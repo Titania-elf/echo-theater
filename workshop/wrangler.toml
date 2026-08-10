@@ -1,0 +1,18 @@
+name = "echo-workshop"
+compatibility_date = "2026-01-01"
+pages_build_output_dir = "public"
+
+# database_id 用 `wrangler d1 create echo-workshop` 之后填进来
+[[d1_databases]]
+binding = "DB"
+database_name = "echo-workshop"
+database_id = "49e164e5-f8e8-4937-952a-594da405e30d"
+
+[vars]
+# 每人每天投稿上限（防灌水，没有人工审核时这是主要防线）
+DAILY_SUBMIT_LIMIT = "10"
+
+# 以下三个是 secret，不要写在这里，用命令行设置：
+#   wrangler pages secret put DISCORD_CLIENT_ID
+#   wrangler pages secret put DISCORD_CLIENT_SECRET
+#   wrangler pages secret put SESSION_SECRET

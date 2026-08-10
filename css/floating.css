@@ -1,0 +1,775 @@
+/* css/floating.css - 悬浮球 */
+
+#titania-float-btn {
+    position: fixed;
+    top: 100px;
+    left: 20px;
+    /* 使用 CSS 变量控制尺寸 */
+    width: var(--t-size, 56px);
+    height: var(--t-size, 56px);
+    font-size: calc(var(--t-size, 56px) * 0.46);
+
+    padding: 3px;
+    border-radius: 50%;
+    /* 使用 CSS 变量控制背景颜色（支持透明度） */
+    background: var(--t-bg-color, #2b2b2b);
+    color: #fff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 9999;
+    /* 使用 CSS 变量控制边框颜色（支持透明度） */
+    border: 2px solid var(--t-border-color-rgba, var(--t-border-color, #444));
+    transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    user-select: none;
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+#titania-float-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    pointer-events: none;
+    position: relative;
+    z-index: 2;
+}
+
+/* ===== 加载动画效果 ===== */
+/* 注：通用加载状态保持可交互以支持侧边菜单（无需额外样式） */
+
+/* ===== 动画 1: 脉冲波纹 (Pulse Ripple) ===== */
+@keyframes t-ripple-1 {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+@keyframes t-ripple-2 {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}
+
+@keyframes t-ripple-3 {
+    0% {
+        transform: scale(1);
+        opacity: 0.4;
+    }
+
+    100% {
+        transform: scale(1.9);
+        opacity: 0;
+    }
+}
+
+#titania-float-btn.t-loading.t-anim-ripple {
+    border-color: var(--t-border-color-rgba, var(--t-border-color, #90cdf4));
+}
+
+#titania-float-btn.t-loading.t-anim-ripple::before,
+#titania-float-btn.t-loading.t-anim-ripple::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    /* 动画波纹使用不透明的边框颜色以保持可见性 */
+    border: 2px solid var(--t-border-color, #90cdf4);
+    animation: t-ripple-1 1.5s ease-out infinite;
+}
+
+#titania-float-btn.t-loading.t-anim-ripple::after {
+    animation: t-ripple-2 1.5s ease-out 0.5s infinite;
+}
+
+/* 第三层波纹通过额外元素实现 */
+#titania-float-btn.t-loading.t-anim-ripple .t-ripple-extra {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--t-border-color, #90cdf4);
+    animation: t-ripple-3 1.5s ease-out 1s infinite;
+    pointer-events: none;
+}
+
+/* ===== 动画 2: 电磁闪烁 (Arc Flash) ===== */
+@keyframes t-arc-flash-1 {
+
+    0%,
+    90%,
+    100% {
+        opacity: 0;
+    }
+
+    92%,
+    95% {
+        opacity: 1;
+    }
+}
+
+@keyframes t-arc-flash-2 {
+
+    0%,
+    80%,
+    100% {
+        opacity: 0;
+    }
+
+    82%,
+    88% {
+        opacity: 1;
+    }
+}
+
+@keyframes t-arc-rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+#titania-float-btn.t-loading.t-anim-arc {
+    border-color: var(--t-border-color-rgba, var(--t-border-color, #a29bfe));
+}
+
+#titania-float-btn.t-loading.t-anim-arc::before {
+    content: "";
+    position: absolute;
+    width: 120%;
+    height: 120%;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 20% 0%, var(--t-border-color, #a29bfe) 0%, transparent 30%),
+        radial-gradient(circle at 80% 100%, var(--t-border-color, #a29bfe) 0%, transparent 30%);
+    animation: t-arc-rotate 1s linear infinite, t-arc-flash-1 0.3s ease infinite;
+    opacity: 0.8;
+}
+
+#titania-float-btn.t-loading.t-anim-arc::after {
+    content: "";
+    position: absolute;
+    width: 130%;
+    height: 130%;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 0%, var(--t-border-color, #74b9ff) 0%, transparent 25%),
+        radial-gradient(circle at 50% 100%, var(--t-border-color, #74b9ff) 0%, transparent 25%);
+    animation: t-arc-rotate 1.5s linear infinite reverse, t-arc-flash-2 0.5s ease infinite;
+    opacity: 0.6;
+}
+
+/* ===== 通知呼吸灯 ===== */
+@keyframes t-notify-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px var(--t-border-color, #55efc4);
+        border-color: var(--t-border-color, #55efc4);
+    }
+
+    50% {
+        box-shadow: 0 0 25px var(--t-border-color, #55efc4);
+        border-color: var(--t-border-color, #55efc4);
+    }
+}
+
+#titania-float-btn.t-notify {
+    animation: t-notify-glow 2s infinite ease-in-out;
+    border-color: var(--t-border-color-rgba, var(--t-border-color, #55efc4));
+}
+
+/* ===== 计时器 ===== */
+#titania-timer {
+    position: fixed;
+    top: 80px;
+    left: 20px;
+
+    /* 毛玻璃效果 */
+    background: rgba(30, 30, 30, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+    color: #00d9ff;
+    font-family: var(--t-font-mono);
+    font-size: 11px;
+
+    padding: 3px 10px;
+    border-radius: 12px;
+    min-width: 36px;
+    text-align: center;
+
+    z-index: 9998;
+    pointer-events: none;
+
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+#titania-timer.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#titania-timer.done {
+    color: #55efc4;
+}
+
+/* ===== 横向图标菜单容器 ===== */
+#titania-slide-menu {
+    position: fixed;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    z-index: 10000;
+    pointer-events: none;
+
+    /* 透明毛玻璃效果 */
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.08) 0%,
+            rgba(255, 255, 255, 0.03) 50%,
+            rgba(255, 255, 255, 0.06) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+
+    /* 边框 */
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50px;
+    padding: 5px 6px;
+
+    /* 柔和阴影 */
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+
+#titania-slide-menu.t-horizontal {
+    flex-direction: row;
+}
+
+#titania-slide-menu.show {
+    pointer-events: auto;
+    opacity: 1;
+    transform: scale(1) translateY(-50%);
+}
+
+/* ===== 横向图标按钮 ===== */
+.t-menu-icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    opacity: 0;
+    transform: scale(0.5) rotate(-10deg);
+
+    /* 微妙的玻璃质感 */
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(4px);
+}
+
+.t-menu-icon-btn.show {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+.t-menu-icon-btn:hover {
+    transform: scale(1.12);
+    color: #fff;
+}
+
+.t-menu-icon-btn:active {
+    transform: scale(0.92);
+}
+
+/* 剧场按钮 */
+.t-menu-icon-btn.main {
+    color: #74b9ff;
+}
+
+.t-menu-icon-btn.main:hover {
+    background: radial-gradient(circle at center, rgba(74, 158, 255, 0.25) 0%, rgba(74, 158, 255, 0.1) 70%);
+    border-color: rgba(74, 158, 255, 0.5);
+    box-shadow:
+        0 0 15px rgba(74, 158, 255, 0.4),
+        inset 0 0 10px rgba(74, 158, 255, 0.1);
+}
+
+/* 设定提取按钮 */
+.t-menu-icon-btn.lore {
+    color: #a29bfe;
+}
+
+.t-menu-icon-btn.lore:hover {
+    background: radial-gradient(circle at center, rgba(162, 155, 254, 0.25) 0%, rgba(162, 155, 254, 0.1) 70%);
+    border-color: rgba(162, 155, 254, 0.5);
+    box-shadow:
+        0 0 15px rgba(162, 155, 254, 0.4),
+        inset 0 0 10px rgba(162, 155, 254, 0.1);
+}
+
+/* 故事大纲按钮 */
+.t-menu-icon-btn.outline {
+    color: #81ecec;
+}
+
+.t-menu-icon-btn.outline:hover {
+    background: radial-gradient(circle at center, rgba(129, 236, 236, 0.25) 0%, rgba(129, 236, 236, 0.1) 70%);
+    border-color: rgba(129, 236, 236, 0.5);
+    box-shadow:
+        0 0 15px rgba(129, 236, 236, 0.35),
+        inset 0 0 10px rgba(129, 236, 236, 0.1);
+}
+
+/* 设置按钮 */
+.t-menu-icon-btn.settings {
+    color: #b0bec5;
+}
+
+.t-menu-icon-btn.settings:hover {
+    background: radial-gradient(circle at center, rgba(176, 190, 197, 0.2) 0%, rgba(176, 190, 197, 0.08) 70%);
+    border-color: rgba(176, 190, 197, 0.4);
+    box-shadow:
+        0 0 15px rgba(176, 190, 197, 0.3),
+        inset 0 0 10px rgba(176, 190, 197, 0.1);
+    color: #fff;
+}
+
+/* 收藏夹按钮 */
+.t-menu-icon-btn.favs {
+    color: #ffd93d;
+}
+
+.t-menu-icon-btn.favs:hover {
+    background: radial-gradient(circle at center, rgba(255, 217, 61, 0.25) 0%, rgba(255, 217, 61, 0.1) 70%);
+    border-color: rgba(255, 217, 61, 0.5);
+    box-shadow:
+        0 0 15px rgba(255, 217, 61, 0.4),
+        inset 0 0 10px rgba(255, 217, 61, 0.1);
+}
+
+/* 剧本管理按钮 */
+.t-menu-icon-btn.scripts {
+    color: #d4a574;
+}
+
+.t-menu-icon-btn.scripts:hover {
+    background: radial-gradient(circle at center, rgba(212, 165, 116, 0.25) 0%, rgba(212, 165, 116, 0.1) 70%);
+    border-color: rgba(212, 165, 116, 0.5);
+    box-shadow:
+        0 0 15px rgba(212, 165, 116, 0.4),
+        inset 0 0 10px rgba(212, 165, 116, 0.1);
+}
+
+/* 调试按钮 */
+.t-menu-icon-btn.debug {
+    color: #ff9f43;
+}
+
+.t-menu-icon-btn.debug:hover {
+    background: radial-gradient(circle at center, rgba(255, 159, 67, 0.25) 0%, rgba(255, 159, 67, 0.1) 70%);
+    border-color: rgba(255, 159, 67, 0.5);
+    box-shadow:
+        0 0 15px rgba(255, 159, 67, 0.4),
+        inset 0 0 10px rgba(255, 159, 67, 0.1);
+}
+
+/* 中止按钮 */
+.t-menu-icon-btn.cancel {
+    color: #ff6b6b;
+    animation: t-cancel-pulse-icon 1.5s ease-in-out infinite;
+}
+
+.t-menu-icon-btn.cancel:hover {
+    background: radial-gradient(circle at center, rgba(255, 107, 107, 0.3) 0%, rgba(255, 107, 107, 0.12) 70%);
+    border-color: rgba(255, 107, 107, 0.6);
+    box-shadow:
+        0 0 18px rgba(255, 107, 107, 0.5),
+        inset 0 0 12px rgba(255, 107, 107, 0.15);
+}
+
+@keyframes t-cancel-pulse-icon {
+
+    0%,
+    100% {
+        text-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+    }
+
+    50% {
+        text-shadow: 0 0 15px rgba(255, 107, 107, 0.8);
+    }
+}
+
+/* ===== 旧版菜单项样式（保留兼容性）===== */
+.t-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+}
+
+.t-menu-item.show {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+.t-menu-item:hover .t-menu-icon {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.t-menu-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.t-menu-icon.main {
+    background: linear-gradient(135deg, #4a9eff, #2d7fd3);
+    border: 2px solid #74b9ff;
+}
+
+.t-menu-icon.lore {
+    background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+    border: 2px solid #a29bfe;
+}
+
+.t-menu-icon.cancel {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+    border: 2px solid #ff4757;
+    animation: t-cancel-pulse 1.5s ease-in-out infinite;
+}
+
+.t-menu-label {
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+}
+
+@keyframes t-cancel-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px rgba(255, 71, 87, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(255, 71, 87, 0.8);
+    }
+}
+
+/* ===== 点击外部区域关闭菜单的遮罩 ===== */
+#titania-menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9998;
+    background: transparent;
+    display: none;
+}
+
+#titania-menu-backdrop.show {
+    display: block;
+}
+
+/* ===== 切换模型按钮 ===== */
+.t-menu-icon-btn.model {
+    color: #00cec9;
+}
+
+.t-menu-icon-btn.model:hover {
+    background: radial-gradient(circle at center, rgba(0, 206, 201, 0.25) 0%, rgba(0, 206, 201, 0.1) 70%);
+    border-color: rgba(0, 206, 201, 0.5);
+    box-shadow:
+        0 0 15px rgba(0, 206, 201, 0.4),
+        inset 0 0 10px rgba(0, 206, 201, 0.1);
+}
+
+/* ===== 模型切换弹窗 ===== */
+.t-model-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20001;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.t-model-dialog-box {
+    background: rgba(30, 30, 35, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #e2e8f0;
+}
+
+.t-model-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(0, 206, 201, 0.1);
+    border-bottom: 1px solid rgba(0, 206, 201, 0.2);
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.t-model-dialog-header i {
+    margin-right: 8px;
+    color: #00cec9;
+}
+
+.t-model-dialog-close {
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    color: #a0aec0;
+}
+
+.t-model-dialog-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.t-model-dialog-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.t-model-dialog-hint {
+    color: #888;
+    font-size: 0.85em;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    border-left: 3px solid #00cec9;
+}
+
+.t-model-dialog-hint i {
+    color: #00cec9;
+    margin-right: 6px;
+}
+
+.t-model-current-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+
+.t-model-label {
+    color: #718096;
+}
+
+.t-model-value {
+    color: #90cdf4;
+    font-weight: 500;
+}
+
+.t-model-dialog-body .t-form-group {
+    margin-bottom: 15px;
+}
+
+.t-model-dialog-body .t-form-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #cbd5e0;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.t-model-dialog-body .t-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.95em;
+    transition: all 0.2s;
+}
+
+.t-model-dialog-body .t-input:focus {
+    border-color: #00cec9;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 206, 201, 0.1);
+}
+
+.t-model-override-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(0, 206, 201, 0.1);
+    border: 1px solid rgba(0, 206, 201, 0.3);
+    border-radius: 6px;
+    color: #00cec9;
+    font-size: 0.9em;
+}
+
+.t-model-override-status i {
+    color: #00cec9;
+}
+
+.t-model-dialog-footer {
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.t-model-dialog-footer .t-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.t-model-dialog-footer .t-btn:not(.t-btn-primary) {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #a0aec0;
+}
+
+.t-model-dialog-footer .t-btn:not(.t-btn-primary):hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.t-model-dialog-footer .t-btn-primary {
+    background: linear-gradient(135deg, #00cec9, #00b894);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 206, 201, 0.3);
+}
+
+.t-model-dialog-footer .t-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 206, 201, 0.4);
+}
+
+.t-btn-xs {
+    padding: 4px 10px;
+    font-size: 0.8em;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #a0aec0;
+}
+
+.t-btn-xs:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.t-btn-danger {
+    background: rgba(231, 76, 60, 0.2) !important;
+    border-color: rgba(231, 76, 60, 0.4) !important;
+    color: #e74c3c !important;
+}
+
+.t-btn-danger:hover {
+    background: rgba(231, 76, 60, 0.3) !important;
+}
+
+/* 移动端模型弹窗适配 */
+@media (max-width: 768px) {
+    .t-model-dialog-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        padding: 15px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .t-model-dialog-box {
+        width: 100%;
+        max-width: 100%;
+        max-height: 85vh;
+        margin: auto;
+        position: relative;
+    }
+}

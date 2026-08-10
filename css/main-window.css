@@ -1,0 +1,3368 @@
+/* css/main-window.css - 主演绎窗口 */
+
+#t-main-view {
+    width: 950px;
+    max-width: 95vw;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+    background: #121212;
+    position: relative;
+    /* 确保主窗口在遮罩层之上 */
+    z-index: 20001;
+}
+
+/* 标题栏右侧图标组（工坊 / 收藏夹 / 更多 / 关闭）
+   base.css 的 .t-icon-btn 是 1.2em 裸图标 + margin-left，点击热区只有字形本身，
+   在标题栏里既显小又难点。这里统一改成带内边距的方形热区，间距交给 gap。 */
+#t-main-view .t-header .t-header-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+#t-main-view .t-header .t-header-actions .t-icon-btn {
+    /* 间距统一由父级 gap 负责，清掉 base.css 的 margin-left 避免叠加 */
+    margin-left: 0;
+    font-size: 1.5em;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+#t-main-view .t-header .t-header-actions .t-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+#t-main-view .t-header .t-header-actions .t-close {
+    margin-left: 0;
+}
+
+/* Zen Mode (沉浸模式) */
+#t-main-view.t-zen-mode .t-header,
+#t-main-view.t-zen-mode .t-top-bar,
+#t-main-view.t-zen-mode .t-bottom-bar,
+#t-main-view.t-zen-mode .t-toolbox-panel,
+#t-main-view.t-zen-mode .t-toolbox-backdrop {
+    display: none !important;
+}
+
+#t-main-view.t-zen-mode .t-content-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    background-color: #0b0b0b;
+    background-image: none;
+}
+
+/* 内容容器 */
+.t-content-wrapper {
+    flex-grow: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: #0b0b0b;
+    background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px);
+    background-size: 20px 20px;
+    transform: translateZ(0);
+    min-height: 0;
+}
+
+.t-content-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 生成内容约束 */
+#t-output-content {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+#t-output-content>div {
+    flex-grow: 1;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    min-height: 100%;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+
+#t-output-content img {
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+/* iframe 内容样式 - 移除多余滚动条 */
+#t-output-content .t-content-iframe {
+    width: 100%;
+    border: none;
+    background: transparent;
+    display: block;
+    /* 高度由 JS 动态设置 */
+}
+
+/* 主动续写历史管理模式 */
+.t-cont-history-heading {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.t-cont-history-heading strong,
+.t-cont-history-heading span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-cont-history-heading span {
+    color: #888;
+    font-size: 12px;
+}
+
+.t-cont-history-scope {
+    max-width: 92px;
+    height: 30px;
+    padding: 0 6px;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    background: #242424;
+    color: #ccc;
+    font-size: 11px;
+}
+
+.t-cont-select-wrap {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+}
+
+.t-cont-select {
+    width: 16px;
+    height: 16px;
+    margin: 0 8px 0 0;
+    accent-color: #90cdf4;
+    cursor: pointer;
+}
+
+.t-cont-select:disabled {
+    cursor: not-allowed;
+    opacity: .45;
+}
+
+.t-cont-history-panel.is-managing .t-cont-history-session-toggle,
+.t-cont-history-panel.is-managing .t-cont-history-branch-title,
+.t-cont-history-panel.is-managing .t-cont-history-round-head {
+    gap: 6px;
+}
+
+.t-cont-history-panel.is-managing .t-cont-history-session-toggle {
+    cursor: default;
+}
+
+.t-cont-history-bulk-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border-top: 1px solid #333;
+    background: #181818;
+    flex-shrink: 0;
+}
+
+.t-cont-history-bulk-bar span {
+    color: #aaa;
+    font-size: 12px;
+}
+
+.t-cont-history-bulk-bar .danger {
+    color: #ffd6d6;
+    border-color: rgba(248, 113, 113, .45);
+    background: rgba(185, 28, 28, .18);
+}
+
+@media (max-width: 620px) {
+    .t-cont-history-heading span {
+        display: none;
+    }
+
+    .t-cont-history-header-actions .t-btn {
+        padding: 5px 7px;
+        font-size: 12px;
+    }
+}
+
+/* 顶部操作区 */
+.t-top-bar {
+    padding: 12px 20px;
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+    display: flex;
+    gap: 15px;
+    align-items: stretch;
+    height: 75px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    z-index: 20;
+}
+
+/* === [修复] PC端布局核心 === */
+.t-mobile-row {
+    display: flex;
+    flex-grow: 1;
+    /* 填满剩余空间 */
+    gap: 15px;
+    /* 元素间距 */
+    height: 100%;
+    min-width: 0;
+    /* 防止 flex 子项溢出 */
+}
+
+/* 历史开关 */
+.t-history-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    background: #1a1a1a;
+    border-radius: 6px;
+    padding: 0 12px;
+    border: 1px solid #333;
+    flex-shrink: 0;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.t-history-toggle:hover {
+    background: #222;
+    border-color: #444;
+}
+
+.t-history-toggle.active {
+    background: rgba(144, 205, 244, 0.1);
+    border-color: rgba(144, 205, 244, 0.3);
+}
+
+.t-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.t-toggle-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #90cdf4;
+    cursor: pointer;
+}
+
+.t-toggle-text {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #888;
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+
+.t-history-toggle.active .t-toggle-text {
+    color: #90cdf4;
+}
+
+.t-history-toggle:hover .t-toggle-text {
+    color: #bbb;
+}
+
+.t-history-toggle.active:hover .t-toggle-text {
+    color: #a8d8f8;
+}
+
+/* 生成模式切换 */
+.t-mode-toggle {
+    display: flex;
+    align-items: center;
+    background: #1a1a1a;
+    border-radius: 6px;
+    border: 1px solid #333;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.t-mode-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    height: 100%;
+    cursor: pointer;
+    color: #666;
+    font-size: 0.85em;
+    font-weight: bold;
+    transition: all 0.2s;
+    white-space: nowrap;
+    border-right: 1px solid #333;
+}
+
+.t-mode-btn:last-child {
+    border-right: none;
+}
+
+.t-mode-btn:hover {
+    background: #222;
+    color: #aaa;
+}
+
+.t-mode-btn.active {
+    background: rgba(191, 161, 95, 0.15);
+    color: #bfa15f;
+}
+
+.t-mode-btn.active:hover {
+    background: rgba(191, 161, 95, 0.2);
+}
+
+/* Trigger Card */
+.t-trigger-card {
+    flex-grow: 1;
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 0 15px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: 0.2s;
+    position: relative;
+    min-width: 0;
+}
+
+.t-trigger-card:hover {
+    background: #2a2a2a;
+    border-color: #555;
+}
+
+.t-trigger-main {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #eee;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.t-trigger-sub {
+    font-size: 0.8em;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.t-cat-tag {
+    background: #333;
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: #aaa;
+    font-size: 0.9em;
+    flex-shrink: 0;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.t-chevron {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #555;
+    font-size: 1.2em;
+}
+
+/* Filter & Dice */
+.t-action-group {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.t-filter-btn,
+.t-dice-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+
+.t-filter-btn {
+    width: 40px;
+    font-size: 1.1em;
+    color: #666;
+}
+
+.t-filter-btn:hover {
+    background: #2a2a2a;
+    color: #aaa;
+}
+
+.t-filter-btn.active-filter {
+    color: #bfa15f;
+    border-color: rgba(191, 161, 95, 0.3);
+    background: rgba(191, 161, 95, 0.1);
+}
+
+.t-dice-btn {
+    width: 50px;
+    font-size: 1.5em;
+    color: #888;
+}
+
+.t-dice-btn:hover {
+    background: #2a2a2a;
+    color: #fff;
+}
+
+/* 内容区右上角垂直图标栏 */
+.t-tools-rail {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 100;
+}
+
+.t-tools-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 50%;
+    background: rgba(30, 30, 30, 0.4);
+    backdrop-filter: blur(4px);
+    color: #666;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.4;
+}
+
+.t-tools-icon:hover {
+    opacity: 1;
+    background: rgba(51, 51, 51, 0.8);
+    color: #fff;
+    transform: scale(1.08);
+}
+
+.t-tools-icon.active {
+    opacity: 1;
+    background: #bfa15f;
+    color: #000;
+}
+
+.t-tools-icon.is-faved {
+    opacity: 0.95;
+    border-color: rgba(255, 107, 107, 0.4);
+}
+
+#t-main-view.t-zen-mode .t-tools-icon {
+    background: transparent;
+}
+
+/* 核心操作栏 */
+.t-bottom-bar {
+    min-height: 70px;
+    padding: 10px 14px;
+    background: #181818;
+    border-top: 1px solid #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 50;
+    box-sizing: border-box;
+}
+
+.t-continuation-stack {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+/* 快捷指令行：左边可横滑，右边固定住编辑器和工具两个入口。
+   固定在右侧而不是左侧 —— 左侧固定会挡住「还能往右滑」的暗示，
+   而且快捷指令才是这一行的主体，该先被看到。 */
+.t-continuation-shortcuts-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.t-continuation-shortcuts {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.t-continuation-shortcuts-fixed {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+.t-continuation-shortcuts::-webkit-scrollbar {
+    display: none;
+}
+
+.t-shortcut-btn {
+    padding: 4px 11px;
+    flex: 0 0 auto;
+    border: 1px solid #3a3a3a;
+    border-radius: 999px;
+    background: #232323;
+    color: #999;
+    font: inherit;
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .18s, border-color .18s, color .18s;
+}
+
+.t-shortcut-btn:hover {
+    border-color: rgba(191, 161, 95, .5);
+    background: #2b2b2b;
+    color: #ddd;
+}
+
+.t-shortcut-btn.t-shortcut-compose {
+    margin-left: auto;
+    color: #bfa15f;
+}
+
+.t-shortcut-btn.t-shortcut-compose i {
+    margin-right: 3px;
+    font-size: 10px;
+}
+
+
+.t-continuation-quick {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    position: relative;
+    border: 1px solid #3a3a3a;
+    border-radius: 7px;
+    background: #222;
+}
+
+.t-continuation-history-btn,
+.t-continuation-context-btn,
+.t-continuation-send {
+    height: 36px;
+    margin: 0 4px;
+    padding: 0 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #888;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.t-continuation-history-btn:hover,
+.t-continuation-context-btn:hover,
+.t-continuation-context-btn.active {
+    background: #303030;
+    color: #ddd;
+}
+
+.t-continuation-input-wrap {
+    min-width: 0;
+    flex: 1;
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.t-continuation-input-wrap textarea {
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+    padding: 11px 8px 9px;
+    resize: none;
+    overflow-y: auto;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #eee;
+    font: inherit;
+    font-size: 13px;
+    line-height: 18px;
+    box-sizing: border-box;
+}
+
+.t-continuation-input-wrap textarea::placeholder {
+    color: #777;
+}
+
+.t-continuation-input-wrap textarea:focus {
+    box-shadow: none;
+}
+
+.t-continuation-quick:focus-within {
+    border-color: rgba(191, 161, 95, .58);
+}
+
+.t-continuation-send {
+    width: 38px;
+    margin-left: 0;
+    background: #bfa15f;
+    color: #171717;
+}
+
+.t-continuation-send:hover:not(:disabled) {
+    background: #d0b575;
+}
+
+.t-continuation-send.is-stop {
+    border-color: rgba(255, 107, 107, .55);
+    background: #d95757;
+    color: #fff;
+}
+
+.t-continuation-send.is-stop:hover {
+    background: #e86868;
+}
+
+/* 重演：跟发送键同规格。发送是主操作用实心，重演用描边，
+   两个挨着才不会误点 */
+.t-continuation-replay {
+    height: 36px;
+    width: 34px;
+    margin: 0 2px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border: 1px solid #3f3f3f;
+    border-radius: 5px;
+    background: transparent;
+    color: #999;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color .18s, color .18s, background .18s;
+}
+
+.t-continuation-replay:hover:not(:disabled) {
+    border-color: rgba(191, 161, 95, .55);
+    background: #2b2b2b;
+    color: #d0b575;
+}
+
+.t-continuation-replay:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.t-continuation-replay:disabled,
+.t-continuation-send:disabled,
+.t-continuation-history-btn:disabled,
+.t-continuation-context-btn:disabled,
+.t-continuation-input-wrap textarea:disabled {
+    cursor: not-allowed;
+    opacity: .42;
+}
+
+
+
+
+.t-continuation-context-popover {
+    position: absolute;
+    z-index: 120;
+    bottom: calc(100% + 9px);
+    border: 1px solid #444;
+    border-radius: 7px;
+    background: #1d1d1d;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, .48);
+}
+
+.t-continuation-context-popover[hidden] {
+    display: none;
+}
+
+
+
+
+
+
+
+.t-continuation-context-popover {
+    right: 46px;
+    width: 248px;
+    padding: 12px;
+}
+
+.t-continuation-context-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.t-continuation-context-head strong {
+    color: #eee;
+    font-size: 13px;
+}
+
+.t-continuation-context-head span,
+.t-continuation-context-stats {
+    color: #888;
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+.t-continuation-stepper {
+    margin: 12px 0 10px;
+    display: grid;
+    grid-template-columns: 34px 1fr 34px;
+    align-items: center;
+    gap: 8px;
+}
+
+.t-continuation-stepper button {
+    width: 34px;
+    height: 32px;
+    border: 1px solid #444;
+    border-radius: 5px;
+    background: #292929;
+    color: #ccc;
+    cursor: pointer;
+}
+
+.t-continuation-stepper button:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+.t-continuation-stepper span {
+    color: #bbb;
+    font-size: 12px;
+    text-align: center;
+}
+
+.t-continuation-stepper strong {
+    color: #bfa15f;
+    font-size: 17px;
+}
+
+.t-continuation-context-stats.is-warning {
+    color: #ff7675;
+}
+
+/* 工具箱抽屉 */
+.t-toolbox-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 106;
+    visibility: hidden;
+    background: rgba(0, 0, 0, .28);
+    opacity: 0;
+    transition: opacity .2s, visibility .2s;
+}
+
+.t-toolbox-panel {
+    position: absolute;
+    z-index: 107;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    background: #191919;
+    border-left: 1px solid #444;
+    box-shadow: -14px 0 34px rgba(0, 0, 0, .5);
+    transform: translateX(102%);
+    transition: transform .24s ease;
+}
+
+.t-toolbox-open .t-toolbox-backdrop {
+    visibility: visible;
+    opacity: 1;
+}
+
+.t-toolbox-open .t-toolbox-panel {
+    transform: translateX(0);
+}
+
+.t-toolbox-header {
+    min-height: 62px;
+    padding: 13px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #333;
+    box-sizing: border-box;
+}
+
+.t-toolbox-header div {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.t-toolbox-header strong {
+    color: #eee;
+    font-size: 15px;
+}
+
+.t-toolbox-header span,
+.t-toolbox-section-title {
+    color: #777;
+    font-size: 11px;
+}
+
+.t-toolbox-close {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 6px;
+    background: #292929;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.t-toolbox-body {
+    flex: 1;
+    min-height: 0;
+    padding: 12px;
+    overflow-y: auto;
+}
+
+.t-toolbox-section + .t-toolbox-section {
+    margin-top: 16px;
+}
+
+.t-toolbox-section-title {
+    margin: 0 0 7px 2px;
+}
+
+.t-toolbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.t-toolbox-action {
+    min-width: 0;
+    min-height: 54px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #393939;
+    border-radius: 6px;
+    background: #232323;
+    color: #bbb;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: background .18s, border-color .18s, color .18s;
+}
+
+.t-toolbox-action i {
+    width: 19px;
+    flex: 0 0 19px;
+    color: #888;
+    text-align: center;
+}
+
+.t-toolbox-action:hover {
+    background: #2d2d2d;
+    border-color: #555;
+    color: #fff;
+}
+
+.t-toolbox-action.active,
+#t-btn-queue-settings.active {
+    border-color: rgba(144, 205, 244, .45);
+    background: rgba(144, 205, 244, .12);
+    color: #b8e0fa;
+}
+
+.t-toolbox-action.inactive {
+    color: #777;
+}
+
+.t-toolbox-action-wide {
+    grid-column: 1 / -1;
+}
+
+.t-toolbox-stop {
+    display: none;
+    min-height: 44px;
+    margin: 0 12px 12px;
+    border: 1px solid rgba(255, 107, 107, .45);
+    border-radius: 6px;
+    background: rgba(255, 107, 107, .1);
+    color: #ff8a8a;
+    font: inherit;
+    cursor: pointer;
+}
+
+.t-toolbox-stop.is-active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* 筛选弹出菜单 */
+.t-filter-popover {
+    position: absolute;
+    z-index: 20001;
+    background: #1e1e1e;
+    border: 1px solid #444;
+    border-radius: 6px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    width: 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: fadeIn 0.15s;
+    /* 固定最大高度：约容纳5个分类项，超出时显示滚动条 */
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* 筛选弹出菜单滚动条美化 */
+.t-filter-popover::-webkit-scrollbar {
+    width: 6px;
+}
+
+.t-filter-popover::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 3px;
+}
+
+.t-filter-popover::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+}
+
+.t-filter-popover::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.t-filter-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: #aaa;
+    border-radius: 4px;
+    font-size: 0.9em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.t-filter-item:hover {
+    background: #2a2a2a;
+    color: #fff;
+}
+
+.t-filter-item.active {
+    background: #bfa15f;
+    color: #000;
+    font-weight: bold;
+}
+
+.t-filter-check {
+    opacity: 0;
+    font-size: 0.8em;
+}
+
+.t-filter-item.active .t-filter-check {
+    opacity: 1;
+}
+
+/* 
+   === 移动端适配 ===
+   注意：只有屏幕宽度小于 600px 时，这些样式才会生效。
+   在“桌面版网站”模式下，屏幕宽度通常被模拟为 980px 或更高，
+   所以下面的代码不会执行，会使用上面的 PC 布局。
+*/
+/* css/main-window.css - 移动端适配部分 */
+
+@media screen and (max-width: 600px) {
+    #t-main-view {
+        width: 100%;
+        height: 95vh;
+        max-width: 100vw;
+        border-radius: 10px 10px 0 0;
+    }
+
+    /* 顶部栏紧凑化 */
+    .t-header {
+        padding: 10px;
+    }
+
+    /* 图标间距收窄：桌面下的 8px gap 在窄屏会把标题挤到截断
+       （.t-title-container 是 overflow:hidden） */
+    #t-main-view .t-header .t-header-actions {
+        gap: 4px;
+    }
+
+    #t-main-view .t-header .t-header-actions .t-icon-btn {
+        font-size: 1.3em;
+        width: 30px;
+        height: 30px;
+    }
+
+    .t-top-bar {
+        height: auto;
+        flex-direction: column;
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .t-history-toggle {
+        width: 100%;
+        height: 40px;
+        min-width: unset;
+        justify-content: center;
+    }
+
+    .t-mode-toggle {
+        width: 100%;
+        height: 40px;
+    }
+
+    .t-mode-btn {
+        flex: 1;
+        font-size: 0.8em;
+        padding: 0 10px;
+    }
+
+    .t-mobile-row {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        height: 50px;
+    }
+
+    .t-trigger-card {
+        height: 100%;
+    }
+
+    .t-action-group {
+        height: 100%;
+    }
+
+    .t-dice-btn {
+        height: 100%;
+        width: 50px;
+    }
+
+    .t-filter-btn {
+        height: 100%;
+        width: 40px;
+    }
+
+    .t-content-area {
+        padding: 15px;
+    }
+
+    /* 移动端核心操作栏 */
+    .t-bottom-bar {
+        height: auto;
+        min-height: 62px;
+        padding: 8px;
+        display: block;
+    }
+
+    .t-continuation-stack {
+        gap: 6px;
+    }
+
+    .t-continuation-quick {
+        height: 46px;
+    }
+
+    .t-shortcut-btn {
+        padding: 3px 10px;
+    }
+
+    .t-shortcut-btn.t-shortcut-compose span,
+    .t-shortcut-btn.t-shortcut-compose {
+        margin-left: 0;
+    }
+
+    .t-continuation-history-btn {
+        width: 38px;
+        height: 42px;
+        margin: 0 2px;
+        padding: 0 5px;
+    }
+
+    .t-continuation-input-wrap textarea {
+        height: 42px;
+        padding: 12px 5px 10px;
+        font-size: 12px;
+    }
+
+    .t-continuation-context-btn {
+        width: 38px;
+        height: 42px;
+        margin: 0;
+        padding: 0;
+        font-size: 13px;
+    }
+
+    .t-continuation-context-btn i {
+        display: none;
+    }
+
+    .t-continuation-send {
+        width: 38px;
+        height: 42px;
+        margin-right: 4px;
+        padding: 0;
+    }
+
+    /* 工具入口已经并进快捷指令行，这里只需要让它跟其他胶囊一样高 */
+    .t-shortcut-toolbox {
+        padding: 3px 10px;
+    }
+
+    .t-continuation-context-popover {
+        position: fixed;
+        left: 8px;
+        right: 8px;
+        bottom: 62px;
+        width: auto;
+        box-sizing: border-box;
+    }
+
+    .t-toolbox-backdrop {
+        position: fixed;
+        inset: 0;
+    }
+
+    .t-toolbox-panel {
+        position: fixed;
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-height: min(76dvh, 620px);
+        border-top: 1px solid #555;
+        border-left: 0;
+        border-radius: 12px 12px 0 0;
+        transform: translateY(102%);
+    }
+
+    .t-toolbox-open .t-toolbox-panel {
+        transform: translateY(0);
+    }
+
+    .t-toolbox-close i {
+        transform: rotate(90deg);
+    }
+
+    /* 面板高度由 max-height 收口，body 必须可收缩才会出现滚动条 */
+    .t-toolbox-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .t-toolbox-header {
+        min-height: 52px;
+        padding: 9px 12px;
+        flex-shrink: 0;
+    }
+
+    .t-toolbox-section + .t-toolbox-section {
+        margin-top: 12px;
+    }
+
+    .t-toolbox-action {
+        min-height: 44px;
+        padding: 7px;
+    }
+
+    .t-toolbox-action i {
+        width: 16px;
+        flex: 0 0 16px;
+    }
+
+    .t-toolbox-stop {
+        min-height: 42px;
+        margin: 0 10px 10px;
+        flex-shrink: 0;
+    }
+}
+
+/* ===== 世界书条目选择器 ===== */
+
+/* 选择器面板 */
+.t-wi-selector {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 860px;
+    max-height: 80vh;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.2s;
+}
+
+.t-wi-header {
+    padding: 12px 15px;
+    background: #242424;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px 10px 0 0;
+    flex-shrink: 0;
+}
+
+/* 版本号徽章 */
+.t-version-badge {
+    font-size: 0.65em;
+    color: #666;
+    background: #252525;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    border: 1px solid #333;
+    font-weight: normal;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.t-wi-mode-bar {
+    padding: 10px 15px;
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+    display: flex;
+    gap: 20px;
+    flex-shrink: 0;
+}
+
+.t-wi-mode-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 0.9em;
+}
+
+.t-wi-mode-label input:checked+span {
+    color: #90cdf4;
+    font-weight: bold;
+}
+
+.t-wi-body {
+    flex-grow: 1;
+    overflow: hidden;
+    padding: 10px;
+    min-height: 0;
+}
+
+/* 标签栏。样式原本内联在 mainWindow.js 里，内联优先级压过媒体查询，
+   移动端没法把它并进标题栏，所以搬到这里 */
+.t-wi-action-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.t-wi-tabs {
+    gap: 8px;
+}
+
+.t-wi-tab-btn {
+    padding: 6px 10px;
+    font-size: 0.82em;
+    color: #aaa;
+    background: #232323;
+    border: 1px solid #3a3a3a;
+}
+
+.t-wi-tab-btn.active {
+    color: #90cdf4;
+    border-color: rgba(144, 205, 244, 0.45);
+    background: rgba(144, 205, 244, 0.12);
+}
+
+.t-wi-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 10px;
+    overflow: hidden;
+    height: 100%;
+    min-height: 0;
+}
+
+.t-wi-books-pane {
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #1d1d1d;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.t-wi-books-header {
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    color: #999;
+    font-size: 0.8em;
+}
+
+.t-wi-books-list {
+    overflow-y: auto;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* 桌面端不需要下拉，卡片列表已经全部展开 */
+.t-wi-book-select {
+    display: none;
+}
+
+.t-wi-book-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 9px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    color: #bbb;
+    transition: all 0.2s;
+}
+
+.t-wi-book-item:hover {
+    background: #252525;
+    border-color: #3b3b3b;
+}
+
+.t-wi-book-item.selected {
+    color: #dff1ff;
+    background: rgba(144, 205, 244, 0.12);
+    border-color: rgba(144, 205, 244, 0.35);
+}
+
+.t-wi-book-item-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4d4d4d;
+    flex-shrink: 0;
+}
+
+.t-wi-book-item-dot.active {
+    background: #55efc4;
+    box-shadow: 0 0 6px rgba(85, 239, 196, 0.6);
+}
+
+.t-wi-book-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.86em;
+}
+
+.t-wi-booklist-empty {
+    color: #666;
+    font-size: 0.84em;
+    text-align: center;
+    padding: 20px 10px;
+}
+
+.t-wi-entry-pane {
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #191919;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* 条目区头部：上排书名+徽章，下排搜索框+全选按钮。
+   移动端会把上排整个隐藏，只留下排一条工具行 */
+.t-wi-entry-pane-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.t-wi-entry-pane-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.t-wi-entry-pane-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.t-wi-entry-pane-title {
+    color: #ddd;
+    font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-wi-entry-pane-badge {
+    flex-shrink: 0;
+    font-size: 0.72em;
+    padding: 2px 7px;
+    border-radius: 99px;
+    border: 1px solid #444;
+    color: #888;
+    background: #232323;
+}
+
+.t-wi-entry-pane-badge.active {
+    color: #55efc4;
+    border-color: rgba(85, 239, 196, 0.45);
+    background: rgba(85, 239, 196, 0.08);
+}
+
+.t-wi-entry-pane-badge.inactive {
+    color: #999;
+}
+
+/* 条目搜索（按标题过滤）。现在是工具行里的一个 flex 子项，
+   自身不再有 padding / 下边框 —— 那些已经上移到 .t-wi-entry-pane-header */
+.t-wi-entry-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.t-wi-entry-search .t-wi-search-icon {
+    position: absolute;
+    left: 10px;
+    color: #666;
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.t-wi-entry-search input {
+    width: 100%;
+    height: 30px;
+    padding: 0 28px 0 30px;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    background: #222;
+    color: #ddd;
+    font-size: 12px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.t-wi-entry-search input:focus {
+    outline: none;
+    border-color: rgba(144, 205, 244, 0.5);
+}
+
+.t-wi-entry-search input::placeholder {
+    color: #666;
+}
+
+.t-wi-search-clear {
+    position: absolute;
+    right: 8px;
+    display: none;
+    color: #888;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+.t-wi-entry-pane-tools .t-btn {
+    flex-shrink: 0;
+}
+
+.t-wi-search-clear:hover {
+    color: #ddd;
+}
+
+.t-wi-entry-search.has-query .t-wi-search-clear {
+    display: block;
+}
+
+.t-wi-title-hit {
+    background: rgba(144, 205, 244, 0.25);
+    color: #cfe8ff;
+    border-radius: 2px;
+}
+
+.t-wi-entry-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    min-height: 0;
+    overscroll-behavior: contain;
+}
+
+.t-wi-empty {
+    text-align: center;
+    color: #666;
+    padding: 40px;
+    font-size: 0.9em;
+}
+
+.t-wi-book {
+    margin-bottom: 10px;
+}
+
+.t-wi-book-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #252525;
+    border-radius: 6px;
+    font-weight: bold;
+    color: #ddd;
+}
+
+/* 可折叠的世界书标题 */
+.t-wi-book-header.t-wi-collapsible {
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.t-wi-book-header.t-wi-collapsible:hover {
+    background: #2a2a2a;
+}
+
+/* 折叠箭头图标 */
+.t-wi-collapse-icon {
+    color: #666;
+    font-size: 0.9em;
+    transition: transform 0.2s;
+    width: 12px;
+}
+
+.t-wi-collapse-icon.t-wi-expanded {
+    transform: rotate(90deg);
+}
+
+.t-wi-book-name {
+    flex-grow: 1;
+}
+
+.t-wi-book-stat {
+    color: #888;
+    font-size: 0.8em;
+    font-weight: normal;
+}
+
+/* 世界书分组全选按钮 */
+.t-wi-book-toggle {
+    margin-left: auto;
+    padding: 2px 8px;
+    font-size: 0.75em;
+    font-weight: normal;
+    color: #90cdf4;
+    background: rgba(144, 205, 244, 0.1);
+    border: 1px solid rgba(144, 205, 244, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-wi-book-toggle:hover {
+    background: rgba(144, 205, 244, 0.2);
+    color: #fff;
+}
+
+.t-wi-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0 0 20px;
+    /* 展开时不限制高度，让父容器 .t-wi-body 负责滚动 */
+    max-height: none;
+    overflow: visible;
+    transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+}
+
+/* 折叠状态 */
+.t-wi-entries.t-wi-collapsed {
+    max-height: 0 !important;
+    padding-top: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.t-wi-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-wi-entry:hover {
+    background: #2a2a2a;
+    border-color: #444;
+}
+
+.t-wi-entry.selected {
+    background: rgba(144, 205, 244, 0.1);
+    border-color: rgba(144, 205, 244, 0.3);
+}
+
+.t-wi-entry-check {
+    padding-top: 2px;
+    flex-shrink: 0;
+}
+
+.t-wi-entry-content {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.t-wi-entry-title {
+    font-weight: bold;
+    color: #eee;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.t-wi-uid {
+    font-size: 0.75em;
+    color: #666;
+    font-weight: normal;
+}
+
+.t-wi-entry-preview {
+    font-size: 0.8em;
+    color: #888;
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* 条目操作按钮区 */
+.t-wi-entry-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding-top: 2px;
+}
+
+/* 眼睛预览按钮 */
+.t-wi-preview-btn {
+    color: #666;
+    font-size: 1em;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.t-wi-preview-btn:hover {
+    color: #90cdf4;
+    background: rgba(144, 205, 244, 0.1);
+}
+
+/* 预览弹窗 */
+.t-wi-preview-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3100;
+    animation: fadeIn 0.15s;
+}
+
+.t-wi-preview-box {
+    width: 90%;
+    max-width: 550px;
+    max-height: 70%;
+    background: #1e1e1e;
+    border: 1px solid #444;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.t-wi-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: #252525;
+    border-bottom: 1px solid #333;
+    border-radius: 8px 8px 0 0;
+}
+
+.t-wi-preview-title {
+    font-weight: bold;
+    color: #eee;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-wi-preview-close {
+    font-size: 1.5em;
+    color: #888;
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1;
+}
+
+.t-wi-preview-close:hover {
+    color: #fff;
+}
+
+.t-wi-preview-content {
+    padding: 15px;
+    overflow-y: auto;
+    color: #ccc;
+    font-size: 0.9em;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.t-wi-footer {
+    padding: 12px 15px;
+    background: #1e1e1e;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0 0 10px 10px;
+    flex-shrink: 0;
+}
+
+#t-wi-stat {
+    color: #888;
+    font-size: 0.9em;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 600px) {
+    /* 面板拉到近满屏。用父容器百分比而不是 vh/dvh：
+       .t-wi-selector 绝对定位在 #t-main-view 内，而 .t-box 是 overflow:hidden，
+       所以 100% 就是主窗口可视高度，且不受移动浏览器地址栏伸缩影响 */
+    .t-wi-selector {
+        width: 95%;
+        top: 8px;
+        max-height: calc(100% - 16px);
+    }
+
+    .t-wi-mode-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* 标题栏和标签栏各自压薄。两者是兄弟节点而非父子，
+       没法靠 CSS 合并成一行，真要合并得改 DOM 并牺牲桌面端的分隔线，不划算 */
+    .t-wi-header {
+        padding: 10px 12px;
+    }
+
+    .t-wi-action-bar {
+        padding: 6px 12px;
+    }
+
+    .t-wi-body {
+        padding: 8px;
+    }
+
+    .t-wi-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 8px;
+        height: 100%;
+        min-height: 0;
+    }
+
+    /* 160px 的卡片竖列换成一个原生下拉。
+       之前试过横滑芯片条，真机上滑不动，已弃用 */
+    .t-wi-books-pane {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        max-height: none;
+    }
+
+    .t-wi-books-header,
+    .t-wi-books-list {
+        display: none;
+    }
+
+    .t-wi-book-select {
+        display: block;
+        width: 100%;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        background: #222;
+        color: #ddd;
+        font-size: 13px;
+        box-sizing: border-box;
+    }
+
+    .t-wi-book-select:disabled {
+        color: #777;
+    }
+
+    .t-wi-entry-pane {
+        min-height: 0;
+    }
+
+    /* 书名那行隐藏 —— 上面的下拉框已经显示了当前选中的书 */
+    .t-wi-entry-pane-heading {
+        display: none;
+    }
+
+    .t-wi-entry-pane-header {
+        padding: 8px 10px;
+    }
+
+    .t-wi-entry-list {
+        padding: 8px;
+    }
+
+    .t-wi-footer {
+        padding: 10px 12px;
+    }
+}
+
+/* ===== 互动内容提示栏 ===== */
+
+.t-interactive-hint {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(25, 25, 35, 0.98), rgba(25, 25, 35, 0.92));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-top: 1px solid rgba(144, 205, 244, 0.3);
+    z-index: 100;
+    animation: t-slideUp 0.3s ease;
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+@keyframes t-slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.t-hint-icon {
+    font-size: 1.5em;
+    flex-shrink: 0;
+}
+
+.t-hint-text {
+    flex: 1;
+    color: #90cdf4;
+    font-size: 0.95em;
+    line-height: 1.4;
+}
+
+.t-hint-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.t-hint-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #2a2a2a;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.t-hint-btn:hover {
+    background: #3a3a3a;
+    border-color: #666;
+    color: #fff;
+}
+
+.t-hint-btn.primary {
+    background: linear-gradient(90deg, #4a9eff, #6ab0ff);
+    border-color: transparent;
+    color: #fff;
+    font-weight: bold;
+}
+
+.t-hint-btn.primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 2px 10px rgba(74, 158, 255, 0.3);
+}
+
+.t-hint-btn.dismiss {
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 1.1em;
+}
+
+.t-hint-btn.dismiss:hover {
+    color: #fff;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 600px) {
+    .t-interactive-hint {
+        flex-direction: column;
+        padding: 12px 15px;
+        gap: 10px;
+    }
+
+    .t-hint-icon {
+        display: none;
+    }
+
+    .t-hint-text {
+        text-align: center;
+        font-size: 0.9em;
+    }
+
+    .t-hint-actions {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .t-hint-btn {
+        padding: 10px 14px;
+        font-size: 0.85em;
+    }
+
+    .t-hint-btn.dismiss {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+    }
+}
+
+/* ===== 内容统计 HUD (紧凑水平条) ===== */
+
+.t-stats-hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+
+    /* 透明毛玻璃效果 */
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+
+    /* 边框和圆角 */
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+
+    /* 内边距 - 更紧凑 */
+    padding: 4px 8px;
+
+    /* 水平排列 */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    /* 字体设置 - 最小可读字号 */
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 10px;
+    line-height: 1;
+
+    /* 不阻挡鼠标事件 */
+    pointer-events: none;
+
+    /* 动画 */
+    animation: t-stats-fadeIn 0.3s ease;
+}
+
+@keyframes t-stats-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.t-stats-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+}
+
+.t-stats-sep {
+    color: rgba(255, 255, 255, 0.15);
+    font-size: 9px;
+}
+
+.t-stats-label {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.t-stats-value {
+    color: #55efc4;
+    font-weight: bold;
+    font-size: 10px;
+}
+
+/* 模型名称使用不同颜色 */
+#t-stat-model {
+    color: #90cdf4;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 生成时间使用不同颜色 */
+#t-stat-time {
+    color: #ffeaa7;
+}
+
+/* Zen 模式下隐藏统计 HUD */
+#t-main-view.t-zen-mode .t-stats-hud {
+    display: none !important;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 600px) {
+    .t-stats-hud {
+        top: 8px;
+        left: 8px;
+        padding: 3px 6px;
+        font-size: 9px;
+        gap: 4px;
+    }
+
+    .t-stats-label {
+        font-size: 8px;
+    }
+
+    .t-stats-value {
+        font-size: 9px;
+    }
+
+    #t-stat-model {
+        max-width: 80px;
+    }
+}
+
+/* Shadow DOM 宿主样式 */
+.t-shadow-host {
+    display: block;
+    width: 100%;
+    min-height: 100%;
+}
+
+/* ===== 剧场历史翻页按钮（简洁版） ===== */
+
+/* 翻页按钮 - 位于内容区左右两侧 */
+.t-page-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 150;
+    width: 28px;
+    height: 50px;
+    border: none;
+    background: rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.4;
+}
+
+.t-page-nav:hover:not(:disabled) {
+    opacity: 1;
+    background: rgba(191, 161, 95, 0.3);
+    color: #bfa15f;
+}
+
+.t-page-nav:active:not(:disabled) {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.t-page-nav:disabled {
+    opacity: 0.15;
+    cursor: not-allowed;
+}
+
+/* 左侧按钮 */
+.t-page-prev {
+    left: 0;
+    border-radius: 0 4px 4px 0;
+}
+
+/* 右侧按钮 */
+.t-page-next {
+    right: 0;
+    border-radius: 4px 0 0 4px;
+}
+
+/* 页码指示器 - 右下角小字 */
+.t-page-indicator {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    z-index: 150;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+    font-family: 'Consolas', 'Monaco', monospace;
+    pointer-events: none;
+}
+
+.t-cont-inline-actions {
+    position: absolute;
+    right: 10px;
+    bottom: 24px;
+    z-index: 155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px 3px 8px;
+    border: 1px solid rgba(191, 161, 95, 0.16);
+    border-radius: 999px;
+    background: rgba(12, 12, 12, 0.72);
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 10px;
+    backdrop-filter: blur(5px);
+    opacity: 0.45;
+    transition: opacity 0.2s, border-color 0.2s;
+}
+
+.t-cont-inline-actions:hover {
+    opacity: 1;
+    border-color: rgba(191, 161, 95, 0.45);
+}
+
+.t-cont-inline-actions button {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #bfa15f;
+    cursor: pointer;
+}
+
+.t-cont-inline-actions button:hover {
+    background: rgba(191, 161, 95, 0.15);
+}
+
+.t-cont-inline-actions.is-menu-open {
+    opacity: 1;
+    border-color: rgba(191, 161, 95, 0.45);
+}
+
+.t-cont-inline-actions.is-menu-open > #t-cont-inline-branch {
+    background: rgba(191, 161, 95, 0.2);
+    transform: rotate(90deg);
+}
+
+#t-cont-inline-branch {
+    transition: background 0.18s, transform 0.18s;
+}
+
+.t-cont-inline-branch-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px) scale(0.96);
+    transform-origin: bottom right;
+    transition: visibility 0.18s, opacity 0.18s, transform 0.18s;
+}
+
+.t-cont-inline-actions.is-menu-open .t-cont-inline-branch-menu {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+.t-cont-inline-branch-option {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.t-cont-inline-branch-option span {
+    padding: 4px 8px;
+    border: 1px solid rgba(191, 161, 95, 0.22);
+    border-radius: 999px;
+    background: rgba(12, 12, 12, 0.88);
+    color: #c9b98f;
+    font-size: 10px;
+    line-height: 1.2;
+    backdrop-filter: blur(5px);
+}
+
+.t-cont-inline-actions .t-cont-inline-branch-option button {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: 1px solid rgba(191, 161, 95, 0.35);
+    background: rgba(18, 18, 18, 0.92);
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.35);
+}
+
+.t-cont-inline-actions .t-cont-inline-branch-option button:hover {
+    border-color: rgba(191, 161, 95, 0.7);
+    background: rgba(191, 161, 95, 0.2);
+}
+
+.t-cont-regeneration-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 11px;
+    border: 1px solid rgba(191, 161, 95, 0.35);
+    border-radius: 8px;
+    background: rgba(191, 161, 95, 0.08);
+    color: #cbbd9e;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* Zen 模式下隐藏翻页按钮 */
+#t-main-view.t-zen-mode .t-page-nav,
+#t-main-view.t-zen-mode .t-page-indicator,
+#t-main-view.t-zen-mode .t-cont-inline-actions {
+    display: none !important;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 600px) {
+    .t-page-nav {
+        width: 24px;
+        height: 40px;
+        font-size: 14px;
+    }
+
+    .t-page-indicator {
+        font-size: 9px;
+    }
+}
+
+/* ===== 主动续写聊天历史 ===== */
+.t-cont-history-panel {
+    position: absolute;
+    inset: 12px;
+    z-index: 3100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #464138;
+    border-radius: 12px;
+    background: #151515;
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.72);
+}
+
+.t-cont-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 52px;
+    padding: 0 16px;
+    border-bottom: 1px solid #333;
+    background: #1d1d1d;
+}
+
+.t-cont-history-header>div,
+.t-cont-history-round-head,
+.t-cont-history-round-title,
+.t-cont-history-actions {
+    display: flex;
+    align-items: center;
+}
+
+.t-cont-history-header>div {
+    gap: 9px;
+}
+
+.t-cont-history-header .t-cont-history-header-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.t-cont-history-header-actions .t-btn {
+    padding: 5px 8px;
+    color: #a98888;
+    font-size: 10px;
+}
+
+.t-cont-history-header i,
+.t-cont-history-branch-title i {
+    color: #bfa15f;
+}
+
+.t-cont-history-header span {
+    color: #777;
+    font-size: 11px;
+}
+
+.t-cont-history-body {
+    flex: 1;
+    overflow: auto;
+    padding: 14px;
+}
+
+.t-cont-history-empty {
+    display: grid;
+    min-height: 180px;
+    place-items: center;
+    color: #777;
+    font-size: 13px;
+}
+
+.t-cont-history-session {
+    margin-bottom: 12px;
+    border: 1px solid #343434;
+    border-radius: 12px;
+    background: #171717;
+}
+
+.t-cont-history-session:last-child {
+    margin-bottom: 0;
+}
+
+.t-cont-history-session.is-open {
+    border-color: rgba(191, 161, 95, 0.32);
+}
+
+.t-cont-history-session-toggle {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 11px;
+    background: #202020;
+    color: #ddd4c2;
+    cursor: pointer;
+    text-align: left;
+}
+
+.t-cont-history-session.is-open .t-cont-history-session-toggle {
+    border-radius: 11px 11px 0 0;
+    border-bottom: 1px solid #343434;
+}
+
+.t-cont-history-session-toggle > i {
+    color: #bfa15f;
+    font-size: 10px;
+    transition: transform 0.18s;
+}
+
+.t-cont-history-session.is-open .t-cont-history-session-toggle > i {
+    transform: rotate(90deg);
+}
+
+.t-cont-history-session-toggle > span {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-cont-history-session-toggle > small {
+    margin-left: auto;
+    flex-shrink: 0;
+    color: #777;
+    font-size: 10px;
+}
+
+.t-cont-history-session-body {
+    padding: 10px;
+}
+
+.t-cont-history-session-body[hidden] {
+    display: none;
+}
+
+.t-cont-history-branch {
+    margin-bottom: 14px;
+    overflow: hidden;
+    border: 1px solid #303030;
+    border-radius: 10px;
+    background: #191919;
+}
+
+.t-cont-history-branch.is-active {
+    border-color: rgba(191, 161, 95, 0.42);
+}
+
+.t-cont-history-branch-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #303030;
+    color: #d6d0c3;
+    background: #202020;
+}
+
+.t-cont-history-branch-heading {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.t-cont-history-branch-heading strong {
+    overflow: hidden;
+    color: #e4ddcf;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-cont-history-branch-heading span {
+    color: #8c857a;
+    font-size: 10px;
+    line-height: 1.35;
+}
+
+.t-cont-history-branch-title small {
+    margin-left: auto;
+    color: #777;
+    flex-shrink: 0;
+}
+
+.t-cont-history-round {
+    padding: 12px;
+    border-bottom: 1px solid #292929;
+}
+
+.t-cont-history-round:last-child {
+    border-bottom: 0;
+}
+
+.t-cont-history-round-head {
+    justify-content: space-between;
+}
+
+.t-cont-history-round-title {
+    gap: 8px;
+    color: #ddd;
+}
+
+.t-cont-history-round-title span {
+    color: #666;
+    font-size: 10px;
+}
+
+.t-cont-history-toggle {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+}
+
+.t-cont-history-toggle:hover {
+    color: #bfa15f;
+    background: rgba(191, 161, 95, 0.1);
+}
+
+.t-cont-history-instruction {
+    margin-top: 7px;
+    color: #b7a989;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.t-cont-history-preview {
+    margin-top: 5px;
+    overflow: hidden;
+    color: #777;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-cont-history-full {
+    margin-top: 10px;
+    overflow: hidden;
+    border: 1px solid #303030;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.t-cont-history-full iframe {
+    display: block;
+    width: 100%;
+    height: 300px;
+    border: 0;
+}
+
+.t-cont-history-cross-hint {
+    margin-top: 9px;
+    padding: 5px 8px;
+    border-left: 2px solid rgba(191, 161, 95, 0.55);
+    border-radius: 0 4px 4px 0;
+    background: rgba(191, 161, 95, 0.08);
+    color: #9a8a63;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.t-cont-history-actions {
+    gap: 7px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.t-cont-history-actions .t-btn {
+    padding: 6px 9px;
+    font-size: 11px;
+}
+
+@media screen and (max-width: 600px) {
+    .t-cont-inline-actions > span {
+        display: none;
+    }
+
+    .t-cont-inline-actions {
+        padding-left: 4px;
+    }
+
+    .t-cont-history-panel {
+        inset: 5px;
+    }
+
+    .t-cont-history-body {
+        padding: 8px;
+    }
+
+    .t-cont-history-session-toggle {
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+
+    .t-cont-history-session-toggle > .t-cont-select-wrap {
+        flex: 0 0 auto;
+    }
+
+    .t-cont-history-session-toggle > span:not(.t-cont-select-wrap) {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .t-cont-history-session-toggle > small {
+        width: auto;
+        margin-left: auto;
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    .t-cont-history-session-body {
+        padding: 6px;
+    }
+
+    .t-cont-history-actions .t-btn {
+        flex: 1;
+    }
+}
+
+/* ===== 队列生成设置窗口 ===== */
+
+.t-queue-settings {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 450px;
+    max-height: 75vh;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.2s;
+}
+
+.t-queue-header {
+    padding: 12px 15px;
+    background: #242424;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px 10px 0 0;
+    flex-shrink: 0;
+}
+
+.t-queue-body {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.t-queue-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.t-queue-label {
+    font-size: 0.9em;
+    color: #aaa;
+    font-weight: bold;
+}
+
+.t-queue-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+/* 模式切换按钮组 */
+.t-queue-mode-toggle {
+    display: flex;
+    gap: 8px;
+}
+
+.t-queue-mode-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: #252525;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #888;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-queue-mode-btn:hover {
+    background: #2a2a2a;
+    color: #ccc;
+    border-color: #555;
+}
+
+.t-queue-mode-btn.active {
+    background: rgba(144, 205, 244, 0.15);
+    border-color: rgba(144, 205, 244, 0.4);
+    color: #90cdf4;
+}
+
+.t-queue-mode-btn i {
+    font-size: 1.1em;
+}
+
+/* 数字控制器 */
+.t-queue-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.t-queue-num-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #2a2a2a;
+    color: #ccc;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.t-queue-num-btn:hover {
+    background: #383838;
+    color: #fff;
+    border-color: #666;
+}
+
+.t-queue-num-btn:active {
+    transform: scale(0.95);
+}
+
+.t-queue-num-value {
+    min-width: 30px;
+    text-align: center;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #90cdf4;
+}
+
+/* 下拉选择框 */
+.t-queue-select {
+    flex: 1;
+    padding: 8px 12px;
+    background: #252525;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #ccc;
+    font-size: 0.9em;
+    cursor: pointer;
+    outline: none;
+}
+
+.t-queue-select:focus {
+    border-color: #90cdf4;
+}
+
+/* 剧本列表 */
+.t-queue-script-list {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 5px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 6px;
+}
+
+.t-queue-script-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.t-queue-script-list::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+.t-queue-script-list::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+}
+
+.t-queue-script-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: #252525;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-queue-script-item:hover {
+    background: #2a2a2a;
+}
+
+.t-queue-script-item.selected {
+    background: rgba(144, 205, 244, 0.1);
+    border-color: rgba(144, 205, 244, 0.3);
+}
+
+.t-queue-script-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #90cdf4;
+    cursor: pointer;
+}
+
+.t-queue-script-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.t-queue-script-name {
+    font-size: 0.9em;
+    color: #eee;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.t-queue-script-cat {
+    font-size: 0.75em;
+    color: #666;
+}
+
+.t-queue-script-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.t-queue-script-actions .t-btn {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 0.85em;
+}
+
+/* 底部 */
+.t-queue-footer {
+    padding: 12px 15px;
+    background: #1e1e1e;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0 0 10px 10px;
+    flex-shrink: 0;
+}
+
+.t-queue-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85em;
+    color: #888;
+}
+
+.t-queue-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 600px) {
+    .t-queue-settings {
+        width: 95%;
+        top: 50px;
+        max-height: 80vh;
+    }
+
+    .t-queue-mode-btn {
+        padding: 10px;
+        font-size: 0.85em;
+    }
+
+    .t-queue-script-list {
+        max-height: 150px;
+    }
+}
+
+/* ===== 队列进度条 ===== */
+
+.t-queue-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #333;
+    z-index: 200;
+    overflow: hidden;
+}
+
+.t-queue-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #90cdf4, #4a9eff);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.t-queue-progress-bar.animated {
+    animation: t-queue-progress-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes t-queue-progress-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* 队列运行时的状态指示 */
+.t-queue-running-indicator {
+    position: absolute;
+    top: 10px;
+    right: 70px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(144, 205, 244, 0.15);
+    border: 1px solid rgba(144, 205, 244, 0.3);
+    border-radius: 20px;
+    font-size: 0.8em;
+    color: #90cdf4;
+    z-index: 150;
+    animation: fadeIn 0.3s;
+}
+
+.t-queue-running-indicator i {
+    animation: fa-spin 1s linear infinite;
+}
+
+/* ===== 内容编辑器 ===== */
+
+.t-content-editor {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95%;
+    max-width: 800px;
+    height: calc(100% - 80px);
+    max-height: 600px;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.2s;
+}
+
+.t-ce-header {
+    padding: 12px 15px;
+    background: #242424;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px 10px 0 0;
+    flex-shrink: 0;
+}
+
+.t-ce-body {
+    flex-grow: 1;
+    padding: 10px;
+    overflow: hidden;
+    display: flex;
+    min-height: 0;
+}
+
+.t-ce-textarea {
+    width: 100%;
+    height: 100%;
+    background: #0d0d0d;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 12px;
+    resize: none;
+    outline: none;
+    overflow-y: auto;
+}
+
+.t-ce-textarea:focus {
+    border-color: #bfa15f;
+}
+
+/* 编辑器滚动条美化 */
+.t-ce-textarea::-webkit-scrollbar {
+    width: 8px;
+}
+
+.t-ce-textarea::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 4px;
+}
+
+.t-ce-textarea::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+.t-ce-textarea::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.t-ce-footer {
+    padding: 12px 15px;
+    background: #1e1e1e;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0 0 10px 10px;
+    flex-shrink: 0;
+}
+
+.t-ce-stats {
+    color: #666;
+    font-size: 0.85em;
+}
+
+.t-ce-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 600px) {
+    .t-content-editor {
+        width: 98%;
+        top: 50px;
+        max-height: none;
+        height: calc(100% - 60px);
+    }
+
+    .t-ce-textarea {
+        font-size: 12px;
+    }
+
+    .t-ce-actions {
+        gap: 6px;
+    }
+
+    .t-ce-actions .t-btn {
+        padding: 8px 12px;
+        font-size: 0.85em;
+    }
+}
+
+/* ===== 新内容生成中指示器 ===== */
+
+.t-new-content-indicator {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(25, 25, 35, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(144, 205, 244, 0.3);
+    border-radius: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    animation: t-indicator-slideUp 0.3s ease;
+}
+
+@keyframes t-indicator-slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.t-new-content-indicator i {
+    color: #90cdf4;
+    font-size: 1em;
+}
+
+.t-new-content-indicator span {
+    color: #ccc;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.t-goto-live-btn {
+    padding: 5px 12px;
+    background: linear-gradient(90deg, #4a9eff, #6ab0ff);
+    border: none;
+    border-radius: 15px;
+    color: #fff;
+    font-size: 0.85em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-goto-live-btn:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 2px 10px rgba(74, 158, 255, 0.4);
+}
+
+.t-goto-live-btn:active {
+    transform: scale(0.95);
+}
+
+/* ===== 生成完成通知 ===== */
+
+.t-generation-complete-notification {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: rgba(25, 35, 25, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(85, 239, 196, 0.3);
+    border-radius: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    animation: t-gcn-slideUp 0.3s ease;
+}
+
+@keyframes t-gcn-slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.t-gcn-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.t-gcn-content i {
+    color: #55efc4;
+    font-size: 1.1em;
+}
+
+.t-gcn-content span {
+    color: #ccc;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.t-gcn-view-btn {
+    padding: 6px 14px;
+    background: linear-gradient(90deg, #55efc4, #00b894);
+    border: none;
+    border-radius: 15px;
+    color: #000;
+    font-size: 0.85em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-gcn-view-btn:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 2px 10px rgba(85, 239, 196, 0.4);
+}
+
+.t-gcn-view-btn:active {
+    transform: scale(0.95);
+}
+
+.t-gcn-close-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: #666;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-gcn-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 600px) {
+    .t-new-content-indicator,
+    .t-generation-complete-notification {
+        bottom: 10px;
+        padding: 8px 14px;
+        gap: 8px;
+    }
+
+    .t-new-content-indicator span,
+    .t-gcn-content span {
+        font-size: 0.85em;
+    }
+
+    .t-goto-live-btn,
+    .t-gcn-view-btn {
+        padding: 5px 10px;
+        font-size: 0.8em;
+    }
+}

@@ -1,0 +1,618 @@
+/* css/workshop.css - 回声工坊浏览窗 */
+
+#t-ws-view {
+    height: 85vh;
+    width: 880px;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: column;
+    background: #121212;
+}
+
+/* 标题栏右侧图标组（打开站点 / 刷新 / 关闭）
+   base.css 的 .t-icon-btn 是裸图标 + margin-left，点击热区只有字形本身，
+   移动端很难点中。这里跟主窗口保持一致：方形热区 + gap 控制间距。 */
+#t-ws-view .t-header .t-header-actions,
+.t-ws-preview-box .t-header .t-header-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 6px;
+}
+
+#t-ws-view .t-header .t-header-actions .t-icon-btn,
+#t-ws-view .t-header .t-header-actions .t-close,
+.t-ws-preview-box .t-header .t-header-actions .t-close {
+    /* 间距统一由父级 gap 负责，清掉 base.css 的 margin-left 避免叠加 */
+    margin-left: 0;
+    padding: 0;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: color 0.2s, background-color 0.2s;
+    /* 避免移动端长按选中 × 文本 / 点击高亮块 */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#t-ws-view .t-header .t-header-actions .t-icon-btn {
+    font-size: 1.35em;
+}
+
+#t-ws-view .t-header .t-header-actions .t-close,
+.t-ws-preview-box .t-header .t-header-actions .t-close {
+    font-size: 1.7em;
+}
+
+#t-ws-view .t-header .t-header-actions .t-icon-btn:hover,
+#t-ws-view .t-header .t-header-actions .t-close:hover,
+.t-ws-preview-box .t-header .t-header-actions .t-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* 关闭键旋转会带着热区一起转，圆角方块看着没问题，保留原动效 */
+
+.t-ws-body {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+    /* flex 子项默认 min-height:auto，不加这行就撑不住，
+       内部的 .t-ws-grid 算不出可用高度，滚动条永远不出现、卡片被挤压 */
+    min-height: 0;
+}
+
+/* ── 工具栏 ── */
+.t-ws-toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 10px 15px;
+    border-bottom: 1px solid #2a2a2a;
+    background: #181818;
+    flex-shrink: 0;
+}
+
+.t-ws-search {
+    flex-grow: 1;
+    min-width: 0;
+    background-color: #1a1a1a !important;
+    color: #eee !important;
+    border: 1px solid #3a3a3a !important;
+    border-radius: 6px;
+    padding: 7px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.t-ws-search:focus {
+    border-color: var(--t-theme) !important;
+}
+
+.t-ws-select {
+    background: #1a1a1a;
+    color: #ccc;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    padding: 7px 8px;
+    cursor: pointer;
+    max-width: 130px;
+    transition: border-color 0.2s;
+}
+
+.t-ws-select:hover {
+    border-color: #555;
+}
+
+/* ── 统计条 ── */
+.t-ws-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 8px 15px;
+    background: #151515;
+    border-bottom: 1px solid #2a2a2a;
+    color: #777;
+    font-size: 0.8em;
+    flex-shrink: 0;
+}
+
+.t-ws-stats:empty {
+    display: none;
+}
+
+.t-ws-stats b {
+    color: var(--t-theme);
+    font-weight: bold;
+}
+
+.t-ws-stats-filter b {
+    color: #90cdf4;
+}
+
+/* ── 卡片网格 ── */
+/* 多列紧凑视图，参考收藏画廊的 compact 模式。
+   .t-ws-body 补了 min-height:0 之后这里才能安全用 grid ——
+   缺那一层时行高算不出来，卡片会被压扁。 */
+.t-ws-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
+    align-content: start;
+    /* 双层渐变打底，避免大片纯色显得板。手法同收藏画廊的 .t-fav-grid-area：
+       竖向渐变压出纵深，右上角一团暖光呼应金色主题 */
+    background:
+        linear-gradient(180deg, rgba(10, 10, 10, 0.2), rgba(10, 10, 10, 0.65)),
+        radial-gradient(90% 140% at 100% 0%, rgba(54, 40, 24, 0.28), transparent 70%);
+}
+
+.t-ws-grid-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.t-ws-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    /* 用 min-height 而不是固定 height：同一行的卡片会自动等高（grid 默认 stretch），
+       字号被用户放大时也不会裁掉内容 */
+    min-height: 200px;
+    padding: 12px 12px 12px 16px;
+    background: linear-gradient(160deg, #1d1d1d 0%, #151515 100%);
+    border: 1px solid #2e2e2e;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    animation: fadeIn 0.25s;
+}
+
+/* 左侧强调条：颜色按作者取，同一作者的投稿看起来是一组 */
+.t-ws-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 0 2px 2px 0;
+    background: var(--card-accent, var(--t-theme));
+    opacity: 0.85;
+}
+
+.t-ws-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(191, 161, 95, 0.55);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* 已下载过的整卡压暗，方便一眼跳过 */
+.t-ws-card.is-dup {
+    opacity: 0.55;
+}
+
+.t-ws-card.is-dup:hover {
+    opacity: 1;
+}
+
+.t-ws-dup-flag {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(225deg, var(--t-theme) 50%, transparent 50%);
+    color: #1a1a1a;
+    font-size: 0.66em;
+    text-align: right;
+    padding: 2px 4px 0 0;
+    box-sizing: border-box;
+}
+
+/* 顶部：头像 + 作者 + 热度 */
+.t-ws-card-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+.t-ws-card-head .t-ws-author-name {
+    flex: 1 1 auto;
+}
+
+.t-ws-card-title {
+    color: #f0f0f0;
+    font-weight: bold;
+    font-size: 1em;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* 热度徽章 */
+.t-ws-heat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: #262626;
+    color: #777;
+    font-size: 0.72em;
+    white-space: nowrap;
+}
+
+.t-ws-heat.is-hot {
+    background: rgba(191, 161, 95, 0.16);
+    color: var(--t-theme);
+}
+
+.t-ws-card-desc {
+    flex: 1 1 auto;
+    color: #9a9a9a;
+    font-size: 0.84em;
+    line-height: 1.45;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.t-ws-card-tags {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    max-height: 18px;
+    overflow: hidden;
+}
+
+.t-ws-tag {
+    display: inline-block;
+    background: #282828;
+    color: #888;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.72em;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.t-ws-tag-cat {
+    background: rgba(191, 161, 95, 0.16);
+    color: var(--t-theme);
+}
+
+/* 底部操作 */
+.t-ws-card-actions {
+    display: flex;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid #262626;
+    margin-top: auto;
+}
+
+.t-ws-card-actions .t-btn {
+    flex: 1;
+    padding: 5px 4px;
+    font-size: 0.78em;
+    white-space: nowrap;
+}
+
+/* 头像：色块打底，图片盖在上层。
+   Discord CDN 连不上时 JS 会摘掉 img，自然露出底下的首字 */
+.t-ws-avatar {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: block;
+    overflow: hidden;
+    border: 1px solid #383838;
+}
+
+.t-ws-avatar-initial {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #14100a;
+    font-weight: bold;
+    font-size: 0.8em;
+}
+
+.t-ws-avatar-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.t-ws-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.t-ws-author-meta {
+    min-width: 0;
+}
+
+.t-ws-author-name {
+    color: #aaa;
+    font-size: 0.78em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.t-ws-author-time {
+    color: #666;
+    font-size: 0.72em;
+}
+
+/* ── 占位态：空 / 无匹配 / 出错 ── */
+.t-ws-placeholder {
+    text-align: center;
+    color: #555;
+    padding: 40px 20px;
+    /* 网格是多列的，占位内容要横跨整行才不会被挤成一条 */
+    grid-column: 1 / -1;
+}
+
+.t-ws-placeholder>i {
+    font-size: 2.6em;
+    color: #333;
+    margin-bottom: 14px;
+    display: block;
+}
+
+.t-ws-ph-title {
+    color: #aaa;
+    font-size: 1.05em;
+    margin-bottom: 6px;
+}
+
+.t-ws-ph-desc {
+    color: #666;
+    font-size: 0.85em;
+    margin-bottom: 14px;
+}
+
+.t-ws-placeholder .t-btn {
+    display: inline-flex;
+    margin: 0 auto;
+}
+
+/* ── 骨架屏 ── */
+.t-ws-skeleton {
+    pointer-events: none;
+}
+
+.t-ws-skeleton::before {
+    background: #2a2a2a;
+}
+
+.t-ws-sk-line {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #232323 25%, #2d2d2d 50%, #232323 75%);
+    background-size: 200% 100%;
+    animation: t-ws-shimmer 1.4s infinite;
+}
+
+.t-ws-sk-circle {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: linear-gradient(90deg, #232323 25%, #2d2d2d 50%, #232323 75%);
+    background-size: 200% 100%;
+    animation: t-ws-shimmer 1.4s infinite;
+}
+
+@keyframes t-ws-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ── 预览弹层 ── */
+.t-ws-preview-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(2px);
+    z-index: 20002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.t-ws-preview-box {
+    width: 100%;
+    max-width: 700px;
+    height: 80vh;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.t-ws-preview-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 14px;
+    gap: 10px;
+}
+
+.t-ws-pv-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.t-ws-pv-desc {
+    color: #bbb;
+    font-size: 0.88em;
+    line-height: 1.55;
+    padding: 8px 12px;
+    background: #1a1a1a;
+    border-radius: 4px;
+    border-left: 2px solid var(--t-theme);
+}
+
+.t-ws-pv-label {
+    color: #888;
+    font-size: 0.8em;
+}
+
+.t-ws-pv-prompt {
+    flex: 1;
+    resize: none;
+    min-height: 0;
+    font-family: var(--t-font-mono);
+    font-size: 0.88em;
+    line-height: 1.6;
+}
+
+/* ── 移动端 ── */
+@media screen and (max-width: 600px) {
+    #t-ws-view {
+        width: 100%;
+        height: 95vh;
+        max-width: 100vw;
+        border-radius: 10px 10px 0 0;
+    }
+
+    #t-ws-view .t-header {
+        padding: 10px;
+    }
+
+    /* 移动端热区放大到 40px，比桌面更好按；图标字号不再缩小 */
+    #t-ws-view .t-header .t-header-actions,
+    .t-ws-preview-box .t-header .t-header-actions {
+        gap: 4px;
+    }
+
+    #t-ws-view .t-header .t-header-actions .t-icon-btn,
+    #t-ws-view .t-header .t-header-actions .t-close,
+    .t-ws-preview-box .t-header .t-header-actions .t-close {
+        width: 40px;
+        height: 40px;
+    }
+
+    #t-ws-view .t-header .t-header-actions .t-icon-btn {
+        font-size: 1.3em;
+    }
+
+    #t-ws-view .t-header .t-header-actions .t-close,
+    .t-ws-preview-box .t-header .t-header-actions .t-close {
+        font-size: 1.6em;
+    }
+
+    .t-ws-toolbar {
+        flex-wrap: wrap;
+        padding: 8px 10px;
+    }
+
+    .t-ws-search {
+        flex: 1 1 100%;
+    }
+
+    .t-ws-select {
+        flex: 1;
+        max-width: none;
+    }
+
+    .t-ws-stats {
+        gap: 10px;
+        padding: 7px 10px;
+    }
+
+    /* 窄屏两列。minmax 会自然降级——320px 以下放不下两列就退回单列 */
+    .t-ws-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .t-ws-card {
+        min-height: 170px;
+        padding: 10px 10px 10px 14px;
+        gap: 5px;
+        border-radius: 8px;
+    }
+
+    .t-ws-card::before {
+        width: 2px;
+    }
+
+    .t-ws-avatar {
+        width: 22px;
+        height: 22px;
+    }
+
+    .t-ws-card-title {
+        font-size: 0.92em;
+    }
+
+    .t-ws-card-desc {
+        font-size: 0.78em;
+        -webkit-line-clamp: 2;
+    }
+
+    .t-ws-author-name {
+        font-size: 0.72em;
+    }
+
+    .t-ws-heat {
+        padding: 1px 5px;
+        font-size: 0.66em;
+    }
+
+    .t-ws-card-tags {
+        max-height: 16px;
+    }
+
+    .t-ws-card-actions {
+        gap: 5px;
+        padding-top: 7px;
+    }
+
+    .t-ws-card-actions .t-btn {
+        font-size: 0.72em;
+        padding: 5px 2px;
+    }
+}

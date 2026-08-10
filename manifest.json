@@ -1,0 +1,10 @@
+{
+    "display_name": "回声工具箱 (Echo Toolbox)",
+    "name": "Titania Echo Theater",
+    "version": "5.2.0",
+    "author": "Titania",
+    "description": "沉浸式角色内心独白与平行世界演绎插件。",
+    "type": "module",
+    "js": "index.js",
+    "homePage": "https://github.com/Titania-elf/titania-theater"
+}

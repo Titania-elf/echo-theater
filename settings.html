@@ -1,0 +1,245 @@
+<!-- settings.html -->
+<div class="inline-drawer" id="titania-settings-drawer">
+    <div class="inline-drawer-toggle inline-drawer-header">
+        <div class="titania-header-main">
+            <b>回声工具箱</b>
+            <span id="titania-version-badge" class="titania-version-badge"></span>
+        </div>
+        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+    </div>
+
+    <div class="inline-drawer-content">
+        <div class="titania-panel-grid">
+            <section id="titania-update-card" class="titania-panel-card titania-update-card" data-state="checking">
+                <div class="titania-update-card-head">
+                    <div class="titania-update-card-copy">
+                        <div class="titania-card-title"><i class="fa-solid fa-arrows-rotate"></i> 扩展更新</div>
+                        <div id="titania-update-status" class="titania-update-status" role="status">正在检查更新...</div>
+                    </div>
+                    <button id="titania-update-check" class="titania-mini-btn titania-update-check" type="button" title="重新检查更新" aria-label="重新检查更新" disabled>
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                    </button>
+                </div>
+
+                <div id="titania-update-summary" class="titania-update-summary">
+                    <span>当前版本 <strong id="titania-update-current-version">-</strong></span>
+                    <span id="titania-update-latest-row" hidden>最新版本 <strong id="titania-update-latest-version">-</strong></span>
+                </div>
+
+                <div id="titania-update-actions" class="titania-update-actions" hidden>
+                    <button id="titania-update-details" class="titania-mini-btn" type="button">
+                        <i class="fa-regular fa-rectangle-list"></i> 查看更新内容
+                    </button>
+                    <button id="titania-update-install" class="titania-mini-btn is-update" type="button">
+                        <i class="fa-solid fa-download"></i> 立即更新
+                    </button>
+                </div>
+
+                <div id="titania-update-inline-error" class="titania-update-inline-error" role="alert" hidden></div>
+            </section>
+
+            <section class="titania-panel-card">
+                <div class="titania-card-title"><i class="fa-solid fa-sliders"></i> 快速开关</div>
+
+                <label class="checkbox_label titania-switch-row">
+                    <input id="enable_echo_theater" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">显示悬浮球</span>
+                        <small>开启后在屏幕边缘显示 🎭 悬浮球，也可从发送键菜单进入回声小剧场。</small>
+                    </span>
+                </label>
+
+                <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-float-edge-tuck" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">启用悬浮球半隐藏</span>
+                        <small>开启后可把悬浮球拖到屏幕边缘、只露出一半以减少遮挡；关闭则始终完整显示。</small>
+                    </span>
+                </label>
+
+                <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-outline-entry-enabled" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">启用发送键菜单入口</span>
+                        <small>在发送按钮旁显示菜单入口，故事大纲/细纲情节/回声小剧场等功能从该菜单进入。</small>
+                    </span>
+                </label>
+
+                <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-outline-actions-enabled" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">启用大纲生成入口</span>
+                        <small>在发送键菜单中显示「发送细纲」与「生成大纲」两个入口。</small>
+                    </span>
+                </label>
+
+                <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-outline-theater-enabled" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">启用回声小剧场入口</span>
+                        <small>在发送键菜单中显示「回声小剧场」项。</small>
+                    </span>
+                </label>
+
+                <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-rewrite-entry-enabled" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">启用文本改写入口</span>
+                        <small>在发送键菜单中显示「文本改写」项。</small>
+                    </span>
+                </label>
+
+                <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-toolbar-lore-enabled" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">启用提取设定快捷入口</span>
+                        <small>在发送键菜单中显示「提取设定」项。</small>
+                    </span>
+                </label>
+
+                <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-toolbar-recall-enabled" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">启用记忆召回快捷入口</span>
+                        <small>在发送键菜单中显示「记忆召回」项。</small>
+                    </span>
+                </label>
+            </section>
+
+            <section class="titania-panel-card">
+                <div class="titania-card-title"><i class="fa-solid fa-database"></i> 数据备份与恢复</div>
+                <div class="titania-backup-desc">
+                    导出包含：API 配置、用户脚本、收藏内容、外观设置、导演指令、世界书筛选、向量索引等所有插件数据。
+                    <br><span style="color:#feca57;">⚠️ 导出文件包含 API 密钥，请妥善保管！</span>
+                </div>
+                <div class="titania-backup-actions">
+                    <button id="titania-backup-export" class="titania-mini-btn is-export"><i class="fa-solid fa-download"></i> 导出备份</button>
+                    <button id="titania-backup-import" class="titania-mini-btn is-import"><i class="fa-solid fa-upload"></i> 导入备份</button>
+                    <input type="file" id="titania-backup-file-input" accept=".json" style="display:none;">
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<style>
+    #titania-settings-drawer .inline-drawer-content {
+        padding-top: 10px;
+    }
+
+    .titania-header-main {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .titania-panel-grid {
+        display: grid;
+        gap: 10px;
+    }
+
+    .titania-panel-card {
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+    }
+
+    .titania-card-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #d8e4f0;
+    }
+
+    .titania-switch-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .titania-switch-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .titania-switch-text {
+        display: inline-flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .titania-switch-main {
+        color: #dce7f3;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+
+    .titania-switch-text small {
+        color: #93a8bb;
+        line-height: 1.4;
+        font-size: 11px;
+    }
+
+    .titania-version-badge {
+        background: rgba(100, 100, 100, 0.3);
+        color: #888;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .titania-backup-desc {
+        color: #93a8bb;
+        line-height: 1.45;
+        font-size: 11px;
+        margin-bottom: 8px;
+    }
+
+    .titania-backup-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .titania-mini-btn {
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        background: rgba(255, 255, 255, 0.03);
+        color: #d5e2ef;
+        border-radius: 8px;
+        min-height: 30px;
+        padding: 0 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .titania-mini-btn.is-export {
+        border-color: rgba(85, 239, 196, 0.65);
+        color: #72efd0;
+    }
+
+    .titania-mini-btn.is-import {
+        border-color: rgba(144, 205, 244, 0.65);
+        color: #9acff5;
+    }
+
+    .titania-mini-btn:hover:not(:disabled) {
+        filter: brightness(1.06);
+    }
+
+    .titania-mini-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+</style>
