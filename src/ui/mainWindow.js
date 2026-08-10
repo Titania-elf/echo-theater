@@ -447,6 +447,28 @@ function getContinuationInstructionPreview(instruction, maxLength = 100) {
     return `${normalized.slice(0, maxLength)}…`;
 }
 
+/**
+ * 分支创建时间，格式对齐 ST 消息楼层的绝对时间（moment 的 'LL LT'，跟随 ST 语言设置）。
+ * moment 由 ST 挂在 window 上；拿不到时退回 toLocaleString，不因为格式化失败就丢掉时间。
+ */
+function formatContinuationTimestamp(timestamp) {
+    const value = Number(timestamp) || 0;
+    if (!value) return "";
+    if (typeof window.moment === "function") {
+        const parsed = window.moment(value);
+        if (parsed.isValid()) return parsed.format("LL LT");
+    }
+    return new Date(value).toLocaleString();
+}
+
+/**
+ * 分支标题用的时间：优先分支自己的 fork 时刻，
+ * 早期迁移记录可能没有 createdAt，退回该分支首轮的时间。
+ */
+function getContinuationBranchTime(branch) {
+    return Number(branch?.createdAt) || Number(branch?.rounds?.[0]?.timestamp) || 0;
+}
+
 function findContinuationRound(scriptId, branchKey, roundKey) {
     const branch = getContinuationBranches(scriptId).find(item => item.branchKey === branchKey);
     const round = branch?.rounds.find(item => item.roundKey === roundKey);
@@ -542,7 +564,20 @@ async function openContinuationHistory(preferredScriptId = "") {
         : "";
     const sessionsHtml = sessions.map((session, sessionIndex) => {
         const isOpen = sessionIndex === 0;
-        const branchHtml = session.branches.map(branch => {
+        const hasActiveBranch = session.branches.some(item => item.isActive);
+        // 编号按创建先后固定，不跟着显示顺序（当前分支置顶）走，
+        // 否则同一条分支在不同筛选/激活状态下会换号。最早的主干不加编号。
+        const branchNumbers = new Map(
+            [...session.branches]
+                .sort((a, b) => getContinuationBranchTime(a) - getContinuationBranchTime(b))
+                .map((item, index) => [item.branchKey, index + 1])
+        );
+        const branchHtml = session.branches.map((branch, branchIndex) => {
+            // 分支多了以后全展开很容易看串行，默认只留当前分支展开，历史分支收起
+            const isBranchOpen = hasActiveBranch ? branch.isActive : branchIndex === 0;
+            const branchNumber = branchNumbers.get(branch.branchKey) || 1;
+            const branchTime = formatContinuationTimestamp(getContinuationBranchTime(branch));
+            const branchTitle = branchTime || "时间未知";
             const sourceContinuationIndex = Math.max(0, Number(branch.branchedAtRound) - 1);
             const branchSource = sourceContinuationIndex > 0 ? ` · 从续写第 ${sourceContinuationIndex} 次创建` : "";
             const branchStatus = `${branch.isActive ? "当前分支" : "历史分支"}${branchSource}`;
@@ -570,17 +605,18 @@ async function openContinuationHistory(preferredScriptId = "") {
                     </div>
                 </article>`;
             }).join("");
-            return `<section class="t-cont-history-branch ${branch.isActive ? "is-active" : ""}" data-chat-id="${escapeHtmlText(session.chatId)}" data-script-id="${escapeHtmlText(session.scriptId)}" data-branch-key="${escapeHtmlText(branch.branchKey)}">
-                <div class="t-cont-history-branch-title">
+            return `<section class="t-cont-history-branch ${branch.isActive ? "is-active" : ""} ${isBranchOpen ? "is-open" : ""}" data-chat-id="${escapeHtmlText(session.chatId)}" data-script-id="${escapeHtmlText(session.scriptId)}" data-branch-key="${escapeHtmlText(branch.branchKey)}">
+                <button class="t-cont-history-branch-title" type="button" aria-expanded="${isBranchOpen}">
                     <span class="t-cont-select-wrap">${selectionCheckbox("branch", session.chatId, session.scriptId, branch.branchKey)}</span>
+                    <i class="fa-solid fa-chevron-right t-cont-history-branch-chevron"></i>
                     <i class="fa-solid fa-code-branch"></i>
                     <div class="t-cont-history-branch-heading">
-                        <strong>《${escapeHtmlText(session.scriptName)}》</strong>
-                        <span>${escapeHtmlText(session.characterName)} · ${escapeHtmlText(branchStatus)}</span>
+                        <strong>${escapeHtmlText(branchTitle)}${branchNumber > 1 ? `<em class="t-cont-history-branch-no">分支 ${branchNumber}</em>` : ""}</strong>
+                        <span>${escapeHtmlText(branchStatus)}</span>
                     </div>
                     <small>${branch.rounds.length - 1} 次续写</small>
-                </div>
-                ${roundHtml}
+                </button>
+                <div class="t-cont-history-branch-body" ${isBranchOpen ? "" : "hidden"}>${roundHtml}</div>
             </section>`;
         }).join("");
         return `<section class="t-cont-history-session ${isOpen ? "is-open" : ""}" data-chat-id="${escapeHtmlText(session.chatId)}" data-script-id="${escapeHtmlText(session.scriptId)}">
@@ -716,6 +752,13 @@ async function openContinuationHistory(preferredScriptId = "") {
         $session.toggleClass("is-open", shouldOpen);
         $(this).attr("aria-expanded", String(shouldOpen));
         $session.find(".t-cont-history-session-body").first().prop("hidden", !shouldOpen);
+    });
+    $panel.on("click", ".t-cont-history-branch-title", function () {
+        const $branch = $(this).closest(".t-cont-history-branch");
+        const shouldOpen = !$branch.hasClass("is-open");
+        $branch.toggleClass("is-open", shouldOpen);
+        $(this).attr("aria-expanded", String(shouldOpen));
+        $branch.find(".t-cont-history-branch-body").first().prop("hidden", !shouldOpen);
     });
     $panel.on("click", ".t-cont-history-toggle", function () {
         const $round = $(this).closest(".t-cont-history-round");

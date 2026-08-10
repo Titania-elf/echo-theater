@@ -184,6 +184,11 @@
     cursor: default;
 }
 
+/* 分支标题在批量管理下仍可折叠，保留指针以示可点 */
+.t-cont-history-panel.is-managing .t-cont-history-branch-title {
+    cursor: pointer;
+}
+
 .t-cont-history-bulk-bar {
     display: flex;
     align-items: center;
@@ -2555,11 +2560,34 @@
 .t-cont-history-branch-title {
     display: flex;
     align-items: center;
+    width: 100%;
     gap: 8px;
     padding: 10px 12px;
+    border: 0;
     border-bottom: 1px solid #303030;
     color: #d6d0c3;
     background: #202020;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+}
+
+.t-cont-history-branch:not(.is-open) .t-cont-history-branch-title {
+    border-bottom-color: transparent;
+}
+
+.t-cont-history-branch-chevron {
+    flex-shrink: 0;
+    font-size: 10px;
+    transition: transform 0.18s;
+}
+
+.t-cont-history-branch.is-open .t-cont-history-branch-chevron {
+    transform: rotate(90deg);
+}
+
+.t-cont-history-branch-body[hidden] {
+    display: none;
 }
 
 .t-cont-history-branch-heading {
@@ -2576,6 +2604,19 @@
     font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* 分支编号是扫列表时的主要区分点，给它一枚标记避免混在时间里 */
+.t-cont-history-branch-no {
+    margin-left: 7px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(191, 161, 95, 0.14);
+    color: #bfa15f;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 600;
+    vertical-align: 1px;
 }
 
 .t-cont-history-branch-heading span {

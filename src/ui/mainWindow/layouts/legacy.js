@@ -97,10 +97,6 @@ export function renderHtml(viewData) {
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
                         <span>主动续写</span>
                     </div>
-                    <div class="t-tools-item" id="t-tool-continuation-history">
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-                        <span>续写历史</span>
-                    </div>
                     <div class="t-tools-item" id="t-tool-edit-content">
                         <i class="fa-solid fa-pen-nib"></i>
                         <span>编辑内容</span>
@@ -133,7 +129,7 @@ export function renderHtml(viewData) {
             <!-- 左侧：2x2 工具网格 -->
             <div class="t-bot-left">
                 <button class="t-btn-grid" id="t-btn-debug" title="审查 Prompt"><i class="fa-solid fa-eye"></i></button>
-                <button class="t-btn-grid" id="t-btn-copy" title="复制源码"><i class="fa-regular fa-copy"></i></button>
+                <button class="t-btn-grid" id="t-btn-continuation-history" title="续写历史"><i class="fa-solid fa-clock-rotate-left"></i></button>
                 <button class="t-btn-grid" id="t-btn-like" title="收藏结果"><i class="fa-regular fa-heart"></i></button>
                 <button class="t-btn-grid" id="t-btn-new" title="新建剧本"><i class="fa-solid fa-plus"></i></button>
             </div>
@@ -223,8 +219,8 @@ export function bindEvents(ctx) {
         await runContinuation(composeResult);
     });
 
-    // 5.1.5 新增的续写历史在经典版没有原生入口，补进工具面板以免丢失能力
-    $("#t-tool-continuation-history").on("click", function () {
+    // 续写历史在经典版占用底部工具网格里原「复制源码」的位置
+    $("#t-btn-continuation-history").on("click", function () {
         openContinuationHistory("");
     });
 

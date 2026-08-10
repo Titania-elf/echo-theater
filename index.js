@@ -2910,6 +2910,11 @@ textarea.t-input {
     cursor: default;
 }
 
+/* \u5206\u652F\u6807\u9898\u5728\u6279\u91CF\u7BA1\u7406\u4E0B\u4ECD\u53EF\u6298\u53E0\uFF0C\u4FDD\u7559\u6307\u9488\u4EE5\u793A\u53EF\u70B9 */
+.t-cont-history-panel.is-managing .t-cont-history-branch-title {
+    cursor: pointer;
+}
+
 .t-cont-history-bulk-bar {
     display: flex;
     align-items: center;
@@ -5281,11 +5286,34 @@ textarea.t-input {
 .t-cont-history-branch-title {
     display: flex;
     align-items: center;
+    width: 100%;
     gap: 8px;
     padding: 10px 12px;
+    border: 0;
     border-bottom: 1px solid #303030;
     color: #d6d0c3;
     background: #202020;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+}
+
+.t-cont-history-branch:not(.is-open) .t-cont-history-branch-title {
+    border-bottom-color: transparent;
+}
+
+.t-cont-history-branch-chevron {
+    flex-shrink: 0;
+    font-size: 10px;
+    transition: transform 0.18s;
+}
+
+.t-cont-history-branch.is-open .t-cont-history-branch-chevron {
+    transform: rotate(90deg);
+}
+
+.t-cont-history-branch-body[hidden] {
+    display: none;
 }
 
 .t-cont-history-branch-heading {
@@ -5302,6 +5330,19 @@ textarea.t-input {
     font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* \u5206\u652F\u7F16\u53F7\u662F\u626B\u5217\u8868\u65F6\u7684\u4E3B\u8981\u533A\u5206\u70B9\uFF0C\u7ED9\u5B83\u4E00\u679A\u6807\u8BB0\u907F\u514D\u6DF7\u5728\u65F6\u95F4\u91CC */
+.t-cont-history-branch-no {
+    margin-left: 7px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(191, 161, 95, 0.14);
+    color: #bfa15f;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 600;
+    vertical-align: 1px;
 }
 
 .t-cont-history-branch-heading span {
@@ -35317,10 +35358,6 @@ function renderHtml2(viewData) {
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
                         <span>\u4E3B\u52A8\u7EED\u5199</span>
                     </div>
-                    <div class="t-tools-item" id="t-tool-continuation-history">
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-                        <span>\u7EED\u5199\u5386\u53F2</span>
-                    </div>
                     <div class="t-tools-item" id="t-tool-edit-content">
                         <i class="fa-solid fa-pen-nib"></i>
                         <span>\u7F16\u8F91\u5185\u5BB9</span>
@@ -35353,7 +35390,7 @@ function renderHtml2(viewData) {
             <!-- \u5DE6\u4FA7\uFF1A2x2 \u5DE5\u5177\u7F51\u683C -->
             <div class="t-bot-left">
                 <button class="t-btn-grid" id="t-btn-debug" title="\u5BA1\u67E5 Prompt"><i class="fa-solid fa-eye"></i></button>
-                <button class="t-btn-grid" id="t-btn-copy" title="\u590D\u5236\u6E90\u7801"><i class="fa-regular fa-copy"></i></button>
+                <button class="t-btn-grid" id="t-btn-continuation-history" title="\u7EED\u5199\u5386\u53F2"><i class="fa-solid fa-clock-rotate-left"></i></button>
                 <button class="t-btn-grid" id="t-btn-like" title="\u6536\u85CF\u7ED3\u679C"><i class="fa-regular fa-heart"></i></button>
                 <button class="t-btn-grid" id="t-btn-new" title="\u65B0\u5EFA\u5267\u672C"><i class="fa-solid fa-plus"></i></button>
             </div>
@@ -35423,7 +35460,7 @@ function bindEvents4(ctx) {
     const composeResult = await openContinuationComposer2("");
     await runContinuation(composeResult);
   });
-  $("#t-tool-continuation-history").on("click", function() {
+  $("#t-btn-continuation-history").on("click", function() {
     openContinuationHistory2("");
   });
   $("#t-btn-run-single").on("click", () => {
@@ -35776,6 +35813,18 @@ function getContinuationInstructionPreview(instruction, maxLength = 100) {
   if (normalized.length <= maxLength) return normalized;
   return `${normalized.slice(0, maxLength)}\u2026`;
 }
+function formatContinuationTimestamp(timestamp) {
+  const value = Number(timestamp) || 0;
+  if (!value) return "";
+  if (typeof window.moment === "function") {
+    const parsed = window.moment(value);
+    if (parsed.isValid()) return parsed.format("LL LT");
+  }
+  return new Date(value).toLocaleString();
+}
+function getContinuationBranchTime(branch) {
+  return Number(branch?.createdAt) || Number(branch?.rounds?.[0]?.timestamp) || 0;
+}
 function findContinuationRound(scriptId, branchKey, roundKey) {
   const branch = getContinuationBranches(scriptId).find((item) => item.branchKey === branchKey);
   const round = branch?.rounds.find((item) => item.roundKey === roundKey);
@@ -35859,7 +35908,15 @@ async function openContinuationHistory(preferredScriptId = "") {
   const selectionCheckbox = (level, chatId, scriptId, branchKey = "", roundKey = "", disabled = false) => continuationHistoryManaging ? `<input class="t-cont-select" type="checkbox" data-selection-level="${level}" data-chat-id="${escapeHtmlText2(chatId)}" data-script-id="${escapeHtmlText2(scriptId)}" data-branch-key="${escapeHtmlText2(branchKey)}" data-round-key="${escapeHtmlText2(roundKey)}" ${disabled ? "disabled" : ""} aria-label="\u9009\u62E9${level === "session" ? "\u5267\u672C" : level === "branch" ? "\u5206\u652F" : "\u8F6E\u6B21"}">` : "";
   const sessionsHtml = sessions.map((session, sessionIndex) => {
     const isOpen = sessionIndex === 0;
-    const branchHtml = session.branches.map((branch) => {
+    const hasActiveBranch = session.branches.some((item) => item.isActive);
+    const branchNumbers = new Map(
+      [...session.branches].sort((a, b) => getContinuationBranchTime(a) - getContinuationBranchTime(b)).map((item, index) => [item.branchKey, index + 1])
+    );
+    const branchHtml = session.branches.map((branch, branchIndex) => {
+      const isBranchOpen = hasActiveBranch ? branch.isActive : branchIndex === 0;
+      const branchNumber = branchNumbers.get(branch.branchKey) || 1;
+      const branchTime = formatContinuationTimestamp(getContinuationBranchTime(branch));
+      const branchTitle = branchTime || "\u65F6\u95F4\u672A\u77E5";
       const sourceContinuationIndex = Math.max(0, Number(branch.branchedAtRound) - 1);
       const branchSource = sourceContinuationIndex > 0 ? ` \xB7 \u4ECE\u7EED\u5199\u7B2C ${sourceContinuationIndex} \u6B21\u521B\u5EFA` : "";
       const branchStatus = `${branch.isActive ? "\u5F53\u524D\u5206\u652F" : "\u5386\u53F2\u5206\u652F"}${branchSource}`;
@@ -35887,17 +35944,18 @@ async function openContinuationHistory(preferredScriptId = "") {
                     </div>
                 </article>`;
       }).join("");
-      return `<section class="t-cont-history-branch ${branch.isActive ? "is-active" : ""}" data-chat-id="${escapeHtmlText2(session.chatId)}" data-script-id="${escapeHtmlText2(session.scriptId)}" data-branch-key="${escapeHtmlText2(branch.branchKey)}">
-                <div class="t-cont-history-branch-title">
+      return `<section class="t-cont-history-branch ${branch.isActive ? "is-active" : ""} ${isBranchOpen ? "is-open" : ""}" data-chat-id="${escapeHtmlText2(session.chatId)}" data-script-id="${escapeHtmlText2(session.scriptId)}" data-branch-key="${escapeHtmlText2(branch.branchKey)}">
+                <button class="t-cont-history-branch-title" type="button" aria-expanded="${isBranchOpen}">
                     <span class="t-cont-select-wrap">${selectionCheckbox("branch", session.chatId, session.scriptId, branch.branchKey)}</span>
+                    <i class="fa-solid fa-chevron-right t-cont-history-branch-chevron"></i>
                     <i class="fa-solid fa-code-branch"></i>
                     <div class="t-cont-history-branch-heading">
-                        <strong>\u300A${escapeHtmlText2(session.scriptName)}\u300B</strong>
-                        <span>${escapeHtmlText2(session.characterName)} \xB7 ${escapeHtmlText2(branchStatus)}</span>
+                        <strong>${escapeHtmlText2(branchTitle)}${branchNumber > 1 ? `<em class="t-cont-history-branch-no">\u5206\u652F ${branchNumber}</em>` : ""}</strong>
+                        <span>${escapeHtmlText2(branchStatus)}</span>
                     </div>
                     <small>${branch.rounds.length - 1} \u6B21\u7EED\u5199</small>
-                </div>
-                ${roundHtml}
+                </button>
+                <div class="t-cont-history-branch-body" ${isBranchOpen ? "" : "hidden"}>${roundHtml}</div>
             </section>`;
     }).join("");
     return `<section class="t-cont-history-session ${isOpen ? "is-open" : ""}" data-chat-id="${escapeHtmlText2(session.chatId)}" data-script-id="${escapeHtmlText2(session.scriptId)}">
@@ -36024,6 +36082,13 @@ async function openContinuationHistory(preferredScriptId = "") {
     $session.toggleClass("is-open", shouldOpen);
     $(this).attr("aria-expanded", String(shouldOpen));
     $session.find(".t-cont-history-session-body").first().prop("hidden", !shouldOpen);
+  });
+  $panel.on("click", ".t-cont-history-branch-title", function() {
+    const $branch = $(this).closest(".t-cont-history-branch");
+    const shouldOpen = !$branch.hasClass("is-open");
+    $branch.toggleClass("is-open", shouldOpen);
+    $(this).attr("aria-expanded", String(shouldOpen));
+    $branch.find(".t-cont-history-branch-body").first().prop("hidden", !shouldOpen);
   });
   $panel.on("click", ".t-cont-history-toggle", function() {
     const $round = $(this).closest(".t-cont-history-round");
