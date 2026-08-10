@@ -57,7 +57,10 @@ export const defaultSettings = {
     ui_prefs: {
         script_sort_mode: "smart",
         // 主界面布局: modern(新版工具箱布局) | legacy(5.1.2 经典布局)
-        main_window_mode: "modern"
+        main_window_mode: "modern",
+        // 标题栏常驻图标（最多 5 个），未列入的自动收进「更多」弹层。
+        // 可选 id 见 src/ui/mainWindow/headerActions.js 的注册表
+        header_actions: ["workshop", "favs"]
     },
     appearance: {
         type: "emoji",

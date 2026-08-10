@@ -1038,6 +1038,101 @@
     cursor: default;
 }
 
+/* === 标题栏图标配置 === */
+
+.t-header-action-count {
+    margin-left: 6px;
+    color: #666;
+    font-size: 0.8em;
+    font-weight: normal;
+}
+
+.t-header-action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.t-header-action-card {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    background: #1a1a1a;
+    cursor: grab;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.t-header-action-card:active {
+    cursor: grabbing;
+}
+
+.t-header-action-card:hover {
+    background: #1d1d1d;
+    border-color: #555;
+}
+
+.t-header-action-card.is-dragging {
+    opacity: 0.45;
+    border-style: dashed;
+}
+
+.t-header-action-card.is-drag-over {
+    border-color: #90cdf4;
+    box-shadow: 0 -3px 0 rgba(144, 205, 244, 0.75);
+}
+
+/* 已达上限时未选中的项：变暗提示选不了，但仍可拖动调序 */
+.t-header-action-card.is-blocked {
+    opacity: 0.5;
+}
+
+.t-header-action-grip {
+    flex-shrink: 0;
+    color: #555;
+    cursor: grab;
+}
+
+.t-header-action-icon {
+    width: 1.2em;
+    flex-shrink: 0;
+    color: #bfa15f;
+    text-align: center;
+}
+
+.t-header-action-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: #ccc;
+    font-size: 0.9em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-header-action-switch {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    cursor: pointer;
+}
+
+.t-header-action-switch input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #bfa15f;
+    cursor: pointer;
+}
+
+.t-header-action-switch input:disabled {
+    cursor: not-allowed;
+}
+
 @media (max-width: 600px) {
     .t-prompt-entry-list {
         gap: 5px;

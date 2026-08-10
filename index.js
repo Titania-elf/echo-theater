@@ -73,7 +73,10 @@ var init_defaults = __esm({
       ui_prefs: {
         script_sort_mode: "smart",
         // 主界面布局: modern(新版工具箱布局) | legacy(5.1.2 经典布局)
-        main_window_mode: "modern"
+        main_window_mode: "modern",
+        // 标题栏常驻图标（最多 5 个），未列入的自动收进「更多」弹层。
+        // 可选 id 见 src/ui/mainWindow/headerActions.js 的注册表
+        header_actions: ["workshop", "favs"]
       },
       appearance: {
         type: "emoji",
@@ -3776,6 +3779,34 @@ textarea.t-input {
     opacity: 1;
 }
 
+/* === \u300C\u66F4\u591A\u300D\u83DC\u5355\u91CC\u7684\u56FE\u9489\uFF1A\u628A\u8BE5\u9879\u63D0\u5347\u5230\u6807\u9898\u680F === */
+
+/* \u624B\u673A\u4E0A\u6CA1\u6709\u53F3\u952E\u3001\u957F\u6309\u53C8\u4F1A\u8DDF\u6EDA\u52A8\u624B\u52BF\u6253\u67B6\uFF0C\u6240\u4EE5\u7528\u5E38\u9A7B\u53EF\u89C1\u7684\u6309\u94AE */
+.t-more-pin {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    margin-left: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #6d6d6d;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.t-more-pin:hover:not(:disabled) {
+    background: rgba(191, 161, 95, 0.16);
+    color: #bfa15f;
+}
+
+.t-more-pin:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
 /* 
    === \u79FB\u52A8\u7AEF\u9002\u914D ===
    \u6CE8\u610F\uFF1A\u53EA\u6709\u5C4F\u5E55\u5BBD\u5EA6\u5C0F\u4E8E 600px \u65F6\uFF0C\u8FD9\u4E9B\u6837\u5F0F\u624D\u4F1A\u751F\u6548\u3002
@@ -3804,9 +3835,17 @@ textarea.t-input {
     }
 
     #t-main-view .t-header .t-header-actions .t-icon-btn {
-        font-size: 1.3em;
+        /* \u53EA\u6536\u5B57\u5F62\u4E0D\u6536\u70ED\u533A\uFF1A30px \u5DF2\u662F\u89E6\u5C4F\u70B9\u51FB\u7684\u4E0B\u9650\uFF0C\u518D\u5C0F\u4F1A\u96BE\u70B9\u3002
+           \u56FE\u6807\u6700\u591A 5 \u4E2A\u65F6 1.3em \u51E0\u4E4E\u9876\u6EE1\u65B9\u5757\uFF0C\u663E\u5F97\u62E5\u6324\uFF0C\u7F29\u5230 1.15em \u7559\u51FA\u547C\u5438\u611F\u3002 */
+        font-size: 1.15em;
         width: 30px;
         height: 30px;
+    }
+
+    /* \u5173\u95ED\u952E\u7684 1.8em \u5728\u7A84\u5C4F\u6BD4\u529F\u80FD\u56FE\u6807\u5927\u51FA\u4E00\u5708\uFF0C\u4E00\u8D77\u6536\u4E00\u70B9\u4FDD\u6301\u89C6\u89C9\u9F50\u5E73 */
+    #t-main-view .t-header .t-header-actions .t-close {
+        font-size: 1.5em;
+        padding: 0 3px;
     }
 
     .t-top-bar {
@@ -7540,6 +7579,101 @@ textarea.t-input {
 .t-prompt-entry-actions button:disabled {
     opacity: 0.35;
     cursor: default;
+}
+
+/* === \u6807\u9898\u680F\u56FE\u6807\u914D\u7F6E === */
+
+.t-header-action-count {
+    margin-left: 6px;
+    color: #666;
+    font-size: 0.8em;
+    font-weight: normal;
+}
+
+.t-header-action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.t-header-action-card {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    background: #1a1a1a;
+    cursor: grab;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.t-header-action-card:active {
+    cursor: grabbing;
+}
+
+.t-header-action-card:hover {
+    background: #1d1d1d;
+    border-color: #555;
+}
+
+.t-header-action-card.is-dragging {
+    opacity: 0.45;
+    border-style: dashed;
+}
+
+.t-header-action-card.is-drag-over {
+    border-color: #90cdf4;
+    box-shadow: 0 -3px 0 rgba(144, 205, 244, 0.75);
+}
+
+/* \u5DF2\u8FBE\u4E0A\u9650\u65F6\u672A\u9009\u4E2D\u7684\u9879\uFF1A\u53D8\u6697\u63D0\u793A\u9009\u4E0D\u4E86\uFF0C\u4F46\u4ECD\u53EF\u62D6\u52A8\u8C03\u5E8F */
+.t-header-action-card.is-blocked {
+    opacity: 0.5;
+}
+
+.t-header-action-grip {
+    flex-shrink: 0;
+    color: #555;
+    cursor: grab;
+}
+
+.t-header-action-icon {
+    width: 1.2em;
+    flex-shrink: 0;
+    color: #bfa15f;
+    text-align: center;
+}
+
+.t-header-action-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: #ccc;
+    font-size: 0.9em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-header-action-switch {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    cursor: pointer;
+}
+
+.t-header-action-switch input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #bfa15f;
+    cursor: pointer;
+}
+
+.t-header-action-switch input:disabled {
+    cursor: not-allowed;
 }
 
 @media (max-width: 600px) {
@@ -31055,6 +31189,65 @@ var init_outlineEntryButton = __esm({
   }
 });
 
+// src/ui/mainWindow/headerActions.js
+function getHeaderActionMeta(id3) {
+  return HEADER_ACTION_REGISTRY.find((item) => item.id === String(id3 || "")) || null;
+}
+function normalizeHeaderActions(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = /* @__PURE__ */ new Set();
+  const result = [];
+  for (const raw of list) {
+    const id3 = String(raw || "");
+    if (seen.has(id3) || !getHeaderActionMeta(id3)) continue;
+    seen.add(id3);
+    result.push(id3);
+    if (result.length >= HEADER_ACTION_MAX) break;
+  }
+  return result;
+}
+function getHeaderActions() {
+  const data = getExtData();
+  const saved = data.ui_prefs?.header_actions;
+  if (!Array.isArray(saved)) return [...HEADER_ACTION_DEFAULT];
+  return normalizeHeaderActions(saved);
+}
+function saveHeaderActions(list) {
+  const data = getExtData();
+  if (!data.ui_prefs) data.ui_prefs = {};
+  data.ui_prefs.header_actions = normalizeHeaderActions(list);
+  saveExtData();
+  return data.ui_prefs.header_actions;
+}
+function getOverflowActions() {
+  const active = new Set(getHeaderActions());
+  return HEADER_ACTION_REGISTRY.filter((item) => !active.has(item.id));
+}
+function renderHeaderActionsHtml() {
+  const iconsHtml = getHeaderActions().map((id3) => {
+    const meta = getHeaderActionMeta(id3);
+    if (!meta) return "";
+    return `<i class="fa-solid ${meta.icon} t-icon-btn" id="t-btn-${meta.id}" data-header-action="${meta.id}" title="${meta.label}" role="button" tabindex="0" aria-label="${meta.label}"></i>`;
+  }).join("");
+  const moreHtml = getOverflowActions().length ? `<i class="fa-solid fa-ellipsis t-icon-btn" id="t-btn-more" data-header-action="__more__" title="\u66F4\u591A" role="button" tabindex="0" aria-label="\u66F4\u591A"></i>` : "";
+  return `${iconsHtml}${moreHtml}<span class="t-close" id="t-btn-close">&times;</span>`;
+}
+var HEADER_ACTION_REGISTRY, HEADER_ACTION_MAX, HEADER_ACTION_DEFAULT;
+var init_headerActions = __esm({
+  "src/ui/mainWindow/headerActions.js"() {
+    init_storage();
+    HEADER_ACTION_REGISTRY = [
+      { id: "workshop", icon: "fa-store", label: "\u56DE\u58F0\u5DE5\u574A" },
+      { id: "favs", icon: "fa-book-bookmark", label: "\u56DE\u58F0\u6536\u85CF\u5939" },
+      { id: "worldinfo", icon: "fa-book-atlas", label: "\u4E16\u754C\u4E66\u7B5B\u9009" },
+      { id: "profiles", icon: "fa-network-wired", label: "API \u65B9\u6848" },
+      { id: "settings", icon: "fa-gear", label: "\u8BBE\u7F6E" }
+    ];
+    HEADER_ACTION_MAX = 5;
+    HEADER_ACTION_DEFAULT = ["workshop", "favs"];
+  }
+});
+
 // src/ui/settingsWindow.js
 function applyCustomCSS(cssText) {
   let styleEl = document.getElementById("t-custom-style");
@@ -31296,6 +31489,12 @@ function openSettingsWindow() {
                             <option value="legacy" ${mainWindowMode === "legacy" ? "selected" : ""}>\u7ECF\u5178\u7248\uFF08\u53CC\u6F14\u7ECE\u6309\u94AE + \u5DE5\u5177\u7F51\u683C\uFF09</option>
                         </select>
                         <p style="font-size:0.75em; color:#666; margin-top:6px;">\u4E24\u7248\u529F\u80FD\u5B8C\u5168\u76F8\u540C\uFF0C\u4EC5\u5E03\u5C40\u4E0D\u540C\u3002\u5207\u6362\u540E\u9700\u91CD\u65B0\u6253\u5F00\u5C0F\u5267\u573A\u751F\u6548\u3002</p>
+                    </div>
+
+                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                        <label style="color:#ccc; display:block; margin-bottom:8px;">\u{1F3A8} \u6807\u9898\u680F\u56FE\u6807 <span id="p-header-actions-count" class="t-header-action-count"></span></label>
+                        <div id="p-header-actions" class="t-header-action-list"></div>
+                        <p style="font-size:0.75em; color:#666; margin-top:6px;">\u52FE\u9009\u8981\u5E38\u9A7B\u6807\u9898\u680F\u7684\u529F\u80FD\uFF08\u6700\u591A ${HEADER_ACTION_MAX} \u4E2A\uFF09\uFF0C\u62D6\u52A8\u53EF\u8C03\u6574\u987A\u5E8F\u3002\u6CA1\u9009\u4E2D\u7684\u4F1A\u6536\u8FDB\u6807\u9898\u680F\u7684\u300C\u66F4\u591A\u300D\u83DC\u5355\u3002\u6539\u52A8\u7ACB\u5373\u751F\u6548\u3002</p>
                     </div>
                 </div>
 
@@ -32785,6 +32984,91 @@ function openSettingsWindow() {
     $("#toolbar-settings-panel").toggle($(this).is(":checked"));
   });
   initToolbarCheckboxes();
+  let headerActionOrder = (() => {
+    const active = getHeaderActions();
+    const rest = HEADER_ACTION_REGISTRY.map((item) => item.id).filter((id3) => !active.includes(id3));
+    return [...active, ...rest];
+  })();
+  const applyHeaderActions = () => {
+    const selected = headerActionOrder.filter((id3) => $(`.t-header-action-chk[data-action-id="${id3}"]`).is(":checked"));
+    saveHeaderActions(selected);
+    if (typeof window.refreshHeaderActions === "function") window.refreshHeaderActions();
+    return selected;
+  };
+  const updateHeaderActionCount = () => {
+    const count = $(".t-header-action-chk:checked").length;
+    const $countEl = $("#p-header-actions-count");
+    $countEl.text(`\u5DF2\u9009 ${count} / ${HEADER_ACTION_MAX}`);
+    const full = count >= HEADER_ACTION_MAX;
+    $countEl.css("color", full ? "#ff9f43" : "#666");
+    $(".t-header-action-chk:not(:checked)").prop("disabled", full).closest(".t-header-action-card").toggleClass("is-blocked", full).attr("title", full ? `\u6700\u591A ${HEADER_ACTION_MAX} \u4E2A\uFF0C\u53D6\u6D88\u4E00\u4E2A\u518D\u9009` : "");
+  };
+  const renderHeaderActionCards = () => {
+    const $list = $("#p-header-actions");
+    if (!$list.length) return;
+    const active = getHeaderActions();
+    $list.empty();
+    headerActionOrder.forEach((id3) => {
+      const meta = HEADER_ACTION_REGISTRY.find((item) => item.id === id3);
+      if (!meta) return;
+      const checked = active.includes(id3);
+      const $card = $(`<div class="t-header-action-card" data-action-id="${id3}" draggable="true">
+                <span class="t-header-action-grip" title="\u62D6\u52A8\u6392\u5E8F"><i class="fa-solid fa-grip-vertical"></i></span>
+                <i class="fa-solid ${meta.icon} t-header-action-icon"></i>
+                <span class="t-header-action-label"></span>
+                <label class="t-header-action-switch">
+                    <input type="checkbox" class="t-header-action-chk" data-action-id="${id3}" ${checked ? "checked" : ""}>
+                </label>
+            </div>`);
+      $card.find(".t-header-action-label").text(meta.label);
+      $card.on("dragstart", function(event) {
+        const originalEvent = event.originalEvent;
+        if ($(event.target).closest("input, label").length) {
+          originalEvent?.preventDefault();
+          return;
+        }
+        originalEvent.dataTransfer.effectAllowed = "move";
+        originalEvent.dataTransfer.setData("text/plain", id3);
+        $(this).addClass("is-dragging");
+      });
+      $card.on("dragend", function() {
+        $(this).removeClass("is-dragging");
+        $(".t-header-action-card").removeClass("is-drag-over");
+      });
+      $card.on("dragover", function(event) {
+        event.preventDefault();
+        event.originalEvent.dataTransfer.dropEffect = "move";
+        $(this).addClass("is-drag-over");
+      });
+      $card.on("dragleave", function(event) {
+        if (event.target === this) $(this).removeClass("is-drag-over");
+      });
+      $card.on("drop", function(event) {
+        event.preventDefault();
+        const draggedId = String(event.originalEvent.dataTransfer.getData("text/plain") || "");
+        const fromIndex = headerActionOrder.indexOf(draggedId);
+        const targetIndex = headerActionOrder.indexOf(id3);
+        if (fromIndex < 0 || targetIndex < 0 || fromIndex === targetIndex) {
+          renderHeaderActionCards();
+          return;
+        }
+        const rect = this.getBoundingClientRect();
+        const insertBefore = event.originalEvent.clientY < rect.top + rect.height / 2;
+        headerActionOrder.splice(fromIndex, 1);
+        const base = headerActionOrder.indexOf(id3);
+        headerActionOrder.splice(insertBefore ? base : base + 1, 0, draggedId);
+        applyHeaderActions();
+        renderHeaderActionCards();
+      });
+      $list.append($card);
+    });
+    $(".t-header-action-chk").on("change", function() {
+      applyHeaderActions();
+      updateHeaderActionCount();
+    });
+    updateHeaderActionCount();
+  };
+  renderHeaderActionCards();
   const renderLogView = () => {
     const logs = TitaniaLogger.logs;
     if (!logs || logs.length === 0) {
@@ -32887,6 +33171,9 @@ ${JSON.stringify(l.details, null, 2)}`;
     };
     if (!d.ui_prefs) d.ui_prefs = {};
     d.ui_prefs.main_window_mode = $("#p-main-window-mode").val() === "legacy" ? "legacy" : "modern";
+    if ($(".t-header-action-chk").length) {
+      d.ui_prefs.header_actions = headerActionOrder.filter((id3) => $(`.t-header-action-chk[data-action-id="${id3}"]`).is(":checked")).slice(0, HEADER_ACTION_MAX);
+    }
     d.director = { instruction: $("#set-dir-instruction").val().trim() };
     const clampInt = (value, min, max, fallback) => {
       const n = parseInt(value, 10);
@@ -32991,6 +33278,7 @@ var init_settingsWindow = __esm({
     init_apiProfileRegistry();
     init_apiConnectionEditor();
     init_promptManager();
+    init_headerActions();
   }
 });
 
@@ -34881,10 +35169,7 @@ function renderHtml(viewData) {
                     </div>
                 </div>
                 <div class="t-header-actions">
-                    <i class="fa-solid fa-store t-icon-btn" id="t-btn-workshop" title="\u56DE\u58F0\u5DE5\u574A"></i>
-                    <i class="fa-solid fa-book-bookmark t-icon-btn" id="t-btn-favs" title="\u56DE\u58F0\u6536\u85CF\u5939"></i>
-                    <i class="fa-solid fa-ellipsis t-icon-btn" id="t-btn-more" title="\u66F4\u591A"></i>
-                    <span class="t-close" id="t-btn-close">&times;</span>
+                    ${renderHeaderActionsHtml()}
                 </div>
             </div>
 
@@ -35266,6 +35551,7 @@ var init_modern = __esm({
     init_api();
     init_continuationStore();
     init_viewState();
+    init_headerActions();
     id = "modern";
   }
 });
@@ -35292,10 +35578,7 @@ function renderHtml2(viewData) {
                     </div>
                 </div>
                 <div class="t-header-actions">
-                    <i class="fa-solid fa-store t-icon-btn" id="t-btn-workshop" title="\u56DE\u58F0\u5DE5\u574A"></i>
-                    <i class="fa-solid fa-book-bookmark t-icon-btn" id="t-btn-favs" title="\u56DE\u58F0\u6536\u85CF\u5939"></i>
-                    <i class="fa-solid fa-ellipsis t-icon-btn" id="t-btn-more" title="\u66F4\u591A"></i>
-                    <span class="t-close" id="t-btn-close">&times;</span>
+                    ${renderHeaderActionsHtml()}
                 </div>
             </div>
 
@@ -35488,6 +35771,7 @@ var init_legacy = __esm({
   "src/ui/mainWindow/layouts/legacy.js"() {
     init_state();
     init_api();
+    init_headerActions();
     id2 = "legacy";
   }
 });
@@ -35502,6 +35786,7 @@ __export(mainWindow_exports, {
   getQueueScripts: () => getQueueScripts,
   handleRandom: () => handleRandom,
   openMainWindow: () => openMainWindow,
+  refreshHeaderActions: () => refreshHeaderActions,
   refreshScriptList: () => refreshScriptList,
   registerTeardown: () => registerTeardown,
   setContinuationHistoryView: () => setContinuationHistoryView,
@@ -36400,10 +36685,6 @@ async function openMainWindow() {
   $("#t-overlay").on("click", (e) => {
     if (e.target === e.currentTarget) closeWindow();
   });
-  $("#t-btn-profile").on("click", function(e) {
-    renderProfileMenu($(this));
-    e.stopPropagation();
-  });
   $("#t-btn-new").on("click", () => {
     openEditor(null, "main");
   });
@@ -36496,14 +36777,9 @@ async function openMainWindow() {
       saveFavorite();
     }
   });
-  $("#t-btn-favs").on("click", openFavsWindow);
-  $("#t-btn-workshop").on("click", async () => {
-    const { openWorkshopWindow: openWorkshopWindow2 } = await Promise.resolve().then(() => (init_workshopWindow(), workshopWindow_exports));
-    openWorkshopWindow2("main");
-  });
-  $("#t-btn-more").on("click", function(e) {
-    renderMoreMenu($(this));
+  $("#t-main-view").on("click", "[data-header-action]", function(e) {
     e.stopPropagation();
+    runHeaderAction(String($(this).data("header-action") || ""), $(this));
   });
   $("#t-btn-debug").on("click", async () => await showDebugInfo());
   $("#t-btn-queue-settings").on("click", openQueueSettingsWindow);
@@ -36585,6 +36861,7 @@ async function openMainWindow() {
   window.updateRunButtonsState = updateRunButtonsState;
   window.updateFavButtonUI = updateFavButtonUI;
   window.updateScriptTitleDisplay = updateScriptTitleDisplay;
+  window.refreshHeaderActions = refreshHeaderActions;
   let initialScriptId = GlobalState.lastUsedScriptId;
   if (GlobalState.lastGeneratedContent && GlobalState.lastGeneratedScriptId) {
     initialScriptId = GlobalState.lastGeneratedScriptId;
@@ -36813,20 +37090,23 @@ async function updateWorldInfoBadge() {
         }
       });
     });
-    const $icon = $("#t-btn-more");
+    const onBar = $("#t-btn-worldinfo").length > 0;
+    const $icon = onBar ? $("#t-btn-worldinfo") : $("#t-btn-more");
+    if (!$icon.length) return;
+    const prefix = onBar ? "\u4E16\u754C\u4E66\u7B5B\u9009" : "\u66F4\u591A \xB7 \u4E16\u754C\u4E66";
     if (selectedCount > 0) {
       $icon.css("color", "#90cdf4");
-      $icon.attr("title", `\u66F4\u591A \xB7 \u4E16\u754C\u4E66\u5DF2\u9009 ${selectedCount}/${totalCount}`);
+      $icon.attr("title", `${prefix}\u5DF2\u9009 ${selectedCount}/${totalCount}`);
     } else if (totalCount > 0) {
       $icon.css("color", "#bfa15f");
-      $icon.attr("title", `\u66F4\u591A \xB7 \u4E16\u754C\u4E66\u672A\u9009\u62E9\u4EFB\u4F55\u6761\u76EE`);
+      $icon.attr("title", `${prefix}\u672A\u9009\u62E9\u4EFB\u4F55\u6761\u76EE`);
     } else {
       $icon.css("color", "");
-      $icon.attr("title", "\u66F4\u591A");
+      $icon.attr("title", onBar ? "\u4E16\u754C\u4E66\u7B5B\u9009" : "\u66F4\u591A");
     }
   } catch (e) {
     console.warn("Titania: \u66F4\u65B0\u4E16\u754C\u4E66\u56FE\u6807\u72B6\u6001\u5931\u8D25", e);
-    $("#t-btn-more").css("color", "");
+    $("#t-btn-worldinfo, #t-btn-more").css("color", "");
   }
 }
 async function openWorldInfoSelector() {
@@ -37417,43 +37697,73 @@ function showScriptSelector(initialFilter = "ALL") {
   renderGrid();
   $("#t-sel-close").on("click", () => $("#t-selector-panel").remove());
 }
+async function runHeaderAction(id3, $anchor) {
+  if (id3 === "__more__") {
+    renderMoreMenu($anchor);
+    return;
+  }
+  if (id3 === "favs") {
+    openFavsWindow();
+  } else if (id3 === "workshop") {
+    const { openWorkshopWindow: openWorkshopWindow2 } = await Promise.resolve().then(() => (init_workshopWindow(), workshopWindow_exports));
+    openWorkshopWindow2("main");
+  } else if (id3 === "worldinfo") {
+    openWorldInfoSelector();
+  } else if (id3 === "profiles") {
+    renderProfileMenu($anchor);
+  } else if (id3 === "settings") {
+    openSettingsWindow();
+  }
+}
+function refreshHeaderActions() {
+  const $host = $("#t-main-view .t-header-actions");
+  if (!$host.length) return;
+  $host.html(renderHeaderActionsHtml());
+  updateWorldInfoBadge().catch((e) => console.warn("Titania: \u5237\u65B0\u4E16\u754C\u4E66\u72B6\u6001\u5931\u8D25", e));
+}
 function renderMoreMenu($targetBtn) {
   if ($("#t-more-popover").length) {
     $("#t-more-popover").remove();
     return;
   }
-  const items = [
-    { id: "worldinfo", icon: "fa-book-atlas", label: "\u4E16\u754C\u4E66\u7B5B\u9009" },
-    { id: "profiles", icon: "fa-network-wired", label: "API \u65B9\u6848" },
-    { id: "settings", icon: "fa-gear", label: "\u8BBE\u7F6E" }
-  ];
+  const items = getOverflowActions();
+  if (!items.length) return;
+  const isFull = getHeaderActions().length >= HEADER_ACTION_MAX;
+  const pinTitle = isFull ? `\u6700\u591A ${HEADER_ACTION_MAX} \u4E2A\uFF0C\u53D6\u6D88\u4E00\u4E2A\u518D\u9009` : "\u56FA\u5B9A\u5230\u680F\u4E0A";
   const html = `
-    <div id="t-more-popover" class="t-filter-popover" style="width: 170px; z-index: 21000;">
+    <div id="t-more-popover" class="t-filter-popover" style="width: 190px; z-index: 21000;">
         ${items.map((it) => `
-            <div class="t-filter-item" data-action="${it.id}">
+            <div class="t-filter-item t-more-item" data-action="${it.id}">
                 <span><i class="fa-solid ${it.icon}" style="width:1.1em; margin-right:8px;"></i>${it.label}</span>
+                <button type="button" class="t-more-pin" data-pin="${it.id}" title="${pinTitle}" aria-label="${pinTitle}" ${isFull ? "disabled" : ""}><i class="fa-solid fa-thumbtack"></i></button>
             </div>
         `).join("")}
     </div>`;
   $("body").append(html);
   const pop = $("#t-more-popover");
   const rect = $targetBtn[0].getBoundingClientRect();
-  const left = rect.left + 170 > window.innerWidth ? rect.right - 170 : rect.left;
+  const left = rect.left + 190 > window.innerWidth ? rect.right - 190 : rect.left;
   pop.css({ top: rect.bottom + 10, left });
   const closeMenu2 = () => {
     pop.remove();
     $(document).off("click.closemore");
   };
-  $(".t-filter-item", pop).on("click", function() {
-    const action = $(this).data("action");
+  $(".t-more-pin", pop).on("click", function(e) {
+    e.stopPropagation();
+    if ($(this).prop("disabled")) return;
+    const id3 = String($(this).data("pin") || "");
+    const meta = getOverflowActions().find((item) => item.id === id3);
+    const next = [...getHeaderActions(), id3];
+    if (next.length > HEADER_ACTION_MAX) return;
+    saveHeaderActions(next);
     closeMenu2();
-    if (action === "worldinfo") {
-      openWorldInfoSelector();
-    } else if (action === "profiles") {
-      renderProfileMenu($targetBtn);
-    } else if (action === "settings") {
-      openSettingsWindow();
-    }
+    refreshHeaderActions();
+    if (window.toastr && meta) toastr.success(`\u5DF2\u628A\u300C${meta.label}\u300D\u56FA\u5B9A\u5230\u6807\u9898\u680F`, "Titania");
+  });
+  $(".t-filter-item", pop).on("click", function() {
+    const action = String($(this).data("action") || "");
+    closeMenu2();
+    runHeaderAction(action, $targetBtn);
   });
   setTimeout(() => {
     $(document).on("click.closemore", (e) => {
@@ -37839,6 +38149,7 @@ var init_mainWindow = __esm({
     init_viewState();
     init_modern();
     init_legacy();
+    init_headerActions();
     SORT_MODE_LABELS2 = {
       default: "\u9ED8\u8BA4\u987A\u5E8F",
       smart: "\u667A\u80FD\u6392\u5E8F",

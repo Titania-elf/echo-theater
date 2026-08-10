@@ -1050,6 +1050,34 @@
     opacity: 1;
 }
 
+/* === 「更多」菜单里的图钉：把该项提升到标题栏 === */
+
+/* 手机上没有右键、长按又会跟滚动手势打架，所以用常驻可见的按钮 */
+.t-more-pin {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    margin-left: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #6d6d6d;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.t-more-pin:hover:not(:disabled) {
+    background: rgba(191, 161, 95, 0.16);
+    color: #bfa15f;
+}
+
+.t-more-pin:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
 /* 
    === 移动端适配 ===
    注意：只有屏幕宽度小于 600px 时，这些样式才会生效。
@@ -1078,9 +1106,17 @@
     }
 
     #t-main-view .t-header .t-header-actions .t-icon-btn {
-        font-size: 1.3em;
+        /* 只收字形不收热区：30px 已是触屏点击的下限，再小会难点。
+           图标最多 5 个时 1.3em 几乎顶满方块，显得拥挤，缩到 1.15em 留出呼吸感。 */
+        font-size: 1.15em;
         width: 30px;
         height: 30px;
+    }
+
+    /* 关闭键的 1.8em 在窄屏比功能图标大出一圈，一起收一点保持视觉齐平 */
+    #t-main-view .t-header .t-header-actions .t-close {
+        font-size: 1.5em;
+        padding: 0 3px;
     }
 
     .t-top-bar {

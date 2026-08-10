@@ -13,6 +13,12 @@ import { refreshRewriteEntryButton } from "./rewriteEntryButton.js";
 import { ensureMainApiProfiles } from "../core/apiProfileRegistry.js";
 import { createApiConnectionEditor, renderApiConnectionEditorHTML } from "./shared/apiConnectionEditor.js";
 import { normalizeChatCompletionPreset, getPresetEntrySummary, ensurePromptManager, ensureTitaniaPresetEntries, createCustomPresetEntry, getPresetInsertLimit } from "../core/promptManager.js";
+import {
+    HEADER_ACTION_REGISTRY,
+    HEADER_ACTION_MAX,
+    getHeaderActions,
+    saveHeaderActions
+} from "./mainWindow/headerActions.js";
 
 /**
  * 应用自定义 CSS 样式
@@ -305,6 +311,12 @@ export function openSettingsWindow() {
                             <option value="legacy" ${mainWindowMode === 'legacy' ? 'selected' : ''}>经典版（双演绎按钮 + 工具网格）</option>
                         </select>
                         <p style="font-size:0.75em; color:#666; margin-top:6px;">两版功能完全相同，仅布局不同。切换后需重新打开小剧场生效。</p>
+                    </div>
+
+                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                        <label style="color:#ccc; display:block; margin-bottom:8px;">🎨 标题栏图标 <span id="p-header-actions-count" class="t-header-action-count"></span></label>
+                        <div id="p-header-actions" class="t-header-action-list"></div>
+                        <p style="font-size:0.75em; color:#666; margin-top:6px;">勾选要常驻标题栏的功能（最多 ${HEADER_ACTION_MAX} 个），拖动可调整顺序。没选中的会收进标题栏的「更多」菜单。改动立即生效。</p>
                     </div>
                 </div>
 
@@ -2006,6 +2018,110 @@ export function openSettingsWindow() {
     // 初始化
     initToolbarCheckboxes();
 
+    // --- 标题栏图标配置 ---
+    // 勾选决定是否上栏、拖动决定顺序；改动立即写入并重绘主窗口顶栏（若开着）。
+    // 顺序以当前已选列表为准，未选中的按注册表顺序排在后面。
+    let headerActionOrder = (() => {
+        const active = getHeaderActions();
+        const rest = HEADER_ACTION_REGISTRY.map(item => item.id).filter(id => !active.includes(id));
+        return [...active, ...rest];
+    })();
+
+    const applyHeaderActions = () => {
+        const selected = headerActionOrder.filter(id => $(`.t-header-action-chk[data-action-id="${id}"]`).is(":checked"));
+        saveHeaderActions(selected);
+        // 主窗口可能没开，函数不存在时静默跳过
+        if (typeof window.refreshHeaderActions === "function") window.refreshHeaderActions();
+        return selected;
+    };
+
+    const updateHeaderActionCount = () => {
+        const count = $(".t-header-action-chk:checked").length;
+        const $countEl = $("#p-header-actions-count");
+        $countEl.text(`已选 ${count} / ${HEADER_ACTION_MAX}`);
+        const full = count >= HEADER_ACTION_MAX;
+        $countEl.css("color", full ? "#ff9f43" : "#666");
+        // 到上限就挡住未选中的，避免用户以为选上了却被静默截断
+        $(".t-header-action-chk:not(:checked)")
+            .prop("disabled", full)
+            .closest(".t-header-action-card")
+            .toggleClass("is-blocked", full)
+            .attr("title", full ? `最多 ${HEADER_ACTION_MAX} 个，取消一个再选` : "");
+    };
+
+    const renderHeaderActionCards = () => {
+        const $list = $("#p-header-actions");
+        if (!$list.length) return;
+        const active = getHeaderActions();
+        $list.empty();
+
+        headerActionOrder.forEach(id => {
+            const meta = HEADER_ACTION_REGISTRY.find(item => item.id === id);
+            if (!meta) return;
+            const checked = active.includes(id);
+            const $card = $(`<div class="t-header-action-card" data-action-id="${id}" draggable="true">
+                <span class="t-header-action-grip" title="拖动排序"><i class="fa-solid fa-grip-vertical"></i></span>
+                <i class="fa-solid ${meta.icon} t-header-action-icon"></i>
+                <span class="t-header-action-label"></span>
+                <label class="t-header-action-switch">
+                    <input type="checkbox" class="t-header-action-chk" data-action-id="${id}" ${checked ? "checked" : ""}>
+                </label>
+            </div>`);
+            $card.find(".t-header-action-label").text(meta.label);
+
+            $card.on("dragstart", function (event) {
+                const originalEvent = event.originalEvent;
+                if ($(event.target).closest("input, label").length) {
+                    originalEvent?.preventDefault();
+                    return;
+                }
+                originalEvent.dataTransfer.effectAllowed = "move";
+                originalEvent.dataTransfer.setData("text/plain", id);
+                $(this).addClass("is-dragging");
+            });
+            $card.on("dragend", function () {
+                $(this).removeClass("is-dragging");
+                $(".t-header-action-card").removeClass("is-drag-over");
+            });
+            $card.on("dragover", function (event) {
+                event.preventDefault();
+                event.originalEvent.dataTransfer.dropEffect = "move";
+                $(this).addClass("is-drag-over");
+            });
+            $card.on("dragleave", function (event) {
+                if (event.target === this) $(this).removeClass("is-drag-over");
+            });
+            $card.on("drop", function (event) {
+                event.preventDefault();
+                const draggedId = String(event.originalEvent.dataTransfer.getData("text/plain") || "");
+                const fromIndex = headerActionOrder.indexOf(draggedId);
+                const targetIndex = headerActionOrder.indexOf(id);
+                if (fromIndex < 0 || targetIndex < 0 || fromIndex === targetIndex) {
+                    renderHeaderActionCards();
+                    return;
+                }
+                // 落在目标上半部插到它前面，下半部插到后面
+                const rect = this.getBoundingClientRect();
+                const insertBefore = event.originalEvent.clientY < rect.top + rect.height / 2;
+                headerActionOrder.splice(fromIndex, 1);
+                const base = headerActionOrder.indexOf(id);
+                headerActionOrder.splice(insertBefore ? base : base + 1, 0, draggedId);
+                applyHeaderActions();
+                renderHeaderActionCards();
+            });
+
+            $list.append($card);
+        });
+
+        $(".t-header-action-chk").on("change", function () {
+            applyHeaderActions();
+            updateHeaderActionCount();
+        });
+        updateHeaderActionCount();
+    };
+
+    renderHeaderActionCards();
+
     // --- 诊断与日志逻辑 ---
     const renderLogView = () => {
         const logs = TitaniaLogger.logs;
@@ -2113,6 +2229,12 @@ export function openSettingsWindow() {
         // 逐字段写入，避免覆盖 script_sort_mode 等其它偏好
         if (!d.ui_prefs) d.ui_prefs = {};
         d.ui_prefs.main_window_mode = $("#p-main-window-mode").val() === "legacy" ? "legacy" : "modern";
+        // 顶栏图标勾选时已即时写入，这里再兜一次，跟其它设置一并落盘
+        if ($(".t-header-action-chk").length) {
+            d.ui_prefs.header_actions = headerActionOrder
+                .filter(id => $(`.t-header-action-chk[data-action-id="${id}"]`).is(":checked"))
+                .slice(0, HEADER_ACTION_MAX);
+        }
         d.director = { instruction: $("#set-dir-instruction").val().trim() };
 
         const clampInt = (value, min, max, fallback) => {

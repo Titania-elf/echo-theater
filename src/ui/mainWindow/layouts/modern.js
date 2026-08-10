@@ -28,6 +28,7 @@ import {
     getContinuationQuickDraft,
     setContinuationQuickDraft
 } from "../viewState.js";
+import { renderHeaderActionsHtml } from "../headerActions.js";
 
 export const id = "modern";
 
@@ -50,10 +51,7 @@ export function renderHtml(viewData) {
                     </div>
                 </div>
                 <div class="t-header-actions">
-                    <i class="fa-solid fa-store t-icon-btn" id="t-btn-workshop" title="回声工坊"></i>
-                    <i class="fa-solid fa-book-bookmark t-icon-btn" id="t-btn-favs" title="回声收藏夹"></i>
-                    <i class="fa-solid fa-ellipsis t-icon-btn" id="t-btn-more" title="更多"></i>
-                    <span class="t-close" id="t-btn-close">&times;</span>
+                    ${renderHeaderActionsHtml()}
                 </div>
             </div>
 

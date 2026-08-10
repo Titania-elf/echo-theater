@@ -50,6 +50,13 @@ import {
 } from "./mainWindow/viewState.js";
 import * as modernLayout from "./mainWindow/layouts/modern.js";
 import * as legacyLayout from "./mainWindow/layouts/legacy.js";
+import {
+    HEADER_ACTION_MAX,
+    getHeaderActions,
+    saveHeaderActions,
+    getOverflowActions,
+    renderHeaderActionsHtml
+} from "./mainWindow/headerActions.js";
 
 const SORT_MODE_LABELS = {
     default: "默认顺序",
@@ -1156,10 +1163,6 @@ export async function openMainWindow() {
 
     $("#t-btn-close").on("click", closeWindow);
     $("#t-overlay").on("click", (e) => { if (e.target === e.currentTarget) closeWindow(); });
-    $("#t-btn-profile").on("click", function (e) {
-        renderProfileMenu($(this));
-        e.stopPropagation();
-    });
     // 新建剧本 (点击后打开空编辑器)
     $("#t-btn-new").on("click", () => {
         // 传入 null 表示新建，第二个参数 'main' 表示从主窗口打开
@@ -1287,14 +1290,10 @@ export async function openMainWindow() {
             saveFavorite();
         }
     });
-    $("#t-btn-favs").on("click", openFavsWindow);
-    $("#t-btn-workshop").on("click", async () => {
-        const { openWorkshopWindow } = await import("./workshopWindow.js");
-        openWorkshopWindow('main');
-    });
-    $("#t-btn-more").on("click", function (e) {
-        renderMoreMenu($(this));
+    // 标题栏图标由用户自选，重绘后 id 会变，所以委托到窗口根节点而不是逐个绑定
+    $("#t-main-view").on("click", "[data-header-action]", function (e) {
         e.stopPropagation();
+        runHeaderAction(String($(this).data("header-action") || ""), $(this));
     });
     $("#t-btn-debug").on("click", async () => await showDebugInfo());
 
@@ -1420,6 +1419,8 @@ export async function openMainWindow() {
     window.updateRunButtonsState = updateRunButtonsState;
     window.updateFavButtonUI = updateFavButtonUI;
     window.updateScriptTitleDisplay = updateScriptTitleDisplay;
+    // 供设置窗口在改动顶栏图标后即时重绘（主窗口没开时函数不存在，调用方需守卫）
+    window.refreshHeaderActions = refreshHeaderActions;
 
     // --- [初始化阶段] ---
     // 1. 确定要显示的剧本：优先使用 lastGeneratedScriptId（如果有内容的话）
@@ -1780,25 +1781,29 @@ async function updateWorldInfoBadge() {
             });
         });
 
-        // 世界书图标已收进「更多」菜单，状态色转移到「更多」按钮上，
-        // 否则用户看不到「有条目未选」这类提示
-        const $icon = $("#t-btn-more");
+        // 状态色跟着世界书这个功能项走：它在顶栏就染自己的图标，
+        // 被收进「更多」时才降级染「更多」，否则用户看不到「有条目未选」这类提示
+        const onBar = $("#t-btn-worldinfo").length > 0;
+        const $icon = onBar ? $("#t-btn-worldinfo") : $("#t-btn-more");
+        // 世界书没上栏就必然是溢出项、「更多」必然存在；这里只是防御
+        if (!$icon.length) return;
+        const prefix = onBar ? "世界书筛选" : "更多 · 世界书";
         if (selectedCount > 0) {
             // 有选中条目时：图标变蓝色
             $icon.css("color", "#90cdf4");
-            $icon.attr("title", `更多 · 世界书已选 ${selectedCount}/${totalCount}`);
+            $icon.attr("title", `${prefix}已选 ${selectedCount}/${totalCount}`);
         } else if (totalCount > 0) {
             // 有条目但未选中：图标变橙色提醒
             $icon.css("color", "#bfa15f");
-            $icon.attr("title", `更多 · 世界书未选择任何条目`);
+            $icon.attr("title", `${prefix}未选择任何条目`);
         } else {
             // 无条目时：恢复默认灰色
             $icon.css("color", "");
-            $icon.attr("title", "更多");
+            $icon.attr("title", onBar ? "世界书筛选" : "更多");
         }
     } catch (e) {
         console.warn("Titania: 更新世界书图标状态失败", e);
-        $("#t-btn-more").css("color", "");
+        $("#t-btn-worldinfo, #t-btn-more").css("color", "");
     }
 }
 
@@ -2528,28 +2533,63 @@ function showScriptSelector(initialFilter = "ALL") {
 }
 
 /**
- * 渲染 API 方案切换菜单
+ * 执行一个标题栏动作。
+ * 顶栏图标和「更多」菜单共用这里，保证同一功能在两处行为一致。
+ * @param {string} id 注册表里的动作 id，"__more__" 表示打开溢出菜单
+ * @param {JQuery} $anchor 触发元素，供需要定位弹层的动作当锚点
  */
+async function runHeaderAction(id, $anchor) {
+    if (id === "__more__") {
+        renderMoreMenu($anchor);
+        return;
+    }
+    if (id === "favs") {
+        openFavsWindow();
+    } else if (id === "workshop") {
+        const { openWorkshopWindow } = await import("./workshopWindow.js");
+        openWorkshopWindow('main');
+    } else if (id === "worldinfo") {
+        openWorldInfoSelector();
+    } else if (id === "profiles") {
+        renderProfileMenu($anchor);
+    } else if (id === "settings") {
+        openSettingsWindow();
+    }
+}
+
+/**
+ * 重绘标题栏图标区。
+ * 点击靠委托，所以这里只换 HTML 不用重新绑定；世界书状态色的宿主可能变了，顺带刷新。
+ * 主窗口没开时静默跳过，设置窗口可以无条件调用。
+ */
+export function refreshHeaderActions() {
+    const $host = $("#t-main-view .t-header-actions");
+    if (!$host.length) return;
+    $host.html(renderHeaderActionsHtml());
+    updateWorldInfoBadge().catch(e => console.warn("Titania: 刷新世界书状态失败", e));
+}
+
 /**
  * 渲染标题栏「更多」菜单
- * 收纳低频的配置类入口，把标题栏留给收藏和工坊两条内容动线。
+ * 收纳没被固定到顶栏的功能项；每行带一个图钉，可直接提升到顶栏。
  * @param {JQuery} $targetBtn 锚点按钮，弹层定位到它下方
  */
 function renderMoreMenu($targetBtn) {
     if ($("#t-more-popover").length) { $("#t-more-popover").remove(); return; }
 
-    const items = [
-        { id: "worldinfo", icon: "fa-book-atlas", label: "世界书筛选" },
-        { id: "profiles", icon: "fa-network-wired", label: "API 方案" },
-        { id: "settings", icon: "fa-gear", label: "设置" }
-    ];
+    const items = getOverflowActions();
+    if (!items.length) return;
+
+    const isFull = getHeaderActions().length >= HEADER_ACTION_MAX;
+    const pinTitle = isFull ? `最多 ${HEADER_ACTION_MAX} 个，取消一个再选` : "固定到栏上";
 
     // 复用 t-filter-popover 的样式类，保持视觉一致
     const html = `
-    <div id="t-more-popover" class="t-filter-popover" style="width: 170px; z-index: 21000;">
+    <div id="t-more-popover" class="t-filter-popover" style="width: 190px; z-index: 21000;">
         ${items.map(it => `
-            <div class="t-filter-item" data-action="${it.id}">
+            <div class="t-filter-item t-more-item" data-action="${it.id}">
                 <span><i class="fa-solid ${it.icon}" style="width:1.1em; margin-right:8px;"></i>${it.label}</span>
+                <button type="button" class="t-more-pin" data-pin="${it.id}" title="${pinTitle}" aria-label="${pinTitle}" ${isFull ? "disabled" : ""}><i class="fa-solid fa-thumbtack"></i></button>
             </div>
         `).join('')}
     </div>`;
@@ -2559,7 +2599,7 @@ function renderMoreMenu($targetBtn) {
 
     // 定位逻辑：贴着锚点下方，右侧超出视口时改为右对齐
     const rect = $targetBtn[0].getBoundingClientRect();
-    const left = (rect.left + 170 > window.innerWidth) ? (rect.right - 170) : rect.left;
+    const left = (rect.left + 190 > window.innerWidth) ? (rect.right - 190) : rect.left;
     pop.css({ top: rect.bottom + 10, left: left });
 
     const closeMenu = () => {
@@ -2567,19 +2607,27 @@ function renderMoreMenu($targetBtn) {
         $(document).off("click.closemore");
     };
 
+    // 图钉：把该项提升到顶栏。必须挡住冒泡，否则会连带触发整行的主动作。
+    $(".t-more-pin", pop).on("click", function (e) {
+        e.stopPropagation();
+        if ($(this).prop("disabled")) return;
+        const id = String($(this).data("pin") || "");
+        const meta = getOverflowActions().find(item => item.id === id);
+        const next = [...getHeaderActions(), id];
+        if (next.length > HEADER_ACTION_MAX) return;
+        saveHeaderActions(next);
+        // 锚点「更多」可能因为溢出项清空而消失，所以关掉弹层而不是重新定位
+        closeMenu();
+        refreshHeaderActions();
+        if (window.toastr && meta) toastr.success(`已把「${meta.label}」固定到标题栏`, "Titania");
+    });
+
     $(".t-filter-item", pop).on("click", function () {
-        const action = $(this).data("action");
+        const action = String($(this).data("action") || "");
 
         // 先收起本菜单再执行，避免 API 方案的弹层跟这层叠在一起
         closeMenu();
-
-        if (action === "worldinfo") {
-            openWorldInfoSelector();
-        } else if (action === "profiles") {
-            renderProfileMenu($targetBtn);
-        } else if (action === "settings") {
-            openSettingsWindow();
-        }
+        runHeaderAction(action, $targetBtn);
     });
 
     // 点击外部关闭
