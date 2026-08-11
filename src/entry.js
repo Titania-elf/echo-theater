@@ -21,6 +21,8 @@ import { createFloatingButton, destroyFloatingButton, refreshFloatingTuck } from
 import { applyCustomCSS, applyFontSettings, applyUIFontScale } from "./ui/settingsWindow.js";
 import { initOutlineEntryButton } from "./ui/outlineEntryButton.js";
 import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteEntryButton.js";
+import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
+import { isInjectedTheaterMessage } from "./core/chatInjector.js";
 import { refreshOutlineEntryButton } from "./ui/outlineEntryButton.js";
 import {
     checkUnsavedVectors,
@@ -61,6 +63,8 @@ async function onGenerationEnded() {
     if (lastMsg.is_user) return;
     if (lastMsg.is_system) return;
     if (lastMsg.is_hidden) return;
+    // 插件自己注入的小剧场不该再触发一轮自动演绎
+    if (isInjectedTheaterMessage(lastMsg)) return;
 
     // 5. 概率检查
     const chance = cfg.auto_chance || 50;
@@ -179,6 +183,9 @@ function initCoreFeatures() {
 
     // 初始化文本改写快捷栏入口按钮
     initRewriteEntryButton();
+
+    // 初始化消息气泡上的小剧场注入入口
+    initChatInjectButton();
 }
 
 /**
@@ -505,6 +512,12 @@ async function loadExtensionSettings() {
         extData.outline_entry.show_outline_actions = true;
     }
     if (!extData.rewrite_entry || typeof extData.rewrite_entry !== "object") extData.rewrite_entry = { enabled: false };
+    if (!extData.chat_inject || typeof extData.chat_inject !== "object") {
+        extData.chat_inject = { enabled: true, visible_to_ai: true, speaker_name: "回声小剧场" };
+    }
+    if (typeof extData.chat_inject.enabled !== "boolean") extData.chat_inject.enabled = true;
+    if (typeof extData.chat_inject.visible_to_ai !== "boolean") extData.chat_inject.visible_to_ai = true;
+    if (!String(extData.chat_inject.speaker_name || "").trim()) extData.chat_inject.speaker_name = "回声小剧场";
     if (!extData.quick_toolbar || typeof extData.quick_toolbar !== "object") extData.quick_toolbar = {};
     if (!extData.quick_toolbar.enabled_items || typeof extData.quick_toolbar.enabled_items !== "object") {
         extData.quick_toolbar.enabled_items = {};
@@ -520,6 +533,7 @@ async function loadExtensionSettings() {
     $("#cfg-outline-theater-enabled").prop("checked", extData.outline_entry.show_theater === true);
     $("#cfg-outline-actions-enabled").prop("checked", extData.outline_entry.show_outline_actions === true);
     $("#cfg-rewrite-entry-enabled").prop("checked", extData.rewrite_entry.enabled === true);
+    $("#cfg-chat-inject-enabled").prop("checked", extData.chat_inject.enabled === true);
     $("#cfg-toolbar-lore-enabled").prop("checked", extData.quick_toolbar.enabled_items.lore === true);
     $("#cfg-toolbar-recall-enabled").prop("checked", extData.quick_toolbar.enabled_items.recall === true);
 
@@ -578,6 +592,18 @@ async function loadExtensionSettings() {
         saveExtData();
         refreshRewriteEntryButton();
         if (window.toastr) toastr.success(enabled ? "文本改写入口已启用" : "文本改写入口已关闭", "Titania Echo");
+    });
+
+    $("#cfg-chat-inject-enabled").on("input", function () {
+        const enabled = $(this).prop("checked") === true;
+        const data = getExtData();
+        if (!data.chat_inject || typeof data.chat_inject !== "object") {
+            data.chat_inject = { enabled: true, visible_to_ai: true, speaker_name: "回声小剧场" };
+        }
+        data.chat_inject.enabled = enabled;
+        saveExtData();
+        refreshChatInjectButton();
+        if (window.toastr) toastr.success(enabled ? "小剧场注入入口已启用" : "小剧场注入入口已关闭", "Titania Echo");
     });
 
     $("#cfg-toolbar-lore-enabled").on("input", function () {

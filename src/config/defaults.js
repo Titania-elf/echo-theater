@@ -144,6 +144,12 @@ export const defaultSettings = {
         show_theater: true,
         show_outline_actions: true
     },
+    // 小剧场注入聊天（挂在每条消息气泡的「…」菜单里）
+    chat_inject: {
+        enabled: true,
+        visible_to_ai: true,      // 注入时默认让 AI 看到；注入后可用气泡上的眼睛图标切换
+        speaker_name: "回声小剧场" // 仅界面显示用，narrator 类型不会把名字带进提示词
+    },
     // 文本改写入口（显示在故事大纲菜单中）
     rewrite_entry: {
         enabled: false,
