@@ -105,7 +105,9 @@ const buildOptions = {
         '../../../openai.js',
         '../../../macros.js',
         '../../../sse-stream.js',
-        '../../../tokenizers.js'
+        '../../../tokenizers.js',
+        '../../../system-messages.js',
+        '../../../RossAscends-mods.js'
     ],
 
     // 保留原始模块路径（相对于 dist 目录）

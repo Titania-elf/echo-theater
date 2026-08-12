@@ -90,6 +90,22 @@
                 </label>
 
                 <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-chat-inject-enabled" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">启用小剧场注入入口</span>
+                        <small>在每条消息气泡的「…」菜单中显示注入按钮，可把已生成的小剧场插入到该楼层下方。</small>
+                    </span>
+                </label>
+
+                <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-preset-persist-vars" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">允许预设变量写入聊天存档</span>
+                        <small>关闭时（推荐）预设里的 {{setvar}} 只在本次提示词构建内生效，不污染聊天存档；提示词展开结果不受影响。仅当预设依赖变量跨次留存时才需要开启。</small>
+                    </span>
+                </label>
+
+                <label class="checkbox_label titania-switch-row">
                     <input id="cfg-toolbar-lore-enabled" type="checkbox" />
                     <span class="titania-switch-text">
                         <span class="titania-switch-main">启用提取设定快捷入口</span>

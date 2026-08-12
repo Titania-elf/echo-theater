@@ -4,7 +4,7 @@ export const extensionName = "Titania_Theater_Echo";
 export const extensionFolderPath = `scripts/extensions/third-party/titania-theater`;
 
 // 当前版本号 (每次更新时修改这里)
-export const CURRENT_VERSION = "5.2.0";
+export const CURRENT_VERSION = "5.2.2";
 
 // 旧版 Key (用于迁移检测)
 export const LEGACY_KEYS = {
@@ -79,10 +79,15 @@ export const defaultSettings = {
     director: {
         instruction: ""  // 自由编辑的导演指令
     },
-    // 世界书条目筛选配置
+    // 世界书条目筛选配置（按角色卡隔离）
     worldinfo: {
-        char_selections: {}  // { "角色名": { "世界书名": [uid1, uid2, ...] } }
-        // 用户选择的条目会被保存在这里，首次使用时默认全选
+        // { "card:<avatar 去扩展名>": { "世界书名": [uid1, uid2, ...] } }
+        // 键用 avatar 而非角色名：同名角色卡必须各自独立，否则会互相激活对方的世界书
+        card_selections: {},
+        // { "card:<avatar>": ["世界书名", ...] } 需要额外激活的书（由选中条目推导）
+        card_auto_active_books: {},
+        // 旧的名字键配置，保留供读取回退（仅当该名字只有一张卡时才继承）
+        char_selections: {}
     },
     // 自动续写配置 (应对 API 超时截断)
     auto_continue: {
@@ -143,6 +148,18 @@ export const defaultSettings = {
         enabled: true,
         show_theater: true,
         show_outline_actions: true
+    },
+    // 小剧场注入聊天（挂在每条消息气泡的「…」菜单里）
+    chat_inject: {
+        enabled: true,
+        visible_to_ai: true,      // 注入时默认让 AI 看到；注入后可用气泡上的眼睛图标切换
+        speaker_name: "回声小剧场" // 仅界面显示用，narrator 类型不会把名字带进提示词
+    },
+    // 导入预设的宏求值行为
+    preset_macros: {
+        // 预设里的 {{setvar::}} 等写入宏默认只在本次提示词构建内有效，构建完成后还原，
+        // 不写进用户的聊天存档。开启后写入照常落盘（少数依赖变量跨次留存的预设才需要）。
+        persist_variables: false
     },
     // 文本改写入口（显示在故事大纲菜单中）
     rewrite_entry: {

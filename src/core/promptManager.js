@@ -1,6 +1,10 @@
 // 提示词方案模型与统一消息构造器
 
 import { estimateTokens } from "../utils/helpers.js";
+// 只取常量：defaults.js 是纯常量模块，没有 import，不会成环。
+// 不能从 utils/storage.js 取 getExtData —— storage.js 反过来 import 了本模块的
+// ensurePromptManager，会形成循环依赖。配置直接从 ST 的 extension_settings 读。
+import { extensionName } from "../config/defaults.js";
 
 export const DEFAULT_CONTENT_PROMPT = "You are a creative engine. Output ONLY valid HTML content inside a <div> with Inline CSS. Do NOT use markdown code blocks. Language: Chinese.";
 
@@ -505,10 +509,105 @@ function resolveMacro(marker, runtimeContext, originalText) {
     return originalText;
 }
 
+/**
+ * 预设宏相关配置。
+ * @returns {{ persistVariables: boolean }}
+ */
+export function getPresetMacroConfig() {
+    try {
+        const ctx = typeof SillyTavern !== "undefined" ? SillyTavern.getContext?.() : null;
+        const data = ctx?.extensionSettings?.[extensionName];
+        const cfg = data?.preset_macros;
+        return { persistVariables: cfg?.persist_variables === true };
+    } catch {
+        return { persistVariables: false };
+    }
+}
+
+/**
+ * 交给 ST 自己的宏引擎求值。
+ *
+ * 这里刻意不自己实现变量宏：substituteParamsExtended（script.js:2651）内部走 evaluateMacros，
+ * 而 evaluateMacros 已经包含 getVariableMacros()（macros.js:519），也就是 {{getvar::}}、
+ * {{setvar::}} 等全部 10 个变量宏（variables.js:241-259）。顺带还拿到角色卡环境
+ * （description / personality / scenario / persona / mesExamples / group…）、时间、随机、
+ * 骰子、{{//注释}}、{{lastMessage}} 系列，以及其他扩展注册的宏和将来 ST 新增的宏。
+ *
+ * 手写复刻那 10 条正则会把 ST 的语义（addvar 是拼接还是加法、incvar 边界、索引参数）
+ * 抄一份，ST 一改就漂移。用 ST 的引擎，一致性是构造出来的。
+ *
+ * @param {string} content
+ * @returns {string}
+ */
+function safeSubstituteParams(content) {
+    const source = String(content || "");
+    if (!source.includes("{{")) return source;
+
+    try {
+        const ctx = typeof SillyTavern !== "undefined" ? SillyTavern.getContext?.() : null;
+        const substitute = ctx?.substituteParamsExtended || ctx?.substituteParams;
+        if (typeof substitute !== "function") return source;
+        return String(substitute.call(ctx, source) ?? source);
+    } catch (e) {
+        console.warn("Titania: ST 宏求值失败，保留原文", e);
+        return source;
+    }
+}
+
+/**
+ * 变量沙箱：构建提示词前给 ST 的变量存储拍快照，构建完成后还原。
+ *
+ * 为什么需要：{{setvar::}} 这类写入宏会真的改 chat_metadata.variables，并且
+ * setLocalVariable 结尾会 saveMetadataDebounced()（variables.js:79）落盘。很多预设
+ * 拿变量当「提示词组装草稿纸」，一次构建就会写进几十个通用名变量（content、summary、
+ * language、speed、thinking…），极易与主对话自己的变量撞名。
+ *
+ * 关键点：还原发生在提示词**构建完成之后**，所以提示词的展开结果与 ST 完全一致，
+ * 被丢弃的只是构建过程中的记账副作用。
+ *
+ * @returns {() => void} 还原函数
+ */
+export function beginVariableSandbox() {
+    if (getPresetMacroConfig().persistVariables) return () => {};
+
+    let ctx = null;
+    try {
+        ctx = typeof SillyTavern !== "undefined" ? SillyTavern.getContext?.() : null;
+    } catch {
+        return () => {};
+    }
+    if (!ctx) return () => {};
+
+    // ctx.chatMetadata / ctx.extensionSettings 就是 chat_metadata / extension_settings 本体，
+    // 所以直接改它们的属性等价于改 ST 的存储，无需额外 import。
+    const chatMetadata = ctx.chatMetadata;
+    const extensionSettings = ctx.extensionSettings;
+    const localSnapshot = chatMetadata && typeof chatMetadata.variables === "object" && chatMetadata.variables
+        ? { ...chatMetadata.variables }
+        : null;
+    const globalStore = extensionSettings?.variables;
+    const globalSnapshot = globalStore && typeof globalStore.global === "object" && globalStore.global
+        ? { ...globalStore.global }
+        : null;
+
+    return () => {
+        try {
+            if (chatMetadata && localSnapshot) chatMetadata.variables = localSnapshot;
+            if (globalStore && globalSnapshot) globalStore.global = globalSnapshot;
+        } catch (e) {
+            console.warn("Titania: 变量沙箱还原失败", e);
+        }
+    };
+}
+
 function resolveEntryContent(entry, contentByEntry, runtimeContext) {
     let content = Object.prototype.hasOwnProperty.call(contentByEntry, entry.id)
         ? String(contentByEntry[entry.id] || "")
         : String(entry.content || "");
+    // 1. 先跑 ST 全套宏，只作用于预设作者自己写的文本
+    content = safeSubstituteParams(content);
+    // 2. 再展开插件专属标记。必须在后面：它注入的是聊天历史、剧本正文、世界书等大段内容，
+    //    其中可能含 {{...}} 字面量，提前注入会被二次求值误伤（参见 api.js:1464-1465 的同类顾虑）。
     content = content.replace(/\{\{\s*([\w-]+)\s*\}\}/g, (match, marker) => resolveMacro(marker, runtimeContext, match));
     if (entry.marker) content = resolveMacro(entry.marker, runtimeContext, `{{${entry.marker}}}`);
     return content;
@@ -516,25 +615,34 @@ function resolveEntryContent(entry, contentByEntry, runtimeContext) {
 
 export function buildPromptMessageDetails(scheme, contentByEntry = {}, runtimeContext = {}) {
     if (!scheme || !Array.isArray(scheme.entries)) return [];
-    return scheme.entries
-        .filter(entry => entry?.enabled !== false)
-        .map(entry => {
-            const content = resolveEntryContent(entry, contentByEntry, runtimeContext);
-            return {
-                entryId: entry.id || "",
-                sourceIdentifier: entry.source_identifier || null,
-                name: entry.name || entry.source_identifier || "未命名条目",
-                role: MESSAGE_ROLES.includes(entry.role) ? entry.role : "user",
-                type: entry.type || "text",
-                marker: entry.marker || null,
-                required: entry.required === true,
-                content,
-                chars: content.length,
-                tokens: estimateTokens(content)
-            };
-        })
-        .filter(message => message.content.length > 0)
-        .map((message, index) => ({ ...message, index }));
+    // 变量宏跨条目可见（重置 → 赋值 → 组装），所以整次构建共享一次沙箱。
+    // filter + map 全程同步，中间没有 await，外部观察不到临时改动。
+    const restoreVariables = beginVariableSandbox();
+    try {
+        return scheme.entries
+            .filter(entry => entry?.enabled !== false)
+            .map(entry => {
+                const content = resolveEntryContent(entry, contentByEntry, runtimeContext);
+                return {
+                    entryId: entry.id || "",
+                    sourceIdentifier: entry.source_identifier || null,
+                    name: entry.name || entry.source_identifier || "未命名条目",
+                    role: MESSAGE_ROLES.includes(entry.role) ? entry.role : "user",
+                    type: entry.type || "text",
+                    marker: entry.marker || null,
+                    required: entry.required === true,
+                    content,
+                    chars: content.length,
+                    tokens: estimateTokens(content)
+                };
+            })
+            // 纯副作用条目（整条都是 {{setvar::}}）求值后只剩换行，不该变成一条消息。
+            // 宏生效前它们是非空的原始文本，所以以前一直漏进消息列表。
+            .filter(message => message.content.trim().length > 0)
+            .map((message, index) => ({ ...message, index }));
+    } finally {
+        restoreVariables();
+    }
 }
 
 /**

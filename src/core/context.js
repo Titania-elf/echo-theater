@@ -149,10 +149,9 @@ export async function getContextData() {
     // --- 2. 加载并筛选世界书条目 ---
     const contentParts = [];
 
-    // 获取世界书筛选配置
+    // 获取世界书筛选配置（按角色卡隔离，同名卡不再互相串味）
     const extData = getExtData();
-    const wiConfig = extData.worldinfo || { char_selections: {} };
-    const charSelections = wiConfig.char_selections[data.charName] || null;
+    const charSelections = readWorldInfoSelections(extData, ctx, data.charName);
 
     for (const bookName of activeBooks) {
         const bookData = await safeLoadWorldInfo(ctx, bookName);
@@ -239,22 +238,167 @@ function getCurrentCharNameFromContext(ctx) {
     }
 }
 
-function getLocalAutoActiveBooks(charName) {
-    const extData = getExtData();
-    const wiConfig = extData.worldinfo || {};
+/* ------------------------------------------------------------------ *
+ * 角色卡身份
+ *
+ * 世界书筛选配置过去以「角色显示名」为键（char_selections["小明"]），导致同名角色卡
+ * 共用同一份配置：A 卡在书A 里勾了条目，B 卡（同名、实际挂书B）会连带把书A 判为已激活
+ * 并注入其条目。ST 自己是靠 avatar 文件名区分卡片的——collectSessionActiveBooks 里
+ * 匹配 charLore 时就已经在用 avatar 了，只是没用在这份配置上。
+ *
+ * 所以改用 avatar 作为键。群聊里 characterId 为 undefined，退回名字键但加前缀命名空间，
+ * 避免与 avatar 键混淆。
+ * ------------------------------------------------------------------ */
 
-    const explicit = wiConfig.char_auto_active_books?.[charName];
-    if (Array.isArray(explicit)) return explicit;
+const CARD_KEY_PREFIX = "card:";
+const NAME_KEY_PREFIX = "name:";
 
-    const legacySelections = wiConfig.char_selections?.[charName];
-    if (legacySelections && typeof legacySelections === "object") {
-        return Object.keys(legacySelections).filter(bookName => {
-            const selected = legacySelections[bookName];
-            return Array.isArray(selected) && selected.length > 0;
-        });
+/**
+ * 当前角色卡的稳定标识。
+ * @param {object} [stCtx] SillyTavern.getContext() 的结果，缺省时自行获取
+ * @returns {string}
+ */
+export function getCharacterCardKey(stCtx = null) {
+    let ctx = stCtx;
+    try {
+        if (!ctx && typeof SillyTavern !== "undefined") ctx = SillyTavern.getContext?.();
+    } catch {
+        ctx = null;
+    }
+    if (!ctx) return `${NAME_KEY_PREFIX}Char`;
+
+    const charId = ctx.characterId;
+    if (charId !== undefined && charId !== null) {
+        const avatar = String(ctx.characters?.[charId]?.avatar || "").trim();
+        // 去掉扩展名，与 charLore 的匹配口径一致（见 collectSessionActiveBooks）
+        if (avatar) return CARD_KEY_PREFIX + avatar.replace(/\.[^/.]+$/, "");
     }
 
+    return NAME_KEY_PREFIX + getCurrentCharNameFromContext(ctx);
+}
+
+/**
+ * 这个名字是否被多张卡共用。用于判断旧配置能否安全地认领给当前卡。
+ * @param {object} ctx
+ * @param {string} charName
+ * @returns {boolean}
+ */
+function isNameSharedByMultipleCards(ctx, charName) {
+    const characters = Array.isArray(ctx?.characters) ? ctx.characters : [];
+    const target = String(charName || "").trim();
+    if (!target) return false;
+    let seen = 0;
+    for (const item of characters) {
+        if (String(item?.name || "").trim() === target && ++seen > 1) return true;
+    }
+    return false;
+}
+
+function getWorldInfoConfig(extData) {
+    const wiConfig = extData.worldinfo && typeof extData.worldinfo === "object" ? extData.worldinfo : {};
+    return {
+        cardSelections: wiConfig.card_selections && typeof wiConfig.card_selections === "object" ? wiConfig.card_selections : null,
+        cardAutoActiveBooks: wiConfig.card_auto_active_books && typeof wiConfig.card_auto_active_books === "object" ? wiConfig.card_auto_active_books : null,
+        legacySelections: wiConfig.char_selections && typeof wiConfig.char_selections === "object" ? wiConfig.char_selections : null,
+        legacyAutoActiveBooks: wiConfig.char_auto_active_books && typeof wiConfig.char_auto_active_books === "object" ? wiConfig.char_auto_active_books : null
+    };
+}
+
+let legacyAmbiguityNotified = false;
+
+function notifyLegacyAmbiguityOnce(charName) {
+    if (legacyAmbiguityNotified) return;
+    legacyAmbiguityNotified = true;
+    console.warn(`Titania: 检测到多张角色卡共用名称「${charName}」，旧的世界书筛选配置已按卡片隔离，需要重新选择一次条目。`);
+    if (typeof window !== "undefined" && window.toastr) {
+        window.toastr.info(
+            `检测到多张角色卡共用名称「${charName}」。世界书筛选已改为按卡片独立保存，这张卡需要重新选择一次条目。`,
+            "Titania Echo",
+            { timeOut: 9000 }
+        );
+    }
+}
+
+/**
+ * 旧的名字键配置是否可以被当前卡继承。
+ * 名字唯一时可以（对绝大多数用户零影响）；被多张卡共用时不行——那正是串味的来源，
+ * 无法判断这份配置原本属于哪张卡，只能让每张卡从干净状态开始。
+ *
+ * @param {boolean} hasLegacyData 该名字下确实存在旧配置。只有「有东西却拒绝继承」时才提示用户，
+ *   否则没有旧数据的用户也会收到「需要重新选择」的误报。
+ */
+function canInheritLegacy(ctx, charName, hasLegacyData) {
+    if (!isNameSharedByMultipleCards(ctx, charName)) return true;
+    if (hasLegacyData) notifyLegacyAmbiguityOnce(charName);
+    return false;
+}
+
+/**
+ * 读取当前卡的世界书条目筛选。
+ * @returns {object|null} null 表示从未保存过（沿用「默认不选任何条目」的既有语义）
+ */
+export function readWorldInfoSelections(extData, ctx, charName) {
+    const cfg = getWorldInfoConfig(extData);
+    const cardKey = getCharacterCardKey(ctx);
+
+    const byCard = cfg.cardSelections?.[cardKey];
+    if (byCard && typeof byCard === "object") return byCard;
+
+    const legacy = cfg.legacySelections?.[charName];
+    const hasLegacy = Boolean(legacy && typeof legacy === "object");
+    if (hasLegacy && canInheritLegacy(ctx, charName, true)) return legacy;
+
+    return null;
+}
+
+/**
+ * 读取当前卡需要额外激活的世界书名单。
+ * @returns {string[]}
+ */
+export function readAutoActiveBooks(extData, ctx, charName) {
+    const cfg = getWorldInfoConfig(extData);
+    const cardKey = getCharacterCardKey(ctx);
+
+    const deriveFromSelections = selections => Object.keys(selections).filter(bookName => {
+        const selected = selections[bookName];
+        return Array.isArray(selected) && selected.length > 0;
+    });
+
+    const byCard = cfg.cardAutoActiveBooks?.[cardKey];
+    if (Array.isArray(byCard)) return byCard;
+
+    const cardSelections = cfg.cardSelections?.[cardKey];
+    if (cardSelections && typeof cardSelections === "object") return deriveFromSelections(cardSelections);
+
+    const legacyExplicit = cfg.legacyAutoActiveBooks?.[charName];
+    const legacySelections = cfg.legacySelections?.[charName];
+    const hasLegacy = Array.isArray(legacyExplicit) || Boolean(legacySelections && typeof legacySelections === "object");
+    if (!canInheritLegacy(ctx, charName, hasLegacy)) return [];
+
+    if (Array.isArray(legacyExplicit)) return legacyExplicit;
+    if (legacySelections && typeof legacySelections === "object") return deriveFromSelections(legacySelections);
+
     return [];
+}
+
+/**
+ * 写入当前卡的世界书配置。只写卡片键，旧的名字键原样保留（不删，便于回退）。
+ * @returns {string} 实际写入的卡片键
+ */
+export function writeWorldInfoSelections(extData, ctx, selections, autoActiveBooks) {
+    if (!extData.worldinfo || typeof extData.worldinfo !== "object") extData.worldinfo = {};
+    const wiConfig = extData.worldinfo;
+    if (!wiConfig.card_selections || typeof wiConfig.card_selections !== "object") wiConfig.card_selections = {};
+    if (!wiConfig.card_auto_active_books || typeof wiConfig.card_auto_active_books !== "object") wiConfig.card_auto_active_books = {};
+
+    const cardKey = getCharacterCardKey(ctx);
+    wiConfig.card_selections[cardKey] = selections;
+    wiConfig.card_auto_active_books[cardKey] = Array.isArray(autoActiveBooks) ? autoActiveBooks : [];
+    return cardKey;
+}
+
+function getLocalAutoActiveBooks(charName, ctx = null) {
+    return readAutoActiveBooks(getExtData(), ctx, charName);
 }
 
 function collectSessionActiveBooks(ctx, wiVars, charName = "Char", includeLocalAuto = false) {
@@ -291,7 +435,7 @@ function collectSessionActiveBooks(ctx, wiVars, charName = "Char", includeLocalA
     }
 
     if (includeLocalAuto) {
-        const localAutoBooks = getLocalAutoActiveBooks(charName);
+        const localAutoBooks = getLocalAutoActiveBooks(charName, ctx);
         localAutoBooks.forEach(name => activeBooks.add(name));
     }
 
