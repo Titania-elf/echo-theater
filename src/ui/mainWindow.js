@@ -20,7 +20,7 @@ import {
     isFavoriteEligible,
     setCurrentGenerationResult
 } from "../core/state.js";
-import { getContextData, getActiveWorldInfoEntries, getAllWorldBookNames, getWorldInfoEntriesByBookName, getActiveWorldBookNames } from "../core/context.js";
+import { getContextData, getActiveWorldInfoEntries, getAllWorldBookNames, getWorldInfoEntriesByBookName, getActiveWorldBookNames, readWorldInfoSelections, writeWorldInfoSelections } from "../core/context.js";
 import { handleGenerate, handleUserContinuation, renderGeneratedContent, executeQueueGeneration, cancelQueueGeneration, cancelGeneration, getContinuationSessionStats, getContinuationBranches, copyContinuationBranchToCurrentChat, findContinuationRoundByContent, syncEditedContentToContinuationSession } from "../core/api.js";
 import { openFavsWindow, saveFavorite, unsaveFavorite } from "./favsWindow.js";
 import { showDebugInfo, showDiagnosticsWindow } from "./debugWindow.js";
@@ -1764,7 +1764,12 @@ async function updateWorldInfoBadge() {
         let totalCount = 0;
         let selectedCount = 0;
 
-        const charSelections = data.worldinfo?.char_selections?.[ctx.charName] || null;
+        // 与生成路径同一套解析：按角色卡隔离，避免同名卡的统计互相污染
+        let stCtx = null;
+        try {
+            if (typeof SillyTavern !== "undefined") stCtx = SillyTavern.getContext?.() || null;
+        } catch { stCtx = null; }
+        const charSelections = readWorldInfoSelections(data, stCtx, ctx.charName);
 
         entries.forEach(book => {
             book.entries.forEach(entry => {
@@ -1824,12 +1829,14 @@ async function openWorldInfoSelector() {
             if (typeof SillyTavern !== "undefined" && SillyTavern.getContext) {
                 const stCtx = SillyTavern.getContext();
                 const charName = stCtx?.substituteParams?.("{{char}}") || "Char";
-                return { charName };
+                // stCtx 要一路带下去：世界书配置按角色卡（avatar）隔离，
+                // 光有 charName 无法区分同名卡
+                return { charName, stCtx };
             }
         } catch (e) {
             console.warn("Titania: 获取世界书窗口上下文失败", e);
         }
-        return { charName: "Char" };
+        return { charName: "Char", stCtx: null };
     };
 
     const loadingHtml = `
@@ -1895,12 +1902,11 @@ async function openWorldInfoSelector() {
     }
 
     const data = getExtData();
-    if (!data.worldinfo) data.worldinfo = { char_selections: {}, char_auto_active_books: {} };
-    if (!data.worldinfo.char_selections) data.worldinfo.char_selections = {};
-    if (!data.worldinfo.char_auto_active_books) data.worldinfo.char_auto_active_books = {};
+    if (!data.worldinfo) data.worldinfo = {};
 
     const charName = ctx.charName;
-    const savedSelections = data.worldinfo.char_selections[charName] || null;
+    // 按角色卡（avatar）隔离读取；名字唯一时仍可继承旧的名字键配置
+    const savedSelections = readWorldInfoSelections(data, ctx.stCtx, charName);
     const workingSelections = savedSelections ? structuredClone(savedSelections) : {};
     const allBooks = Array.isArray(allBookNames) ? allBookNames.slice() : [];
     const baseActiveBooks = Array.isArray(activeBookNames)
@@ -2327,8 +2333,7 @@ async function openWorldInfoSelector() {
     $("#t-wi-save").on("click", () => {
         if (!currentBookName && !Object.keys(workingSelections).length) return;
 
-        data.worldinfo.char_selections[charName] = workingSelections;
-        data.worldinfo.char_auto_active_books[charName] = getAutoActiveBooksFromSelections();
+        writeWorldInfoSelections(data, ctx.stCtx, workingSelections, getAutoActiveBooksFromSelections());
         saveExtData();
         updateWorldInfoBadge();
         if (window.toastr) toastr.success("世界书设置已保存");

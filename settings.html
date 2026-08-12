@@ -98,6 +98,14 @@
                 </label>
 
                 <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-preset-persist-vars" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">允许预设变量写入聊天存档</span>
+                        <small>关闭时（推荐）预设里的 {{setvar}} 只在本次提示词构建内生效，不污染聊天存档；提示词展开结果不受影响。仅当预设依赖变量跨次留存时才需要开启。</small>
+                    </span>
+                </label>
+
+                <label class="checkbox_label titania-switch-row">
                     <input id="cfg-toolbar-lore-enabled" type="checkbox" />
                     <span class="titania-switch-text">
                         <span class="titania-switch-main">启用提取设定快捷入口</span>

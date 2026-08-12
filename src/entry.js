@@ -518,6 +518,12 @@ async function loadExtensionSettings() {
     if (typeof extData.chat_inject.enabled !== "boolean") extData.chat_inject.enabled = true;
     if (typeof extData.chat_inject.visible_to_ai !== "boolean") extData.chat_inject.visible_to_ai = true;
     if (!String(extData.chat_inject.speaker_name || "").trim()) extData.chat_inject.speaker_name = "回声小剧场";
+    if (!extData.preset_macros || typeof extData.preset_macros !== "object") {
+        extData.preset_macros = { persist_variables: false };
+    }
+    if (typeof extData.preset_macros.persist_variables !== "boolean") {
+        extData.preset_macros.persist_variables = false;
+    }
     if (!extData.quick_toolbar || typeof extData.quick_toolbar !== "object") extData.quick_toolbar = {};
     if (!extData.quick_toolbar.enabled_items || typeof extData.quick_toolbar.enabled_items !== "object") {
         extData.quick_toolbar.enabled_items = {};
@@ -534,6 +540,7 @@ async function loadExtensionSettings() {
     $("#cfg-outline-actions-enabled").prop("checked", extData.outline_entry.show_outline_actions === true);
     $("#cfg-rewrite-entry-enabled").prop("checked", extData.rewrite_entry.enabled === true);
     $("#cfg-chat-inject-enabled").prop("checked", extData.chat_inject.enabled === true);
+    $("#cfg-preset-persist-vars").prop("checked", extData.preset_macros.persist_variables === true);
     $("#cfg-toolbar-lore-enabled").prop("checked", extData.quick_toolbar.enabled_items.lore === true);
     $("#cfg-toolbar-recall-enabled").prop("checked", extData.quick_toolbar.enabled_items.recall === true);
 
@@ -604,6 +611,22 @@ async function loadExtensionSettings() {
         saveExtData();
         refreshChatInjectButton();
         if (window.toastr) toastr.success(enabled ? "小剧场注入入口已启用" : "小剧场注入入口已关闭", "Titania Echo");
+    });
+
+    $("#cfg-preset-persist-vars").on("input", function () {
+        const enabled = $(this).prop("checked") === true;
+        const data = getExtData();
+        if (!data.preset_macros || typeof data.preset_macros !== "object") {
+            data.preset_macros = { persist_variables: false };
+        }
+        data.preset_macros.persist_variables = enabled;
+        saveExtData();
+        if (window.toastr) {
+            toastr.success(
+                enabled ? "预设变量将写入聊天存档" : "预设变量只在本次提示词构建内生效",
+                "Titania Echo"
+            );
+        }
     });
 
     $("#cfg-toolbar-lore-enabled").on("input", function () {
