@@ -83,9 +83,12 @@ function formatRelativeTime(ts) {
 }
 
 const SORT_MODES = {
+    newest: { label: "最新发布", fn: (a, b) =>
+        (b.created_at || b.updated_at || 0) - (a.created_at || a.updated_at || 0)
+        || (b.updated_at || 0) - (a.updated_at || 0)
+        || String(b.id).localeCompare(String(a.id)) },
     latest: { label: "最新更新", fn: (a, b) => (b.updated_at || 0) - (a.updated_at || 0) },
     downloads: { label: "下载最多", fn: (a, b) => (b.downloads || 0) - (a.downloads || 0) },
-    newest: { label: "最新发布", fn: (a, b) => (b.created_at || 0) - (a.created_at || 0) },
     name: { label: "名称 A-Z", fn: (a, b) => String(a.name).localeCompare(String(b.name), "zh-CN") }
 };
 
@@ -95,7 +98,7 @@ const SORT_MODES = {
  */
 export function openWorkshopWindow(source = 'manager') {
     let allItems = [];
-    let currentFilter = { category: "全部", search: "", sort: "latest" };
+    let currentFilter = { category: "全部", search: "", sort: "newest" };
 
     // 兜底：来源传错就按实际打开的窗口纠正。
     // #t-overlay 是 flex 容器，漏隐藏上一层窗口会变成两个窗口并排。
@@ -185,7 +188,7 @@ export function openWorkshopWindow(source = 'manager') {
             }
             return true;
         });
-        const sorter = SORT_MODES[currentFilter.sort] || SORT_MODES.latest;
+        const sorter = SORT_MODES[currentFilter.sort] || SORT_MODES.newest;
         return list.sort(sorter.fn);
     };
 

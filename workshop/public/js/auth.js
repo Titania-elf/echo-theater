@@ -6,17 +6,17 @@ let cached = null;
 
 export async function getSession({ force = false } = {}) {
     if (cached && !force) return cached;
-    try {
-        cached = await whoami();
-    } catch {
-        cached = { logged_in: false };
-    }
+    cached = await whoami();
     return cached;
 }
 
-export async function renderAuthSlot() {
+export async function logoutSession() {
+    await logout();
+    cached = null;
+}
+
+export function renderAuthSlot(session, { onLogout } = {}) {
     const slot = document.getElementById("authSlot");
-    const session = await getSession();
 
     // 批量导入入口只对站长显示。这里只是 UI 开关，
     // 真正的权限校验在 /api/admin/* 接口里
@@ -24,23 +24,32 @@ export async function renderAuthSlot() {
     if (navImport) navImport.hidden = !(session.logged_in && session.is_admin);
 
     if (!session.logged_in) {
-        slot.replaceChildren(
-            el("a", { href: "/api/auth/login" }, [el("button", { text: "Discord 登录" })])
-        );
+        slot.replaceChildren();
         return;
     }
 
-    const onLogout = async () => {
-        await logout().catch(() => {});
-        cached = null;
-        toast("已退出");
-        location.hash = "#/";
-        renderAuthSlot();
-    };
+    const logoutBtn = el("button", { text: "退出" });
+    logoutBtn.addEventListener("click", async () => {
+        logoutBtn.disabled = true;
+        try {
+            await onLogout?.();
+        } catch (e) {
+            toast(e?.message || "退出失败，请重试");
+            logoutBtn.disabled = false;
+        }
+    });
+
+    const avatar = session.user.avatar
+        ? el("img", { src: session.user.avatar, alt: "" })
+        : null;
+
+    if (avatar) {
+        avatar.addEventListener("error", () => avatar.remove(), { once: true });
+    }
 
     slot.replaceChildren(
-        session.user.avatar ? el("img", { src: session.user.avatar, alt: "" }) : null,
+        avatar,
         el("span", { text: session.user.name }),
-        el("button", { text: "退出", onclick: onLogout })
+        logoutBtn
     );
 }

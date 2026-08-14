@@ -1,4 +1,5 @@
 // 通用工具：响应封装、CORS、哈希、ID
+import { isScriptCategory } from "./categories.js";
 
 // 插件面板跑在 localhost 的 SillyTavern 里，读接口必须允许跨域
 const PUBLIC_CORS = {
@@ -68,7 +69,8 @@ export function validateScript(body) {
     if (prompt.length < 10) return { ok: false, message: "指令内容太短了（至少 10 字）" };
     if (prompt.length > 20000) return { ok: false, message: "指令内容超出 20000 字上限" };
     if (summary.length > 200) return { ok: false, message: "简介不能超过 200 字" };
-    if (category.length > 20) return { ok: false, message: "分类不能超过 20 字" };
+    if (!category) return { ok: false, message: "请选择分类" };
+    if (!isScriptCategory(category)) return { ok: false, message: "分类无效，请从现有分类中选择" };
 
     let tags = Array.isArray(body?.tags) ? body.tags : [];
     tags = tags.map(t => String(t).trim()).filter(t => t && t.length <= 16).slice(0, 5);

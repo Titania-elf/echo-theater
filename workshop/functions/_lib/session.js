@@ -58,6 +58,13 @@ export function sessionCookie(token) {
 export const clearCookie = () =>
     "sid=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0";
 
+/** OAuth 登录后只允许回到站内 hash 路由，避免把登录接口变成开放重定向。 */
+export function normalizeReturnHash(value) {
+    const target = String(value || "").trim();
+    if (!target.startsWith("#/") || target.length > 512 || /[\r\n]/.test(target)) return "#/";
+    return target;
+}
+
 function readCookie(request, name) {
     const raw = request.headers.get("Cookie") || "";
     for (const part of raw.split(";")) {

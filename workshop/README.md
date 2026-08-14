@@ -8,6 +8,8 @@ functions/api/       Pages Functions（就是 Worker，同域，无 CORS 问题�
 schema.sql           D1 表结构
 ```
 
+网页端会先要求使用 Discord 登录；插件内浏览仍通过公开只读接口完成，不依赖网页 cookie。
+
 ## 部署
 
 ### 1. 建库

@@ -5,7 +5,7 @@
 //
 // 用途：把以前散落在本地的剧本一次性传上来，归属到已注册的作者名下。
 import { el, mount, loading, toast } from "./dom.js";
-import { adminAuthors, adminUpload, invalidateList } from "./api.js";
+import { adminAuthors, adminUpload, fetchCategories, invalidateList } from "./api.js";
 import { getSession } from "./auth.js";
 
 /** 服务端单请求上限是 100，这里留点余量，超出自动分批 */
@@ -13,6 +13,8 @@ const CHUNK = 50;
 
 /** 预览列表最多渲染多少条。再多 DOM 就开始拖慢页面了 */
 const PREVIEW_MAX = 300;
+
+let categoryValues = new Set();
 
 /**
  * 解析插件导出的 JSON。
@@ -78,7 +80,8 @@ function localIssue(item) {
     if (item.prompt.length < 10) return "指令内容太短（至少 10 字）";
     if (item.prompt.length > 20000) return "指令内容超过 20000 字";
     if (item.desc.length > 200) return "简介超过 200 字";
-    if (item.category.length > 20) return "分类超过 20 字";
+    if (!item.category) return "请选择分类";
+    if (!categoryValues.has(item.category)) return `分类「${item.category}」不在固定选项中`;
     return null;
 }
 
@@ -101,9 +104,16 @@ export async function renderImport() {
 
     mount(loading("正在读取作者列表…"));
 
-    let authors, knownCategories = [];
+    let authors, categories;
     try {
-        ({ items: authors, categories: knownCategories = [] } = await adminAuthors());
+        const [authorData, categoryData] = await Promise.all([
+            adminAuthors(),
+            fetchCategories()
+        ]);
+        authors = authorData.items || [];
+        categories = Array.isArray(categoryData?.items) ? categoryData.items : [];
+        categoryValues = new Set(categories.map(item => item.value));
+        if (!categories.length) throw new Error("暂时无法读取投稿分类");
     } catch (e) {
         mount(el("div", { class: "empty", text: `加载失败：${e.message}` }));
         return;
@@ -140,24 +150,27 @@ export async function renderImport() {
     const progress = el("p", { class: "summary", text: "" });
     const anonChk = el("input", { type: "checkbox" });
 
-    // 现有分类做候选，减少「心理分析」和「心理分析 」这类同义碎片
-    const CAT_LIST_ID = "knownCats";
-    const catDatalist = el("datalist", { id: CAT_LIST_ID },
-        knownCategories.map(c => el("option", { value: c })));
+    const categoryOptions = () => [
+        el("option", {
+            value: "",
+            text: "保留文件中的有效分类",
+            disabled: true
+        }),
+        ...categories.map(item => el("option", {
+            value: item.value,
+            text: `${item.value} — ${item.description}`
+        }))
+    ];
 
-    const bulkCatIn = el("input", {
-        type: "text", maxlength: "20", list: CAT_LIST_ID,
-        placeholder: "留空表示不改动"
-    });
+    const bulkCatIn = el("select", {}, categoryOptions());
+    bulkCatIn.value = "";
 
     const applyAll = (onlyEmpty) => {
-        const value = bulkCatIn.value.trim();
-        if (!value && !onlyEmpty) {
-            if (!confirm("分类留空，确定要清掉所有条目的分类吗？")) return;
-        }
+        const value = bulkCatIn.value;
+        if (!categoryValues.has(value)) return toast("请先选择分类");
         let touched = 0;
         for (const p of parsed) {
-            if (onlyEmpty && p.category) continue;
+            if (onlyEmpty && categoryValues.has(p.category)) continue;
             p.category = value;
             p.issue = localIssue(p);
             touched++;
@@ -187,19 +200,22 @@ export async function renderImport() {
                     : el("span", { class: "tag", text: "全部可导入" })
             ]),
             el("div", { class: "cards" }, parsed.slice(0, PREVIEW_MAX).map((p, i) => {
-                // 每条的分类单独可改：批量套一个大类之后，总有几条要挪窝
-                const catIn = el("input", {
-                    type: "text", value: p.category, maxlength: "20", list: CAT_LIST_ID,
-                    placeholder: "未分类", class: "cat-inline"
-                });
-                catIn.oninput = () => {
-                    p.category = catIn.value.trim();
-                    const issue = localIssue(p);
-                    // 只重画受影响的部分，避免每敲一个字就重建整个列表把焦点弄丢
-                    if (issue !== p.issue) {
-                        p.issue = issue;
-                        paintPreview();
-                    }
+                // 文件中的旧分类仍显示出来，但必须改成固定选项才能导入
+                const legacyCategory = p.category && !categoryValues.has(p.category) ? p.category : "";
+                const catIn = el("select", { class: "cat-inline" }, [
+                    el("option", { value: "", text: "请选择分类", disabled: true }),
+                    legacyCategory ? el("option", {
+                        value: legacyCategory,
+                        text: `原分类：${legacyCategory}（需调整）`,
+                        disabled: true
+                    }) : null,
+                    ...categories.map(item => el("option", { value: item.value, text: item.value }))
+                ]);
+                catIn.value = p.category || "";
+                catIn.onchange = () => {
+                    p.category = catIn.value;
+                    p.issue = localIssue(p);
+                    paintPreview();
                 };
 
                 return el("div", {
@@ -334,14 +350,13 @@ export async function renderImport() {
             el("h3", { style: "margin-top:0", text: "3. 分类" }),
             el("p", {
                 class: "summary",
-                text: "文件里带的分类会照搬过来。想统一归类就在这里填，也可以在下面逐条微调。"
+                text: "文件中的有效固定分类会保留；旧分类和空分类需要在这里批量调整，或在下方逐条选择。"
             }),
             el("div", { class: "row", style: "gap:8px;flex-wrap:wrap" }, [
                 bulkCatIn,
                 el("button", { text: "套用到全部", onclick: () => applyAll(false) }),
-                el("button", { text: "只填补未分类的", onclick: () => applyAll(true) })
-            ]),
-            catDatalist
+                el("button", { text: "只调整无效分类", onclick: () => applyAll(true) })
+            ])
         ]),
 
         el("div", { class: "card", style: "margin-top:12px" }, [

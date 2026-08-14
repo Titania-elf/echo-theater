@@ -24,14 +24,6 @@ export async function onRequestGet({ request, env }) {
         script_count: Number(r.script_count) || 0
     }));
 
-    // 现有分类：导入页拿它做候选，避免手打造成「心理分析」「心理分析 」这类碎片
-    const { results: catRows } = await env.DB.prepare(`
-        SELECT category, COUNT(*) AS n FROM scripts
-        WHERE status = 'public' AND category IS NOT NULL AND category != ''
-        GROUP BY category ORDER BY n DESC
-    `).all();
-    const categories = (catRows || []).map(r => r.category);
-
     // 空列表是正常状态（还没人登录过），交给前端提示，不当错误处理
-    return json({ count: items.length, items, categories });
+    return json({ count: items.length, items });
 }

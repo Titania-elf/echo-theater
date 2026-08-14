@@ -1,24 +1,51 @@
 // 投稿表单（最简版：几个输入框 + 一个 textarea）
 import { el, mount, toast, loading } from "./dom.js";
-import { createScript, updateScript, fetchScript, invalidateList } from "./api.js";
+import { createScript, updateScript, fetchScript, fetchCategories, invalidateList } from "./api.js";
 
 const PROMPT_MAX = 20000;
 
 export async function renderEditor(editId) {
     let init = { name: "", category: "", desc: "", prompt: "", tags: [], rating: "general" };
+    let categories;
 
-    if (editId) {
-        mount(loading());
-        try {
-            init = await fetchScript(editId);
-        } catch (e) {
-            mount(el("div", { class: "empty", text: `加载失败：${e.message}` }));
-            return;
-        }
+    mount(loading("正在加载投稿表单…"));
+    try {
+        const [categoryData, script] = await Promise.all([
+            fetchCategories(),
+            editId ? fetchScript(editId) : Promise.resolve(null)
+        ]);
+        categories = Array.isArray(categoryData?.items) ? categoryData.items : [];
+        if (!categories.length) throw new Error("暂时无法读取投稿分类");
+        if (script) init = script;
+    } catch (e) {
+        mount(el("div", { class: "empty", text: `加载失败：${e.message}` }));
+        return;
     }
 
     const nameIn = el("input", { type: "text", value: init.name, maxlength: "60", placeholder: "例如：🔍 此刻心声" });
-    const catIn = el("input", { type: "text", value: init.category || "", maxlength: "20", placeholder: "例如：心理分析 / 平行世界" });
+    const categoryValues = new Set(categories.map(item => item.value));
+    const legacyCategory = init.category && !categoryValues.has(init.category) ? init.category : "";
+    const catIn = el("select", {}, [
+        el("option", { value: "", text: "请选择分类", disabled: true }),
+        legacyCategory ? el("option", {
+            value: legacyCategory,
+            text: `原分类：${legacyCategory}（请重新选择）`,
+            disabled: true
+        }) : null,
+        ...categories.map(item => el("option", { value: item.value, text: item.value }))
+    ]);
+    catIn.value = init.category || "";
+    const catHint = el("p", { class: "field-hint" });
+    const paintCategoryHint = () => {
+        const selected = categories.find(item => item.value === catIn.value);
+        catHint.textContent = selected
+            ? selected.description
+            : legacyCategory
+                ? `旧分类「${legacyCategory}」仍可浏览，但保存前需要改为新的固定分类。`
+                : "分类按最终生成的内容形式选择；题材和风格请填写在标签中。";
+    };
+    catIn.addEventListener("change", paintCategoryHint);
+    paintCategoryHint();
     const descIn = el("input", { type: "text", value: init.desc || "", maxlength: "200", placeholder: "一句话说明这条指令做什么" });
     const tagsIn = el("input", { type: "text", value: (init.tags || []).join(", "), placeholder: "逗号分隔，最多 5 个" });
     const promptIn = el("textarea", { rows: "16", maxlength: String(PROMPT_MAX), placeholder: "在这里写完整的剧本指令…" });
@@ -43,7 +70,7 @@ export async function renderEditor(editId) {
     submitBtn.addEventListener("click", async () => {
         const payload = {
             name: nameIn.value.trim(),
-            category: catIn.value.trim(),
+            category: catIn.value,
             desc: descIn.value.trim(),
             prompt: promptIn.value.trim(),
             rating: ratingSel.value,
@@ -52,6 +79,7 @@ export async function renderEditor(editId) {
         };
 
         if (!payload.name) return toast("请填写标题");
+        if (!categoryValues.has(payload.category)) return toast("请选择分类");
         if (payload.prompt.length < 10) return toast("指令内容太短了");
 
         submitBtn.disabled = true;
@@ -74,7 +102,11 @@ export async function renderEditor(editId) {
             el("a", { href: "#/mine", text: "← 返回我的投稿", style: "font-size:13px;color:var(--muted)" }),
             el("h1", { text: editId ? "编辑指令" : "发布新指令", style: "font-size:20px" }),
             field("标题 *", nameIn),
-            field("分类", catIn),
+            el("div", { class: "field" }, [
+                el("label", { text: "分类 *" }),
+                catIn,
+                catHint
+            ]),
             field("简介", descIn),
             field("标签", tagsIn),
             field("内容分级", ratingSel),

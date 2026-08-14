@@ -17,7 +17,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
         FROM scripts s
         JOIN authors a ON a.discord_id = s.author_id
         WHERE s.status = 'public' AND a.banned = 0
-        ORDER BY s.updated_at DESC
+        ORDER BY s.created_at DESC, s.updated_at DESC, s.id DESC
         LIMIT 2000
     `).all();
 

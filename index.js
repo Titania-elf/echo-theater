@@ -22,7 +22,7 @@ var init_defaults = __esm({
   "src/config/defaults.js"() {
     extensionName = "Titania_Theater_Echo";
     extensionFolderPath = `scripts/extensions/third-party/titania-theater`;
-    CURRENT_VERSION = "5.2.3";
+    CURRENT_VERSION = "5.2.4";
     LEGACY_KEYS = {
       CFG: "Titania_Config_v3",
       SCRIPTS: "Titania_UserScripts_v3",
@@ -33784,7 +33784,7 @@ function formatRelativeTime(ts) {
 }
 function openWorkshopWindow(source = "manager") {
   let allItems = [];
-  let currentFilter = { category: "\u5168\u90E8", search: "", sort: "latest" };
+  let currentFilter = { category: "\u5168\u90E8", search: "", sort: "newest" };
   if (source === "manager" && !$("#t-mgr-view").length) source = "main";
   if (source === "main" && !$("#t-main-view").length && $("#t-mgr-view").length) source = "manager";
   if (source === "manager") {
@@ -33860,7 +33860,7 @@ function openWorkshopWindow(source = "manager") {
       }
       return true;
     });
-    const sorter = SORT_MODES[currentFilter.sort] || SORT_MODES.latest;
+    const sorter = SORT_MODES[currentFilter.sort] || SORT_MODES.newest;
     return list.sort(sorter.fn);
   };
   const renderList = () => {
@@ -34081,9 +34081,9 @@ var init_workshopWindow = __esm({
     ];
     ANON_COLOR = "linear-gradient(135deg, #5a5a5a, #3a3a3a)";
     SORT_MODES = {
+      newest: { label: "\u6700\u65B0\u53D1\u5E03", fn: (a, b) => (b.created_at || b.updated_at || 0) - (a.created_at || a.updated_at || 0) || (b.updated_at || 0) - (a.updated_at || 0) || String(b.id).localeCompare(String(a.id)) },
       latest: { label: "\u6700\u65B0\u66F4\u65B0", fn: (a, b) => (b.updated_at || 0) - (a.updated_at || 0) },
       downloads: { label: "\u4E0B\u8F7D\u6700\u591A", fn: (a, b) => (b.downloads || 0) - (a.downloads || 0) },
-      newest: { label: "\u6700\u65B0\u53D1\u5E03", fn: (a, b) => (b.created_at || 0) - (a.created_at || 0) },
       name: { label: "\u540D\u79F0 A-Z", fn: (a, b) => String(a.name).localeCompare(String(b.name), "zh-CN") }
     };
   }

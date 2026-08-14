@@ -33,6 +33,8 @@ export const fetchScript = id => req(`/api/script/${encodeURIComponent(id)}`);
 
 export const fetchAuthor = id => req(`/api/author/${encodeURIComponent(id)}`);
 
+export const fetchCategories = () => req("/api/categories");
+
 export const whoami = () => req("/api/auth/me");
 export const logout = () => req("/api/auth/logout", { method: "POST" });
 
@@ -56,12 +58,6 @@ export const purgeScript = id =>
 
 export const report = (scriptId, reason) =>
     req("/api/report", { method: "POST", body: JSON.stringify({ script_id: scriptId, reason }) });
-
-export function countDownload(id) {
-    // 失败无所谓，计数不是关键路径
-    return req("/api/downloads", { method: "POST", body: JSON.stringify({ ids: [id] }) })
-        .catch(() => {});
-}
 
 // ── 管理员通道 ──
 // 权限在服务端按登录身份判定，这里只是普通的同源请求

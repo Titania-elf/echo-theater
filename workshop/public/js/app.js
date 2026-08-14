@@ -5,9 +5,16 @@ import { renderMine } from "./mine.js";
 import { renderEditor } from "./editor.js";
 import { renderImport } from "./import.js";
 import { renderAuthor } from "./author.js";
-import { renderAuthSlot } from "./auth.js";
+import { getSession, logoutSession, renderAuthSlot } from "./auth.js";
 import { showMature, toggleMature } from "./rating.js";
-import { el, mount } from "./dom.js";
+import { el, mount, toast } from "./dom.js";
+
+let authorized = false;
+let bootId = 0;
+
+const topbar = document.querySelector(".topbar");
+const footer = document.querySelector(".footer");
+const view = document.getElementById("view");
 
 function markNav(name) {
     document.querySelectorAll("[data-nav]").forEach(a => {
@@ -52,6 +59,8 @@ function renderError(e) {
  * 只接一种都会留下静默失败的缺口，所以 try 和 catch 都要有。
  */
 function route() {
+    if (!authorized) return;
+
     let pending;
     try {
         pending = dispatch();
@@ -59,6 +68,142 @@ function route() {
         return renderError(e);
     }
     return Promise.resolve(pending).catch(renderError);
+}
+
+function authLoginHref() {
+    const returnTo = location.hash.startsWith("#/") ? location.hash : "#/";
+    return `/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
+}
+
+function consumeAuthFeedback() {
+    const url = new URL(location.href);
+    const code = url.searchParams.get("auth_error");
+    if (!code) return "";
+
+    url.searchParams.delete("auth_error");
+    history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+
+    if (code === "cancelled") return "登录未完成，你可以重新尝试。";
+    return "Discord 登录暂时失败，请稍后重试。";
+}
+
+function echoBrand() {
+    return [
+        el("div", { class: "echo-mark", "aria-hidden": "true" }),
+        el("p", { class: "access-kicker", text: "ECHO WORKSHOP" }),
+        el("h1", { text: "回声工坊" })
+    ];
+}
+
+function showAccessPage(kind, { message = "", session = null } = {}) {
+    authorized = false;
+    document.body.classList.add("auth-mode");
+    topbar.hidden = true;
+    footer.hidden = true;
+    view.className = "view access-view";
+
+    const content = [...echoBrand()];
+
+    if (kind === "checking") {
+        content.push(el("p", { class: "access-status", text: "正在确认登录状态…" }));
+    } else if (kind === "guest") {
+        content.push(
+            el("p", { class: "access-lead", text: "发现、分享并管理回声剧场指令。" }),
+            message ? el("p", { class: "access-notice", text: message }) : null,
+            el("a", {
+                class: "access-action",
+                href: authLoginHref(),
+                text: "使用 Discord 登录"
+            }),
+            el("p", {
+                class: "access-privacy",
+                text: "仅获取你的 Discord 昵称、头像和用户 ID，不读取邮箱或服务器列表。"
+            })
+        );
+    } else if (kind === "banned") {
+        content.push(
+            el("p", { class: "access-lead", text: "此账号暂时无法访问回声工坊。" }),
+            el("p", {
+                class: "access-notice is-danger",
+                text: "如有疑问，请在 Discord 联系管理员。"
+            })
+        );
+
+        const exitBtn = el("button", { class: "access-secondary", text: "退出当前账号" });
+        exitBtn.addEventListener("click", async () => {
+            exitBtn.disabled = true;
+            try {
+                await logoutSession();
+                location.hash = "#/";
+                showAccessPage("guest", { message: "已退出当前账号。" });
+            } catch (e) {
+                toast(e?.message || "退出失败，请重试");
+                exitBtn.disabled = false;
+            }
+        });
+        content.push(exitBtn);
+
+        if (session?.user?.name) {
+            content.push(el("p", { class: "access-account", text: `当前账号：${session.user.name}` }));
+        }
+    } else {
+        content.push(
+            el("p", { class: "access-lead", text: "暂时无法连接回声工坊。" }),
+            el("p", {
+                class: "access-notice is-danger",
+                text: message || "请检查网络连接后重试。"
+            }),
+            el("button", { class: "access-secondary", text: "重新连接", onclick: bootstrap })
+        );
+    }
+
+    mount(el("section", { class: "access-page" }, [
+        el("div", { class: `access-panel access-${kind}` }, content)
+    ]));
+}
+
+async function handleLogout() {
+    await logoutSession();
+    location.hash = "#/";
+    showAccessPage("guest", { message: "已安全退出。" });
+}
+
+function startApp(session) {
+    authorized = true;
+    document.body.classList.remove("auth-mode");
+    topbar.hidden = false;
+    footer.hidden = false;
+    view.className = "view";
+    renderAuthSlot(session, { onLogout: handleLogout });
+    paintRatingToggle();
+    route();
+}
+
+async function bootstrap() {
+    const currentBoot = ++bootId;
+    const feedback = consumeAuthFeedback();
+    showAccessPage("checking");
+
+    let session;
+    try {
+        session = await getSession({ force: true });
+    } catch (e) {
+        if (currentBoot !== bootId) return;
+        showAccessPage("error", { message: e?.message });
+        return;
+    }
+
+    if (currentBoot !== bootId) return;
+    if (!session.logged_in) {
+        showAccessPage("guest", { message: feedback });
+        return;
+    }
+    if (session.banned) {
+        showAccessPage("banned", { session });
+        return;
+    }
+
+    startApp(session);
 }
 
 function paintRatingToggle() {
@@ -72,8 +217,8 @@ function paintRatingToggle() {
     };
 }
 
-window.addEventListener("hashchange", route);
+window.addEventListener("hashchange", () => {
+    if (authorized) route();
+});
 
-renderAuthSlot();
-paintRatingToggle();
-route();
+bootstrap();
