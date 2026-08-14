@@ -431,7 +431,7 @@ function isSameChainSession(favEntry, scriptId, branchKey, currentItems) {
 export async function saveContinuationChainFavorite() {
     const currentResult = getCurrentGenerationResult();
     if (!isFavoriteEligible(currentResult)) {
-        if (window.toastr) toastr.warning("当前内容生成未完成，无法收藏");
+        if (window.toastr) toastr.warning("当前没有可收藏的剧场内容");
         return false;
     }
 
@@ -454,7 +454,12 @@ export async function saveContinuationChainFavorite() {
     const currentDisplayContent = String(currentResult?.content || "").trim();
 
     const normalizedRounds = rounds.length > 0
-        ? rounds.filter(round => round.status === "success" || round.status === "legacy")
+        // 收藏入口已拒绝 running/failed 的当前结果；此处保留同一分支中已有内容的
+        // partial/aborted 轮次，确保中断首段和后续成功主动续写可以一起归档。
+        ? rounds.filter(round =>
+            ["success", "partial", "aborted", "legacy"].includes(String(round?.status || "legacy"))
+            && String(round?.content || "").trim().length > 0
+        )
         : (currentDisplayContent
             ? [{ round: 1, type: "initial", instruction: "（首次生成）", content: currentDisplayContent, timestamp: Date.now() }]
             : []);

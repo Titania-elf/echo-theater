@@ -1,5 +1,12 @@
 // src/core/state.js
 
+const FAVORITABLE_RESULT_STATUSES = new Set(["success", "partial", "aborted", "legacy"]);
+const CONTINUABLE_RESULT_STATUSES = new Set(["success", "partial", "aborted", "legacy"]);
+
+function isFavoritableStatus(status) {
+    return FAVORITABLE_RESULT_STATUSES.has(String(status || ""));
+}
+
 // 统一管理运行时的全局变量
 export const GlobalState = {
     isGenerating: false,
@@ -271,8 +278,8 @@ export function pushSceneToHistory(content, scriptId, scriptName, metadata = {})
         scriptId: String(scriptId || ""),
         scriptName: String(scriptName || "场景"),
         status,
-        canFavorite: status === "success" || status === "legacy",
-        canContinue: ["success", "partial", "aborted", "legacy"].includes(status),
+        canFavorite: isFavoritableStatus(status),
+        canContinue: CONTINUABLE_RESULT_STATUSES.has(status),
         error: metadata.error || null,
         timestamp: Date.now()
     };
@@ -289,8 +296,8 @@ export function setCurrentGenerationResult(result = {}) {
         scriptId: String(result.scriptId || ""),
         scriptName: String(result.scriptName || "场景"),
         status,
-        canFavorite: status === "success" || status === "legacy",
-        canContinue: ["success", "partial", "aborted", "legacy"].includes(status),
+        canFavorite: isFavoritableStatus(status),
+        canContinue: CONTINUABLE_RESULT_STATUSES.has(status),
         error: result.error || null,
         timestamp: Number(result.timestamp) || Date.now()
     };
@@ -311,8 +318,8 @@ export function getCurrentGenerationResult() {
                 scriptId: String(item.scriptId || ""),
                 scriptName: String(item.scriptName || "场景"),
                 status,
-                canFavorite: status === "success" || status === "legacy",
-                canContinue: ["success", "partial", "aborted", "legacy"].includes(status),
+                canFavorite: isFavoritableStatus(status),
+                canContinue: CONTINUABLE_RESULT_STATUSES.has(status),
                 error: item.error || null,
                 timestamp: Number(item.timestamp) || 0
             };

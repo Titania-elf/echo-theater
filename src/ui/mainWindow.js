@@ -1278,7 +1278,7 @@ export async function openMainWindow() {
     // 收藏按钮：根据状态切换保存/取消收藏
     $("#t-btn-like").on("click", () => {
         if (!isFavoriteEligible(getCurrentGenerationResult())) {
-            if (window.toastr) toastr.warning("当前内容生成未完成，无法收藏");
+            if (window.toastr) toastr.warning("当前没有可收藏的剧场内容");
             updateFavButtonUI();
             return;
         }
@@ -1856,8 +1856,13 @@ async function openWorldInfoSelector() {
         </div>
     </div>`;
 
-    $("#t-main-view").append(loadingHtml);
-    $("#t-wi-close").on("click", () => $("#t-wi-selector").remove());
+    const $loadingPanel = $(loadingHtml);
+    let loadingCancelled = false;
+    $("#t-main-view").append($loadingPanel);
+    $loadingPanel.find("#t-wi-close").on("click", () => {
+        loadingCancelled = true;
+        $loadingPanel.remove();
+    });
 
     let ctx;
     let allBookNames;
@@ -1890,16 +1895,21 @@ async function openWorldInfoSelector() {
         }
     } catch (e) {
         console.error("Titania: 加载世界书数据失败", e);
-        $("#t-wi-selector .t-wi-body").html(`
+        if (loadingCancelled || !$loadingPanel[0]?.isConnected) return;
+        $loadingPanel.find(".t-wi-body").html(`
             <div style="text-align:center; color:#e74c3c; padding:20px;">
                 <i class="fa-solid fa-exclamation-triangle" style="font-size:2em; margin-bottom:10px;"></i>
                 <div style="margin-bottom:10px;">加载世界书数据失败</div>
                 <div style="font-size:0.9em; color:#888;">${e.message}</div>
-                <button class="t-btn" style="margin-top:15px;" onclick="$('#t-wi-selector').remove();">关闭</button>
+                <button class="t-btn t-wi-load-error-close" style="margin-top:15px;">关闭</button>
             </div>
         `);
+        $loadingPanel.find(".t-wi-load-error-close").on("click", () => $loadingPanel.remove());
         return;
     }
+
+    // 加载期间允许关闭面板；旧调用完成后不能再覆盖后来打开的实例。
+    if (loadingCancelled || !$loadingPanel[0]?.isConnected) return;
 
     const data = getExtData();
     if (!data.worldinfo) data.worldinfo = {};
@@ -1921,7 +1931,7 @@ async function openWorldInfoSelector() {
     const getVisibleBooks = () => currentViewMode === "active" ? baseActiveBooks : allBooks;
     let visibleBooks = getVisibleBooks();
 
-    $("#t-wi-selector").remove();
+    $loadingPanel.remove();
 
     const renderBookListHtml = (books, activeSet, selectedName) => {
         if (!books.length) {
@@ -1969,9 +1979,13 @@ async function openWorldInfoSelector() {
             <div class="t-close" id="t-wi-close">&times;</div>
         </div>
 
-        <div class="t-wi-action-bar t-wi-tabs">
-            <button type="button" class="t-btn t-btn-xs t-wi-tab-btn active" data-mode="all">全部世界书 (${allBooks.length})</button>
-            <button type="button" class="t-btn t-btn-xs t-wi-tab-btn" data-mode="active">已激活世界书 (${baseActiveBooks.length})</button>
+        <div class="t-wi-tabs" role="tablist" aria-label="世界书范围">
+            <button type="button" class="t-wi-tab-btn active" role="tab" aria-selected="true" data-mode="all">
+                <span>全部世界书</span><span class="t-wi-tab-count" id="t-wi-all-count">${allBooks.length}</span>
+            </button>
+            <button type="button" class="t-wi-tab-btn" role="tab" aria-selected="false" data-mode="active">
+                <span>已激活世界书</span><span class="t-wi-tab-count" id="t-wi-active-count">${baseActiveBooks.length}</span>
+            </button>
         </div>
 
         <div class="t-wi-body t-wi-layout" id="t-wi-layout">
@@ -2008,12 +2022,22 @@ async function openWorldInfoSelector() {
         </div>
     </div>`;
 
-    $("#t-main-view").append(html);
+    const $panel = $(html);
+    const $q = (selector) => $panel.find(selector);
+    $("#t-main-view").append($panel);
 
     let currentBookName = visibleBooks[0] || "";
     let currentEntries = [];
     let entrySearchQuery = "";
+    let entrySearchTimer = null;
+    let bookLoadRequestId = 0;
     const activeSet = new Set(baseActiveBooks);
+
+    const closePanel = () => {
+        bookLoadRequestId++;
+        clearTimeout(entrySearchTimer);
+        $panel.remove();
+    };
 
     const getAutoActiveBooksFromSelections = () => {
         return Object.keys(workingSelections).filter(bookName => {
@@ -2027,10 +2051,12 @@ async function openWorldInfoSelector() {
         activeSet.clear();
         baseActiveBooks.forEach(name => activeSet.add(name));
         autoActive.forEach(name => activeSet.add(name));
+        const activeCount = allBooks.filter(name => activeSet.has(name)).length;
+        $q("#t-wi-active-count").text(activeCount);
     };
 
     const showEntryPreview = (title, content) => {
-        $(".t-wi-preview-modal").remove();
+        $q(".t-wi-preview-modal").remove();
         const $modal = $(`
             <div class="t-wi-preview-modal">
                 <div class="t-wi-preview-box">
@@ -2049,7 +2075,7 @@ async function openWorldInfoSelector() {
         $modal.find(".t-wi-preview-close").on("click", function () {
             $modal.remove();
         });
-        $("#t-wi-selector").append($modal);
+        $panel.append($modal);
     };
 
     const getBookSelectedSet = (bookName) => {
@@ -2084,20 +2110,20 @@ async function openWorldInfoSelector() {
     const syncSelectAllLabels = () => {
         const visibleCount = getVisibleEntries().length;
         const suffix = entrySearchQuery ? ` (${visibleCount})` : "";
-        $("#t-wi-current-select-all").text(`全选${suffix}`);
-        $("#t-wi-current-select-none").text(`取消全选${suffix}`);
+        $q("#t-wi-current-select-all").text(`全选${suffix}`);
+        $q("#t-wi-current-select-none").text(`取消全选${suffix}`);
     };
 
     const updateStat = () => {
         const selectedSet = getBookSelectedSet(currentBookName);
         const selectedCount = currentEntries.filter(entry => selectedSet.has(Number(entry.uid))).length;
         const filterNote = entrySearchQuery ? `　筛选出 ${getVisibleEntries().length} 条` : "";
-        $("#t-wi-stat").text(`已选: ${selectedCount}/${currentEntries.length}${filterNote}`);
+        $q("#t-wi-stat").text(`已选: ${selectedCount}/${currentEntries.length}${filterNote}`);
         syncSelectAllLabels();
     };
 
     const renderEntries = () => {
-        const $body = $("#t-wi-entry-list");
+        const $body = $q("#t-wi-entry-list");
         $body.empty();
 
         if (!currentBookName) {
@@ -2122,7 +2148,7 @@ async function openWorldInfoSelector() {
                 </div>
             `);
             $body.find("#t-wi-search-reset").on("click", () => {
-                $("#t-wi-entry-search-input").val("").trigger("input");
+                $q("#t-wi-entry-search-input").val("").trigger("input");
             });
             updateStat();
             return;
@@ -2171,9 +2197,19 @@ async function openWorldInfoSelector() {
                 setBookSelections(currentBookName, nextSet);
                 $entry.toggleClass("selected", isChecked);
                 if (currentViewMode === "active") {
+                    const previousBookName = currentBookName;
                     syncVisibleBooksByMode();
                     ensureCurrentBookInView();
                     renderBookList();
+                    if (currentBookName !== previousBookName) {
+                        if (currentBookName) loadBookEntries(currentBookName);
+                        else {
+                            currentEntries = [];
+                            renderEntries();
+                            syncEntryPaneHeader();
+                        }
+                        return;
+                    }
                 }
                 syncEntryPaneHeader();
                 updateStat();
@@ -2199,8 +2235,8 @@ async function openWorldInfoSelector() {
     const syncEntryPaneHeader = () => {
         const isActive = activeSet.has(currentBookName);
         const title = currentBookName || "未选择世界书";
-        $("#t-wi-entry-pane-title").text(title);
-        $("#t-wi-entry-pane-badge")
+        $q("#t-wi-entry-pane-title").text(title);
+        $q("#t-wi-entry-pane-badge")
             .text(isActive ? "已激活" : "未激活")
             .removeClass("active inactive")
             .addClass(isActive ? "active" : "inactive");
@@ -2219,18 +2255,28 @@ async function openWorldInfoSelector() {
 
         setBookSelections(currentBookName, nextSet);
         if (currentViewMode === "active") {
+            const previousBookName = currentBookName;
             syncVisibleBooksByMode();
             ensureCurrentBookInView();
             renderBookList();
+            if (currentBookName !== previousBookName) {
+                if (currentBookName) loadBookEntries(currentBookName);
+                else {
+                    currentEntries = [];
+                    renderEntries();
+                    syncEntryPaneHeader();
+                }
+                return;
+            }
         }
         syncEntryPaneHeader();
         renderEntries();
     };
 
     const renderBookList = () => {
-        $("#t-wi-books-list").html(renderBookListHtml(visibleBooks, activeSet, currentBookName));
+        $q("#t-wi-books-list").html(renderBookListHtml(visibleBooks, activeSet, currentBookName));
 
-        $("#t-wi-books-list .t-wi-book-item").on("click", function () {
+        $q("#t-wi-books-list .t-wi-book-item").on("click", function () {
             const next = decodeURIComponent(String($(this).data("bookName") || ""));
             if (!next || next === currentBookName) return;
             loadBookEntries(next);
@@ -2238,7 +2284,7 @@ async function openWorldInfoSelector() {
 
         // 下拉和卡片列表是同一份数据的两种呈现，各自在桌面/移动端可见。
         // 重绘时一并刷新，避免切换标签后两者不一致
-        const $select = $("#t-wi-book-select");
+        const $select = $q("#t-wi-book-select");
         $select.html(renderBookSelectHtml(visibleBooks, activeSet, currentBookName));
         $select.prop("disabled", visibleBooks.length === 0);
         $select.off("change").on("change", function () {
@@ -2263,33 +2309,38 @@ async function openWorldInfoSelector() {
 
     const loadBookEntries = async (bookName) => {
         currentBookName = bookName || "";
+        const requestedBookName = currentBookName;
+        const requestId = ++bookLoadRequestId;
+        clearTimeout(entrySearchTimer);
         entrySearchQuery = "";
-        $("#t-wi-entry-search-input").val("");
-        $("#t-wi-entry-search").removeClass("has-query");
+        $q("#t-wi-entry-search-input").val("");
+        $q("#t-wi-entry-search").removeClass("has-query");
         syncEntryPaneHeader();
         renderBookList();
 
-        const $body = $("#t-wi-entry-list");
+        const $body = $q("#t-wi-entry-list");
         $body.html(`
             <div style="text-align:center; color:#888; padding:30px 10px;">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size:1.6em; margin-bottom:10px;"></i>
-                <div>正在加载「${escapeHtmlText(currentBookName)}」...</div>
+                <div>正在加载「${escapeHtmlText(requestedBookName)}」...</div>
             </div>
         `);
 
+        let nextEntries = [];
         try {
-            currentEntries = await getWorldInfoEntriesByBookName(currentBookName);
+            nextEntries = await getWorldInfoEntriesByBookName(requestedBookName);
         } catch (e) {
             console.error("Titania: 加载指定世界书失败", e);
-            currentEntries = [];
         }
 
+        if (!$panel[0]?.isConnected || requestId !== bookLoadRequestId || currentBookName !== requestedBookName) return;
+        currentEntries = nextEntries;
         renderEntries();
         syncEntryPaneHeader();
         renderBookList();
     };
 
-    $(".t-wi-tab-btn").on("click", function () {
+    $panel.on("click", ".t-wi-tab-btn", function () {
         const nextMode = String($(this).data("mode") || "all");
         if (nextMode === currentViewMode) return;
 
@@ -2297,8 +2348,12 @@ async function openWorldInfoSelector() {
         syncVisibleBooksByMode();
         ensureCurrentBookInView();
 
-        $(".t-wi-tab-btn").removeClass("active");
-        $(this).addClass("active");
+        $q(".t-wi-tab-btn")
+            .removeClass("active")
+            .attr("aria-selected", "false");
+        $(this)
+            .addClass("active")
+            .attr("aria-selected", "true");
 
         if (!currentBookName) {
             currentEntries = [];
@@ -2311,14 +2366,13 @@ async function openWorldInfoSelector() {
         loadBookEntries(currentBookName);
     });
 
-    $("#t-wi-current-select-all").on("click", () => bulkSelectCurrentBook(true));
-    $("#t-wi-current-select-none").on("click", () => bulkSelectCurrentBook(false));
+    $q("#t-wi-current-select-all").on("click", () => bulkSelectCurrentBook(true));
+    $q("#t-wi-current-select-none").on("click", () => bulkSelectCurrentBook(false));
 
     // 条目标题搜索：输入防抖，避免逐字符重渲染
-    let entrySearchTimer = null;
-    $("#t-wi-entry-search-input").on("input", function () {
+    $q("#t-wi-entry-search-input").on("input", function () {
         const raw = String($(this).val() || "");
-        $("#t-wi-entry-search").toggleClass("has-query", raw.length > 0);
+        $q("#t-wi-entry-search").toggleClass("has-query", raw.length > 0);
         clearTimeout(entrySearchTimer);
         entrySearchTimer = setTimeout(() => {
             entrySearchQuery = raw.trim();
@@ -2326,11 +2380,11 @@ async function openWorldInfoSelector() {
         }, 120);
     });
 
-    $("#t-wi-entry-search-clear").on("click", () => {
-        $("#t-wi-entry-search-input").val("").trigger("input").trigger("focus");
+    $q("#t-wi-entry-search-clear").on("click", () => {
+        $q("#t-wi-entry-search-input").val("").trigger("input").trigger("focus");
     });
 
-    $("#t-wi-save").on("click", () => {
+    $q("#t-wi-save").on("click", () => {
         if (!currentBookName && !Object.keys(workingSelections).length) return;
 
         writeWorldInfoSelections(data, ctx.stCtx, workingSelections, getAutoActiveBooksFromSelections());
@@ -2339,7 +2393,7 @@ async function openWorldInfoSelector() {
         if (window.toastr) toastr.success("世界书设置已保存");
     });
 
-    $("#t-wi-close").on("click", () => $("#t-wi-selector").remove());
+    $q("#t-wi-close").on("click", closePanel);
 
     refreshActiveState();
     syncVisibleBooksByMode();

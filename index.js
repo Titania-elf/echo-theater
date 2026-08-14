@@ -22,7 +22,7 @@ var init_defaults = __esm({
   "src/config/defaults.js"() {
     extensionName = "Titania_Theater_Echo";
     extensionFolderPath = `scripts/extensions/third-party/titania-theater`;
-    CURRENT_VERSION = "5.2.0";
+    CURRENT_VERSION = "5.2.3";
     LEGACY_KEYS = {
       CFG: "Titania_Config_v3",
       SCRIPTS: "Titania_UserScripts_v3",
@@ -102,11 +102,15 @@ var init_defaults = __esm({
         instruction: ""
         // 自由编辑的导演指令
       },
-      // 世界书条目筛选配置
+      // 世界书条目筛选配置（按角色卡隔离）
       worldinfo: {
+        // { "card:<avatar 去扩展名>": { "世界书名": [uid1, uid2, ...] } }
+        // 键用 avatar 而非角色名：同名角色卡必须各自独立，否则会互相激活对方的世界书
+        card_selections: {},
+        // { "card:<avatar>": ["世界书名", ...] } 需要额外激活的书（由选中条目推导）
+        card_auto_active_books: {},
+        // 旧的名字键配置，保留供读取回退（仅当该名字只有一张卡时才继承）
         char_selections: {}
-        // { "角色名": { "世界书名": [uid1, uid2, ...] } }
-        // 用户选择的条目会被保存在这里，首次使用时默认全选
       },
       // 自动续写配置 (应对 API 超时截断)
       auto_continue: {
@@ -191,6 +195,12 @@ var init_defaults = __esm({
         // 注入时默认让 AI 看到；注入后可用气泡上的眼睛图标切换
         speaker_name: "\u56DE\u58F0\u5C0F\u5267\u573A"
         // 仅界面显示用，narrator 类型不会把名字带进提示词
+      },
+      // 导入预设的宏求值行为
+      preset_macros: {
+        // 预设里的 {{setvar::}} 等写入宏默认只在本次提示词构建内有效，构建完成后还原，
+        // 不写进用户的聊天存档。开启后写入照常落盘（少数依赖变量跨次留存的预设才需要）。
+        persist_variables: false
       },
       // 文本改写入口（显示在故事大纲菜单中）
       rewrite_entry: {
@@ -1560,34 +1570,90 @@ function resolveMacro(marker, runtimeContext, originalText) {
   }
   return originalText;
 }
+function getPresetMacroConfig() {
+  try {
+    const ctx = typeof SillyTavern !== "undefined" ? SillyTavern.getContext?.() : null;
+    const data = ctx?.extensionSettings?.[extensionName];
+    const cfg = data?.preset_macros;
+    return { persistVariables: cfg?.persist_variables === true };
+  } catch {
+    return { persistVariables: false };
+  }
+}
+function safeSubstituteParams(content) {
+  const source = String(content || "");
+  if (!source.includes("{{")) return source;
+  try {
+    const ctx = typeof SillyTavern !== "undefined" ? SillyTavern.getContext?.() : null;
+    const substitute = ctx?.substituteParamsExtended || ctx?.substituteParams;
+    if (typeof substitute !== "function") return source;
+    return String(substitute.call(ctx, source) ?? source);
+  } catch (e) {
+    console.warn("Titania: ST \u5B8F\u6C42\u503C\u5931\u8D25\uFF0C\u4FDD\u7559\u539F\u6587", e);
+    return source;
+  }
+}
+function beginVariableSandbox() {
+  if (getPresetMacroConfig().persistVariables) return () => {
+  };
+  let ctx = null;
+  try {
+    ctx = typeof SillyTavern !== "undefined" ? SillyTavern.getContext?.() : null;
+  } catch {
+    return () => {
+    };
+  }
+  if (!ctx) return () => {
+  };
+  const chatMetadata = ctx.chatMetadata;
+  const extensionSettings = ctx.extensionSettings;
+  const localSnapshot = chatMetadata && typeof chatMetadata.variables === "object" && chatMetadata.variables ? { ...chatMetadata.variables } : null;
+  const globalStore = extensionSettings?.variables;
+  const globalSnapshot = globalStore && typeof globalStore.global === "object" && globalStore.global ? { ...globalStore.global } : null;
+  return () => {
+    try {
+      if (chatMetadata && localSnapshot) chatMetadata.variables = localSnapshot;
+      if (globalStore && globalSnapshot) globalStore.global = globalSnapshot;
+    } catch (e) {
+      console.warn("Titania: \u53D8\u91CF\u6C99\u7BB1\u8FD8\u539F\u5931\u8D25", e);
+    }
+  };
+}
 function resolveEntryContent(entry, contentByEntry, runtimeContext) {
   let content = Object.prototype.hasOwnProperty.call(contentByEntry, entry.id) ? String(contentByEntry[entry.id] || "") : String(entry.content || "");
+  content = safeSubstituteParams(content);
   content = content.replace(/\{\{\s*([\w-]+)\s*\}\}/g, (match, marker) => resolveMacro(marker, runtimeContext, match));
   if (entry.marker) content = resolveMacro(entry.marker, runtimeContext, `{{${entry.marker}}}`);
   return content;
 }
 function buildPromptMessageDetails(scheme, contentByEntry = {}, runtimeContext = {}) {
   if (!scheme || !Array.isArray(scheme.entries)) return [];
-  return scheme.entries.filter((entry) => entry?.enabled !== false).map((entry) => {
-    const content = resolveEntryContent(entry, contentByEntry, runtimeContext);
-    return {
-      entryId: entry.id || "",
-      sourceIdentifier: entry.source_identifier || null,
-      name: entry.name || entry.source_identifier || "\u672A\u547D\u540D\u6761\u76EE",
-      role: MESSAGE_ROLES.includes(entry.role) ? entry.role : "user",
-      type: entry.type || "text",
-      marker: entry.marker || null,
-      required: entry.required === true,
-      content,
-      chars: content.length,
-      tokens: estimateTokens(content)
-    };
-  }).filter((message) => message.content.length > 0).map((message, index) => ({ ...message, index }));
+  const restoreVariables = beginVariableSandbox();
+  try {
+    return scheme.entries.filter((entry) => entry?.enabled !== false).map((entry) => {
+      const content = resolveEntryContent(entry, contentByEntry, runtimeContext);
+      return {
+        entryId: entry.id || "",
+        sourceIdentifier: entry.source_identifier || null,
+        name: entry.name || entry.source_identifier || "\u672A\u547D\u540D\u6761\u76EE",
+        role: MESSAGE_ROLES.includes(entry.role) ? entry.role : "user",
+        type: entry.type || "text",
+        marker: entry.marker || null,
+        required: entry.required === true,
+        content,
+        chars: content.length,
+        tokens: estimateTokens(content)
+      };
+    }).filter((message) => message.content.trim().length > 0).map((message, index) => ({ ...message, index }));
+  } finally {
+    restoreVariables();
+  }
 }
 var DEFAULT_CONTENT_PROMPT, DEFAULT_VISUAL_PROMPT, TITANIA_OUTPUT_CONTRACT, BUILTIN_MODES, EDITOR_VIEWS, MESSAGE_ROLES, REMOVED_MARKERS, DYNAMIC_MARKERS, BASIC_MACRO_CONTEXT_KEYS, DYNAMIC_MARKER_CONTEXT_KEYS;
 var init_promptManager = __esm({
   "src/core/promptManager.js"() {
     init_helpers();
+    init_defaults();
     DEFAULT_CONTENT_PROMPT = "You are a creative engine. Output ONLY valid HTML content inside a <div> with Inline CSS. Do NOT use markdown code blocks. Language: Chinese.";
     DEFAULT_VISUAL_PROMPT = `You are a Visual Director creating an immersive HTML scene.
 
@@ -4118,35 +4184,80 @@ textarea.t-input {
     overflow: hidden;
     padding: 10px;
     min-height: 0;
+    position: relative;
+    z-index: 0;
 }
 
-/* \u6807\u7B7E\u680F\u3002\u6837\u5F0F\u539F\u672C\u5185\u8054\u5728 mainWindow.js \u91CC\uFF0C\u5185\u8054\u4F18\u5148\u7EA7\u538B\u8FC7\u5A92\u4F53\u67E5\u8BE2\uFF0C
-   \u79FB\u52A8\u7AEF\u6CA1\u6CD5\u628A\u5B83\u5E76\u8FDB\u6807\u9898\u680F\uFF0C\u6240\u4EE5\u642C\u5230\u8FD9\u91CC */
-.t-wi-action-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 15px;
-    border-bottom: 1px solid #333;
-    flex-shrink: 0;
-}
-
+/* \u6807\u51C6\u6807\u7B7E\u9875\uFF1A\u6574\u884C\u5206\u533A\uFF0C\u9009\u4E2D\u9879\u901A\u8FC7\u5E95\u90E8\u6307\u793A\u7EBF\u8868\u8FBE\u5F53\u524D\u9875\u9762\u3002 */
 .t-wi-tabs {
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-shrink: 0;
+    border-bottom: 1px solid #333;
+    background: #1e1e1e;
+    position: relative;
+    z-index: 2;
 }
 
 .t-wi-tab-btn {
-    padding: 6px 10px;
-    font-size: 0.82em;
-    color: #aaa;
-    background: #232323;
-    border: 1px solid #3a3a3a;
+    appearance: none;
+    position: relative;
+    min-width: 0;
+    min-height: 42px;
+    padding: 10px 12px 9px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #999;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.86em;
+    letter-spacing: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.t-wi-tab-btn:hover {
+    color: #d0d0d0;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.t-wi-tab-btn::after {
+    content: "";
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    bottom: -1px;
+    height: 2px;
+    background: transparent;
 }
 
 .t-wi-tab-btn.active {
     color: #90cdf4;
-    border-color: rgba(144, 205, 244, 0.45);
-    background: rgba(144, 205, 244, 0.12);
+    font-weight: 600;
+    background: rgba(144, 205, 244, 0.055);
+}
+
+.t-wi-tab-btn.active::after {
+    background: #90cdf4;
+}
+
+.t-wi-tab-btn:focus-visible {
+    outline: 2px solid rgba(144, 205, 244, 0.75);
+    outline-offset: -3px;
+}
+
+.t-wi-tab-count {
+    color: #777;
+    font-size: 0.82em;
+    font-variant-numeric: tabular-nums;
+}
+
+.t-wi-tab-btn.active .t-wi-tab-count {
+    color: #90cdf4;
 }
 
 .t-wi-layout {
@@ -4654,6 +4765,14 @@ textarea.t-input {
        \u6CA1\u6CD5\u9760 CSS \u5408\u5E76\u6210\u4E00\u884C\uFF0C\u771F\u8981\u5408\u5E76\u5F97\u6539 DOM \u5E76\u727A\u7272\u684C\u9762\u7AEF\u7684\u5206\u9694\u7EBF\uFF0C\u4E0D\u5212\u7B97 */
     .t-wi-header {
         padding: 10px 12px;
+    }
+
+    .t-wi-tabs {
+        isolation: isolate;
+    }
+
+    .t-wi-tab-btn {
+        touch-action: manipulation;
     }
 
     .t-wi-action-bar {
@@ -11202,23 +11321,41 @@ textarea.t-input {
     }
 
     #t-debug-view .t-prompt-summary-actions {
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        justify-content: stretch;
+    }
+
+    #t-debug-view .t-prompt-count {
+        grid-column: 1 / -1;
+        margin-right: 0;
+        white-space: normal;
     }
 
     #t-debug-view .t-prompt-tool-btn {
         justify-content: center;
-        padding: 8px 6px;
+        min-height: 36px;
+        padding: 8px 10px;
     }
 
     #t-debug-view #t-prompt-expand-all-btn {
-        width: 34px;
-        overflow: hidden;
-        color: transparent;
-        gap: 0;
+        width: auto;
+        min-width: 0;
+        overflow: visible;
+        color: #999;
+        gap: 6px;
     }
 
     #t-debug-view #t-prompt-expand-all-btn i {
-        color: #999;
+        color: inherit;
+        flex-shrink: 0;
+    }
+
+    #t-debug-view .t-prompt-expand-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     #t-debug-view .t-prompt-icon-btn {
@@ -15991,6 +16128,9 @@ var init_dom = __esm({
 });
 
 // src/core/state.js
+function isFavoritableStatus(status) {
+  return FAVORITABLE_RESULT_STATUSES.has(String(status || ""));
+}
 function clonePromptTraceData(data) {
   return JSON.parse(JSON.stringify(data));
 }
@@ -16093,8 +16233,8 @@ function pushSceneToHistory(content, scriptId, scriptName, metadata = {}) {
     scriptId: String(scriptId || ""),
     scriptName: String(scriptName || "\u573A\u666F"),
     status,
-    canFavorite: status === "success" || status === "legacy",
-    canContinue: ["success", "partial", "aborted", "legacy"].includes(status),
+    canFavorite: isFavoritableStatus(status),
+    canContinue: CONTINUABLE_RESULT_STATUSES.has(status),
     error: metadata.error || null,
     timestamp: Date.now()
   };
@@ -16109,8 +16249,8 @@ function setCurrentGenerationResult(result = {}) {
     scriptId: String(result.scriptId || ""),
     scriptName: String(result.scriptName || "\u573A\u666F"),
     status,
-    canFavorite: status === "success" || status === "legacy",
-    canContinue: ["success", "partial", "aborted", "legacy"].includes(status),
+    canFavorite: isFavoritableStatus(status),
+    canContinue: CONTINUABLE_RESULT_STATUSES.has(status),
     error: result.error || null,
     timestamp: Number(result.timestamp) || Date.now()
   };
@@ -16130,8 +16270,8 @@ function getCurrentGenerationResult() {
         scriptId: String(item.scriptId || ""),
         scriptName: String(item.scriptName || "\u573A\u666F"),
         status,
-        canFavorite: status === "success" || status === "legacy",
-        canContinue: ["success", "partial", "aborted", "legacy"].includes(status),
+        canFavorite: isFavoritableStatus(status),
+        canContinue: CONTINUABLE_RESULT_STATUSES.has(status),
         error: item.error || null,
         timestamp: Number(item.timestamp) || 0
       };
@@ -16322,9 +16462,11 @@ function setFavsWindowOpen(isOpen) {
 function shouldSuspendStreamUiRendering() {
   return GlobalState.uiFlags.isFavsOpen === true;
 }
-var GlobalState;
+var FAVORITABLE_RESULT_STATUSES, CONTINUABLE_RESULT_STATUSES, GlobalState;
 var init_state = __esm({
   "src/core/state.js"() {
+    FAVORITABLE_RESULT_STATUSES = /* @__PURE__ */ new Set(["success", "partial", "aborted", "legacy"]);
+    CONTINUABLE_RESULT_STATUSES = /* @__PURE__ */ new Set(["success", "partial", "aborted", "legacy"]);
     GlobalState = {
       isGenerating: false,
       abortController: null,
@@ -17022,8 +17164,7 @@ async function getContextData() {
   const activeBooks = collectSessionActiveBooks(ctx, wiVars, data.charName, true);
   const contentParts = [];
   const extData = getExtData();
-  const wiConfig = extData.worldinfo || { char_selections: {} };
-  const charSelections = wiConfig.char_selections[data.charName] || null;
+  const charSelections = readWorldInfoSelections(extData, ctx, data.charName);
   for (const bookName of activeBooks) {
     const bookData = await safeLoadWorldInfo(ctx, bookName);
     if (!bookData || !bookData.entries) continue;
@@ -17079,19 +17220,98 @@ function getCurrentCharNameFromContext(ctx) {
     return "Char";
   }
 }
-function getLocalAutoActiveBooks(charName) {
-  const extData = getExtData();
-  const wiConfig = extData.worldinfo || {};
-  const explicit = wiConfig.char_auto_active_books?.[charName];
-  if (Array.isArray(explicit)) return explicit;
-  const legacySelections = wiConfig.char_selections?.[charName];
-  if (legacySelections && typeof legacySelections === "object") {
-    return Object.keys(legacySelections).filter((bookName) => {
-      const selected = legacySelections[bookName];
-      return Array.isArray(selected) && selected.length > 0;
-    });
+function getCharacterCardKey(stCtx = null) {
+  let ctx = stCtx;
+  try {
+    if (!ctx && typeof SillyTavern !== "undefined") ctx = SillyTavern.getContext?.();
+  } catch {
+    ctx = null;
   }
+  if (!ctx) return `${NAME_KEY_PREFIX}Char`;
+  const charId = ctx.characterId;
+  if (charId !== void 0 && charId !== null) {
+    const avatar = String(ctx.characters?.[charId]?.avatar || "").trim();
+    if (avatar) return CARD_KEY_PREFIX + avatar.replace(/\.[^/.]+$/, "");
+  }
+  return NAME_KEY_PREFIX + getCurrentCharNameFromContext(ctx);
+}
+function isNameSharedByMultipleCards(ctx, charName) {
+  const characters = Array.isArray(ctx?.characters) ? ctx.characters : [];
+  const target = String(charName || "").trim();
+  if (!target) return false;
+  let seen = 0;
+  for (const item of characters) {
+    if (String(item?.name || "").trim() === target && ++seen > 1) return true;
+  }
+  return false;
+}
+function getWorldInfoConfig(extData) {
+  const wiConfig = extData.worldinfo && typeof extData.worldinfo === "object" ? extData.worldinfo : {};
+  return {
+    cardSelections: wiConfig.card_selections && typeof wiConfig.card_selections === "object" ? wiConfig.card_selections : null,
+    cardAutoActiveBooks: wiConfig.card_auto_active_books && typeof wiConfig.card_auto_active_books === "object" ? wiConfig.card_auto_active_books : null,
+    legacySelections: wiConfig.char_selections && typeof wiConfig.char_selections === "object" ? wiConfig.char_selections : null,
+    legacyAutoActiveBooks: wiConfig.char_auto_active_books && typeof wiConfig.char_auto_active_books === "object" ? wiConfig.char_auto_active_books : null
+  };
+}
+function notifyLegacyAmbiguityOnce(charName) {
+  if (legacyAmbiguityNotified) return;
+  legacyAmbiguityNotified = true;
+  console.warn(`Titania: \u68C0\u6D4B\u5230\u591A\u5F20\u89D2\u8272\u5361\u5171\u7528\u540D\u79F0\u300C${charName}\u300D\uFF0C\u65E7\u7684\u4E16\u754C\u4E66\u7B5B\u9009\u914D\u7F6E\u5DF2\u6309\u5361\u7247\u9694\u79BB\uFF0C\u9700\u8981\u91CD\u65B0\u9009\u62E9\u4E00\u6B21\u6761\u76EE\u3002`);
+  if (typeof window !== "undefined" && window.toastr) {
+    window.toastr.info(
+      `\u68C0\u6D4B\u5230\u591A\u5F20\u89D2\u8272\u5361\u5171\u7528\u540D\u79F0\u300C${charName}\u300D\u3002\u4E16\u754C\u4E66\u7B5B\u9009\u5DF2\u6539\u4E3A\u6309\u5361\u7247\u72EC\u7ACB\u4FDD\u5B58\uFF0C\u8FD9\u5F20\u5361\u9700\u8981\u91CD\u65B0\u9009\u62E9\u4E00\u6B21\u6761\u76EE\u3002`,
+      "Titania Echo",
+      { timeOut: 9e3 }
+    );
+  }
+}
+function canInheritLegacy(ctx, charName, hasLegacyData) {
+  if (!isNameSharedByMultipleCards(ctx, charName)) return true;
+  if (hasLegacyData) notifyLegacyAmbiguityOnce(charName);
+  return false;
+}
+function readWorldInfoSelections(extData, ctx, charName) {
+  const cfg = getWorldInfoConfig(extData);
+  const cardKey = getCharacterCardKey(ctx);
+  const byCard = cfg.cardSelections?.[cardKey];
+  if (byCard && typeof byCard === "object") return byCard;
+  const legacy = cfg.legacySelections?.[charName];
+  const hasLegacy = Boolean(legacy && typeof legacy === "object");
+  if (hasLegacy && canInheritLegacy(ctx, charName, true)) return legacy;
+  return null;
+}
+function readAutoActiveBooks(extData, ctx, charName) {
+  const cfg = getWorldInfoConfig(extData);
+  const cardKey = getCharacterCardKey(ctx);
+  const deriveFromSelections = (selections) => Object.keys(selections).filter((bookName) => {
+    const selected = selections[bookName];
+    return Array.isArray(selected) && selected.length > 0;
+  });
+  const byCard = cfg.cardAutoActiveBooks?.[cardKey];
+  if (Array.isArray(byCard)) return byCard;
+  const cardSelections = cfg.cardSelections?.[cardKey];
+  if (cardSelections && typeof cardSelections === "object") return deriveFromSelections(cardSelections);
+  const legacyExplicit = cfg.legacyAutoActiveBooks?.[charName];
+  const legacySelections = cfg.legacySelections?.[charName];
+  const hasLegacy = Array.isArray(legacyExplicit) || Boolean(legacySelections && typeof legacySelections === "object");
+  if (!canInheritLegacy(ctx, charName, hasLegacy)) return [];
+  if (Array.isArray(legacyExplicit)) return legacyExplicit;
+  if (legacySelections && typeof legacySelections === "object") return deriveFromSelections(legacySelections);
   return [];
+}
+function writeWorldInfoSelections(extData, ctx, selections, autoActiveBooks) {
+  if (!extData.worldinfo || typeof extData.worldinfo !== "object") extData.worldinfo = {};
+  const wiConfig = extData.worldinfo;
+  if (!wiConfig.card_selections || typeof wiConfig.card_selections !== "object") wiConfig.card_selections = {};
+  if (!wiConfig.card_auto_active_books || typeof wiConfig.card_auto_active_books !== "object") wiConfig.card_auto_active_books = {};
+  const cardKey = getCharacterCardKey(ctx);
+  wiConfig.card_selections[cardKey] = selections;
+  wiConfig.card_auto_active_books[cardKey] = Array.isArray(autoActiveBooks) ? autoActiveBooks : [];
+  return cardKey;
+}
+function getLocalAutoActiveBooks(charName, ctx = null) {
+  return readAutoActiveBooks(getExtData(), ctx, charName);
 }
 function collectSessionActiveBooks(ctx, wiVars, charName = "Char", includeLocalAuto = false) {
   const activeBooks = /* @__PURE__ */ new Set();
@@ -17121,7 +17341,7 @@ function collectSessionActiveBooks(ctx, wiVars, charName = "Char", includeLocalA
     console.warn("Titania: \u83B7\u53D6 Persona \u4E16\u754C\u4E66\u5931\u8D25", e);
   }
   if (includeLocalAuto) {
-    const localAutoBooks = getLocalAutoActiveBooks(charName);
+    const localAutoBooks = getLocalAutoActiveBooks(charName, ctx);
     localAutoBooks.forEach((name) => activeBooks.add(name));
   }
   return activeBooks;
@@ -17177,9 +17397,13 @@ async function getWorldInfoEntriesByBookName(bookName) {
     isDisabled: e.disable === true && e.enabled !== true
   }));
 }
+var CARD_KEY_PREFIX, NAME_KEY_PREFIX, legacyAmbiguityNotified;
 var init_context = __esm({
   "src/core/context.js"() {
     init_storage();
+    CARD_KEY_PREFIX = "card:";
+    NAME_KEY_PREFIX = "name:";
+    legacyAmbiguityNotified = false;
   }
 });
 
@@ -17544,7 +17768,7 @@ function isSameChainSession(favEntry, scriptId, branchKey, currentItems) {
 async function saveContinuationChainFavorite() {
   const currentResult = getCurrentGenerationResult();
   if (!isFavoriteEligible(currentResult)) {
-    if (window.toastr) toastr.warning("\u5F53\u524D\u5185\u5BB9\u751F\u6210\u672A\u5B8C\u6210\uFF0C\u65E0\u6CD5\u6536\u85CF");
+    if (window.toastr) toastr.warning("\u5F53\u524D\u6CA1\u6709\u53EF\u6536\u85CF\u7684\u5267\u573A\u5185\u5BB9");
     return false;
   }
   const display = GlobalState.displayState?.isViewingHistory ? GlobalState.sceneHistory?.items?.[GlobalState.displayState.currentViewIndex] || null : {
@@ -17560,7 +17784,9 @@ async function saveContinuationChainFavorite() {
   const chainData = getContinuationRoundsForFav(scriptId);
   const rounds = Array.isArray(chainData?.rounds) ? chainData.rounds : [];
   const currentDisplayContent = String(currentResult?.content || "").trim();
-  const normalizedRounds = rounds.length > 0 ? rounds.filter((round) => round.status === "success" || round.status === "legacy") : currentDisplayContent ? [{ round: 1, type: "initial", instruction: "\uFF08\u9996\u6B21\u751F\u6210\uFF09", content: currentDisplayContent, timestamp: Date.now() }] : [];
+  const normalizedRounds = rounds.length > 0 ? rounds.filter(
+    (round) => ["success", "partial", "aborted", "legacy"].includes(String(round?.status || "legacy")) && String(round?.content || "").trim().length > 0
+  ) : currentDisplayContent ? [{ round: 1, type: "initial", instruction: "\uFF08\u9996\u6B21\u751F\u6210\uFF09", content: currentDisplayContent, timestamp: Date.now() }] : [];
   if (normalizedRounds.length === 0) {
     if (window.toastr) toastr.warning("\u5F53\u524D\u5267\u573A\u6CA1\u6709\u53EF\u6536\u85CF\u5185\u5BB9");
     return false;
@@ -19317,7 +19543,7 @@ async function showDebugInfo() {
             </div>
             <div class="t-prompt-summary-actions">
                 <span class="t-prompt-count"><strong id="t-prompt-total-token">0</strong> tokens<span id="t-prompt-token-approx" style="display:none"> (\u4F30\u7B97)</span> \xB7 <b id="t-prompt-section-count">0</b> \u6761\u6D88\u606F</span>
-                <button id="t-prompt-expand-all-btn" class="t-prompt-tool-btn" title="\u5C55\u5F00\u5168\u90E8\u6D88\u606F"><i class="fa-solid fa-angles-down"></i> \u5C55\u5F00\u5168\u90E8</button>
+                <button id="t-prompt-expand-all-btn" class="t-prompt-tool-btn" title="\u5C55\u5F00\u5168\u90E8\u6D88\u606F" aria-label="\u5C55\u5F00\u5168\u90E8\u6D88\u606F"><i class="fa-solid fa-angles-down"></i><span class="t-prompt-expand-label">\u5C55\u5F00\u5168\u90E8</span></button>
                 <button id="t-debug-refresh" class="t-prompt-tool-btn t-prompt-icon-btn" title="\u5237\u65B0"><i class="fa-solid fa-rotate-right"></i></button>
             </div>
         </div>
@@ -19430,8 +19656,12 @@ async function showDebugInfo() {
     $(this).addClass("active").attr("aria-selected", "true");
     $("#t-prompt-info-popover").prop("hidden", true);
     $("#t-prompt-info-btn").attr("aria-expanded", "false");
-    if (activeSource === "preview" && !currentPreview) await loadCurrentPreview();
-    else renderPromptWindow();
+    if (activeSource === "preview") {
+      currentPreview = null;
+      await loadCurrentPreview();
+    } else {
+      renderPromptWindow();
+    }
   });
   $("#t-prompt-info-btn").on("click", function(event) {
     event.stopPropagation();
@@ -19467,11 +19697,11 @@ async function showDebugInfo() {
     if ($cards.length === 0) return;
     const allExpanded = $cards.filter(".expanded").length === $cards.length;
     if (allExpanded) {
-      $btn.html('<i class="fa-solid fa-angles-up"></i> \u6298\u53E0\u5168\u90E8');
-      $btn.attr("title", "\u6298\u53E0\u5168\u90E8\u6D88\u606F");
+      $btn.html('<i class="fa-solid fa-angles-up"></i><span class="t-prompt-expand-label">\u6298\u53E0\u5168\u90E8</span>');
+      $btn.attr({ title: "\u6298\u53E0\u5168\u90E8\u6D88\u606F", "aria-label": "\u6298\u53E0\u5168\u90E8\u6D88\u606F" });
     } else {
-      $btn.html('<i class="fa-solid fa-angles-down"></i> \u5C55\u5F00\u5168\u90E8');
-      $btn.attr("title", "\u5C55\u5F00\u5168\u90E8\u6D88\u606F");
+      $btn.html('<i class="fa-solid fa-angles-down"></i><span class="t-prompt-expand-label">\u5C55\u5F00\u5168\u90E8</span>');
+      $btn.attr({ title: "\u5C55\u5F00\u5168\u90E8\u6D88\u606F", "aria-label": "\u5C55\u5F00\u5168\u90E8\u6D88\u606F" });
     }
   };
   $("#t-prompt-expand-all-btn").on("click", function() {
@@ -36934,7 +37164,7 @@ async function openMainWindow() {
   });
   $("#t-btn-like").on("click", () => {
     if (!isFavoriteEligible(getCurrentGenerationResult())) {
-      if (window.toastr) toastr.warning("\u5F53\u524D\u5185\u5BB9\u751F\u6210\u672A\u5B8C\u6210\uFF0C\u65E0\u6CD5\u6536\u85CF");
+      if (window.toastr) toastr.warning("\u5F53\u524D\u6CA1\u6709\u53EF\u6536\u85CF\u7684\u5267\u573A\u5185\u5BB9");
       updateFavButtonUI();
       return;
     }
@@ -37243,7 +37473,13 @@ async function updateWorldInfoBadge() {
     const data = getExtData();
     let totalCount = 0;
     let selectedCount = 0;
-    const charSelections = data.worldinfo?.char_selections?.[ctx.charName] || null;
+    let stCtx = null;
+    try {
+      if (typeof SillyTavern !== "undefined") stCtx = SillyTavern.getContext?.() || null;
+    } catch {
+      stCtx = null;
+    }
+    const charSelections = readWorldInfoSelections(data, stCtx, ctx.charName);
     entries.forEach((book) => {
       book.entries.forEach((entry) => {
         totalCount++;
@@ -37287,12 +37523,12 @@ async function openWorldInfoSelector() {
       if (typeof SillyTavern !== "undefined" && SillyTavern.getContext) {
         const stCtx = SillyTavern.getContext();
         const charName2 = stCtx?.substituteParams?.("{{char}}") || "Char";
-        return { charName: charName2 };
+        return { charName: charName2, stCtx };
       }
     } catch (e) {
       console.warn("Titania: \u83B7\u53D6\u4E16\u754C\u4E66\u7A97\u53E3\u4E0A\u4E0B\u6587\u5931\u8D25", e);
     }
-    return { charName: "Char" };
+    return { charName: "Char", stCtx: null };
   };
   const loadingHtml = `
     <div id="t-wi-selector" class="t-wi-selector">
@@ -37310,8 +37546,13 @@ async function openWorldInfoSelector() {
             </div>
         </div>
     </div>`;
-  $("#t-main-view").append(loadingHtml);
-  $("#t-wi-close").on("click", () => $("#t-wi-selector").remove());
+  const $loadingPanel = $(loadingHtml);
+  let loadingCancelled = false;
+  $("#t-main-view").append($loadingPanel);
+  $loadingPanel.find("#t-wi-close").on("click", () => {
+    loadingCancelled = true;
+    $loadingPanel.remove();
+  });
   let ctx;
   let allBookNames;
   let activeBookNames;
@@ -37340,22 +37581,23 @@ async function openWorldInfoSelector() {
     }
   } catch (e) {
     console.error("Titania: \u52A0\u8F7D\u4E16\u754C\u4E66\u6570\u636E\u5931\u8D25", e);
-    $("#t-wi-selector .t-wi-body").html(`
+    if (loadingCancelled || !$loadingPanel[0]?.isConnected) return;
+    $loadingPanel.find(".t-wi-body").html(`
             <div style="text-align:center; color:#e74c3c; padding:20px;">
                 <i class="fa-solid fa-exclamation-triangle" style="font-size:2em; margin-bottom:10px;"></i>
                 <div style="margin-bottom:10px;">\u52A0\u8F7D\u4E16\u754C\u4E66\u6570\u636E\u5931\u8D25</div>
                 <div style="font-size:0.9em; color:#888;">${e.message}</div>
-                <button class="t-btn" style="margin-top:15px;" onclick="$('#t-wi-selector').remove();">\u5173\u95ED</button>
+                <button class="t-btn t-wi-load-error-close" style="margin-top:15px;">\u5173\u95ED</button>
             </div>
         `);
+    $loadingPanel.find(".t-wi-load-error-close").on("click", () => $loadingPanel.remove());
     return;
   }
+  if (loadingCancelled || !$loadingPanel[0]?.isConnected) return;
   const data = getExtData();
-  if (!data.worldinfo) data.worldinfo = { char_selections: {}, char_auto_active_books: {} };
-  if (!data.worldinfo.char_selections) data.worldinfo.char_selections = {};
-  if (!data.worldinfo.char_auto_active_books) data.worldinfo.char_auto_active_books = {};
+  if (!data.worldinfo) data.worldinfo = {};
   const charName = ctx.charName;
-  const savedSelections = data.worldinfo.char_selections[charName] || null;
+  const savedSelections = readWorldInfoSelections(data, ctx.stCtx, charName);
   const workingSelections = savedSelections ? structuredClone(savedSelections) : {};
   const allBooks = Array.isArray(allBookNames) ? allBookNames.slice() : [];
   const baseActiveBooks = Array.isArray(activeBookNames) ? activeBookNames.filter((name) => allBooks.includes(name)) : [];
@@ -37365,7 +37607,7 @@ async function openWorldInfoSelector() {
   let currentViewMode = "all";
   const getVisibleBooks = () => currentViewMode === "active" ? baseActiveBooks : allBooks;
   let visibleBooks = getVisibleBooks();
-  $("#t-wi-selector").remove();
+  $loadingPanel.remove();
   const renderBookListHtml = (books, activeSet2, selectedName) => {
     if (!books.length) {
       const emptyText = currentViewMode === "active" ? "\u5F53\u524D\u6CA1\u6709\u5DF2\u6FC0\u6D3B\u4E16\u754C\u4E66" : "\u672A\u627E\u5230\u4EFB\u4F55\u4E16\u754C\u4E66";
@@ -37405,9 +37647,13 @@ async function openWorldInfoSelector() {
             <div class="t-close" id="t-wi-close">&times;</div>
         </div>
 
-        <div class="t-wi-action-bar t-wi-tabs">
-            <button type="button" class="t-btn t-btn-xs t-wi-tab-btn active" data-mode="all">\u5168\u90E8\u4E16\u754C\u4E66 (${allBooks.length})</button>
-            <button type="button" class="t-btn t-btn-xs t-wi-tab-btn" data-mode="active">\u5DF2\u6FC0\u6D3B\u4E16\u754C\u4E66 (${baseActiveBooks.length})</button>
+        <div class="t-wi-tabs" role="tablist" aria-label="\u4E16\u754C\u4E66\u8303\u56F4">
+            <button type="button" class="t-wi-tab-btn active" role="tab" aria-selected="true" data-mode="all">
+                <span>\u5168\u90E8\u4E16\u754C\u4E66</span><span class="t-wi-tab-count" id="t-wi-all-count">${allBooks.length}</span>
+            </button>
+            <button type="button" class="t-wi-tab-btn" role="tab" aria-selected="false" data-mode="active">
+                <span>\u5DF2\u6FC0\u6D3B\u4E16\u754C\u4E66</span><span class="t-wi-tab-count" id="t-wi-active-count">${baseActiveBooks.length}</span>
+            </button>
         </div>
 
         <div class="t-wi-body t-wi-layout" id="t-wi-layout">
@@ -37443,11 +37689,20 @@ async function openWorldInfoSelector() {
             <button class="t-btn primary" id="t-wi-save" ${allBooks.length === 0 ? "disabled" : ""}>\u4FDD\u5B58</button>
         </div>
     </div>`;
-  $("#t-main-view").append(html);
+  const $panel = $(html);
+  const $q = (selector) => $panel.find(selector);
+  $("#t-main-view").append($panel);
   let currentBookName = visibleBooks[0] || "";
   let currentEntries2 = [];
   let entrySearchQuery = "";
+  let entrySearchTimer = null;
+  let bookLoadRequestId = 0;
   const activeSet = new Set(baseActiveBooks);
+  const closePanel2 = () => {
+    bookLoadRequestId++;
+    clearTimeout(entrySearchTimer);
+    $panel.remove();
+  };
   const getAutoActiveBooksFromSelections = () => {
     return Object.keys(workingSelections).filter((bookName) => {
       const selected = workingSelections[bookName];
@@ -37459,9 +37714,11 @@ async function openWorldInfoSelector() {
     activeSet.clear();
     baseActiveBooks.forEach((name) => activeSet.add(name));
     autoActive.forEach((name) => activeSet.add(name));
+    const activeCount = allBooks.filter((name) => activeSet.has(name)).length;
+    $q("#t-wi-active-count").text(activeCount);
   };
   const showEntryPreview = (title, content) => {
-    $(".t-wi-preview-modal").remove();
+    $q(".t-wi-preview-modal").remove();
     const $modal = $(`
             <div class="t-wi-preview-modal">
                 <div class="t-wi-preview-box">
@@ -37479,7 +37736,7 @@ async function openWorldInfoSelector() {
     $modal.find(".t-wi-preview-close").on("click", function() {
       $modal.remove();
     });
-    $("#t-wi-selector").append($modal);
+    $panel.append($modal);
   };
   const getBookSelectedSet = (bookName) => {
     const selectedUids = Array.isArray(workingSelections[bookName]) ? workingSelections[bookName] : [];
@@ -37507,18 +37764,18 @@ async function openWorldInfoSelector() {
   const syncSelectAllLabels = () => {
     const visibleCount = getVisibleEntries().length;
     const suffix = entrySearchQuery ? ` (${visibleCount})` : "";
-    $("#t-wi-current-select-all").text(`\u5168\u9009${suffix}`);
-    $("#t-wi-current-select-none").text(`\u53D6\u6D88\u5168\u9009${suffix}`);
+    $q("#t-wi-current-select-all").text(`\u5168\u9009${suffix}`);
+    $q("#t-wi-current-select-none").text(`\u53D6\u6D88\u5168\u9009${suffix}`);
   };
   const updateStat = () => {
     const selectedSet = getBookSelectedSet(currentBookName);
     const selectedCount = currentEntries2.filter((entry) => selectedSet.has(Number(entry.uid))).length;
     const filterNote = entrySearchQuery ? `\u3000\u7B5B\u9009\u51FA ${getVisibleEntries().length} \u6761` : "";
-    $("#t-wi-stat").text(`\u5DF2\u9009: ${selectedCount}/${currentEntries2.length}${filterNote}`);
+    $q("#t-wi-stat").text(`\u5DF2\u9009: ${selectedCount}/${currentEntries2.length}${filterNote}`);
     syncSelectAllLabels();
   };
   const renderEntries = () => {
-    const $body = $("#t-wi-entry-list");
+    const $body = $q("#t-wi-entry-list");
     $body.empty();
     if (!currentBookName) {
       $body.append('<div class="t-wi-empty">\u672A\u9009\u62E9\u4E16\u754C\u4E66</div>');
@@ -37539,7 +37796,7 @@ async function openWorldInfoSelector() {
                 </div>
             `);
       $body.find("#t-wi-search-reset").on("click", () => {
-        $("#t-wi-entry-search-input").val("").trigger("input");
+        $q("#t-wi-entry-search-input").val("").trigger("input");
       });
       updateStat();
       return;
@@ -37578,9 +37835,19 @@ async function openWorldInfoSelector() {
         setBookSelections(currentBookName, nextSet);
         $entry.toggleClass("selected", isChecked);
         if (currentViewMode === "active") {
+          const previousBookName = currentBookName;
           syncVisibleBooksByMode();
           ensureCurrentBookInView();
           renderBookList();
+          if (currentBookName !== previousBookName) {
+            if (currentBookName) loadBookEntries(currentBookName);
+            else {
+              currentEntries2 = [];
+              renderEntries();
+              syncEntryPaneHeader();
+            }
+            return;
+          }
         }
         syncEntryPaneHeader();
         updateStat();
@@ -37601,8 +37868,8 @@ async function openWorldInfoSelector() {
   const syncEntryPaneHeader = () => {
     const isActive = activeSet.has(currentBookName);
     const title = currentBookName || "\u672A\u9009\u62E9\u4E16\u754C\u4E66";
-    $("#t-wi-entry-pane-title").text(title);
-    $("#t-wi-entry-pane-badge").text(isActive ? "\u5DF2\u6FC0\u6D3B" : "\u672A\u6FC0\u6D3B").removeClass("active inactive").addClass(isActive ? "active" : "inactive");
+    $q("#t-wi-entry-pane-title").text(title);
+    $q("#t-wi-entry-pane-badge").text(isActive ? "\u5DF2\u6FC0\u6D3B" : "\u672A\u6FC0\u6D3B").removeClass("active inactive").addClass(isActive ? "active" : "inactive");
   };
   const bulkSelectCurrentBook = (checked) => {
     if (!currentBookName) return;
@@ -37614,21 +37881,31 @@ async function openWorldInfoSelector() {
     });
     setBookSelections(currentBookName, nextSet);
     if (currentViewMode === "active") {
+      const previousBookName = currentBookName;
       syncVisibleBooksByMode();
       ensureCurrentBookInView();
       renderBookList();
+      if (currentBookName !== previousBookName) {
+        if (currentBookName) loadBookEntries(currentBookName);
+        else {
+          currentEntries2 = [];
+          renderEntries();
+          syncEntryPaneHeader();
+        }
+        return;
+      }
     }
     syncEntryPaneHeader();
     renderEntries();
   };
   const renderBookList = () => {
-    $("#t-wi-books-list").html(renderBookListHtml(visibleBooks, activeSet, currentBookName));
-    $("#t-wi-books-list .t-wi-book-item").on("click", function() {
+    $q("#t-wi-books-list").html(renderBookListHtml(visibleBooks, activeSet, currentBookName));
+    $q("#t-wi-books-list .t-wi-book-item").on("click", function() {
       const next = decodeURIComponent(String($(this).data("bookName") || ""));
       if (!next || next === currentBookName) return;
       loadBookEntries(next);
     });
-    const $select = $("#t-wi-book-select");
+    const $select = $q("#t-wi-book-select");
     $select.html(renderBookSelectHtml(visibleBooks, activeSet, currentBookName));
     $select.prop("disabled", visibleBooks.length === 0);
     $select.off("change").on("change", function() {
@@ -37650,36 +37927,41 @@ async function openWorldInfoSelector() {
   };
   const loadBookEntries = async (bookName) => {
     currentBookName = bookName || "";
+    const requestedBookName = currentBookName;
+    const requestId = ++bookLoadRequestId;
+    clearTimeout(entrySearchTimer);
     entrySearchQuery = "";
-    $("#t-wi-entry-search-input").val("");
-    $("#t-wi-entry-search").removeClass("has-query");
+    $q("#t-wi-entry-search-input").val("");
+    $q("#t-wi-entry-search").removeClass("has-query");
     syncEntryPaneHeader();
     renderBookList();
-    const $body = $("#t-wi-entry-list");
+    const $body = $q("#t-wi-entry-list");
     $body.html(`
             <div style="text-align:center; color:#888; padding:30px 10px;">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size:1.6em; margin-bottom:10px;"></i>
-                <div>\u6B63\u5728\u52A0\u8F7D\u300C${escapeHtmlText2(currentBookName)}\u300D...</div>
+                <div>\u6B63\u5728\u52A0\u8F7D\u300C${escapeHtmlText2(requestedBookName)}\u300D...</div>
             </div>
         `);
+    let nextEntries = [];
     try {
-      currentEntries2 = await getWorldInfoEntriesByBookName(currentBookName);
+      nextEntries = await getWorldInfoEntriesByBookName(requestedBookName);
     } catch (e) {
       console.error("Titania: \u52A0\u8F7D\u6307\u5B9A\u4E16\u754C\u4E66\u5931\u8D25", e);
-      currentEntries2 = [];
     }
+    if (!$panel[0]?.isConnected || requestId !== bookLoadRequestId || currentBookName !== requestedBookName) return;
+    currentEntries2 = nextEntries;
     renderEntries();
     syncEntryPaneHeader();
     renderBookList();
   };
-  $(".t-wi-tab-btn").on("click", function() {
+  $panel.on("click", ".t-wi-tab-btn", function() {
     const nextMode = String($(this).data("mode") || "all");
     if (nextMode === currentViewMode) return;
     currentViewMode = nextMode === "active" ? "active" : "all";
     syncVisibleBooksByMode();
     ensureCurrentBookInView();
-    $(".t-wi-tab-btn").removeClass("active");
-    $(this).addClass("active");
+    $q(".t-wi-tab-btn").removeClass("active").attr("aria-selected", "false");
+    $(this).addClass("active").attr("aria-selected", "true");
     if (!currentBookName) {
       currentEntries2 = [];
       renderBookList();
@@ -37689,30 +37971,28 @@ async function openWorldInfoSelector() {
     }
     loadBookEntries(currentBookName);
   });
-  $("#t-wi-current-select-all").on("click", () => bulkSelectCurrentBook(true));
-  $("#t-wi-current-select-none").on("click", () => bulkSelectCurrentBook(false));
-  let entrySearchTimer = null;
-  $("#t-wi-entry-search-input").on("input", function() {
+  $q("#t-wi-current-select-all").on("click", () => bulkSelectCurrentBook(true));
+  $q("#t-wi-current-select-none").on("click", () => bulkSelectCurrentBook(false));
+  $q("#t-wi-entry-search-input").on("input", function() {
     const raw = String($(this).val() || "");
-    $("#t-wi-entry-search").toggleClass("has-query", raw.length > 0);
+    $q("#t-wi-entry-search").toggleClass("has-query", raw.length > 0);
     clearTimeout(entrySearchTimer);
     entrySearchTimer = setTimeout(() => {
       entrySearchQuery = raw.trim();
       renderEntries();
     }, 120);
   });
-  $("#t-wi-entry-search-clear").on("click", () => {
-    $("#t-wi-entry-search-input").val("").trigger("input").trigger("focus");
+  $q("#t-wi-entry-search-clear").on("click", () => {
+    $q("#t-wi-entry-search-input").val("").trigger("input").trigger("focus");
   });
-  $("#t-wi-save").on("click", () => {
+  $q("#t-wi-save").on("click", () => {
     if (!currentBookName && !Object.keys(workingSelections).length) return;
-    data.worldinfo.char_selections[charName] = workingSelections;
-    data.worldinfo.char_auto_active_books[charName] = getAutoActiveBooksFromSelections();
+    writeWorldInfoSelections(data, ctx.stCtx, workingSelections, getAutoActiveBooksFromSelections());
     saveExtData();
     updateWorldInfoBadge();
     if (window.toastr) toastr.success("\u4E16\u754C\u4E66\u8BBE\u7F6E\u5DF2\u4FDD\u5B58");
   });
-  $("#t-wi-close").on("click", () => $("#t-wi-selector").remove());
+  $q("#t-wi-close").on("click", closePanel2);
   refreshActiveState();
   syncVisibleBooksByMode();
   ensureCurrentBookInView();
@@ -38872,11 +39152,12 @@ function createContinuationRoundKey() {
   const rand = Math.random().toString(36).slice(2, 8);
   return `round_${ts}_${rand}`;
 }
-function normalizeContinuationRounds(rounds) {
+function normalizeContinuationRounds(rounds, options = {}) {
   if (!Array.isArray(rounds)) return [];
+  const persistRoundKeys = options.persistRoundKeys !== false;
   return rounds.map((item, index) => {
     const roundKey = String(item?.roundKey || "").trim() || createContinuationRoundKey();
-    if (item && typeof item === "object" && !item.roundKey) item.roundKey = roundKey;
+    if (persistRoundKeys && item && typeof item === "object" && !item.roundKey) item.roundKey = roundKey;
     return {
       roundKey,
       round: index + 1,
@@ -38918,7 +39199,7 @@ function findContinuationRoundAnchor(scriptId, probe = {}) {
     if (!matchById && !wantedContent) continue;
     for (const candidate of candidates) {
       if (!candidate.branchKey) continue;
-      const rounds = normalizeContinuationRounds(candidate.rounds);
+      const rounds = normalizeContinuationRounds(candidate.rounds, { persistRoundKeys: false });
       const index = rounds.findIndex((item) => matchById ? String(item.generationId || "").trim() === wantedId : item.content === wantedContent);
       if (index < 0) continue;
       return {
@@ -38932,7 +39213,7 @@ function findContinuationRoundAnchor(scriptId, probe = {}) {
   }
   return null;
 }
-async function startFreshContinuationBranch(script, baseContent) {
+async function startFreshContinuationBranch(script, baseContent, generationId = "") {
   resetContinuationSessionRounds(script.id, script.name);
   const branchContext = await getContextData();
   let branchInstruction = String(script.prompt || "");
@@ -38946,7 +39227,8 @@ async function startFreshContinuationBranch(script, baseContent) {
   }
   setContinuationSessionBaseRound(script.id, script.name, baseContent, {
     forceNewBranch: true,
-    instruction: branchInstruction
+    instruction: branchInstruction,
+    generationId: String(generationId || "")
   });
 }
 function branchContinuationSessionAtRound(scriptId, sourceBranchKey, targetRound, targetRoundKey = "", includeTarget = false) {
@@ -38957,7 +39239,8 @@ function branchContinuationSessionAtRound(scriptId, sourceBranchKey, targetRound
   const source = requestedBranchKey === activeBranchKey ? { branchKey: activeBranchKey, rounds: entry.rounds } : Array.isArray(entry.archivedBranches) ? entry.archivedBranches.find((item) => String(item?.branchKey || "") === requestedBranchKey) : null;
   const sourceRounds = normalizeContinuationRounds(source?.rounds);
   const requestedRoundKey = String(targetRoundKey || "").trim();
-  const roundNumber = requestedRoundKey ? sourceRounds.findIndex((item) => item.roundKey === requestedRoundKey) + 1 : Math.floor(Number(targetRound));
+  let roundNumber = requestedRoundKey ? sourceRounds.findIndex((item) => item.roundKey === requestedRoundKey) + 1 : Math.floor(Number(targetRound));
+  if (requestedRoundKey && roundNumber === 0) roundNumber = Math.floor(Number(targetRound));
   if (!source || !Number.isFinite(roundNumber) || roundNumber < 1 || roundNumber > sourceRounds.length) return null;
   const previousActiveBranch = {
     branchKey: activeBranchKey,
@@ -39145,6 +39428,19 @@ ${item.content}`;
     estimatedTokens: estimateTokens(block)
   };
 }
+function getContinuationRoundsThroughAnchor(scriptId, anchor) {
+  const entry = getContinuationRuntimeStore()[scriptId];
+  if (!entry || !anchor) return [];
+  const activeBranchKey = String(entry.branchKey || "").trim();
+  const requestedBranchKey = String(anchor.branchKey || "").trim();
+  const source = requestedBranchKey === activeBranchKey ? entry : Array.isArray(entry.archivedBranches) ? entry.archivedBranches.find((branch) => String(branch?.branchKey || "").trim() === requestedBranchKey) : null;
+  const rounds = normalizeContinuationRounds(source?.rounds, { persistRoundKeys: false });
+  const requestedRoundKey = String(anchor.roundKey || "").trim();
+  let anchorIndex = requestedRoundKey ? rounds.findIndex((round) => round.roundKey === requestedRoundKey) : -1;
+  if (anchorIndex < 0) anchorIndex = Math.floor(Number(anchor.round)) - 1;
+  if (anchorIndex < 0 || anchorIndex >= rounds.length) return [];
+  return rounds.slice(0, anchorIndex + 1);
+}
 function buildContinuationBranchInjection(rounds) {
   const selectedRounds = normalizeContinuationRounds(rounds);
   if (selectedRounds.length === 0) {
@@ -39213,11 +39509,32 @@ function applyScriptInstructionSectionLengths(sectionLengths, scriptBlock, promp
 function resolveContinuationPreviewPlan() {
   if (getPendingGenerationScriptId()) return null;
   const display = getCurrentDisplayContent();
-  if (!String(display?.content || "").trim()) return null;
+  const displayContent = String(display?.content || "").trim();
+  if (!displayContent) return null;
   const scriptId = display?.scriptId || GlobalState.lastGeneratedScriptId || GlobalState.lastUsedScriptId || "";
   if (!scriptId) return null;
   const injectRoundsCount = getContinuationDefaultInjectCount();
-  const injection = buildContinuationSessionInjection(scriptId, injectRoundsCount);
+  const anchor = findContinuationRoundAnchor(scriptId, {
+    generationId: display?.generationId,
+    content: displayContent
+  });
+  let injection;
+  if (anchor?.isActiveTail) {
+    injection = buildContinuationSessionInjection(scriptId, injectRoundsCount);
+  } else if (anchor) {
+    const ancestorRounds = getContinuationRoundsThroughAnchor(scriptId, anchor);
+    injection = buildContinuationBranchInjection(ancestorRounds.slice(-clampContinuationInjectRounds(injectRoundsCount)));
+    injection.totalRounds = ancestorRounds.length;
+  } else {
+    injection = buildContinuationBranchInjection([{
+      round: 1,
+      type: "initial",
+      instruction: "\uFF08\u9996\u6B21\u751F\u6210\uFF09",
+      content: displayContent,
+      status: "legacy",
+      generationId: String(display?.generationId || "")
+    }]);
+  }
   if (injection.totalRounds === 0) return null;
   const userInstruction = getContinuationQuickDraft().trim() || DEFAULT_CONTINUATION_INSTRUCTION;
   return {
@@ -39437,7 +39754,11 @@ function getContinuationRoundsForFav(scriptId) {
     scriptId,
     scriptName: String(entry?.scriptName || "\u573A\u666F"),
     branchKey: String(entry?.branchKey || "").trim(),
-    rounds: getContinuationSessionRounds(scriptId).filter((item) => item.status === "success" || item.status === "legacy")
+    // 收藏入口会先校验当前结果已成功；这里必须保留该分支中已有内容的中断轮次，
+    // 否则“首段中断后主动续写成功”的收藏会只剩续写段。
+    rounds: getContinuationSessionRounds(scriptId).filter(
+      (item) => ["success", "partial", "aborted", "legacy"].includes(String(item?.status || "legacy")) && String(item?.content || "").trim().length > 0
+    )
   };
 }
 function renderGeneratedContent(content, scriptName = "\u573A\u666F", isStreaming = false) {
@@ -41419,7 +41740,7 @@ async function handleUserContinuation(options = {}) {
       content: baseContent
     });
     if (!anchor) {
-      await startFreshContinuationBranch(script, baseContent);
+      await startFreshContinuationBranch(script, baseContent, display?.generationId);
     } else if (!anchor.isActiveTail) {
       lineageBranchResult = branchContinuationSessionAtRound(
         script.id,
@@ -41454,7 +41775,7 @@ async function handleUserContinuation(options = {}) {
     }
   }
   if (branchFromCurrentView) {
-    await startFreshContinuationBranch(script, baseContent);
+    await startFreshContinuationBranch(script, baseContent, display?.generationId);
     TitaniaLogger.info("\u4E3B\u52A8\u7EED\u5199\u5DF2\u521B\u5EFA\u5206\u652F", {
       scriptId: script.id,
       scriptName: script.name,
@@ -41477,7 +41798,7 @@ async function handleUserContinuation(options = {}) {
   }
   const userInstruction = (instruction || "").trim() || (isRegeneration ? branchResult?.targetInstruction : "") || DEFAULT_CONTINUATION_INSTRUCTION;
   const effectiveInjectCount = clampContinuationInjectRounds(injectRoundsCount);
-  const sessionInjection = branchResult ? buildContinuationBranchInjection(branchResult.contextRounds) : buildContinuationSessionInjection(script.id, effectiveInjectCount);
+  const sessionInjection = branchResult ? buildContinuationBranchInjection(branchResult.contextRounds.slice(-effectiveInjectCount)) : buildContinuationSessionInjection(script.id, effectiveInjectCount);
   const composedOverride = composeContinuationPromptOverride({
     injectionText: sessionInjection.text,
     userInstruction,
@@ -42498,6 +42819,12 @@ async function loadExtensionSettings() {
   if (typeof extData.chat_inject.enabled !== "boolean") extData.chat_inject.enabled = true;
   if (typeof extData.chat_inject.visible_to_ai !== "boolean") extData.chat_inject.visible_to_ai = true;
   if (!String(extData.chat_inject.speaker_name || "").trim()) extData.chat_inject.speaker_name = "\u56DE\u58F0\u5C0F\u5267\u573A";
+  if (!extData.preset_macros || typeof extData.preset_macros !== "object") {
+    extData.preset_macros = { persist_variables: false };
+  }
+  if (typeof extData.preset_macros.persist_variables !== "boolean") {
+    extData.preset_macros.persist_variables = false;
+  }
   if (!extData.quick_toolbar || typeof extData.quick_toolbar !== "object") extData.quick_toolbar = {};
   if (!extData.quick_toolbar.enabled_items || typeof extData.quick_toolbar.enabled_items !== "object") {
     extData.quick_toolbar.enabled_items = {};
@@ -42513,6 +42840,7 @@ async function loadExtensionSettings() {
   $("#cfg-outline-actions-enabled").prop("checked", extData.outline_entry.show_outline_actions === true);
   $("#cfg-rewrite-entry-enabled").prop("checked", extData.rewrite_entry.enabled === true);
   $("#cfg-chat-inject-enabled").prop("checked", extData.chat_inject.enabled === true);
+  $("#cfg-preset-persist-vars").prop("checked", extData.preset_macros.persist_variables === true);
   $("#cfg-toolbar-lore-enabled").prop("checked", extData.quick_toolbar.enabled_items.lore === true);
   $("#cfg-toolbar-recall-enabled").prop("checked", extData.quick_toolbar.enabled_items.recall === true);
   $("#cfg-float-edge-tuck").on("input", function() {
@@ -42576,6 +42904,21 @@ async function loadExtensionSettings() {
     saveExtData();
     refreshChatInjectButton();
     if (window.toastr) toastr.success(enabled ? "\u5C0F\u5267\u573A\u6CE8\u5165\u5165\u53E3\u5DF2\u542F\u7528" : "\u5C0F\u5267\u573A\u6CE8\u5165\u5165\u53E3\u5DF2\u5173\u95ED", "Titania Echo");
+  });
+  $("#cfg-preset-persist-vars").on("input", function() {
+    const enabled = $(this).prop("checked") === true;
+    const data = getExtData();
+    if (!data.preset_macros || typeof data.preset_macros !== "object") {
+      data.preset_macros = { persist_variables: false };
+    }
+    data.preset_macros.persist_variables = enabled;
+    saveExtData();
+    if (window.toastr) {
+      toastr.success(
+        enabled ? "\u9884\u8BBE\u53D8\u91CF\u5C06\u5199\u5165\u804A\u5929\u5B58\u6863" : "\u9884\u8BBE\u53D8\u91CF\u53EA\u5728\u672C\u6B21\u63D0\u793A\u8BCD\u6784\u5EFA\u5185\u751F\u6548",
+        "Titania Echo"
+      );
+    }
   });
   $("#cfg-toolbar-lore-enabled").on("input", function() {
     const enabled = $(this).prop("checked") === true;
