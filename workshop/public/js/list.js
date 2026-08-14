@@ -4,9 +4,9 @@ import { fetchList } from "./api.js";
 import { filterByRating } from "./rating.js";
 import { scriptCard, avatar, authorLink } from "./card.js";
 
-const state = { q: "", category: "", sort: "hot" };
+const state = { q: "", category: "", sort: "newest" };
 
-// 热度：下载量 + 30 天半衰的时间新鲜度。默认不用"最新"，垃圾投稿会自己沉底
+// 热度：下载量 + 30 天半衰的时间新鲜度
 function hotScore(s, nowSec) {
     const days = Math.max(0, (nowSec - (s.updated_at || 0)) / 86400);
     return Math.log(1 + (s.downloads || 0)) + Math.exp(-days / 30) * 1.2;
@@ -15,9 +15,13 @@ function hotScore(s, nowSec) {
 function sortItems(items, mode) {
     const nowSec = Math.floor(Date.now() / 1000);
     const list = [...items];
-    if (mode === "new") return list.sort((a, b) => b.updated_at - a.updated_at);
+    if (mode === "hot") return list.sort((a, b) => hotScore(b, nowSec) - hotScore(a, nowSec));
     if (mode === "downloads") return list.sort((a, b) => b.downloads - a.downloads);
-    return list.sort((a, b) => hotScore(b, nowSec) - hotScore(a, nowSec));
+    return list.sort((a, b) =>
+        (b.created_at || b.updated_at || 0) - (a.created_at || a.updated_at || 0)
+        || (b.updated_at || 0) - (a.updated_at || 0)
+        || String(b.id).localeCompare(String(a.id))
+    );
 }
 
 function matches(s, q) {
@@ -200,8 +204,8 @@ export async function renderList() {
     const sortSel = el("select", {
         onchange: e => { state.sort = e.target.value; paint(); }
     }, [
+        el("option", { value: "newest", text: "按最新发布" }),
         el("option", { value: "hot", text: "按热度" }),
-        el("option", { value: "new", text: "按最新" }),
         el("option", { value: "downloads", text: "按下载量" })
     ]);
     sortSel.value = state.sort;

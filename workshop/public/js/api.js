@@ -33,6 +33,8 @@ export const fetchScript = id => req(`/api/script/${encodeURIComponent(id)}`);
 
 export const fetchAuthor = id => req(`/api/author/${encodeURIComponent(id)}`);
 
+export const fetchCategories = () => req("/api/categories");
+
 export const whoami = () => req("/api/auth/me");
 export const logout = () => req("/api/auth/logout", { method: "POST" });
 

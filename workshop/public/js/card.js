@@ -90,7 +90,7 @@ export function scriptCard(s) {
             el("span", { class: "tag ghost", text: `v${s.version || 1}` })
         ]),
         el("div", { class: "s-card-foot" }, [
-            el("span", { text: fmtDate(s.updated_at) })
+            el("span", { text: fmtDate(s.created_at || s.updated_at) })
         ])
     ]);
 }
