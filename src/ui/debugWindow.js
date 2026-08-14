@@ -198,7 +198,7 @@ export async function showDebugInfo() {
             </div>
             <div class="t-prompt-summary-actions">
                 <span class="t-prompt-count"><strong id="t-prompt-total-token">0</strong> tokens<span id="t-prompt-token-approx" style="display:none"> (估算)</span> · <b id="t-prompt-section-count">0</b> 条消息</span>
-                <button id="t-prompt-expand-all-btn" class="t-prompt-tool-btn" title="展开全部消息"><i class="fa-solid fa-angles-down"></i> 展开全部</button>
+                <button id="t-prompt-expand-all-btn" class="t-prompt-tool-btn" title="展开全部消息" aria-label="展开全部消息"><i class="fa-solid fa-angles-down"></i><span class="t-prompt-expand-label">展开全部</span></button>
                 <button id="t-debug-refresh" class="t-prompt-tool-btn t-prompt-icon-btn" title="刷新"><i class="fa-solid fa-rotate-right"></i></button>
             </div>
         </div>
@@ -337,8 +337,12 @@ export async function showDebugInfo() {
         $(this).addClass("active").attr("aria-selected", "true");
         $("#t-prompt-info-popover").prop("hidden", true);
         $("#t-prompt-info-btn").attr("aria-expanded", "false");
-        if (activeSource === "preview" && !currentPreview) await loadCurrentPreview();
-        else renderPromptWindow();
+        if (activeSource === "preview") {
+            currentPreview = null;
+            await loadCurrentPreview();
+        } else {
+            renderPromptWindow();
+        }
     });
 
     $("#t-prompt-info-btn").on("click", function (event) {
@@ -381,11 +385,11 @@ export async function showDebugInfo() {
         if ($cards.length === 0) return;
         const allExpanded = $cards.filter(".expanded").length === $cards.length;
         if (allExpanded) {
-            $btn.html('<i class="fa-solid fa-angles-up"></i> 折叠全部');
-            $btn.attr("title", "折叠全部消息");
+            $btn.html('<i class="fa-solid fa-angles-up"></i><span class="t-prompt-expand-label">折叠全部</span>');
+            $btn.attr({ title: "折叠全部消息", "aria-label": "折叠全部消息" });
         } else {
-            $btn.html('<i class="fa-solid fa-angles-down"></i> 展开全部');
-            $btn.attr("title", "展开全部消息");
+            $btn.html('<i class="fa-solid fa-angles-down"></i><span class="t-prompt-expand-label">展开全部</span>');
+            $btn.attr({ title: "展开全部消息", "aria-label": "展开全部消息" });
         }
     };
 

@@ -762,23 +762,41 @@
     }
 
     #t-debug-view .t-prompt-summary-actions {
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        justify-content: stretch;
+    }
+
+    #t-debug-view .t-prompt-count {
+        grid-column: 1 / -1;
+        margin-right: 0;
+        white-space: normal;
     }
 
     #t-debug-view .t-prompt-tool-btn {
         justify-content: center;
-        padding: 8px 6px;
+        min-height: 36px;
+        padding: 8px 10px;
     }
 
     #t-debug-view #t-prompt-expand-all-btn {
-        width: 34px;
-        overflow: hidden;
-        color: transparent;
-        gap: 0;
+        width: auto;
+        min-width: 0;
+        overflow: visible;
+        color: #999;
+        gap: 6px;
     }
 
     #t-debug-view #t-prompt-expand-all-btn i {
-        color: #999;
+        color: inherit;
+        flex-shrink: 0;
+    }
+
+    #t-debug-view .t-prompt-expand-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     #t-debug-view .t-prompt-icon-btn {

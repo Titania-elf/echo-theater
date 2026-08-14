@@ -126,12 +126,13 @@ function createContinuationRoundKey() {
     return `round_${ts}_${rand}`;
 }
 
-function normalizeContinuationRounds(rounds) {
+function normalizeContinuationRounds(rounds, options = {}) {
     if (!Array.isArray(rounds)) return [];
+    const persistRoundKeys = options.persistRoundKeys !== false;
     return rounds
         .map((item, index) => {
             const roundKey = String(item?.roundKey || "").trim() || createContinuationRoundKey();
-            if (item && typeof item === "object" && !item.roundKey) item.roundKey = roundKey;
+            if (persistRoundKeys && item && typeof item === "object" && !item.roundKey) item.roundKey = roundKey;
             return {
                 roundKey,
                 round: index + 1,
@@ -193,7 +194,7 @@ function findContinuationRoundAnchor(scriptId, probe = {}) {
 
         for (const candidate of candidates) {
             if (!candidate.branchKey) continue;
-            const rounds = normalizeContinuationRounds(candidate.rounds);
+            const rounds = normalizeContinuationRounds(candidate.rounds, { persistRoundKeys: false });
             const index = rounds.findIndex(item => matchById
                 ? String(item.generationId || "").trim() === wantedId
                 : item.content === wantedContent);
@@ -218,7 +219,7 @@ function findContinuationRoundAnchor(scriptId, probe = {}) {
  * @param {object} script
  * @param {string} baseContent
  */
-async function startFreshContinuationBranch(script, baseContent) {
+async function startFreshContinuationBranch(script, baseContent, generationId = "") {
     resetContinuationSessionRounds(script.id, script.name);
     const branchContext = await getContextData();
     let branchInstruction = String(script.prompt || "");
@@ -234,7 +235,8 @@ async function startFreshContinuationBranch(script, baseContent) {
     }
     setContinuationSessionBaseRound(script.id, script.name, baseContent, {
         forceNewBranch: true,
-        instruction: branchInstruction
+        instruction: branchInstruction,
+        generationId: String(generationId || "")
     });
 }
 
@@ -251,9 +253,11 @@ function branchContinuationSessionAtRound(scriptId, sourceBranchKey, targetRound
             : null);
     const sourceRounds = normalizeContinuationRounds(source?.rounds);
     const requestedRoundKey = String(targetRoundKey || "").trim();
-    const roundNumber = requestedRoundKey
+    let roundNumber = requestedRoundKey
         ? sourceRounds.findIndex(item => item.roundKey === requestedRoundKey) + 1
         : Math.floor(Number(targetRound));
+    // 旧数据没有持久化 roundKey 时，调用方拿到的临时 key无法跨规范化复用，按稳定轮次号回退。
+    if (requestedRoundKey && roundNumber === 0) roundNumber = Math.floor(Number(targetRound));
     if (!source || !Number.isFinite(roundNumber) || roundNumber < 1 || roundNumber > sourceRounds.length) return null;
 
     const previousActiveBranch = {
@@ -486,6 +490,35 @@ function buildContinuationSessionInjection(scriptId, injectRoundsCount) {
     };
 }
 
+/**
+ * 只读取得当前显示轮次所在世系的祖先链，不改变活动分支。
+ * @param {string} scriptId
+ * @param {{ branchKey: string, roundKey: string, round: number }} anchor
+ * @returns {Array}
+ */
+function getContinuationRoundsThroughAnchor(scriptId, anchor) {
+    const entry = getContinuationRuntimeStore()[scriptId];
+    if (!entry || !anchor) return [];
+
+    const activeBranchKey = String(entry.branchKey || "").trim();
+    const requestedBranchKey = String(anchor.branchKey || "").trim();
+    const source = requestedBranchKey === activeBranchKey
+        ? entry
+        : (Array.isArray(entry.archivedBranches)
+            ? entry.archivedBranches.find(branch => String(branch?.branchKey || "").trim() === requestedBranchKey)
+            : null);
+    const rounds = normalizeContinuationRounds(source?.rounds, { persistRoundKeys: false });
+    const requestedRoundKey = String(anchor.roundKey || "").trim();
+    let anchorIndex = requestedRoundKey
+        ? rounds.findIndex(round => round.roundKey === requestedRoundKey)
+        : -1;
+    // 旧数据没有持久化 roundKey，纯读取规范化每次会产生临时 key；此时按稳定轮次号回退。
+    if (anchorIndex < 0) anchorIndex = Math.floor(Number(anchor.round)) - 1;
+
+    if (anchorIndex < 0 || anchorIndex >= rounds.length) return [];
+    return rounds.slice(0, anchorIndex + 1);
+}
+
 function buildContinuationBranchInjection(rounds) {
     const selectedRounds = normalizeContinuationRounds(rounds);
     if (selectedRounds.length === 0) {
@@ -573,13 +606,38 @@ function resolveContinuationPreviewPlan() {
     if (getPendingGenerationScriptId()) return null;
 
     const display = getCurrentDisplayContent();
-    if (!String(display?.content || "").trim()) return null;
+    const displayContent = String(display?.content || "").trim();
+    if (!displayContent) return null;
 
     const scriptId = display?.scriptId || GlobalState.lastGeneratedScriptId || GlobalState.lastUsedScriptId || "";
     if (!scriptId) return null;
 
     const injectRoundsCount = getContinuationDefaultInjectCount();
-    const injection = buildContinuationSessionInjection(scriptId, injectRoundsCount);
+    const anchor = findContinuationRoundAnchor(scriptId, {
+        generationId: display?.generationId,
+        content: displayContent
+    });
+
+    let injection;
+    if (anchor?.isActiveTail) {
+        injection = buildContinuationSessionInjection(scriptId, injectRoundsCount);
+    } else if (anchor) {
+        const ancestorRounds = getContinuationRoundsThroughAnchor(scriptId, anchor);
+        injection = buildContinuationBranchInjection(ancestorRounds.slice(-clampContinuationInjectRounds(injectRoundsCount)));
+        injection.totalRounds = ancestorRounds.length;
+    } else {
+        // 收藏、编辑或旧数据可能不在续写世系中。真实续写会以当前显示内容另起根轮；
+        // 预览阶段只构造等价的临时单轮上下文，不写入或切换活动分支。
+        injection = buildContinuationBranchInjection([{
+            round: 1,
+            type: "initial",
+            instruction: "（首次生成）",
+            content: displayContent,
+            status: "legacy",
+            generationId: String(display?.generationId || "")
+        }]);
+    }
+
     if (injection.totalRounds === 0) return null;
 
     const userInstruction = getContinuationQuickDraft().trim() || DEFAULT_CONTINUATION_INSTRUCTION;
@@ -838,7 +896,12 @@ export function getContinuationRoundsForFav(scriptId) {
         scriptId,
         scriptName: String(entry?.scriptName || "场景"),
         branchKey: String(entry?.branchKey || "").trim(),
-        rounds: getContinuationSessionRounds(scriptId).filter(item => item.status === "success" || item.status === "legacy")
+        // 收藏入口会先校验当前结果已成功；这里必须保留该分支中已有内容的中断轮次，
+        // 否则“首段中断后主动续写成功”的收藏会只剩续写段。
+        rounds: getContinuationSessionRounds(scriptId).filter(item =>
+            ["success", "partial", "aborted", "legacy"].includes(String(item?.status || "legacy"))
+            && String(item?.content || "").trim().length > 0
+        )
     };
 }
 
@@ -3382,7 +3445,7 @@ export async function handleUserContinuation(options = {}) {
 
         if (!anchor) {
             // 不属于任何已知世系（首次续写、编辑过的旧场景等）：以它为根另起一条
-            await startFreshContinuationBranch(script, baseContent);
+            await startFreshContinuationBranch(script, baseContent, display?.generationId);
         } else if (!anchor.isActiveTail) {
             // 命中归档分支、或命中活动分支的中间某轮：从该轮切出祖先链作为新活动分支
             lineageBranchResult = branchContinuationSessionAtRound(
@@ -3422,7 +3485,7 @@ export async function handleUserContinuation(options = {}) {
     }
 
     if (branchFromCurrentView) {
-        await startFreshContinuationBranch(script, baseContent);
+        await startFreshContinuationBranch(script, baseContent, display?.generationId);
         TitaniaLogger.info("主动续写已创建分支", {
             scriptId: script.id,
             scriptName: script.name,
@@ -3452,7 +3515,7 @@ export async function handleUserContinuation(options = {}) {
         || DEFAULT_CONTINUATION_INSTRUCTION;
     const effectiveInjectCount = clampContinuationInjectRounds(injectRoundsCount);
     const sessionInjection = branchResult
-        ? buildContinuationBranchInjection(branchResult.contextRounds)
+        ? buildContinuationBranchInjection(branchResult.contextRounds.slice(-effectiveInjectCount))
         : buildContinuationSessionInjection(script.id, effectiveInjectCount);
 
     const composedOverride = composeContinuationPromptOverride({

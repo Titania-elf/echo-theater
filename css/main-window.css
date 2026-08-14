@@ -1381,35 +1381,80 @@
     overflow: hidden;
     padding: 10px;
     min-height: 0;
+    position: relative;
+    z-index: 0;
 }
 
-/* 标签栏。样式原本内联在 mainWindow.js 里，内联优先级压过媒体查询，
-   移动端没法把它并进标题栏，所以搬到这里 */
-.t-wi-action-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 15px;
-    border-bottom: 1px solid #333;
-    flex-shrink: 0;
-}
-
+/* 标准标签页：整行分区，选中项通过底部指示线表达当前页面。 */
 .t-wi-tabs {
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-shrink: 0;
+    border-bottom: 1px solid #333;
+    background: #1e1e1e;
+    position: relative;
+    z-index: 2;
 }
 
 .t-wi-tab-btn {
-    padding: 6px 10px;
-    font-size: 0.82em;
-    color: #aaa;
-    background: #232323;
-    border: 1px solid #3a3a3a;
+    appearance: none;
+    position: relative;
+    min-width: 0;
+    min-height: 42px;
+    padding: 10px 12px 9px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #999;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.86em;
+    letter-spacing: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.t-wi-tab-btn:hover {
+    color: #d0d0d0;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.t-wi-tab-btn::after {
+    content: "";
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    bottom: -1px;
+    height: 2px;
+    background: transparent;
 }
 
 .t-wi-tab-btn.active {
     color: #90cdf4;
-    border-color: rgba(144, 205, 244, 0.45);
-    background: rgba(144, 205, 244, 0.12);
+    font-weight: 600;
+    background: rgba(144, 205, 244, 0.055);
+}
+
+.t-wi-tab-btn.active::after {
+    background: #90cdf4;
+}
+
+.t-wi-tab-btn:focus-visible {
+    outline: 2px solid rgba(144, 205, 244, 0.75);
+    outline-offset: -3px;
+}
+
+.t-wi-tab-count {
+    color: #777;
+    font-size: 0.82em;
+    font-variant-numeric: tabular-nums;
+}
+
+.t-wi-tab-btn.active .t-wi-tab-count {
+    color: #90cdf4;
 }
 
 .t-wi-layout {
@@ -1917,6 +1962,14 @@
        没法靠 CSS 合并成一行，真要合并得改 DOM 并牺牲桌面端的分隔线，不划算 */
     .t-wi-header {
         padding: 10px 12px;
+    }
+
+    .t-wi-tabs {
+        isolation: isolate;
+    }
+
+    .t-wi-tab-btn {
+        touch-action: manipulation;
     }
 
     .t-wi-action-bar {
