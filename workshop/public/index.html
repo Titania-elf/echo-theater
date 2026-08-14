@@ -10,7 +10,7 @@
 </head>
 <body>
 
-<header class="topbar">
+<header class="topbar" hidden>
   <a class="brand" href="#/">回声工坊</a>
   <nav>
     <a href="#/" data-nav="list">浏览</a>
@@ -20,9 +20,18 @@
   <div id="authSlot" class="auth-slot"></div>
 </header>
 
-<main id="view" class="view"></main>
+<main id="view" class="view access-view" aria-live="polite">
+  <section class="access-page">
+    <div class="access-panel access-checking">
+      <div class="echo-mark" aria-hidden="true"></div>
+      <p class="access-kicker">ECHO WORKSHOP</p>
+      <h1>回声工坊</h1>
+      <p class="access-status">正在确认登录状态…</p>
+    </div>
+  </section>
+</main>
 
-<footer class="footer">
+<footer class="footer" hidden>
   <span>回声剧场 · 工坊</span>
   <span id="ratingToggle" class="rating-toggle"></span>
 </footer>
