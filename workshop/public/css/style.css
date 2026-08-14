@@ -89,6 +89,9 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 14px; white-space: pre-wrap; word-break: break-word;
   font-size: 14px; max-height: 60vh; overflow: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
 
@@ -180,8 +183,19 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   padding-bottom: 4px;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
+  cursor: grab;
+  user-select: none;
 }
 .featured-strip::-webkit-scrollbar { height: 0; display: none; }
+.featured-strip .f-card { cursor: grab; }
+.featured-strip.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+}
+.featured-strip.is-dragging .f-card {
+  cursor: grabbing;
+  transform: none;
+}
 
 .f-card {
   flex: 0 0 240px; scroll-snap-align: start;

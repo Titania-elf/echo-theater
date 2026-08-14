@@ -45,19 +45,3 @@ export function fmtDate(sec) {
 export function loading(text = "加载中…") {
     return el("div", { class: "empty", text });
 }
-
-export async function copyText(text) {
-    try {
-        await navigator.clipboard.writeText(text);
-        return true;
-    } catch {
-        // http 或旧浏览器下 clipboard API 不可用
-        const ta = el("textarea", { style: "position:fixed;opacity:0" });
-        ta.value = text;
-        document.body.append(ta);
-        ta.select();
-        const ok = document.execCommand("copy");
-        ta.remove();
-        return ok;
-    }
-}
