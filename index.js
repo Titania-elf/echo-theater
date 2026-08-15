@@ -79,7 +79,10 @@ var init_defaults = __esm({
         main_window_mode: "modern",
         // 标题栏常驻图标（最多 5 个），未列入的自动收进「更多」弹层。
         // 可选 id 见 src/ui/mainWindow/headerActions.js 的注册表
-        header_actions: ["workshop", "favs"]
+        header_actions: ["workshop", "favs"],
+        // 世界书管理页：列表里不显示带「酒馆中已禁用」标记的条目。
+        // 纯视图过滤，不动已保存的勾选
+        wi_hide_disabled: false
       },
       appearance: {
         type: "emoji",
@@ -4544,6 +4547,38 @@ textarea.t-input {
     flex-shrink: 0;
 }
 
+/* \u300C\u9690\u85CF\u5DF2\u7981\u7528\u300D\uFF1A\u7EAF\u89C6\u56FE\u8FC7\u6EE4\uFF0C\u89C6\u89C9\u4E0A\u6BD4\u4E24\u4E2A\u52A8\u4F5C\u6309\u94AE\u8F7B\u4E00\u6863 */
+.t-wi-hide-disabled {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    padding: 0 6px;
+    color: #888;
+    font-size: 0.8em;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+
+.t-wi-hide-disabled:hover {
+    color: #bbb;
+}
+
+.t-wi-hide-disabled input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: #ffb968;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* \u52FE\u9009\u540E\u7528\u7981\u7528\u6807\u8BB0\u7684\u540C\u8272\uFF0C\u548C\u6761\u76EE\u4E0A\u90A3\u4E2A\u300C\u9152\u9986\u4E2D\u5DF2\u7981\u7528\u300D\u5FBD\u7AE0\u547C\u5E94 */
+.t-wi-hide-disabled:has(input:checked) {
+    color: #ffb968;
+}
+
 .t-wi-search-clear:hover {
     color: #ddd;
 }
@@ -4846,12 +4881,12 @@ textarea.t-input {
         padding: 10px 12px;
     }
 
+    /* \u6807\u7B7E\u680F\u5728\u7A84\u5C4F\u9690\u85CF\uFF1A\u8FD9\u91CC\u7A7A\u95F4\u7D27\uFF0C\u800C\u5B83\u627F\u8F7D\u7684\u4FE1\u606F\u6CA1\u6709\u4E22 \u2014\u2014
+       \u4E0B\u65B9\u539F\u751F\u4E0B\u62C9\u6846\u7684\u6BCF\u4E00\u9879\u524D\u9762\u6709 \u25CF/\u25CB \u6807\u793A\u6FC0\u6D3B\u72B6\u6001\uFF08\u89C1 renderBookSelectHtml\uFF09\u3002
+       \u4EE3\u4EF7\u662F\u79FB\u52A8\u7AEF\u9501\u5B9A\u5728\u300C\u5168\u90E8\u4E16\u754C\u4E66\u300D\u89C6\u56FE\uFF08currentViewMode \u7684\u521D\u503C\uFF09\u3002
+       \u539F\u5148\u9488\u5BF9\u5B83\u7684 isolation / touch-action \u4E24\u6761\u89C4\u5219\u968F\u4E4B\u5931\u53BB\u610F\u4E49\uFF0C\u5DF2\u4E00\u5E76\u79FB\u9664 */
     .t-wi-tabs {
-        isolation: isolate;
-    }
-
-    .t-wi-tab-btn {
-        touch-action: manipulation;
+        display: none;
     }
 
     .t-wi-action-bar {
@@ -4912,6 +4947,16 @@ textarea.t-input {
 
     .t-wi-entry-pane-header {
         padding: 8px 10px;
+    }
+
+    /* \u641C\u7D22\u6846\u72EC\u5360\u4E00\u884C\uFF0C\u4E24\u4E2A\u6309\u94AE\u52A0\u300C\u9690\u85CF\u5DF2\u7981\u7528\u300D\u5171\u7528\u4E0B\u4E00\u884C\u3002
+       \u6324\u5728\u540C\u4E00\u884C\u65F6\u641C\u7D22\u6846\uFF08flex:1, min-width:0\uFF09\u4F1A\u88AB\u538B\u5230\u53EA\u5269\u767E\u6765\u50CF\u7D20 */
+    .t-wi-entry-pane-tools {
+        flex-wrap: wrap;
+    }
+
+    .t-wi-entry-pane-tools .t-wi-entry-search {
+        flex: 1 0 100%;
     }
 
     .t-wi-entry-list {
@@ -37917,6 +37962,7 @@ async function openWorldInfoSelector() {
     toastr.warning(`\u4E16\u754C\u4E66\u6570\u636E\u90E8\u5206\u52A0\u8F7D\u5931\u8D25\uFF1A${loadWarnings.join("\uFF1B")}`, "Titania Echo");
   }
   let currentViewMode = "all";
+  let hideDisabled = data.ui_prefs?.wi_hide_disabled === true;
   const getVisibleBooks = () => currentViewMode === "active" ? baseActiveBooks : allBooks;
   let visibleBooks = getVisibleBooks();
   $loadingPanel.remove();
@@ -37988,6 +38034,10 @@ async function openWorldInfoSelector() {
                         </div>
                         <button type="button" class="t-btn t-btn-xs" id="t-wi-current-select-all">\u5168\u9009</button>
                         <button type="button" class="t-btn t-btn-xs" id="t-wi-current-select-none">\u53D6\u6D88\u5168\u9009</button>
+                        <label class="t-wi-hide-disabled" id="t-wi-hide-disabled-label" title="\u4EC5\u4ECE\u5217\u8868\u91CC\u9690\u85CF\uFF0C\u4E0D\u6539\u52A8\u5DF2\u4FDD\u5B58\u7684\u52FE\u9009\u3002\u5DF2\u52FE\u9009\u7684\u7981\u7528\u6761\u76EE\u4ECD\u4F1A\u6CE8\u5165">
+                            <input type="checkbox" id="t-wi-hide-disabled" ${hideDisabled ? "checked" : ""}>
+                            <span>\u9690\u85CF\u5DF2\u7981\u7528</span>
+                        </label>
                     </div>
                 </div>
                 <div class="t-wi-entry-list" id="t-wi-entry-list">
@@ -38059,9 +38109,16 @@ async function openWorldInfoSelector() {
     refreshActiveState();
   };
   const getVisibleEntries = () => {
-    if (!entrySearchQuery) return currentEntries2;
+    let list = currentEntries2;
+    if (hideDisabled) list = list.filter((entry) => !entry.isDisabled);
+    if (!entrySearchQuery) return list;
     const needle = entrySearchQuery.toLowerCase();
-    return currentEntries2.filter((entry) => String(entry.comment || "").toLowerCase().includes(needle));
+    return list.filter((entry) => String(entry.comment || "").toLowerCase().includes(needle));
+  };
+  const countHiddenSelected = () => {
+    if (!hideDisabled || !currentBookName) return 0;
+    const selectedSet = getBookSelectedSet(currentBookName);
+    return currentEntries2.filter((entry) => entry.isDisabled && selectedSet.has(Number(entry.uid))).length;
   };
   const renderEntryTitle = (title) => {
     const text = String(title || "");
@@ -38075,15 +38132,17 @@ async function openWorldInfoSelector() {
   };
   const syncSelectAllLabels = () => {
     const visibleCount = getVisibleEntries().length;
-    const suffix = entrySearchQuery ? ` (${visibleCount})` : "";
+    const suffix = entrySearchQuery || hideDisabled ? ` (${visibleCount})` : "";
     $q("#t-wi-current-select-all").text(`\u5168\u9009${suffix}`);
     $q("#t-wi-current-select-none").text(`\u53D6\u6D88\u5168\u9009${suffix}`);
   };
   const updateStat = () => {
     const selectedSet = getBookSelectedSet(currentBookName);
     const selectedCount = currentEntries2.filter((entry) => selectedSet.has(Number(entry.uid))).length;
-    const filterNote = entrySearchQuery ? `\u3000\u7B5B\u9009\u51FA ${getVisibleEntries().length} \u6761` : "";
-    $q("#t-wi-stat").text(`\u5DF2\u9009: ${selectedCount}/${currentEntries2.length}${filterNote}`);
+    const filterNote = entrySearchQuery || hideDisabled ? `\u3000\u7B5B\u9009\u51FA ${getVisibleEntries().length} \u6761` : "";
+    const hiddenSelected = countHiddenSelected();
+    const hiddenNote = hiddenSelected ? `\u3000\u542B ${hiddenSelected} \u6761\u5DF2\u9690\u85CF\u4F46\u4ECD\u4F1A\u6CE8\u5165` : "";
+    $q("#t-wi-stat").text(`\u5DF2\u9009: ${selectedCount}/${currentEntries2.length}${filterNote}${hiddenNote}`);
     syncSelectAllLabels();
   };
   const renderEntries = () => {
@@ -38101,14 +38160,16 @@ async function openWorldInfoSelector() {
     }
     const visibleEntries = getVisibleEntries();
     if (!visibleEntries.length) {
+      const blockedByHide = hideDisabled && !entrySearchQuery;
       $body.append(`
                 <div class="t-wi-empty">
-                    <div>\u65E0\u5339\u914D\u6761\u76EE</div>
-                    <button type="button" class="t-btn t-btn-xs" id="t-wi-search-reset" style="margin-top:12px;">\u6E05\u7A7A\u641C\u7D22</button>
+                    <div>${blockedByHide ? "\u8BE5\u4E16\u754C\u4E66\u7684\u6761\u76EE\u5728\u9152\u9986\u4E2D\u90FD\u88AB\u7981\u7528\u4E86" : "\u65E0\u5339\u914D\u6761\u76EE"}</div>
+                    <button type="button" class="t-btn t-btn-xs" id="t-wi-empty-reset" style="margin-top:12px;">${blockedByHide ? "\u663E\u793A\u5DF2\u7981\u7528\u6761\u76EE" : "\u6E05\u7A7A\u641C\u7D22"}</button>
                 </div>
             `);
-      $body.find("#t-wi-search-reset").on("click", () => {
-        $q("#t-wi-entry-search-input").val("").trigger("input");
+      $body.find("#t-wi-empty-reset").on("click", () => {
+        if (blockedByHide) $q("#t-wi-hide-disabled").prop("checked", false).trigger("change");
+        else $q("#t-wi-entry-search-input").val("").trigger("input");
       });
       updateStat();
       return;
@@ -38296,6 +38357,13 @@ async function openWorldInfoSelector() {
   });
   $q("#t-wi-entry-search-clear").on("click", () => {
     $q("#t-wi-entry-search-input").val("").trigger("input").trigger("focus");
+  });
+  $q("#t-wi-hide-disabled").on("change", function() {
+    hideDisabled = $(this).is(":checked");
+    if (!data.ui_prefs || typeof data.ui_prefs !== "object") data.ui_prefs = {};
+    data.ui_prefs.wi_hide_disabled = hideDisabled;
+    saveExtData();
+    renderEntries();
   });
   $q("#t-wi-save").on("click", () => {
     if (!currentBookName && !Object.keys(workingSelections).length) return;

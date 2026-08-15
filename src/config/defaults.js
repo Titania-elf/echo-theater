@@ -63,7 +63,10 @@ export const defaultSettings = {
         main_window_mode: "modern",
         // 标题栏常驻图标（最多 5 个），未列入的自动收进「更多」弹层。
         // 可选 id 见 src/ui/mainWindow/headerActions.js 的注册表
-        header_actions: ["workshop", "favs"]
+        header_actions: ["workshop", "favs"],
+        // 世界书管理页：列表里不显示带「酒馆中已禁用」标记的条目。
+        // 纯视图过滤，不动已保存的勾选
+        wi_hide_disabled: false
     },
     appearance: {
         type: "emoji",

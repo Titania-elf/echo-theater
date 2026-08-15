@@ -1734,6 +1734,38 @@
     flex-shrink: 0;
 }
 
+/* 「隐藏已禁用」：纯视图过滤，视觉上比两个动作按钮轻一档 */
+.t-wi-hide-disabled {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    padding: 0 6px;
+    color: #888;
+    font-size: 0.8em;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+
+.t-wi-hide-disabled:hover {
+    color: #bbb;
+}
+
+.t-wi-hide-disabled input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: #ffb968;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* 勾选后用禁用标记的同色，和条目上那个「酒馆中已禁用」徽章呼应 */
+.t-wi-hide-disabled:has(input:checked) {
+    color: #ffb968;
+}
+
 .t-wi-search-clear:hover {
     color: #ddd;
 }
@@ -2036,12 +2068,12 @@
         padding: 10px 12px;
     }
 
+    /* 标签栏在窄屏隐藏：这里空间紧，而它承载的信息没有丢 ——
+       下方原生下拉框的每一项前面有 ●/○ 标示激活状态（见 renderBookSelectHtml）。
+       代价是移动端锁定在「全部世界书」视图（currentViewMode 的初值）。
+       原先针对它的 isolation / touch-action 两条规则随之失去意义，已一并移除 */
     .t-wi-tabs {
-        isolation: isolate;
-    }
-
-    .t-wi-tab-btn {
-        touch-action: manipulation;
+        display: none;
     }
 
     .t-wi-action-bar {
@@ -2102,6 +2134,16 @@
 
     .t-wi-entry-pane-header {
         padding: 8px 10px;
+    }
+
+    /* 搜索框独占一行，两个按钮加「隐藏已禁用」共用下一行。
+       挤在同一行时搜索框（flex:1, min-width:0）会被压到只剩百来像素 */
+    .t-wi-entry-pane-tools {
+        flex-wrap: wrap;
+    }
+
+    .t-wi-entry-pane-tools .t-wi-entry-search {
+        flex: 1 0 100%;
     }
 
     .t-wi-entry-list {

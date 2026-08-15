@@ -1980,6 +1980,9 @@ async function openWorldInfoSelector() {
     }
 
     let currentViewMode = "all";
+    // 「隐藏已禁用」是持久化的视图偏好。纯过滤：不动 workingSelections，
+    // 所以已经勾选的禁用条目虽然从列表消失，注入时照旧生效（见 context.js 的选择集过滤）
+    let hideDisabled = data.ui_prefs?.wi_hide_disabled === true;
     const getVisibleBooks = () => currentViewMode === "active" ? baseActiveBooks : allBooks;
     let visibleBooks = getVisibleBooks();
 
@@ -2060,6 +2063,10 @@ async function openWorldInfoSelector() {
                         </div>
                         <button type="button" class="t-btn t-btn-xs" id="t-wi-current-select-all">全选</button>
                         <button type="button" class="t-btn t-btn-xs" id="t-wi-current-select-none">取消全选</button>
+                        <label class="t-wi-hide-disabled" id="t-wi-hide-disabled-label" title="仅从列表里隐藏，不改动已保存的勾选。已勾选的禁用条目仍会注入">
+                            <input type="checkbox" id="t-wi-hide-disabled" ${hideDisabled ? "checked" : ""}>
+                            <span>隐藏已禁用</span>
+                        </label>
                     </div>
                 </div>
                 <div class="t-wi-entry-list" id="t-wi-entry-list">
@@ -2141,9 +2148,18 @@ async function openWorldInfoSelector() {
     };
 
     const getVisibleEntries = () => {
-        if (!entrySearchQuery) return currentEntries;
+        let list = currentEntries;
+        if (hideDisabled) list = list.filter(entry => !entry.isDisabled);
+        if (!entrySearchQuery) return list;
         const needle = entrySearchQuery.toLowerCase();
-        return currentEntries.filter(entry => String(entry.comment || "").toLowerCase().includes(needle));
+        return list.filter(entry => String(entry.comment || "").toLowerCase().includes(needle));
+    };
+
+    /** 被「隐藏已禁用」挡掉、但仍处于勾选状态的条目数。这些条目看不见却照旧注入 */
+    const countHiddenSelected = () => {
+        if (!hideDisabled || !currentBookName) return 0;
+        const selectedSet = getBookSelectedSet(currentBookName);
+        return currentEntries.filter(entry => entry.isDisabled && selectedSet.has(Number(entry.uid))).length;
     };
 
     const renderEntryTitle = (title) => {
@@ -2161,7 +2177,8 @@ async function openWorldInfoSelector() {
 
     const syncSelectAllLabels = () => {
         const visibleCount = getVisibleEntries().length;
-        const suffix = entrySearchQuery ? ` (${visibleCount})` : "";
+        // 任一过滤生效时都要标出范围 —— 全选只作用于可见条目
+        const suffix = (entrySearchQuery || hideDisabled) ? ` (${visibleCount})` : "";
         $q("#t-wi-current-select-all").text(`全选${suffix}`);
         $q("#t-wi-current-select-none").text(`取消全选${suffix}`);
     };
@@ -2169,8 +2186,12 @@ async function openWorldInfoSelector() {
     const updateStat = () => {
         const selectedSet = getBookSelectedSet(currentBookName);
         const selectedCount = currentEntries.filter(entry => selectedSet.has(Number(entry.uid))).length;
-        const filterNote = entrySearchQuery ? `　筛选出 ${getVisibleEntries().length} 条` : "";
-        $q("#t-wi-stat").text(`已选: ${selectedCount}/${currentEntries.length}${filterNote}`);
+        const filterNote = (entrySearchQuery || hideDisabled) ? `　筛选出 ${getVisibleEntries().length} 条` : "";
+        // 这是纯视图过滤，「已选」里可能包含被隐藏的条目。不写出来会让人
+        // 以为隐藏等于不注入，而注入侧只看勾选、不看禁用状态
+        const hiddenSelected = countHiddenSelected();
+        const hiddenNote = hiddenSelected ? `　含 ${hiddenSelected} 条已隐藏但仍会注入` : "";
+        $q("#t-wi-stat").text(`已选: ${selectedCount}/${currentEntries.length}${filterNote}${hiddenNote}`);
         syncSelectAllLabels();
     };
 
@@ -2193,14 +2214,17 @@ async function openWorldInfoSelector() {
         const visibleEntries = getVisibleEntries();
 
         if (!visibleEntries.length) {
+            // 退路要对得上是谁挡的：搜索挡的就清搜索，「隐藏已禁用」挡的就取消隐藏
+            const blockedByHide = hideDisabled && !entrySearchQuery;
             $body.append(`
                 <div class="t-wi-empty">
-                    <div>无匹配条目</div>
-                    <button type="button" class="t-btn t-btn-xs" id="t-wi-search-reset" style="margin-top:12px;">清空搜索</button>
+                    <div>${blockedByHide ? "该世界书的条目在酒馆中都被禁用了" : "无匹配条目"}</div>
+                    <button type="button" class="t-btn t-btn-xs" id="t-wi-empty-reset" style="margin-top:12px;">${blockedByHide ? "显示已禁用条目" : "清空搜索"}</button>
                 </div>
             `);
-            $body.find("#t-wi-search-reset").on("click", () => {
-                $q("#t-wi-entry-search-input").val("").trigger("input");
+            $body.find("#t-wi-empty-reset").on("click", () => {
+                if (blockedByHide) $q("#t-wi-hide-disabled").prop("checked", false).trigger("change");
+                else $q("#t-wi-entry-search-input").val("").trigger("input");
             });
             updateStat();
             return;
@@ -2434,6 +2458,18 @@ async function openWorldInfoSelector() {
 
     $q("#t-wi-entry-search-clear").on("click", () => {
         $q("#t-wi-entry-search-input").val("").trigger("input").trigger("focus");
+    });
+
+    $q("#t-wi-hide-disabled").on("change", function () {
+        hideDisabled = $(this).is(":checked");
+
+        // 立刻落盘：这是视图偏好，跟「保存」按钮管的世界书勾选是两回事，
+        // 不该被用户关掉面板的动作连带丢弃
+        if (!data.ui_prefs || typeof data.ui_prefs !== "object") data.ui_prefs = {};
+        data.ui_prefs.wi_hide_disabled = hideDisabled;
+        saveExtData();
+
+        renderEntries();
     });
 
     $q("#t-wi-save").on("click", () => {
