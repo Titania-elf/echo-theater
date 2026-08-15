@@ -20,6 +20,23 @@
     gap: 6px;
 }
 
+#t-ws-rating-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #ccc;
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: 0.8em;
+}
+#t-ws-rating-toggle:hover { border-color: var(--t-theme); color: #fff; }
+#t-ws-rating-toggle.is-mature { border-color: #7e3847; background: #4a2530; color: #ffa8b0; }
+
 #t-ws-view .t-header .t-header-actions .t-icon-btn,
 #t-ws-view .t-header .t-header-actions .t-close,
 .t-ws-preview-box .t-header .t-header-actions .t-close {
@@ -298,6 +315,7 @@
     background: rgba(191, 161, 95, 0.16);
     color: var(--t-theme);
 }
+.t-ws-tag-mature { background: #4a2530; color: #ffa8b0; }
 
 /* 底部操作 */
 .t-ws-card-actions {

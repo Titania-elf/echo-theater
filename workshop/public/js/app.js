@@ -4,6 +4,7 @@ import { renderDetail } from "./detail.js";
 import { renderMine } from "./mine.js";
 import { renderEditor } from "./editor.js";
 import { renderImport } from "./import.js";
+import { renderAdmin } from "./admin.js";
 import { renderAuthor } from "./author.js";
 import { getSession, logoutSession, renderAuthSlot } from "./auth.js";
 import { showMature, toggleMature } from "./rating.js";
@@ -32,6 +33,7 @@ function dispatch() {
     if (head === "new") { markNav("mine"); return renderEditor(null); }
     if (head === "edit" && arg) { markNav("mine"); return renderEditor(arg); }
     if (head === "import") { markNav("import"); return renderImport(); }
+    if (head === "admin") { markNav("admin"); return renderAdmin(arg); }
     if (!head) { markNav("list"); return renderList(); }
 
     markNav("list");
@@ -89,9 +91,14 @@ function consumeAuthFeedback() {
 
 function echoBrand() {
     return [
-        el("div", { class: "echo-mark", "aria-hidden": "true" }),
-        el("p", { class: "access-kicker", text: "ECHO WORKSHOP" }),
-        el("h1", { text: "回声工坊" })
+        el("div", { class: "brand-hero" }, [
+            el("img", { class: "brand-hero-mark", src: "/1786768560798.png", alt: "回声工坊" }),
+            el("div", { class: "brand-hero-copy" }, [
+                el("p", { class: "access-kicker", text: "ECHO BOOK CLUB" }),
+                el("h1", { text: "回声工坊" }),
+                el("p", { class: "brand-hero-subtitle", text: "把值得反复演绎的故事，留在同一座书架上。" })
+            ])
+        ])
     ];
 }
 
@@ -208,12 +215,15 @@ async function bootstrap() {
 
 function paintRatingToggle() {
     const box = document.getElementById("ratingToggle");
-    box.textContent = showMature() ? "当前：显示全部内容（点击关闭）" : "当前：仅全年龄（点击切换）";
+    if (!box) return;
+    const mature = showMature();
+    box.textContent = mature ? "内容范围：包含成人向" : "内容范围：全年龄";
+    box.classList.toggle("is-mature", mature);
+    box.setAttribute("aria-pressed", String(mature));
     box.onclick = () => {
         toggleMature();
         paintRatingToggle();
-        // 走 route 而不是直接 renderList，是为了同样吃到上面的错误兜底
-        if (!location.hash || location.hash === "#/") route();
+        route();
     };
 }
 

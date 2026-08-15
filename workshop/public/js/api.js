@@ -56,6 +56,9 @@ export const restoreScript = id =>
 export const purgeScript = id =>
     req(`/api/my/script/${encodeURIComponent(id)}?purge=1`, { method: "DELETE" });
 
+export const batchDeleteScripts = ids =>
+    req("/api/my/scripts/batch-delete", { method: "POST", body: JSON.stringify({ ids }) });
+
 export const report = (scriptId, reason) =>
     req("/api/report", { method: "POST", body: JSON.stringify({ script_id: scriptId, reason }) });
 
@@ -66,3 +69,19 @@ export const adminAuthors = () => req("/api/admin/authors");
 
 export const adminUpload = payload =>
     req("/api/admin/scripts", { method: "POST", body: JSON.stringify(payload) });
+
+export const adminScripts = params => {
+    const query = new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v !== "" && v !== undefined));
+    return req(`/api/admin/scripts?${query}`);
+};
+
+export const adminScript = id => req(`/api/admin/script/${encodeURIComponent(id)}`);
+
+export const adminUpdateScript = (id, payload) =>
+    req(`/api/admin/script/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(payload) });
+
+export const adminScriptAction = (id, action, note = "") =>
+    req(`/api/admin/script/${encodeURIComponent(id)}`, { method: "POST", body: JSON.stringify({ action, note }) });
+
+export const adminBatchUpdate = payload =>
+    req("/api/admin/scripts/batch", { method: "POST", body: JSON.stringify(payload) });

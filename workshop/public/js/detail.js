@@ -2,6 +2,7 @@
 import { el, mount, loading, fmtDate, toast } from "./dom.js";
 import { fetchScript, report } from "./api.js";
 import { avatar, authorLink } from "./card.js";
+import { showMature, toggleMature } from "./rating.js";
 
 export async function renderDetail(id) {
     mount(loading());
@@ -11,6 +12,23 @@ export async function renderDetail(id) {
         s = await fetchScript(id);
     } catch (e) {
         mount(el("div", { class: "empty", text: `加载失败：${e.message}` }));
+        return;
+    }
+
+    if (s.rating === "mature" && !showMature()) {
+        const unlock = el("button", { class: "primary", text: "显示成人向内容" });
+        unlock.addEventListener("click", () => {
+            if (toggleMature()) renderDetail(id);
+        });
+        mount(el("div", { class: "rating-gate" }, [
+            el("div", { class: "rating-gate-icon", text: "18+" }),
+            el("h1", { text: "此投稿属于成人向内容" }),
+            el("p", { text: "当前内容范围为全年龄。开启后才能查看这条投稿。" }),
+            el("div", { class: "actions" }, [
+                el("a", { href: "#/" }, [el("button", { text: "返回列表" })]),
+                unlock
+            ])
+        ]));
         return;
     }
 

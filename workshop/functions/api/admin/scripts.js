@@ -10,7 +10,7 @@
 // 逐条 await 的写法在上百条时会撞 Worker 的子请求上限和执行时限。
 //
 // 内容去重保留：schema 里的唯一索引挡的是真·重复内容，跳过它没好处。
-import { json, err, now, genId, sha256, normalizeForHash, validateScript } from "../../_lib/util.js";
+import { json, err, now, genId, sha256, normalizeForHash, validateScript, invalidatePublicList } from "../../_lib/util.js";
 import { requireAdmin } from "../../_lib/admin.js";
 
 /**
@@ -18,6 +18,42 @@ import { requireAdmin } from "../../_lib/admin.js";
  * 防止一个超大请求把 SQL 变量数或执行时间顶爆。
  */
 const MAX_BATCH = 100;
+
+export async function onRequestGet({ request, env }) {
+    const gate = await requireAdmin(request, env);
+    if (gate.response) return gate.response;
+    const url = new URL(request.url);
+    const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.min(50, Math.max(10, Number.parseInt(url.searchParams.get("limit") || "20", 10) || 20));
+    const offset = (page - 1) * limit;
+    const q = String(url.searchParams.get("q") || "").trim().slice(0, 100);
+    const category = String(url.searchParams.get("category") || "").trim();
+    const rating = String(url.searchParams.get("rating") || "").trim();
+    const status = String(url.searchParams.get("status") || "all").trim();
+    const reviewed = String(url.searchParams.get("reviewed") || "all").trim();
+    const where = ["1 = 1"];
+    const binds = [];
+    if (q) { where.push("(s.name LIKE ? OR s.summary LIKE ? OR a.username LIKE ?)"); binds.push(`%${q}%`, `%${q}%`, `%${q}%`); }
+    if (category) { where.push("s.category = ?"); binds.push(category); }
+    if (rating === "general" || rating === "mature") { where.push("s.rating = ?"); binds.push(rating); }
+    if (["public", "removed", "deleted"].includes(status)) { where.push("s.status = ?"); binds.push(status); }
+    else where.push("s.status != 'deleted'");
+    if (reviewed === "0" || reviewed === "1") { where.push("s.reviewed = ?"); binds.push(Number(reviewed)); }
+    const condition = where.join(" AND ");
+    const totalRow = await env.DB.prepare(`SELECT COUNT(*) AS count FROM scripts s JOIN authors a ON a.discord_id = s.author_id WHERE ${condition}`).bind(...binds).first();
+    const { results } = await env.DB.prepare(`
+        SELECT s.id, s.name, s.category, s.summary, s.tags, s.rating, s.version,
+               s.downloads, s.author_id, s.status, s.anonymous, s.reviewed,
+               s.moderated_at, s.moderated_by, s.moderation_note,
+               s.created_at, s.updated_at, a.username, a.avatar
+        FROM scripts s JOIN authors a ON a.discord_id = s.author_id
+        WHERE ${condition} ORDER BY s.updated_at DESC, s.id DESC LIMIT ? OFFSET ?
+    `).bind(...binds, limit, offset).all();
+    return json({ page, limit, total: Number(totalRow?.count) || 0, items: (results || []).map(row => {
+        let tags = []; try { tags = JSON.parse(row.tags || "[]"); } catch { /* legacy */ }
+        return { ...row, tags: Array.isArray(tags) ? tags : [], reviewed: !!row.reviewed };
+    }) });
+}
 
 export async function onRequestPost({ request, env }) {
     const gate = await requireAdmin(request, env);
@@ -137,8 +173,9 @@ export async function onRequestPost({ request, env }) {
         const stmt = env.DB.prepare(`
             INSERT INTO scripts
                 (id, author_id, name, category, summary, prompt, tags, rating,
-                 version, content_hash, downloads, status, anonymous, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 0, 'public', ?, ?, ?)
+                 version, content_hash, downloads, status, anonymous, reviewed,
+                 moderated_at, moderated_by, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 0, 'public', ?, 1, ?, ?, ?, ?)
         `);
 
         const batch = survivors.map(p => {
@@ -146,12 +183,13 @@ export async function onRequestPost({ request, env }) {
             const v = p.value;
             return stmt.bind(
                 p.newId, p.author.discord_id, v.name, v.category, v.summary, v.prompt,
-                JSON.stringify(v.tags), v.rating, p.hash, v.anonymous, ts, ts
+                JSON.stringify(v.tags), v.rating, p.hash, v.anonymous, ts, gate.author.discord_id, ts, ts
             );
         });
 
         try {
             await env.DB.batch(batch);
+            await invalidatePublicList(request);
             for (const p of survivors) {
                 results[p.index] = {
                     index: p.index, name: p.value.name, ok: true,

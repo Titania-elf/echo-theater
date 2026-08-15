@@ -1,6 +1,6 @@
 // 我的投稿
 import { el, mount, loading, toast, fmtDate } from "./dom.js";
-import { myScripts, deleteScript, restoreScript, purgeScript, invalidateList } from "./api.js";
+import { myScripts, deleteScript, restoreScript, purgeScript, batchDeleteScripts, invalidateList } from "./api.js";
 import { getSession } from "./auth.js";
 
 export async function renderMine() {
@@ -32,6 +32,34 @@ export async function renderMine() {
     }
 
     const newBtn = el("a", { href: "#/new" }, [el("button", { class: "primary", text: "＋ 发布新指令" })]);
+    let selected = new Set();
+    const batchBar = el("div", { class: "mine-batch", hidden: true });
+    const selectAllBtn = el("button", { text: "全选" });
+    selectAllBtn.addEventListener("click", () => {
+        selected = selected.size === items.length ? new Set() : new Set(items.map(item => item.id));
+        paintBatchBar();
+        paint();
+    });
+
+    const paintBatchBar = () => {
+        batchBar.hidden = selected.size === 0;
+        batchBar.replaceChildren(
+            el("strong", { text: `已选 ${selected.size} 条` }),
+            el("button", { class: "danger", text: "批量删除", onclick: async () => {
+                const count = selected.size;
+                if (!confirm(`确定永久删除选中的 ${count} 条投稿吗？\n\n它们会从“我的投稿”中消失，之后无法恢复。`)) return;
+                try {
+                    await batchDeleteScripts([...selected]);
+                    invalidateList();
+                    items = items.filter(item => !selected.has(item.id));
+                    selected = new Set();
+                    toast(`已删除 ${count} 条投稿`);
+                    paintBatchBar();
+                    paint();
+                } catch (e) { toast(e.message); }
+            }})
+        );
+    };
 
     if (!items.length) {
         mount(el("div", { class: "empty" }, [
@@ -47,8 +75,15 @@ export async function renderMine() {
     const paint = () => {
         // 删光之后卡片区会是空的，给一句提示，别留一片空白
         emptyNote.hidden = items.length > 0;
+        selectAllBtn.textContent = items.length && selected.size === items.length ? "取消全选" : "全选";
         listBox.replaceChildren(...items.map(s => {
             const removed = s.status === "removed";
+            const select = el("input", { type: "checkbox", class: "mine-select", "aria-label": `选择 ${s.name}` });
+            select.checked = selected.has(s.id);
+            select.addEventListener("change", () => {
+                if (select.checked) selected.add(s.id); else selected.delete(s.id);
+                paintBatchBar();
+            });
 
             const onDelete = async () => {
                 if (!confirm(`确定下架「${s.name}」吗？下架后其他人将无法看到，你可以随时重新上架。`)) return;
@@ -81,7 +116,9 @@ export async function renderMine() {
                     invalidateList();
                     // 这里才该从列表里抹掉：服务端已置成 deleted，刷新也不会回来
                     items = items.filter(x => x.id !== s.id);
+                    selected.delete(s.id);
                     toast("已删除");
+                    paintBatchBar();
                     paint();
                 } catch (e) {
                     toast(e.message);
@@ -101,7 +138,7 @@ export async function renderMine() {
             };
 
             return el("div", { class: "card", style: removed ? "opacity:.55" : null }, [
-                el("h3", { text: s.name }),
+                el("div", { class: "row mine-card-title" }, [select, el("h3", { text: s.name })]),
                 s.desc && el("p", { class: "summary", text: s.desc }),
                 el("div", { class: "meta" }, [
                     s.category && el("span", { class: "tag", text: s.category }),
@@ -129,8 +166,10 @@ export async function renderMine() {
         el("div", { class: "row", style: "margin-bottom:14px" }, [
             el("h1", { text: "我的投稿", style: "font-size:20px;margin:0" }),
             el("span", { class: "spacer" }),
+            selectAllBtn,
             newBtn
         ]),
+        batchBar,
         listBox,
         emptyNote
     );

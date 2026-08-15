@@ -6,6 +6,7 @@ import { fetchList, fetchScript, countDownload, WORKSHOP_ORIGIN } from "../core/
 import { saveUserScript } from "../core/scriptData.js";
 import { GlobalState } from "../core/state.js";
 import { refreshScriptList } from "./mainWindow.js";
+import { showMature, toggleMature, filterByRating } from "../core/workshopRating.js";
 
 /** 工坊内容来源不可控，凡是拼进 HTML 的字段都要先过这里 */
 function esc(text) {
@@ -122,6 +123,7 @@ export function openWorkshopWindow(source = 'manager') {
                 <div class="t-title-sub">ECHO WORKSHOP</div>
             </div>
             <div class="t-header-actions">
+                <button class="t-ws-rating-toggle" id="t-ws-rating-toggle" type="button"></button>
                 <i class="fa-solid fa-arrow-up-right-from-square t-icon-btn" id="t-ws-open-site" title="在浏览器中打开工坊（投稿/编辑）"></i>
                 <i class="fa-solid fa-rotate t-icon-btn" id="t-ws-refresh" title="刷新"></i>
                 <span class="t-close" id="t-ws-close">&times;</span>
@@ -153,7 +155,7 @@ export function openWorkshopWindow(source = 'manager') {
     };
 
     const renderCategories = () => {
-        const cats = [...new Set(allItems.map(i => i.category).filter(Boolean))]
+        const cats = [...new Set(filterByRating(allItems).map(i => i.category).filter(Boolean))]
             .sort((a, b) => a.localeCompare(b, "zh-CN"));
         const $sel = $("#t-ws-cat");
         $sel.empty().append(`<option value="全部">全部分类</option>`);
@@ -162,15 +164,16 @@ export function openWorkshopWindow(source = 'manager') {
     };
 
     const renderStats = (shownCount) => {
-        if (!allItems.length) { $("#t-ws-stats").empty(); return; }
+        const visibleItems = filterByRating(allItems);
+        if (!visibleItems.length) { $("#t-ws-stats").empty(); return; }
 
         const weekAgo = Math.floor(Date.now() / 1000) - 7 * 86400;
-        const fresh = allItems.filter(i => (i.created_at || 0) >= weekAgo).length;
-        const totalDownloads = allItems.reduce((sum, i) => sum + (Number(i.downloads) || 0), 0);
-        const filtered = shownCount !== allItems.length;
+        const fresh = visibleItems.filter(i => (i.created_at || 0) >= weekAgo).length;
+        const totalDownloads = visibleItems.reduce((sum, i) => sum + (Number(i.downloads) || 0), 0);
+        const filtered = shownCount !== visibleItems.length;
 
         $("#t-ws-stats").html(`
-            <span><b>${allItems.length}</b> 条投稿</span>
+            <span><b>${visibleItems.length}</b> 条当前可见投稿</span>
             ${fresh ? `<span>本周新增 <b>${fresh}</b></span>` : ""}
             <span>累计下载 <b>${totalDownloads}</b></span>
             ${filtered ? `<span class="t-ws-stats-filter">当前显示 <b>${shownCount}</b></span>` : ""}
@@ -178,7 +181,7 @@ export function openWorkshopWindow(source = 'manager') {
     };
 
     const getFiltered = () => {
-        const list = allItems.filter(item => {
+        const list = filterByRating(allItems).filter(item => {
             if (currentFilter.category !== "全部" && item.category !== currentFilter.category) return false;
             if (currentFilter.search) {
                 const term = currentFilter.search.toLowerCase();
@@ -205,8 +208,8 @@ export function openWorkshopWindow(source = 'manager') {
                 $list.html(`
                     <div class="t-ws-placeholder">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <div class="t-ws-ph-title">没有匹配的投稿</div>
-                        <div class="t-ws-ph-desc">换个关键词，或把分类切回「全部分类」</div>
+                        <div class="t-ws-ph-title">没有可显示的投稿</div>
+                        <div class="t-ws-ph-desc">换个关键词、分类，或切换内容范围</div>
                     </div>`);
             } else {
                 $list.html(`
@@ -243,6 +246,7 @@ export function openWorkshopWindow(source = 'manager') {
                     <div class="t-ws-card-desc">${esc(item.desc) || "作者没有写简介"}</div>
                     <div class="t-ws-card-tags">
                         ${item.category ? `<span class="t-ws-tag t-ws-tag-cat">${esc(item.category)}</span>` : ""}
+                        ${item.rating === "mature" ? `<span class="t-ws-tag t-ws-tag-mature">成人向</span>` : ""}
                         ${tags}
                         <span class="t-ws-tag">v${Number(item.version) || 1}</span>
                     </div>
@@ -310,6 +314,7 @@ export function openWorkshopWindow(source = 'manager') {
                         <div class="t-ws-heat${downloads >= HOT_THRESHOLD ? " is-hot" : ""}">
                             <i class="fa-solid fa-fire"></i> ${downloads}
                         </div>
+                        ${item.rating === "mature" ? `<span class="t-ws-tag t-ws-tag-mature">成人向</span>` : ""}
                     </div>
                     ${item.desc ? `<div class="t-ws-pv-desc">${esc(item.desc)}</div>` : ""}
                     <div class="t-ws-pv-label">
@@ -395,6 +400,20 @@ export function openWorkshopWindow(source = 'manager') {
     $("#t-ws-close").on("click", closeWindow);
     $("#t-ws-refresh").on("click", () => load({ force: true }));
     $("#t-ws-open-site").on("click", () => window.open(WORKSHOP_ORIGIN, "_blank"));
+    const paintRatingToggle = () => {
+        const mature = showMature();
+        $("#t-ws-rating-toggle")
+            .toggleClass("is-mature", mature)
+            .attr("aria-pressed", String(mature))
+            .attr("title", mature ? "点击隐藏成人向内容" : "点击显示成人向内容")
+            .html(`<i class="fa-solid fa-shield-halved"></i> ${mature ? "包含成人向" : "全年龄"}`);
+    };
+    $("#t-ws-rating-toggle").on("click", () => {
+        toggleMature();
+        paintRatingToggle();
+        renderCategories();
+        renderList();
+    });
     $("#t-ws-search").on("input", function () {
         currentFilter.search = $(this).val().trim();
         renderList();
@@ -408,5 +427,6 @@ export function openWorkshopWindow(source = 'manager') {
         renderList();
     });
 
+    paintRatingToggle();
     load();
 }

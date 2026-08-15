@@ -8743,6 +8743,23 @@ textarea.t-input {
     gap: 6px;
 }
 
+#t-ws-rating-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #ccc;
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: 0.8em;
+}
+#t-ws-rating-toggle:hover { border-color: var(--t-theme); color: #fff; }
+#t-ws-rating-toggle.is-mature { border-color: #7e3847; background: #4a2530; color: #ffa8b0; }
+
 #t-ws-view .t-header .t-header-actions .t-icon-btn,
 #t-ws-view .t-header .t-header-actions .t-close,
 .t-ws-preview-box .t-header .t-header-actions .t-close {
@@ -9021,6 +9038,7 @@ textarea.t-input {
     background: rgba(191, 161, 95, 0.16);
     color: var(--t-theme);
 }
+.t-ws-tag-mature { background: #4a2530; color: #ffa8b0; }
 
 /* \u5E95\u90E8\u64CD\u4F5C */
 .t-ws-card-actions {
@@ -33733,6 +33751,39 @@ var init_workshopApi = __esm({
   }
 });
 
+// src/core/workshopRating.js
+function showMature() {
+  try {
+    return localStorage.getItem(KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function setShowMature(on) {
+  try {
+    localStorage.setItem(KEY, on ? "1" : "0");
+  } catch {
+  }
+}
+function toggleMature() {
+  if (showMature()) {
+    setShowMature(false);
+    return false;
+  }
+  const ok = window.confirm("\u5373\u5C06\u663E\u793A\u6807\u8BB0\u4E3A\u201C\u6210\u4EBA\u5411\u201D\u7684\u6295\u7A3F\uFF0C\u5176\u4E2D\u53EF\u80FD\u5305\u542B\u9732\u9AA8\u6027\u5185\u5BB9\u3001\u6027\u6697\u793A\u6216\u5F3A\u70C8\u66B4\u529B\u5185\u5BB9\u3002\n\n\u8BF7\u786E\u8BA4\u4F60\u5DF2\u6EE1\u8DB3\u6240\u5728\u5730\u7684\u6CD5\u5B9A\u5E74\u9F84\u8981\u6C42\u3002\n\n\u70B9\u51FB\u201C\u786E\u5B9A\u201D\u7EE7\u7EED\u663E\u793A\u6210\u4EBA\u5411\u5185\u5BB9\u3002");
+  if (ok) setShowMature(true);
+  return ok;
+}
+function filterByRating(items) {
+  return showMature() ? items : items.filter((item) => item.rating !== "mature");
+}
+var KEY;
+var init_workshopRating = __esm({
+  "src/core/workshopRating.js"() {
+    KEY = "titania_workshop_show_mature";
+  }
+});
+
 // src/ui/workshopWindow.js
 var workshopWindow_exports = {};
 __export(workshopWindow_exports, {
@@ -33801,6 +33852,7 @@ function openWorkshopWindow(source = "manager") {
                 <div class="t-title-sub">ECHO WORKSHOP</div>
             </div>
             <div class="t-header-actions">
+                <button class="t-ws-rating-toggle" id="t-ws-rating-toggle" type="button"></button>
                 <i class="fa-solid fa-arrow-up-right-from-square t-icon-btn" id="t-ws-open-site" title="\u5728\u6D4F\u89C8\u5668\u4E2D\u6253\u5F00\u5DE5\u574A\uFF08\u6295\u7A3F/\u7F16\u8F91\uFF09"></i>
                 <i class="fa-solid fa-rotate t-icon-btn" id="t-ws-refresh" title="\u5237\u65B0"></i>
                 <span class="t-close" id="t-ws-close">&times;</span>
@@ -33828,30 +33880,31 @@ function openWorkshopWindow(source = "manager") {
     }
   };
   const renderCategories = () => {
-    const cats = [...new Set(allItems.map((i) => i.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+    const cats = [...new Set(filterByRating(allItems).map((i) => i.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN"));
     const $sel = $("#t-ws-cat");
     $sel.empty().append(`<option value="\u5168\u90E8">\u5168\u90E8\u5206\u7C7B</option>`);
     cats.forEach((c) => $sel.append(`<option value="${esc(c)}">${esc(c)}</option>`));
     $sel.val(currentFilter.category);
   };
   const renderStats = (shownCount) => {
-    if (!allItems.length) {
+    const visibleItems = filterByRating(allItems);
+    if (!visibleItems.length) {
       $("#t-ws-stats").empty();
       return;
     }
     const weekAgo = Math.floor(Date.now() / 1e3) - 7 * 86400;
-    const fresh = allItems.filter((i) => (i.created_at || 0) >= weekAgo).length;
-    const totalDownloads = allItems.reduce((sum, i) => sum + (Number(i.downloads) || 0), 0);
-    const filtered = shownCount !== allItems.length;
+    const fresh = visibleItems.filter((i) => (i.created_at || 0) >= weekAgo).length;
+    const totalDownloads = visibleItems.reduce((sum, i) => sum + (Number(i.downloads) || 0), 0);
+    const filtered = shownCount !== visibleItems.length;
     $("#t-ws-stats").html(`
-            <span><b>${allItems.length}</b> \u6761\u6295\u7A3F</span>
+            <span><b>${visibleItems.length}</b> \u6761\u5F53\u524D\u53EF\u89C1\u6295\u7A3F</span>
             ${fresh ? `<span>\u672C\u5468\u65B0\u589E <b>${fresh}</b></span>` : ""}
             <span>\u7D2F\u8BA1\u4E0B\u8F7D <b>${totalDownloads}</b></span>
             ${filtered ? `<span class="t-ws-stats-filter">\u5F53\u524D\u663E\u793A <b>${shownCount}</b></span>` : ""}
         `);
   };
   const getFiltered = () => {
-    const list = allItems.filter((item) => {
+    const list = filterByRating(allItems).filter((item) => {
       if (currentFilter.category !== "\u5168\u90E8" && item.category !== currentFilter.category) return false;
       if (currentFilter.search) {
         const term = currentFilter.search.toLowerCase();
@@ -33874,8 +33927,8 @@ function openWorkshopWindow(source = "manager") {
         $list.html(`
                     <div class="t-ws-placeholder">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <div class="t-ws-ph-title">\u6CA1\u6709\u5339\u914D\u7684\u6295\u7A3F</div>
-                        <div class="t-ws-ph-desc">\u6362\u4E2A\u5173\u952E\u8BCD\uFF0C\u6216\u628A\u5206\u7C7B\u5207\u56DE\u300C\u5168\u90E8\u5206\u7C7B\u300D</div>
+                        <div class="t-ws-ph-title">\u6CA1\u6709\u53EF\u663E\u793A\u7684\u6295\u7A3F</div>
+                        <div class="t-ws-ph-desc">\u6362\u4E2A\u5173\u952E\u8BCD\u3001\u5206\u7C7B\uFF0C\u6216\u5207\u6362\u5185\u5BB9\u8303\u56F4</div>
                     </div>`);
       } else {
         $list.html(`
@@ -33908,6 +33961,7 @@ function openWorkshopWindow(source = "manager") {
                     <div class="t-ws-card-desc">${esc(item.desc) || "\u4F5C\u8005\u6CA1\u6709\u5199\u7B80\u4ECB"}</div>
                     <div class="t-ws-card-tags">
                         ${item.category ? `<span class="t-ws-tag t-ws-tag-cat">${esc(item.category)}</span>` : ""}
+                        ${item.rating === "mature" ? `<span class="t-ws-tag t-ws-tag-mature">\u6210\u4EBA\u5411</span>` : ""}
                         ${tags}
                         <span class="t-ws-tag">v${Number(item.version) || 1}</span>
                     </div>
@@ -33970,6 +34024,7 @@ function openWorkshopWindow(source = "manager") {
                         <div class="t-ws-heat${downloads >= HOT_THRESHOLD ? " is-hot" : ""}">
                             <i class="fa-solid fa-fire"></i> ${downloads}
                         </div>
+                        ${item.rating === "mature" ? `<span class="t-ws-tag t-ws-tag-mature">\u6210\u4EBA\u5411</span>` : ""}
                     </div>
                     ${item.desc ? `<div class="t-ws-pv-desc">${esc(item.desc)}</div>` : ""}
                     <div class="t-ws-pv-label">
@@ -34049,6 +34104,16 @@ function openWorkshopWindow(source = "manager") {
   $("#t-ws-close").on("click", closeWindow2);
   $("#t-ws-refresh").on("click", () => load({ force: true }));
   $("#t-ws-open-site").on("click", () => window.open(WORKSHOP_ORIGIN, "_blank"));
+  const paintRatingToggle = () => {
+    const mature = showMature();
+    $("#t-ws-rating-toggle").toggleClass("is-mature", mature).attr("aria-pressed", String(mature)).attr("title", mature ? "\u70B9\u51FB\u9690\u85CF\u6210\u4EBA\u5411\u5185\u5BB9" : "\u70B9\u51FB\u663E\u793A\u6210\u4EBA\u5411\u5185\u5BB9").html(`<i class="fa-solid fa-shield-halved"></i> ${mature ? "\u5305\u542B\u6210\u4EBA\u5411" : "\u5168\u5E74\u9F84"}`);
+  };
+  $("#t-ws-rating-toggle").on("click", () => {
+    toggleMature();
+    paintRatingToggle();
+    renderCategories();
+    renderList();
+  });
   $("#t-ws-search").on("input", function() {
     currentFilter.search = $(this).val().trim();
     renderList();
@@ -34061,6 +34126,7 @@ function openWorkshopWindow(source = "manager") {
     currentFilter.sort = $(this).val();
     renderList();
   });
+  paintRatingToggle();
   load();
 }
 var HOT_THRESHOLD, AVATAR_COLORS, ANON_COLOR, SORT_MODES;
@@ -34070,6 +34136,7 @@ var init_workshopWindow = __esm({
     init_scriptData();
     init_state();
     init_mainWindow();
+    init_workshopRating();
     HOT_THRESHOLD = 50;
     AVATAR_COLORS = [
       "linear-gradient(135deg, #bfa15f, #8a7038)",

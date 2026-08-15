@@ -40,6 +40,11 @@ export function publicErr(status, message) {
     return publicJson({ error: message }, { status });
 }
 
+export async function invalidatePublicList(request) {
+    const url = new URL("/api/list", request.url);
+    await caches.default.delete(new Request(url.toString(), { method: "GET" }));
+}
+
 export const now = () => Math.floor(Date.now() / 1000);
 
 export async function sha256(text) {

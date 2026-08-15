@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS scripts (
   status        TEXT NOT NULL DEFAULT 'public',
   -- 1 = 对外隐藏作者身份。归属关系照旧存在，作者本人依然能管理自己的投稿
   anonymous     INTEGER NOT NULL DEFAULT 0,
+  reviewed      INTEGER NOT NULL DEFAULT 0,
+  moderated_at  INTEGER,
+  moderated_by  TEXT,
+  moderation_note TEXT,
   created_at    INTEGER NOT NULL,
   updated_at    INTEGER NOT NULL
 );
