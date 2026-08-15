@@ -244,6 +244,43 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
 .admin-checks { display: flex; gap: 18px; flex-wrap: wrap; margin: 4px 0 14px; }
 
+/* ---------- 举报处理 ---------- */
+.nav-badge {
+  display: inline-grid; place-items: center; min-width: 16px; height: 16px;
+  margin-left: 5px; padding: 0 4px; border-radius: 99px;
+  background: var(--danger); color: #fff; font-size: 10px; line-height: 1;
+  vertical-align: 1px;
+}
+.admin-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.admin-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 13px; border-radius: 99px; font-size: 13px;
+  color: var(--muted); background: var(--panel); border: 1px solid var(--line);
+}
+.admin-tab:hover { color: var(--accent); }
+.admin-tab.is-active { color: var(--text); background: var(--panel-hi); border-color: var(--accent-dim); }
+.admin-tab-count {
+  display: inline-grid; place-items: center; min-width: 16px; height: 16px;
+  padding: 0 4px; border-radius: 99px;
+  background: var(--danger); color: #fff; font-size: 10px; line-height: 1;
+}
+.report-row { align-items: stretch; }
+.report-title-gone { color: var(--muted); }
+.report-quote {
+  margin: 8px 0 0; padding: 8px 11px;
+  color: var(--text); background: var(--panel-hi);
+  border-left: 3px solid var(--line); border-radius: 0 8px 8px 0;
+  font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.report-reasons { list-style: none; margin: 9px 0 0; padding: 0; display: grid; gap: 6px; }
+.report-reasons li {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 7px 10px; background: var(--panel-hi); border-radius: 8px;
+}
+.report-reason-text { font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.report-reason-meta { color: var(--muted); font-size: 12px; }
+.report-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 11px; }
+
 @media (max-width: 640px) {
   .topbar { gap: 8px; flex-wrap: wrap; }
   .topbar nav { order: 3; flex-basis: 100%; overflow-x: auto; }

@@ -5,7 +5,8 @@ import { createScript, updateScript, fetchScript, fetchCategories, invalidateLis
 const PROMPT_MAX = 20000;
 
 export async function renderEditor(editId) {
-    let init = { name: "", category: "", desc: "", prompt: "", tags: [], rating: "general" };
+    // rating 刻意留空：新投稿必须由作者自己选，不给默认值
+    let init = { name: "", category: "", desc: "", prompt: "", tags: [], rating: "" };
     let categories;
 
     mount(loading("正在加载投稿表单…"));
@@ -52,10 +53,22 @@ export async function renderEditor(editId) {
     promptIn.value = init.prompt || "";
 
     const ratingSel = el("select", {}, [
+        el("option", { value: "", text: "请选择内容分级", disabled: true }),
         el("option", { value: "general", text: "全年龄" }),
         el("option", { value: "mature", text: "成人向" })
     ]);
-    ratingSel.value = init.rating || "general";
+    // 编辑时带出库里的真实分级；新建时留在占位项上
+    ratingSel.value = init.rating === "general" || init.rating === "mature" ? init.rating : "";
+    const ratingHint = el("p", { class: "field-hint" });
+    const paintRatingHint = () => {
+        ratingHint.textContent = ratingSel.value === "general"
+            ? "全年龄：所有人都能在列表里看到。"
+            : ratingSel.value === "mature"
+                ? "成人向：只有主动开启「内容范围：包含成人向」的人才能看到，详情页也会先出现遮挡。"
+                : "必选。分级决定这条投稿对谁可见，没有默认值 —— 请按内容实际情况选择。";
+    };
+    ratingSel.addEventListener("change", paintRatingHint);
+    paintRatingHint();
 
     const anonChk = el("input", { type: "checkbox" });
     anonChk.checked = !!init.anonymous;
@@ -80,6 +93,10 @@ export async function renderEditor(editId) {
 
         if (!payload.name) return toast("请填写标题");
         if (!categoryValues.has(payload.category)) return toast("请选择分类");
+        if (payload.rating !== "general" && payload.rating !== "mature") {
+            ratingSel.focus();
+            return toast("请选择内容分级");
+        }
         if (payload.prompt.length < 10) return toast("指令内容太短了");
 
         submitBtn.disabled = true;
@@ -109,7 +126,11 @@ export async function renderEditor(editId) {
             ]),
             field("简介", descIn),
             field("标签", tagsIn),
-            field("内容分级", ratingSel),
+            el("div", { class: "field" }, [
+                el("label", { text: "内容分级 *" }),
+                ratingSel,
+                ratingHint
+            ]),
             el("div", { class: "field" }, [
                 el("label", { class: "check-row" }, [
                     anonChk,

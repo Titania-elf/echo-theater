@@ -16,9 +16,18 @@ const PREVIEW_MAX = 300;
 
 let categoryValues = new Set();
 
+/** 分级的可选值。留空表示「还没指定」，会被 localIssue 挡下来 */
+const RATINGS = [
+    { value: "general", label: "全年龄" },
+    { value: "mature", label: "成人向" }
+];
+
+const ratingLabel = value => RATINGS.find(r => r.value === value)?.label || "";
+
 /**
  * 解析插件导出的 JSON。
  * 插件的导出格式就是 [{name, desc, prompt, category}, ...]，字段跟投稿接口一致。
+ * 注意插件导出里没有 rating 字段 —— 缺失时一律留空让人来选，不猜成全年龄。
  */
 function parseJson(text) {
     const data = JSON.parse(text);
@@ -30,7 +39,7 @@ function parseJson(text) {
         prompt: String(x?.prompt ?? "").trim(),
         category: String(x?.category ?? "").trim(),
         tags: Array.isArray(x?.tags) ? x.tags.map(String) : [],
-        rating: x?.rating === "mature" ? "mature" : "general"
+        rating: x?.rating === "mature" || x?.rating === "general" ? x.rating : ""
     }));
 }
 
@@ -68,7 +77,7 @@ function parseTxt(text) {
             if (!body) return null;
             if (!name) name = body.replace(/\s+/g, " ").slice(0, 20) + "…";
 
-            return { name, desc, prompt: body, category, tags: [], rating: "general" };
+            return { name, desc, prompt: body, category, tags: [], rating: "" };
         })
         .filter(Boolean);
 }
@@ -82,6 +91,7 @@ function localIssue(item) {
     if (item.desc.length > 200) return "简介超过 200 字";
     if (!item.category) return "请选择分类";
     if (!categoryValues.has(item.category)) return `分类「${item.category}」不在固定选项中`;
+    if (!ratingLabel(item.rating)) return "请选择内容分级";
     return null;
 }
 
@@ -165,6 +175,12 @@ export async function renderImport() {
     const bulkCatIn = el("select", {}, categoryOptions());
     bulkCatIn.value = "";
 
+    const bulkRatingIn = el("select", {}, [
+        el("option", { value: "", text: "请选择分级", disabled: true }),
+        ...RATINGS.map(r => el("option", { value: r.value, text: r.label }))
+    ]);
+    bulkRatingIn.value = "";
+
     const applyAll = (onlyEmpty) => {
         const value = bulkCatIn.value;
         if (!categoryValues.has(value)) return toast("请先选择分类");
@@ -176,6 +192,20 @@ export async function renderImport() {
             touched++;
         }
         toast(touched ? `已更新 ${touched} 条的分类` : "没有需要更新的条目");
+        paintPreview();
+    };
+
+    const applyAllRating = (onlyEmpty) => {
+        const value = bulkRatingIn.value;
+        if (!ratingLabel(value)) return toast("请先选择分级");
+        let touched = 0;
+        for (const p of parsed) {
+            if (onlyEmpty && ratingLabel(p.rating)) continue;
+            p.rating = value;
+            p.issue = localIssue(p);
+            touched++;
+        }
+        toast(touched ? `已把 ${touched} 条设为${ratingLabel(value)}` : "没有需要更新的条目");
         paintPreview();
     };
 
@@ -218,6 +248,17 @@ export async function renderImport() {
                     paintPreview();
                 };
 
+                const ratingIn = el("select", { class: "cat-inline" }, [
+                    el("option", { value: "", text: "请选择", disabled: true }),
+                    ...RATINGS.map(r => el("option", { value: r.value, text: r.label }))
+                ]);
+                ratingIn.value = ratingLabel(p.rating) ? p.rating : "";
+                ratingIn.onchange = () => {
+                    p.rating = ratingIn.value;
+                    p.issue = localIssue(p);
+                    paintPreview();
+                };
+
                 return el("div", {
                     class: "card",
                     style: p.issue ? "opacity:.5" : null
@@ -227,6 +268,10 @@ export async function renderImport() {
                     el("div", { class: "row", style: "gap:8px;margin:6px 0" }, [
                         el("span", { class: "summary", text: "分类" }),
                         catIn
+                    ]),
+                    el("div", { class: "row", style: "gap:8px;margin:6px 0" }, [
+                        el("span", { class: "summary", text: "分级" }),
+                        ratingIn
                     ]),
                     el("div", { class: "meta" }, [
                         el("span", { text: `${p.prompt.length} 字` }),
@@ -238,7 +283,7 @@ export async function renderImport() {
                 ? el("p", {
                     class: "summary",
                     text: `列表只显示前 ${PREVIEW_MAX} 条（会导入全部 ${good.length} 条）。`
-                        + `第 ${PREVIEW_MAX + 1} 条之后只能用上面的批量分类调整。`
+                        + `第 ${PREVIEW_MAX + 1} 条之后只能用上面的批量分类和批量分级调整。`
                 })
                 : null
         );
@@ -275,7 +320,10 @@ export async function renderImport() {
         const anonNote = anonChk.checked
             ? "\n\n这批将以匿名投稿发布：对外只显示「匿名作者」，不显示头像和名字。"
             : "";
-        if (!confirm(`确定把 ${queue.length} 条指令导入并归属给「${author?.name}」吗？\n\n导入后这些投稿会立即公开，作者本人可以编辑和下架。${anonNote}`)) return;
+        // 分级写错的代价是单向的，导入前把成人向的条数摆出来再确认一次
+        const matureCount = queue.filter(p => p.rating === "mature").length;
+        const ratingNote = `\n\n分级：全年龄 ${queue.length - matureCount} 条，成人向 ${matureCount} 条。`;
+        if (!confirm(`确定把 ${queue.length} 条指令导入并归属给「${author?.name}」吗？${ratingNote}\n\n导入后这些投稿会立即公开，作者本人可以编辑和下架。${anonNote}`)) return;
 
         submitBtn.disabled = true;
         const collected = [];
@@ -360,7 +408,20 @@ export async function renderImport() {
         ]),
 
         el("div", { class: "card", style: "margin-top:12px" }, [
-            el("h3", { style: "margin-top:0", text: "4. 署名" }),
+            el("h3", { style: "margin-top:0", text: "4. 内容分级" }),
+            el("p", {
+                class: "summary",
+                text: "插件导出的文件里没有分级字段，所以必须在这里指定 —— 未指定分级的条目会被跳过，不会导入。"
+            }),
+            el("div", { class: "row", style: "gap:8px;flex-wrap:wrap" }, [
+                bulkRatingIn,
+                el("button", { text: "套用到全部", onclick: () => applyAllRating(false) }),
+                el("button", { text: "只调整未指定的", onclick: () => applyAllRating(true) })
+            ])
+        ]),
+
+        el("div", { class: "card", style: "margin-top:12px" }, [
+            el("h3", { style: "margin-top:0", text: "5. 署名" }),
             el("label", { class: "check-row" }, [
                 anonChk,
                 el("span", { text: "这批以匿名发布" })
