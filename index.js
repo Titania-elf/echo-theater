@@ -61,7 +61,10 @@ var init_defaults = __esm({
       favs: [],
       history_extraction: {
         whitelist: "",
-        blacklist: ""
+        blacklist: "",
+        // 只把角色发言注入剧本生成，跳过用户楼层。
+        // 只作用于剧本生成，总结和世界书提取照旧读全量历史
+        ai_only: false
       },
       character_map: {},
       disabled_presets: [],
@@ -632,7 +635,7 @@ function extractContent(text, whitelist = []) {
   cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
   return cleaned;
 }
-function getChatHistory(limit, whitelist = [], blacklist = void 0) {
+function getChatHistory(limit, whitelist = [], blacklist = void 0, aiOnly = false) {
   if (typeof SillyTavern === "undefined" || !SillyTavern.getContext) return "";
   const ctx = SillyTavern.getContext();
   const history = ctx.chat || [];
@@ -664,7 +667,11 @@ function getChatHistory(limit, whitelist = [], blacklist = void 0) {
     return true;
   });
   console.log(`Titania: History Analysis - Total: ${history.length}, Visible: ${visibleHistory.length}, Filtered: ${history.length - visibleHistory.length}`);
-  const recent = visibleHistory.slice(-safeLimit);
+  const scoped = aiOnly ? visibleHistory.filter((msg) => !msg.is_user) : visibleHistory;
+  if (aiOnly) {
+    console.log(`Titania: History Analysis - AI only: ${scoped.length} / ${visibleHistory.length}`);
+  }
+  const recent = scoped.slice(-safeLimit);
   return recent.map((msg) => {
     let name = msg.name;
     if (msg.is_user) name = ctx.name1 || "User";
@@ -3109,6 +3116,31 @@ textarea.t-input {
 
 .t-history-toggle.active:hover .t-toggle-text {
     color: #a8d8f8;
+}
+
+/* \u300C\u53EA\u8981\u89D2\u8272\u53D1\u8A00\u300D\uFF1A\u5386\u53F2\u5F00\u5173\u7684\u5B50\u9879\uFF0C\u7A84\u4E00\u70B9\u4EE5\u514D\u9876\u680F\u88AB\u4E24\u4E2A\u540C\u5BBD\u5F00\u5173\u6324\u6EE1 */
+.t-subtoggle {
+    min-width: 150px;
+}
+
+/* \u4E0D\u8BFB\u5386\u53F2\u65F6\u7F6E\u7070\u3002\u4ECD\u4FDD\u7559 pointer-events\uFF0C\u597D\u8BA9 title \u63D0\u793A\u80FD\u8BF4\u660E\u4E3A\u4EC0\u4E48\u4E0D\u53EF\u7528 */
+.t-subtoggle.disabled {
+    opacity: 0.45;
+}
+
+.t-subtoggle.disabled,
+.t-subtoggle.disabled .t-toggle-label,
+.t-subtoggle.disabled input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+.t-subtoggle.disabled:hover {
+    background: #1a1a1a;
+    border-color: #333;
+}
+
+.t-subtoggle.disabled:hover .t-toggle-text {
+    color: #888;
 }
 
 /* \u751F\u6210\u6A21\u5F0F\u5207\u6362 */
@@ -16564,6 +16596,8 @@ var init_state = __esm({
       // 生成模式: "narrative"(内容优先) | "visual"(氛围美化)
       useHistoryAnalysis: false,
       // 是否读取聊天历史（默认关闭）
+      historyAiOnly: false,
+      // 读历史时只要角色发言，跳过用户楼层（仅作用于剧本生成）
       skipWorldBookCheck: false,
       // 跳过世界书空检查（本次会话内有效）
       skipInteractiveHint: false,
@@ -35744,6 +35778,12 @@ function renderHtml(viewData) {
                         <span class="t-toggle-text">\u{1F4DC} \u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
                     </label>
                 </div>
+                <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD">
+                    <label class="t-toggle-label">
+                        <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? "checked" : ""}>
+                        <span class="t-toggle-text">\u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
+                    </label>
+                </div>
                 <div class="t-mode-toggle" id="t-mode-toggle">
                     <div class="t-mode-btn ${GlobalState.generationMode === "narrative" ? "active" : ""}" data-mode="narrative">
                         <span>\u{1F4D6} \u5185\u5BB9\u4F18\u5148</span>
@@ -36156,6 +36196,12 @@ function renderHtml2(viewData) {
                         <span class="t-toggle-text">\u{1F4DC} \u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
                     </label>
                 </div>
+                <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD">
+                    <label class="t-toggle-label">
+                        <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? "checked" : ""}>
+                        <span class="t-toggle-text">\u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
+                    </label>
+                </div>
                 <div class="t-mode-toggle" id="t-mode-toggle">
                     <div class="t-mode-btn ${GlobalState.generationMode === "narrative" ? "active" : ""}" data-mode="narrative">
                         <span>\u{1F4D6} \u5185\u5BB9\u4F18\u5148</span>
@@ -36412,6 +36458,12 @@ function updateHistoryToggleUI() {
     $toggle.removeClass("active");
   }
   $checkbox.prop("checked", GlobalState.useHistoryAnalysis);
+  const $aiOnly = $("#t-ai-only-toggle");
+  const $aiOnlyBox = $("#t-history-ai-only");
+  $aiOnly.toggleClass("disabled", !GlobalState.useHistoryAnalysis);
+  $aiOnly.toggleClass("active", GlobalState.useHistoryAnalysis && GlobalState.historyAiOnly);
+  $aiOnlyBox.prop("disabled", !GlobalState.useHistoryAnalysis);
+  $aiOnlyBox.prop("checked", GlobalState.historyAiOnly);
 }
 function updateModeToggleUI() {
   $(".t-mode-btn").removeClass("active");
@@ -37079,6 +37131,7 @@ async function openMainWindow() {
     data = { ui_mode_echo: true };
   }
   GlobalState.useHistoryAnalysis = data.use_history_analysis === true;
+  GlobalState.historyAiOnly = data.history_extraction?.ai_only === true;
   GlobalState.generationMode = ["narrative", "visual", "preset"].includes(data.config?.generation_mode) ? data.config.generation_mode : "narrative";
   const placeholderContent = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#555;"><i class="fa-solid fa-clapperboard" style="font-size:3em; margin-bottom:15px; opacity:0.5;"></i><div style="font-size:1.1em;">\u8BF7\u9009\u62E9\u5267\u672C\uFF0C\u5F00\u59CB\u6F14\u7ECE...</div></div>';
   const layout = data.ui_prefs?.main_window_mode === "legacy" ? legacy_exports : modern_exports;
@@ -37105,6 +37158,21 @@ async function openMainWindow() {
         toastr.info("\u{1F4DC} \u5DF2\u5F00\u542F\uFF1A\u5C06\u5206\u6790\u804A\u5929\u5386\u53F2", "Titania");
       } else {
         toastr.info("\u{1F4DC} \u5DF2\u5173\u95ED\uFF1A\u4E0D\u8BFB\u53D6\u804A\u5929\u5386\u53F2", "Titania");
+      }
+    }
+  });
+  $("#t-history-ai-only").on("change", function() {
+    GlobalState.historyAiOnly = $(this).is(":checked");
+    updateHistoryToggleUI();
+    const d = getExtData();
+    if (!d.history_extraction || typeof d.history_extraction !== "object") d.history_extraction = {};
+    d.history_extraction.ai_only = GlobalState.historyAiOnly;
+    saveExtData();
+    if (window.toastr) {
+      if (GlobalState.historyAiOnly) {
+        toastr.info("\u{1F3AD} \u5DF2\u5F00\u542F\uFF1A\u5386\u53F2\u53EA\u6CE8\u5165\u89D2\u8272\u53D1\u8A00", "Titania");
+      } else {
+        toastr.info("\u{1F3AD} \u5DF2\u5173\u95ED\uFF1A\u5386\u53F2\u5305\u542B\u53CC\u65B9\u53D1\u8A00", "Titania");
       }
     }
   });
@@ -39313,6 +39381,18 @@ function clampContinuationInjectRounds(value) {
   if (!Number.isFinite(num)) return 3;
   return Math.max(CONTINUATION_INJECT_MIN, Math.min(CONTINUATION_INJECT_MAX, Math.floor(num)));
 }
+function buildChatHistoryBlock(history, aiOnly) {
+  if (!history || history.trim().length === 0) return `[\u804A\u5929\u5386\u53F2]
+\uFF08\u65E0\u5386\u53F2\u8BB0\u5F55\uFF09
+
+`;
+  const note = aiOnly ? "\u4EE5\u4E0B\u4EC5\u4E3A\u89D2\u8272\u7684\u8FD1\u671F\u53D1\u8A00\uFF0C\u5DF2\u8DF3\u8FC7\u7528\u6237\u8F93\u5165\uFF0C\u4EC5\u4F9B\u53C2\u8003\u4E0A\u4E0B\u6587" : "\u4EE5\u4E0B\u662F\u8FD1\u671F\u5BF9\u8BDD\u8BB0\u5F55\uFF0C\u4EC5\u4F9B\u53C2\u8003\u4E0A\u4E0B\u6587";
+  return `[\u804A\u5929\u5386\u53F2]
+\uFF08${note}\u3002\u8BF7\u52FF\u7EED\u5199\u6216\u91CD\u590D\u6B64\u5185\u5BB9\uFF0C\u4E13\u6CE8\u4E8E\u4E0B\u65B9\u7684\u5267\u672C\u6307\u4EE4\uFF09
+${history}
+
+`;
+}
 function createContinuationBranchKey() {
   const ts = Date.now().toString(36);
   const rand = Math.random().toString(36).slice(2, 8);
@@ -40422,15 +40502,8 @@ ${ctx.worldInfo}
       const historyWhitelistStr = data.history_extraction?.whitelist || "";
       const historyWhitelist = parseWhitelistInput(historyWhitelistStr);
       const historyBlacklist = parseChatHistoryBlacklistInput(data.history_extraction?.blacklist || "");
-      const history = getChatHistory(limit, historyWhitelist, historyBlacklist);
-      const historyBlock = history && history.trim().length > 0 ? `[\u804A\u5929\u5386\u53F2]
-\uFF08\u4EE5\u4E0B\u662F\u8FD1\u671F\u5BF9\u8BDD\u8BB0\u5F55\uFF0C\u4EC5\u4F9B\u53C2\u8003\u4E0A\u4E0B\u6587\u3002\u8BF7\u52FF\u7EED\u5199\u6216\u91CD\u590D\u6B64\u5185\u5BB9\uFF0C\u4E13\u6CE8\u4E8E\u4E0B\u65B9\u7684\u5267\u672C\u6307\u4EE4\uFF09
-${history}
-
-` : `[\u804A\u5929\u5386\u53F2]
-\uFF08\u65E0\u5386\u53F2\u8BB0\u5F55\uFF09
-
-`;
+      const history = getChatHistory(limit, historyWhitelist, historyBlacklist, GlobalState.historyAiOnly);
+      const historyBlock = buildChatHistoryBlock(history, GlobalState.historyAiOnly);
       sectionLengths.history = historyBlock.length;
       runtimeChatHistory = historyBlock;
       user += historyBlock;
@@ -40750,15 +40823,8 @@ ${ctx.worldInfo}
       const historyWhitelistStr = data.history_extraction?.whitelist || "";
       const historyWhitelist = parseWhitelistInput(historyWhitelistStr);
       const historyBlacklist = parseChatHistoryBlacklistInput(data.history_extraction?.blacklist || "");
-      const history = getChatHistory(limit, historyWhitelist, historyBlacklist);
-      const historyBlock = history && history.trim().length > 0 ? `[\u804A\u5929\u5386\u53F2]
-\uFF08\u4EE5\u4E0B\u662F\u8FD1\u671F\u5BF9\u8BDD\u8BB0\u5F55\uFF0C\u4EC5\u4F9B\u53C2\u8003\u4E0A\u4E0B\u6587\u3002\u8BF7\u52FF\u7EED\u5199\u6216\u91CD\u590D\u6B64\u5185\u5BB9\uFF0C\u4E13\u6CE8\u4E8E\u4E0B\u65B9\u7684\u5267\u672C\u6307\u4EE4\uFF09
-${history}
-
-` : `[\u804A\u5929\u5386\u53F2]
-\uFF08\u65E0\u5386\u53F2\u8BB0\u5F55\uFF09
-
-`;
+      const history = getChatHistory(limit, historyWhitelist, historyBlacklist, GlobalState.historyAiOnly);
+      const historyBlock = buildChatHistoryBlock(history, GlobalState.historyAiOnly);
       sectionLengths.history = historyBlock.length;
       runtimeChatHistory = historyBlock;
       user += historyBlock;

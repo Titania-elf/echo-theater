@@ -426,8 +426,12 @@ function extractContent(text, whitelist = []) {
  * 获取聊天历史，过滤掉隐藏的并提取正文内容
  * @param {number} limit - 获取的行数限制
  * @param {string[]} whitelist - 白名单标签数组（可选）
+ * @param {object[]} [blacklist] - 黑名单规则；缺省时自行从配置读取
+ * @param {boolean} [aiOnly=false] - 只保留角色发言，跳过用户楼层。
+ *   刻意不像 blacklist 那样缺省时回退读配置：总结（summarizer）和世界书提取
+ *   （loreExtractor）需要完整对话，用户的动作也是情节。只有剧本生成那两处显式传 true。
  */
-export function getChatHistory(limit, whitelist = [], blacklist = undefined) {
+export function getChatHistory(limit, whitelist = [], blacklist = undefined, aiOnly = false) {
     if (typeof SillyTavern === 'undefined' || !SillyTavern.getContext) return "";
     const ctx = SillyTavern.getContext();
     const history = ctx.chat || [];
@@ -487,8 +491,16 @@ export function getChatHistory(limit, whitelist = [], blacklist = undefined) {
 
     console.log(`Titania: History Analysis - Total: ${history.length}, Visible: ${visibleHistory.length}, Filtered: ${history.length - visibleHistory.length}`);
 
+    // 只要角色发言：is_user 为真才是用户楼层，其余都算角色（群聊里的多个角色都保留）。
+    // 必须在 slice 之前过滤 —— 与上面的隐藏楼层过滤同一口径，
+    // 这样 limit 表示「N 条角色发言」而不是「最近 N 楼里剩下的那几条」。
+    const scoped = aiOnly ? visibleHistory.filter(msg => !msg.is_user) : visibleHistory;
+    if (aiOnly) {
+        console.log(`Titania: History Analysis - AI only: ${scoped.length} / ${visibleHistory.length}`);
+    }
+
     // 从过滤后的列表中截取最后 N 条
-    const recent = visibleHistory.slice(-safeLimit);
+    const recent = scoped.slice(-safeLimit);
 
     return recent.map(msg => {
         let name = msg.name;

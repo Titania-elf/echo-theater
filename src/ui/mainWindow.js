@@ -132,6 +132,15 @@ export function updateHistoryToggleUI() {
         $toggle.removeClass("active");
     }
     $checkbox.prop("checked", GlobalState.useHistoryAnalysis);
+
+    // 「只要角色发言」是历史开关的子项：不读历史时它没有意义，置灰并禁用。
+    // 这里只改可用状态，不动 GlobalState.historyAiOnly —— 重新开启历史后要恢复用户原来的选择
+    const $aiOnly = $("#t-ai-only-toggle");
+    const $aiOnlyBox = $("#t-history-ai-only");
+    $aiOnly.toggleClass("disabled", !GlobalState.useHistoryAnalysis);
+    $aiOnly.toggleClass("active", GlobalState.useHistoryAnalysis && GlobalState.historyAiOnly);
+    $aiOnlyBox.prop("disabled", !GlobalState.useHistoryAnalysis);
+    $aiOnlyBox.prop("checked", GlobalState.historyAiOnly);
 }
 
 /** 更新生成模式 UI */
@@ -934,6 +943,10 @@ export async function openMainWindow() {
     // 1. 获取持久化的历史开关偏好 (默认为关闭)
     GlobalState.useHistoryAnalysis = (data.use_history_analysis === true);
 
+    // 1.1 只要角色发言（历史开关的子项，默认关闭）。
+    // 老用户的 history_extraction 里没有这个键 —— getExtData 不做深合并，undefined 即关闭，正是想要的
+    GlobalState.historyAiOnly = (data.history_extraction?.ai_only === true);
+
     // 1.5 获取持久化的生成模式偏好 (默认为内容优先)
     GlobalState.generationMode = ["narrative", "visual", "preset"].includes(data.config?.generation_mode)
         ? data.config.generation_mode
@@ -982,6 +995,25 @@ export async function openMainWindow() {
                 toastr.info("📜 已开启：将分析聊天历史", "Titania");
             } else {
                 toastr.info("📜 已关闭：不读取聊天历史", "Titania");
+            }
+        }
+    });
+
+    // 「只要角色发言」子开关
+    $("#t-history-ai-only").on("change", function () {
+        GlobalState.historyAiOnly = $(this).is(":checked");
+        updateHistoryToggleUI();
+
+        const d = getExtData();
+        if (!d.history_extraction || typeof d.history_extraction !== "object") d.history_extraction = {};
+        d.history_extraction.ai_only = GlobalState.historyAiOnly;
+        saveExtData();
+
+        if (window.toastr) {
+            if (GlobalState.historyAiOnly) {
+                toastr.info("🎭 已开启：历史只注入角色发言", "Titania");
+            } else {
+                toastr.info("🎭 已关闭：历史包含双方发言", "Titania");
             }
         }
     });

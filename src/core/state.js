@@ -21,6 +21,7 @@ export const GlobalState = {
     currentCategoryFilter: "ALL", // 当前的分类筛选器状态
     generationMode: "narrative", // 生成模式: "narrative"(内容优先) | "visual"(氛围美化)
     useHistoryAnalysis: false, // 是否读取聊天历史（默认关闭）
+    historyAiOnly: false,      // 读历史时只要角色发言，跳过用户楼层（仅作用于剧本生成）
     skipWorldBookCheck: false, // 跳过世界书空检查（本次会话内有效）
     skipInteractiveHint: false, // 跳过互动内容提示弹窗（本次会话内有效）
 

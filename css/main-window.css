@@ -308,6 +308,31 @@
     color: #a8d8f8;
 }
 
+/* 「只要角色发言」：历史开关的子项，窄一点以免顶栏被两个同宽开关挤满 */
+.t-subtoggle {
+    min-width: 150px;
+}
+
+/* 不读历史时置灰。仍保留 pointer-events，好让 title 提示能说明为什么不可用 */
+.t-subtoggle.disabled {
+    opacity: 0.45;
+}
+
+.t-subtoggle.disabled,
+.t-subtoggle.disabled .t-toggle-label,
+.t-subtoggle.disabled input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+.t-subtoggle.disabled:hover {
+    background: #1a1a1a;
+    border-color: #333;
+}
+
+.t-subtoggle.disabled:hover .t-toggle-text {
+    color: #888;
+}
+
 /* 生成模式切换 */
 .t-mode-toggle {
     display: flex;

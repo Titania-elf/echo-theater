@@ -83,6 +83,20 @@ function clampContinuationInjectRounds(value) {
     return Math.max(CONTINUATION_INJECT_MIN, Math.min(CONTINUATION_INJECT_MAX, Math.floor(num)));
 }
 
+/**
+ * 组装 [聊天历史] 提示词块。两条生成路径共用，避免同一段说明文案分散两处。
+ *
+ * 只要角色发言时要换个口径：那时注入的不是一问一答的对话，而是抽掉用户输入后的
+ * 发言序列，因果链本来就是断的。不说明的话模型会把它当完整对话，自己去补缺失的起因。
+ */
+function buildChatHistoryBlock(history, aiOnly) {
+    if (!history || history.trim().length === 0) return `[聊天历史]\n（无历史记录）\n\n`;
+    const note = aiOnly
+        ? "以下仅为角色的近期发言，已跳过用户输入，仅供参考上下文"
+        : "以下是近期对话记录，仅供参考上下文";
+    return `[聊天历史]\n（${note}。请勿续写或重复此内容，专注于下方的剧本指令）\n${history}\n\n`;
+}
+
 // Token 估算统一走 helpers.js 的 estimateTokens；
 // 查看器等 UI 场景由 countTokens 用 ST 真实分词器覆盖为精确值。
 
@@ -1514,10 +1528,8 @@ export async function buildPromptCompositionPreview(options = {}) {
             const historyWhitelistStr = data.history_extraction?.whitelist || "";
             const historyWhitelist = parseWhitelistInput(historyWhitelistStr);
             const historyBlacklist = parseChatHistoryBlacklistInput(data.history_extraction?.blacklist || "");
-            const history = getChatHistory(limit, historyWhitelist, historyBlacklist);
-            const historyBlock = history && history.trim().length > 0
-                ? `[聊天历史]\n（以下是近期对话记录，仅供参考上下文。请勿续写或重复此内容，专注于下方的剧本指令）\n${history}\n\n`
-                : `[聊天历史]\n（无历史记录）\n\n`;
+            const history = getChatHistory(limit, historyWhitelist, historyBlacklist, GlobalState.historyAiOnly);
+            const historyBlock = buildChatHistoryBlock(history, GlobalState.historyAiOnly);
             sectionLengths.history = historyBlock.length;
             runtimeChatHistory = historyBlock;
             user += historyBlock;
@@ -1892,10 +1904,8 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
             const historyWhitelistStr = data.history_extraction?.whitelist || "";
             const historyWhitelist = parseWhitelistInput(historyWhitelistStr);
             const historyBlacklist = parseChatHistoryBlacklistInput(data.history_extraction?.blacklist || "");
-            const history = getChatHistory(limit, historyWhitelist, historyBlacklist);
-            const historyBlock = history && history.trim().length > 0
-                ? `[聊天历史]\n（以下是近期对话记录，仅供参考上下文。请勿续写或重复此内容，专注于下方的剧本指令）\n${history}\n\n`
-                : `[聊天历史]\n（无历史记录）\n\n`;
+            const history = getChatHistory(limit, historyWhitelist, historyBlacklist, GlobalState.historyAiOnly);
+            const historyBlock = buildChatHistoryBlock(history, GlobalState.historyAiOnly);
             sectionLengths.history = historyBlock.length;
             runtimeChatHistory = historyBlock;
             user += historyBlock;

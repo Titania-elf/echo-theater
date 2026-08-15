@@ -45,7 +45,10 @@ export const defaultSettings = {
     favs: [],
     history_extraction: {
         whitelist: "",
-        blacklist: ""
+        blacklist: "",
+        // 只把角色发言注入剧本生成，跳过用户楼层。
+        // 只作用于剧本生成，总结和世界书提取照旧读全量历史
+        ai_only: false
     },
     character_map: {},
     disabled_presets: [],
