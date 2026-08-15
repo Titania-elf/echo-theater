@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS scripts (
   status        TEXT NOT NULL DEFAULT 'public',
   -- 1 = 对外隐藏作者身份。归属关系照旧存在，作者本人依然能管理自己的投稿
   anonymous     INTEGER NOT NULL DEFAULT 0,
+  reviewed      INTEGER NOT NULL DEFAULT 0,
+  moderated_at  INTEGER,
+  moderated_by  TEXT,
+  moderation_note TEXT,
   created_at    INTEGER NOT NULL,
   updated_at    INTEGER NOT NULL
 );
@@ -46,3 +50,46 @@ CREATE TABLE IF NOT EXISTS reports (
 );
 
 CREATE INDEX IF NOT EXISTS idx_report_open ON reports(handled, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS comments (
+  id            TEXT PRIMARY KEY,
+  script_id     TEXT NOT NULL,
+  author_id     TEXT NOT NULL,
+  body          TEXT NOT NULL,
+  reply_body    TEXT,
+  replied_at    INTEGER,
+  status        TEXT NOT NULL DEFAULT 'public',
+  created_at    INTEGER NOT NULL,
+  updated_at    INTEGER NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_comment_once
+  ON comments(script_id, author_id) WHERE status != 'deleted';
+CREATE INDEX IF NOT EXISTS idx_comment_script
+  ON comments(script_id, status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id            TEXT PRIMARY KEY,
+  recipient_id  TEXT NOT NULL,
+  actor_id      TEXT,
+  type          TEXT NOT NULL,
+  script_id     TEXT,
+  comment_id    TEXT,
+  read_at       INTEGER,
+  created_at    INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_notification_recipient
+  ON notifications(recipient_id, read_at, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS comment_reports (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  comment_id    TEXT NOT NULL,
+  reporter_id   TEXT,
+  reason        TEXT NOT NULL,
+  created_at    INTEGER NOT NULL,
+  handled       INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_comment_report_open
+  ON comment_reports(handled, created_at DESC);

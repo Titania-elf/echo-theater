@@ -56,8 +56,20 @@ export const restoreScript = id =>
 export const purgeScript = id =>
     req(`/api/my/script/${encodeURIComponent(id)}?purge=1`, { method: "DELETE" });
 
+export const batchDeleteScripts = ids =>
+    req("/api/my/scripts/batch-delete", { method: "POST", body: JSON.stringify({ ids }) });
+
 export const report = (scriptId, reason) =>
     req("/api/report", { method: "POST", body: JSON.stringify({ script_id: scriptId, reason }) });
+
+export const fetchComments = scriptId => req(`/api/script/${encodeURIComponent(scriptId)}/comments`);
+export const createComment = (scriptId, body) => req(`/api/script/${encodeURIComponent(scriptId)}/comments`, { method: "POST", body: JSON.stringify({ body }) });
+export const updateComment = (id, body) => req(`/api/my/comment/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ body }) });
+export const deleteComment = id => req(`/api/my/comment/${encodeURIComponent(id)}`, { method: "DELETE" });
+export const replyComment = (id, body) => req(`/api/my/comment/${encodeURIComponent(id)}`, { method: "POST", body: JSON.stringify({ body }) });
+export const reportComment = (id, reason) => req(`/api/comment/${encodeURIComponent(id)}/report`, { method: "POST", body: JSON.stringify({ reason }) });
+export const myNotifications = () => req("/api/my/notifications");
+export const readNotifications = ids => req("/api/my/notifications", { method: "POST", body: JSON.stringify(ids?.length ? { ids } : {}) });
 
 // ── 管理员通道 ──
 // 权限在服务端按登录身份判定，这里只是普通的同源请求
@@ -66,3 +78,19 @@ export const adminAuthors = () => req("/api/admin/authors");
 
 export const adminUpload = payload =>
     req("/api/admin/scripts", { method: "POST", body: JSON.stringify(payload) });
+
+export const adminScripts = params => {
+    const query = new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v !== "" && v !== undefined));
+    return req(`/api/admin/scripts?${query}`);
+};
+
+export const adminScript = id => req(`/api/admin/script/${encodeURIComponent(id)}`);
+
+export const adminUpdateScript = (id, payload) =>
+    req(`/api/admin/script/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(payload) });
+
+export const adminScriptAction = (id, action, note = "") =>
+    req(`/api/admin/script/${encodeURIComponent(id)}`, { method: "POST", body: JSON.stringify({ action, note }) });
+
+export const adminBatchUpdate = payload =>
+    req("/api/admin/scripts/batch", { method: "POST", body: JSON.stringify(payload) });

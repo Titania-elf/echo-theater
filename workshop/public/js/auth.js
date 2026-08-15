@@ -21,7 +21,9 @@ export function renderAuthSlot(session, { onLogout } = {}) {
     // 批量导入入口只对站长显示。这里只是 UI 开关，
     // 真正的权限校验在 /api/admin/* 接口里
     const navImport = document.getElementById("navImport");
+    const navAdmin = document.getElementById("navAdmin");
     if (navImport) navImport.hidden = !(session.logged_in && session.is_admin);
+    if (navAdmin) navAdmin.hidden = !(session.logged_in && session.is_admin);
 
     if (!session.logged_in) {
         slot.replaceChildren();

@@ -15,5 +15,7 @@ export async function onRequestGet({ params, env }) {
         return publicErr(404, "该指令不存在或已下架");
     }
 
-    return publicJson(rowToScript(row, { withPrompt: true }), { maxAge: 300 });
+    return publicJson(rowToScript(row, { withPrompt: true }), {
+        headers: { "Cache-Control": "no-store" }
+    });
 }

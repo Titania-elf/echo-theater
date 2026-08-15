@@ -2,8 +2,10 @@
 import { el, mount, loading, fmtDate, toast } from "./dom.js";
 import { fetchScript, report } from "./api.js";
 import { avatar, authorLink } from "./card.js";
+import { showMature, toggleMature } from "./rating.js";
+import { commentSection } from "./comments.js";
 
-export async function renderDetail(id) {
+export async function renderDetail(id, focusCommentId = "") {
     mount(loading());
 
     let s;
@@ -14,12 +16,29 @@ export async function renderDetail(id) {
         return;
     }
 
+    if (s.rating === "mature" && !showMature()) {
+        const unlock = el("button", { class: "primary", text: "显示成人向内容" });
+        unlock.addEventListener("click", () => {
+            if (toggleMature()) renderDetail(id, focusCommentId);
+        });
+        mount(el("div", { class: "rating-gate" }, [
+            el("div", { class: "rating-gate-icon", text: "18+" }),
+            el("h1", { text: "此投稿属于成人向内容" }),
+            el("p", { text: "当前内容范围为全年龄。开启后才能查看这条投稿。" }),
+            el("div", { class: "actions" }, [
+                el("a", { href: "#/" }, [el("button", { text: "返回列表" })]),
+                unlock
+            ])
+        ]));
+        return;
+    }
+
     const onReport = async () => {
         const reason = prompt("请简要说明举报理由：");
         if (!reason?.trim()) return;
         try {
             await report(s.id, reason.trim());
-            toast("已提交，感谢反馈");
+            toast("举报已提交");
         } catch (e) {
             toast(e.message);
         }
@@ -53,7 +72,8 @@ export async function renderDetail(id) {
                     event.preventDefault();
                     toast("网页端不支持复制，请在回声剧场插件中使用该指令");
                 }
-            })
+            }),
+            commentSection(s, { focusCommentId })
         ])
     );
 }

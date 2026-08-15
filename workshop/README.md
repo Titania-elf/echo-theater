@@ -97,6 +97,16 @@ wrangler d1 export echo-workshop --remote --output=backup-$(date +%F).sql
 | D1 写入行 | 10 万/天 | 几乎不可能 |
 | D1 单库 | 500 MB | 不可能。400 条纯文本约 800KB |
 
+## 内容管理升级
+
+已有数据库部署新版前，需要先执行一次迁移：
+
+```bash
+wrangler d1 execute echo-workshop --remote --file=./migrate-content-management.sql
+```
+
+迁移后，历史投稿会统一成为“待审核”；管理员批量导入的新投稿会直接标记为已审核。
+
 ## API
 
 | 方法 | 路径 | 说明 |

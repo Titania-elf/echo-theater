@@ -40,6 +40,11 @@ export function publicErr(status, message) {
     return publicJson({ error: message }, { status });
 }
 
+export async function invalidatePublicList(request) {
+    const url = new URL("/api/list", request.url);
+    await caches.default.delete(new Request(url.toString(), { method: "GET" }));
+}
+
 export const now = () => Math.floor(Date.now() / 1000);
 
 export async function sha256(text) {
@@ -52,9 +57,9 @@ export function normalizeForHash(prompt) {
     return prompt.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-export function genId() {
+export function genId(prefix = "ws") {
     const bytes = crypto.getRandomValues(new Uint8Array(8));
-    return "ws_" + [...bytes].map(b => b.toString(36).padStart(2, "0")).join("").slice(0, 12);
+    return `${prefix}_` + [...bytes].map(b => b.toString(36).padStart(2, "0")).join("").slice(0, 12);
 }
 
 /** 投稿字段校验，返回 {ok, value|message} */

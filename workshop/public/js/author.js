@@ -20,6 +20,7 @@ export async function renderAuthor(id) {
 
     const { author, stats } = data;
     const items = filterByRating(data.items || []);
+    const visibleDownloads = items.reduce((sum, item) => sum + (Number(item.downloads) || 0), 0);
 
     mount(
         el("div", { class: "author-hero" }, [
@@ -27,8 +28,8 @@ export async function renderAuthor(id) {
             el("div", { class: "author-hero-meta" }, [
                 el("h1", { class: "author-hero-name", text: author.name }),
                 el("div", { class: "author-hero-stats" }, [
-                    el("span", { text: `${stats.count} 条公开投稿` }),
-                    el("span", { text: `累计下载 ${stats.downloads}` }),
+                    el("span", { text: `${items.length} 条当前可见投稿` }),
+                    el("span", { text: `当前可见下载 ${visibleDownloads}` }),
                     author.joined_at && el("span", { text: `${fmtDate(author.joined_at)} 加入` })
                 ])
             ])

@@ -191,7 +191,12 @@ export async function renderList() {
             ? `共 ${all.length} 条指令`
             : `${hits.length} / ${all.length} 条`;
         cardsBox.replaceChildren(
-            ...(hits.length ? hits.map(scriptCard) : [el("div", { class: "empty", text: "没有匹配的指令" })])
+            ...(hits.length
+                ? hits.map(scriptCard)
+                : [el("div", {
+                    class: "empty",
+                    text: all.length ? "没有匹配的指令" : (data.items?.length ? "当前内容范围没有可见投稿" : "工坊里还没有投稿")
+                })])
         );
         paintChips();
     };
@@ -213,6 +218,14 @@ export async function renderList() {
     paint();
 
     mount(
+        el("header", { class: "workshop-home-head" }, [
+            el("img", { class: "workshop-home-mark", src: "/1786768560798.png", alt: "" }),
+            el("div", { class: "workshop-home-copy" }, [
+                el("p", { class: "workshop-home-kicker", text: "ECHO BOOK CLUB" }),
+                el("h1", { text: "回声工坊" }),
+                el("p", { class: "workshop-home-subtitle", text: "收录值得反复演绎的剧本指令，也把每一位创作者的回声留在这里。" })
+            ])
+        ]),
         featuredStrip(all),
         el("div", { class: "toolbar" }, [search, sortSel]),
         categories.length ? chipBox : null,

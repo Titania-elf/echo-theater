@@ -65,6 +65,11 @@ export function fetchScript(id) {
     return req(`/api/script/${encodeURIComponent(id)}`);
 }
 
+/** 拉取单条投稿的公开评论，插件端只读展示。 */
+export function fetchComments(id) {
+    return req(`/api/script/${encodeURIComponent(id)}/comments`);
+}
+
 /** 上报下载量。失败无所谓，计数不是关键路径 */
 export function countDownload(id) {
     return req("/api/downloads", {

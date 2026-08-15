@@ -99,6 +99,10 @@ export function renderHtml(viewData) {
                         <i class="fa-solid fa-pen-nib"></i>
                         <span>编辑内容</span>
                     </div>
+                    <div class="t-tools-item" id="t-tool-workshop-feedback" style="display:none;">
+                        <i class="fa-regular fa-comment-dots"></i>
+                        <span>评论工坊投稿</span>
+                    </div>
                 </div>
                 <div class="t-content-area">
                     <!-- 翻页按钮移到内容区两侧 -->

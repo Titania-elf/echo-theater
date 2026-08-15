@@ -6,26 +6,41 @@
 <!-- 刻意不被搜索引擎收录：只在插件和 Discord 里流通 -->
 <meta name="robots" content="noindex, nofollow, noarchive">
 <title>回声工坊</title>
+<link rel="icon" type="image/png" sizes="512x512" href="/1786768560798.png?v=1">
+<link rel="apple-touch-icon" href="/1786768560798.png?v=1">
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
 <header class="topbar" hidden>
-  <a class="brand" href="#/">回声工坊</a>
+  <a class="brand" href="#/">
+    <img class="brand-mark" src="/1786768560798.png" alt="">
+    <span>回声工坊</span>
+  </a>
   <nav>
     <a href="#/" data-nav="list">浏览</a>
     <a href="#/mine" data-nav="mine">我的投稿</a>
+    <a href="#/admin" data-nav="admin" id="navAdmin" hidden>内容管理</a>
     <a href="#/import" data-nav="import" id="navImport" hidden>批量导入</a>
   </nav>
+  <a href="#/notifications" data-nav="notifications" class="notification-nav" title="通知">
+    <span aria-hidden="true">🔔</span><span id="notificationBadge" class="notification-badge" hidden></span>
+  </a>
+  <button type="button" id="ratingToggle" class="rating-toggle" aria-pressed="false"></button>
   <div id="authSlot" class="auth-slot"></div>
 </header>
 
 <main id="view" class="view access-view" aria-live="polite">
   <section class="access-page">
     <div class="access-panel access-checking">
-      <div class="echo-mark" aria-hidden="true"></div>
-      <p class="access-kicker">ECHO WORKSHOP</p>
-      <h1>回声工坊</h1>
+      <div class="brand-hero">
+        <img class="brand-hero-mark" src="/1786768560798.png" alt="回声工坊">
+        <div class="brand-hero-copy">
+          <p class="access-kicker">ECHO BOOK CLUB</p>
+          <h1>回声工坊</h1>
+          <p class="brand-hero-subtitle">把值得反复演绎的故事，留在同一座书架上。</p>
+        </div>
+      </div>
       <p class="access-status">正在确认登录状态…</p>
     </div>
   </section>
@@ -33,7 +48,6 @@
 
 <footer class="footer" hidden>
   <span>回声剧场 · 工坊</span>
-  <span id="ratingToggle" class="rating-toggle"></span>
 </footer>
 
 <div id="toast" class="toast" hidden></div>
