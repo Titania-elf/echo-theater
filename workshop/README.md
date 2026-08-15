@@ -57,7 +57,10 @@ wrangler pages dev public --d1=DB=echo-workshop
 
 ## 日常维护
 
-没有管理后台 —— 一个人运营，直接跑 SQL 更快。
+举报走网页端的 `#/admin/reports`（顶栏「内容管理」→「举报」标签页，有未处理时会带红色角标）。
+按被举报对象聚合，能直接下架投稿 / 隐藏评论并把该对象的举报标记为已处理。
+
+剩下的杂事一个人运营直接跑 SQL 更快：
 
 ```bash
 # 下架一条
@@ -68,15 +71,19 @@ wrangler d1 execute echo-workshop --remote --command \
 wrangler d1 execute echo-workshop --remote --command \
   "UPDATE authors SET banned=1 WHERE discord_id='xxx'"
 
-# 看未处理举报
+# 看未处理举报（网页端打不开时的后备）
 wrangler d1 execute echo-workshop --remote --command \
   "SELECT r.id, r.script_id, s.name, r.reason FROM reports r
    LEFT JOIN scripts s ON s.id=r.script_id WHERE r.handled=0 ORDER BY r.created_at DESC"
 
-# 标记举报已处理
+# 评论举报
 wrangler d1 execute echo-workshop --remote --command \
-  "UPDATE reports SET handled=1 WHERE id=1"
+  "SELECT r.id, r.comment_id, c.body, r.reason FROM comment_reports r
+   LEFT JOIN comments c ON c.id=r.comment_id WHERE r.handled=0 ORDER BY r.created_at DESC"
 ```
+
+被管理端隐藏的评论是 `status='removed'`，跟作者自删的 `'deleted'` 分开：
+前者仍然占着 `idx_comment_once`，被隐藏的人不能换一条重发。
 
 ## 备份
 
@@ -114,7 +121,8 @@ wrangler d1 execute echo-workshop --remote --file=./migrate-content-management.s
 | GET | `/api/list` | 公开索引，不含 prompt，带 CORS + 5 分钟缓存 |
 | GET | `/api/script/:id` | 详情，含 prompt |
 | POST | `/api/downloads` | 批量上报下载量 `{ids:[...]}` |
-| POST | `/api/report` | 举报，允许匿名 |
+| POST | `/api/report` | 举报投稿，允许匿名 |
+| POST | `/api/comment/:id/report` | 举报评论，允许匿名 |
 | GET | `/api/auth/login` | 跳 Discord 授权 |
 | GET | `/api/auth/callback` | OAuth 回调 |
 | GET | `/api/auth/me` | 当前登录状态 |
@@ -123,6 +131,8 @@ wrangler d1 execute echo-workshop --remote --file=./migrate-content-management.s
 | POST | `/api/my/scripts` | 新建 |
 | PUT | `/api/my/script/:id` | 编辑（version+1） |
 | DELETE | `/api/my/script/:id` | 下架（软删除） |
+| GET | `/api/admin/reports` | 举报列表，按对象聚合；`?count=1` 只回未处理数 |
+| POST | `/api/admin/reports` | 处理举报 `{type, target_id, action?, handled?}` |
 
 读接口开 CORS 是给插件面板用的（SillyTavern 跑在 localhost）。带 cookie 的私有接口不开跨域。
 
@@ -131,3 +141,6 @@ wrangler d1 execute echo-workshop --remote --file=./migrate-content-management.s
 - 编辑走的是公开详情接口，所以**已下架的投稿无法编辑**。要改的话得加一个 `/api/my/script/:id` 的 GET
 - 下载计数按点击计，没有去重，同一个人多次点会重复计数
 - 没有分页。超过 2000 条要改 `list.js` 的 LIMIT 和前端渲染策略
+- 举报没有频率限制也不去重：同一个人可以对同一条投稿反复提交，匿名举报无法追溯。
+  这是「门槛越低越好」换来的代价 —— 处理台按对象聚合并回传「几个登录用户 + 几条匿名」，
+  就是为了让刷举报在列表里一眼能看出来

@@ -4,7 +4,7 @@ import { renderDetail } from "./detail.js";
 import { renderMine } from "./mine.js";
 import { renderEditor } from "./editor.js";
 import { renderImport } from "./import.js";
-import { renderAdmin } from "./admin.js";
+import { renderAdmin, refreshReportBadge } from "./admin.js";
 import { renderAuthor } from "./author.js";
 import { getSession, logoutSession, renderAuthSlot } from "./auth.js";
 import { showMature, toggleMature } from "./rating.js";
@@ -188,6 +188,8 @@ function startApp(session) {
     renderAuthSlot(session, { onLogout: handleLogout });
     paintRatingToggle();
     refreshNotificationBadge();
+    // 举报角标只对站长有意义 —— 也只有站长的请求能通过 /api/admin/*
+    if (session.is_admin) refreshReportBadge();
     route();
 }
 

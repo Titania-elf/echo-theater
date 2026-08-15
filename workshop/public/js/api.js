@@ -94,3 +94,14 @@ export const adminScriptAction = (id, action, note = "") =>
 
 export const adminBatchUpdate = payload =>
     req("/api/admin/scripts/batch", { method: "POST", body: JSON.stringify(payload) });
+
+export const adminReports = params => {
+    const query = new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v !== "" && v !== undefined));
+    return req(`/api/admin/reports?${query}`);
+};
+
+/** 只取未处理计数，给导航徽标用 */
+export const adminReportCounts = () => req("/api/admin/reports?count=1");
+
+export const adminReportAction = payload =>
+    req("/api/admin/reports", { method: "POST", body: JSON.stringify(payload) });
