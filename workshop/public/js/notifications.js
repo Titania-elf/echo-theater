@@ -17,7 +17,7 @@ export async function renderNotifications() {
     try { data = await myNotifications(); }
     catch (e) { mount(el("div", { class: "empty", text: `加载失败：${e.message}` })); return; }
     const text = n => n.type === "author_reply"
-        ? `${n.actor_name || "投稿作者"} 回复了你在《${n.script_name || "已下架投稿"}》下的反馈`
+        ? `${n.actor_name || "投稿作者"} 回复了你在《${n.script_name || "已下架投稿"}》下的评论`
         : `${n.actor_name || "一位用户"} 评论了你的投稿《${n.script_name || "已下架投稿"}》`;
     const open = async n => {
         if (!n.read_at) await readNotifications([n.id]).catch(() => {});

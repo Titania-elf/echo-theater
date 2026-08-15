@@ -38,7 +38,7 @@ export async function renderDetail(id, focusCommentId = "") {
         if (!reason?.trim()) return;
         try {
             await report(s.id, reason.trim());
-            toast("已提交，感谢反馈");
+            toast("举报已提交");
         } catch (e) {
             toast(e.message);
         }

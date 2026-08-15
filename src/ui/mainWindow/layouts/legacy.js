@@ -101,7 +101,7 @@ export function renderHtml(viewData) {
                     </div>
                     <div class="t-tools-item" id="t-tool-workshop-feedback" style="display:none;">
                         <i class="fa-regular fa-comment-dots"></i>
-                        <span>反馈给作者</span>
+                        <span>评论工坊投稿</span>
                     </div>
                 </div>
                 <div class="t-content-area">

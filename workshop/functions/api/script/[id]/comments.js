@@ -30,16 +30,16 @@ export async function onRequestPost({ request, params, env }) {
     let body;
     try { body = await request.json(); } catch { return err(400, "请求格式错误"); }
     const text = String(body?.body || "").trim();
-    if (text.length < 2 || text.length > 1000) return err(400, "反馈内容需在 2 到 1000 字之间");
+    if (text.length < 2 || text.length > 1000) return err(400, "评论内容需在 2 到 1000 字之间");
     const script = await env.DB.prepare("SELECT id, author_id, status FROM scripts WHERE id = ?").bind(params.id).first();
     if (!script || script.status !== "public") return err(404, "投稿不存在或已下架");
     const existing = await env.DB.prepare("SELECT id FROM comments WHERE script_id = ? AND author_id = ? AND status != 'deleted'")
         .bind(params.id, author.discord_id).first();
-    if (existing) return err(409, "你已经反馈过这条投稿，可以编辑原反馈");
+    if (existing) return err(409, "你已经评论过这条投稿，可以编辑原评论");
     const since = now() - 86400;
     const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM comments WHERE author_id = ? AND created_at > ?")
         .bind(author.discord_id, since).first();
-    if ((Number(count?.count) || 0) >= 20) return err(429, "今天发布的反馈已达上限");
+    if ((Number(count?.count) || 0) >= 20) return err(429, "今天发布的评论已达上限");
 
     const ts = now();
     const id = genId("cm");

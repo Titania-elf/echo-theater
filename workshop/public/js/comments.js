@@ -4,28 +4,28 @@ import { fetchComments, createComment, updateComment, deleteComment, replyCommen
 import { avatar, authorLink } from "./card.js";
 
 export function commentSection(script, { focusCommentId = "" } = {}) {
-    const root = el("section", { class: "comments-section", id: "feedback" });
+    const root = el("section", { class: "comments-section", id: "comments" });
 
     const load = async () => {
-        root.replaceChildren(el("div", { class: "comments-loading", text: "正在加载使用反馈…" }));
+        root.replaceChildren(el("div", { class: "comments-loading", text: "正在加载评论…" }));
         let session, data;
         try { [session, data] = await Promise.all([getSession(), fetchComments(script.id)]); }
-        catch (e) { root.replaceChildren(el("div", { class: "empty", text: `反馈加载失败：${e.message}` })); return; }
+        catch (e) { root.replaceChildren(el("div", { class: "empty", text: `评论加载失败：${e.message}` })); return; }
         const items = data.items || [];
         const mine = items.find(item => item.author.id === session?.user?.id);
         const form = !mine ? feedbackForm(async body => {
-            await createComment(script.id, body); toast("反馈已发布"); await load();
-        }) : el("p", { class: "comments-own-hint", text: "你已经反馈过这条投稿，可以在自己的反馈下编辑。" });
+            await createComment(script.id, body); toast("评论已发布"); await load();
+        }) : el("p", { class: "comments-own-hint", text: "你已经评论过这条投稿，可以在自己的评论下编辑。" });
 
         root.replaceChildren(
             el("div", { class: "comments-head" }, [
-                el("div", {}, [el("p", { class: "comments-kicker", text: "USER FEEDBACK" }), el("h2", { text: `使用反馈 · ${items.length}` })]),
-                el("p", { text: "说说实际使用感受、遇到的问题或改进建议。" })
+                el("div", {}, [el("p", { class: "comments-kicker", text: "COMMENTS" }), el("h2", { text: `评论 · ${items.length}` })]),
+                el("p", { text: "喜欢这条指令的话，就留句话夸夸作者吧。" })
             ]),
             form,
             el("div", { class: "comment-list" }, items.length
                 ? items.map(item => commentCard(item, session, load, data.can_reply))
-                : [el("div", { class: "comments-empty", text: "还没有使用反馈，来留下第一条吧。" })])
+                : [el("div", { class: "comments-empty", text: "还没有评论，来给作者留下第一句话吧。" })])
         );
         if (focusCommentId) {
             requestAnimationFrame(() => {
@@ -38,8 +38,8 @@ export function commentSection(script, { focusCommentId = "" } = {}) {
     return root;
 }
 
-function feedbackForm(onSubmit, { value = "", submitText = "发布反馈", cancel = null } = {}) {
-    const input = el("textarea", { rows: "4", maxlength: "1000", placeholder: "请尽量描述实际使用后的体验，这会直接帮助作者改进指令。" });
+function feedbackForm(onSubmit, { value = "", submitText = "发布评论", cancel = null } = {}) {
+    const input = el("textarea", { rows: "4", maxlength: "1000", placeholder: "写下你想对作者说的话，也可以分享使用感受或建议。" });
     input.value = value;
     const submit = el("button", { class: "primary", text: submitText });
     submit.addEventListener("click", async () => {
@@ -49,7 +49,7 @@ function feedbackForm(onSubmit, { value = "", submitText = "发布反馈", cance
         try { await onSubmit(body); } catch (e) { toast(e.message); submit.disabled = false; }
     });
     return el("div", { class: "feedback-form" }, [input, el("div", { class: "feedback-form-actions" }, [
-        el("span", { text: "每位用户对每条投稿可发布一条反馈" }),
+        el("span", { text: "每位用户对每条投稿可发布一条评论" }),
         cancel && el("button", { text: "取消", onclick: cancel }), submit
     ])]);
 }
@@ -63,12 +63,12 @@ function commentCard(item, session, reload, canReply) {
         if (isMine) {
             actions.push(el("button", { text: "编辑", onclick: () => {
                 card.replaceChildren(feedbackForm(async body => {
-                    await updateComment(item.id, body); toast("反馈已更新"); await reload();
+                    await updateComment(item.id, body); toast("评论已更新"); await reload();
                 }, { value: item.body, submitText: "保存修改", cancel: paint }));
             }}));
             actions.push(el("button", { class: "danger", text: "删除", onclick: async () => {
-                if (!confirm("确定删除这条反馈吗？删除后无法恢复。")) return;
-                try { await deleteComment(item.id); toast("反馈已删除"); await reload(); } catch (e) { toast(e.message); }
+                if (!confirm("确定删除这条评论吗？删除后无法恢复。")) return;
+                try { await deleteComment(item.id); toast("评论已删除"); await reload(); } catch (e) { toast(e.message); }
             }}));
         } else {
             actions.push(el("button", { text: "举报", onclick: async () => {

@@ -1,4 +1,4 @@
--- 回声工坊：使用反馈与站内通知
+-- 回声工坊：评论与站内通知
 CREATE TABLE IF NOT EXISTS comments (
   id TEXT PRIMARY KEY,
   script_id TEXT NOT NULL,

@@ -9210,7 +9210,7 @@ textarea.t-input {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
     padding: 14px;
     gap: 10px;
 }
@@ -9240,13 +9240,68 @@ textarea.t-input {
 }
 
 .t-ws-pv-prompt {
-    flex: 1;
+    flex: 0 0 auto;
     resize: none;
-    min-height: 0;
+    height: clamp(160px, 28vh, 300px);
     font-family: var(--t-font-mono);
     font-size: 0.88em;
     line-height: 1.6;
 }
+
+.t-ws-pv-comments {
+    border-top: 1px solid #2a2a2a;
+    padding-top: 12px;
+}
+
+.t-ws-pv-comments-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.t-ws-pv-comments-head > div {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.t-ws-pv-comments-head strong {
+    color: #ddd;
+    font-size: 0.85em;
+}
+
+.t-ws-pv-comments-list {
+    display: grid;
+    gap: 8px;
+}
+
+.t-ws-pv-comment {
+    padding: 10px 12px;
+    border: 1px solid #2a2a2a;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.t-ws-pv-comment-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.t-ws-pv-comment-author {
+    display: grid;
+    gap: 2px;
+}
+
+.t-ws-pv-comment-author strong { font-size: 0.86em; color: #e5e5e5; }
+.t-ws-pv-comment-author small { color: #888; font-size: 0.72em; }
+.t-ws-pv-comment-body { margin-top: 8px; white-space: pre-wrap; line-height: 1.5; color: #d0d0d0; font-size: 0.86em; }
+.t-ws-pv-comment-reply { margin-top: 8px; padding: 7px 9px; border-left: 2px solid var(--t-theme); background: rgba(255, 255, 255, 0.04); display: grid; gap: 3px; font-size: 0.82em; }
+.t-ws-pv-comment-reply strong { color: #d9c18a; }
+.t-ws-pv-comment-reply span { white-space: pre-wrap; color: #bbb; }
+.t-ws-pv-comments-empty { color: #888; font-size: 0.84em; padding: 12px 0; }
 
 /* \u2500\u2500 \u79FB\u52A8\u7AEF \u2500\u2500 */
 @media screen and (max-width: 600px) {
@@ -33734,6 +33789,9 @@ async function fetchList({ force = false } = {}) {
 function fetchScript(id3) {
   return req(`/api/script/${encodeURIComponent(id3)}`);
 }
+function fetchComments(id3) {
+  return req(`/api/script/${encodeURIComponent(id3)}/comments`);
+}
 function countDownload(id3) {
   return req("/api/downloads", {
     method: "POST",
@@ -33823,6 +33881,24 @@ function bindAvatarFallback($scope) {
   $scope.find(".t-ws-avatar-img").on("error", function() {
     $(this).remove();
   });
+}
+function renderPreviewComments(items) {
+  if (!items?.length) {
+    return `<div class="t-ws-pv-comments-empty">\u8FD8\u6CA1\u6709\u8BC4\u8BBA\uFF0C\u53BB\u7F51\u9875\u7ED9\u4F5C\u8005\u7559\u53E5\u8BDD\u5427\u3002</div>`;
+  }
+  return items.map((item) => `
+        <article class="t-ws-pv-comment">
+            <div class="t-ws-pv-comment-head">
+                ${renderAvatar(item.author)}
+                <div class="t-ws-pv-comment-author">
+                    <strong>${esc(item.author?.name || "\u672A\u77E5\u7528\u6237")}</strong>
+                    <small>${formatRelativeTime(item.updated_at || item.created_at)}</small>
+                </div>
+            </div>
+            <div class="t-ws-pv-comment-body">${esc(item.body)}</div>
+            ${item.reply ? `<div class="t-ws-pv-comment-reply"><strong>\u4F5C\u8005\u56DE\u590D</strong><span>${esc(item.reply.body)}</span></div>` : ""}
+        </article>
+    `).join("");
 }
 function formatRelativeTime(ts) {
   const time = (Number(ts) || 0) * 1e3;
@@ -34033,8 +34109,19 @@ function openWorkshopWindow(source = "manager") {
                         <span>\u6307\u4EE4\u5185\u5BB9</span>
                     </div>
                     <textarea class="t-input t-ws-pv-prompt" readonly>\u52A0\u8F7D\u4E2D...</textarea>
+                    <section class="t-ws-pv-comments">
+                        <div class="t-ws-pv-comments-head">
+                            <div>
+                                <span class="t-ws-pv-label">\u8BC4\u8BBA</span>
+                                <strong id="t-ws-pv-comments-count">\u52A0\u8F7D\u4E2D...</strong>
+                            </div>
+                            <button class="t-btn t-btn-soft" id="t-ws-pv-comment-open">\u53BB\u7F51\u9875\u8BC4\u8BBA</button>
+                        </div>
+                        <div id="t-ws-pv-comments-list" class="t-ws-pv-comments-list">
+                            <div class="t-ws-pv-comments-empty">\u6B63\u5728\u52A0\u8F7D\u8BC4\u8BBA...</div>
+                        </div>
+                    </section>
                     <div class="t-btn-row">
-                        <button class="t-btn" id="t-ws-pv-feedback" style="flex:1;">\u67E5\u770B\u53CD\u9988</button>
                         <button class="t-btn primary" id="t-ws-pv-get" style="flex:1;">\u4E0B\u8F7D\u5230\u672C\u5730</button>
                     </div>
                 </div>
@@ -34047,7 +34134,7 @@ function openWorkshopWindow(source = "manager") {
       $(document).off("keydown.wspreview");
     };
     $("#t-ws-pv-close").on("click", closePreview);
-    $("#t-ws-pv-feedback").on("click", () => window.open(`${WORKSHOP_ORIGIN}/#/comment/${encodeURIComponent(item.id)}`, "_blank"));
+    $("#t-ws-pv-comment-open").on("click", () => window.open(`${WORKSHOP_ORIGIN}/#/comment/${encodeURIComponent(item.id)}`, "_blank"));
     $("#t-ws-preview-overlay").on("click", function(e) {
       if (e.target === this) closePreview();
     });
@@ -34057,16 +34144,25 @@ function openWorkshopWindow(source = "manager") {
         e.preventDefault();
       }
     });
-    try {
-      const detail = await fetchScript(item.id);
-      $("#t-ws-preview-overlay .t-ws-pv-prompt").val(detail.prompt);
+    const [detailResult, commentsResult] = await Promise.allSettled([fetchScript(item.id), fetchComments(item.id)]);
+    if (detailResult.status === "fulfilled") {
+      $("#t-ws-preview-overlay .t-ws-pv-prompt").val(detailResult.value.prompt);
       $("#t-ws-pv-get").on("click", function() {
         downloadScript(item, $(this));
         setTimeout(closePreview, 800);
       });
-    } catch (e) {
-      $("#t-ws-preview-overlay .t-ws-pv-prompt").val(`\u52A0\u8F7D\u5931\u8D25\uFF1A${e.message}`);
+    } else {
+      $("#t-ws-preview-overlay .t-ws-pv-prompt").val(`\u52A0\u8F7D\u5931\u8D25\uFF1A${detailResult.reason?.message || "\u672A\u77E5\u9519\u8BEF"}`);
       $("#t-ws-pv-get").prop("disabled", true);
+    }
+    if (commentsResult.status === "fulfilled") {
+      const items = commentsResult.value.items || [];
+      $("#t-ws-pv-comments-count").text(`${items.length} \u6761`);
+      $("#t-ws-pv-comments-list").html(renderPreviewComments(items));
+      bindAvatarFallback($("#t-ws-pv-comments-list"));
+    } else {
+      $("#t-ws-pv-comments-count").text("\u6682\u4E0D\u53EF\u7528");
+      $("#t-ws-pv-comments-list").html(`<div class="t-ws-pv-comments-empty">\u8BC4\u8BBA\u52A0\u8F7D\u5931\u8D25\uFF1A${esc(commentsResult.reason?.message || "\u672A\u77E5\u9519\u8BEF")}</div>`);
     }
   };
   const renderSkeleton = () => {
@@ -35700,7 +35796,7 @@ function renderHtml(viewData) {
                     <button class="t-tools-icon" id="t-btn-like" type="button" title="\u6536\u85CF\u7ED3\u679C" aria-label="\u6536\u85CF\u7ED3\u679C">
                         <i class="fa-regular fa-heart"></i>
                     </button>
-                    <button class="t-tools-icon" id="t-tool-workshop-feedback" type="button" title="\u53CD\u9988\u7ED9\u5DE5\u574A\u4F5C\u8005" aria-label="\u53CD\u9988\u7ED9\u5DE5\u574A\u4F5C\u8005" style="display:none;">
+                    <button class="t-tools-icon" id="t-tool-workshop-feedback" type="button" title="\u8BC4\u8BBA\u5DE5\u574A\u6295\u7A3F" aria-label="\u8BC4\u8BBA\u5DE5\u574A\u6295\u7A3F" style="display:none;">
                         <i class="fa-regular fa-comment-dots"></i>
                     </button>
                 </div>
@@ -36118,7 +36214,7 @@ function renderHtml2(viewData) {
                     </div>
                     <div class="t-tools-item" id="t-tool-workshop-feedback" style="display:none;">
                         <i class="fa-regular fa-comment-dots"></i>
-                        <span>\u53CD\u9988\u7ED9\u4F5C\u8005</span>
+                        <span>\u8BC4\u8BBA\u5DE5\u574A\u6295\u7A3F</span>
                     </div>
                 </div>
                 <div class="t-content-area">

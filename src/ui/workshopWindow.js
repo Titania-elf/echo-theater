@@ -2,7 +2,7 @@
 //
 // 回声工坊浏览窗。只做「看 + 下载」，投稿和编辑去网页端。
 
-import { fetchList, fetchScript, countDownload, WORKSHOP_ORIGIN } from "../core/workshopApi.js";
+import { fetchList, fetchScript, fetchComments, countDownload, WORKSHOP_ORIGIN } from "../core/workshopApi.js";
 import { saveUserScript } from "../core/scriptData.js";
 import { GlobalState } from "../core/state.js";
 import { refreshScriptList } from "./mainWindow.js";
@@ -70,6 +70,25 @@ function bindAvatarFallback($scope) {
     $scope.find(".t-ws-avatar-img").on("error", function () {
         $(this).remove();
     });
+}
+
+function renderPreviewComments(items) {
+    if (!items?.length) {
+        return `<div class="t-ws-pv-comments-empty">还没有评论，去网页给作者留句话吧。</div>`;
+    }
+    return items.map(item => `
+        <article class="t-ws-pv-comment">
+            <div class="t-ws-pv-comment-head">
+                ${renderAvatar(item.author)}
+                <div class="t-ws-pv-comment-author">
+                    <strong>${esc(item.author?.name || "未知用户")}</strong>
+                    <small>${formatRelativeTime(item.updated_at || item.created_at)}</small>
+                </div>
+            </div>
+            <div class="t-ws-pv-comment-body">${esc(item.body)}</div>
+            ${item.reply ? `<div class="t-ws-pv-comment-reply"><strong>作者回复</strong><span>${esc(item.reply.body)}</span></div>` : ""}
+        </article>
+    `).join("");
 }
 
 function formatRelativeTime(ts) {
@@ -323,8 +342,19 @@ export function openWorkshopWindow(source = 'manager') {
                         <span>指令内容</span>
                     </div>
                     <textarea class="t-input t-ws-pv-prompt" readonly>加载中...</textarea>
+                    <section class="t-ws-pv-comments">
+                        <div class="t-ws-pv-comments-head">
+                            <div>
+                                <span class="t-ws-pv-label">评论</span>
+                                <strong id="t-ws-pv-comments-count">加载中...</strong>
+                            </div>
+                            <button class="t-btn t-btn-soft" id="t-ws-pv-comment-open">去网页评论</button>
+                        </div>
+                        <div id="t-ws-pv-comments-list" class="t-ws-pv-comments-list">
+                            <div class="t-ws-pv-comments-empty">正在加载评论...</div>
+                        </div>
+                    </section>
                     <div class="t-btn-row">
-                        <button class="t-btn" id="t-ws-pv-feedback" style="flex:1;">查看反馈</button>
                         <button class="t-btn primary" id="t-ws-pv-get" style="flex:1;">下载到本地</button>
                     </div>
                 </div>
@@ -340,7 +370,7 @@ export function openWorkshopWindow(source = 'manager') {
         };
 
         $("#t-ws-pv-close").on("click", closePreview);
-        $("#t-ws-pv-feedback").on("click", () => window.open(`${WORKSHOP_ORIGIN}/#/comment/${encodeURIComponent(item.id)}`, "_blank"));
+        $("#t-ws-pv-comment-open").on("click", () => window.open(`${WORKSHOP_ORIGIN}/#/comment/${encodeURIComponent(item.id)}`, "_blank"));
         $("#t-ws-preview-overlay").on("click", function (e) {
             if (e.target === this) closePreview();
         });
@@ -348,17 +378,26 @@ export function openWorkshopWindow(source = 'manager') {
             if (e.key === "Escape") { closePreview(); e.preventDefault(); }
         });
 
-        try {
-            const detail = await fetchScript(item.id);
-            $("#t-ws-preview-overlay .t-ws-pv-prompt").val(detail.prompt);
+        const [detailResult, commentsResult] = await Promise.allSettled([fetchScript(item.id), fetchComments(item.id)]);
+        if (detailResult.status === "fulfilled") {
+            $("#t-ws-preview-overlay .t-ws-pv-prompt").val(detailResult.value.prompt);
 
             $("#t-ws-pv-get").on("click", function () {
                 downloadScript(item, $(this));
                 setTimeout(closePreview, 800);
             });
-        } catch (e) {
-            $("#t-ws-preview-overlay .t-ws-pv-prompt").val(`加载失败：${e.message}`);
+        } else {
+            $("#t-ws-preview-overlay .t-ws-pv-prompt").val(`加载失败：${detailResult.reason?.message || "未知错误"}`);
             $("#t-ws-pv-get").prop("disabled", true);
+        }
+        if (commentsResult.status === "fulfilled") {
+            const items = commentsResult.value.items || [];
+            $("#t-ws-pv-comments-count").text(`${items.length} 条`);
+            $("#t-ws-pv-comments-list").html(renderPreviewComments(items));
+            bindAvatarFallback($("#t-ws-pv-comments-list"));
+        } else {
+            $("#t-ws-pv-comments-count").text("暂不可用");
+            $("#t-ws-pv-comments-list").html(`<div class="t-ws-pv-comments-empty">评论加载失败：${esc(commentsResult.reason?.message || "未知错误")}</div>`);
         }
     };
 
