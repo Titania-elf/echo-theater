@@ -248,6 +248,15 @@
     /* 防止 flex 子项溢出 */
 }
 
+/* 历史开关 + 子开关的分组容器。
+   桌面端沿用顶栏的 15px gap，视觉与两者各自作为顶栏直接子项时完全一致；
+   存在的意义在窄屏：让这两个开关共占一行，而不是各占一行 */
+.t-history-group {
+    display: flex;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
 /* 历史开关 */
 .t-history-toggle {
     display: flex;
@@ -1156,6 +1165,44 @@
         height: 40px;
         min-width: unset;
         justify-content: center;
+    }
+
+    /* 两个开关平分一行：各占一行会让顶栏在窄屏多吃 48px */
+    .t-history-group {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .t-history-group .t-history-toggle {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        /* 极端组合（320px 屏 + 130% 字号缩放）下文字要折成两行，
+           固定 40px 会裁掉第二行，所以改成下限 */
+        height: auto;
+        min-height: 40px;
+        padding: 0 6px;
+    }
+
+    /* 半格宽度容不下 0.9em 的 7 个汉字。收到 0.8em，与同排的 .t-mode-btn 一致 */
+    .t-history-group .t-toggle-text {
+        font-size: 0.8em;
+        /* 基准字号可被用户放大到 130%，那时半格仍会不够。
+           解除全局的 nowrap 让它折行 —— 比截断成省略号不丢信息 */
+        white-space: normal;
+        line-height: 1.25;
+        text-align: center;
+    }
+
+    .t-history-group .t-toggle-label {
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .t-history-group .t-toggle-label input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
     }
 
     .t-mode-toggle {

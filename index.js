@@ -3058,6 +3058,15 @@ textarea.t-input {
     /* \u9632\u6B62 flex \u5B50\u9879\u6EA2\u51FA */
 }
 
+/* \u5386\u53F2\u5F00\u5173 + \u5B50\u5F00\u5173\u7684\u5206\u7EC4\u5BB9\u5668\u3002
+   \u684C\u9762\u7AEF\u6CBF\u7528\u9876\u680F\u7684 15px gap\uFF0C\u89C6\u89C9\u4E0E\u4E24\u8005\u5404\u81EA\u4F5C\u4E3A\u9876\u680F\u76F4\u63A5\u5B50\u9879\u65F6\u5B8C\u5168\u4E00\u81F4\uFF1B
+   \u5B58\u5728\u7684\u610F\u4E49\u5728\u7A84\u5C4F\uFF1A\u8BA9\u8FD9\u4E24\u4E2A\u5F00\u5173\u5171\u5360\u4E00\u884C\uFF0C\u800C\u4E0D\u662F\u5404\u5360\u4E00\u884C */
+.t-history-group {
+    display: flex;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
 /* \u5386\u53F2\u5F00\u5173 */
 .t-history-toggle {
     display: flex;
@@ -3966,6 +3975,44 @@ textarea.t-input {
         height: 40px;
         min-width: unset;
         justify-content: center;
+    }
+
+    /* \u4E24\u4E2A\u5F00\u5173\u5E73\u5206\u4E00\u884C\uFF1A\u5404\u5360\u4E00\u884C\u4F1A\u8BA9\u9876\u680F\u5728\u7A84\u5C4F\u591A\u5403 48px */
+    .t-history-group {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .t-history-group .t-history-toggle {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        /* \u6781\u7AEF\u7EC4\u5408\uFF08320px \u5C4F + 130% \u5B57\u53F7\u7F29\u653E\uFF09\u4E0B\u6587\u5B57\u8981\u6298\u6210\u4E24\u884C\uFF0C
+           \u56FA\u5B9A 40px \u4F1A\u88C1\u6389\u7B2C\u4E8C\u884C\uFF0C\u6240\u4EE5\u6539\u6210\u4E0B\u9650 */
+        height: auto;
+        min-height: 40px;
+        padding: 0 6px;
+    }
+
+    /* \u534A\u683C\u5BBD\u5EA6\u5BB9\u4E0D\u4E0B 0.9em \u7684 7 \u4E2A\u6C49\u5B57\u3002\u6536\u5230 0.8em\uFF0C\u4E0E\u540C\u6392\u7684 .t-mode-btn \u4E00\u81F4 */
+    .t-history-group .t-toggle-text {
+        font-size: 0.8em;
+        /* \u57FA\u51C6\u5B57\u53F7\u53EF\u88AB\u7528\u6237\u653E\u5927\u5230 130%\uFF0C\u90A3\u65F6\u534A\u683C\u4ECD\u4F1A\u4E0D\u591F\u3002
+           \u89E3\u9664\u5168\u5C40\u7684 nowrap \u8BA9\u5B83\u6298\u884C \u2014\u2014 \u6BD4\u622A\u65AD\u6210\u7701\u7565\u53F7\u4E0D\u4E22\u4FE1\u606F */
+        white-space: normal;
+        line-height: 1.25;
+        text-align: center;
+    }
+
+    .t-history-group .t-toggle-label {
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .t-history-group .t-toggle-label input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
     }
 
     .t-mode-toggle {
@@ -35772,17 +35819,19 @@ function renderHtml(viewData) {
             </div>
 
             <div class="t-top-bar">
-                <div class="t-history-toggle" id="t-history-toggle">
-                    <label class="t-toggle-label">
-                        <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
-                        <span class="t-toggle-text">\u{1F4DC} \u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
-                    </label>
-                </div>
-                <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD">
-                    <label class="t-toggle-label">
-                        <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? "checked" : ""}>
-                        <span class="t-toggle-text">\u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
-                    </label>
+                <div class="t-history-group">
+                    <div class="t-history-toggle" id="t-history-toggle">
+                        <label class="t-toggle-label">
+                            <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
+                            <span class="t-toggle-text">\u{1F4DC} \u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
+                        </label>
+                    </div>
+                    <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD">
+                        <label class="t-toggle-label">
+                            <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? "checked" : ""}>
+                            <span class="t-toggle-text">\u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="t-mode-toggle" id="t-mode-toggle">
                     <div class="t-mode-btn ${GlobalState.generationMode === "narrative" ? "active" : ""}" data-mode="narrative">
@@ -36190,17 +36239,19 @@ function renderHtml2(viewData) {
             </div>
 
             <div class="t-top-bar">
-                <div class="t-history-toggle" id="t-history-toggle">
-                    <label class="t-toggle-label">
-                        <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
-                        <span class="t-toggle-text">\u{1F4DC} \u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
-                    </label>
-                </div>
-                <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD">
-                    <label class="t-toggle-label">
-                        <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? "checked" : ""}>
-                        <span class="t-toggle-text">\u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
-                    </label>
+                <div class="t-history-group">
+                    <div class="t-history-toggle" id="t-history-toggle">
+                        <label class="t-toggle-label">
+                            <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
+                            <span class="t-toggle-text">\u{1F4DC} \u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
+                        </label>
+                    </div>
+                    <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD">
+                        <label class="t-toggle-label">
+                            <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? "checked" : ""}>
+                            <span class="t-toggle-text">\u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="t-mode-toggle" id="t-mode-toggle">
                     <div class="t-mode-btn ${GlobalState.generationMode === "narrative" ? "active" : ""}" data-mode="narrative">

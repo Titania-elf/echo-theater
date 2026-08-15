@@ -56,17 +56,19 @@ export function renderHtml(viewData) {
             </div>
 
             <div class="t-top-bar">
-                <div class="t-history-toggle" id="t-history-toggle">
-                    <label class="t-toggle-label">
-                        <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? 'checked' : ''}>
-                        <span class="t-toggle-text">📜 读取聊天历史</span>
-                    </label>
-                </div>
-                <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="只把角色的发言注入剧本生成，跳过你自己的楼层。总结和设定提取不受影响">
-                    <label class="t-toggle-label">
-                        <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? 'checked' : ''}>
-                        <span class="t-toggle-text">🎭 只要角色发言</span>
-                    </label>
+                <div class="t-history-group">
+                    <div class="t-history-toggle" id="t-history-toggle">
+                        <label class="t-toggle-label">
+                            <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? 'checked' : ''}>
+                            <span class="t-toggle-text">📜 读取聊天历史</span>
+                        </label>
+                    </div>
+                    <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="只把角色的发言注入剧本生成，跳过你自己的楼层。总结和设定提取不受影响">
+                        <label class="t-toggle-label">
+                            <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? 'checked' : ''}>
+                            <span class="t-toggle-text">🎭 只要角色发言</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="t-mode-toggle" id="t-mode-toggle">
                     <div class="t-mode-btn ${GlobalState.generationMode === 'narrative' ? 'active' : ''}" data-mode="narrative">
