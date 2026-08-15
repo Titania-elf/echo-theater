@@ -35973,7 +35973,6 @@ function renderHtml(viewData) {
                             <div class="t-toolbox-grid">
                                 <button class="t-toolbox-action" id="t-btn-new" type="button"><i class="fa-solid fa-plus"></i><span>\u65B0\u5EFA\u5267\u672C</span></button>
                                 <button class="t-toolbox-action" id="t-btn-edit" type="button"><i class="fa-solid fa-pen-to-square"></i><span>\u7F16\u8F91\u5267\u672C</span></button>
-                                <button class="t-toolbox-action t-toolbox-action-wide" id="t-btn-regenerate" type="button"><i class="fa-solid fa-rotate"></i><span>\u91CD\u65B0\u6F14\u7ECE\u5F53\u524D\u5267\u672C</span></button>
                             </div>
                         </section>
                         <section class="t-toolbox-section">
@@ -36080,8 +36079,9 @@ function bindEvents3(ctx) {
     const hasContent = !!getCurrentDisplayContent()?.content?.trim();
     const busy = action === "stop";
     const drafting = !!String($quickInput.val() || "").trim();
-    const disabled = busy || !hasContent || drafting;
-    $("#t-btn-continuation-replay").prop("disabled", disabled).attr("title", drafting ? "\u6E05\u7A7A\u8F93\u5165\u6846\u540E\u53EF\u91CD\u65B0\u6F14\u7ECE" : hasContent ? "\u91CD\u65B0\u6F14\u7ECE\u5F53\u524D\u5267\u672C" : "\u8FD8\u6CA1\u6709\u53EF\u91CD\u6F14\u7684\u5185\u5BB9");
+    const redundant = action === "generate";
+    const disabled = busy || !hasContent || drafting || redundant;
+    $("#t-btn-continuation-replay").prop("disabled", disabled).attr("title", busy ? "\u6B63\u5728\u751F\u6210\u4E2D" : drafting ? "\u6E05\u7A7A\u8F93\u5165\u6846\u540E\u53EF\u91CD\u65B0\u6F14\u7ECE" : !hasContent ? "\u8FD8\u6CA1\u6709\u53EF\u91CD\u6F14\u7684\u5185\u5BB9" : redundant ? "\u5DF2\u5207\u6362\u5267\u672C\uFF0C\u8BF7\u7528\u53F3\u4FA7\u53D1\u9001\u952E\u6F14\u7ECE\u65B0\u5267\u672C" : "\u91CD\u65B0\u6F14\u7ECE\u5F53\u524D\u5267\u672C");
   };
   const updateContextPopover = () => {
     const stats = getContinuationSessionStats(getQuickScriptId(), quickInjectRounds);
@@ -36210,19 +36210,6 @@ function bindEvents3(ctx) {
     if (event.key === "Escape" && $("#t-main-view").hasClass("t-toolbox-open")) {
       setToolboxOpen(false);
     }
-  });
-  $("#t-btn-regenerate").on("click", () => {
-    if (GlobalState.isGenerating || GlobalState.queueState.isRunning) {
-      if (window.toastr) toastr.info("\u6B63\u5728\u751F\u6210\u4E2D\uFF0C\u8BF7\u7A0D\u5019...", "Titania");
-      return;
-    }
-    const scriptId = GlobalState.lastUsedScriptId || GlobalState.lastGeneratedScriptId;
-    if (!scriptId) {
-      if (window.toastr) toastr.warning("\u5F53\u524D\u6CA1\u6709\u9009\u4E2D\u7684\u5267\u672C", "Titania");
-      return;
-    }
-    closeWindow2();
-    handleGenerate(scriptId, false);
   });
   registerTeardown2(() => {
     $(document).off("keydown.ttoolbox");

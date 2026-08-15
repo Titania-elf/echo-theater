@@ -165,7 +165,6 @@ export function renderHtml(viewData) {
                             <div class="t-toolbox-grid">
                                 <button class="t-toolbox-action" id="t-btn-new" type="button"><i class="fa-solid fa-plus"></i><span>新建剧本</span></button>
                                 <button class="t-toolbox-action" id="t-btn-edit" type="button"><i class="fa-solid fa-pen-to-square"></i><span>编辑剧本</span></button>
-                                <button class="t-toolbox-action t-toolbox-action-wide" id="t-btn-regenerate" type="button"><i class="fa-solid fa-rotate"></i><span>重新演绎当前剧本</span></button>
                             </div>
                         </section>
                         <section class="t-toolbox-section">
@@ -294,13 +293,23 @@ export function bindEvents(ctx) {
         const busy = action === "stop";
         // 输入框有字说明用户在写续写指令，这时点重演会把它丢掉
         const drafting = !!String($quickInput.val() || "").trim();
-        const disabled = busy || !hasContent || drafting;
+        // 发送键已经是「演绎」时本按钮是多余的 —— 它补的就是发送键翻成「续写」后
+        // 无法重跑首轮的缺口。切换剧本后尤其不能留着：这里取的是当前显示内容对应的
+        // 剧本（getQuickScriptId），也就是刚切走的那个旧剧本，跟文案里的「当前剧本」不是同一个
+        const redundant = action === "generate";
+        const disabled = busy || !hasContent || drafting || redundant;
 
         $("#t-btn-continuation-replay")
             .prop("disabled", disabled)
-            .attr("title", drafting
-                ? "清空输入框后可重新演绎"
-                : (hasContent ? "重新演绎当前剧本" : "还没有可重演的内容"));
+            .attr("title", busy
+                ? "正在生成中"
+                : drafting
+                    ? "清空输入框后可重新演绎"
+                    : !hasContent
+                        ? "还没有可重演的内容"
+                        : redundant
+                            ? "已切换剧本，请用右侧发送键演绎新剧本"
+                            : "重新演绎当前剧本");
     };
 
     const updateContextPopover = () => {
@@ -449,23 +458,6 @@ export function bindEvents(ctx) {
         if (event.key === "Escape" && $("#t-main-view").hasClass("t-toolbox-open")) {
             setToolboxOpen(false);
         }
-    });
-
-    // --- 工具箱内的“重新演绎” ---
-
-    // 已有内容时，显式重新演绎当前选中的剧本。
-    $("#t-btn-regenerate").on("click", () => {
-        if (GlobalState.isGenerating || GlobalState.queueState.isRunning) {
-            if (window.toastr) toastr.info("正在生成中，请稍候...", "Titania");
-            return;
-        }
-        const scriptId = GlobalState.lastUsedScriptId || GlobalState.lastGeneratedScriptId;
-        if (!scriptId) {
-            if (window.toastr) toastr.warning("当前没有选中的剧本", "Titania");
-            return;
-        }
-        closeWindow();
-        handleGenerate(scriptId, false);
     });
 
     // 关闭窗口时解绑本布局挂在 document 上的监听
