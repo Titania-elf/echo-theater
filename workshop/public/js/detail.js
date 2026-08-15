@@ -5,7 +5,7 @@ import { avatar, authorLink } from "./card.js";
 import { showMature, toggleMature } from "./rating.js";
 import { commentSection } from "./comments.js";
 
-export async function renderDetail(id) {
+export async function renderDetail(id, focusCommentId = "") {
     mount(loading());
 
     let s;
@@ -19,7 +19,7 @@ export async function renderDetail(id) {
     if (s.rating === "mature" && !showMature()) {
         const unlock = el("button", { class: "primary", text: "显示成人向内容" });
         unlock.addEventListener("click", () => {
-            if (toggleMature()) renderDetail(id);
+            if (toggleMature()) renderDetail(id, focusCommentId);
         });
         mount(el("div", { class: "rating-gate" }, [
             el("div", { class: "rating-gate-icon", text: "18+" }),
@@ -73,7 +73,7 @@ export async function renderDetail(id) {
                     toast("网页端不支持复制，请在回声剧场插件中使用该指令");
                 }
             }),
-            commentSection(s)
+            commentSection(s, { focusCommentId })
         ])
     );
 }

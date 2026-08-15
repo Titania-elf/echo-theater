@@ -33989,7 +33989,9 @@ function openWorkshopWindow(source = "manager") {
         name: detail.name,
         desc: detail.desc || "",
         prompt: detail.prompt,
-        category: detail.category || "\u5DE5\u574A\u4E0B\u8F7D"
+        category: detail.category || "\u5DE5\u574A\u4E0B\u8F7D",
+        workshop_source_id: item.id,
+        workshop_author_id: item.author?.id || null
       });
       countDownload(item.id);
       $btn.text("\u2713 \u5DF2\u4E0B\u8F7D");
@@ -34032,6 +34034,7 @@ function openWorkshopWindow(source = "manager") {
                     </div>
                     <textarea class="t-input t-ws-pv-prompt" readonly>\u52A0\u8F7D\u4E2D...</textarea>
                     <div class="t-btn-row">
+                        <button class="t-btn" id="t-ws-pv-feedback" style="flex:1;">\u67E5\u770B\u53CD\u9988</button>
                         <button class="t-btn primary" id="t-ws-pv-get" style="flex:1;">\u4E0B\u8F7D\u5230\u672C\u5730</button>
                     </div>
                 </div>
@@ -34044,6 +34047,7 @@ function openWorkshopWindow(source = "manager") {
       $(document).off("keydown.wspreview");
     };
     $("#t-ws-pv-close").on("click", closePreview);
+    $("#t-ws-pv-feedback").on("click", () => window.open(`${WORKSHOP_ORIGIN}/#/comment/${encodeURIComponent(item.id)}`, "_blank"));
     $("#t-ws-preview-overlay").on("click", function(e) {
       if (e.target === this) closePreview();
     });
@@ -35696,6 +35700,9 @@ function renderHtml(viewData) {
                     <button class="t-tools-icon" id="t-btn-like" type="button" title="\u6536\u85CF\u7ED3\u679C" aria-label="\u6536\u85CF\u7ED3\u679C">
                         <i class="fa-regular fa-heart"></i>
                     </button>
+                    <button class="t-tools-icon" id="t-tool-workshop-feedback" type="button" title="\u53CD\u9988\u7ED9\u5DE5\u574A\u4F5C\u8005" aria-label="\u53CD\u9988\u7ED9\u5DE5\u574A\u4F5C\u8005" style="display:none;">
+                        <i class="fa-regular fa-comment-dots"></i>
+                    </button>
                 </div>
                 <div class="t-content-area">
                     <!-- \u7FFB\u9875\u6309\u94AE\u79FB\u5230\u5185\u5BB9\u533A\u4E24\u4FA7 -->
@@ -36109,6 +36116,10 @@ function renderHtml2(viewData) {
                         <i class="fa-solid fa-pen-nib"></i>
                         <span>\u7F16\u8F91\u5185\u5BB9</span>
                     </div>
+                    <div class="t-tools-item" id="t-tool-workshop-feedback" style="display:none;">
+                        <i class="fa-regular fa-comment-dots"></i>
+                        <span>\u53CD\u9988\u7ED9\u4F5C\u8005</span>
+                    </div>
                 </div>
                 <div class="t-content-area">
                     <!-- \u7FFB\u9875\u6309\u94AE\u79FB\u5230\u5185\u5BB9\u533A\u4E24\u4FA7 -->
@@ -36261,7 +36272,8 @@ __export(mainWindow_exports, {
   updateModeToggleUI: () => updateModeToggleUI,
   updateQueueButtonUI: () => updateQueueButtonUI,
   updateRunButtonsState: () => updateRunButtonsState,
-  updateScriptTitleDisplay: () => updateScriptTitleDisplay
+  updateScriptTitleDisplay: () => updateScriptTitleDisplay,
+  updateWorkshopFeedbackButton: () => updateWorkshopFeedbackButton
 });
 function formatRelativeTime3(ts) {
   const time = Number(ts) || 0;
@@ -37241,6 +37253,16 @@ async function openMainWindow() {
       saveFavorite();
     }
   });
+  $("#t-tool-workshop-feedback").on("click", () => {
+    const result = getCurrentGenerationResult();
+    const script = GlobalState.runtimeScripts.find((s) => s.id === result?.scriptId);
+    const sourceId = script?.workshop_source_id;
+    if (!sourceId) {
+      if (window.toastr) toastr.info("\u5F53\u524D\u5267\u672C\u4E0D\u662F\u4ECE\u56DE\u58F0\u5DE5\u574A\u4E0B\u8F7D\u7684");
+      return;
+    }
+    window.open(`${WORKSHOP_ORIGIN}/#/comment/${encodeURIComponent(sourceId)}`, "_blank");
+  });
   $("#t-main-view").on("click", "[data-header-action]", function(e) {
     e.stopPropagation();
     runHeaderAction(String($(this).data("header-action") || ""), $(this));
@@ -37395,6 +37417,7 @@ function updateContentStatsDisplay(stats) {
   $hud.show();
 }
 function updateFavButtonUI() {
+  updateWorkshopFeedbackButton();
   const btn = $("#t-btn-like");
   if (!btn.length) return;
   const icon = btn.find("i");
@@ -37412,6 +37435,13 @@ function updateFavButtonUI() {
     icon.attr("class", "fa-regular fa-heart").css("color", "");
     btn.attr({ title: "\u6536\u85CF\u7ED3\u679C", "aria-label": "\u6536\u85CF\u7ED3\u679C" }).removeClass("is-faved");
   }
+}
+function updateWorkshopFeedbackButton() {
+  const btn = $("#t-tool-workshop-feedback");
+  if (!btn.length) return;
+  const result = getCurrentGenerationResult();
+  const script = GlobalState.runtimeScripts.find((s) => s.id === result?.scriptId);
+  btn.toggle(Boolean(result?.content && script?.workshop_source_id));
 }
 function updateScriptTitleDisplay() {
   const scriptId = GlobalState.lastGeneratedScriptId;
@@ -38658,6 +38688,7 @@ var init_mainWindow = __esm({
     init_loreReviewWindow();
     init_settingsWindow();
     init_helpers();
+    init_workshopApi();
     init_continuationStore();
     init_scriptData();
     init_viewState();

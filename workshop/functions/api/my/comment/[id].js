@@ -40,9 +40,9 @@ export async function onRequestPost({ request, params, env }) {
     const text = String(body?.body || "").trim();
     if (text.length < 1 || text.length > 1000) return err(400, "回复内容需在 1 到 1000 字之间");
     const ts = now();
-    const batch = [env.DB.prepare("UPDATE comments SET reply_body = ?, replied_at = ?, updated_at = ? WHERE id = ?")
-        .bind(text, ts, ts, params.id)];
-    if (row.author_id !== author.discord_id) {
+    const batch = [env.DB.prepare("UPDATE comments SET reply_body = ?, replied_at = ? WHERE id = ?")
+        .bind(text, ts, params.id)];
+    if (!row.reply_body && row.author_id !== author.discord_id) {
         batch.push(env.DB.prepare(`
             INSERT INTO notifications (id, recipient_id, actor_id, type, script_id, comment_id, created_at)
             VALUES (?, ?, ?, 'author_reply', ?, ?, ?)

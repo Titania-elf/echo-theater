@@ -3,9 +3,10 @@ import { getAuthor } from "../../../_lib/session.js";
 
 export const onRequestOptions = () => preflight();
 
-export async function onRequestGet({ params, env }) {
-    const script = await env.DB.prepare("SELECT id, status FROM scripts WHERE id = ?").bind(params.id).first();
+export async function onRequestGet({ request, params, env }) {
+    const script = await env.DB.prepare("SELECT id, author_id, status FROM scripts WHERE id = ?").bind(params.id).first();
     if (!script || script.status !== "public") return publicErr(404, "投稿不存在或已下架");
+    const viewer = await getAuthor(request, env).catch(() => null);
     const { results } = await env.DB.prepare(`
         SELECT c.id, c.script_id, c.author_id, c.body, c.reply_body, c.replied_at,
                c.created_at, c.updated_at, a.username, a.avatar
@@ -19,7 +20,7 @@ export async function onRequestGet({ params, env }) {
         reply: row.reply_body ? { body: row.reply_body, created_at: row.replied_at } : null,
         author: { id: row.author_id, name: row.username, avatar: row.avatar || null },
         created_at: row.created_at, updated_at: row.updated_at
-    })) });
+    })), can_reply: Boolean(viewer && viewer.discord_id === script.author_id) });
 }
 
 export async function onRequestPost({ request, params, env }) {

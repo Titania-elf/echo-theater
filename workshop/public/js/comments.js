@@ -3,7 +3,7 @@ import { getSession } from "./auth.js";
 import { fetchComments, createComment, updateComment, deleteComment, replyComment, reportComment } from "./api.js";
 import { avatar, authorLink } from "./card.js";
 
-export function commentSection(script) {
+export function commentSection(script, { focusCommentId = "" } = {}) {
     const root = el("section", { class: "comments-section", id: "feedback" });
 
     const load = async () => {
@@ -24,10 +24,15 @@ export function commentSection(script) {
             ]),
             form,
             el("div", { class: "comment-list" }, items.length
-                ? items.map(item => commentCard(item, script, session, load))
+                ? items.map(item => commentCard(item, session, load, data.can_reply))
                 : [el("div", { class: "comments-empty", text: "还没有使用反馈，来留下第一条吧。" })])
         );
-        if (location.hash.includes("/comment/")) root.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (focusCommentId) {
+            requestAnimationFrame(() => {
+                const target = document.getElementById(`comment-${focusCommentId}`);
+                if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+            });
+        }
     };
     load();
     return root;
@@ -49,9 +54,9 @@ function feedbackForm(onSubmit, { value = "", submitText = "发布反馈", cance
     ])]);
 }
 
-function commentCard(item, script, session, reload) {
+function commentCard(item, session, reload, canReply) {
     const isMine = item.author.id === session?.user?.id;
-    const isOwner = script.author?.id === session?.user?.id;
+    const isOwner = Boolean(canReply);
     const card = el("article", { class: "comment-card", id: `comment-${item.id}` });
     const paint = () => {
         const actions = [];

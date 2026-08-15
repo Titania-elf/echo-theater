@@ -28,6 +28,7 @@ function dispatch() {
     const hash = location.hash.replace(/^#/, "") || "/";
     const [, head, arg] = hash.split("/");
 
+    const commentId = head === "comment" ? hash.split("/")[3] : "";
     if (head === "s" && arg) { markNav("list"); return renderDetail(arg); }
     if (head === "u" && arg) { markNav("list"); return renderAuthor(arg); }
     if (head === "mine") { markNav("mine"); return renderMine(); }
@@ -36,7 +37,7 @@ function dispatch() {
     if (head === "import") { markNav("import"); return renderImport(); }
     if (head === "admin") { markNav("admin"); return renderAdmin(arg); }
     if (head === "notifications") { markNav("notifications"); return renderNotifications(); }
-    if (head === "comment" && arg) { markNav("list"); return renderDetail(arg); }
+    if (head === "comment" && arg) { markNav("list"); return renderDetail(arg, commentId); }
     if (!head) { markNav("list"); return renderList(); }
 
     markNav("list");
