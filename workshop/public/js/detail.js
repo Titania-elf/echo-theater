@@ -3,6 +3,7 @@ import { el, mount, loading, fmtDate, toast } from "./dom.js";
 import { fetchScript, report } from "./api.js";
 import { avatar, authorLink } from "./card.js";
 import { showMature, toggleMature } from "./rating.js";
+import { commentSection } from "./comments.js";
 
 export async function renderDetail(id) {
     mount(loading());
@@ -71,7 +72,8 @@ export async function renderDetail(id) {
                     event.preventDefault();
                     toast("网页端不支持复制，请在回声剧场插件中使用该指令");
                 }
-            })
+            }),
+            commentSection(s)
         ])
     );
 }

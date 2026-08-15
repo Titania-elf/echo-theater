@@ -57,9 +57,9 @@ export function normalizeForHash(prompt) {
     return prompt.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-export function genId() {
+export function genId(prefix = "ws") {
     const bytes = crypto.getRandomValues(new Uint8Array(8));
-    return "ws_" + [...bytes].map(b => b.toString(36).padStart(2, "0")).join("").slice(0, 12);
+    return `${prefix}_` + [...bytes].map(b => b.toString(36).padStart(2, "0")).join("").slice(0, 12);
 }
 
 /** 投稿字段校验，返回 {ok, value|message} */

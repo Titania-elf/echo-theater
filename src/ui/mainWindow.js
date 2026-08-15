@@ -28,6 +28,7 @@ import { openScriptManager, openEditor } from "./scriptManager.js";
 import { showLoreReviewWindow } from "./loreReviewWindow.js";
 import { openSettingsWindow } from "./settingsWindow.js";
 import { countContentStats } from "../utils/helpers.js";
+import { WORKSHOP_ORIGIN } from "../core/workshopApi.js";
 import { clearContinuationForCurrentChat, listAllContinuationSessions, deleteGlobalContinuationSelections, getCurrentContinuationSource } from "../core/continuationStore.js";
 import {
     getScriptSortMode,
@@ -1290,6 +1291,16 @@ export async function openMainWindow() {
             saveFavorite();
         }
     });
+    $("#t-tool-workshop-feedback").on("click", () => {
+        const result = getCurrentGenerationResult();
+        const script = GlobalState.runtimeScripts.find(s => s.id === result?.scriptId);
+        const sourceId = script?.workshop_source_id;
+        if (!sourceId) {
+            if (window.toastr) toastr.info("当前剧本不是从回声工坊下载的");
+            return;
+        }
+        window.open(`${WORKSHOP_ORIGIN}/#/comment/${encodeURIComponent(sourceId)}`, "_blank");
+    });
     // 标题栏图标由用户自选，重绘后 id 会变，所以委托到窗口根节点而不是逐个绑定
     $("#t-main-view").on("click", "[data-header-action]", function (e) {
         e.stopPropagation();
@@ -1544,6 +1555,7 @@ export function updateContentStatsDisplay(stats) {
  * 根据 GlobalState.lastFavId 切换红心图标显示
  */
 export function updateFavButtonUI() {
+    updateWorkshopFeedbackButton();
     const btn = $("#t-btn-like");
     if (!btn.length) return;
     const icon = btn.find("i");
@@ -1565,6 +1577,14 @@ export function updateFavButtonUI() {
         icon.attr("class", "fa-regular fa-heart").css("color", "");
         btn.attr({ title: "收藏结果", "aria-label": "收藏结果" }).removeClass("is-faved");
     }
+}
+
+export function updateWorkshopFeedbackButton() {
+    const btn = $("#t-tool-workshop-feedback");
+    if (!btn.length) return;
+    const result = getCurrentGenerationResult();
+    const script = GlobalState.runtimeScripts.find(s => s.id === result?.scriptId);
+    btn.toggle(Boolean(result?.content && script?.workshop_source_id));
 }
 
 /**

@@ -277,7 +277,9 @@ export function openWorkshopWindow(source = 'manager') {
                 name: detail.name,
                 desc: detail.desc || "",
                 prompt: detail.prompt,
-                category: detail.category || "工坊下载"
+                category: detail.category || "工坊下载",
+                workshop_source_id: item.id,
+                workshop_author_id: item.author?.id || null
             });
             countDownload(item.id);
             $btn.text("✓ 已下载");
@@ -322,6 +324,7 @@ export function openWorkshopWindow(source = 'manager') {
                     </div>
                     <textarea class="t-input t-ws-pv-prompt" readonly>加载中...</textarea>
                     <div class="t-btn-row">
+                        <button class="t-btn" id="t-ws-pv-feedback" style="flex:1;">查看反馈</button>
                         <button class="t-btn primary" id="t-ws-pv-get" style="flex:1;">下载到本地</button>
                     </div>
                 </div>
@@ -337,6 +340,7 @@ export function openWorkshopWindow(source = 'manager') {
         };
 
         $("#t-ws-pv-close").on("click", closePreview);
+        $("#t-ws-pv-feedback").on("click", () => window.open(`${WORKSHOP_ORIGIN}/#/comment/${encodeURIComponent(item.id)}`, "_blank"));
         $("#t-ws-preview-overlay").on("click", function (e) {
             if (e.target === this) closePreview();
         });

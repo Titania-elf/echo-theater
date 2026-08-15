@@ -62,6 +62,15 @@ export const batchDeleteScripts = ids =>
 export const report = (scriptId, reason) =>
     req("/api/report", { method: "POST", body: JSON.stringify({ script_id: scriptId, reason }) });
 
+export const fetchComments = scriptId => req(`/api/script/${encodeURIComponent(scriptId)}/comments`);
+export const createComment = (scriptId, body) => req(`/api/script/${encodeURIComponent(scriptId)}/comments`, { method: "POST", body: JSON.stringify({ body }) });
+export const updateComment = (id, body) => req(`/api/my/comment/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ body }) });
+export const deleteComment = id => req(`/api/my/comment/${encodeURIComponent(id)}`, { method: "DELETE" });
+export const replyComment = (id, body) => req(`/api/my/comment/${encodeURIComponent(id)}`, { method: "POST", body: JSON.stringify({ body }) });
+export const reportComment = (id, reason) => req(`/api/comment/${encodeURIComponent(id)}/report`, { method: "POST", body: JSON.stringify({ reason }) });
+export const myNotifications = () => req("/api/my/notifications");
+export const readNotifications = ids => req("/api/my/notifications", { method: "POST", body: JSON.stringify(ids?.length ? { ids } : {}) });
+
 // ── 管理员通道 ──
 // 权限在服务端按登录身份判定，这里只是普通的同源请求
 

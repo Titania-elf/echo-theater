@@ -9,6 +9,7 @@ import { renderAuthor } from "./author.js";
 import { getSession, logoutSession, renderAuthSlot } from "./auth.js";
 import { showMature, toggleMature } from "./rating.js";
 import { el, mount, toast } from "./dom.js";
+import { renderNotifications, refreshNotificationBadge } from "./notifications.js";
 
 let authorized = false;
 let bootId = 0;
@@ -34,6 +35,8 @@ function dispatch() {
     if (head === "edit" && arg) { markNav("mine"); return renderEditor(arg); }
     if (head === "import") { markNav("import"); return renderImport(); }
     if (head === "admin") { markNav("admin"); return renderAdmin(arg); }
+    if (head === "notifications") { markNav("notifications"); return renderNotifications(); }
+    if (head === "comment" && arg) { markNav("list"); return renderDetail(arg); }
     if (!head) { markNav("list"); return renderList(); }
 
     markNav("list");
@@ -183,6 +186,7 @@ function startApp(session) {
     view.className = "view";
     renderAuthSlot(session, { onLogout: handleLogout });
     paintRatingToggle();
+    refreshNotificationBadge();
     route();
 }
 
