@@ -68,7 +68,10 @@ export function validateScript(body) {
     const prompt = String(body?.prompt ?? "").trim();
     const summary = String(body?.summary ?? body?.desc ?? "").trim();
     const category = String(body?.category ?? "").trim();
-    const rating = body?.rating === "mature" ? "mature" : "general";
+    // 分级必须由投稿人明确给出，不默认成 general。
+    // 默认全年龄的后果是单向的：成人向内容会漏进全年龄列表，
+    // 而那是插件端和未开启成人向的浏览者的默认视图 —— 反过来则只是少些曝光。
+    const rating = String(body?.rating ?? "").trim();
 
     if (name.length < 1 || name.length > 60) return { ok: false, message: "标题需在 1–60 字之间" };
     if (prompt.length < 10) return { ok: false, message: "指令内容太短了（至少 10 字）" };
@@ -76,6 +79,7 @@ export function validateScript(body) {
     if (summary.length > 200) return { ok: false, message: "简介不能超过 200 字" };
     if (!category) return { ok: false, message: "请选择分类" };
     if (!isScriptCategory(category)) return { ok: false, message: "分类无效，请从现有分类中选择" };
+    if (rating !== "general" && rating !== "mature") return { ok: false, message: "请选择内容分级" };
 
     let tags = Array.isArray(body?.tags) ? body.tags : [];
     tags = tags.map(t => String(t).trim()).filter(t => t && t.length <= 16).slice(0, 5);
