@@ -57,11 +57,14 @@ export const CSS_LAYERS = [
             // ⚠ story-outline.css 目前在最末,其顶层 .t-dialog-* 定义会污染
             //   lore-review 的对话框(缺陷 B6)。Phase 4 修复,届时可前移。
             'story-outline.css',
+            // 以下为从 JS 运行时注入迁出的样式。它们原先靠「注入得晚」无条件取胜，
+            // 现在服从层叠顺序；因全部带 ID 作用域，位置对结果无影响。
+            'outline-entry-menu.css',
         ]
     },
 
-    // 后续 Phase 新增的层(00-tokens / 02-components / 03-layout / 05-utilities)
-    // 在此按顺序插入。当前尚未创建,故不列出 —— 审计 A14 要求清单与磁盘完全一致。
+    // 尚未创建的层：03-layout / 05-utilities（Phase 2b 起）。
+    // 审计 A14 要求清单与磁盘完全一致，故未创建的文件不得预先列出。
 ];
 
 /** 展开为相对 css/ 的有序路径列表,如 '01-base/base.css' */

@@ -17155,6 +17155,68 @@ body.titania-debug-mode #chat titania-memory::before {
 }
 
 
+/* === 04-features/outline-entry-menu.css === */
+/* css/04-features/outline-entry-menu.css \u2014\u2014 \u5927\u7EB2\u5165\u53E3\u83DC\u5355
+   ============================================================
+   \u539F\u5148\u7531 src/ui/outlineEntryButton.js \u7684 ensureMenuStyle() \u5728\u8FD0\u884C\u65F6
+   createElement('style') \u6CE8\u5165 document.head\u3002
+
+   \u2500\u2500 \u4E3A\u4EC0\u4E48\u642C\u51FA\u6765 \u2500\u2500
+   \u8FD0\u884C\u65F6\u6CE8\u5165\u7684 <style> \u665A\u4E8E\u63D2\u4EF6\u6253\u5305 CSS \u8FDB\u5165 head\uFF0C\u5C42\u53E0\u4E0A\u65E0\u6761\u4EF6\u53D6\u80DC\uFF0C
+   \u5B8C\u5168\u7ED5\u8FC7 00-tokens \u2192 02-components \u2192 04-features \u7684\u5206\u5C42\u67B6\u6784\u3002
+   \u53EA\u8981\u5B83\u8FD8\u5728 JS \u91CC\uFF0C\u91CC\u9762\u7684\u989C\u8272\u5C31\u6C38\u8FDC\u65E0\u6CD5\u88AB token \u5316\uFF0C
+   \u4E5F\u5C31\u6C38\u8FDC\u65E0\u6CD5\u8DDF\u968F\u4E3B\u9898\u5207\u6362\u3002
+
+   \u2500\u2500 \u672C\u6B21\u53EA\u642C\u5BB6\uFF0C\u4E0D\u6539\u503C \u2500\u2500
+   \u4E0B\u9762 8 \u5904\u786C\u7F16\u7801\u989C\u8272\u9010\u5B57\u8282\u7167\u642C\u81EA\u539F JS \u6A21\u677F\uFF0C\u672A\u505A token \u5316\uFF0C
+   \u4EE5\u4FDD\u8BC1\u672C\u6B65\u89C6\u89C9\u96F6\u53D8\u5316\u3002token \u5316\u5728\u300C\u6CE8\u5165\u6837\u5F0F\u8FC1\u79FB\u300D\u7684\u6700\u540E\u4E00\u6B65\u7EDF\u4E00\u505A\uFF0C
+   \u5C4A\u65F6\u5355\u72EC\u53D1\u7248\u3002
+
+   \u539F\u6A21\u677F\u7528 \`#\${MENU_ID}\` \u63D2\u503C\uFF0CMENU_ID \u662F\u5E38\u91CF "titania-outline-entry-menu"\uFF0C
+   \u5DF2\u66FF\u6362\u4E3A\u5B57\u9762\u91CF\u3002
+   ============================================================ */
+
+#titania-outline-entry-menu {
+    position: fixed;
+    /* z-index \u6563\u503C\uFF0CPhase 7 \u7EDF\u4E00\u6536\u53E3\u5230 var(--t-z-*) */
+    z-index: 30050;
+    min-width: 170px;
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(120, 150, 170, 0.35);
+    background: rgba(14, 20, 28, 0.96);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+#titania-outline-entry-menu .t-outline-entry-item {
+    border: 1px solid rgba(120, 150, 170, 0.25);
+    border-radius: 8px;
+    background: rgba(18, 28, 38, 0.8);
+    color: #d7e7f5;
+    text-align: left;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+#titania-outline-entry-menu .t-outline-entry-item:hover:not(:disabled) {
+    background: rgba(129, 236, 236, 0.14);
+}
+
+#titania-outline-entry-menu .t-outline-entry-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+#titania-outline-entry-menu .t-outline-entry-tip {
+    color: #7f96aa;
+    font-size: 11px;
+    line-height: 1.35;
+    padding: 0 2px;
+}
+
+
 `;
   document.head.appendChild(style);
 }
@@ -17187,7 +17249,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/button.css", "02-components/icon-button.css", "02-components/_legacy.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/button.css", "02-components/icon-button.css", "02-components/_legacy.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css"];
   }
 });
 
@@ -32353,47 +32415,6 @@ function removeButton2() {
   $(`#${BTN_ID2}`).remove();
   closeMenu();
 }
-function ensureMenuStyle() {
-  if (document.getElementById(MENU_STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = MENU_STYLE_ID;
-  style.textContent = `
-    #${MENU_ID} {
-        position: fixed;
-        z-index: 30050;
-        min-width: 170px;
-        display: grid;
-        gap: 6px;
-        padding: 8px;
-        border-radius: 10px;
-        border: 1px solid rgba(120, 150, 170, 0.35);
-        background: rgba(14, 20, 28, 0.96);
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-    }
-    #${MENU_ID} .t-outline-entry-item {
-        border: 1px solid rgba(120, 150, 170, 0.25);
-        border-radius: 8px;
-        background: rgba(18, 28, 38, 0.8);
-        color: #d7e7f5;
-        text-align: left;
-        padding: 8px 10px;
-        cursor: pointer;
-    }
-    #${MENU_ID} .t-outline-entry-item:hover:not(:disabled) {
-        background: rgba(129, 236, 236, 0.14);
-    }
-    #${MENU_ID} .t-outline-entry-item:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-    }
-    #${MENU_ID} .t-outline-entry-tip {
-        color: #7f96aa;
-        font-size: 11px;
-        line-height: 1.35;
-        padding: 0 2px;
-    }`;
-  document.head.appendChild(style);
-}
 function closeMenu() {
   $(`#${MENU_ID}`).remove();
   $(document).off("mousedown.titaniaOutlineMenu");
@@ -32467,7 +32488,6 @@ async function tryOpenSingleFeatureDirect() {
   return true;
 }
 async function openMenu($btn) {
-  ensureMenuStyle();
   closeMenu();
   const data = getExtData();
   const toolbarItems = data?.quick_toolbar?.enabled_items || {};
@@ -32624,14 +32644,13 @@ function initOutlineEntryButton() {
 function refreshOutlineEntryButton() {
   syncEntryButton2();
 }
-var BTN_ID2, ANCHOR_SELECTOR, MENU_ID, MENU_STYLE_ID, SCENE_PLANS_KEY, SCENE_SOURCE_PLAN_KEY2, observerBound2;
+var BTN_ID2, ANCHOR_SELECTOR, MENU_ID, SCENE_PLANS_KEY, SCENE_SOURCE_PLAN_KEY2, observerBound2;
 var init_outlineEntryButton = __esm({
   "src/ui/outlineEntryButton.js"() {
     init_storage();
     BTN_ID2 = "titania-outline-entry-btn";
     ANCHOR_SELECTOR = "#send_but";
     MENU_ID = "titania-outline-entry-menu";
-    MENU_STYLE_ID = "titania-outline-entry-menu-style";
     SCENE_PLANS_KEY = "story_outline_plans";
     SCENE_SOURCE_PLAN_KEY2 = "story_outline_scene_source_plan_id";
     observerBound2 = false;

@@ -5,7 +5,6 @@ import { getExtData } from "../utils/storage.js";
 const BTN_ID = "titania-outline-entry-btn";
 const ANCHOR_SELECTOR = "#send_but";
 const MENU_ID = "titania-outline-entry-menu";
-const MENU_STYLE_ID = "titania-outline-entry-menu-style";
 const SCENE_PLANS_KEY = "story_outline_plans";
 const SCENE_SOURCE_PLAN_KEY = "story_outline_scene_source_plan_id";
 let observerBound = false;
@@ -18,48 +17,6 @@ function isEnabled() {
 function removeButton() {
     $(`#${BTN_ID}`).remove();
     closeMenu();
-}
-
-function ensureMenuStyle() {
-    if (document.getElementById(MENU_STYLE_ID)) return;
-    const style = document.createElement("style");
-    style.id = MENU_STYLE_ID;
-    style.textContent = `
-    #${MENU_ID} {
-        position: fixed;
-        z-index: 30050;
-        min-width: 170px;
-        display: grid;
-        gap: 6px;
-        padding: 8px;
-        border-radius: 10px;
-        border: 1px solid rgba(120, 150, 170, 0.35);
-        background: rgba(14, 20, 28, 0.96);
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-    }
-    #${MENU_ID} .t-outline-entry-item {
-        border: 1px solid rgba(120, 150, 170, 0.25);
-        border-radius: 8px;
-        background: rgba(18, 28, 38, 0.8);
-        color: #d7e7f5;
-        text-align: left;
-        padding: 8px 10px;
-        cursor: pointer;
-    }
-    #${MENU_ID} .t-outline-entry-item:hover:not(:disabled) {
-        background: rgba(129, 236, 236, 0.14);
-    }
-    #${MENU_ID} .t-outline-entry-item:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-    }
-    #${MENU_ID} .t-outline-entry-tip {
-        color: #7f96aa;
-        font-size: 11px;
-        line-height: 1.35;
-        padding: 0 2px;
-    }`;
-    document.head.appendChild(style);
 }
 
 function closeMenu() {
@@ -143,7 +100,8 @@ async function tryOpenSingleFeatureDirect() {
 }
 
 async function openMenu($btn) {
-    ensureMenuStyle();
+    // 菜单样式已迁至 css/04-features/outline-entry-menu.css，随插件 CSS 一同加载，
+    // 不再需要运行时注入（原 ensureMenuStyle()）。
     closeMenu();
 
     const data = getExtData();
