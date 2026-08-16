@@ -2151,6 +2151,8 @@ function loadCssFiles() {
     /* #333 \u2014\u2014 74 \u6B21 */
     --t-color-border-strong: rgb(var(--t-c-neutral-7-rgb));
     /* #444 */
+    --t-color-border-control: rgb(var(--t-c-neutral-6-rgb));
+    /* #3a3a3a \u63A7\u4EF6\u8FB9\u6846 */
     --t-color-border-subtle: rgb(var(--t-c-neutral-13-rgb) / .1);
     /* \u66FF\u6362 39 \u6B21\uFF1B\u540C\u65F6\u5403\u6389\u6539\u5199\u9762\u677F\u7684 .12/.13/.14 \u4E09\u6863\uFF08\u5DEE 4% \u4E0D\u53EF\u89C1\uFF09 */
     --t-color-border-glass: rgb(var(--t-c-neutral-13-rgb) / .18);
@@ -10060,20 +10062,20 @@ textarea.t-input {
     flex-shrink: 0;
 }
 
-.t-ws-search {
+#t-ws-view .t-ws-search {
     flex-grow: 1;
     min-width: 0;
-    background-color: #1a1a1a !important;
-    color: #eee !important;
-    border: 1px solid #3a3a3a !important;
+    background-color: var(--t-color-surface-sunken);
+    color: var(--t-color-text);
+    border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
     padding: 7px 12px;
     outline: none;
     transition: border-color 0.2s;
 }
 
-.t-ws-search:focus {
-    border-color: var(--t-theme) !important;
+#t-ws-view .t-ws-search:focus {
+    border-color: var(--t-color-brand);
 }
 
 .t-ws-select {

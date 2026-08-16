@@ -84,6 +84,8 @@
     /* #333 —— 74 次 */
     --t-color-border-strong: rgb(var(--t-c-neutral-7-rgb));
     /* #444 */
+    --t-color-border-control: rgb(var(--t-c-neutral-6-rgb));
+    /* #3a3a3a 控件边框 */
     --t-color-border-subtle: rgb(var(--t-c-neutral-13-rgb) / .1);
     /* 替换 39 次；同时吃掉改写面板的 .12/.13/.14 三档（差 4% 不可见） */
     --t-color-border-glass: rgb(var(--t-c-neutral-13-rgb) / .18);
