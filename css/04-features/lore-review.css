@@ -156,7 +156,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-list-actions .t-btn {
     padding: 2px 8px;
-    font-size: 0.8em;
     background: rgba(255, 255, 255, 0.1);
     border: none;
     color: #a0aec0;
@@ -1872,7 +1871,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     flex: 1;
     min-width: 120px;
     padding: 10px 16px;
-    font-size: 0.9em;
 }
 
 /* 移动端隐藏功能区适配 */

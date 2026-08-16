@@ -12776,7 +12776,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-list-actions .t-btn {
     padding: 2px 8px;
-    font-size: 0.8em;
     background: rgba(255, 255, 255, 0.1);
     border: none;
     color: #a0aec0;
@@ -14492,7 +14491,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     flex: 1;
     min-width: 120px;
     padding: 10px 16px;
-    font-size: 0.9em;
 }
 
 /* \u79FB\u52A8\u7AEF\u9690\u85CF\u529F\u80FD\u533A\u9002\u914D */

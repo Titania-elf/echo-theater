@@ -96,7 +96,7 @@
     },
     "A5": {
       "title": "feature 层禁止重定义组件类的视觉属性",
-      "violations": 32,
+      "violations": 30,
       "metrics": {}
     },
     "A6": {
@@ -177,11 +177,11 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16408,
+    "CSS 总行数": 16406,
     "规则条数": 2265,
     "border-radius 声明 / 不同值": "354 / 41",
     "box-shadow 声明 / 不同值": "119 / 84",
-    "font-size (px / em)": "165 / 328",
+    "font-size (px / em)": "165 / 326",
     "padding / gap 声明": "548 / 394"
   }
 }
