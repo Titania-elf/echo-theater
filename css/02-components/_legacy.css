@@ -8,11 +8,10 @@
    删除前提：审计确认 JS 侧零旧类名引用。
    本文件必须排在 02-components/ 全部组件之后（见 css/manifest.js）。
 
-   ── 本阶段（2a）只处理 base.css 迁移过来的这几个 ──
-   feature 层还有约 50 个按钮类名（.t-btn-danger 的 2 份冲突定义、
-   .t-sel-cat-btn 的同文件 2 份、18 个 ghost-xs 同义类等），
-   它们的定义仍在各自 feature 文件里、优先级高于本层，需要连同删除才能生效，
-   留待 2b 处理。plan.md §6.4 的完整映射表是 2b 的依据。
+   ── Phase 2b 第一批 ──
+   primary / success / danger / xs 的旧类名已在此收口。对应 feature 视觉定义
+   必须同步删除，否则 feature 层加载更晚，会重新覆盖组件角色。
+   其余页面专用按钮按窗口分批迁移，见 plan.md §6.4。
    ============================================================ */
 
 /* ---- .t-btn.primary → 蓝色主按钮（S4 决策）----
@@ -20,19 +19,46 @@
    与 .t-btn-primary（蓝，19 处）二选一后取蓝：蓝是事实上的交互色
    （#90cdf4 全库 64 次），且粉渐变在浅色主题下对比度不足。
    这是本次唯一不可逆的视觉决策，已单独成提交。 */
-.t-btn.primary {
+.t-btn.primary,
+.t-btn.t-btn-primary {
     background: var(--t-color-accent);
     color: var(--t-color-text-on-accent);
     border-color: transparent;
 }
 
-.t-btn.primary:hover:not(:disabled) {
+.t-btn.primary:hover:not(:disabled),
+.t-btn.t-btn-primary:hover:not(:disabled) {
     background: var(--t-color-accent-hover);
     border-color: transparent;
 }
 
-.t-btn.primary:active:not(:disabled) {
+.t-btn.primary:active:not(:disabled),
+.t-btn.t-btn-primary:active:not(:disabled) {
     background: var(--t-color-accent-active);
+}
+
+/* ---- 反馈色旧类名 ---- */
+.t-btn.t-btn-success {
+    background: var(--t-color-success-soft);
+    color: var(--t-color-success);
+    border-color: transparent;
+}
+
+.t-btn.t-btn-success:hover:not(:disabled) {
+    background: var(--t-color-success);
+    color: var(--t-color-text-on-accent);
+}
+
+.t-btn.t-btn-danger {
+    background: var(--t-color-danger-soft);
+    color: var(--t-color-danger);
+    border-color: var(--t-color-danger-border);
+}
+
+.t-btn.t-btn-danger:hover:not(:disabled) {
+    background: var(--t-color-danger);
+    color: var(--t-color-text-on-accent);
+    border-color: transparent;
 }
 
 /* ---- .t-btn-soft → .t-btn--brand（品牌金）----

@@ -135,7 +135,8 @@
 
 /* ---- 4 个尺寸，覆盖现有 12 种 padding 组合 ---- */
 
-.t-btn--xs {
+.t-btn--xs,
+.t-btn.t-btn-xs {
     padding: var(--t-space-xs) var(--t-space-md);
     min-height: 22px;
     font-size: var(--t-text-caption);

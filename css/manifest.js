@@ -39,6 +39,13 @@ export const CSS_LAYERS = [
         ]
     },
 
+    // 【第 3 层:布局原语】只负责排列与间距，不定义组件视觉
+    {
+        layer: '03-layout', files: [
+            'button-groups.css',
+        ]
+    },
+
     // 【第 4 层:功能视图】
     // 顺序沿用 5.2.5 build.js 的原始顺序,保证层叠结果逐字节不变。
     {
@@ -70,7 +77,7 @@ export const CSS_LAYERS = [
         ]
     },
 
-    // 尚未创建的层：03-layout / 05-utilities（Phase 2b 起）。
+    // 尚未创建的层：05-utilities。
     // 审计 A14 要求清单与磁盘完全一致，故未创建的文件不得预先列出。
 ];
 

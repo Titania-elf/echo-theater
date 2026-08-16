@@ -4,15 +4,15 @@
       "title": "manifest.js 与磁盘双向一致",
       "violations": 0,
       "metrics": {
-        "清单文件数": 26,
-        "磁盘文件数": 26
+        "清单文件数": 27,
+        "磁盘文件数": 27
       }
     },
     "A15": {
       "title": "main-window-legacy.css 紧跟 main-window.css",
       "violations": 0,
       "metrics": {
-        "位置": "13 → 14"
+        "位置": "14 → 15"
       }
     },
     "A10": {
@@ -59,22 +59,23 @@
     },
     "A9": {
       "title": "!important 紧邻注释说明其对抗的宿主规则",
-      "violations": 75,
+      "violations": 71,
       "metrics": {
-        "important总数": 77
+        "important总数": 73
       }
     },
     "A1": {
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1249,
-        "rgb/rgba字面量": 1026,
-        "合计": 2275,
+        "hex字面量": 1223,
+        "rgb/rgba字面量": 1003,
+        "合计": 2226,
         "  00-tokens": "hex 10 / rgb 89",
         "  01-base": "hex 25 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
-        "  04-features": "hex 1206 / rgb 912",
+        "  03-layout": "hex 0 / rgb 0",
+        "  04-features": "hex 1180 / rgb 889",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
     },
@@ -95,19 +96,19 @@
     },
     "A5": {
       "title": "feature 层禁止重定义组件类的视觉属性",
-      "violations": 53,
+      "violations": 38,
       "metrics": {}
     },
     "A6": {
       "title": "feature 之间禁止交叉引用类名",
-      "violations": 44,
+      "violations": 41,
       "metrics": {}
     },
     "A12": {
       "title": "跨文件重复定义的顶层类",
-      "violations": 6,
+      "violations": 4,
       "metrics": {
-        "冲突类数": 6
+        "冲突类数": 4
       }
     },
     "A13": {
@@ -142,11 +143,11 @@
       "title": "@media 断点在约定集合内",
       "violations": 9,
       "metrics": {
-        "@media 块": 40,
+        "@media 块": 41,
         "其中指针/hover 查询": 3,
         "JS matchMedia": 4,
         "不同断点": 10,
-        "断点分布": "420px×1 480px×1 600px×18 620px×1 700px×2 768px×14 769px×1 900px×1 980px×1 1200px×1"
+        "断点分布": "420px×1 480px×1 600px×18 620px×1 700px×2 768px×15 769px×1 900px×1 980px×1 1200px×1"
       }
     },
     "A19": {
@@ -158,11 +159,11 @@
     },
     "A20": {
       "title": "禁止 transition: all",
-      "violations": 57,
+      "violations": 52,
       "metrics": {
-        "transition 声明总数": 144,
-        "含 all": 57,
-        "其中 all 0.2s": 47
+        "transition 声明总数": 139,
+        "含 all": 52,
+        "其中 all 0.2s": 42
       }
     },
     "A21": {
@@ -176,11 +177,11 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16534,
-    "规则条数": 2285,
-    "border-radius 声明 / 不同值": "360 / 41",
-    "box-shadow 声明 / 不同值": "126 / 90",
-    "font-size (px / em)": "165 / 330",
-    "padding / gap 声明": "552 / 395"
+    "CSS 总行数": 16417,
+    "规则条数": 2267,
+    "border-radius 声明 / 不同值": "354 / 41",
+    "box-shadow 声明 / 不同值": "119 / 84",
+    "font-size (px / em)": "165 / 328",
+    "padding / gap 声明": "548 / 394"
   }
 }

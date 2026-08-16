@@ -585,59 +585,6 @@
 
 .t-model-dialog-footer .t-btn {
     padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-}
-
-.t-model-dialog-footer .t-btn:not(.t-btn-primary) {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #a0aec0;
-}
-
-.t-model-dialog-footer .t-btn:not(.t-btn-primary):hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
-}
-
-.t-model-dialog-footer .t-btn-primary {
-    background: linear-gradient(135deg, #00cec9, #00b894);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(0, 206, 201, 0.3);
-}
-
-.t-model-dialog-footer .t-btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(0, 206, 201, 0.4);
-}
-
-.t-btn-xs {
-    padding: 4px 10px;
-    font-size: 0.8em;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #a0aec0;
-}
-
-.t-btn-xs:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
-}
-
-.t-btn-danger {
-    background: rgba(231, 76, 60, 0.2) !important;
-    border-color: rgba(231, 76, 60, 0.4) !important;
-    color: #e74c3c !important;
-}
-
-.t-btn-danger:hover {
-    background: rgba(231, 76, 60, 0.3) !important;
 }
 
 /* 移动端模型弹窗适配 */

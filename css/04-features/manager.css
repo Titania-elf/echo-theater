@@ -484,12 +484,8 @@
 }
 
 #t-editor-view .t-btn-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
     padding-top: 15px;
     border-top: 1px solid #333;
-    flex-shrink: 0;
 }
 
 /* 大屏编辑器 */
@@ -504,13 +500,6 @@
     flex-direction: column;
     flex-grow: 1;
     overflow: hidden;
-}
-
-#t-large-edit-view .t-btn-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-    flex-shrink: 0;
 }
 
 /* 移动端分类下拉选择器 - 默认隐藏 */

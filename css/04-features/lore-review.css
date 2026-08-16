@@ -372,21 +372,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     font-size: 0.9em;
 }
 
-.t-btn-xs {
-    padding: 2px 8px;
-    font-size: 0.8em;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: #a0aec0;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.t-btn-xs:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-}
-
 /* 底部操作栏 */
 .t-window-footer {
     padding: 15px 25px;
@@ -410,45 +395,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     padding: 8px 12px;
     border-radius: 6px;
     min-width: 220px;
-}
-
-.t-btn-success {
-    background: linear-gradient(135deg, #48bb78, #38a169);
-    border: none;
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
-    transition: all 0.2s;
-}
-
-.t-btn-success:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(72, 187, 120, 0.4);
-}
-
-.t-btn-success:disabled {
-    background: #4a5568;
-    color: #a0aec0;
-    cursor: not-allowed;
-    box-shadow: none;
-}
-
-.t-btn-primary {
-    background: linear-gradient(135deg, #4299e1, #3182ce);
-    border: none;
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
-    transition: all 0.2s;
-}
-
-.t-btn-primary:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(66, 153, 225, 0.4);
 }
 
 /* 状态提示 */
@@ -648,11 +594,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-
-    .t-mobile-nav-btns {
-        display: flex;
-        gap: 5px;
     }
 
     .t-mobile-nav-btn {
@@ -907,21 +848,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-dialog-footer .t-btn {
     padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.t-dialog-footer .t-btn:not(.t-btn-primary) {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #a0aec0;
-}
-
-.t-dialog-footer .t-btn:not(.t-btn-primary):hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
 }
 
 /* 智能提取与总结设置窗口（对齐主设置窗口风格） */
@@ -1112,25 +1038,11 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     word-break: break-all;
 }
 
-/* 控制按钮组 */
-.t-control-buttons {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
 /* 楼层信息显示 */
 .t-floor-info {
     color: #718096;
     font-size: 0.85em;
     white-space: nowrap;
-}
-
-/* 快捷按钮组 */
-.t-quick-btns {
-    display: flex;
-    gap: 4px;
-    margin-left: 8px;
 }
 
 .t-quick-btn {
@@ -1216,10 +1128,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     .t-config-info-bar {
         padding: 8px 15px;
         font-size: 0.8em;
-    }
-
-    .t-control-buttons {
-        flex-wrap: wrap;
     }
 
     #t-lore-settings-dialog .t-lore-settings-window {
@@ -1557,23 +1465,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     color: #f56565;
 }
 
-/* 危险按钮 */
-.t-btn-danger {
-    background: rgba(245, 101, 101, 0.2);
-    border: 1px solid rgba(245, 101, 101, 0.4);
-    color: #f56565;
-}
-
-.t-btn-danger:hover:not(:disabled) {
-    background: rgba(245, 101, 101, 0.3);
-    color: #fff;
-}
-
-.t-btn-danger:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 /* Checkbox 样式优化 */
 .t-control-group input[type="checkbox"] {
     width: 16px;
@@ -1848,13 +1739,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         flex-wrap: wrap;
     }
 
-    /* 移动端快捷按钮调整 */
-    .t-quick-btns {
-        margin-left: 0;
-        margin-top: 8px;
-        flex-wrap: wrap;
-    }
-
     .t-quick-btn {
         padding: 6px 12px;
         font-size: 0.85em;
@@ -1973,13 +1857,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     margin-left: 5px;
 }
 
-.t-hide-quick-btns {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: 15px;
-}
-
 .t-hide-quick-btns .t-quick-btn {
     padding: 6px 12px;
     font-size: 0.85em;
@@ -1996,14 +1873,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     min-width: 120px;
     padding: 10px 16px;
     font-size: 0.9em;
-}
-
-.t-hide-actions .t-btn-primary {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-}
-
-.t-hide-actions .t-btn-primary:hover {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
 }
 
 /* 移动端隐藏功能区适配 */
@@ -2032,10 +1901,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         padding: 10px 8px;
         font-size: 16px;
         /* 防止 iOS 缩放 */
-    }
-
-    .t-hide-quick-btns {
-        gap: 5px;
     }
 
     .t-hide-quick-btns .t-quick-btn {
@@ -2306,24 +2171,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     font-size: 0.85em;
 }
 
-/* 构建索引按钮组 */
-.t-build-index-buttons {
-    display: flex;
-    gap: 10px;
-    width: 100%;
-}
-
-.t-build-index-buttons .t-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.t-build-index-buttons .t-btn-primary {
-    flex: 1;
-}
-
 /* 移动端适配 */
 @media (max-width: 768px) {
     .t-incremental-status {
@@ -2335,11 +2182,4 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         font-size: 0.85em;
     }
 
-    .t-build-index-buttons {
-        flex-direction: column;
-    }
-
-    .t-build-index-buttons .t-btn {
-        width: 100%;
-    }
 }
