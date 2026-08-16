@@ -2001,27 +2001,111 @@ textarea.t-input {
     resize: vertical;
 }
 
-/* \u6EDA\u52A8\u6761 */
-::-webkit-scrollbar {
+/* \u6EDA\u52A8\u6761\uFF1A\u5DF2\u8FC1\u81F3 01-base/scrollbar.css \u5E76\u52A0\u4F5C\u7528\u57DF\uFF08\u89C4\u5219 R7\uFF09\u3002
+   \u539F\u5148\u662F\u65E0\u4F5C\u7528\u57DF\u7684 \`::-webkit-scrollbar\`\uFF0C\u91CD\u5199\u4E86\u6574\u4E2A SillyTavern \u7684\u6EDA\u52A8\u6761\uFF08\u4FEE B2\uFF09\u3002 */
+
+/* \u52A8\u753B:\u5168\u90E8 @keyframes \u5DF2\u96C6\u4E2D\u5230 01-base/keyframes.css(\u89C4\u5219 R6)\u3002
+   \u539F \`fadeIn\` \u56E0\u65E0\u524D\u7F00\u4F1A\u4E0E ST \u53CA\u5176\u5B83\u6269\u5C55\u649E\u540D,\u5DF2\u6539\u540D\u4E3A \`t-fade-in\`(\u4FEE B3)\u3002 */
+
+
+/* === 01-base/scrollbar.css === */
+/* css/01-base/scrollbar.css \u2014\u2014 \u63D2\u4EF6\u6EDA\u52A8\u6761\u5916\u89C2\uFF08\u5E26\u4F5C\u7528\u57DF\uFF09
+   ============================================================
+   \u7F3A\u9677 B2\uFF1A\u8FD9\u4E9B\u89C4\u5219\u539F\u5148\u5728 base.css:236-252 \u91CC\u662F**\u65E0\u4F5C\u7528\u57DF\u7684\u5168\u5C40\u9009\u62E9\u5668**
+   \uFF08\`::-webkit-scrollbar { \u2026 }\`\uFF09\u3002\u63D2\u4EF6\u7684 <style> \u6CE8\u5165\u5728 document.head\uFF0C
+   \u665A\u4E8E SillyTavern \u7684\u6837\u5F0F\u8868\uFF0C\u4E14\u88F8\u4F2A\u5143\u7D20\u9009\u62E9\u5668\u7279\u5F02\u6027\u76F8\u540C \u2014\u2014 \u7ED3\u679C\u63D2\u4EF6
+   \u91CD\u5199\u4E86**\u6574\u4E2A SillyTavern** \u7684\u6EDA\u52A8\u6761\uFF08ST \u81EA\u5DF1\u5728 public/style.css:168-216
+   \u5B9A\u4E49\u4E86 width: 0.7rem / cursor: grab / thumb:vertical \u7B49\u4E00\u6574\u5957\uFF09\u3002
+
+   \u2500\u2500 \u4E3A\u4EC0\u4E48\u7528\u5C5E\u6027\u9009\u62E9\u5668\u800C\u4E0D\u662F\u9010\u4E2A\u5217\u51FA\u6302\u8F7D\u70B9 \u2500\u2500
+   \u63D2\u4EF6\u6709 34 \u5904 $("body").append() \u4E0E ensureOverlay() \u6302\u8F7D\u70B9\u3002\u9010\u4E2A\u5217\u4E3E\u4E00\u65E6
+   \u6F0F\u6389\u4E00\u4E2A\uFF0C\u90A3\u4E2A\u7A97\u53E3\u7684\u6EDA\u52A8\u6761\u5C31\u4F1A\u9759\u9ED8\u56DE\u9000\u6210 ST \u7684 0.7rem \u2014\u2014 \u5C5E\u4E8E\u300C\u770B\u4E0D\u89C1\u7684
+   \u56DE\u5F52\u300D\u3002\u6539\u4E3A\u6309\u63D2\u4EF6\u81EA\u8EAB\u547D\u540D\u7EA6\u5B9A\u5339\u914D\uFF0C\u53EF\u8BC1\u660E\u8986\u76D6\u5B8C\u6574\uFF1A
+   \u5B9E\u6D4B SillyTavern \u5168\u5E93\uFF08style.css + index.html\uFF09\u4E2D\u4EE5 \`t-\` \u5F00\u5934\u7684\u7C7B\u4E3A 0 \u4E2A\u3001
+   \u4EE5 \`titania\` \u547D\u540D\u7684\u6807\u8BC6\u4E3A 0 \u4E2A\uFF0C\u6545\u4E0D\u5B58\u5728\u53CD\u5411\u6CC4\u6F0F\u3002
+
+   \u672C\u6587\u4EF6\u7684\u6548\u679C = \u539F\u5168\u5C40\u89C4\u5219\u7684**\u771F\u5B50\u96C6**\uFF1A\u63D2\u4EF6\u5143\u7D20\u5916\u89C2\u5B8C\u5168\u4E0D\u53D8\uFF0C
+   ST \u5143\u7D20\u6062\u590D\u539F\u751F\u5916\u89C2\u3002\u8FD9\u6B63\u662F B2 \u8981\u7684\u7ED3\u679C\u3002
+
+   \u2500\u2500 \u7279\u5F02\u6027\u8BF4\u660E\uFF08\u91CD\u8981\uFF0C\u52FF\u6539\u6210 ID \u6216 :is()\uFF09\u2500\u2500
+   \u5C5E\u6027\u9009\u62E9\u5668\u4E0E\u7C7B\u540C\u7EA7 (0,1,0)\u3002feature \u5C42\u73B0\u6709 31 \u6761\u5F62\u5982
+   \`.t-mode-panel::-webkit-scrollbar\` \u7684\u8986\u76D6\u89C4\u5219\u4E5F\u662F (0,1,0)\uFF0C\u800C 01-base
+   \u5728 manifest \u4E2D\u6392\u5728 04-features **\u4E4B\u524D**\uFF0C\u6545 feature \u8986\u76D6\u4F9D\u7136\u751F\u6548\u3002
+   \u82E5\u628A\u4F5C\u7528\u57DF\u5199\u6210 ID\uFF08\u5982 \`#t-overlay\`\uFF09\u4F1A\u53D8\u6210 (1,0,0)\uFF0C\u5C06\u65E0\u6761\u4EF6\u538B\u8FC7\u90A3 31 \u6761
+   \u89C4\u5219\uFF0C\u9020\u6210\u89C6\u89C9\u56DE\u5F52\u3002
+   \u540C\u7406\u4E0D\u4F7F\u7528 \`:is()\`\uFF1A\u5B83\u53D6\u53C2\u6570\u4E2D\u6700\u9AD8\u7684\u7279\u5F02\u6027\uFF0C\u4E00\u65E6\u5217\u8868\u91CC\u6709 ID \u5C31\u4F1A\u6574\u4F53\u63D0\u6743
+   \uFF08\u4E14\u5B9E\u6D4B ST \u5168\u5E93\u672A\u4F7F\u7528 \`:is()\`\uFF0C\u4FDD\u6301\u4E00\u81F4\u7684\u4FDD\u5B88\u53D6\u5411\uFF09\u3002
+
+   \u2500\u2500 Phase 1 \u2500\u2500
+   Phase 1 \u7ED9 plan.md \xA78.2 \u6E05\u5355\u91CC\u6240\u6709\u6302\u8F7D\u70B9\u52A0\u4E0A \`.t-root\` \u540E\uFF0C
+   \u672C\u6587\u4EF6\u7684 6 \u7EC4\u5339\u914D\u5668\u53EF\u6574\u4F53\u6298\u53E0\u4E3A \`.t-root\` \u4E0E \`.t-root *\` \u4E24\u6761\u3002
+   ============================================================ */
+
+/* \u5C3A\u5BF8 */
+[class^="t-"]::-webkit-scrollbar,
+[class*=" t-"]::-webkit-scrollbar,
+[class^="titania-"]::-webkit-scrollbar,
+[class*=" titania-"]::-webkit-scrollbar,
+[id^="t-"]::-webkit-scrollbar,
+[id^="titania-"]::-webkit-scrollbar,
+[class^="t-"] ::-webkit-scrollbar,
+[class*=" t-"] ::-webkit-scrollbar,
+[class^="titania-"] ::-webkit-scrollbar,
+[class*=" titania-"] ::-webkit-scrollbar,
+[id^="t-"] ::-webkit-scrollbar,
+[id^="titania-"] ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
 }
 
-::-webkit-scrollbar-track {
+/* \u8F68\u9053 */
+[class^="t-"]::-webkit-scrollbar-track,
+[class*=" t-"]::-webkit-scrollbar-track,
+[class^="titania-"]::-webkit-scrollbar-track,
+[class*=" titania-"]::-webkit-scrollbar-track,
+[id^="t-"]::-webkit-scrollbar-track,
+[id^="titania-"]::-webkit-scrollbar-track,
+[class^="t-"] ::-webkit-scrollbar-track,
+[class*=" t-"] ::-webkit-scrollbar-track,
+[class^="titania-"] ::-webkit-scrollbar-track,
+[class*=" titania-"] ::-webkit-scrollbar-track,
+[id^="t-"] ::-webkit-scrollbar-track,
+[id^="titania-"] ::-webkit-scrollbar-track {
     background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
+/* \u6ED1\u5757 */
+[class^="t-"]::-webkit-scrollbar-thumb,
+[class*=" t-"]::-webkit-scrollbar-thumb,
+[class^="titania-"]::-webkit-scrollbar-thumb,
+[class*=" titania-"]::-webkit-scrollbar-thumb,
+[id^="t-"]::-webkit-scrollbar-thumb,
+[id^="titania-"]::-webkit-scrollbar-thumb,
+[class^="t-"] ::-webkit-scrollbar-thumb,
+[class*=" t-"] ::-webkit-scrollbar-thumb,
+[class^="titania-"] ::-webkit-scrollbar-thumb,
+[class*=" titania-"] ::-webkit-scrollbar-thumb,
+[id^="t-"] ::-webkit-scrollbar-thumb,
+[id^="titania-"] ::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+/* \u6ED1\u5757 hover */
+[class^="t-"]::-webkit-scrollbar-thumb:hover,
+[class*=" t-"]::-webkit-scrollbar-thumb:hover,
+[class^="titania-"]::-webkit-scrollbar-thumb:hover,
+[class*=" titania-"]::-webkit-scrollbar-thumb:hover,
+[id^="t-"]::-webkit-scrollbar-thumb:hover,
+[id^="titania-"]::-webkit-scrollbar-thumb:hover,
+[class^="t-"] ::-webkit-scrollbar-thumb:hover,
+[class*=" t-"] ::-webkit-scrollbar-thumb:hover,
+[class^="titania-"] ::-webkit-scrollbar-thumb:hover,
+[class*=" titania-"] ::-webkit-scrollbar-thumb:hover,
+[id^="t-"] ::-webkit-scrollbar-thumb:hover,
+[id^="titania-"] ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.4);
 }
-
-/* \u52A8\u753B:\u5168\u90E8 @keyframes \u5DF2\u96C6\u4E2D\u5230 01-base/keyframes.css(\u89C4\u5219 R6)\u3002
-   \u539F \`fadeIn\` \u56E0\u65E0\u524D\u7F00\u4F1A\u4E0E ST \u53CA\u5176\u5B83\u6269\u5C55\u649E\u540D,\u5DF2\u6539\u540D\u4E3A \`t-fade-in\`(\u4FEE B3)\u3002 */
 
 
 /* === 01-base/keyframes.css === */
@@ -16345,7 +16429,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["01-base/base.css", "01-base/keyframes.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css"];
+    CSS_FILES = ["01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css"];
   }
 });
 

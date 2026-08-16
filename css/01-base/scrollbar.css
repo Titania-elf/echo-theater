@@ -1,0 +1,97 @@
+/* css/01-base/scrollbar.css —— 插件滚动条外观（带作用域）
+   ============================================================
+   缺陷 B2：这些规则原先在 base.css:236-252 里是**无作用域的全局选择器**
+   （`::-webkit-scrollbar { … }`）。插件的 <style> 注入在 document.head，
+   晚于 SillyTavern 的样式表，且裸伪元素选择器特异性相同 —— 结果插件
+   重写了**整个 SillyTavern** 的滚动条（ST 自己在 public/style.css:168-216
+   定义了 width: 0.7rem / cursor: grab / thumb:vertical 等一整套）。
+
+   ── 为什么用属性选择器而不是逐个列出挂载点 ──
+   插件有 34 处 $("body").append() 与 ensureOverlay() 挂载点。逐个列举一旦
+   漏掉一个，那个窗口的滚动条就会静默回退成 ST 的 0.7rem —— 属于「看不见的
+   回归」。改为按插件自身命名约定匹配，可证明覆盖完整：
+   实测 SillyTavern 全库（style.css + index.html）中以 `t-` 开头的类为 0 个、
+   以 `titania` 命名的标识为 0 个，故不存在反向泄漏。
+
+   本文件的效果 = 原全局规则的**真子集**：插件元素外观完全不变，
+   ST 元素恢复原生外观。这正是 B2 要的结果。
+
+   ── 特异性说明（重要，勿改成 ID 或 :is()）──
+   属性选择器与类同级 (0,1,0)。feature 层现有 31 条形如
+   `.t-mode-panel::-webkit-scrollbar` 的覆盖规则也是 (0,1,0)，而 01-base
+   在 manifest 中排在 04-features **之前**，故 feature 覆盖依然生效。
+   若把作用域写成 ID（如 `#t-overlay`）会变成 (1,0,0)，将无条件压过那 31 条
+   规则，造成视觉回归。
+   同理不使用 `:is()`：它取参数中最高的特异性，一旦列表里有 ID 就会整体提权
+   （且实测 ST 全库未使用 `:is()`，保持一致的保守取向）。
+
+   ── Phase 1 ──
+   Phase 1 给 plan.md §8.2 清单里所有挂载点加上 `.t-root` 后，
+   本文件的 6 组匹配器可整体折叠为 `.t-root` 与 `.t-root *` 两条。
+   ============================================================ */
+
+/* 尺寸 */
+[class^="t-"]::-webkit-scrollbar,
+[class*=" t-"]::-webkit-scrollbar,
+[class^="titania-"]::-webkit-scrollbar,
+[class*=" titania-"]::-webkit-scrollbar,
+[id^="t-"]::-webkit-scrollbar,
+[id^="titania-"]::-webkit-scrollbar,
+[class^="t-"] ::-webkit-scrollbar,
+[class*=" t-"] ::-webkit-scrollbar,
+[class^="titania-"] ::-webkit-scrollbar,
+[class*=" titania-"] ::-webkit-scrollbar,
+[id^="t-"] ::-webkit-scrollbar,
+[id^="titania-"] ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+/* 轨道 */
+[class^="t-"]::-webkit-scrollbar-track,
+[class*=" t-"]::-webkit-scrollbar-track,
+[class^="titania-"]::-webkit-scrollbar-track,
+[class*=" titania-"]::-webkit-scrollbar-track,
+[id^="t-"]::-webkit-scrollbar-track,
+[id^="titania-"]::-webkit-scrollbar-track,
+[class^="t-"] ::-webkit-scrollbar-track,
+[class*=" t-"] ::-webkit-scrollbar-track,
+[class^="titania-"] ::-webkit-scrollbar-track,
+[class*=" titania-"] ::-webkit-scrollbar-track,
+[id^="t-"] ::-webkit-scrollbar-track,
+[id^="titania-"] ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* 滑块 */
+[class^="t-"]::-webkit-scrollbar-thumb,
+[class*=" t-"]::-webkit-scrollbar-thumb,
+[class^="titania-"]::-webkit-scrollbar-thumb,
+[class*=" titania-"]::-webkit-scrollbar-thumb,
+[id^="t-"]::-webkit-scrollbar-thumb,
+[id^="titania-"]::-webkit-scrollbar-thumb,
+[class^="t-"] ::-webkit-scrollbar-thumb,
+[class*=" t-"] ::-webkit-scrollbar-thumb,
+[class^="titania-"] ::-webkit-scrollbar-thumb,
+[class*=" titania-"] ::-webkit-scrollbar-thumb,
+[id^="t-"] ::-webkit-scrollbar-thumb,
+[id^="titania-"] ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+/* 滑块 hover */
+[class^="t-"]::-webkit-scrollbar-thumb:hover,
+[class*=" t-"]::-webkit-scrollbar-thumb:hover,
+[class^="titania-"]::-webkit-scrollbar-thumb:hover,
+[class*=" titania-"]::-webkit-scrollbar-thumb:hover,
+[id^="t-"]::-webkit-scrollbar-thumb:hover,
+[id^="titania-"]::-webkit-scrollbar-thumb:hover,
+[class^="t-"] ::-webkit-scrollbar-thumb:hover,
+[class*=" t-"] ::-webkit-scrollbar-thumb:hover,
+[class^="titania-"] ::-webkit-scrollbar-thumb:hover,
+[class*=" titania-"] ::-webkit-scrollbar-thumb:hover,
+[id^="t-"] ::-webkit-scrollbar-thumb:hover,
+[id^="titania-"] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}

@@ -499,23 +499,44 @@ check('A7', 'R6', '@keyframes 集中声明且带 t- 前缀', () => {
     return { violations, metrics: { keyframes总数: total } };
 });
 
-// ── A8：全局伪元素选择器必须以 .t-root 开头（R7）───────────────
-check('A8', 'R7', '全局伪元素选择器带 .t-root 作用域', () => {
+// ── A8：全局伪元素选择器必须限定在插件作用域内（R7）───────────
+// 判定方式：剥掉伪元素与其后的伪类，得到选择器的「主语」。
+//   主语为空                    → 裸全局选择器，会泄漏到整个 SillyTavern
+//   主语不含 t- / titania 标识   → 未限定在插件范围内
+// 不按「前缀是否为 .t-root」判定：作用域也可以由属性选择器提供
+// （见 01-base/scrollbar.css 的说明），只看前缀会把正确写法误报为违规。
+check('A8', 'R7', '全局伪元素选择器带插件作用域', () => {
     const violations = [];
-    const GLOBAL_PSEUDO = /::(-webkit-scrollbar(-[a-z]+)?|-webkit-resizer|selection|placeholder|-moz-placeholder|-webkit-input-placeholder|backdrop)/i;
+    const GLOBAL_PSEUDO = /::(-webkit-scrollbar[a-z-]*|-webkit-resizer|selection|placeholder|-moz-[a-z-]*placeholder|-webkit-input-placeholder|backdrop)/i;
+    let scoped = 0, viaRoot = 0;
     for (const f of styleSources) {
         for (const r of f.rules) {
             if (r.isAtContainer || r.isKeyframes) continue;
             for (const part of r.selector.split(',')) {
                 const s = part.trim();
                 if (!s || !GLOBAL_PSEUDO.test(s)) continue;
-                if (!/^\.t-root\b/.test(s) && !/^(\.t-|#t-|#titania|\.titania)/.test(s)) {
-                    violations.push({ loc: `${f.rel}:${r.line}`, msg: `无作用域的全局伪元素选择器：${s}（会重写整个 SillyTavern，见 B2）` });
+                const subject = s
+                    .replace(GLOBAL_PSEUDO, '')
+                    .replace(/:[a-z-]+(\([^)]*\))?/gi, '')
+                    .trim();
+                if (!subject) {
+                    violations.push({ loc: `${f.rel}:${r.line}`, msg: `裸全局伪元素选择器：${s}（会重写整个 SillyTavern，见 B2）` });
+                    continue;
                 }
+                if (!/t-|titania/.test(subject)) {
+                    violations.push({ loc: `${f.rel}:${r.line}`, msg: `伪元素选择器未限定在插件范围：${s}` });
+                    continue;
+                }
+                scoped++;
+                if (/\.t-root\b/.test(subject)) viaRoot++;
             }
         }
     }
-    return { violations };
+    return {
+        violations,
+        metrics: { '已限定作用域的伪元素选择器': scoped, '其中用 .t-root': viaRoot },
+        note: viaRoot < scoped ? 'Phase 1 给挂载点加 .t-root 后，应把作用域统一收敛为 .t-root' : null,
+    };
 });
 
 // ── A9：!important 必须紧邻注释说明（R8）─────────────────────

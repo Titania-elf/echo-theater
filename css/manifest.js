@@ -13,7 +13,8 @@ export const CSS_LAYERS = [
     {
         layer: '01-base', files: [
             'base.css',
-            'keyframes.css',   // 全库唯一的 @keyframes 声明处(规则 R6)
+            'scrollbar.css',   // 带作用域的滚动条外观（修 B2）
+            'keyframes.css',   // 全库唯一的 @keyframes 声明处（规则 R6）
         ]
     },
 

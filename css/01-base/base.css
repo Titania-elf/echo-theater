@@ -232,24 +232,8 @@ textarea.t-input {
     resize: vertical;
 }
 
-/* 滚动条 */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.4);
-}
+/* 滚动条：已迁至 01-base/scrollbar.css 并加作用域（规则 R7）。
+   原先是无作用域的 `::-webkit-scrollbar`，重写了整个 SillyTavern 的滚动条（修 B2）。 */
 
 /* 动画:全部 @keyframes 已集中到 01-base/keyframes.css(规则 R6)。
    原 `fadeIn` 因无前缀会与 ST 及其它扩展撞名,已改名为 `t-fade-in`(修 B3)。 */
