@@ -12933,7 +12933,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-lore-entry-item.t-is-update::before {
-    background: #ecc94b !important;
+    background: #ecc94b;
 }
 
 .t-lore-entry-item.t-is-update .t-entry-keys i {
@@ -13180,6 +13180,11 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     border-color: #90cdf4;
 }
 
+/* Default state; the mobile layout below reveals this toolbar. */
+.t-mobile-editor-header {
+    display: none;
+}
+
 /* \u79FB\u52A8\u7AEF\u9002\u914D - \u5168\u5C4F\u5207\u6362\u5F0F\u5E03\u5C40 */
 @media (max-width: 768px) {
     .t-lore-review-window {
@@ -13317,7 +13322,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
     /* \u79FB\u52A8\u7AEF placeholder \u9690\u85CF */
     #t-editor-placeholder {
-        display: none !important;
+        display: none !important; /* override jQuery .show() inline display on mobile */
     }
 
     /* \u79FB\u52A8\u7AEF textarea \u589E\u5927\u9AD8\u5EA6 */
@@ -13379,22 +13384,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         left: 20px;
     }
 
-    /* \u79FB\u52A8\u7AEF\u663E\u793A\u8FD4\u56DE\u6309\u94AE\u680F */
-    .t-mobile-editor-header {
-        display: flex !important;
-    }
-}
-
-/* \u684C\u9762\u7AEF\u9690\u85CF\u79FB\u52A8\u7AEF\u4E13\u7528\u5143\u7D20 */
-@media (min-width: 769px) {
-    .t-mobile-editor-header {
-        display: none !important;
-    }
-}
-
-/* \u9ED8\u8BA4\u9690\u85CF\u79FB\u52A8\u7AEF\u4E13\u7528\u5143\u7D20\uFF08\u684C\u9762\u7AEF\uFF09 */
-.t-mobile-editor-header {
-    display: none;
 }
 
 /* \u914D\u7F6E\u4FE1\u606F\u680F */
@@ -13754,7 +13743,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-dialog-header-error i {
-    color: #e74c3c !important;
+    color: #e74c3c;
 }
 
 /* \u79FB\u52A8\u7AEF\u914D\u7F6E\u5F39\u7A97\u9002\u914D */

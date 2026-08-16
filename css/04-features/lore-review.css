@@ -226,7 +226,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-lore-entry-item.t-is-update::before {
-    background: #ecc94b !important;
+    background: #ecc94b;
 }
 
 .t-lore-entry-item.t-is-update .t-entry-keys i {
@@ -473,6 +473,11 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     border-color: #90cdf4;
 }
 
+/* Default state; the mobile layout below reveals this toolbar. */
+.t-mobile-editor-header {
+    display: none;
+}
+
 /* 移动端适配 - 全屏切换式布局 */
 @media (max-width: 768px) {
     .t-lore-review-window {
@@ -610,7 +615,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
     /* 移动端 placeholder 隐藏 */
     #t-editor-placeholder {
-        display: none !important;
+        display: none !important; /* override jQuery .show() inline display on mobile */
     }
 
     /* 移动端 textarea 增大高度 */
@@ -672,22 +677,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         left: 20px;
     }
 
-    /* 移动端显示返回按钮栏 */
-    .t-mobile-editor-header {
-        display: flex !important;
-    }
-}
-
-/* 桌面端隐藏移动端专用元素 */
-@media (min-width: 769px) {
-    .t-mobile-editor-header {
-        display: none !important;
-    }
-}
-
-/* 默认隐藏移动端专用元素（桌面端） */
-.t-mobile-editor-header {
-    display: none;
 }
 
 /* 配置信息栏 */
@@ -1047,7 +1036,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-dialog-header-error i {
-    color: #e74c3c !important;
+    color: #e74c3c;
 }
 
 /* 移动端配置弹窗适配 */
