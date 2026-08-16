@@ -63,6 +63,10 @@ export const CSS_LAYERS = [
             // ⚠ 必须晚于 lore-review.css：清洗预览原先是运行时注入的，
             //   层叠上晚于 lore-review.css，此顺序保持其原有优先级。
             'cleaning-preview.css',
+            'rewrite.css',
+            // 注入 ST DOM 的元素（依 ADR-02 独立于插件组件体系，且不加 .t-root）。
+            // 放在最末：这些样式原先靠运行时注入取胜，此位置保持其原有优先级。
+            'st-embedded.css',
         ]
     },
 
