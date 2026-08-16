@@ -1,4 +1,4 @@
-/* css/base.css - 基础组件与工具类 */
+/* css/01-base/base.css - 基础组件与工具类 */
 
 :root {
     /* 颜色变量 */
@@ -251,15 +251,5 @@ textarea.t-input {
     background: rgba(255, 255, 255, 0.4);
 }
 
-/* 动画 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(5px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+/* 动画:全部 @keyframes 已集中到 01-base/keyframes.css(规则 R6)。
+   原 `fadeIn` 因无前缀会与 ST 及其它扩展撞名,已改名为 `t-fade-in`(修 B3)。 */

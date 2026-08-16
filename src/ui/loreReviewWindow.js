@@ -3,7 +3,7 @@
 import { extractLoreFromHistory, previewExtractPrompt } from "../core/loreExtractor.js";
 import { getAvailableWorldBooks, getCharacterWorldBook, saveLoreEntry } from "../core/worldInfoManager.js";
 import { TitaniaLogger } from "../core/logger.js";
-import { extensionFolderPath } from "../config/defaults.js";
+import { ensureFeatureCss } from "../utils/dom.js";
 
 /**
  * 带超时的 Promise 包装器（与 context.js 保持一致）
@@ -97,17 +97,10 @@ let lastAnalyzedRange = { start: 0, end: 0 }; // 上次分析的范围
 
 /**
  * 确保 CSS 已加载
+ * 路径由 css/manifest.js 统一解析，不再硬编码扁平路径（B1）
  */
 function ensureCssLoaded() {
-    const id = "titania-css-lore-review";
-    if (!document.getElementById(id)) {
-        const link = document.createElement("link");
-        link.id = id;
-        link.rel = "stylesheet";
-        link.type = "text/css";
-        link.href = `${extensionFolderPath}/css/lore-review.css`;
-        document.head.appendChild(link);
-    }
+    ensureFeatureCss("lore-review.css");
 }
 
 /**

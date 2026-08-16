@@ -1,4 +1,4 @@
-/* css/favs.css - 收藏与图鉴 */
+/* css/04-features/favs.css - 收藏与图鉴 */
 
 .t-fav-container {
     height: 90vh;
@@ -516,7 +516,7 @@
     border-radius: 8px;
     background: #1f1b15;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
-    animation: fadeIn 0.14s ease;
+    animation: t-fade-in 0.14s ease;
 }
 
 .t-read-more-menu[hidden] {
@@ -647,7 +647,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    animation: fadeIn 0.2s;
+    animation: t-fade-in 0.2s;
 }
 
 .t-img-mgr-box {
@@ -762,24 +762,12 @@
     color: #4ade80;
     border-color: rgba(74, 222, 128, 0.4);
     background: rgba(74, 222, 128, 0.1);
-    animation: pulse-green 2s infinite;
+    animation: t-pulse-green 2s infinite;
 }
 
 #t-read-open-window.has-interactive:hover {
     background: rgba(74, 222, 128, 0.2);
     border-color: rgba(74, 222, 128, 0.6);
-}
-
-@keyframes pulse-green {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.3);
-    }
-
-    50% {
-        box-shadow: 0 0 8px 2px rgba(74, 222, 128, 0.2);
-    }
 }
 
 /* ========== 批量编辑模式样式 ========== */
@@ -1048,7 +1036,7 @@
         border-radius: 10px;
         background: #1c1811;
         box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
-        animation: fadeIn 0.14s ease;
+        animation: t-fade-in 0.14s ease;
     }
 
     .t-fav-tools-drawer[hidden] {

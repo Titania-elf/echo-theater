@@ -1,4 +1,4 @@
-/* css/lore-review.css */
+/* css/04-features/lore-review.css */
 
 /* 窗口容器 */
 .t-lore-review-window {
@@ -250,12 +250,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-lore-entry-item.t-is-update:hover .t-entry-keys i {
     animation-play-state: running;
-}
-
-@keyframes t-spin {
-    100% {
-        transform: rotate(360deg);
-    }
 }
 
 .t-entry-header {

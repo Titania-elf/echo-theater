@@ -1,4 +1,4 @@
-/* css/main-window-legacy.css - 经典版（5.1.2）主界面布局
+/* css/04-features/main-window-legacy.css - 经典版（5.1.2）主界面布局
  *
  * 仅包含经典布局独有的选择器，以及与 5.1.5 冲突需要覆盖的规则。
  * 全部限定在 #t-main-view.t-layout-legacy 作用域内，
@@ -58,7 +58,7 @@
     z-index: 101;
     min-width: 140px;
     padding: 5px;
-    animation: fadeIn 0.15s ease;
+    animation: t-fade-in 0.15s ease;
 }
 
 #t-main-view.t-layout-legacy .t-tools-item {

@@ -1754,6 +1754,8 @@ var init_storage = __esm({
 // src/utils/dom.js
 var dom_exports = {};
 __export(dom_exports, {
+  cssLinkId: () => cssLinkId,
+  ensureFeatureCss: () => ensureFeatureCss,
   ensureOverlay: () => ensureOverlay,
   loadCssFiles: () => loadCssFiles
 });
@@ -1764,8 +1766,8 @@ function loadCssFiles() {
   style.id = styleId;
   style.textContent = `/* Titania Theater - Bundled CSS */
 
-/* === base.css === */
-/* css/base.css - \u57FA\u7840\u7EC4\u4EF6\u4E0E\u5DE5\u5177\u7C7B */
+/* === 01-base/base.css === */
+/* css/01-base/base.css - \u57FA\u7840\u7EC4\u4EF6\u4E0E\u5DE5\u5177\u7C7B */
 
 :root {
     /* \u989C\u8272\u53D8\u91CF */
@@ -2018,8 +2020,30 @@ textarea.t-input {
     background: rgba(255, 255, 255, 0.4);
 }
 
-/* \u52A8\u753B */
-@keyframes fadeIn {
+/* \u52A8\u753B:\u5168\u90E8 @keyframes \u5DF2\u96C6\u4E2D\u5230 01-base/keyframes.css(\u89C4\u5219 R6)\u3002
+   \u539F \`fadeIn\` \u56E0\u65E0\u524D\u7F00\u4F1A\u4E0E ST \u53CA\u5176\u5B83\u6269\u5C55\u649E\u540D,\u5DF2\u6539\u540D\u4E3A \`t-fade-in\`(\u4FEE B3)\u3002 */
+
+
+/* === 01-base/keyframes.css === */
+/* ============================================================
+   01-base/keyframes.css \u2014\u2014 \u5168\u5E93\u552F\u4E00\u7684 @keyframes \u58F0\u660E\u5904
+
+   \u89C4\u5219 R6:\u4EFB\u4F55 @keyframes \u53EA\u80FD\u5728\u672C\u6587\u4EF6\u58F0\u660E,\u4E14\u5FC5\u987B\u5E26 t- \u524D\u7F00\u3002
+   \u7531 scripts/css-audit.js \u7684 A7 \u68C0\u67E5(Phase 6 \u8D77\u963B\u65AD\u6784\u5EFA)\u3002
+
+   \u4E3A\u4EC0\u4E48\u96C6\u4E2D:
+   - \u65E0\u524D\u7F00\u7684\u5168\u5C40 keyframes \u4F1A\u4E0E SillyTavern \u53CA\u5176\u5B83\u7B2C\u4E09\u65B9\u6269\u5C55\u649E\u540D(B3)
+   - \u60AC\u6D6E\u7403\u4E0E\u8BBE\u7F6E\u9875\u9884\u89C8\u7403\u66FE\u5404\u5B58\u4E00\u5957 t-* / p-* \u91CD\u590D\u5B9A\u4E49,\u6539\u4E00\u5904\u8981\u6539\u4E24\u5904(B4)
+
+   \u672C\u6587\u4EF6\u7531 5.2.5 \u7684 12 \u4E2A CSS + rewriteEntryButton.js \u6C47\u603B\u800C\u6765:
+   28 \u5904\u539F\u59CB\u5B9A\u4E49 \u2192 \u5F52\u5E76 6 \u5904\u5B57\u8282\u7EA7\u91CD\u590D \u2192 22 \u4E2A\u52A8\u753B\u3002
+   \u6240\u6709\u52A8\u753B\u4F53\u5747\u81EA\u539F\u6587\u4EF6\u9010\u5B57\u8282\u4FDD\u7559,\u4EC5\u91CD\u547D\u540D,\u4E0D\u6539\u6570\u503C\u3002
+   ============================================================ */
+
+/* ===== \u901A\u7528:\u6DE1\u5165 / \u4E0A\u6ED1 ===== */
+
+/* base.css  \xB7  \u65E7\u540D fadeIn(\u65E0\u524D\u7F00,\u4E0E ST \u53CA\u5176\u5B83\u6269\u5C55\u51B2\u7A81)\u2014 \u4FEE B3 */
+@keyframes t-fade-in {
     from {
         opacity: 0;
         transform: translateY(5px);
@@ -2031,9 +2055,256 @@ textarea.t-input {
     }
 }
 
+/* manager.css  \xB7  \u65E7\u540D slideUp(\u65E0\u524D\u7F00)\u2014 \u4FEE B3 */
+@keyframes t-slide-up {
+    from {
+        transform: translateY(100%);
+    }
 
-/* === floating.css === */
-/* css/floating.css - \u60AC\u6D6E\u7403 */
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* main-window.css  \xB7  \u65E7\u540D t-slideUp(\u9A7C\u5CF0);\u5E26\u6DE1\u5165,\u4E0E t-slide-up \u4E0D\u540C */
+@keyframes t-slide-up-fade {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* main-window.css  \xB7  \u65E7\u540D t-stats-fadeIn(\u9A7C\u5CF0) */
+@keyframes t-stats-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* main-window.css  \xB7  \u65E7\u540D t-indicator-slideUp;\u5DF2\u5408\u5E76 t-gcn-slideUp(\u5B57\u8282\u7EA7\u7B49\u4EF7) */
+@keyframes t-indicator-slide-up {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* ===== \u60AC\u6D6E\u7403 / \u8BBE\u7F6E\u9875\u9884\u89C8\u7403(\u5171\u7528\u4E00\u5957 \u2014\u2014 \u4FEE B4) ===== */
+
+/* floating.css  \xB7  \u5DF2\u5408\u5E76 settings.css \u7684 p-ripple-1(\u5B57\u8282\u7EA7\u7B49\u4EF7) */
+@keyframes t-ripple-1 {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+/* floating.css  \xB7  \u5DF2\u5408\u5E76 settings.css \u7684 p-ripple-2(\u5B57\u8282\u7EA7\u7B49\u4EF7) */
+@keyframes t-ripple-2 {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}
+
+/* floating.css  \xB7  \u4EC5\u771F\u7403\u4F7F\u7528(\u9884\u89C8\u7403\u65E0\u7B2C\u4E09\u5C42\u6CE2\u7EB9) */
+@keyframes t-ripple-3 {
+    0% {
+        transform: scale(1);
+        opacity: 0.4;
+    }
+
+    100% {
+        transform: scale(1.9);
+        opacity: 0;
+    }
+}
+
+/* floating.css  \xB7  \u5DF2\u5408\u5E76 settings.css \u7684 p-arc-rotate(\u5B57\u8282\u7EA7\u7B49\u4EF7) */
+@keyframes t-arc-rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* floating.css  \xB7  \u5DF2\u5408\u5E76 settings.css \u7684 p-arc-flash(\u5B57\u8282\u7EA7\u7B49\u4EF7) */
+@keyframes t-arc-flash-1 {
+
+    0%,
+    90%,
+    100% {
+        opacity: 0;
+    }
+
+    92%,
+    95% {
+        opacity: 1;
+    }
+}
+
+/* floating.css  \xB7  \u4EC5\u771F\u7403\u4F7F\u7528 */
+@keyframes t-arc-flash-2 {
+
+    0%,
+    80%,
+    100% {
+        opacity: 0;
+    }
+
+    82%,
+    88% {
+        opacity: 1;
+    }
+}
+
+/* floating.css  \xB7  \u5DF2\u5408\u5E76 settings.css \u7684 p-notify-glow\u3002\u26A0 \u4E8C\u8005\u539F\u672C\u4E0D\u7B49\u4EF7:
+   \u9884\u89C8\u7403\u65E7\u7248 glow 20px \u4E14\u4E0D\u52A8 border-color;\u73B0\u7EDF\u4E00\u4E3A\u771F\u7403\u7248(25px + border-color)\u3002
+   \u9884\u89C8\u7403\u672A\u8BBE\u7F6E --t-border-color,\u6545 var() \u56DE\u843D #55efc4,\u914D\u8272\u4E0D\u53D8\u3002
+   \u8FD9\u662F B4 \u7684\u9884\u671F\u7ED3\u679C:\u9884\u89C8\u7403\u672C\u5C31\u5E94\u4E0E\u771F\u7403\u4E00\u81F4 */
+@keyframes t-notify-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px var(--t-border-color, #55efc4);
+        border-color: var(--t-border-color, #55efc4);
+    }
+
+    50% {
+        box-shadow: 0 0 25px var(--t-border-color, #55efc4);
+        border-color: var(--t-border-color, #55efc4);
+    }
+}
+
+/* floating.css */
+@keyframes t-cancel-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px rgba(255, 71, 87, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(255, 71, 87, 0.8);
+    }
+}
+
+/* floating.css */
+@keyframes t-cancel-pulse-icon {
+
+    0%,
+    100% {
+        text-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+    }
+
+    50% {
+        text-shadow: 0 0 15px rgba(255, 107, 107, 0.8);
+    }
+}
+
+/* ===== \u529F\u80FD\u89C6\u56FE\u4E13\u7528 ===== */
+
+/* main-window.css */
+@keyframes t-queue-progress-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* lore-review.css */
+@keyframes t-spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* workshop.css */
+@keyframes t-ws-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* favs.css  \xB7  \u65E7\u540D pulse-green(\u65E0\u524D\u7F00)\u2014 \u4FEE B3 */
+@keyframes t-pulse-green {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 8px 2px rgba(74, 222, 128, 0.2);
+    }
+}
+
+/* story-outline.css  \xB7  \u65E7\u540D tRawPulse(\u9A7C\u5CF0\u65E0\u8FDE\u5B57\u7B26)\u2014 \u4FEE B3 */
+@keyframes t-raw-pulse {
+    0%,
+    80%,
+    100% {
+        transform: translateY(0) scale(0.85);
+        box-shadow: 0 0 0 0 rgba(129, 236, 236, 0.0);
+    }
+
+    40% {
+        transform: translateY(-2px) scale(1);
+        box-shadow: 0 0 0 4px rgba(129, 236, 236, 0.12);
+    }
+}
+
+/* ===== \u6CE8\u5165 ST DOM \u7684\u5143\u7D20(\u4F9D ADR-02 \u89C6\u89C9\u72EC\u7ACB,\u4F46 keyframes \u4F9D R6 \u96C6\u4E2D\u58F0\u660E) ===== */
+
+/* rewriteEntryButton.js  \xB7  \u539F\u5B9A\u4E49\u5728 rewriteEntryButton.js \u7684 REWRITE_PANEL_CSS \u5185\u8054\u6837\u5F0F\u4E2D */
+@keyframes t-rewrite-badge-flow { 0% { background-position: 0% 50%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); } 50% { background-position: 100% 50%; box-shadow: 0 6px 22px rgba(100, 168, 214, 0.3); } 100% { background-position: 200% 50%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); } }
+
+/* rewriteEntryButton.js */
+@keyframes t-rewrite-badge-icon { 0%,100% { transform: scale(1) rotate(0deg); opacity: 0.9; } 50% { transform: scale(1.12) rotate(8deg); opacity: 1; } }
+
+/* rewriteEntryButton.js */
+@keyframes t-rewrite-mark-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+
+/* === 04-features/floating.css === */
+/* css/04-features/floating.css - \u60AC\u6D6E\u7403 */
 
 #titania-float-btn {
     position: fixed;
@@ -2077,41 +2348,6 @@ textarea.t-input {
 /* \u6CE8\uFF1A\u901A\u7528\u52A0\u8F7D\u72B6\u6001\u4FDD\u6301\u53EF\u4EA4\u4E92\u4EE5\u652F\u6301\u4FA7\u8FB9\u83DC\u5355\uFF08\u65E0\u9700\u989D\u5916\u6837\u5F0F\uFF09 */
 
 /* ===== \u52A8\u753B 1: \u8109\u51B2\u6CE2\u7EB9 (Pulse Ripple) ===== */
-@keyframes t-ripple-1 {
-    0% {
-        transform: scale(1);
-        opacity: 0.8;
-    }
-
-    100% {
-        transform: scale(2.5);
-        opacity: 0;
-    }
-}
-
-@keyframes t-ripple-2 {
-    0% {
-        transform: scale(1);
-        opacity: 0.6;
-    }
-
-    100% {
-        transform: scale(2.2);
-        opacity: 0;
-    }
-}
-
-@keyframes t-ripple-3 {
-    0% {
-        transform: scale(1);
-        opacity: 0.4;
-    }
-
-    100% {
-        transform: scale(1.9);
-        opacity: 0;
-    }
-}
 
 #titania-float-btn.t-loading.t-anim-ripple {
     border-color: var(--t-border-color-rgba, var(--t-border-color, #90cdf4));
@@ -2145,43 +2381,6 @@ textarea.t-input {
 }
 
 /* ===== \u52A8\u753B 2: \u7535\u78C1\u95EA\u70C1 (Arc Flash) ===== */
-@keyframes t-arc-flash-1 {
-
-    0%,
-    90%,
-    100% {
-        opacity: 0;
-    }
-
-    92%,
-    95% {
-        opacity: 1;
-    }
-}
-
-@keyframes t-arc-flash-2 {
-
-    0%,
-    80%,
-    100% {
-        opacity: 0;
-    }
-
-    82%,
-    88% {
-        opacity: 1;
-    }
-}
-
-@keyframes t-arc-rotate {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
 
 #titania-float-btn.t-loading.t-anim-arc {
     border-color: var(--t-border-color-rgba, var(--t-border-color, #a29bfe));
@@ -2214,19 +2413,6 @@ textarea.t-input {
 }
 
 /* ===== \u901A\u77E5\u547C\u5438\u706F ===== */
-@keyframes t-notify-glow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 5px var(--t-border-color, #55efc4);
-        border-color: var(--t-border-color, #55efc4);
-    }
-
-    50% {
-        box-shadow: 0 0 25px var(--t-border-color, #55efc4);
-        border-color: var(--t-border-color, #55efc4);
-    }
-}
 
 #titania-float-btn.t-notify {
     animation: t-notify-glow 2s infinite ease-in-out;
@@ -2458,18 +2644,6 @@ textarea.t-input {
         inset 0 0 12px rgba(255, 107, 107, 0.15);
 }
 
-@keyframes t-cancel-pulse-icon {
-
-    0%,
-    100% {
-        text-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
-    }
-
-    50% {
-        text-shadow: 0 0 15px rgba(255, 107, 107, 0.8);
-    }
-}
-
 /* ===== \u65E7\u7248\u83DC\u5355\u9879\u6837\u5F0F\uFF08\u4FDD\u7559\u517C\u5BB9\u6027\uFF09===== */
 .t-menu-item {
     display: flex;
@@ -2528,18 +2702,6 @@ textarea.t-input {
     border-radius: 4px;
     white-space: nowrap;
     backdrop-filter: blur(4px);
-}
-
-@keyframes t-cancel-pulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 5px rgba(255, 71, 87, 0.5);
-    }
-
-    50% {
-        box-shadow: 0 0 15px rgba(255, 71, 87, 0.8);
-    }
 }
 
 /* ===== \u70B9\u51FB\u5916\u90E8\u533A\u57DF\u5173\u95ED\u83DC\u5355\u7684\u906E\u7F69 ===== */
@@ -2810,8 +2972,8 @@ textarea.t-input {
 }
 
 
-/* === main-window.css === */
-/* css/main-window.css - \u4E3B\u6F14\u7ECE\u7A97\u53E3 */
+/* === 04-features/main-window.css === */
+/* css/04-features/main-window.css - \u4E3B\u6F14\u7ECE\u7A97\u53E3 */
 
 #t-main-view {
     width: 950px;
@@ -3841,7 +4003,7 @@ textarea.t-input {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    animation: fadeIn 0.15s;
+    animation: t-fade-in 0.15s;
     /* \u56FA\u5B9A\u6700\u5927\u9AD8\u5EA6\uFF1A\u7EA6\u5BB9\u7EB35\u4E2A\u5206\u7C7B\u9879\uFF0C\u8D85\u51FA\u65F6\u663E\u793A\u6EDA\u52A8\u6761 */
     max-height: 200px;
     overflow-y: auto;
@@ -4210,7 +4372,7 @@ textarea.t-input {
     z-index: 3000;
     display: flex;
     flex-direction: column;
-    animation: fadeIn 0.2s;
+    animation: t-fade-in 0.2s;
 }
 
 .t-wi-header {
@@ -4788,7 +4950,7 @@ textarea.t-input {
     align-items: center;
     justify-content: center;
     z-index: 3100;
-    animation: fadeIn 0.15s;
+    animation: t-fade-in 0.15s;
 }
 
 .t-wi-preview-box {
@@ -4881,12 +5043,21 @@ textarea.t-input {
         padding: 10px 12px;
     }
 
-    /* \u6807\u7B7E\u680F\u5728\u7A84\u5C4F\u9690\u85CF\uFF1A\u8FD9\u91CC\u7A7A\u95F4\u7D27\uFF0C\u800C\u5B83\u627F\u8F7D\u7684\u4FE1\u606F\u6CA1\u6709\u4E22 \u2014\u2014
-       \u4E0B\u65B9\u539F\u751F\u4E0B\u62C9\u6846\u7684\u6BCF\u4E00\u9879\u524D\u9762\u6709 \u25CF/\u25CB \u6807\u793A\u6FC0\u6D3B\u72B6\u6001\uFF08\u89C1 renderBookSelectHtml\uFF09\u3002
-       \u4EE3\u4EF7\u662F\u79FB\u52A8\u7AEF\u9501\u5B9A\u5728\u300C\u5168\u90E8\u4E16\u754C\u4E66\u300D\u89C6\u56FE\uFF08currentViewMode \u7684\u521D\u503C\uFF09\u3002
-       \u539F\u5148\u9488\u5BF9\u5B83\u7684 isolation / touch-action \u4E24\u6761\u89C4\u5219\u968F\u4E4B\u5931\u53BB\u610F\u4E49\uFF0C\u5DF2\u4E00\u5E76\u79FB\u9664 */
+    /* \u6807\u7B7E\u680F\u5728\u7A84\u5C4F\u4FDD\u7559\uFF1A\u25CF/\u25CB \u53EA\u6807\u793A\u5355\u672C\u4E66\u6FC0\u6D3B\u4E0E\u5426\uFF0C\u66FF\u4EE3\u4E0D\u4E86\u300C\u53EA\u770B\u5DF2\u6FC0\u6D3B\u300D\u8FD9\u4E2A\u7B5B\u9009\uFF0C
+       \u79FB\u52A8\u7AEF\u5426\u5219\u4F1A\u9501\u6B7B\u5728\u300C\u5168\u90E8\u4E16\u754C\u4E66\u300D\uFF08currentViewMode \u7684\u521D\u503C\uFF09\u3002
+       \u6539\u4E3A\u538B\u8584\u800C\u975E\u9690\u85CF \u2014\u2014 \u9AD8\u5EA6\u4ECE 42px \u964D\u5230 36px\uFF0C\u4ECD\u5728\u6307\u5C16\u53EF\u70B9\u8303\u56F4\u5185\u3002
+       isolation \u9694\u5F00 z-index \u5C42\u53E0\uFF0C\u907F\u514D\u88AB body \u7684\u6EDA\u52A8\u5C42\u76D6\u4F4F\uFF1B
+       touch-action \u5173\u6389\u53CC\u51FB\u7F29\u653E\uFF0C\u6D88\u9664\u79FB\u52A8\u6D4F\u89C8\u5668\u7EA6 300ms \u7684\u70B9\u51FB\u5EF6\u8FDF */
     .t-wi-tabs {
-        display: none;
+        isolation: isolate;
+    }
+
+    .t-wi-tab-btn {
+        min-height: 36px;
+        padding: 8px 8px 7px;
+        font-size: 0.82em;
+        gap: 5px;
+        touch-action: manipulation;
     }
 
     .t-wi-action-bar {
@@ -4984,21 +5155,9 @@ textarea.t-input {
     gap: 15px;
     border-top: 1px solid rgba(144, 205, 244, 0.3);
     z-index: 100;
-    animation: t-slideUp 0.3s ease;
+    animation: t-slide-up-fade 0.3s ease;
     margin-top: auto;
     flex-shrink: 0;
-}
-
-@keyframes t-slideUp {
-    from {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
 }
 
 .t-hint-icon {
@@ -5132,19 +5291,7 @@ textarea.t-input {
     pointer-events: none;
 
     /* \u52A8\u753B */
-    animation: t-stats-fadeIn 0.3s ease;
-}
-
-@keyframes t-stats-fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-3px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    animation: t-stats-fade-in 0.3s ease;
 }
 
 .t-stats-item {
@@ -5803,7 +5950,7 @@ textarea.t-input {
     z-index: 3000;
     display: flex;
     flex-direction: column;
-    animation: fadeIn 0.2s;
+    animation: t-fade-in 0.2s;
 }
 
 .t-queue-header {
@@ -6092,18 +6239,6 @@ textarea.t-input {
     animation: t-queue-progress-pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes t-queue-progress-pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.6;
-    }
-}
-
 /* \u961F\u5217\u8FD0\u884C\u65F6\u7684\u72B6\u6001\u6307\u793A */
 .t-queue-running-indicator {
     position: absolute;
@@ -6119,7 +6254,7 @@ textarea.t-input {
     font-size: 0.8em;
     color: #90cdf4;
     z-index: 150;
-    animation: fadeIn 0.3s;
+    animation: t-fade-in 0.3s;
 }
 
 .t-queue-running-indicator i {
@@ -6144,7 +6279,7 @@ textarea.t-input {
     z-index: 3000;
     display: flex;
     flex-direction: column;
-    animation: fadeIn 0.2s;
+    animation: t-fade-in 0.2s;
 }
 
 .t-ce-header {
@@ -6267,18 +6402,7 @@ textarea.t-input {
     border: 1px solid rgba(144, 205, 244, 0.3);
     border-radius: 25px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    animation: t-indicator-slideUp 0.3s ease;
-}
-
-@keyframes t-indicator-slideUp {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
+    animation: t-indicator-slide-up 0.3s ease;
 }
 
 .t-new-content-indicator i {
@@ -6331,18 +6455,7 @@ textarea.t-input {
     border: 1px solid rgba(85, 239, 196, 0.3);
     border-radius: 25px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    animation: t-gcn-slideUp 0.3s ease;
-}
-
-@keyframes t-gcn-slideUp {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
+    animation: t-indicator-slide-up 0.3s ease;
 }
 
 .t-gcn-content {
@@ -6584,8 +6697,8 @@ textarea.t-input {
 }
 
 
-/* === main-window-legacy.css === */
-/* css/main-window-legacy.css - \u7ECF\u5178\u7248\uFF085.1.2\uFF09\u4E3B\u754C\u9762\u5E03\u5C40
+/* === 04-features/main-window-legacy.css === */
+/* css/04-features/main-window-legacy.css - \u7ECF\u5178\u7248\uFF085.1.2\uFF09\u4E3B\u754C\u9762\u5E03\u5C40
  *
  * \u4EC5\u5305\u542B\u7ECF\u5178\u5E03\u5C40\u72EC\u6709\u7684\u9009\u62E9\u5668\uFF0C\u4EE5\u53CA\u4E0E 5.1.5 \u51B2\u7A81\u9700\u8981\u8986\u76D6\u7684\u89C4\u5219\u3002
  * \u5168\u90E8\u9650\u5B9A\u5728 #t-main-view.t-layout-legacy \u4F5C\u7528\u57DF\u5185\uFF0C
@@ -6645,7 +6758,7 @@ textarea.t-input {
     z-index: 101;
     min-width: 140px;
     padding: 5px;
-    animation: fadeIn 0.15s ease;
+    animation: t-fade-in 0.15s ease;
 }
 
 #t-main-view.t-layout-legacy .t-tools-item {
@@ -6950,8 +7063,8 @@ textarea.t-input {
 }
 
 
-/* === settings.css === */
-/* css/settings.css - \u8BBE\u7F6E\u7A97\u53E3 */
+/* === 04-features/settings.css === */
+/* css/04-features/settings.css - \u8BBE\u7F6E\u7A97\u53E3 */
 
 .titania-update-card {
     border-color: rgba(98, 217, 188, 0.28);
@@ -7357,29 +7470,6 @@ textarea.t-input {
 /* ===== \u9884\u89C8\u52A8\u753B\u6548\u679C ===== */
 
 /* \u52A8\u753B 1: \u8109\u51B2\u6CE2\u7EB9 */
-@keyframes p-ripple-1 {
-    0% {
-        transform: scale(1);
-        opacity: 0.8;
-    }
-
-    100% {
-        transform: scale(2.5);
-        opacity: 0;
-    }
-}
-
-@keyframes p-ripple-2 {
-    0% {
-        transform: scale(1);
-        opacity: 0.6;
-    }
-
-    100% {
-        transform: scale(2.2);
-        opacity: 0;
-    }
-}
 
 .t-preview-ball.p-anim-ripple {
     border-color: #90cdf4;
@@ -7393,37 +7483,14 @@ textarea.t-input {
     height: 100%;
     border-radius: 50%;
     border: 2px solid #90cdf4;
-    animation: p-ripple-1 1.5s ease-out infinite;
+    animation: t-ripple-1 1.5s ease-out infinite;
 }
 
 .t-preview-ball.p-anim-ripple::after {
-    animation: p-ripple-2 1.5s ease-out 0.5s infinite;
+    animation: t-ripple-2 1.5s ease-out 0.5s infinite;
 }
 
 /* \u52A8\u753B 2: \u7535\u78C1\u95EA\u70C1 */
-@keyframes p-arc-rotate {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes p-arc-flash {
-
-    0%,
-    90%,
-    100% {
-        opacity: 0;
-    }
-
-    92%,
-    95% {
-        opacity: 1;
-    }
-}
 
 .t-preview-ball.p-anim-arc {
     border-color: #a29bfe;
@@ -7438,7 +7505,7 @@ textarea.t-input {
     background:
         radial-gradient(circle at 20% 0%, #a29bfe 0%, transparent 30%),
         radial-gradient(circle at 80% 100%, #a29bfe 0%, transparent 30%);
-    animation: p-arc-rotate 1s linear infinite, p-arc-flash 0.3s ease infinite;
+    animation: t-arc-rotate 1s linear infinite, t-arc-flash-1 0.3s ease infinite;
     opacity: 0.8;
 }
 
@@ -7451,26 +7518,15 @@ textarea.t-input {
     background:
         radial-gradient(circle at 50% 0%, #74b9ff 0%, transparent 25%),
         radial-gradient(circle at 50% 100%, #74b9ff 0%, transparent 25%);
-    animation: p-arc-rotate 1.5s linear infinite reverse;
+    animation: t-arc-rotate 1.5s linear infinite reverse;
     opacity: 0.6;
 }
 
 /* \u901A\u77E5\u547C\u5438\u706F\u9884\u89C8 */
-@keyframes p-notify-glow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 5px #55efc4;
-    }
-
-    50% {
-        box-shadow: 0 0 20px #55efc4;
-    }
-}
 
 .t-preview-ball.p-notify {
     border-color: #55efc4 !important;
-    animation: p-notify-glow 1.5s infinite ease-in-out;
+    animation: t-notify-glow 1.5s infinite ease-in-out;
 }
 
 /* \u52A8\u753B\u9009\u62E9\u7F51\u683C */
@@ -8132,8 +8188,8 @@ textarea.t-input {
 }
 
 
-/* === manager.css === */
-/* css/manager.css - \u5267\u672C\u7BA1\u7406 */
+/* === 04-features/manager.css === */
+/* css/04-features/manager.css - \u5267\u672C\u7BA1\u7406 */
 
 /* \u7BA1\u7406\u5668\u4E3B\u7A97 */
 #t-mgr-view {
@@ -8388,17 +8444,7 @@ textarea.t-input {
 
 .t-batch-active .t-mgr-footer-bar {
     display: flex;
-    animation: slideUp 0.2s;
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(100%);
-    }
-
-    to {
-        transform: translateY(0);
-    }
+    animation: t-slide-up 0.2s;
 }
 
 /* \u5267\u672C\u9009\u62E9\u5668\u9762\u677F */
@@ -8416,7 +8462,7 @@ textarea.t-input {
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-    animation: fadeIn 0.2s;
+    animation: t-fade-in 0.2s;
 }
 
 .t-sel-header {
@@ -8844,8 +8890,8 @@ textarea.t-input {
 }
 
 
-/* === workshop.css === */
-/* css/workshop.css - \u56DE\u58F0\u5DE5\u574A\u6D4F\u89C8\u7A97 */
+/* === 04-features/workshop.css === */
+/* css/04-features/workshop.css - \u56DE\u58F0\u5DE5\u574A\u6D4F\u89C8\u7A97 */
 
 #t-ws-view {
     height: 85vh;
@@ -9038,7 +9084,7 @@ textarea.t-input {
     border-radius: 10px;
     overflow: hidden;
     transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-    animation: fadeIn 0.25s;
+    animation: t-fade-in 0.25s;
 }
 
 /* \u5DE6\u4FA7\u5F3A\u8C03\u6761\uFF1A\u989C\u8272\u6309\u4F5C\u8005\u53D6\uFF0C\u540C\u4E00\u4F5C\u8005\u7684\u6295\u7A3F\u770B\u8D77\u6765\u662F\u4E00\u7EC4 */
@@ -9297,16 +9343,6 @@ textarea.t-input {
     animation: t-ws-shimmer 1.4s infinite;
 }
 
-@keyframes t-ws-shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-
-    100% {
-        background-position: -200% 0;
-    }
-}
-
 /* \u2500\u2500 \u9884\u89C8\u5F39\u5C42 \u2500\u2500 */
 .t-ws-preview-overlay {
     position: fixed;
@@ -9538,8 +9574,8 @@ textarea.t-input {
 }
 
 
-/* === favs.css === */
-/* css/favs.css - \u6536\u85CF\u4E0E\u56FE\u9274 */
+/* === 04-features/favs.css === */
+/* css/04-features/favs.css - \u6536\u85CF\u4E0E\u56FE\u9274 */
 
 .t-fav-container {
     height: 90vh;
@@ -10057,7 +10093,7 @@ textarea.t-input {
     border-radius: 8px;
     background: #1f1b15;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
-    animation: fadeIn 0.14s ease;
+    animation: t-fade-in 0.14s ease;
 }
 
 .t-read-more-menu[hidden] {
@@ -10188,7 +10224,7 @@ textarea.t-input {
     display: flex;
     justify-content: center;
     align-items: center;
-    animation: fadeIn 0.2s;
+    animation: t-fade-in 0.2s;
 }
 
 .t-img-mgr-box {
@@ -10303,24 +10339,12 @@ textarea.t-input {
     color: #4ade80;
     border-color: rgba(74, 222, 128, 0.4);
     background: rgba(74, 222, 128, 0.1);
-    animation: pulse-green 2s infinite;
+    animation: t-pulse-green 2s infinite;
 }
 
 #t-read-open-window.has-interactive:hover {
     background: rgba(74, 222, 128, 0.2);
     border-color: rgba(74, 222, 128, 0.6);
-}
-
-@keyframes pulse-green {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.3);
-    }
-
-    50% {
-        box-shadow: 0 0 8px 2px rgba(74, 222, 128, 0.2);
-    }
 }
 
 /* ========== \u6279\u91CF\u7F16\u8F91\u6A21\u5F0F\u6837\u5F0F ========== */
@@ -10589,7 +10613,7 @@ textarea.t-input {
         border-radius: 10px;
         background: #1c1811;
         box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
-        animation: fadeIn 0.14s ease;
+        animation: t-fade-in 0.14s ease;
     }
 
     .t-fav-tools-drawer[hidden] {
@@ -10753,8 +10777,8 @@ textarea.t-input {
 }
 
 
-/* === debug.css === */
-/* css/debug.css - \u6781\u7B80\u4EE3\u7801\u7F16\u8F91\u5668\u98CE\u683C (\u542B\u79FB\u52A8\u7AEF\u9002\u914D) */
+/* === 04-features/debug.css === */
+/* css/04-features/debug.css - \u6781\u7B80\u4EE3\u7801\u7F16\u8F91\u5668\u98CE\u683C (\u542B\u79FB\u52A8\u7AEF\u9002\u914D) */
 
 /* === \u57FA\u7840\u6837\u5F0F (Desktop First) === */
 
@@ -11570,8 +11594,8 @@ textarea.t-input {
 }
 
 
-/* === lore-review.css === */
-/* css/lore-review.css */
+/* === 04-features/lore-review.css === */
+/* css/04-features/lore-review.css */
 
 /* \u7A97\u53E3\u5BB9\u5668 */
 .t-lore-review-window {
@@ -11823,12 +11847,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-lore-entry-item.t-is-update:hover .t-entry-keys i {
     animation-play-state: running;
-}
-
-@keyframes t-spin {
-    100% {
-        transform: rotate(360deg);
-    }
 }
 
 .t-entry-header {
@@ -13924,8 +13942,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 
-/* === memory-recall.css === */
-/* css/memory-recall.css */
+/* === 04-features/memory-recall.css === */
+/* css/04-features/memory-recall.css */
 /* \u8BB0\u5FC6\u53EC\u56DE\u529F\u80FD\u6837\u5F0F */
 
 /* ===== \u8BB0\u5FC6\u53EC\u56DE\u8986\u76D6\u5C42 ===== */
@@ -14467,8 +14485,8 @@ body.titania-debug-mode #chat titania-memory::before {
     }
 }
 
-/* === story-outline.css === */
-/* css/story-outline.css */
+/* === 04-features/story-outline.css === */
+/* css/04-features/story-outline.css */
 
 .t-story-outline-window {
     max-width: 1120px;
@@ -15595,7 +15613,7 @@ body.titania-debug-mode #chat titania-memory::before {
     border-radius: 50%;
     background: #81ecec;
     box-shadow: 0 0 0 0 rgba(129, 236, 236, 0.45);
-    animation: tRawPulse 1s ease-in-out infinite;
+    animation: t-raw-pulse 1s ease-in-out infinite;
 }
 
 .t-raw-wait-anim span:nth-child(2) {
@@ -15608,20 +15626,6 @@ body.titania-debug-mode #chat titania-memory::before {
 
 .t-raw-wait-anim.is-active {
     opacity: 1;
-}
-
-@keyframes tRawPulse {
-    0%,
-    80%,
-    100% {
-        transform: translateY(0) scale(0.85);
-        box-shadow: 0 0 0 0 rgba(129, 236, 236, 0.0);
-    }
-
-    40% {
-        transform: translateY(-2px) scale(1);
-        box-shadow: 0 0 0 4px rgba(129, 236, 236, 0.12);
-    }
 }
 
 .t-outline-mobile-list {
@@ -16312,6 +16316,24 @@ body.titania-debug-mode #chat titania-memory::before {
 `;
   document.head.appendChild(style);
 }
+function cssLinkId(file) {
+  return `titania-css-${file.replace(/\.css$/, "").replace(/\//g, "-")}`;
+}
+function ensureFeatureCss(fileName) {
+  const file = CSS_FILES.find((p) => p.endsWith(`/${fileName}`));
+  if (!file) {
+    console.warn(`[Titania] ensureFeatureCss: ${fileName} \u4E0D\u5728 css/manifest.js \u6E05\u5355\u4E2D`);
+    return;
+  }
+  const id3 = cssLinkId(file);
+  if (document.getElementById(id3)) return;
+  const link = document.createElement("link");
+  link.id = id3;
+  link.rel = "stylesheet";
+  link.type = "text/css";
+  link.href = `${extensionFolderPath}/css/${file}`;
+  document.head.appendChild(link);
+}
 function ensureOverlay() {
   if ($("#t-overlay").length === 0) {
     const overlayHtml = '<div id="t-overlay" class="t-overlay"></div>';
@@ -16319,8 +16341,11 @@ function ensureOverlay() {
   }
   return $("#t-overlay");
 }
+var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
+    init_defaults();
+    CSS_FILES = ["01-base/base.css", "01-base/keyframes.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css"];
   }
 });
 
@@ -20810,15 +20835,7 @@ function stopResponseTimer() {
   setRawWaitingAnimation(false);
 }
 function ensureCssLoaded() {
-  const id3 = "titania-css-story-outline";
-  if (!document.getElementById(id3)) {
-    const link = document.createElement("link");
-    link.id = id3;
-    link.rel = "stylesheet";
-    link.type = "text/css";
-    link.href = `${extensionFolderPath}/css/story-outline.css`;
-    document.head.appendChild(link);
-  }
+  ensureFeatureCss("story-outline.css");
 }
 function escapeHtml4(text) {
   const div = document.createElement("div");
@@ -23824,7 +23841,7 @@ var init_storyOutlineWindow = __esm({
   "src/ui/storyOutlineWindow.js"() {
     init_context();
     init_apiProfileRegistry();
-    init_defaults();
+    init_dom();
     init_storage();
     init_chatTagWhitelist();
     init_apiConnectionEditor();
@@ -26270,8 +26287,8 @@ var init_rewriteEntryButton = __esm({
 #t-rewrite-live-overlay #t-rewrite-live-prompt-json { min-height: 92px; }
 #t-rewrite-live-overlay .t-rewrite-live-textarea:focus { outline: none; border-color: rgba(144, 205, 244, 0.55); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
 #t-rewrite-live-overlay #t-rewrite-raw-response { max-height: min(34vh, 320px); min-height: 170px; }
-#chat .mes .t-rewrite-auto-badge { position: absolute; right: 10px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #dff0ff; background: rgba(15, 24, 35, 0.88); border: 1px solid rgba(144, 205, 244, 0.45); border-radius: 999px; padding: 3px 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); background-image: linear-gradient(120deg, rgba(144, 205, 244, 0.15) 0%, rgba(191, 161, 95, 0.22) 35%, rgba(122, 203, 159, 0.2) 70%, rgba(144, 205, 244, 0.15) 100%); background-size: 220% 220%; animation: titania-rewrite-badge-flow 1.4s linear infinite; }
-#chat .mes .t-rewrite-auto-badge i { color: #90cdf4; animation: titania-rewrite-badge-icon 0.95s ease-in-out infinite; }
+#chat .mes .t-rewrite-auto-badge { position: absolute; right: 10px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #dff0ff; background: rgba(15, 24, 35, 0.88); border: 1px solid rgba(144, 205, 244, 0.45); border-radius: 999px; padding: 3px 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); background-image: linear-gradient(120deg, rgba(144, 205, 244, 0.15) 0%, rgba(191, 161, 95, 0.22) 35%, rgba(122, 203, 159, 0.2) 70%, rgba(144, 205, 244, 0.15) 100%); background-size: 220% 220%; animation: t-rewrite-badge-flow 1.4s linear infinite; }
+#chat .mes .t-rewrite-auto-badge i { color: #90cdf4; animation: t-rewrite-badge-icon 0.95s ease-in-out infinite; }
 #chat .mes .t-rewrite-inline-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0 8px; font-size: 12px; }
 #chat .mes .t-rewrite-inline-toolbar button { border: 1px solid rgba(144, 205, 244, 0.38); border-radius: 999px; background: rgba(15, 24, 35, 0.82); color: #dff0ff; padding: 3px 9px; line-height: 1.35; cursor: pointer; }
 #chat .mes .t-rewrite-inline-toolbar button:hover { border-color: rgba(144, 205, 244, 0.65); background: rgba(34, 54, 76, 0.86); }
@@ -26291,7 +26308,7 @@ var init_rewriteEntryButton = __esm({
     background: linear-gradient(180deg, rgba(122, 203, 159, 0.14) 0%, rgba(122, 203, 159, 0.08) 100%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     transition: background-color 0.2s ease, border-color 0.2s ease;
-    animation: titania-rewrite-mark-fade-in 0.2s ease;
+    animation: t-rewrite-mark-fade-in 0.2s ease;
 }
 #chat .mes .t-rewrite-mark::before {
     content: "\u21BB \u5DF2\u6539\u5199";
@@ -26313,9 +26330,11 @@ var init_rewriteEntryButton = __esm({
     border-color: rgba(122, 203, 159, 0.45);
     background: linear-gradient(180deg, rgba(122, 203, 159, 0.19) 0%, rgba(122, 203, 159, 0.12) 100%);
 }
-@keyframes titania-rewrite-badge-flow { 0% { background-position: 0% 50%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); } 50% { background-position: 100% 50%; box-shadow: 0 6px 22px rgba(100, 168, 214, 0.3); } 100% { background-position: 200% 50%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); } }
-@keyframes titania-rewrite-badge-icon { 0%,100% { transform: scale(1) rotate(0deg); opacity: 0.9; } 50% { transform: scale(1.12) rotate(8deg); opacity: 1; } }
-@keyframes titania-rewrite-mark-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* t-rewrite-badge-flow / t-rewrite-badge-icon / t-rewrite-mark-fade-in \u4E09\u4E2A @keyframes
+   \u5DF2\u79FB\u81F3 css/01-base/keyframes.css \u96C6\u4E2D\u58F0\u660E\uFF08\u89C4\u5219 R6\uFF09\u3002keyframes \u662F document \u7EA7\u7684\uFF0C
+   \u672C\u5904\u6CE8\u5165\u7684\u6837\u5F0F\u4ECD\u53EF\u6B63\u5E38\u5F15\u7528\u3002\u539F\u540D titania-rewrite-* \u5DF2\u7EDF\u4E00\u4E3A t-* \u524D\u7F00\u3002 */
+
 #t-rewrite-settings-overlay .t-rewrite-settings-body { flex: 1; overflow: auto; display: block; padding: 16px; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
 #t-rewrite-settings-overlay .t-rewrite-settings-grid { display: grid; gap: 14px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
 #t-rewrite-settings-overlay .t-rewrite-settings-card { min-height: 0; border-radius: 0; border: 1px solid rgba(255, 255, 255, 0.14); background: linear-gradient(170deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.86); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); }
@@ -28775,15 +28794,7 @@ async function getHideChatMessageRange() {
   return _hideChatMessageRange;
 }
 function ensureCssLoaded2() {
-  const id3 = "titania-css-lore-review";
-  if (!document.getElementById(id3)) {
-    const link = document.createElement("link");
-    link.id = id3;
-    link.rel = "stylesheet";
-    link.type = "text/css";
-    link.href = `${extensionFolderPath}/css/lore-review.css`;
-    document.head.appendChild(link);
-  }
+  ensureFeatureCss("lore-review.css");
 }
 function getFeatureConfig() {
   const data = getExtData();
@@ -31055,7 +31066,7 @@ var init_loreReviewWindow = __esm({
     init_loreExtractor();
     init_worldInfoManager();
     init_logger();
-    init_defaults();
+    init_dom();
     init_connection();
     init_apiProfileRegistry();
     init_apiConnectionEditor();

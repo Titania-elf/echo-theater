@@ -1,4 +1,4 @@
-/* css/manager.css - 剧本管理 */
+/* css/04-features/manager.css - 剧本管理 */
 
 /* 管理器主窗 */
 #t-mgr-view {
@@ -253,17 +253,7 @@
 
 .t-batch-active .t-mgr-footer-bar {
     display: flex;
-    animation: slideUp 0.2s;
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(100%);
-    }
-
-    to {
-        transform: translateY(0);
-    }
+    animation: t-slide-up 0.2s;
 }
 
 /* 剧本选择器面板 */
@@ -281,7 +271,7 @@
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-    animation: fadeIn 0.2s;
+    animation: t-fade-in 0.2s;
 }
 
 .t-sel-header {

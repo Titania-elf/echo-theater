@@ -1,4 +1,4 @@
-/* css/workshop.css - 回声工坊浏览窗 */
+/* css/04-features/workshop.css - 回声工坊浏览窗 */
 
 #t-ws-view {
     height: 85vh;
@@ -191,7 +191,7 @@
     border-radius: 10px;
     overflow: hidden;
     transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-    animation: fadeIn 0.25s;
+    animation: t-fade-in 0.25s;
 }
 
 /* 左侧强调条：颜色按作者取，同一作者的投稿看起来是一组 */
@@ -448,16 +448,6 @@
     background: linear-gradient(90deg, #232323 25%, #2d2d2d 50%, #232323 75%);
     background-size: 200% 100%;
     animation: t-ws-shimmer 1.4s infinite;
-}
-
-@keyframes t-ws-shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-
-    100% {
-        background-position: -200% 0;
-    }
 }
 
 /* ── 预览弹层 ── */

@@ -2,7 +2,7 @@
 
 import { getContextData } from "../core/context.js";
 import { normalizeApiBaseUrl, normalizeRewriteCustomProfiles } from "../core/apiProfileRegistry.js";
-import { extensionFolderPath } from "../config/defaults.js";
+import { ensureFeatureCss } from "../utils/dom.js";
 import { getExtData, saveExtData } from "../utils/storage.js";
 import { parseTagWhitelistInput, extractTextByWhitelist } from "../utils/chatTagWhitelist.js";
 import {
@@ -330,16 +330,9 @@ function stopResponseTimer() {
     setRawWaitingAnimation(false);
 }
 
+// 路径由 css/manifest.js 统一解析，不再硬编码扁平路径（B1）
 function ensureCssLoaded() {
-    const id = "titania-css-story-outline";
-    if (!document.getElementById(id)) {
-        const link = document.createElement("link");
-        link.id = id;
-        link.rel = "stylesheet";
-        link.type = "text/css";
-        link.href = `${extensionFolderPath}/css/story-outline.css`;
-        document.head.appendChild(link);
-    }
+    ensureFeatureCss("story-outline.css");
 }
 
 function escapeHtml(text) {

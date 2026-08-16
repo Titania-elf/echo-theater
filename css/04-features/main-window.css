@@ -1,4 +1,4 @@
-/* css/main-window.css - 主演绎窗口 */
+/* css/04-features/main-window.css - 主演绎窗口 */
 
 #t-main-view {
     width: 950px;
@@ -1028,7 +1028,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    animation: fadeIn 0.15s;
+    animation: t-fade-in 0.15s;
     /* 固定最大高度：约容纳5个分类项，超出时显示滚动条 */
     max-height: 200px;
     overflow-y: auto;
@@ -1397,7 +1397,7 @@
     z-index: 3000;
     display: flex;
     flex-direction: column;
-    animation: fadeIn 0.2s;
+    animation: t-fade-in 0.2s;
 }
 
 .t-wi-header {
@@ -1975,7 +1975,7 @@
     align-items: center;
     justify-content: center;
     z-index: 3100;
-    animation: fadeIn 0.15s;
+    animation: t-fade-in 0.15s;
 }
 
 .t-wi-preview-box {
@@ -2068,12 +2068,21 @@
         padding: 10px 12px;
     }
 
-    /* 标签栏在窄屏隐藏：这里空间紧，而它承载的信息没有丢 ——
-       下方原生下拉框的每一项前面有 ●/○ 标示激活状态（见 renderBookSelectHtml）。
-       代价是移动端锁定在「全部世界书」视图（currentViewMode 的初值）。
-       原先针对它的 isolation / touch-action 两条规则随之失去意义，已一并移除 */
+    /* 标签栏在窄屏保留：●/○ 只标示单本书激活与否，替代不了「只看已激活」这个筛选，
+       移动端否则会锁死在「全部世界书」（currentViewMode 的初值）。
+       改为压薄而非隐藏 —— 高度从 42px 降到 36px，仍在指尖可点范围内。
+       isolation 隔开 z-index 层叠，避免被 body 的滚动层盖住；
+       touch-action 关掉双击缩放，消除移动浏览器约 300ms 的点击延迟 */
     .t-wi-tabs {
-        display: none;
+        isolation: isolate;
+    }
+
+    .t-wi-tab-btn {
+        min-height: 36px;
+        padding: 8px 8px 7px;
+        font-size: 0.82em;
+        gap: 5px;
+        touch-action: manipulation;
     }
 
     .t-wi-action-bar {
@@ -2171,21 +2180,9 @@
     gap: 15px;
     border-top: 1px solid rgba(144, 205, 244, 0.3);
     z-index: 100;
-    animation: t-slideUp 0.3s ease;
+    animation: t-slide-up-fade 0.3s ease;
     margin-top: auto;
     flex-shrink: 0;
-}
-
-@keyframes t-slideUp {
-    from {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
 }
 
 .t-hint-icon {
@@ -2319,19 +2316,7 @@
     pointer-events: none;
 
     /* 动画 */
-    animation: t-stats-fadeIn 0.3s ease;
-}
-
-@keyframes t-stats-fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-3px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    animation: t-stats-fade-in 0.3s ease;
 }
 
 .t-stats-item {
@@ -2990,7 +2975,7 @@
     z-index: 3000;
     display: flex;
     flex-direction: column;
-    animation: fadeIn 0.2s;
+    animation: t-fade-in 0.2s;
 }
 
 .t-queue-header {
@@ -3279,18 +3264,6 @@
     animation: t-queue-progress-pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes t-queue-progress-pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.6;
-    }
-}
-
 /* 队列运行时的状态指示 */
 .t-queue-running-indicator {
     position: absolute;
@@ -3306,7 +3279,7 @@
     font-size: 0.8em;
     color: #90cdf4;
     z-index: 150;
-    animation: fadeIn 0.3s;
+    animation: t-fade-in 0.3s;
 }
 
 .t-queue-running-indicator i {
@@ -3331,7 +3304,7 @@
     z-index: 3000;
     display: flex;
     flex-direction: column;
-    animation: fadeIn 0.2s;
+    animation: t-fade-in 0.2s;
 }
 
 .t-ce-header {
@@ -3454,18 +3427,7 @@
     border: 1px solid rgba(144, 205, 244, 0.3);
     border-radius: 25px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    animation: t-indicator-slideUp 0.3s ease;
-}
-
-@keyframes t-indicator-slideUp {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
+    animation: t-indicator-slide-up 0.3s ease;
 }
 
 .t-new-content-indicator i {
@@ -3518,18 +3480,7 @@
     border: 1px solid rgba(85, 239, 196, 0.3);
     border-radius: 25px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    animation: t-gcn-slideUp 0.3s ease;
-}
-
-@keyframes t-gcn-slideUp {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
+    animation: t-indicator-slide-up 0.3s ease;
 }
 
 .t-gcn-content {

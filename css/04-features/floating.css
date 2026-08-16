@@ -1,4 +1,4 @@
-/* css/floating.css - 悬浮球 */
+/* css/04-features/floating.css - 悬浮球 */
 
 #titania-float-btn {
     position: fixed;
@@ -42,41 +42,6 @@
 /* 注：通用加载状态保持可交互以支持侧边菜单（无需额外样式） */
 
 /* ===== 动画 1: 脉冲波纹 (Pulse Ripple) ===== */
-@keyframes t-ripple-1 {
-    0% {
-        transform: scale(1);
-        opacity: 0.8;
-    }
-
-    100% {
-        transform: scale(2.5);
-        opacity: 0;
-    }
-}
-
-@keyframes t-ripple-2 {
-    0% {
-        transform: scale(1);
-        opacity: 0.6;
-    }
-
-    100% {
-        transform: scale(2.2);
-        opacity: 0;
-    }
-}
-
-@keyframes t-ripple-3 {
-    0% {
-        transform: scale(1);
-        opacity: 0.4;
-    }
-
-    100% {
-        transform: scale(1.9);
-        opacity: 0;
-    }
-}
 
 #titania-float-btn.t-loading.t-anim-ripple {
     border-color: var(--t-border-color-rgba, var(--t-border-color, #90cdf4));
@@ -110,43 +75,6 @@
 }
 
 /* ===== 动画 2: 电磁闪烁 (Arc Flash) ===== */
-@keyframes t-arc-flash-1 {
-
-    0%,
-    90%,
-    100% {
-        opacity: 0;
-    }
-
-    92%,
-    95% {
-        opacity: 1;
-    }
-}
-
-@keyframes t-arc-flash-2 {
-
-    0%,
-    80%,
-    100% {
-        opacity: 0;
-    }
-
-    82%,
-    88% {
-        opacity: 1;
-    }
-}
-
-@keyframes t-arc-rotate {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
 
 #titania-float-btn.t-loading.t-anim-arc {
     border-color: var(--t-border-color-rgba, var(--t-border-color, #a29bfe));
@@ -179,19 +107,6 @@
 }
 
 /* ===== 通知呼吸灯 ===== */
-@keyframes t-notify-glow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 5px var(--t-border-color, #55efc4);
-        border-color: var(--t-border-color, #55efc4);
-    }
-
-    50% {
-        box-shadow: 0 0 25px var(--t-border-color, #55efc4);
-        border-color: var(--t-border-color, #55efc4);
-    }
-}
 
 #titania-float-btn.t-notify {
     animation: t-notify-glow 2s infinite ease-in-out;
@@ -423,18 +338,6 @@
         inset 0 0 12px rgba(255, 107, 107, 0.15);
 }
 
-@keyframes t-cancel-pulse-icon {
-
-    0%,
-    100% {
-        text-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
-    }
-
-    50% {
-        text-shadow: 0 0 15px rgba(255, 107, 107, 0.8);
-    }
-}
-
 /* ===== 旧版菜单项样式（保留兼容性）===== */
 .t-menu-item {
     display: flex;
@@ -493,18 +396,6 @@
     border-radius: 4px;
     white-space: nowrap;
     backdrop-filter: blur(4px);
-}
-
-@keyframes t-cancel-pulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 5px rgba(255, 71, 87, 0.5);
-    }
-
-    50% {
-        box-shadow: 0 0 15px rgba(255, 71, 87, 0.8);
-    }
 }
 
 /* ===== 点击外部区域关闭菜单的遮罩 ===== */
