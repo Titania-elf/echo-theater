@@ -62,6 +62,12 @@
     cursor: not-allowed;
 }
 
+.t-btn.active,
+.t-btn.is-active {
+    background: var(--t-color-accent-soft-strong);
+    border-color: var(--t-color-accent-border-hover);
+}
+
 /* ---- 6 个变体，覆盖现有 7 类语义 ---- */
 
 .t-btn--primary {

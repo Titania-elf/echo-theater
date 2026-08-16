@@ -3029,6 +3029,12 @@ textarea.t-input {
     cursor: not-allowed;
 }
 
+.t-btn.active,
+.t-btn.is-active {
+    background: var(--t-color-accent-soft-strong);
+    border-color: var(--t-color-accent-border-hover);
+}
+
 /* ---- 6 \u4E2A\u53D8\u4F53\uFF0C\u8986\u76D6\u73B0\u6709 7 \u7C7B\u8BED\u4E49 ---- */
 
 .t-btn--primary {
@@ -15482,11 +15488,6 @@ body.titania-debug-mode #chat titania-memory::before {
     flex-wrap: wrap;
 }
 
-.t-outline-nav .t-btn.active {
-    border-color: rgba(129, 236, 236, 0.65);
-    background: rgba(129, 236, 236, 0.2);
-}
-
 .t-outline-nav-right {
     margin-left: auto;
     display: flex;
@@ -15542,11 +15543,6 @@ body.titania-debug-mode #chat titania-memory::before {
 .t-editor-tabs {
     display: flex;
     gap: 8px;
-}
-
-.t-editor-tabs .t-btn.active {
-    border-color: rgba(129, 236, 236, 0.65);
-    background: rgba(129, 236, 236, 0.2);
 }
 
 .t-outline-subview {
@@ -16942,11 +16938,6 @@ body.titania-debug-mode #chat titania-memory::before {
     .t-mobile-editor-tabs .t-btn {
         flex: 1;
         min-height: 34px;
-    }
-
-    .t-mobile-editor-tabs .t-btn.active {
-        border-color: rgba(129, 236, 236, 0.65);
-        background: rgba(129, 236, 236, 0.2);
     }
 
     .t-outline-mobile-drawer-body {

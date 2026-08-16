@@ -137,11 +137,6 @@
     flex-wrap: wrap;
 }
 
-.t-outline-nav .t-btn.active {
-    border-color: rgba(129, 236, 236, 0.65);
-    background: rgba(129, 236, 236, 0.2);
-}
-
 .t-outline-nav-right {
     margin-left: auto;
     display: flex;
@@ -197,11 +192,6 @@
 .t-editor-tabs {
     display: flex;
     gap: 8px;
-}
-
-.t-editor-tabs .t-btn.active {
-    border-color: rgba(129, 236, 236, 0.65);
-    background: rgba(129, 236, 236, 0.2);
 }
 
 .t-outline-subview {
@@ -1597,11 +1587,6 @@
     .t-mobile-editor-tabs .t-btn {
         flex: 1;
         min-height: 34px;
-    }
-
-    .t-mobile-editor-tabs .t-btn.active {
-        border-color: rgba(129, 236, 236, 0.65);
-        background: rgba(129, 236, 236, 0.2);
     }
 
     .t-outline-mobile-drawer-body {
