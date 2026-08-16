@@ -241,9 +241,9 @@ async function showProfileConfigDialog(onSave) {
                                 stUrlDisplayId: "t-lore-settings-st-url",
                             },
                             classes: {
-                                input: "t-input",
-                                select: "t-input",
-                                profileSelect: "t-input",
+                                input: "t-input t-input--glass",
+                                select: "t-input t-input--glass",
+                                profileSelect: "t-input t-input--glass",
                                 button: "t-btn t-btn-xs",
                             },
                             labels: {
@@ -266,19 +266,19 @@ async function showProfileConfigDialog(onSave) {
                     <div class="t-set-page" data-page="embedding">
                         <div class="t-form-group">
                             <label class="t-form-label">Embedding API 地址</label>
-                            <input id="t-lore-embed-url" class="t-input" type="text" placeholder="例如: https://api.openai.com/v1">
+                            <input id="t-lore-embed-url" class="t-input t-input--glass" type="text" placeholder="例如: https://api.openai.com/v1">
 
                             <label class="t-form-label" style="margin-top:8px;">Embedding API Key</label>
-                            <input id="t-lore-embed-key" class="t-input" type="password" placeholder="sk-...">
+                            <input id="t-lore-embed-key" class="t-input t-input--glass" type="password" placeholder="sk-...">
 
                             <label class="t-form-label" style="margin-top:8px;">Embedding 模型</label>
                             <div class="t-lore-settings-model-row">
-                                <select id="t-lore-embed-model" class="t-input" style="flex:1;"></select>
+                                <select id="t-lore-embed-model" class="t-input t-input--glass" style="flex:1;"></select>
                                 <button id="t-lore-embed-fetch-models" class="t-btn t-btn-xs" type="button" title="获取模型列表"><i class="fa-solid fa-rotate"></i></button>
                             </div>
 
                             <label class="t-form-label" style="margin-top:8px;">向量维度（可选）</label>
-                            <input id="t-lore-embed-dimensions" class="t-input" type="number" min="256" max="3072" step="256" placeholder="留空使用模型默认值">
+                            <input id="t-lore-embed-dimensions" class="t-input t-input--glass" type="number" min="256" max="3072" step="256" placeholder="留空使用模型默认值">
 
                             <div style="margin-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                 <button id="t-lore-embed-test" class="t-btn t-btn-xs" type="button"><i class="fa-solid fa-vial"></i> 测试连接</button>
@@ -300,9 +300,9 @@ async function showProfileConfigDialog(onSave) {
                                 <label><input id="t-lore-clean-bracket-all" type="checkbox"> 移除所有 [...] 内容</label>
                             </div>
                             <label class="t-form-label" style="margin-top:8px;">自定义移除标签（逗号分隔）</label>
-                            <input id="t-lore-clean-custom-tags" class="t-input" type="text" placeholder="例如: internal, debug, author_note">
+                            <input id="t-lore-clean-custom-tags" class="t-input t-input--glass" type="text" placeholder="例如: internal, debug, author_note">
                             <label class="t-form-label" style="margin-top:8px;">最小文本长度</label>
-                            <input id="t-lore-clean-min-length" class="t-input" type="number" min="10" max="200">
+                            <input id="t-lore-clean-min-length" class="t-input t-input--glass" type="number" min="10" max="200">
                         </div>
 
                         <div class="t-form-group">
@@ -310,7 +310,7 @@ async function showProfileConfigDialog(onSave) {
                             <label><input id="t-lore-auto-vectorize" type="checkbox"> 启用自动向量化</label>
                             <div id="t-lore-auto-vectorize-panel" style="margin-top:8px;">
                                 <label class="t-form-label">累积消息阈值</label>
-                                <input id="t-lore-auto-vectorize-threshold" class="t-input" type="number" min="3" max="50">
+                                <input id="t-lore-auto-vectorize-threshold" class="t-input t-input--glass" type="number" min="3" max="50">
                                 <label style="margin-top:8px; display:block;"><input id="t-lore-auto-vectorize-notify" type="checkbox"> 显示向量化完成通知</label>
                             </div>
                         </div>
@@ -318,7 +318,7 @@ async function showProfileConfigDialog(onSave) {
                         <div class="t-form-group">
                             <label class="t-form-label">聊天总结设置</label>
                             <label class="t-form-label">默认总结模板</label>
-                            <select id="t-lore-summary-template" class="t-input">
+                            <select id="t-lore-summary-template" class="t-input t-input--glass">
                                 <option value="structured">结构化 (分章节)</option>
                                 <option value="narrative">叙事性 (故事风格)</option>
                             </select>

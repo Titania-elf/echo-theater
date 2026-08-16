@@ -2090,6 +2090,14 @@ function loadCssFiles() {
     --t-color-field-focus: rgb(var(--t-c-neutral-3-rgb));
     /* #222 \u8F93\u5165\u6846\u805A\u7126\u5E95 */
     --t-color-field-disabled: rgb(17 17 17);
+    --t-color-field-dialog-border: rgb(var(--t-c-neutral-13-rgb) / .15);
+    --t-color-field-dialog-ring: rgb(var(--t-c-blue-rgb) / .1);
+    --t-color-field-dialog-notify: rgb(0 206 201);
+    --t-color-field-dialog-notify-ring: rgb(0 206 201 / .1);
+    --t-color-field-glass-text: rgb(220 233 244);
+    --t-color-field-glass-border: rgb(var(--t-c-neutral-13-rgb) / .14);
+    --t-color-field-glass-focus-border: rgb(var(--t-c-blue-rgb) / .55);
+    --t-color-field-glass-focus-ring: rgb(var(--t-c-blue-rgb) / .16);
     /* #111 \u8F93\u5165\u6846\u7981\u7528\u5E95\uFF1B\u73B0\u6709\u4E2D\u6027\u8272\u9636\u6CA1\u6709\u8FD9\u4E00\u6863\uFF0C\u5148\u4FDD\u7559\u7CBE\u786E\u503C */
     --t-color-surface-hover: rgb(var(--t-c-neutral-13-rgb) / .08);
     /* \u66FF\u6362 31 \u6B21 rgba(255,255,255,.08) */
@@ -2548,39 +2556,6 @@ function loadCssFiles() {
 .t-close:hover {
     color: #fff;
     transform: rotate(90deg);
-}
-
-/* \u8F93\u5165\u6846\uFF1A\u4F5C\u7528\u57DF\u7279\u5F02\u6027\u8986\u76D6 ST \u7684\u5143\u7D20\u7EA7 / \u5355\u7C7B\u7EA7\u8868\u5355\u89C4\u5219\uFF0C\u65E0\u9700 !important\u3002 */
-.t-root.t-box .t-input,
-.t-root .t-box .t-input {
-    background-color: var(--t-color-surface-sunken);
-    color: var(--t-color-text);
-    border: 1px solid var(--t-color-border-strong);
-    border-radius: 4px;
-    padding: 8px 10px;
-    width: 100%;
-    box-sizing: border-box;
-    outline: none;
-    transition: border 0.2s;
-}
-
-.t-root.t-box .t-input:focus,
-.t-root .t-box .t-input:focus {
-    border-color: var(--t-color-brand);
-    background-color: var(--t-color-field-focus);
-}
-
-.t-root.t-box .t-input:disabled,
-.t-root .t-box .t-input:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    background-color: var(--t-color-field-disabled);
-}
-
-textarea.t-input {
-    font-family: var(--t-font-mono);
-    line-height: 1.5;
-    resize: vertical;
 }
 
 /* \u6EDA\u52A8\u6761\uFF1A\u5DF2\u8FC1\u81F3 01-base/scrollbar.css \u5E76\u52A0\u4F5C\u7528\u57DF\uFF08\u89C4\u5219 R7\uFF09\u3002
@@ -3280,6 +3255,81 @@ textarea.t-input {
    \u65E0\u5BF9\u5E94\u8BED\u4E49 token \u7684\u503C\u5E26\u8FDB\u7EC4\u4EF6\u5C42\uFF0C\u89C1 R3a\uFF09\u3002
    \u7559\u5F85 Phase 4 \u7EDF\u4E00 dialog / window \u5934\u90E8\u7ED3\u6784\u3001\u6BCF\u5904\u90FD\u6709\u7236\u7EA7 gap \u4E4B\u540E\uFF0C
    \u518D\u6536\u655B\u4E3A .t-icon-btn--close \u53D8\u4F53\u3002 */
+
+
+/* === 02-components/field.css === */
+/* Form fields. Variants own their visual treatment; feature CSS owns layout only. */
+.t-root.t-box .t-input,
+.t-root .t-box .t-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    color: var(--t-color-text);
+    background-color: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-inline);
+    outline: none;
+    transition: border 0.2s;
+}
+
+.t-root.t-box .t-input:focus,
+.t-root .t-box .t-input:focus {
+    background-color: var(--t-color-field-focus);
+    border-color: var(--t-color-brand);
+}
+
+.t-root.t-box .t-input:disabled,
+.t-root .t-box .t-input:disabled {
+    cursor: not-allowed;
+    background-color: var(--t-color-field-disabled);
+    opacity: 0.6;
+}
+
+.t-root .t-input--dialog {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    color: var(--t-color-text-strong);
+    background: var(--t-color-surface-recess-strong);
+    border: 1px solid var(--t-color-field-dialog-border);
+    border-radius: var(--t-radius-control);
+    outline: none;
+    font-size: 0.95em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.t-root .t-input--dialog:focus {
+    border-color: var(--t-color-accent);
+    box-shadow: 0 0 0 3px var(--t-color-field-dialog-ring);
+}
+
+.t-root .t-input--dialog-notify:focus {
+    border-color: var(--t-color-field-dialog-notify);
+    box-shadow: 0 0 0 3px var(--t-color-field-dialog-notify-ring);
+}
+
+.t-root .t-input--glass {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    color: var(--t-color-field-glass-text);
+    background: var(--t-glass-field);
+    border: 1px solid var(--t-color-field-glass-border);
+    border-radius: var(--t-radius-container);
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.t-root .t-input--glass:focus {
+    border-color: var(--t-color-field-glass-focus-border);
+    box-shadow: 0 0 0 2px var(--t-color-field-glass-focus-ring);
+}
+
+textarea.t-input {
+    resize: vertical;
+    font-family: var(--t-font-mono);
+    line-height: 1.5;
+}
 
 
 /* === 02-components/_legacy.css === */
@@ -4000,23 +4050,6 @@ textarea.t-input {
     color: #cbd5e0;
     font-weight: 500;
     font-size: 0.9em;
-}
-
-.t-model-dialog-body .t-input {
-    width: 100%;
-    padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 6px;
-    color: #fff;
-    font-size: 0.95em;
-    transition: all 0.2s;
-}
-
-.t-model-dialog-body .t-input:focus {
-    border-color: #00cec9;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 206, 201, 0.1);
 }
 
 .t-model-override-status {
@@ -13474,23 +13507,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     font-size: 0.9em;
 }
 
-.t-dialog-body .t-input {
-    width: 100%;
-    padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 6px;
-    color: #fff;
-    font-size: 0.95em;
-    transition: all 0.2s;
-}
-
-.t-dialog-body .t-input:focus {
-    border-color: #90cdf4;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(144, 205, 244, 0.1);
-}
-
 .t-dialog-body small {
     display: block;
     margin-top: 5px;
@@ -13606,23 +13622,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     color: #a9bfd1;
     margin-bottom: 6px;
     font-size: 0.82em;
-}
-
-#t-lore-settings-dialog .t-input {
-    width: 100%;
-    box-sizing: border-box;
-    background: rgba(7, 11, 18, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: #dce9f4;
-    border-radius: 8px;
-    padding: 9px 11px;
-    outline: none;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-#t-lore-settings-dialog .t-input:focus {
-    border-color: rgba(144, 205, 244, 0.55);
-    box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16);
 }
 
 #t-lore-settings-dialog .t-lore-settings-model-row {
@@ -18226,7 +18225,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/button.css", "02-components/icon-button.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
   }
 });
 
@@ -30246,9 +30245,9 @@ async function showProfileConfigDialog(onSave) {
       stUrlDisplayId: "t-lore-settings-st-url"
     },
     classes: {
-      input: "t-input",
-      select: "t-input",
-      profileSelect: "t-input",
+      input: "t-input t-input--glass",
+      select: "t-input t-input--glass",
+      profileSelect: "t-input t-input--glass",
       button: "t-btn t-btn-xs"
     },
     labels: {
@@ -30271,19 +30270,19 @@ async function showProfileConfigDialog(onSave) {
                     <div class="t-set-page" data-page="embedding">
                         <div class="t-form-group">
                             <label class="t-form-label">Embedding API \u5730\u5740</label>
-                            <input id="t-lore-embed-url" class="t-input" type="text" placeholder="\u4F8B\u5982: https://api.openai.com/v1">
+                            <input id="t-lore-embed-url" class="t-input t-input--glass" type="text" placeholder="\u4F8B\u5982: https://api.openai.com/v1">
 
                             <label class="t-form-label" style="margin-top:8px;">Embedding API Key</label>
-                            <input id="t-lore-embed-key" class="t-input" type="password" placeholder="sk-...">
+                            <input id="t-lore-embed-key" class="t-input t-input--glass" type="password" placeholder="sk-...">
 
                             <label class="t-form-label" style="margin-top:8px;">Embedding \u6A21\u578B</label>
                             <div class="t-lore-settings-model-row">
-                                <select id="t-lore-embed-model" class="t-input" style="flex:1;"></select>
+                                <select id="t-lore-embed-model" class="t-input t-input--glass" style="flex:1;"></select>
                                 <button id="t-lore-embed-fetch-models" class="t-btn t-btn-xs" type="button" title="\u83B7\u53D6\u6A21\u578B\u5217\u8868"><i class="fa-solid fa-rotate"></i></button>
                             </div>
 
                             <label class="t-form-label" style="margin-top:8px;">\u5411\u91CF\u7EF4\u5EA6\uFF08\u53EF\u9009\uFF09</label>
-                            <input id="t-lore-embed-dimensions" class="t-input" type="number" min="256" max="3072" step="256" placeholder="\u7559\u7A7A\u4F7F\u7528\u6A21\u578B\u9ED8\u8BA4\u503C">
+                            <input id="t-lore-embed-dimensions" class="t-input t-input--glass" type="number" min="256" max="3072" step="256" placeholder="\u7559\u7A7A\u4F7F\u7528\u6A21\u578B\u9ED8\u8BA4\u503C">
 
                             <div style="margin-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                 <button id="t-lore-embed-test" class="t-btn t-btn-xs" type="button"><i class="fa-solid fa-vial"></i> \u6D4B\u8BD5\u8FDE\u63A5</button>
@@ -30305,9 +30304,9 @@ async function showProfileConfigDialog(onSave) {
                                 <label><input id="t-lore-clean-bracket-all" type="checkbox"> \u79FB\u9664\u6240\u6709 [...] \u5185\u5BB9</label>
                             </div>
                             <label class="t-form-label" style="margin-top:8px;">\u81EA\u5B9A\u4E49\u79FB\u9664\u6807\u7B7E\uFF08\u9017\u53F7\u5206\u9694\uFF09</label>
-                            <input id="t-lore-clean-custom-tags" class="t-input" type="text" placeholder="\u4F8B\u5982: internal, debug, author_note">
+                            <input id="t-lore-clean-custom-tags" class="t-input t-input--glass" type="text" placeholder="\u4F8B\u5982: internal, debug, author_note">
                             <label class="t-form-label" style="margin-top:8px;">\u6700\u5C0F\u6587\u672C\u957F\u5EA6</label>
-                            <input id="t-lore-clean-min-length" class="t-input" type="number" min="10" max="200">
+                            <input id="t-lore-clean-min-length" class="t-input t-input--glass" type="number" min="10" max="200">
                         </div>
 
                         <div class="t-form-group">
@@ -30315,7 +30314,7 @@ async function showProfileConfigDialog(onSave) {
                             <label><input id="t-lore-auto-vectorize" type="checkbox"> \u542F\u7528\u81EA\u52A8\u5411\u91CF\u5316</label>
                             <div id="t-lore-auto-vectorize-panel" style="margin-top:8px;">
                                 <label class="t-form-label">\u7D2F\u79EF\u6D88\u606F\u9608\u503C</label>
-                                <input id="t-lore-auto-vectorize-threshold" class="t-input" type="number" min="3" max="50">
+                                <input id="t-lore-auto-vectorize-threshold" class="t-input t-input--glass" type="number" min="3" max="50">
                                 <label style="margin-top:8px; display:block;"><input id="t-lore-auto-vectorize-notify" type="checkbox"> \u663E\u793A\u5411\u91CF\u5316\u5B8C\u6210\u901A\u77E5</label>
                             </div>
                         </div>
@@ -30323,7 +30322,7 @@ async function showProfileConfigDialog(onSave) {
                         <div class="t-form-group">
                             <label class="t-form-label">\u804A\u5929\u603B\u7ED3\u8BBE\u7F6E</label>
                             <label class="t-form-label">\u9ED8\u8BA4\u603B\u7ED3\u6A21\u677F</label>
-                            <select id="t-lore-summary-template" class="t-input">
+                            <select id="t-lore-summary-template" class="t-input t-input--glass">
                                 <option value="structured">\u7ED3\u6784\u5316 (\u5206\u7AE0\u8282)</option>
                                 <option value="narrative">\u53D9\u4E8B\u6027 (\u6545\u4E8B\u98CE\u683C)</option>
                             </select>

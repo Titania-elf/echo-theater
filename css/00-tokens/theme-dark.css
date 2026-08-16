@@ -23,6 +23,14 @@
     --t-color-field-focus: rgb(var(--t-c-neutral-3-rgb));
     /* #222 输入框聚焦底 */
     --t-color-field-disabled: rgb(17 17 17);
+    --t-color-field-dialog-border: rgb(var(--t-c-neutral-13-rgb) / .15);
+    --t-color-field-dialog-ring: rgb(var(--t-c-blue-rgb) / .1);
+    --t-color-field-dialog-notify: rgb(0 206 201);
+    --t-color-field-dialog-notify-ring: rgb(0 206 201 / .1);
+    --t-color-field-glass-text: rgb(220 233 244);
+    --t-color-field-glass-border: rgb(var(--t-c-neutral-13-rgb) / .14);
+    --t-color-field-glass-focus-border: rgb(var(--t-c-blue-rgb) / .55);
+    --t-color-field-glass-focus-ring: rgb(var(--t-c-blue-rgb) / .16);
     /* #111 输入框禁用底；现有中性色阶没有这一档，先保留精确值 */
     --t-color-surface-hover: rgb(var(--t-c-neutral-13-rgb) / .08);
     /* 替换 31 次 rgba(255,255,255,.08) */

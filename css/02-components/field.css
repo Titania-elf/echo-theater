@@ -1,0 +1,72 @@
+/* Form fields. Variants own their visual treatment; feature CSS owns layout only. */
+.t-root.t-box .t-input,
+.t-root .t-box .t-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    color: var(--t-color-text);
+    background-color: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-inline);
+    outline: none;
+    transition: border 0.2s;
+}
+
+.t-root.t-box .t-input:focus,
+.t-root .t-box .t-input:focus {
+    background-color: var(--t-color-field-focus);
+    border-color: var(--t-color-brand);
+}
+
+.t-root.t-box .t-input:disabled,
+.t-root .t-box .t-input:disabled {
+    cursor: not-allowed;
+    background-color: var(--t-color-field-disabled);
+    opacity: 0.6;
+}
+
+.t-root .t-input--dialog {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    color: var(--t-color-text-strong);
+    background: var(--t-color-surface-recess-strong);
+    border: 1px solid var(--t-color-field-dialog-border);
+    border-radius: var(--t-radius-control);
+    outline: none;
+    font-size: 0.95em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.t-root .t-input--dialog:focus {
+    border-color: var(--t-color-accent);
+    box-shadow: 0 0 0 3px var(--t-color-field-dialog-ring);
+}
+
+.t-root .t-input--dialog-notify:focus {
+    border-color: var(--t-color-field-dialog-notify);
+    box-shadow: 0 0 0 3px var(--t-color-field-dialog-notify-ring);
+}
+
+.t-root .t-input--glass {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    color: var(--t-color-field-glass-text);
+    background: var(--t-glass-field);
+    border: 1px solid var(--t-color-field-glass-border);
+    border-radius: var(--t-radius-container);
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.t-root .t-input--glass:focus {
+    border-color: var(--t-color-field-glass-focus-border);
+    box-shadow: 0 0 0 2px var(--t-color-field-glass-focus-ring);
+}
+
+textarea.t-input {
+    resize: vertical;
+    font-family: var(--t-font-mono);
+    line-height: 1.5;
+}

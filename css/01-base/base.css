@@ -140,39 +140,6 @@
     transform: rotate(90deg);
 }
 
-/* 输入框：作用域特异性覆盖 ST 的元素级 / 单类级表单规则，无需 !important。 */
-.t-root.t-box .t-input,
-.t-root .t-box .t-input {
-    background-color: var(--t-color-surface-sunken);
-    color: var(--t-color-text);
-    border: 1px solid var(--t-color-border-strong);
-    border-radius: 4px;
-    padding: 8px 10px;
-    width: 100%;
-    box-sizing: border-box;
-    outline: none;
-    transition: border 0.2s;
-}
-
-.t-root.t-box .t-input:focus,
-.t-root .t-box .t-input:focus {
-    border-color: var(--t-color-brand);
-    background-color: var(--t-color-field-focus);
-}
-
-.t-root.t-box .t-input:disabled,
-.t-root .t-box .t-input:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    background-color: var(--t-color-field-disabled);
-}
-
-textarea.t-input {
-    font-family: var(--t-font-mono);
-    line-height: 1.5;
-    resize: vertical;
-}
-
 /* 滚动条：已迁至 01-base/scrollbar.css 并加作用域（规则 R7）。
    原先是无作用域的 `::-webkit-scrollbar`，重写了整个 SillyTavern 的滚动条（修 B2）。 */
 
