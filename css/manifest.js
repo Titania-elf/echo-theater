@@ -60,6 +60,9 @@ export const CSS_LAYERS = [
             // 以下为从 JS 运行时注入迁出的样式。它们原先靠「注入得晚」无条件取胜，
             // 现在服从层叠顺序；因全部带 ID 作用域，位置对结果无影响。
             'outline-entry-menu.css',
+            // ⚠ 必须晚于 lore-review.css：清洗预览原先是运行时注入的，
+            //   层叠上晚于 lore-review.css，此顺序保持其原有优先级。
+            'cleaning-preview.css',
         ]
     },
 
