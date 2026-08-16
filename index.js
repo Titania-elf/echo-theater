@@ -14851,7 +14851,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 /* ===== \u5FEB\u6377\u5DE5\u5177\u680F\u4E2D\u7684\u8BB0\u5FC6\u53EC\u56DE\u6309\u94AE\u6837\u5F0F ===== */
 /* \u6309\u94AE\u4F7F\u7528 fa-brain \u56FE\u6807\uFF0C\u7D2B\u8272\u6E10\u53D8\u80CC\u666F */
 .t-menu-icon-btn.recall {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .t-menu-icon-btn.recall:hover {
@@ -14860,17 +14860,17 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 /* ===== \u8BB0\u5FC6\u53EC\u56DE\u9762\u677F ===== */
 .titania-recall-panel {
-    position: relative !important;
+    position: relative;
     width: 100%;
     max-width: 480px;
     max-height: 80vh;
-    background: var(--SmartThemeBlurTintColor, #1a1a2e) !important;
+    background: var(--SmartThemeBlurTintColor, #1a1a2e);
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid rgba(102, 126, 234, 0.5) !important;
+    border: 1px solid rgba(102, 126, 234, 0.5);
 }
 
 /* \u9762\u677F\u5934\u90E8 */
@@ -15223,6 +15223,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 .mes_text titania-memory,
 .mes_text .titania-memory,
 #chat titania-memory {
+    /* Override host message-content rules so injected memory metadata stays hidden. */
     display: none !important;
 }
 
@@ -15230,6 +15231,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 body.titania-debug-mode .mes_text titania-memory,
 body.titania-debug-mode .mes_text .titania-memory,
 body.titania-debug-mode #chat titania-memory {
+    /* Override the plugin's hidden metadata rule only while debug mode is active. */
     display: block !important;
     background: rgba(102, 126, 234, 0.1);
     border-left: 3px solid #667eea;
@@ -15256,12 +15258,12 @@ body.titania-debug-mode #chat titania-memory::before {
 @media (max-width: 768px) {
     .titania-recall-panel {
         /* \u5168\u5C4F\u8986\u76D6 */
-        width: 100% !important;
-        max-width: 100% !important;
-        max-height: 100% !important;
-        height: 100% !important;
-        border-radius: 0 !important;
-        border: none !important;
+        width: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        height: 100%;
+        border-radius: 0;
+        border: none;
     }
 
     .t-recall-header {
