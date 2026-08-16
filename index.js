@@ -16580,8 +16580,8 @@ body.titania-debug-mode #chat titania-memory::before {
 
 @media (max-width: 768px) {
     .t-dialog-overlay {
-        align-items: center !important;
-        justify-content: center !important;
+        align-items: center;
+        justify-content: center;
         top: 0;
         right: 0;
         bottom: 0;
@@ -16717,7 +16717,7 @@ body.titania-debug-mode #chat titania-memory::before {
 
     .t-scene-hub-footer .t-outline-mode {
         width: 100%;
-        margin-right: 0 !important;
+        margin-right: 0 !important; /* override scene hub template inline margin-right:auto on mobile */
     }
 
     .t-scene-hub-footer #t-scene-hub-send {

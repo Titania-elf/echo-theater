@@ -59,9 +59,9 @@
     },
     "A9": {
       "title": "!important 紧邻注释说明其对抗的宿主规则",
-      "violations": 16,
+      "violations": 13,
       "metrics": {
-        "important总数": 30
+        "important总数": 28
       }
     },
     "A1": {
