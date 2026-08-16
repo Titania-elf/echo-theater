@@ -140,11 +140,12 @@
     transform: rotate(90deg);
 }
 
-/* 输入框 (强制覆盖亮色主题) */
-.t-box .t-input {
-    background-color: #1a1a1a !important;
-    color: #eeeeee !important;
-    border: 1px solid #444 !important;
+/* 输入框：作用域特异性覆盖 ST 的元素级 / 单类级表单规则，无需 !important。 */
+.t-root.t-box .t-input,
+.t-root .t-box .t-input {
+    background-color: var(--t-color-surface-sunken);
+    color: var(--t-color-text);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 4px;
     padding: 8px 10px;
     width: 100%;
@@ -153,15 +154,17 @@
     transition: border 0.2s;
 }
 
-.t-box .t-input:focus {
-    border-color: var(--t-theme) !important;
-    background-color: #222 !important;
+.t-root.t-box .t-input:focus,
+.t-root .t-box .t-input:focus {
+    border-color: var(--t-color-brand);
+    background-color: var(--t-color-field-focus);
 }
 
-.t-box .t-input:disabled {
+.t-root.t-box .t-input:disabled,
+.t-root .t-box .t-input:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    background-color: #111 !important;
+    background-color: var(--t-color-field-disabled);
 }
 
 textarea.t-input {

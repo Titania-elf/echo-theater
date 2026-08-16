@@ -2087,6 +2087,10 @@ function loadCssFiles() {
     /* #2a2a2a \u5361\u7247 / \u63A7\u4EF6\u5E95 */
     --t-color-surface-sunken: rgb(var(--t-c-neutral-1-rgb));
     /* #1a1a1a \u8F93\u5165\u6846\u5E95 / \u4EE3\u7801\u5757 */
+    --t-color-field-focus: rgb(var(--t-c-neutral-3-rgb));
+    /* #222 \u8F93\u5165\u6846\u805A\u7126\u5E95 */
+    --t-color-field-disabled: rgb(17 17 17);
+    /* #111 \u8F93\u5165\u6846\u7981\u7528\u5E95\uFF1B\u73B0\u6709\u4E2D\u6027\u8272\u9636\u6CA1\u6709\u8FD9\u4E00\u6863\uFF0C\u5148\u4FDD\u7559\u7CBE\u786E\u503C */
     --t-color-surface-hover: rgb(var(--t-c-neutral-13-rgb) / .08);
     /* \u66FF\u6362 31 \u6B21 rgba(255,255,255,.08) */
     --t-color-surface-active: rgb(var(--t-c-neutral-13-rgb) / .15);
@@ -2544,11 +2548,12 @@ function loadCssFiles() {
     transform: rotate(90deg);
 }
 
-/* \u8F93\u5165\u6846 (\u5F3A\u5236\u8986\u76D6\u4EAE\u8272\u4E3B\u9898) */
-.t-box .t-input {
-    background-color: #1a1a1a !important;
-    color: #eeeeee !important;
-    border: 1px solid #444 !important;
+/* \u8F93\u5165\u6846\uFF1A\u4F5C\u7528\u57DF\u7279\u5F02\u6027\u8986\u76D6 ST \u7684\u5143\u7D20\u7EA7 / \u5355\u7C7B\u7EA7\u8868\u5355\u89C4\u5219\uFF0C\u65E0\u9700 !important\u3002 */
+.t-root.t-box .t-input,
+.t-root .t-box .t-input {
+    background-color: var(--t-color-surface-sunken);
+    color: var(--t-color-text);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 4px;
     padding: 8px 10px;
     width: 100%;
@@ -2557,15 +2562,17 @@ function loadCssFiles() {
     transition: border 0.2s;
 }
 
-.t-box .t-input:focus {
-    border-color: var(--t-theme) !important;
-    background-color: #222 !important;
+.t-root.t-box .t-input:focus,
+.t-root .t-box .t-input:focus {
+    border-color: var(--t-color-brand);
+    background-color: var(--t-color-field-focus);
 }
 
-.t-box .t-input:disabled {
+.t-root.t-box .t-input:disabled,
+.t-root .t-box .t-input:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    background-color: #111 !important;
+    background-color: var(--t-color-field-disabled);
 }
 
 textarea.t-input {
