@@ -1796,14 +1796,14 @@ function renderSchemeCategoriesList(scheme) {
                     <input class="text_pole t-rewrite-kw-anchor" type="text" value="${escapeHtml(r.anchor || "")}" placeholder="主词（逗号分隔，任一命中）">
                     <span class="t-rewrite-kw-and">与</span>
                     <input class="text_pole t-rewrite-kw-extras" type="text" value="${escapeHtml(r.extras || "")}" placeholder="附加词（逗号分隔，任一命中）">
-                    <button class="t-btn t-rewrite-kw-del" type="button" title="删除此关键词规则"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除此关键词规则"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             `).join("")
             : `<div class="t-rewrite-kw-row">
                 <input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="主词（逗号分隔，任一命中）">
                 <span class="t-rewrite-kw-and">与</span>
                 <input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="附加词（逗号分隔，任一命中）">
-                <button class="t-btn t-rewrite-kw-del" type="button" title="删除"><i class="fa-solid fa-xmark"></i></button>
+                <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除"><i class="fa-solid fa-xmark"></i></button>
             </div>`;
 
         const nameMissing = !String(cat.name || "").trim();
@@ -1820,7 +1820,7 @@ function renderSchemeCategoriesList(scheme) {
                     <span class="t-rewrite-cat-num">#${idx + 1}</span>
                     <span class="t-rewrite-cat-name-display">${escapeHtml(cat.name || "未命名分类")}</span>
                     <span class="t-rewrite-cat-head-status">${statusLine}</span>
-                    <button class="t-btn t-rewrite-cat-del" type="button" title="删除此分类"><i class="fa-solid fa-trash"></i></button>
+                    <button class="t-btn t-btn--glass t-rewrite-cat-del" type="button" title="删除此分类"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <div class="t-rewrite-cat-body">
                     <div class="t-rewrite-cat-name-row">
@@ -1843,7 +1843,7 @@ function renderSchemeCategoriesList(scheme) {
                     <div class="t-rewrite-cat-field">
                         <label>关键词规则<span class="t-rewrite-cat-field-hint">（主词 AND 附加词同时命中才生效，命中任一行即归类）</span></label>
                         <div class="t-rewrite-cat-kw-list">${kwRows}</div>
-                        <button class="t-btn t-rewrite-cat-add-kw" type="button"><i class="fa-solid fa-plus"></i> 添加关键词</button>
+                        <button class="t-btn t-btn--glass t-rewrite-cat-add-kw" type="button"><i class="fa-solid fa-plus"></i> 添加关键词</button>
                     </div>
                 </div>
             </div>
@@ -2104,7 +2104,7 @@ function openLivePanel() {
                 <div class="t-rewrite-live-stream-card">
                     <div class="t-rewrite-live-tools">
                         <div id="t-rewrite-raw-meta" class="t-rewrite-status muted">${escapeHtml(lastRawMetaText || "等待请求")}</div>
-                        <button id="t-rewrite-abort" class="t-btn" type="button" ${activeRewriteAbortController ? "" : "disabled"}>终止</button>
+                        <button id="t-rewrite-abort" class="t-btn t-btn--glass" type="button" ${activeRewriteAbortController ? "" : "disabled"}>终止</button>
                     </div>
                     <div class="t-rewrite-live-stream-title">模型实时返回</div>
                     <div class="t-rewrite-live-meta">展示最近一次改写请求的实时返回内容（支持流式滚动）。</div>
@@ -2283,7 +2283,7 @@ function bindSettingsPanelEvents(connectionEditor = null) {
     $overlay.on("click", ".t-rewrite-cat-add-kw", (e) => {
         e.preventDefault();
         const $card = $(e.currentTarget).closest(".t-rewrite-category-card");
-        const newRow = $(`<div class="t-rewrite-kw-row"><input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="主词（逗号分隔，任一命中）"><span class="t-rewrite-kw-and">与</span><input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="附加词（逗号分隔，任一命中）"><button class="t-btn t-rewrite-kw-del" type="button" title="删除"><i class="fa-solid fa-xmark"></i></button></div>`);
+        const newRow = $(`<div class="t-rewrite-kw-row"><input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="主词（逗号分隔，任一命中）"><span class="t-rewrite-kw-and">与</span><input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="附加词（逗号分隔，任一命中）"><button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除"><i class="fa-solid fa-xmark"></i></button></div>`);
         $card.find(".t-rewrite-cat-kw-list").append(newRow);
     });
 
@@ -2398,7 +2398,7 @@ function openSettingsPanel() {
                                 input: "text_pole",
                                 select: "text_pole",
                                 profileSelect: "text_pole",
-                                button: "t-btn",
+                                button: "t-btn t-btn--glass",
                             },
                             labels: {
                                 profile: "API 方案",
@@ -2452,7 +2452,7 @@ function openSettingsPanel() {
                         <div class="t-form-group">
                             <div class="t-rewrite-rule-head">
                                 <label class="t-form-label" style="margin-bottom:0;">规则命中提示词</label>
-                                <button id="t-rewrite-settings-prompt-reset" class="t-btn" type="button">恢复默认</button>
+                                <button id="t-rewrite-settings-prompt-reset" class="t-btn t-btn--glass" type="button">恢复默认</button>
                             </div>
 
                             <label class="t-form-label" for="t-rewrite-settings-prompt-combined">规则改写提示词（请保留 [SYS] 和 [USER] 标记）</label>
@@ -2463,7 +2463,7 @@ function openSettingsPanel() {
                         <div class="t-form-group">
                             <div class="t-rewrite-rule-head">
                                 <label class="t-form-label" style="margin-bottom:0;">选句改写提示词</label>
-                                <button id="t-rewrite-settings-selected-prompt-reset" class="t-btn" type="button">恢复默认</button>
+                                <button id="t-rewrite-settings-selected-prompt-reset" class="t-btn t-btn--glass" type="button">恢复默认</button>
                             </div>
 
                             <label class="t-form-label" for="t-rewrite-settings-selected-prompt-combined">楼层内手动选句提示词（请保留 [SYS] 和 [USER] 标记）</label>
@@ -2477,14 +2477,14 @@ function openSettingsPanel() {
                             <div class="t-rewrite-scheme-bar">
                                 <span class="t-rewrite-scheme-label">当前方案</span>
                                 <select id="t-rewrite-scheme-select" class="text_pole">${schemeOptions}</select>
-                                <button id="t-rewrite-scheme-new" class="t-btn t-rewrite-scheme-btn" type="button" title="新建方案"><i class="fa-solid fa-plus"></i></button>
-                                <button id="t-rewrite-scheme-rename" class="t-btn t-rewrite-scheme-btn" type="button" title="重命名"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button id="t-rewrite-scheme-delete" class="t-btn t-rewrite-scheme-btn" type="button" title="删除方案"><i class="fa-solid fa-trash"></i></button>
+                                <button id="t-rewrite-scheme-new" class="t-btn t-btn--glass t-rewrite-scheme-btn" type="button" title="新建方案"><i class="fa-solid fa-plus"></i></button>
+                                <button id="t-rewrite-scheme-rename" class="t-btn t-btn--glass t-rewrite-scheme-btn" type="button" title="重命名"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button id="t-rewrite-scheme-delete" class="t-btn t-btn--glass t-rewrite-scheme-btn" type="button" title="删除方案"><i class="fa-solid fa-trash"></i></button>
                             </div>
                             <div class="t-rewrite-rule-guide" id="t-rewrite-scheme-status" style="margin-top:4px;">${!activeScheme ? '无方案，请新建或选择已有方案' : `激活方案「${escapeHtml(activeScheme.name)}」`}</div>
                         </div>
                         <div class="t-form-group">
-                            <button id="t-rewrite-scheme-add-category" class="t-btn" type="button"><i class="fa-solid fa-plus"></i> 添加分类</button>
+                            <button id="t-rewrite-scheme-add-category" class="t-btn t-btn--glass" type="button"><i class="fa-solid fa-plus"></i> 添加分类</button>
                             <div class="t-rewrite-rule-guide" style="margin: 6px 0 4px;">每个分类包含示例和改写指导，命中句将按分类注入提示词。</div>
                             <div id="t-rewrite-scheme-categories-list"></div>
                         </div>
@@ -2493,7 +2493,7 @@ function openSettingsPanel() {
             </div>
 
             <div class="t-rewrite-settings-footer">
-                <button id="t-rewrite-settings-save" class="t-btn" type="button" title="保存并应用"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
+                <button id="t-rewrite-settings-save" class="t-btn t-btn--glass" type="button" title="保存并应用"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
             </div>
         </div>
     </div>`;

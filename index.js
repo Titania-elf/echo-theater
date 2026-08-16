@@ -3106,6 +3106,40 @@ textarea.t-input {
     border-color: transparent;
 }
 
+.t-btn--glass {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: var(--t-radius-container);
+    border-color: var(--t-color-border-glass);
+    background: var(--t-gradient-glass-btn);
+    color: var(--t-glass-text);
+    font-size: var(--t-text-caption);
+    font-weight: var(--t-font-weight-semibold);
+    box-shadow: var(--t-shadow-sm), var(--t-shadow-inset-gloss);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.t-btn--glass:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: var(--t-color-accent-border-hover);
+    background: var(--t-gradient-glass-btn-hover);
+    box-shadow: var(--t-shadow-lift), var(--t-shadow-inset-gloss);
+}
+
+.t-btn--glass:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: var(--t-shadow-xs), var(--t-shadow-inset-hairline);
+}
+
+.t-btn--glass:disabled,
+.t-btn--glass.is-disabled {
+    transform: none;
+    box-shadow: var(--t-shadow-xs), var(--t-shadow-inset-hairline);
+}
+
 /* ---- 4 \u4E2A\u5C3A\u5BF8\uFF0C\u8986\u76D6\u73B0\u6709 12 \u79CD padding \u7EC4\u5408 ---- */
 
 .t-btn--xs,
@@ -17994,45 +18028,6 @@ body.titania-debug-mode #chat titania-memory::before {
  }
 }
 
-#t-rewrite-settings-overlay .t-btn,
-#t-rewrite-live-overlay .t-btn {
-    height: 30px;
-    min-height: 30px;
-    padding: 0 10px;
-    border-radius: 9px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: linear-gradient(140deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: #e6f1fb;
-    font-size: 0.8em;
-    font-weight: 600;
-    letter-spacing: 0.15px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
-}
-
-#t-rewrite-settings-overlay .t-btn:hover,
-#t-rewrite-live-overlay .t-btn:hover {
-    transform: translateY(-1px);
-    border-color: rgba(144, 205, 244, 0.55);
-    background: linear-gradient(140deg, rgba(144, 205, 244, 0.22), rgba(255, 255, 255, 0.06));
-    box-shadow: 0 10px 22px rgba(17, 34, 54, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.26);
-}
-
-#t-rewrite-settings-overlay .t-btn:active,
-#t-rewrite-live-overlay .t-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-}
-
-#t-rewrite-live-overlay .t-btn:disabled {
-    opacity: 0.58;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
 #t-rewrite-settings-overlay #t-rewrite-settings-fetch-models {
     min-width: 30px;
     width: 30px;
@@ -27158,13 +27153,13 @@ function renderSchemeCategoriesList(scheme) {
                     <input class="text_pole t-rewrite-kw-anchor" type="text" value="${escapeHtml5(r.anchor || "")}" placeholder="\u4E3B\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09">
                     <span class="t-rewrite-kw-and">\u4E0E</span>
                     <input class="text_pole t-rewrite-kw-extras" type="text" value="${escapeHtml5(r.extras || "")}" placeholder="\u9644\u52A0\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09">
-                    <button class="t-btn t-rewrite-kw-del" type="button" title="\u5220\u9664\u6B64\u5173\u952E\u8BCD\u89C4\u5219"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="\u5220\u9664\u6B64\u5173\u952E\u8BCD\u89C4\u5219"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             `).join("") : `<div class="t-rewrite-kw-row">
                 <input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="\u4E3B\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09">
                 <span class="t-rewrite-kw-and">\u4E0E</span>
                 <input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="\u9644\u52A0\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09">
-                <button class="t-btn t-rewrite-kw-del" type="button" title="\u5220\u9664"><i class="fa-solid fa-xmark"></i></button>
+                <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="\u5220\u9664"><i class="fa-solid fa-xmark"></i></button>
             </div>`;
     const nameMissing = !String(cat.name || "").trim();
     const collapsedClass = hasContent ? " collapsed" : "";
@@ -27177,7 +27172,7 @@ function renderSchemeCategoriesList(scheme) {
                     <span class="t-rewrite-cat-num">#${idx + 1}</span>
                     <span class="t-rewrite-cat-name-display">${escapeHtml5(cat.name || "\u672A\u547D\u540D\u5206\u7C7B")}</span>
                     <span class="t-rewrite-cat-head-status">${statusLine}</span>
-                    <button class="t-btn t-rewrite-cat-del" type="button" title="\u5220\u9664\u6B64\u5206\u7C7B"><i class="fa-solid fa-trash"></i></button>
+                    <button class="t-btn t-btn--glass t-rewrite-cat-del" type="button" title="\u5220\u9664\u6B64\u5206\u7C7B"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <div class="t-rewrite-cat-body">
                     <div class="t-rewrite-cat-name-row">
@@ -27200,7 +27195,7 @@ function renderSchemeCategoriesList(scheme) {
                     <div class="t-rewrite-cat-field">
                         <label>\u5173\u952E\u8BCD\u89C4\u5219<span class="t-rewrite-cat-field-hint">\uFF08\u4E3B\u8BCD AND \u9644\u52A0\u8BCD\u540C\u65F6\u547D\u4E2D\u624D\u751F\u6548\uFF0C\u547D\u4E2D\u4EFB\u4E00\u884C\u5373\u5F52\u7C7B\uFF09</span></label>
                         <div class="t-rewrite-cat-kw-list">${kwRows}</div>
-                        <button class="t-btn t-rewrite-cat-add-kw" type="button"><i class="fa-solid fa-plus"></i> \u6DFB\u52A0\u5173\u952E\u8BCD</button>
+                        <button class="t-btn t-btn--glass t-rewrite-cat-add-kw" type="button"><i class="fa-solid fa-plus"></i> \u6DFB\u52A0\u5173\u952E\u8BCD</button>
                     </div>
                 </div>
             </div>
@@ -27407,7 +27402,7 @@ function openLivePanel() {
                 <div class="t-rewrite-live-stream-card">
                     <div class="t-rewrite-live-tools">
                         <div id="t-rewrite-raw-meta" class="t-rewrite-status muted">${escapeHtml5(lastRawMetaText || "\u7B49\u5F85\u8BF7\u6C42")}</div>
-                        <button id="t-rewrite-abort" class="t-btn" type="button" ${activeRewriteAbortController ? "" : "disabled"}>\u7EC8\u6B62</button>
+                        <button id="t-rewrite-abort" class="t-btn t-btn--glass" type="button" ${activeRewriteAbortController ? "" : "disabled"}>\u7EC8\u6B62</button>
                     </div>
                     <div class="t-rewrite-live-stream-title">\u6A21\u578B\u5B9E\u65F6\u8FD4\u56DE</div>
                     <div class="t-rewrite-live-meta">\u5C55\u793A\u6700\u8FD1\u4E00\u6B21\u6539\u5199\u8BF7\u6C42\u7684\u5B9E\u65F6\u8FD4\u56DE\u5185\u5BB9\uFF08\u652F\u6301\u6D41\u5F0F\u6EDA\u52A8\uFF09\u3002</div>
@@ -27579,7 +27574,7 @@ function bindSettingsPanelEvents(connectionEditor = null) {
   $overlay.on("click", ".t-rewrite-cat-add-kw", (e) => {
     e.preventDefault();
     const $card = $(e.currentTarget).closest(".t-rewrite-category-card");
-    const newRow = $(`<div class="t-rewrite-kw-row"><input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="\u4E3B\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09"><span class="t-rewrite-kw-and">\u4E0E</span><input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="\u9644\u52A0\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09"><button class="t-btn t-rewrite-kw-del" type="button" title="\u5220\u9664"><i class="fa-solid fa-xmark"></i></button></div>`);
+    const newRow = $(`<div class="t-rewrite-kw-row"><input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="\u4E3B\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09"><span class="t-rewrite-kw-and">\u4E0E</span><input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="\u9644\u52A0\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09"><button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="\u5220\u9664"><i class="fa-solid fa-xmark"></i></button></div>`);
     $card.find(".t-rewrite-cat-kw-list").append(newRow);
   });
   $overlay.on("click", ".t-rewrite-kw-del", (e) => {
@@ -27688,7 +27683,7 @@ function openSettingsPanel() {
       input: "text_pole",
       select: "text_pole",
       profileSelect: "text_pole",
-      button: "t-btn"
+      button: "t-btn t-btn--glass"
     },
     labels: {
       profile: "API \u65B9\u6848",
@@ -27742,7 +27737,7 @@ function openSettingsPanel() {
                         <div class="t-form-group">
                             <div class="t-rewrite-rule-head">
                                 <label class="t-form-label" style="margin-bottom:0;">\u89C4\u5219\u547D\u4E2D\u63D0\u793A\u8BCD</label>
-                                <button id="t-rewrite-settings-prompt-reset" class="t-btn" type="button">\u6062\u590D\u9ED8\u8BA4</button>
+                                <button id="t-rewrite-settings-prompt-reset" class="t-btn t-btn--glass" type="button">\u6062\u590D\u9ED8\u8BA4</button>
                             </div>
 
                             <label class="t-form-label" for="t-rewrite-settings-prompt-combined">\u89C4\u5219\u6539\u5199\u63D0\u793A\u8BCD\uFF08\u8BF7\u4FDD\u7559 [SYS] \u548C [USER] \u6807\u8BB0\uFF09</label>
@@ -27757,7 +27752,7 @@ function openSettingsPanel() {
                         <div class="t-form-group">
                             <div class="t-rewrite-rule-head">
                                 <label class="t-form-label" style="margin-bottom:0;">\u9009\u53E5\u6539\u5199\u63D0\u793A\u8BCD</label>
-                                <button id="t-rewrite-settings-selected-prompt-reset" class="t-btn" type="button">\u6062\u590D\u9ED8\u8BA4</button>
+                                <button id="t-rewrite-settings-selected-prompt-reset" class="t-btn t-btn--glass" type="button">\u6062\u590D\u9ED8\u8BA4</button>
                             </div>
 
                             <label class="t-form-label" for="t-rewrite-settings-selected-prompt-combined">\u697C\u5C42\u5185\u624B\u52A8\u9009\u53E5\u63D0\u793A\u8BCD\uFF08\u8BF7\u4FDD\u7559 [SYS] \u548C [USER] \u6807\u8BB0\uFF09</label>
@@ -27775,14 +27770,14 @@ function openSettingsPanel() {
                             <div class="t-rewrite-scheme-bar">
                                 <span class="t-rewrite-scheme-label">\u5F53\u524D\u65B9\u6848</span>
                                 <select id="t-rewrite-scheme-select" class="text_pole">${schemeOptions}</select>
-                                <button id="t-rewrite-scheme-new" class="t-btn t-rewrite-scheme-btn" type="button" title="\u65B0\u5EFA\u65B9\u6848"><i class="fa-solid fa-plus"></i></button>
-                                <button id="t-rewrite-scheme-rename" class="t-btn t-rewrite-scheme-btn" type="button" title="\u91CD\u547D\u540D"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button id="t-rewrite-scheme-delete" class="t-btn t-rewrite-scheme-btn" type="button" title="\u5220\u9664\u65B9\u6848"><i class="fa-solid fa-trash"></i></button>
+                                <button id="t-rewrite-scheme-new" class="t-btn t-btn--glass t-rewrite-scheme-btn" type="button" title="\u65B0\u5EFA\u65B9\u6848"><i class="fa-solid fa-plus"></i></button>
+                                <button id="t-rewrite-scheme-rename" class="t-btn t-btn--glass t-rewrite-scheme-btn" type="button" title="\u91CD\u547D\u540D"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button id="t-rewrite-scheme-delete" class="t-btn t-btn--glass t-rewrite-scheme-btn" type="button" title="\u5220\u9664\u65B9\u6848"><i class="fa-solid fa-trash"></i></button>
                             </div>
                             <div class="t-rewrite-rule-guide" id="t-rewrite-scheme-status" style="margin-top:4px;">${!activeScheme ? "\u65E0\u65B9\u6848\uFF0C\u8BF7\u65B0\u5EFA\u6216\u9009\u62E9\u5DF2\u6709\u65B9\u6848" : `\u6FC0\u6D3B\u65B9\u6848\u300C${escapeHtml5(activeScheme.name)}\u300D`}</div>
                         </div>
                         <div class="t-form-group">
-                            <button id="t-rewrite-scheme-add-category" class="t-btn" type="button"><i class="fa-solid fa-plus"></i> \u6DFB\u52A0\u5206\u7C7B</button>
+                            <button id="t-rewrite-scheme-add-category" class="t-btn t-btn--glass" type="button"><i class="fa-solid fa-plus"></i> \u6DFB\u52A0\u5206\u7C7B</button>
                             <div class="t-rewrite-rule-guide" style="margin: 6px 0 4px;">\u6BCF\u4E2A\u5206\u7C7B\u5305\u542B\u793A\u4F8B\u548C\u6539\u5199\u6307\u5BFC\uFF0C\u547D\u4E2D\u53E5\u5C06\u6309\u5206\u7C7B\u6CE8\u5165\u63D0\u793A\u8BCD\u3002</div>
                             <div id="t-rewrite-scheme-categories-list"></div>
                         </div>
@@ -27791,7 +27786,7 @@ function openSettingsPanel() {
             </div>
 
             <div class="t-rewrite-settings-footer">
-                <button id="t-rewrite-settings-save" class="t-btn" type="button" title="\u4FDD\u5B58\u5E76\u5E94\u7528"><i class="fa-solid fa-floppy-disk"></i> \u4FDD\u5B58</button>
+                <button id="t-rewrite-settings-save" class="t-btn t-btn--glass" type="button" title="\u4FDD\u5B58\u5E76\u5E94\u7528"><i class="fa-solid fa-floppy-disk"></i> \u4FDD\u5B58</button>
             </div>
         </div>
     </div>`;

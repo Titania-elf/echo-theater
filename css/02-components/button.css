@@ -139,6 +139,40 @@
     border-color: transparent;
 }
 
+.t-btn--glass {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: var(--t-radius-container);
+    border-color: var(--t-color-border-glass);
+    background: var(--t-gradient-glass-btn);
+    color: var(--t-glass-text);
+    font-size: var(--t-text-caption);
+    font-weight: var(--t-font-weight-semibold);
+    box-shadow: var(--t-shadow-sm), var(--t-shadow-inset-gloss);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.t-btn--glass:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: var(--t-color-accent-border-hover);
+    background: var(--t-gradient-glass-btn-hover);
+    box-shadow: var(--t-shadow-lift), var(--t-shadow-inset-gloss);
+}
+
+.t-btn--glass:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: var(--t-shadow-xs), var(--t-shadow-inset-hairline);
+}
+
+.t-btn--glass:disabled,
+.t-btn--glass.is-disabled {
+    transform: none;
+    box-shadow: var(--t-shadow-xs), var(--t-shadow-inset-hairline);
+}
+
 /* ---- 4 个尺寸，覆盖现有 12 种 padding 组合 ---- */
 
 .t-btn--xs,

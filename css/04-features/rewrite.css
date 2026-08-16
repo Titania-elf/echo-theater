@@ -451,45 +451,6 @@
     @media (max-width: 600px) { #t-rewrite-settings-overlay .t-rewrite-scheme-bar select { min-width: 100px; } }
 }
 
-#t-rewrite-settings-overlay .t-btn,
-#t-rewrite-live-overlay .t-btn {
-    height: 30px;
-    min-height: 30px;
-    padding: 0 10px;
-    border-radius: 9px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: linear-gradient(140deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: #e6f1fb;
-    font-size: 0.8em;
-    font-weight: 600;
-    letter-spacing: 0.15px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
-}
-
-#t-rewrite-settings-overlay .t-btn:hover,
-#t-rewrite-live-overlay .t-btn:hover {
-    transform: translateY(-1px);
-    border-color: rgba(144, 205, 244, 0.55);
-    background: linear-gradient(140deg, rgba(144, 205, 244, 0.22), rgba(255, 255, 255, 0.06));
-    box-shadow: 0 10px 22px rgba(17, 34, 54, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.26);
-}
-
-#t-rewrite-settings-overlay .t-btn:active,
-#t-rewrite-live-overlay .t-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-}
-
-#t-rewrite-live-overlay .t-btn:disabled {
-    opacity: 0.58;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
 #t-rewrite-settings-overlay #t-rewrite-settings-fetch-models {
     min-width: 30px;
     width: 30px;
