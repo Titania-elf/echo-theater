@@ -59,9 +59,9 @@
     },
     "A9": {
       "title": "!important 紧邻注释说明其对抗的宿主规则",
-      "violations": 71,
+      "violations": 70,
       "metrics": {
-        "important总数": 73
+        "important总数": 72
       }
     },
     "A1": {
@@ -177,7 +177,7 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16404,
+    "CSS 总行数": 16400,
     "规则条数": 2265,
     "border-radius 声明 / 不同值": "354 / 41",
     "box-shadow 声明 / 不同值": "119 / 83",

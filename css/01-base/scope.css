@@ -20,6 +20,7 @@
     font-size: var(--t-font-size-root);
     /* calc(12px * var(--t-ui-font-scale, 1)) */
     color: var(--t-color-text);
+    color-scheme: dark;
 }
 
 /* 盒模型自洽：不依赖宿主。
@@ -33,8 +34,8 @@
 }
 
 /* ============================================================
-   以下两条 plan.md §8.1 列入本文件，但**本阶段刻意不落地**，
-   因为它们都会造成 plan.md §12.2 未评估到的可见变化。
+   plan.md §8.1 还列出了 line-height，但本阶段刻意不落地，
+   因为它会造成 plan.md §12.2 未评估到的全局行距变化。
 
    1) line-height: var(--t-line-height-base)  —— 值为 1.5
       实测 ST 的 body **没有**设置 line-height，故插件 UI 现在继承的是
@@ -45,12 +46,7 @@
       plan.md §12.2 的「已知视觉变化」清单里没有这一条，属计划遗漏。
       应作为独立一步实施并单独比对，不与 token 落盘混在一起。
 
-   2) color-scheme: dark
-      实测 ST 的 body 设了 `color-scheme: only light`，这正是 S2 的根因：
-      插件的 45 个 checkbox + 16 个 radio + 5 个 range 全部按浅色渲染。
-      在 .t-root 上改为 dark 会让这 66 个原生控件外观立刻翻转 —— 这是
-      **修复**，但属于 plan.md §12.4 明确列给 Phase 3 的任务
-      （「color-scheme: dark 落地，接管 …… 解 S2」），
-      且需要在 ST 深色 / 浅色 / 第三方主题下逐一验证。
-      保留给 Phase 3，与拆除 base.css 的 3 处 input !important 一起做。
+   color-scheme: dark 已在 Phase 3 落地：它覆盖 ST body 的
+   `color-scheme: only light`，让插件根内的原生 checkbox / radio / range
+   使用暗色控件；作用域外的 ST DOM 不受影响。
    ============================================================ */
