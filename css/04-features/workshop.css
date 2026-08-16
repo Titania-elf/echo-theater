@@ -37,7 +37,14 @@
 #t-ws-rating-toggle:hover { border-color: var(--t-theme); color: #fff; }
 #t-ws-rating-toggle.is-mature { border-color: #7e3847; background: #4a2530; color: #ffa8b0; }
 
-#t-ws-view .t-header .t-header-actions .t-icon-btn,
+/* 工坊头部的图标钮比主窗口大一号（36 vs 32）：只覆盖尺寸变量。
+   热区/居中/无 margin/user-select 已由 02-components/icon-button.css 提供（修 B13）。 */
+#t-ws-view .t-header .t-header-actions .t-icon-btn {
+    --t-icon-btn-size: 36px;
+    font-size: 1.35em;
+}
+
+/* .t-close 尚未纳入组件（理由见 02-components/icon-button.css），仍需在此自行构造方形热区 */
 #t-ws-view .t-header .t-header-actions .t-close,
 .t-ws-preview-box .t-header .t-header-actions .t-close {
     /* 间距统一由父级 gap 负责，清掉 base.css 的 margin-left 避免叠加 */
@@ -53,18 +60,9 @@
     /* 避免移动端长按选中 × 文本 / 点击高亮块 */
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-}
-
-#t-ws-view .t-header .t-header-actions .t-icon-btn {
-    font-size: 1.35em;
-}
-
-#t-ws-view .t-header .t-header-actions .t-close,
-.t-ws-preview-box .t-header .t-header-actions .t-close {
     font-size: 1.7em;
 }
 
-#t-ws-view .t-header .t-header-actions .t-icon-btn:hover,
 #t-ws-view .t-header .t-header-actions .t-close:hover,
 .t-ws-preview-box .t-header .t-header-actions .t-close:hover {
     background: rgba(255, 255, 255, 0.08);

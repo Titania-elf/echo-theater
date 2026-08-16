@@ -30,6 +30,15 @@ export const CSS_LAYERS = [
         ]
     },
 
+    // 【第 2 层:语义化组件】禁止页面/ID 选择器与颜色字面量（R2/R3a/R3b）
+    {
+        layer: '02-components', files: [
+            'button.css',
+            'icon-button.css',
+            '_legacy.css',     // ⚠ 旧类名 → 新实现映射，必须在全部组件之后（Phase 7 删除）
+        ]
+    },
+
     // 【第 4 层:功能视图】
     // 顺序沿用 5.2.5 build.js 的原始顺序,保证层叠结果逐字节不变。
     {

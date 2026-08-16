@@ -1,0 +1,65 @@
+/* ============================================================
+   02-components/_legacy.css —— 旧类名 → 新实现映射 ⚠ Phase 7 删除
+
+   作用：让 JS 里现存的旧按钮类名直接获得统一后的样式，
+   于是 **Phase 2 期间 JS 一行不改**，视觉即完成统一。
+   JS 侧类名替换在 Phase 2 之后按窗口分批做（11 个文件、11 个独立提交）。
+
+   删除前提：审计确认 JS 侧零旧类名引用。
+   本文件必须排在 02-components/ 全部组件之后（见 css/manifest.js）。
+
+   ── 本阶段（2a）只处理 base.css 迁移过来的这几个 ──
+   feature 层还有约 50 个按钮类名（.t-btn-danger 的 2 份冲突定义、
+   .t-sel-cat-btn 的同文件 2 份、18 个 ghost-xs 同义类等），
+   它们的定义仍在各自 feature 文件里、优先级高于本层，需要连同删除才能生效，
+   留待 2b 处理。plan.md §6.4 的完整映射表是 2b 的依据。
+   ============================================================ */
+
+/* ---- .t-btn.primary → 蓝色主按钮（S4 决策）----
+   原为粉渐变 linear-gradient(90deg, #ff9a9e, #fecfef) + color #444，全库 38 处。
+   与 .t-btn-primary（蓝，19 处）二选一后取蓝：蓝是事实上的交互色
+   （#90cdf4 全库 64 次），且粉渐变在浅色主题下对比度不足。
+   这是本次唯一不可逆的视觉决策，已单独成提交。 */
+.t-btn.primary {
+    background: var(--t-color-accent);
+    color: var(--t-color-text-on-accent);
+    border-color: transparent;
+}
+
+.t-btn.primary:hover:not(:disabled) {
+    background: var(--t-color-accent-hover);
+    border-color: transparent;
+}
+
+.t-btn.primary:active:not(:disabled) {
+    background: var(--t-color-accent-active);
+}
+
+/* ---- .t-btn-soft → .t-btn--brand（品牌金）----
+   原值 rgba(191,161,95,.14) / border rgba(191,161,95,.55) / color #e0c98a，
+   与 --t-color-brand-soft / --t-color-brand-border 等价；
+   文字色由 #e0c98a 改为 --t-color-brand(#bfa15f)，是同色系的收敛。 */
+.t-btn.t-btn-soft {
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-brand);
+    border-color: var(--t-color-brand-border);
+}
+
+.t-btn.t-btn-soft:hover:not(:disabled) {
+    background: var(--t-color-brand);
+    color: var(--t-color-text-on-accent);
+    border-color: var(--t-color-brand-border);
+}
+
+/* ---- 刻意留在 base.css、未纳入组件层的两个 ----
+   .t-tool-btn（42 处使用）与 .t-close（17 处使用）本阶段不做统一，
+   理由见 icon-button.css 与下方说明。它们的定义原地留在 01-base/base.css，
+   不搬到组件层 —— 因为组件层禁止颜色字面量（R3a / 审计 A3），而这两个
+   要保持原值就必然带着 rgba(0,0,0,.6)、#ccc 这类没有对应语义 token 的值。
+   与其为了「搬进来」而改值或硬造 token，不如原地不动、留到 2b 一并评估。
+
+   .t-tool-btn：plan.md §6.4 要求映射为 .t-btn--ghost.t-btn--xs，但它现在是
+     「半透明黑底药丸」，与 ghost 的「全透明无边框」差别明显，42 处同时改观感
+     且无基线可比对，风险与收益不成比例。
+   .t-close：17 处中仅约 4 处在已打补丁的头部里由父级 gap 接管间距，
+     其余 13 处仍依赖 margin-left: 15px，去掉会贴到邻居上。 */

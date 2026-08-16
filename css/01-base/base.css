@@ -99,48 +99,12 @@
 }
 
 /* 按钮 */
-.t-btn {
-    background: #333;
-    border: 1px solid #555;
-    color: white;
-    padding: 10px 15px;
-    cursor: pointer;
-    border-radius: 6px;
-    font-weight: bold;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    transition: 0.2s;
-}
-
-.t-btn:hover {
-    background: #444;
-    border-color: #666;
-}
-
-.t-btn.primary {
-    background: linear-gradient(90deg, #ff9a9e, #fecfef);
-    color: #444;
-    border: none;
-}
-
-.t-btn.t-btn-soft {
-    border: 1px solid rgba(191, 161, 95, 0.55);
-    background: rgba(191, 161, 95, 0.14);
-    color: #e0c98a;
-}
-
-.t-btn.t-btn-soft:hover {
-    background: rgba(191, 161, 95, 0.22);
-    border-color: rgba(191, 161, 95, 0.7);
-}
-
-.t-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
+/* 按钮：.t-btn 家族与 .t-icon-btn 已迁至 02-components/（Phase 2）。
+     .t-btn / 变体 / 尺寸        → 02-components/button.css
+     .t-btn.primary / .t-btn-soft → 02-components/_legacy.css（旧类名映射）
+     .t-icon-btn                  → 02-components/icon-button.css（修 B13 热区）
+   下面的 .t-tool-btn 与 .t-close 刻意留在本层未做统一，理由见
+   02-components/_legacy.css 末尾的说明。 */
 
 .t-tool-btn {
     font-size: 0.75em;
@@ -159,18 +123,6 @@
 .t-tool-btn:hover {
     background: #444;
     color: white;
-}
-
-.t-icon-btn {
-    cursor: pointer;
-    font-size: 1.2em;
-    color: #aaa;
-    margin-left: 15px;
-    transition: color 0.3s;
-}
-
-.t-icon-btn:hover {
-    color: #fff;
 }
 
 .t-close {

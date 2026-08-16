@@ -23,20 +23,9 @@
 }
 
 #t-main-view .t-header .t-header-actions .t-icon-btn {
-    /* 间距统一由父级 gap 负责，清掉 base.css 的 margin-left 避免叠加 */
-    margin-left: 0;
+    /* 热区/居中/无 margin 已由 02-components/icon-button.css 提供（修 B13）。
+       这里只保留本视图自己的排版决定：字形大小。 */
     font-size: 1.5em;
-    width: 32px;
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    transition: color 0.2s, background-color 0.2s;
-}
-
-#t-main-view .t-header .t-header-actions .t-icon-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
 }
 
 #t-main-view .t-header .t-header-actions .t-close {
@@ -1143,8 +1132,7 @@
         /* 只收字形不收热区：30px 已是触屏点击的下限，再小会难点。
            图标最多 5 个时 1.3em 几乎顶满方块，显得拥挤，缩到 1.15em 留出呼吸感。 */
         font-size: 1.15em;
-        width: 30px;
-        height: 30px;
+        --t-icon-btn-size: 30px;
     }
 
     /* 关闭键的 1.8em 在窄屏比功能图标大出一圈，一起收一点保持视觉齐平 */

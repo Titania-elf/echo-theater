@@ -4,15 +4,15 @@
       "title": "manifest.js 与磁盘双向一致",
       "violations": 0,
       "metrics": {
-        "清单文件数": 19,
-        "磁盘文件数": 19
+        "清单文件数": 22,
+        "磁盘文件数": 22
       }
     },
     "A15": {
       "title": "main-window-legacy.css 紧跟 main-window.css",
       "violations": 0,
       "metrics": {
-        "位置": "10 → 11"
+        "位置": "13 → 14"
       }
     },
     "A10": {
@@ -24,8 +24,8 @@
       "title": "消费但未声明的 --t-* 变量",
       "violations": 0,
       "metrics": {
-        "CSS 已声明 --t-*": 158,
-        "被消费种类": 61,
+        "CSS 已声明 --t-*": 159,
+        "被消费种类": 93,
         "仅 JS 声明（B5）": 4
       }
     },
@@ -68,33 +68,34 @@
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1192,
-        "rgb/rgba字面量": 805,
-        "合计": 1997,
+        "hex字面量": 1182,
+        "rgb/rgba字面量": 800,
+        "合计": 1982,
         "  00-tokens": "hex 10 / rgb 45",
-        "  01-base": "hex 35 / rgb 21",
-        "  04-features": "hex 1139 / rgb 731",
+        "  01-base": "hex 25 / rgb 17",
+        "  02-components": "hex 0 / rgb 0",
+        "  04-features": "hex 1139 / rgb 730",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
     },
     "A2": {
       "title": "组件层禁止 ID 选择器",
-      "violations": null,
+      "violations": 0,
       "metrics": {}
     },
     "A3": {
       "title": "组件层禁止颜色字面量",
-      "violations": null,
+      "violations": 0,
       "metrics": {}
     },
     "A4": {
       "title": "组件层禁止直接引用 --t-c-* 原语",
-      "violations": null,
+      "violations": 0,
       "metrics": {}
     },
     "A5": {
       "title": "feature 层禁止重定义组件类的视觉属性",
-      "violations": null,
+      "violations": 40,
       "metrics": {}
     },
     "A6": {
@@ -159,7 +160,7 @@
       "title": "禁止 transition: all",
       "violations": 54,
       "metrics": {
-        "transition 声明总数": 134,
+        "transition 声明总数": 133,
         "含 all": 54,
         "其中 all 0.2s": 47
       }
@@ -175,11 +176,11 @@
     }
   },
   "scale": {
-    "CSS 总行数": 15210,
-    "规则条数": 1975,
-    "border-radius 声明 / 不同值": "318 / 37",
-    "box-shadow 声明 / 不同值": "102 / 73",
-    "font-size (px / em)": "161 / 264",
-    "padding / gap 声明": "480 / 333"
+    "CSS 总行数": 15466,
+    "规则条数": 1998,
+    "border-radius 声明 / 不同值": "319 / 40",
+    "box-shadow 声明 / 不同值": "104 / 74",
+    "font-size (px / em)": "161 / 263",
+    "padding / gap 声明": "484 / 333"
   }
 }

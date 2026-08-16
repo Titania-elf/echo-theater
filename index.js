@@ -2377,48 +2377,12 @@ function loadCssFiles() {
 }
 
 /* \u6309\u94AE */
-.t-btn {
-    background: #333;
-    border: 1px solid #555;
-    color: white;
-    padding: 10px 15px;
-    cursor: pointer;
-    border-radius: 6px;
-    font-weight: bold;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    transition: 0.2s;
-}
-
-.t-btn:hover {
-    background: #444;
-    border-color: #666;
-}
-
-.t-btn.primary {
-    background: linear-gradient(90deg, #ff9a9e, #fecfef);
-    color: #444;
-    border: none;
-}
-
-.t-btn.t-btn-soft {
-    border: 1px solid rgba(191, 161, 95, 0.55);
-    background: rgba(191, 161, 95, 0.14);
-    color: #e0c98a;
-}
-
-.t-btn.t-btn-soft:hover {
-    background: rgba(191, 161, 95, 0.22);
-    border-color: rgba(191, 161, 95, 0.7);
-}
-
-.t-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
+/* \u6309\u94AE\uFF1A.t-btn \u5BB6\u65CF\u4E0E .t-icon-btn \u5DF2\u8FC1\u81F3 02-components/\uFF08Phase 2\uFF09\u3002
+     .t-btn / \u53D8\u4F53 / \u5C3A\u5BF8        \u2192 02-components/button.css
+     .t-btn.primary / .t-btn-soft \u2192 02-components/_legacy.css\uFF08\u65E7\u7C7B\u540D\u6620\u5C04\uFF09
+     .t-icon-btn                  \u2192 02-components/icon-button.css\uFF08\u4FEE B13 \u70ED\u533A\uFF09
+   \u4E0B\u9762\u7684 .t-tool-btn \u4E0E .t-close \u523B\u610F\u7559\u5728\u672C\u5C42\u672A\u505A\u7EDF\u4E00\uFF0C\u7406\u7531\u89C1
+   02-components/_legacy.css \u672B\u5C3E\u7684\u8BF4\u660E\u3002 */
 
 .t-tool-btn {
     font-size: 0.75em;
@@ -2437,18 +2401,6 @@ function loadCssFiles() {
 .t-tool-btn:hover {
     background: #444;
     color: white;
-}
-
-.t-icon-btn {
-    cursor: pointer;
-    font-size: 1.2em;
-    color: #aaa;
-    margin-left: 15px;
-    transition: color 0.3s;
-}
-
-.t-icon-btn:hover {
-    color: #fff;
 }
 
 .t-close {
@@ -2880,6 +2832,330 @@ textarea.t-input {
 
 /* rewriteEntryButton.js */
 @keyframes t-rewrite-mark-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+
+/* === 02-components/button.css === */
+/* ============================================================
+   02-components/button.css \u2014\u2014 \u6309\u94AE\u7EC4\u4EF6
+
+   \u53EA\u6D88\u8D39\u8BED\u4E49 token\uFF0C\u7981\u6B62\u9875\u9762/ID \u9009\u62E9\u5668\u4E0E\u989C\u8272\u5B57\u9762\u91CF\uFF08R2 / R3a / R3b\uFF0C\u5BA1\u8BA1 A2\u2013A4\uFF09\u3002
+   \u672C\u6587\u4EF6\u66FF\u4EE3 base.css \u91CC\u539F\u6765\u7684 .t-btn \u5BB6\u65CF\u5B9A\u4E49\u3002
+
+   \u2500\u2500 \u6536\u655B\u76EE\u6807 \u2500\u2500
+   \u73B0\u72B6 61 \u4E2A\u6309\u94AE\u7C7B\u540D / 68 \u6761\u57FA\u6001\u89C4\u5219\uFF0C\u6536\u655B\u4E3A 1 \u4E2A\u57FA\u7C7B + 6 \u4E2A\u53D8\u4F53 + 4 \u4E2A\u5C3A\u5BF8\u3002
+   \u65E7\u7C7B\u540D\u7531 _legacy.css \u6620\u5C04\u5230\u8FD9\u91CC\uFF0CJS \u4FA7\u7C7B\u540D\u66FF\u6362\u5728 Phase 2 \u4E4B\u540E\u6309\u7A97\u53E3\u5206\u6279\u505A\u3002
+
+   \u2500\u2500 S4 \u51B3\u7B56\uFF1A\u4E3B\u6309\u94AE\u7528\u84DD\u8272 \u2500\u2500
+   \u73B0\u72B6\u4E24\u5957\u5E76\u5B58\uFF1A.t-btn.primary\uFF08\u7C89\u6E10\u53D8\uFF0C38 \u5904\uFF09\u4E0E .t-btn-primary\uFF08\u84DD\u6E10\u53D8\uFF0C19 \u5904\uFF09\u3002
+   \u7EDF\u4E00\u53D6\u84DD\uFF08--t-color-accent\uFF09\uFF1A\u5B83\u662F\u4E8B\u5B9E\u4E0A\u7684\u4EA4\u4E92\u8272\uFF08#90cdf4 \u5168\u5E93 64 \u6B21 vs \u7C89 4 \u6B21\uFF09\uFF0C
+   \u4E14\u7C89\u6E10\u53D8\u5728\u5C06\u6765\u7684\u6D45\u8272\u4E3B\u9898\u4E0B\u5BF9\u6BD4\u5EA6\u4E0D\u8DB3\u3001\u4E0D\u53EF\u7528\u3002
+   \u7C89\u6E10\u53D8\u4FDD\u7559\u4E3A --t-gradient-title \u4F9B\u6807\u9898\u4F7F\u7528\uFF0C\u4E0D\u518D\u7528\u4E8E\u6309\u94AE\u3002
+   ============================================================ */
+
+.t-btn {
+    /* \u26A0 \u523B\u610F\u4FDD\u6301 display: flex\uFF0C\u672A\u91C7\u7528 plan.md \xA76.3 \u7684 inline-flex\u3002
+       \u4E24\u8005\u5DEE\u522B\u4E0D\u662F\u89C6\u89C9\u800C\u662F\u5E03\u5C40\u8BED\u4E49\uFF1A\u5728\u5757\u7EA7\u5BB9\u5668\u91CC flex \u4F1A\u6491\u6EE1\u5BBD\u5EA6\u3001
+       inline-flex \u53EA\u5360\u5185\u5BB9\u5BBD\u5EA6\u3002\u5168\u5E93\u6309\u94AE\u7684\u7236\u5BB9\u5668\u7C7B\u578B\u672A\u9010\u4E00\u6838\u5B9E\uFF0C
+       \u4E14\u672C\u9879\u76EE\u6CA1\u6709\u89C6\u89C9\u57FA\u7EBF\u53EF\u6BD4\u5BF9\uFF0C\u6539\u8FD9\u4E00\u9879\u6781\u6613\u9020\u6210\u5927\u9762\u79EF\u5E03\u5C40\u584C\u9677\u3002
+       \u9700\u8981\u5185\u5BB9\u5BBD\u5EA6\u65F6\u7528 .t-btn--inline\uFF0C\u9700\u8981\u6EE1\u5BBD\u65F6\u7528 .t-btn--block\u3002 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--t-gap-inline);
+    padding: var(--t-space-md) var(--t-space-lg);
+    min-height: 32px;
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-control);
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text);
+    font-family: inherit;
+    font-size: var(--t-text-body);
+    font-weight: var(--t-font-weight-semibold);
+    line-height: var(--t-line-height-tight);
+    text-align: center;
+    cursor: pointer;
+    /* \u66FF\u4EE3\u539F\u6765\u7684 \`transition: 0.2s\`\uFF08\u7B49\u4EF7\u4E8E all 0.2s\uFF0C\u662F\u79FB\u52A8\u7AEF\u6389\u5E27\u6839\u56E0\uFF0C\u5BA1\u8BA1 A20\uFF09 */
+    transition: var(--t-transition-hover);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.t-btn:hover:not(:disabled) {
+    background: var(--t-color-surface-hover);
+    border-color: var(--t-color-border-strong);
+}
+
+.t-btn:active:not(:disabled) {
+    background: var(--t-color-surface-active);
+}
+
+.t-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--t-shadow-focus);
+}
+
+.t-btn:disabled,
+.t-btn.is-disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* ---- 6 \u4E2A\u53D8\u4F53\uFF0C\u8986\u76D6\u73B0\u6709 7 \u7C7B\u8BED\u4E49 ---- */
+
+.t-btn--primary {
+    background: var(--t-color-accent);
+    color: var(--t-color-text-on-accent);
+    border-color: transparent;
+}
+
+.t-btn--primary:hover:not(:disabled) {
+    background: var(--t-color-accent-hover);
+    border-color: transparent;
+}
+
+.t-btn--primary:active:not(:disabled) {
+    background: var(--t-color-accent-active);
+}
+
+/* = \u9ED8\u8BA4\u57FA\u6001\uFF0C\u4FDD\u7559\u7C7B\u540D\u4EE5\u663E\u5F0F\u5316\u8BED\u4E49 */
+.t-btn--secondary {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text);
+    border-color: var(--t-color-border-strong);
+}
+
+.t-btn--danger {
+    background: var(--t-color-danger-soft);
+    color: var(--t-color-danger);
+    border-color: var(--t-color-danger-border);
+}
+
+.t-btn--danger:hover:not(:disabled) {
+    background: var(--t-color-danger);
+    color: var(--t-color-text-on-accent);
+    border-color: transparent;
+}
+
+.t-btn--success {
+    background: var(--t-color-success-soft);
+    color: var(--t-color-success);
+    border-color: transparent;
+}
+
+.t-btn--success:hover:not(:disabled) {
+    background: var(--t-color-success);
+    color: var(--t-color-text-on-accent);
+}
+
+/* \u54C1\u724C\u91D1 \u2014\u2014 \u5373\u539F .t-btn-soft */
+.t-btn--brand {
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-brand);
+    border-color: var(--t-color-brand-border);
+}
+
+.t-btn--brand:hover:not(:disabled) {
+    background: var(--t-color-brand);
+    color: var(--t-color-text-on-accent);
+}
+
+.t-btn--ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--t-color-text-secondary);
+}
+
+.t-btn--ghost:hover:not(:disabled) {
+    background: var(--t-color-surface-hover);
+    color: var(--t-color-text-strong);
+    border-color: transparent;
+}
+
+/* ---- 4 \u4E2A\u5C3A\u5BF8\uFF0C\u8986\u76D6\u73B0\u6709 12 \u79CD padding \u7EC4\u5408 ---- */
+
+.t-btn--xs {
+    padding: var(--t-space-xs) var(--t-space-md);
+    min-height: 22px;
+    font-size: var(--t-text-caption);
+    border-radius: var(--t-radius-inline);
+}
+
+.t-btn--sm {
+    padding: var(--t-space-sm) var(--t-space-lg);
+    min-height: 28px;
+    font-size: var(--t-text-label);
+}
+
+.t-btn--lg {
+    padding: var(--t-space-lg) var(--t-space-2xl);
+    min-height: 40px;
+    font-size: var(--t-font-size-base);
+}
+
+/* ---- \u5E03\u5C40\u4FEE\u9970 ---- */
+
+.t-btn--block {
+    width: 100%;
+}
+
+/* \u5185\u5BB9\u5BBD\u5EA6\uFF08\u914D\u5408\u4E0A\u9762 display:flex \u7684\u8BF4\u660E\u4F7F\u7528\uFF09 */
+.t-btn--inline {
+    display: inline-flex;
+}
+
+.t-btn__icon {
+    flex: 0 0 auto;
+    line-height: 1;
+}
+
+
+/* === 02-components/icon-button.css === */
+/* ============================================================
+   02-components/icon-button.css \u2014\u2014 \u56FE\u6807\u6309\u94AE
+
+   \u2500\u2500 \u4FEE B13 \u2500\u2500
+   base.css \u539F\u6765\u7684 .t-icon-btn \u662F\u300C1.2em \u88F8\u56FE\u6807 + margin-left: 15px\u300D\uFF1A
+   \u70B9\u51FB\u70ED\u533A\u53EA\u6709\u5B57\u5F62\u672C\u8EAB\uFF0C\u5728\u89E6\u5C4F\u4E0A\u6781\u96BE\u70B9\u4E2D\u3002main-window.css \u4E0E workshop.css
+   \u5404\u81EA\u7528 4 \u5C42\u9009\u62E9\u5668\uFF08#view .t-header .t-header-actions .t-icon-btn\uFF09\u628A\u5B83\u4FEE\u6B63\u6210
+   \u65B9\u5F62\u70ED\u533A\uFF0C\u6CE8\u91CA\u90FD\u5199\u660E\u300C\u95F4\u8DDD\u7EDF\u4E00\u7531\u7236\u7EA7 gap \u8D1F\u8D23\uFF0C\u6E05\u6389 base.css \u7684 margin-left\u300D\u3002
+
+   \u5B9E\u6D4B\u8FD9\u4E24\u5904**\u5E76\u975E**\u9010\u5B57\u8282\u76F8\u540C\uFF08plan.md B13 \u8BB0\u4E3A\u300C\u590D\u5236\u540C\u4E00\u6BB5\u4FEE\u6B63\u300D\u4E0D\u51C6\u786E\uFF09\uFF1A
+       main-window  32\xD732\uFF0Cfont-size 1.5em
+       workshop     36\xD736\uFF0Cfont-size 1.35em\uFF0C\u4E14\u628A .t-close \u4E00\u8D77\u7EB3\u5165
+   \u6240\u4EE5\u4E0D\u80FD\u7B80\u5355\u5220\u6389\u4E24\u5904\u8865\u4E01\u3001\u7531\u7EC4\u4EF6\u7EDF\u4E00\u53D6\u4EE3 \u2014\u2014 \u90A3\u4F1A\u6539\u6389\u5176\u4E2D\u4E00\u5904\u7684\u5C3A\u5BF8\u3002
+
+   \u2500\u2500 \u89E3\u6CD5\uFF1A\u5C3A\u5BF8\u505A\u6210\u81EA\u5B9A\u4E49\u5C5E\u6027 \u2500\u2500
+   \u7EC4\u4EF6\u8D1F\u8D23\u300C\u65B9\u5F62\u70ED\u533A + \u5C45\u4E2D + \u4EA4\u4E92 + \u65E0 margin\u300D\u8FD9\u90E8\u5206\u771F\u6B63\u91CD\u590D\u7684\u903B\u8F91\uFF1B
+   \u5177\u4F53\u5C3A\u5BF8\u7531 --t-icon-btn-size \u63D0\u4F9B\u9ED8\u8BA4\u503C\uFF0Cfeature \u5C42\u9700\u8981\u4E0D\u540C\u5C3A\u5BF8\u65F6
+   \u53EA\u8986\u76D6\u8FD9\u4E2A\u53D8\u91CF\uFF0C\u800C\u4E0D\u662F\u91CD\u65B0\u58F0\u660E\u4E00\u904D width/height/display/border-radius\u3002
+   \u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5C5E\u6027\u4E0D\u5C5E\u4E8E\u300C\u91CD\u5B9A\u4E49\u7EC4\u4EF6\u89C6\u89C9\u5C5E\u6027\u300D\uFF0C\u4E0D\u8FDD\u53CD R4\u3002
+
+   font-size \u4ECD\u7559\u5728 feature \u5C42\uFF1A\u4E3B\u7A97\u53E3\u4E0E\u5DE5\u574A\u7684\u56FE\u6807\u6570\u91CF\u4E0D\u540C\uFF0C\u5B57\u5F62\u5927\u5C0F\u662F
+   \u5404\u81EA\u7684\u6392\u7248\u51B3\u5B9A\uFF0C\u4E0D\u662F\u7EC4\u4EF6\u5951\u7EA6\u7684\u4E00\u90E8\u5206\u3002
+   ============================================================ */
+
+.t-icon-btn {
+    --t-icon-btn-size: 32px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: var(--t-icon-btn-size);
+    height: var(--t-icon-btn-size);
+    padding: 0;
+    /* \u4E0D\u8BBE margin \u2014\u2014 \u95F4\u8DDD\u4E00\u5F8B\u7531\u7236\u5BB9\u5668\u7684 gap \u8D1F\u8D23\uFF08\u8FD9\u662F B13 \u7684\u6838\u5FC3\u4FEE\u6B63\uFF09 */
+    margin: 0;
+    border: none;
+    border-radius: var(--t-radius-container);
+    background: transparent;
+    color: var(--t-color-text-secondary);
+    line-height: 1;
+    cursor: pointer;
+    transition: var(--t-transition-hover);
+    /* \u907F\u514D\u79FB\u52A8\u7AEF\u957F\u6309\u9009\u4E2D\u6587\u672C / \u70B9\u51FB\u51FA\u73B0\u9AD8\u4EAE\u5757 */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.t-icon-btn:hover:not(:disabled) {
+    color: var(--t-color-text-strong);
+    background: var(--t-color-surface-hover);
+}
+
+.t-icon-btn:active:not(:disabled) {
+    background: var(--t-color-surface-active);
+}
+
+.t-icon-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--t-shadow-focus);
+}
+
+.t-icon-btn:disabled,
+.t-icon-btn.is-disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* ---- .t-close \u672A\u7EB3\u5165\u672C\u7EC4\u4EF6 ----
+   .t-close \u5168\u5E93 17 \u5904\u4F7F\u7528\uFF0C\u4F46\u53EA\u6709\u4E3B\u7A97\u53E3\u4E0E\u5DE5\u574A\u7684\u5934\u90E8\uFF08\u7EA6 4 \u5904\uFF09\u7ED9\u5B83\u52A0\u4E86
+   margin-left: 0 \u8865\u4E01\u3001\u7531\u7236\u7EA7 gap \u63A5\u7BA1\u95F4\u8DDD\u3002\u5176\u4F59 13 \u5904\u4ECD**\u4F9D\u8D56**
+   base.css \u7684 margin-left: 15px \u6765\u6491\u5F00\u4E0E\u76F8\u90BB\u5143\u7D20\u7684\u8DDD\u79BB\uFF0C\u7236\u5BB9\u5668\u6CA1\u6709 gap\u3002
+   \u82E5\u73B0\u5728\u628A\u5B83\u6539\u6210\u65B9\u5F62\u70ED\u533A\u5E76\u53BB\u6389 margin\uFF0C\u8FD9 13 \u5904\u4F1A\u7ACB\u523B\u8D34\u5230\u90BB\u5C45\u4E0A \u2014\u2014
+   \u800C\u672C\u9879\u76EE\u6CA1\u6709\u89C6\u89C9\u57FA\u7EBF\u53EF\u6BD4\u5BF9\u3002
+
+   \u6545\u5176\u5B9A\u4E49\u539F\u5730\u7559\u5728 01-base/base.css \u4E0D\u52A8\uFF08\u540C\u65F6\u4E5F\u907F\u514D\u628A #888 \u8FD9\u7C7B
+   \u65E0\u5BF9\u5E94\u8BED\u4E49 token \u7684\u503C\u5E26\u8FDB\u7EC4\u4EF6\u5C42\uFF0C\u89C1 R3a\uFF09\u3002
+   \u7559\u5F85 Phase 4 \u7EDF\u4E00 dialog / window \u5934\u90E8\u7ED3\u6784\u3001\u6BCF\u5904\u90FD\u6709\u7236\u7EA7 gap \u4E4B\u540E\uFF0C
+   \u518D\u6536\u655B\u4E3A .t-icon-btn--close \u53D8\u4F53\u3002 */
+
+
+/* === 02-components/_legacy.css === */
+/* ============================================================
+   02-components/_legacy.css \u2014\u2014 \u65E7\u7C7B\u540D \u2192 \u65B0\u5B9E\u73B0\u6620\u5C04 \u26A0 Phase 7 \u5220\u9664
+
+   \u4F5C\u7528\uFF1A\u8BA9 JS \u91CC\u73B0\u5B58\u7684\u65E7\u6309\u94AE\u7C7B\u540D\u76F4\u63A5\u83B7\u5F97\u7EDF\u4E00\u540E\u7684\u6837\u5F0F\uFF0C
+   \u4E8E\u662F **Phase 2 \u671F\u95F4 JS \u4E00\u884C\u4E0D\u6539**\uFF0C\u89C6\u89C9\u5373\u5B8C\u6210\u7EDF\u4E00\u3002
+   JS \u4FA7\u7C7B\u540D\u66FF\u6362\u5728 Phase 2 \u4E4B\u540E\u6309\u7A97\u53E3\u5206\u6279\u505A\uFF0811 \u4E2A\u6587\u4EF6\u300111 \u4E2A\u72EC\u7ACB\u63D0\u4EA4\uFF09\u3002
+
+   \u5220\u9664\u524D\u63D0\uFF1A\u5BA1\u8BA1\u786E\u8BA4 JS \u4FA7\u96F6\u65E7\u7C7B\u540D\u5F15\u7528\u3002
+   \u672C\u6587\u4EF6\u5FC5\u987B\u6392\u5728 02-components/ \u5168\u90E8\u7EC4\u4EF6\u4E4B\u540E\uFF08\u89C1 css/manifest.js\uFF09\u3002
+
+   \u2500\u2500 \u672C\u9636\u6BB5\uFF082a\uFF09\u53EA\u5904\u7406 base.css \u8FC1\u79FB\u8FC7\u6765\u7684\u8FD9\u51E0\u4E2A \u2500\u2500
+   feature \u5C42\u8FD8\u6709\u7EA6 50 \u4E2A\u6309\u94AE\u7C7B\u540D\uFF08.t-btn-danger \u7684 2 \u4EFD\u51B2\u7A81\u5B9A\u4E49\u3001
+   .t-sel-cat-btn \u7684\u540C\u6587\u4EF6 2 \u4EFD\u300118 \u4E2A ghost-xs \u540C\u4E49\u7C7B\u7B49\uFF09\uFF0C
+   \u5B83\u4EEC\u7684\u5B9A\u4E49\u4ECD\u5728\u5404\u81EA feature \u6587\u4EF6\u91CC\u3001\u4F18\u5148\u7EA7\u9AD8\u4E8E\u672C\u5C42\uFF0C\u9700\u8981\u8FDE\u540C\u5220\u9664\u624D\u80FD\u751F\u6548\uFF0C
+   \u7559\u5F85 2b \u5904\u7406\u3002plan.md \xA76.4 \u7684\u5B8C\u6574\u6620\u5C04\u8868\u662F 2b \u7684\u4F9D\u636E\u3002
+   ============================================================ */
+
+/* ---- .t-btn.primary \u2192 \u84DD\u8272\u4E3B\u6309\u94AE\uFF08S4 \u51B3\u7B56\uFF09----
+   \u539F\u4E3A\u7C89\u6E10\u53D8 linear-gradient(90deg, #ff9a9e, #fecfef) + color #444\uFF0C\u5168\u5E93 38 \u5904\u3002
+   \u4E0E .t-btn-primary\uFF08\u84DD\uFF0C19 \u5904\uFF09\u4E8C\u9009\u4E00\u540E\u53D6\u84DD\uFF1A\u84DD\u662F\u4E8B\u5B9E\u4E0A\u7684\u4EA4\u4E92\u8272
+   \uFF08#90cdf4 \u5168\u5E93 64 \u6B21\uFF09\uFF0C\u4E14\u7C89\u6E10\u53D8\u5728\u6D45\u8272\u4E3B\u9898\u4E0B\u5BF9\u6BD4\u5EA6\u4E0D\u8DB3\u3002
+   \u8FD9\u662F\u672C\u6B21\u552F\u4E00\u4E0D\u53EF\u9006\u7684\u89C6\u89C9\u51B3\u7B56\uFF0C\u5DF2\u5355\u72EC\u6210\u63D0\u4EA4\u3002 */
+.t-btn.primary {
+    background: var(--t-color-accent);
+    color: var(--t-color-text-on-accent);
+    border-color: transparent;
+}
+
+.t-btn.primary:hover:not(:disabled) {
+    background: var(--t-color-accent-hover);
+    border-color: transparent;
+}
+
+.t-btn.primary:active:not(:disabled) {
+    background: var(--t-color-accent-active);
+}
+
+/* ---- .t-btn-soft \u2192 .t-btn--brand\uFF08\u54C1\u724C\u91D1\uFF09----
+   \u539F\u503C rgba(191,161,95,.14) / border rgba(191,161,95,.55) / color #e0c98a\uFF0C
+   \u4E0E --t-color-brand-soft / --t-color-brand-border \u7B49\u4EF7\uFF1B
+   \u6587\u5B57\u8272\u7531 #e0c98a \u6539\u4E3A --t-color-brand(#bfa15f)\uFF0C\u662F\u540C\u8272\u7CFB\u7684\u6536\u655B\u3002 */
+.t-btn.t-btn-soft {
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-brand);
+    border-color: var(--t-color-brand-border);
+}
+
+.t-btn.t-btn-soft:hover:not(:disabled) {
+    background: var(--t-color-brand);
+    color: var(--t-color-text-on-accent);
+    border-color: var(--t-color-brand-border);
+}
+
+/* ---- \u523B\u610F\u7559\u5728 base.css\u3001\u672A\u7EB3\u5165\u7EC4\u4EF6\u5C42\u7684\u4E24\u4E2A ----
+   .t-tool-btn\uFF0842 \u5904\u4F7F\u7528\uFF09\u4E0E .t-close\uFF0817 \u5904\u4F7F\u7528\uFF09\u672C\u9636\u6BB5\u4E0D\u505A\u7EDF\u4E00\uFF0C
+   \u7406\u7531\u89C1 icon-button.css \u4E0E\u4E0B\u65B9\u8BF4\u660E\u3002\u5B83\u4EEC\u7684\u5B9A\u4E49\u539F\u5730\u7559\u5728 01-base/base.css\uFF0C
+   \u4E0D\u642C\u5230\u7EC4\u4EF6\u5C42 \u2014\u2014 \u56E0\u4E3A\u7EC4\u4EF6\u5C42\u7981\u6B62\u989C\u8272\u5B57\u9762\u91CF\uFF08R3a / \u5BA1\u8BA1 A3\uFF09\uFF0C\u800C\u8FD9\u4E24\u4E2A
+   \u8981\u4FDD\u6301\u539F\u503C\u5C31\u5FC5\u7136\u5E26\u7740 rgba(0,0,0,.6)\u3001#ccc \u8FD9\u7C7B\u6CA1\u6709\u5BF9\u5E94\u8BED\u4E49 token \u7684\u503C\u3002
+   \u4E0E\u5176\u4E3A\u4E86\u300C\u642C\u8FDB\u6765\u300D\u800C\u6539\u503C\u6216\u786C\u9020 token\uFF0C\u4E0D\u5982\u539F\u5730\u4E0D\u52A8\u3001\u7559\u5230 2b \u4E00\u5E76\u8BC4\u4F30\u3002
+
+   .t-tool-btn\uFF1Aplan.md \xA76.4 \u8981\u6C42\u6620\u5C04\u4E3A .t-btn--ghost.t-btn--xs\uFF0C\u4F46\u5B83\u73B0\u5728\u662F
+     \u300C\u534A\u900F\u660E\u9ED1\u5E95\u836F\u4E38\u300D\uFF0C\u4E0E ghost \u7684\u300C\u5168\u900F\u660E\u65E0\u8FB9\u6846\u300D\u5DEE\u522B\u660E\u663E\uFF0C42 \u5904\u540C\u65F6\u6539\u89C2\u611F
+     \u4E14\u65E0\u57FA\u7EBF\u53EF\u6BD4\u5BF9\uFF0C\u98CE\u9669\u4E0E\u6536\u76CA\u4E0D\u6210\u6BD4\u4F8B\u3002
+   .t-close\uFF1A17 \u5904\u4E2D\u4EC5\u7EA6 4 \u5904\u5728\u5DF2\u6253\u8865\u4E01\u7684\u5934\u90E8\u91CC\u7531\u7236\u7EA7 gap \u63A5\u7BA1\u95F4\u8DDD\uFF0C
+     \u5176\u4F59 13 \u5904\u4ECD\u4F9D\u8D56 margin-left: 15px\uFF0C\u53BB\u6389\u4F1A\u8D34\u5230\u90BB\u5C45\u4E0A\u3002 */
 
 
 /* === 04-features/floating.css === */
@@ -3578,20 +3854,9 @@ textarea.t-input {
 }
 
 #t-main-view .t-header .t-header-actions .t-icon-btn {
-    /* \u95F4\u8DDD\u7EDF\u4E00\u7531\u7236\u7EA7 gap \u8D1F\u8D23\uFF0C\u6E05\u6389 base.css \u7684 margin-left \u907F\u514D\u53E0\u52A0 */
-    margin-left: 0;
+    /* \u70ED\u533A/\u5C45\u4E2D/\u65E0 margin \u5DF2\u7531 02-components/icon-button.css \u63D0\u4F9B\uFF08\u4FEE B13\uFF09\u3002
+       \u8FD9\u91CC\u53EA\u4FDD\u7559\u672C\u89C6\u56FE\u81EA\u5DF1\u7684\u6392\u7248\u51B3\u5B9A\uFF1A\u5B57\u5F62\u5927\u5C0F\u3002 */
     font-size: 1.5em;
-    width: 32px;
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    transition: color 0.2s, background-color 0.2s;
-}
-
-#t-main-view .t-header .t-header-actions .t-icon-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
 }
 
 #t-main-view .t-header .t-header-actions .t-close {
@@ -4698,8 +4963,7 @@ textarea.t-input {
         /* \u53EA\u6536\u5B57\u5F62\u4E0D\u6536\u70ED\u533A\uFF1A30px \u5DF2\u662F\u89E6\u5C4F\u70B9\u51FB\u7684\u4E0B\u9650\uFF0C\u518D\u5C0F\u4F1A\u96BE\u70B9\u3002
            \u56FE\u6807\u6700\u591A 5 \u4E2A\u65F6 1.3em \u51E0\u4E4E\u9876\u6EE1\u65B9\u5757\uFF0C\u663E\u5F97\u62E5\u6324\uFF0C\u7F29\u5230 1.15em \u7559\u51FA\u547C\u5438\u611F\u3002 */
         font-size: 1.15em;
-        width: 30px;
-        height: 30px;
+        --t-icon-btn-size: 30px;
     }
 
     /* \u5173\u95ED\u952E\u7684 1.8em \u5728\u7A84\u5C4F\u6BD4\u529F\u80FD\u56FE\u6807\u5927\u51FA\u4E00\u5708\uFF0C\u4E00\u8D77\u6536\u4E00\u70B9\u4FDD\u6301\u89C6\u89C9\u9F50\u5E73 */
@@ -9510,7 +9774,14 @@ textarea.t-input {
 #t-ws-rating-toggle:hover { border-color: var(--t-theme); color: #fff; }
 #t-ws-rating-toggle.is-mature { border-color: #7e3847; background: #4a2530; color: #ffa8b0; }
 
-#t-ws-view .t-header .t-header-actions .t-icon-btn,
+/* \u5DE5\u574A\u5934\u90E8\u7684\u56FE\u6807\u94AE\u6BD4\u4E3B\u7A97\u53E3\u5927\u4E00\u53F7\uFF0836 vs 32\uFF09\uFF1A\u53EA\u8986\u76D6\u5C3A\u5BF8\u53D8\u91CF\u3002
+   \u70ED\u533A/\u5C45\u4E2D/\u65E0 margin/user-select \u5DF2\u7531 02-components/icon-button.css \u63D0\u4F9B\uFF08\u4FEE B13\uFF09\u3002 */
+#t-ws-view .t-header .t-header-actions .t-icon-btn {
+    --t-icon-btn-size: 36px;
+    font-size: 1.35em;
+}
+
+/* .t-close \u5C1A\u672A\u7EB3\u5165\u7EC4\u4EF6\uFF08\u7406\u7531\u89C1 02-components/icon-button.css\uFF09\uFF0C\u4ECD\u9700\u5728\u6B64\u81EA\u884C\u6784\u9020\u65B9\u5F62\u70ED\u533A */
 #t-ws-view .t-header .t-header-actions .t-close,
 .t-ws-preview-box .t-header .t-header-actions .t-close {
     /* \u95F4\u8DDD\u7EDF\u4E00\u7531\u7236\u7EA7 gap \u8D1F\u8D23\uFF0C\u6E05\u6389 base.css \u7684 margin-left \u907F\u514D\u53E0\u52A0 */
@@ -9526,18 +9797,9 @@ textarea.t-input {
     /* \u907F\u514D\u79FB\u52A8\u7AEF\u957F\u6309\u9009\u4E2D \xD7 \u6587\u672C / \u70B9\u51FB\u9AD8\u4EAE\u5757 */
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-}
-
-#t-ws-view .t-header .t-header-actions .t-icon-btn {
-    font-size: 1.35em;
-}
-
-#t-ws-view .t-header .t-header-actions .t-close,
-.t-ws-preview-box .t-header .t-header-actions .t-close {
     font-size: 1.7em;
 }
 
-#t-ws-view .t-header .t-header-actions .t-icon-btn:hover,
 #t-ws-view .t-header .t-header-actions .t-close:hover,
 .t-ws-preview-box .t-header .t-header-actions .t-close:hover {
     background: rgba(255, 255, 255, 0.08);
@@ -16925,7 +17187,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/button.css", "02-components/icon-button.css", "02-components/_legacy.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css"];
   }
 });
 
