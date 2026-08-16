@@ -459,7 +459,7 @@
 /* 通知呼吸灯预览 */
 
 .t-preview-ball.p-notify {
-    border-color: #55efc4 !important;
+    border-color: #55efc4 !important; /* override color picker inline border during notify preview */
     animation: t-notify-glow 1.5s infinite ease-in-out;
 }
 

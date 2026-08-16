@@ -8648,7 +8648,7 @@ textarea.t-input {
 /* \u901A\u77E5\u547C\u5438\u706F\u9884\u89C8 */
 
 .t-preview-ball.p-notify {
-    border-color: #55efc4 !important;
+    border-color: #55efc4 !important; /* override color picker inline border during notify preview */
     animation: t-notify-glow 1.5s infinite ease-in-out;
 }
 
