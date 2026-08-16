@@ -7205,7 +7205,6 @@ textarea.t-input {
 .t-queue-script-actions .t-btn {
     flex: 1;
     padding: 6px 10px;
-    font-size: 0.85em;
 }
 
 /* \u5E95\u90E8 */
@@ -39881,8 +39880,8 @@ function openQueueSettingsWindow() {
                     `).join("")}
                 </div>
                 <div class="t-queue-script-actions">
-                    <button class="t-btn" id="t-queue-select-all">\u5168\u9009</button>
-                    <button class="t-btn" id="t-queue-select-none">\u6E05\u7A7A</button>
+                    <button class="t-btn t-btn--sm" id="t-queue-select-all">\u5168\u9009</button>
+                    <button class="t-btn t-btn--sm" id="t-queue-select-none">\u6E05\u7A7A</button>
                 </div>
             </div>
             

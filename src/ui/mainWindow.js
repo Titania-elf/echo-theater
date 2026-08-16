@@ -3036,8 +3036,8 @@ function openQueueSettingsWindow() {
                     `).join('')}
                 </div>
                 <div class="t-queue-script-actions">
-                    <button class="t-btn" id="t-queue-select-all">全选</button>
-                    <button class="t-btn" id="t-queue-select-none">清空</button>
+                    <button class="t-btn t-btn--sm" id="t-queue-select-all">全选</button>
+                    <button class="t-btn t-btn--sm" id="t-queue-select-none">清空</button>
                 </div>
             </div>
             
