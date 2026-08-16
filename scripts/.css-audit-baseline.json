@@ -59,9 +59,9 @@
     },
     "A9": {
       "title": "!important 紧邻注释说明其对抗的宿主规则",
-      "violations": 60,
+      "violations": 44,
       "metrics": {
-        "important总数": 62
+        "important总数": 46
       }
     },
     "A1": {
@@ -69,13 +69,13 @@
       "violations": 0,
       "metrics": {
         "hex字面量": 1207,
-        "rgb/rgba字面量": 982,
-        "合计": 2189,
+        "rgb/rgba字面量": 981,
+        "合计": 2188,
         "  00-tokens": "hex 10 / rgb 100",
         "  01-base": "hex 20 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
         "  03-layout": "hex 0 / rgb 0",
-        "  04-features": "hex 1169 / rgb 857",
+        "  04-features": "hex 1169 / rgb 856",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
     },
@@ -152,7 +152,7 @@
     },
     "A19": {
       "title": "z-index 通过 token 声明",
-      "violations": 84,
+      "violations": 83,
       "metrics": {
         "不同取值": 41
       }
@@ -177,11 +177,11 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16406,
-    "规则条数": 2264,
+    "CSS 总行数": 16384,
+    "规则条数": 2262,
     "border-radius 声明 / 不同值": "353 / 41",
     "box-shadow 声明 / 不同值": "119 / 85",
     "font-size (px / em)": "162 / 316",
-    "padding / gap 声明": "546 / 394"
+    "padding / gap 声明": "544 / 394"
   }
 }

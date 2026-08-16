@@ -14848,24 +14848,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 /* css/04-features/memory-recall.css */
 /* \u8BB0\u5FC6\u53EC\u56DE\u529F\u80FD\u6837\u5F0F */
 
-/* ===== \u8BB0\u5FC6\u53EC\u56DE\u8986\u76D6\u5C42 ===== */
-.titania-recall-overlay {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: rgba(0, 0, 0, 0.6) !important;
-    z-index: 99999 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 20px !important;
-    box-sizing: border-box !important;
-}
-
 /* ===== \u5FEB\u6377\u5DE5\u5177\u680F\u4E2D\u7684\u8BB0\u5FC6\u53EC\u56DE\u6309\u94AE\u6837\u5F0F ===== */
 /* \u6309\u94AE\u4F7F\u7528 fa-brain \u56FE\u6807\uFF0C\u7D2B\u8272\u6E10\u53D8\u80CC\u666F */
 .t-menu-icon-btn.recall {
@@ -15272,11 +15254,6 @@ body.titania-debug-mode #chat titania-memory::before {
 
 /* ===== \u79FB\u52A8\u7AEF\u9002\u914D - \u5168\u5C4F\u8986\u76D6\u5F0F ===== */
 @media (max-width: 768px) {
-    .titania-recall-overlay {
-        padding: 0 !important;
-        align-items: stretch !important;
-    }
-
     .titania-recall-panel {
         /* \u5168\u5C4F\u8986\u76D6 */
         width: 100% !important;
@@ -15386,6 +15363,7 @@ body.titania-debug-mode #chat titania-memory::before {
         padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
 }
+
 
 /* === 04-features/story-outline.css === */
 /* css/04-features/story-outline.css */
