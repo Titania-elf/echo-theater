@@ -19,6 +19,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from '
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { CSS_LAYERS, cssFileList } from '../css/manifest.js';
+import { stripComments, makeLineLookup, parseCSS } from './lib/css-parse.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ARGS = process.argv.slice(2);
@@ -43,160 +44,6 @@ const EXTERNAL_ANIMATIONS = new Set(['fa-spin', 'fa-beat', 'fa-fade', 'fa-flip',
 
 /** Phase 0 即阻断的检查项（plan.md §11.1 左列 + 本项目补充的 A22 / A23） */
 const PHASE0_BLOCKING = new Set(['A10', 'A11', 'A14', 'A15', 'A22', 'A23']);
-
-// ─────────────────────────────────────────────────────────────
-// 最小 CSS 解析
-// ─────────────────────────────────────────────────────────────
-
-/** 用等长空白替换注释，保留换行以维持行号 */
-function stripComments(css) {
-    let out = '';
-    let i = 0;
-    while (i < css.length) {
-        if (css[i] === '/' && css[i + 1] === '*') {
-            const end = css.indexOf('*/', i + 2);
-            const stop = end === -1 ? css.length : end + 2;
-            for (let j = i; j < stop; j++) out += css[j] === '\n' ? '\n' : ' ';
-            i = stop;
-            continue;
-        }
-        if (css[i] === '"' || css[i] === "'") {
-            const q = css[i];
-            out += css[i++];
-            while (i < css.length && css[i] !== q) {
-                if (css[i] === '\\') { out += css[i++]; if (i < css.length) out += css[i++]; continue; }
-                out += css[i++];
-            }
-            if (i < css.length) out += css[i++];
-            continue;
-        }
-        out += css[i++];
-    }
-    return out;
-}
-
-function makeLineLookup(text) {
-    const starts = [0];
-    for (let i = 0; i < text.length; i++) if (text[i] === '\n') starts.push(i + 1);
-    return (offset) => {
-        let lo = 0, hi = starts.length - 1;
-        while (lo < hi) {
-            const mid = (lo + hi + 1) >> 1;
-            if (starts[mid] <= offset) lo = mid; else hi = mid - 1;
-        }
-        return lo + 1;
-    };
-}
-
-/** 找到与 css[open] 处 '{' 匹配的 '}' 的下标；字符串内的花括号会被跳过 */
-function matchBrace(css, open) {
-    let depth = 0;
-    for (let i = open; i < css.length; i++) {
-        const ch = css[i];
-        if (ch === '"' || ch === "'") {
-            const q = ch; i++;
-            while (i < css.length && css[i] !== q) { if (css[i] === '\\') i++; i++; }
-            continue;
-        }
-        if (ch === '{') depth++;
-        else if (ch === '}') { depth--; if (depth === 0) return i; }
-    }
-    return css.length - 1;
-}
-
-const CONTAINER_AT = /^@(media|supports|container|layer|document|scope)\b/i;
-const KEYFRAMES_AT = /^@(-[a-z]+-)?keyframes\b/i;
-
-/**
- * 解析为规则数组。每条规则：
- *   { selector, atStack, line, body, isKeyframes, decls:[{prop, value, line}] }
- */
-function parseCSS(raw, label) {
-    const css = stripComments(raw);
-    const lineAt = makeLineLookup(css);
-    const rules = [];
-
-    function walk(start, end, atStack) {
-        let i = start;
-        let bufStart = i;
-        let buf = '';
-        while (i < end) {
-            const ch = css[i];
-            if (ch === '"' || ch === "'") {
-                const q = ch; buf += ch; i++;
-                while (i < end && css[i] !== q) { if (css[i] === '\\') { buf += css[i++]; } buf += css[i++]; }
-                if (i < end) buf += css[i++];
-                continue;
-            }
-            if (ch === '{') {
-                const prelude = buf.trim();
-                const bodyStart = i + 1;
-                const bodyEnd = matchBrace(css, i);
-                const lead = buf.length - buf.trimStart().length;
-                const line = lineAt(Math.min(bufStart + lead, css.length - 1));
-                if (CONTAINER_AT.test(prelude)) {
-                    rules.push({ selector: prelude, atStack: [...atStack], line, body: '', isAtContainer: true, isKeyframes: false, decls: [], file: label });
-                    walk(bodyStart, bodyEnd, [...atStack, prelude]);
-                } else {
-                    const body = css.slice(bodyStart, bodyEnd);
-                    rules.push({
-                        selector: prelude,
-                        atStack: [...atStack],
-                        line,
-                        body,
-                        isAtContainer: false,
-                        isKeyframes: KEYFRAMES_AT.test(prelude),
-                        decls: parseDecls(body, bodyStart, lineAt),
-                        file: label,
-                    });
-                }
-                i = bodyEnd + 1;
-                buf = ''; bufStart = i;
-                continue;
-            }
-            if (ch === '}') { i++; buf = ''; bufStart = i; continue; }
-            buf += ch;
-            i++;
-        }
-    }
-
-    /** 提取顶层声明（跳过嵌套块，例如 @keyframes 内的步骤块） */
-    function parseDecls(body, bodyOffset, lineAt) {
-        const decls = [];
-        let i = 0, segStart = 0;
-        while (i < body.length) {
-            const ch = body[i];
-            if (ch === '"' || ch === "'") {
-                const q = ch; i++;
-                while (i < body.length && body[i] !== q) { if (body[i] === '\\') i++; i++; }
-                i++; continue;
-            }
-            if (ch === '{') { i = matchBrace(body, i) + 1; segStart = i; continue; }
-            if (ch === ';') {
-                pushDecl(body.slice(segStart, i), segStart);
-                i++; segStart = i; continue;
-            }
-            i++;
-        }
-        pushDecl(body.slice(segStart), segStart);
-        return decls;
-
-        function pushDecl(seg, off) {
-            const s = seg.trim();
-            if (!s) return;
-            const ci = s.indexOf(':');
-            if (ci <= 0) return;
-            decls.push({
-                prop: s.slice(0, ci).trim().toLowerCase(),
-                value: s.slice(ci + 1).trim(),
-                line: lineAt(bodyOffset + off),
-            });
-        }
-    }
-
-    walk(0, css.length, []);
-    return rules;
-}
 
 // ─────────────────────────────────────────────────────────────
 // 输入收集
@@ -454,11 +301,12 @@ check('A22', 'R6', '悬空 animation 引用 / 孤儿 @keyframes', () => {
     // 样式来源 + JS 内联样式一并扫描（动画可能定义/引用在 JS 注入的 <style> 里）
     const all = [...styleSources.map(f => ({ rel: f.rel, raw: f.raw })), ...jsFiles.map(f => ({ rel: f.rel, raw: f.raw }))];
     for (const f of all) {
-        const lineAt = makeLineLookup(f.raw);
-        for (const m of f.raw.matchAll(/@keyframes\s+([A-Za-z0-9_-]+)/g)) {
+        const css = stripComments(f.raw);
+        const lineAt = makeLineLookup(css);
+        for (const m of css.matchAll(/@keyframes\s+([A-Za-z0-9_-]+)/g)) {
             defined.set(m[1], `${f.rel}:${lineAt(m.index)}`);
         }
-        for (const m of f.raw.matchAll(/animation(?:-name)?\s*:\s*([^;}"'`]+)/g)) {
+        for (const m of css.matchAll(/animation(?:-name)?\s*:\s*([^;}"'`]+)/g)) {
             for (const part of m[1].split(',')) {
                 for (let tok of part.trim().split(/\s+/)) {
                     tok = tok.replace(/[()]/g, '');
@@ -543,8 +391,9 @@ check('A7', 'R6', '@keyframes 集中声明且带 t- 前缀', () => {
     const all = [...styleSources.map(f => ({ rel: f.rel, raw: f.raw })), ...jsFiles.map(f => ({ rel: f.rel, raw: f.raw }))];
     let total = 0;
     for (const f of all) {
-        const lineAt = makeLineLookup(f.raw);
-        for (const m of f.raw.matchAll(/@keyframes\s+([A-Za-z0-9_-]+)/g)) {
+        const css = stripComments(f.raw);
+        const lineAt = makeLineLookup(css);
+        for (const m of css.matchAll(/@keyframes\s+([A-Za-z0-9_-]+)/g)) {
             total++;
             const loc = `${f.rel}:${lineAt(m.index)}`;
             if (f.rel !== HOME) violations.push({ loc, msg: `@keyframes ${m[1]} 应集中到 ${HOME}` });
