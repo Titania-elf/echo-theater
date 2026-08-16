@@ -38,7 +38,7 @@
 #t-main-view.t-zen-mode .t-bottom-bar,
 #t-main-view.t-zen-mode .t-toolbox-panel,
 #t-main-view.t-zen-mode .t-toolbox-backdrop {
-    display: none !important;
+    display: none !important; /* override later control display rules while Zen mode is active */
 }
 
 #t-main-view.t-zen-mode .t-content-wrapper {
@@ -89,19 +89,19 @@
 
 #t-output-content>div {
     flex-grow: 1;
-    margin: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 0 !important;
-    border: none !important;
+    margin: 0 !important; /* override fallback generated HTML root inline margin */
+    width: 100% !important; /* override fallback generated HTML root inline width */
+    max-width: 100% !important; /* override fallback generated HTML root inline max-width */
+    border-radius: 0 !important; /* override fallback generated HTML root inline radius */
+    border: none !important; /* override fallback generated HTML root inline border */
     min-height: 100%;
-    box-sizing: border-box !important;
-    overflow-x: hidden !important;
+    box-sizing: border-box !important; /* override fallback generated HTML root inline box sizing */
+    overflow-x: hidden !important; /* override fallback generated HTML root inline overflow */
 }
 
 #t-output-content img {
-    max-width: 100% !important;
-    height: auto !important;
+    max-width: 100% !important; /* override fallback generated image inline width constraints */
+    height: auto !important; /* override fallback generated image inline height */
 }
 
 /* iframe 内容样式 - 移除多余滚动条 */
@@ -1863,7 +1863,7 @@
 
 /* 折叠状态 */
 .t-wi-entries.t-wi-collapsed {
-    max-height: 0 !important;
+    max-height: 0;
     padding-top: 0;
     opacity: 0;
     overflow: hidden;
@@ -2347,7 +2347,7 @@
 
 /* Zen 模式下隐藏统计 HUD */
 #t-main-view.t-zen-mode .t-stats-hud {
-    display: none !important;
+    display: none !important; /* override updateContentStatsDisplay() jQuery inline display */
 }
 
 /* 移动端适配 */
@@ -2564,7 +2564,7 @@
 #t-main-view.t-zen-mode .t-page-nav,
 #t-main-view.t-zen-mode .t-page-indicator,
 #t-main-view.t-zen-mode .t-cont-inline-actions {
-    display: none !important;
+    display: none !important; /* override history navigation jQuery inline display in Zen mode */
 }
 
 /* 移动端适配 */

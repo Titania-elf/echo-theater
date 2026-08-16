@@ -4149,7 +4149,7 @@ textarea.t-input {
 #t-main-view.t-zen-mode .t-bottom-bar,
 #t-main-view.t-zen-mode .t-toolbox-panel,
 #t-main-view.t-zen-mode .t-toolbox-backdrop {
-    display: none !important;
+    display: none !important; /* override later control display rules while Zen mode is active */
 }
 
 #t-main-view.t-zen-mode .t-content-wrapper {
@@ -4200,19 +4200,19 @@ textarea.t-input {
 
 #t-output-content>div {
     flex-grow: 1;
-    margin: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 0 !important;
-    border: none !important;
+    margin: 0 !important; /* override fallback generated HTML root inline margin */
+    width: 100% !important; /* override fallback generated HTML root inline width */
+    max-width: 100% !important; /* override fallback generated HTML root inline max-width */
+    border-radius: 0 !important; /* override fallback generated HTML root inline radius */
+    border: none !important; /* override fallback generated HTML root inline border */
     min-height: 100%;
-    box-sizing: border-box !important;
-    overflow-x: hidden !important;
+    box-sizing: border-box !important; /* override fallback generated HTML root inline box sizing */
+    overflow-x: hidden !important; /* override fallback generated HTML root inline overflow */
 }
 
 #t-output-content img {
-    max-width: 100% !important;
-    height: auto !important;
+    max-width: 100% !important; /* override fallback generated image inline width constraints */
+    height: auto !important; /* override fallback generated image inline height */
 }
 
 /* iframe \u5185\u5BB9\u6837\u5F0F - \u79FB\u9664\u591A\u4F59\u6EDA\u52A8\u6761 */
@@ -5974,7 +5974,7 @@ textarea.t-input {
 
 /* \u6298\u53E0\u72B6\u6001 */
 .t-wi-entries.t-wi-collapsed {
-    max-height: 0 !important;
+    max-height: 0;
     padding-top: 0;
     opacity: 0;
     overflow: hidden;
@@ -6458,7 +6458,7 @@ textarea.t-input {
 
 /* Zen \u6A21\u5F0F\u4E0B\u9690\u85CF\u7EDF\u8BA1 HUD */
 #t-main-view.t-zen-mode .t-stats-hud {
-    display: none !important;
+    display: none !important; /* override updateContentStatsDisplay() jQuery inline display */
 }
 
 /* \u79FB\u52A8\u7AEF\u9002\u914D */
@@ -6675,7 +6675,7 @@ textarea.t-input {
 #t-main-view.t-zen-mode .t-page-nav,
 #t-main-view.t-zen-mode .t-page-indicator,
 #t-main-view.t-zen-mode .t-cont-inline-actions {
-    display: none !important;
+    display: none !important; /* override history navigation jQuery inline display in Zen mode */
 }
 
 /* \u79FB\u52A8\u7AEF\u9002\u914D */
