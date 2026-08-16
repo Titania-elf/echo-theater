@@ -12611,10 +12611,10 @@ textarea.t-input {
 
 @media (max-width: 900px) {
     #t-debug-view {
-        width: 100vw !important;
-        height: 100vh !important;
-        max-width: none !important;
-        border-radius: 0 !important;
+        width: 100vw !important; /* override debugWindow.js inline width on mobile */
+        height: 100vh !important; /* override debugWindow.js inline height on mobile */
+        max-width: none !important; /* override debugWindow.js inline max-width on mobile */
+        border-radius: 0 !important; /* override host t-box radius on mobile */
     }
 
     #t-debug-view .t-prompt-summary {
