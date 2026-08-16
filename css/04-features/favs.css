@@ -626,11 +626,11 @@
 
 #t-read-content>div {
     flex-grow: 1;
-    margin: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    border-radius: 0 !important;
-    border: none !important;
+    margin: 0 !important; /* override fallback favorite HTML root inline margin */
+    width: 100% !important; /* override fallback favorite HTML root inline width */
+    max-width: none !important; /* override fallback favorite HTML root inline max-width */
+    border-radius: 0 !important; /* override fallback favorite HTML root inline radius */
+    border: none !important; /* override fallback favorite HTML root inline border */
     min-height: 100%;
     box-sizing: border-box;
 }
