@@ -1807,6 +1807,46 @@ function loadCssFiles() {
     --t-c-neutral-13-rgb: 255 255 255;
     /* #fff     \u73B0 59 \u6B21 */
 
+    /* ---- \u51B7\u8C03\u4E2D\u6027\u9636\uFF1A\u9879\u76EE\u771F\u6B63\u7684\u4E2D\u6027\u8272 ----
+       Phase 1 \u53EA\u6536\u4E86\u300C\u4E09\u901A\u9053\u76F8\u7B49\u300D\u7684\u7EAF\u7070\uFF0C\u6F0F\u6389\u4E86\u8FD9\u6761\u9636\u3002\u5B9E\u6D4B 20 \u4E2A feature
+       \u6587\u4EF6\u91CC\u53E6\u6709 251 \u5904\u300C\u504F\u84DD\u7684\u7070\u300D\uFF0C\u6563\u6210 128 \u4E2A\u624B\u5199\u503C \u2014\u2014 \u6570\u91CF\u4E0E\u7EAF\u7070\u540C\u7EA7\uFF0C
+       \u4E0D\u662F\u7B14\u8BEF\uFF1A\u5B83\u4EEC\u5171\u4EAB\u540C\u4E00\u6761\u8272\u76F8\u8F74\uFF08hue \u2248 205\u2013218\xB0\uFF0C\u9971\u548C\u5EA6 < 30%\uFF09\u3002
+
+       \u4EAE\u7AEF\uFF087\u201312\uFF09\u4E0D\u662F\u81EA\u521B\uFF0C\u800C\u662F Chakra UI \u7684 gray \u9636\uFF0C\u9879\u76EE\u91CC\u5DF2\u5728\u7CBE\u786E\u4F7F\u7528\uFF1A
+       gray.600 #4a5568 \xD73 / gray.500 #718096 \xD79 / gray.400 #a0aec0 \xD724 /
+       gray.300 #cbd5e0 \xD710 / gray.200 #e2e8f0 \xD717\u3002\u540C\u6E90\u7684 #90cdf4 = blue.200\u3001
+       #48bb78 = green.400\u3001#f56565 = red.400 \u4E5F\u5DF2\u5728\u4E0A\u65B9\u8272\u76F8\u91CC\u3002
+       \u6697\u7AEF\uFF080\u20135\uFF09Chakra \u7684 gray.700+ \u9879\u76EE\u672A\u91C7\u7528\uFF0C\u6545\u53D6\u9879\u76EE\u81EA\u5DF1\u7684\u9AD8\u9891\u51B7\u5E95\u503C\u3002
+
+       \u5E8F\u53F7\u4E0E --t-c-neutral-* \u5BF9\u9F50\uFF080 \u6700\u6697\uFF09\uFF0C\u4FBF\u4E8E\u300C\u540C\u4E00\u6863\u3001\u6362\u51B7\u6696\u300D\u5730\u66FF\u6362\u3002
+       \u7F3A 13 \u6863\uFF1A#dff0ff \u4E0E 12 \u6863 #e2e8f0 \u4EAE\u5EA6\u53EA\u5DEE 6\uFF0C\u4E0D\u503C\u4E00\u6863\u3002 */
+    --t-c-cool-0-rgb: 7 11 18;
+    /* #070b12  \u5408\u5E76 rgba(7,11,18)/rgba(8,13,20) \u2014\u2014 \u8F93\u5165\u6846\u4E0E\u4EE3\u7801\u5757\u5E95 */
+    --t-c-cool-1-rgb: 10 15 22;
+    /* #0a0f16  \u5408\u5E76 rgba(10,15,22)\xD76/rgba(13,19,28)/rgba(15,18,25) \u2014\u2014 \u5361\u7247\u5E95 */
+    --t-c-cool-2-rgb: 18 22 29;
+    /* #12161d  \u5408\u5E76 #12161d/rgba(19,22,30)/rgba(16,22,31)/rgba(15,24,35) \u7B49 \u2014\u2014 \u7A97\u53E3\u5E95 */
+    --t-c-cool-3-rgb: 22 27 36;
+    /* #161b24  \u5408\u5E76 rgba(22,27,36)/rgba(18,28,38)/rgba(25,25,35) */
+    --t-c-cool-4-rgb: 28 34 44;
+    /* #1c222c  \u5408\u5E76 rgba(28,34,44)/rgba(18,29,43)/rgba(18,30,44) */
+    --t-c-cool-5-rgb: 34 42 54;
+    /* #222a36  \u5408\u5E76 rgba(34,42,54)/rgba(17,34,54)/rgba(34,54,76) */
+    --t-c-cool-6-rgb: 74 85 104;
+    /* #4a5568  Chakra gray.600\uFF0C\u73B0 3 \u6B21 */
+    --t-c-cool-7-rgb: 113 128 150;
+    /* #718096  Chakra gray.500\uFF0C\u73B0 9 \u6B21 */
+    --t-c-cool-8-rgb: 120 150 170;
+    /* #7896aa  \u73B0 20 \u6B21\uFF08\u5747\u4EE5 rgba \u51FA\u73B0\uFF09\uFF0C\u5408\u5E76 #7f95a8/#8899aa \u4E00\u65CF */
+    --t-c-cool-9-rgb: 160 174 192;
+    /* #a0aec0  Chakra gray.400\uFF0C\u73B0 24 \u6B21 \u2014\u2014 \u51B7\u8C03\u91CC\u6700\u9AD8\u9891 */
+    --t-c-cool-10-rgb: 169 191 209;
+    /* #a9bfd1  \u5408\u5E76 #a9bfd3/#a8bfd3/#bccdd8/rgba(176,188,201) \u4E00\u65CF */
+    --t-c-cool-11-rgb: 203 213 224;
+    /* #cbd5e0  Chakra gray.300\uFF0C\u73B0 10 \u6B21 */
+    --t-c-cool-12-rgb: 226 232 240;
+    /* #e2e8f0  Chakra gray.200\uFF0C\u73B0 17 \u6B21 \u2014\u2014 \u51B7\u8C03\u6B63\u6587 */
+
     /* ---- \u8272\u76F8\uFF1A\u5168\u90E8\u53D6\u81EA\u73B0\u6709\u9AD8\u9891\u503C\uFF0C\u4E0D\u65B0\u589E ----
        \u7528 RGB \u901A\u9053\u4E09\u5143\u7EC4\u800C\u975E hex\uFF0C\u56E0\u4E3A rgba() \u65E0\u6CD5\u63A5\u6536 hex \u53D8\u91CF\uFF0C
        \u800C\u9879\u76EE\u6709 749 \u5904 rgba() \u5B57\u9762\u91CF\u5F85 token \u5316\uFF08ADR-04\uFF09\u3002
@@ -2051,8 +2091,44 @@ function loadCssFiles() {
     /* \u66FF\u6362 31 \u6B21 rgba(255,255,255,.08) */
     --t-color-surface-active: rgb(var(--t-c-neutral-13-rgb) / .15);
     /* \u66FF\u6362 21 \u6B21 */
+    --t-color-surface-veil: rgb(var(--t-c-neutral-13-rgb) / .03);
+    /* \u6781\u6DE1\u767D\u819C \u2014\u2014 \u7A7A\u72B6\u6001\u6846 / \u56FE\u6807\u94AE\u9759\u606F\u5E95\uFF0C\u66FF\u6362 .015~.04 \u4E94\u6863 */
+    --t-color-surface-recess: rgb(0 0 0 / .2);
+    /* \u538B\u6697\u4E00\u6863 \u2014\u2014 \u5DE5\u5177\u6761 / \u7EDF\u8BA1\u6761 / \u5206\u533A\u6761\uFF0C\u66FF\u6362 rgba(0,0,0,.1~.2) */
+    --t-color-surface-recess-strong: rgb(0 0 0 / .3);
+    /* \u538B\u6697\u4E24\u6863 \u2014\u2014 \u5361\u7247\u5934\uFF0C\u66FF\u6362 rgba(0,0,0,.3)
+       \uFF08\u767D\u819C\u662F\u300C\u52A0\u4EAE\u300D\uFF0C\u672C\u5BF9\u662F\u300C\u538B\u6697\u300D\uFF1B\u4E24\u4E2A\u65B9\u5411\u90FD\u9700\u8981\uFF0C\u5426\u5219 feature \u5C42\u53EA\u80FD\u5199\u5B57\u9762\u91CF\uFF09 */
     --t-color-scrim: rgb(0 0 0 / .6);
     /* \u906E\u7F69\uFF0C= \u73B0 .t-overlay \u7684 rgba(0,0,0,.6) */
+
+    /* ---- \u51B7\u8C03\u73BB\u7483\u8868\u9762\uFF08elevation \u7684\u7B2C\u4E8C\u5957\uFF09----
+       \u63D2\u4EF6\u5B9E\u9645\u5B58\u5728\u4E24\u5957\u8868\u9762\u8BED\u8A00\uFF1A\u4E2D\u6027\u7070\uFF08\u4E3B\u7A97\u53E3\u4E00\u7CFB\uFF09\u4E0E\u51B7\u8C03\u73BB\u7483\uFF08\u6539\u5199\u9762\u677F\u3001
+       \u5927\u7EB2\u5165\u53E3\u83DC\u5355\u4E00\u7CFB\uFF09\u3002\u540E\u8005\u4E0D\u662F\u7B14\u8BEF \u2014\u2014 18 \u4E2A\u503C\u5171\u4EAB\u540C\u4E00\u8272\u76F8\u8F74\uFF0C
+       \u662F\u523B\u610F\u7684\u300C\u51B7\u73BB\u7483 + \u80CC\u666F\u6A21\u7CCA\u300D\u8D28\u611F\u3002
+
+       \u4E3A\u4EC0\u4E48\u4E0D\u590D\u7528 --t-color-surface* \u90A3\u5957\uFF1A\u51B7\u73BB\u7483\u9762\u677F\u7684\u5C42\u7EA7\u65B9\u5411\u662F**\u53CD\u7684**
+       \u2014\u2014\u5361\u7247\u6BD4\u7A97\u53E3\u5E95\u66F4\u6697\uFF08\u8D8A\u6DF1\u8868\u793A\u8D8A"\u91CC\u9762"\uFF09\uFF0C\u800C\u4E2D\u6027\u90A3\u5957\u662F\u8D8A\u6D45\u8D8A\u62AC\u8D77\u3002
+       \u4E24\u8005\u8BED\u4E49\u51B2\u7A81\uFF0C\u786C\u5957\u4F1A\u8BA9 raised/sunken \u540D\u4E0D\u526F\u5B9E\uFF0C\u6545\u72EC\u7ACB\u6210\u65CF\u3002 */
+    --t-glass-window: rgb(var(--t-c-cool-2-rgb) / .95);
+    /* \u7A97\u53E3\u6839 / \u9875\u5934\u9875\u811A\uFF0C\u66FF\u6362 rgba(19,22,30,.94~.96) \u4E0E rgba(16,22,31,.85~.9) */
+    --t-glass-body: rgb(var(--t-c-cool-2-rgb));
+    /* \u4E0D\u900F\u660E\u6B63\u6587\u5E95\uFF08\u6E10\u53D8\u6D17\u8272\u7684\u57FA\u5E95\uFF09\uFF0C\u66FF\u6362 #12161d */
+    --t-glass-card: rgb(var(--t-c-cool-1-rgb) / .85);
+    /* \u5361\u7247 / \u5206\u533A / \u6570\u636E\u884C\uFF0C\u66FF\u6362 rgba(10,15,22,.84~.9) \u4E0E rgba(13,19,28,.78) */
+    --t-glass-field: rgb(var(--t-c-cool-0-rgb) / .9);
+    /* \u8F93\u5165\u6846 / textarea / \u4EE3\u7801\u5757\uFF0C\u66FF\u6362 rgba(7,11,18,.9) \u4E0E rgba(8,13,20,.8~.82) */
+    --t-glass-row: rgb(var(--t-c-cool-3-rgb) / .6);
+    /* \u53EF\u6298\u53E0\u5361\u7247\u5916\u58F3\uFF0C\u66FF\u6362 rgba(22,27,36,.6) \u4E0E rgba(18,28,38,.8) */
+    --t-glass-row-head: rgb(var(--t-c-cool-4-rgb) / .7);
+    /* \u6298\u53E0\u5361\u7247\u5934 / \u5217\u8868\u9879 hover\uFF0C\u66FF\u6362 rgba(28,34,44,.7) \u4E0E rgba(18,29,43,.72) */
+    --t-glass-row-hover: rgb(var(--t-c-cool-5-rgb) / .7);
+    /* \u6298\u53E0\u5361\u7247\u5934 hover\uFF0C\u66FF\u6362 rgba(34,42,54,.7) */
+    --t-glass-text: rgb(var(--t-c-cool-12-rgb));
+    /* \u51B7\u73BB\u7483\u8868\u9762\u7684\u6B63\u6587\uFF0C\u66FF\u6362 #d7e7f5 / #dff0ff / #d8f5e4 / #ccefdc */
+    --t-glass-text-secondary: rgb(var(--t-c-cool-10-rgb));
+    /* \u51B7\u73BB\u7483\u8868\u9762\u7684\u6B21\u8981\u6587\u5B57\uFF0C\u66FF\u6362 #a9bfd1 \u4E00\u65CF */
+    --t-glass-text-muted: rgb(var(--t-c-cool-8-rgb));
+    /* \u51B7\u73BB\u7483\u8868\u9762\u7684\u5F31\u63D0\u793A\uFF0C\u66FF\u6362 #7f96aa \u4E00\u65CF */
 
     /* ---- \u6587\u672C ---- */
     --t-color-text: rgb(var(--t-c-neutral-12-rgb));
@@ -2072,7 +2148,11 @@ function loadCssFiles() {
     --t-color-border-strong: rgb(var(--t-c-neutral-7-rgb));
     /* #444 */
     --t-color-border-subtle: rgb(var(--t-c-neutral-13-rgb) / .1);
-    /* \u66FF\u6362 39 \u6B21 */
+    /* \u66FF\u6362 39 \u6B21\uFF1B\u540C\u65F6\u5403\u6389\u6539\u5199\u9762\u677F\u7684 .12/.13/.14 \u4E09\u6863\uFF08\u5DEE 4% \u4E0D\u53EF\u89C1\uFF09 */
+    --t-color-border-glass: rgb(var(--t-c-neutral-13-rgb) / .18);
+    /* \u73BB\u7483\u9762\u677F\u7684\u53EF\u89C1\u63CF\u8FB9\uFF0C\u66FF\u6362 .16/.18/.2 \u4E09\u6863 */
+    --t-color-border-cool: rgb(var(--t-c-cool-8-rgb) / .3);
+    /* \u51B7\u8C03\u63CF\u8FB9\uFF0C\u66FF\u6362\u9879\u76EE\u5185 rgba(120,150,170,.25~.35) \u5171 20 \u6B21 */
 
     /* ---- \u5F3A\u8C03 / \u4EA4\u4E92\uFF08\u84DD\uFF09----
        \u4E8B\u5B9E\u4E0A\u7684\u4EA4\u4E92\u8272\u662F #90cdf4\uFF0864 \u6B21\uFF09\uFF0C\u4E0E\u54C1\u724C\u91D1\u663E\u5F0F\u5206\u79BB\uFF08\u89E3 S3\uFF09\uFF1A
@@ -2082,8 +2162,12 @@ function loadCssFiles() {
     --t-color-accent-active: rgb(var(--t-c-blue-rgb) / .7);
     --t-color-accent-soft: rgb(var(--t-c-blue-rgb) / .12);
     /* \u66FF\u6362 14+9 \u6B21 */
+    --t-color-accent-soft-strong: rgb(var(--t-c-blue-rgb) / .22);
+    /* \u9009\u4E2D\u6001 / \u6FC0\u6D3B tab \u7684\u5E95\u8272\uFF0C\u66FF\u6362 .22/.24/.32 \u4E09\u6863 */
     --t-color-accent-border: rgb(var(--t-c-blue-rgb) / .35);
-    /* \u66FF\u6362 13+7 \u6B21 */
+    /* \u66FF\u6362 13+7 \u6B21\uFF1B\u540C\u65F6\u5403\u6389 .38/.42/.44/.45/.5 \u4E94\u6863 */
+    --t-color-accent-border-hover: rgb(var(--t-c-blue-rgb) / .6);
+    /* hover \u65F6\u7684\u63CF\u8FB9\uFF0C\u66FF\u6362 .55/.6/.65 \u4E09\u6863 */
     --t-color-focus-ring: rgb(var(--t-c-blue-rgb) / .4);
 
     /* ---- \u54C1\u724C\uFF08\u91D1\uFF09\u2014\u2014 \u4E0E accent \u663E\u5F0F\u5206\u79BB\uFF0C\u89E3\u51B3 S3 ---- */
@@ -2094,18 +2178,26 @@ function loadCssFiles() {
     --t-color-brand-border: rgb(var(--t-c-gold-rgb) / .55);
     /* = \u73B0 .t-btn-soft \u7684\u8FB9\u6846 */
 
-    /* ---- \u53CD\u9988\u8272 ---- */
+    /* ---- \u53CD\u9988\u8272 ----
+       soft = \u5E95\u8272\uFF08\u2248.2\uFF09\uFF0Cveil = \u66F4\u6DE1\u7684\u5E95\u8272\uFF08\u2248.12\uFF09\uFF0Cborder = \u63CF\u8FB9\uFF08\u2248.45\uFF09\u3002
+       \u56DB\u4E2A\u8272\u65CF\u5BF9\u79F0\u8865\u9F50\uFF0C\u907F\u514D\u300C\u6709 danger-border \u5374\u6CA1\u6709 success-border\u300D
+       \u90A3\u6837\u903C\u7740 feature \u5C42\u5199\u5B57\u9762\u91CF\u3002 */
     --t-color-danger: rgb(var(--t-c-red-rgb));
     --t-color-danger-soft: rgb(var(--t-c-red-rgb) / .2);
     --t-color-danger-border: rgb(var(--t-c-red-rgb) / .4);
     --t-color-success: rgb(var(--t-c-green-rgb));
     --t-color-success-soft: rgb(var(--t-c-green-rgb) / .2);
+    --t-color-success-veil: rgb(var(--t-c-green-rgb) / .12);
+    --t-color-success-border: rgb(var(--t-c-green-rgb) / .45);
     --t-color-warning: rgb(var(--t-c-amber-rgb));
     --t-color-warning-soft: rgb(var(--t-c-amber-rgb) / .2);
+    --t-color-warning-border: rgb(var(--t-c-amber-rgb) / .5);
     --t-color-notify: rgb(var(--t-c-mint-rgb));
     /* #55efc4 */
     --t-color-decor: rgb(var(--t-c-violet-rgb));
     /* #a29bfe \u88C5\u9970 */
+    --t-color-decor-soft: rgb(var(--t-c-violet-rgb) / .2);
+    --t-color-decor-border: rgb(var(--t-c-violet-rgb) / .52);
 
     /* ---- \u9634\u5F71 ---- */
     --t-shadow-xs: 0 1px 3px rgb(0 0 0 / .2);
@@ -2125,6 +2217,10 @@ function loadCssFiles() {
     --t-shadow-inset-hairline: inset 0 1px 0 rgb(255 255 255 / .06);
     /* \u4EE5\u4E0A 3 \u4E2A glow \u66FF\u6362\u73B0\u6709 12 \u4E2A\u5404\u4E0D\u76F8\u540C\u7684
        "0 4~6px 12~20px rgba(\u5F3A\u8C03\u8272, .3~.5)" */
+    --t-shadow-inset-gloss: inset 0 1px 0 rgb(255 255 255 / .18);
+    /* \u73BB\u7483\u6309\u94AE\u9876\u8FB9\u9AD8\u5149\uFF0C\u6BD4 hairline \u660E\u663E\u4E00\u6863\uFF1B\u66FF\u6362 .1~.26 \u5171 8 \u5904 */
+    --t-shadow-lift: 0 10px 22px rgb(var(--t-c-cool-5-rgb) / .32);
+    /* hover \u62AC\u8D77\u65F6\u7684\u51B7\u8C03\u6295\u5F71\uFF0C\u66FF\u6362 rgba(17,34,54,.28~.32) */
 
     /* ---- \u590D\u5408\u8FC7\u6E21\uFF1A\u6309\u4EA4\u4E92\u573A\u666F\u800C\u975E\u6309\u5C5E\u6027 ----
        \u540C\u65F6\u7528\u4E8E\u6D88\u706D 54 \u5904 \`transition: all\`\uFF08\u5BA1\u8BA1 A20\uFF09\uFF1A
@@ -2154,6 +2250,40 @@ function loadCssFiles() {
     /* = \u73B0 .t-title-container::before */
     --t-gradient-surface: linear-gradient(180deg, rgb(255 255 255 / .04),
             rgb(255 255 255 / .015));
+    /* \u5361\u7247\u9876\u90E8\u5FAE\u5149\uFF0C\u9700\u53E0\u5728\u5E95\u8272\u4E4B\u4E0A\u4F7F\u7528\uFF1A
+       background: var(--t-gradient-surface), var(--t-glass-card); */
+
+    /* ---- \u51B7\u8C03\u73BB\u7483\u8D28\u611F\u7684\u6E10\u53D8\uFF08\u6539\u5199\u9762\u677F\u4E00\u7CFB\uFF09---- */
+    --t-gradient-glass-head: linear-gradient(180deg, rgb(var(--t-c-cool-4-rgb) / .9) 0%,
+            rgb(var(--t-c-cool-2-rgb) / .85) 100%);
+    /* \u7A97\u53E3\u9875\u5934 */
+    --t-gradient-glass-btn: linear-gradient(140deg, rgb(255 255 255 / .12),
+            rgb(255 255 255 / .04));
+    /* \u73BB\u7483\u6309\u94AE\u9759\u606F\uFF0C\u66FF\u6362 140deg/145deg \u4E24\u7EC4\u8FD1\u4F3C\u914D\u65B9 */
+    --t-gradient-glass-btn-hover: linear-gradient(140deg, rgb(var(--t-c-blue-rgb) / .22),
+            rgb(255 255 255 / .06));
+    /* \u73BB\u7483\u6309\u94AE hover */
+    --t-gradient-glass-wash: radial-gradient(circle at 100% 0%,
+            rgb(var(--t-c-blue-rgb) / .1) 0%, rgb(var(--t-c-blue-rgb) / 0) 36%),
+        radial-gradient(circle at 0% 100%,
+            rgb(var(--t-c-gold-rgb) / .08) 0%, rgb(var(--t-c-gold-rgb) / 0) 32%),
+        var(--t-glass-body);
+    /* \u6B63\u6587\u533A\u7684\u53CC\u89D2\u6D17\u8272\uFF08\u542B\u4E0D\u900F\u660E\u57FA\u5E95\uFF09\uFF0C\u73B0 4 \u5904\u9010\u5B57\u8282\u76F8\u540C */
+    --t-gradient-accent-brand: linear-gradient(135deg, rgb(var(--t-c-blue-rgb) / .18),
+            rgb(var(--t-c-gold-rgb) / .16));
+    /* \u4E3B\u64CD\u4F5C\u6309\u94AE\uFF1A\u4EA4\u4E92\u84DD \u2192 \u54C1\u724C\u91D1 */
+
+    /* ---- \u53CD\u9988\u8272\u586B\u5145\uFF08\u9700\u53E0\u5728\u5361\u7247\u5E95\u8272\u4E4B\u4E0A\uFF09----
+       \u539F\u4E3A\u300C\u6DF1\u7EFF/\u6DF1\u7EA2\u5B9E\u8272\u6E10\u53D8\u5230\u8FD1\u9ED1\u300D\uFF0C\u6539\u4E3A\u300C\u53CD\u9988\u8272\u4F4E\u900F\u660E\u5EA6\u8986\u76D6\u300D\uFF1A
+       \u524D\u8005\u65E0\u6CD5\u8DDF\u968F\u4E3B\u9898\uFF08\u6D45\u8272\u4E3B\u9898\u4E0B\u6DF1\u7EFF\u4F1A\u53D8\u6210\u810F\u5757\uFF09\uFF0C\u540E\u8005\u53EF\u4EE5\u3002 */
+    --t-gradient-success-fill: linear-gradient(180deg, rgb(var(--t-c-green-rgb) / .14) 0%,
+            rgb(var(--t-c-green-rgb) / .07) 100%);
+    --t-gradient-danger-fill: linear-gradient(180deg, rgb(var(--t-c-red-rgb) / .14) 0%,
+            rgb(var(--t-c-red-rgb) / .07) 100%);
+    --t-gradient-badge-flow: linear-gradient(120deg, rgb(var(--t-c-blue-rgb) / .15) 0%,
+            rgb(var(--t-c-gold-rgb) / .22) 35%, rgb(var(--t-c-green-rgb) / .2) 70%,
+            rgb(var(--t-c-blue-rgb) / .15) 100%);
+    /* \u81EA\u52A8\u6539\u5199\u5FBD\u7AE0\u7684\u6D41\u52A8\u5E95\uFF0C\u914D\u5408 @keyframes t-rewrite-badge-flow */
 }
 
 
@@ -17167,14 +17297,21 @@ body.titania-debug-mode #chat titania-memory::before {
    \u53EA\u8981\u5B83\u8FD8\u5728 JS \u91CC\uFF0C\u91CC\u9762\u7684\u989C\u8272\u5C31\u6C38\u8FDC\u65E0\u6CD5\u88AB token \u5316\uFF0C
    \u4E5F\u5C31\u6C38\u8FDC\u65E0\u6CD5\u8DDF\u968F\u4E3B\u9898\u5207\u6362\u3002
 
-   \u2500\u2500 \u672C\u6B21\u53EA\u642C\u5BB6\uFF0C\u4E0D\u6539\u503C \u2500\u2500
-   \u4E0B\u9762 8 \u5904\u786C\u7F16\u7801\u989C\u8272\u9010\u5B57\u8282\u7167\u642C\u81EA\u539F JS \u6A21\u677F\uFF0C\u672A\u505A token \u5316\uFF0C
-   \u4EE5\u4FDD\u8BC1\u672C\u6B65\u89C6\u89C9\u96F6\u53D8\u5316\u3002token \u5316\u5728\u300C\u6CE8\u5165\u6837\u5F0F\u8FC1\u79FB\u300D\u7684\u6700\u540E\u4E00\u6B65\u7EDF\u4E00\u505A\uFF0C
-   \u5C4A\u65F6\u5355\u72EC\u53D1\u7248\u3002
-
    \u539F\u6A21\u677F\u7528 \`#\${MENU_ID}\` \u63D2\u503C\uFF0CMENU_ID \u662F\u5E38\u91CF "titania-outline-entry-menu"\uFF0C
    \u5DF2\u66FF\u6362\u4E3A\u5B57\u9762\u91CF\u3002
+
+   \u2500\u2500 token \u5316\uFF08\u6CE8\u5165\u6837\u5F0F\u89E3\u8026 4/4\uFF09\u2500\u2500
+   8 \u5904\u989C\u8272\u5B57\u9762\u91CF\u5DF2\u5168\u90E8\u6362\u6210\u8BED\u4E49 token\u3002\u4EC5\u989C\u8272 / \u9634\u5F71\uFF0C
+   \u5C3A\u5BF8\u4E0E z-index \u5C5E Phase 7 \u5F52\u5E76\u8303\u56F4\uFF0C\u672C\u6B65\u4E0D\u52A8\u3002
    ============================================================ */
+
+/* \u672C\u83DC\u5355\u5C5E\u300C\u51B7\u8C03\u73BB\u7483\u300D\u4E00\u7CFB\uFF08\u89C1 theme-dark.css \u7684 --t-glass-*\uFF09\u3002
+   \u5728\u83DC\u5355\u6839\u4E0A\u628A\u6587\u672C\u89D2\u8272\u91CD\u7ED1\u5230\u51B7\u8C03\u9636\uFF0C\u5185\u90E8\u89C4\u5219\u5373\u53EF\u53EA\u5199\u6807\u51C6\u8BED\u4E49\u540D\u3002
+   \u5C06\u6765\u82E5\u51B3\u5B9A\u6574\u4E2A\u63D2\u4EF6\u7684\u6587\u672C\u90FD\u8F6C\u51B7\u8C03\uFF0C\u5220\u6389\u672C\u5757\u5373\u53EF\uFF0C\u65E0\u9700\u6539\u4E0B\u9762\u4EFB\u4F55\u4E00\u6761\u3002 */
+#titania-outline-entry-menu {
+    --t-color-text: var(--t-glass-text);
+    --t-color-text-muted: var(--t-glass-text-muted);
+}
 
 #titania-outline-entry-menu {
     position: fixed;
@@ -17185,23 +17322,23 @@ body.titania-debug-mode #chat titania-memory::before {
     gap: 6px;
     padding: 8px;
     border-radius: 10px;
-    border: 1px solid rgba(120, 150, 170, 0.35);
-    background: rgba(14, 20, 28, 0.96);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--t-color-border-cool);
+    background: var(--t-glass-window);
+    box-shadow: var(--t-shadow-lg);
 }
 
 #titania-outline-entry-menu .t-outline-entry-item {
-    border: 1px solid rgba(120, 150, 170, 0.25);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 8px;
-    background: rgba(18, 28, 38, 0.8);
-    color: #d7e7f5;
+    background: var(--t-glass-row);
+    color: var(--t-color-text);
     text-align: left;
     padding: 8px 10px;
     cursor: pointer;
 }
 
 #titania-outline-entry-menu .t-outline-entry-item:hover:not(:disabled) {
-    background: rgba(129, 236, 236, 0.14);
+    background: var(--t-color-accent-soft);
 }
 
 #titania-outline-entry-menu .t-outline-entry-item:disabled {
@@ -17210,7 +17347,7 @@ body.titania-debug-mode #chat titania-memory::before {
 }
 
 #titania-outline-entry-menu .t-outline-entry-tip {
-    color: #7f96aa;
+    color: var(--t-color-text-muted);
     font-size: 11px;
     line-height: 1.35;
     padding: 0 2px;
@@ -17227,9 +17364,12 @@ body.titania-debug-mode #chat titania-memory::before {
    \u5B8C\u5168\u7ED5\u8FC7\u5206\u5C42\u67B6\u6784\uFF1B\u53EA\u8981\u6837\u5F0F\u8FD8\u5728 JS \u91CC\uFF0C\u5176\u4E2D\u7684\u989C\u8272\u5C31\u65E0\u6CD5 token \u5316\u3001
    \u4E5F\u65E0\u6CD5\u8DDF\u968F\u4E3B\u9898\u5207\u6362\u3002\u8FD9\u662F\u300C\u6CE8\u5165\u6837\u5F0F\u89E3\u8026\u300D\u7684\u7B2C 2/4 \u6B65\u3002
 
-   \u2500\u2500 \u672C\u6B21\u53EA\u642C\u5BB6\uFF0C\u4E0D\u6539\u503C \u2500\u2500
-   \u5168\u90E8\u58F0\u660E\uFF08\u542B 25 \u5904 hex\u30019 \u5904 rgba \u4E0E 1 \u4E2A @media \u65AD\u70B9\uFF09\u9010\u5B57\u8282\u7167\u642C\u81EA\u539F JS \u6A21\u677F\uFF0C
-   \u672A\u505A token \u5316\uFF0C\u4EE5\u4FDD\u8BC1\u672C\u6B65\u89C6\u89C9\u96F6\u53D8\u5316\u3002token \u5316\u5728\u56DB\u6B65\u642C\u5B8C\u540E\u7EDF\u4E00\u8FDB\u884C\u3002
+   \u2500\u2500 token \u5316\uFF08\u6CE8\u5165\u6837\u5F0F\u89E3\u8026 4/4\uFF09\u2500\u2500
+   34 \u5904\u989C\u8272\u5B57\u9762\u91CF\u5DF2\u5168\u90E8\u6362\u6210\u8BED\u4E49 token\u3002\u672C\u5BF9\u8BDD\u6846\u5C5E**\u4E2D\u6027\u7070**\u4E00\u7CFB
+   \uFF08\u4E0D\u662F\u6539\u5199\u9762\u677F\u90A3\u5957\u51B7\u8C03\u73BB\u7483\uFF09\uFF0C\u6545\u76F4\u63A5\u6D88\u8D39 --t-color-* \u6807\u51C6\u89D2\u8272\u3002
+
+   \u539F\u672C\u7528\u7684\u662F flat-ui \u914D\u8272\uFF08#2ecc71 / #f39c12 / #3498db / #9b59b6 / #e74c3c\uFF09\uFF0C
+   \u5DF2\u6536\u655B\u5230\u63D2\u4EF6\u7EDF\u4E00\u7684\u53CD\u9988\u8272\u65CF \u2014\u2014 \u8FD9\u662F\u672C\u6B65\u4F1A\u770B\u5230\u7684\u4E3B\u8981\u5916\u89C2\u53D8\u5316\u3002
    ============================================================ */
 
 .t-cleaning-preview-box {
@@ -17241,8 +17381,8 @@ body.titania-debug-mode #chat titania-memory::before {
     display: flex;
     gap: 20px;
     padding: 12px 16px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid #333;
+    background: var(--t-color-surface-recess);
+    border-bottom: 1px solid var(--t-color-border);
     flex-wrap: wrap;
 }
 
@@ -17250,16 +17390,16 @@ body.titania-debug-mode #chat titania-memory::before {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 0.9em;
 }
 
 .t-cleaning-stat i {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-cleaning-stat strong {
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-cleaning-config-bar {
@@ -17267,13 +17407,13 @@ body.titania-debug-mode #chat titania-memory::before {
     align-items: center;
     gap: 10px;
     padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.1);
-    border-bottom: 1px solid #333;
+    background: var(--t-color-surface-recess);
+    border-bottom: 1px solid var(--t-color-border);
     flex-wrap: wrap;
 }
 
 .t-cleaning-config-bar .t-config-label {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.85em;
 }
 
@@ -17293,17 +17433,17 @@ body.titania-debug-mode #chat titania-memory::before {
 }
 
 .t-config-enabled {
-    background: rgba(46, 204, 113, 0.2);
-    color: #2ecc71;
+    background: var(--t-color-success-soft);
+    color: var(--t-color-success);
 }
 
 .t-config-disabled {
-    background: rgba(136, 136, 136, 0.2);
-    color: #666;
+    background: var(--t-color-surface-active);
+    color: var(--t-color-text-faint);
 }
 
 .t-custom-tags {
-    color: #f39c12;
+    color: var(--t-color-warning);
     font-size: 0.8em;
     margin-left: auto;
 }
@@ -17316,14 +17456,14 @@ body.titania-debug-mode #chat titania-memory::before {
 
 .t-cleaning-sample {
     margin-bottom: 16px;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 8px;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
 }
 
 .t-cleaning-sample.t-sample-invalid {
-    border-color: rgba(243, 156, 18, 0.5);
+    border-color: var(--t-color-warning-border);
 }
 
 .t-sample-header {
@@ -17331,8 +17471,8 @@ body.titania-debug-mode #chat titania-memory::before {
     justify-content: space-between;
     align-items: center;
     padding: 10px 14px;
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid #333;
+    background: var(--t-color-surface-recess-strong);
+    border-bottom: 1px solid var(--t-color-border);
 }
 
 .t-sample-role {
@@ -17343,15 +17483,15 @@ body.titania-debug-mode #chat titania-memory::before {
 }
 
 .t-role-user {
-    color: #3498db;
+    color: var(--t-color-accent);
 }
 
 .t-role-char {
-    color: #9b59b6;
+    color: var(--t-color-decor);
 }
 
 .t-sample-stats {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.85em;
     display: flex;
     align-items: center;
@@ -17359,16 +17499,16 @@ body.titania-debug-mode #chat titania-memory::before {
 }
 
 .t-reduction {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-reduction.t-has-reduction {
-    color: #2ecc71;
+    color: var(--t-color-success);
 }
 
 .t-invalid-badge {
-    background: rgba(243, 156, 18, 0.2);
-    color: #f39c12;
+    background: var(--t-color-warning-soft);
+    color: var(--t-color-warning);
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.85em;
@@ -17378,17 +17518,17 @@ body.titania-debug-mode #chat titania-memory::before {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1px;
-    background: #333;
+    background: var(--t-color-border);
 }
 
 .t-sample-pane {
-    background: #1e1e2e;
+    background: var(--t-color-surface);
 }
 
 .t-pane-header {
     padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.2);
-    color: #888;
+    background: var(--t-color-surface-recess);
+    color: var(--t-color-text-muted);
     font-size: 0.8em;
     display: flex;
     align-items: center;
@@ -17396,18 +17536,18 @@ body.titania-debug-mode #chat titania-memory::before {
 }
 
 .t-pane-original .t-pane-header {
-    color: #e74c3c;
+    color: var(--t-color-danger);
 }
 
 .t-pane-cleaned .t-pane-header {
-    color: #2ecc71;
+    color: var(--t-color-success);
 }
 
 .t-pane-body {
     padding: 12px;
     font-size: 0.9em;
     line-height: 1.5;
-    color: #ccc;
+    color: var(--t-color-text);
     max-height: 200px;
     overflow-y: auto;
     white-space: pre-wrap;
@@ -17418,12 +17558,12 @@ body.titania-debug-mode #chat titania-memory::before {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.85em;
 }
 
 .t-footer-hint i {
-    color: #3498db;
+    color: var(--t-color-accent);
 }
 
 @media (max-width: 768px) {
@@ -18106,39 +18246,40 @@ body.titania-debug-mode #chat titania-memory::before {
    \u5F53\u524D\u5185\u5BB9\u6765\u81EA\u6587\u672C\u6539\u5199\u529F\u80FD\u6CE8\u5165\u5230\u804A\u5929\u533A\u7684\u5143\u7D20\uFF1A
    #chat .mes \u4E0B\u7684\u6539\u5199\u5FBD\u7AE0 / \u884C\u5185\u5DE5\u5177\u6761 / \u6539\u5199\u6807\u8BB0\uFF0C\u4EE5\u53CA #titania-rewrite-entry-btn\u3002
    \u540E\u7EED\u82E5\u6709\u5176\u5B83\u6CE8\u5165 ST DOM \u7684\u6837\u5F0F\uFF08chatInjectButton \u7B49\uFF09\uFF0C\u4E5F\u5E94\u96C6\u4E2D\u5230\u672C\u6587\u4EF6\u3002
-   \u2500\u2500 \u672C\u6B21\u53EA\u642C\u5BB6\uFF0C\u4E0D\u6539\u503C \u2500\u2500
-   \u5168\u90E8\u58F0\u660E\u9010\u5B57\u8282\u7167\u642C\u81EA src/ui/rewriteEntryButton.js \u7684
-   REWRITE_PANEL_CSS \u4E0E REWRITE_SETTINGS_BUTTON_CSS\uFF0C\u672A\u505A token \u5316\uFF0C
-   \u4EE5\u4FDD\u8BC1\u672C\u6B65\u89C6\u89C9\u96F6\u53D8\u5316\u3002token \u5316\u5728\u56DB\u6B65\u642C\u5B8C\u540E\u7EDF\u4E00\u8FDB\u884C\u5E76\u5355\u72EC\u53D1\u7248\u3002
+
+   \u2500\u2500 token \u5316\uFF08\u6CE8\u5165\u6837\u5F0F\u89E3\u8026 4/4\uFF09\u2500\u2500
+   33 \u5904\u989C\u8272\u5B57\u9762\u91CF\u5DF2\u6362\u6210 token\u3002\u8FD9\u4E9B\u63A7\u4EF6\u867D\u6302\u5728 ST \u804A\u5929\u533A\uFF0C\u4F46\u81EA\u8EAB\u5E26\u6709
+   \u51B7\u73BB\u7483\u6697\u8272\u80CC\u666F\uFF0C\u6545\u6D88\u8D39 --t-glass-* \u89D2\u8272\u800C\u4E0D\u7EE7\u627F ST \u6B63\u6587\u8272\uFF1B\u540C\u65F6\u4E0D\u8FDB\u5165
+   \u63D2\u4EF6\u6309\u94AE\u7EC4\u4EF6\u4F53\u7CFB\u3002\u8FD9\u662F ADR-02 \u5728 token \u5C42\u9762\u7684\u8FB9\u754C\u3002
    ============================================================ */
 
 #titania-rewrite-entry-btn { margin-left: 6px; }
 
-#titania-rewrite-entry-btn i { color: #90cdf4; }
+#titania-rewrite-entry-btn i { color: var(--t-color-accent); }
 
-#titania-rewrite-entry-btn:hover i { color: #b9def8; }
+#titania-rewrite-entry-btn:hover i { color: var(--t-color-text-strong); }
 
-#chat .mes .t-rewrite-auto-badge { position: absolute; right: 10px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #dff0ff; background: rgba(15, 24, 35, 0.88); border: 1px solid rgba(144, 205, 244, 0.45); border-radius: 999px; padding: 3px 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); background-image: linear-gradient(120deg, rgba(144, 205, 244, 0.15) 0%, rgba(191, 161, 95, 0.22) 35%, rgba(122, 203, 159, 0.2) 70%, rgba(144, 205, 244, 0.15) 100%); background-size: 220% 220%; animation: t-rewrite-badge-flow 1.4s linear infinite; }
+#chat .mes .t-rewrite-auto-badge { position: absolute; right: 10px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--t-glass-text); background: var(--t-glass-window); border: 1px solid var(--t-color-accent-border); border-radius: 999px; padding: 3px 8px; box-shadow: var(--t-shadow-md); background-image: var(--t-gradient-badge-flow); background-size: 220% 220%; animation: t-rewrite-badge-flow 1.4s linear infinite; }
 
-#chat .mes .t-rewrite-auto-badge i { color: #90cdf4; animation: t-rewrite-badge-icon 0.95s ease-in-out infinite; }
+#chat .mes .t-rewrite-auto-badge i { color: var(--t-color-accent); animation: t-rewrite-badge-icon 0.95s ease-in-out infinite; }
 
 #chat .mes .t-rewrite-inline-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0 8px; font-size: 12px; }
 
-#chat .mes .t-rewrite-inline-toolbar button { border: 1px solid rgba(144, 205, 244, 0.38); border-radius: 999px; background: rgba(15, 24, 35, 0.82); color: #dff0ff; padding: 3px 9px; line-height: 1.35; cursor: pointer; }
+#chat .mes .t-rewrite-inline-toolbar button { border: 1px solid var(--t-color-accent-border); border-radius: 999px; background: var(--t-glass-window); color: var(--t-glass-text); padding: 3px 9px; line-height: 1.35; cursor: pointer; }
 
-#chat .mes .t-rewrite-inline-toolbar button:hover { border-color: rgba(144, 205, 244, 0.65); background: rgba(34, 54, 76, 0.86); }
+#chat .mes .t-rewrite-inline-toolbar button:hover { border-color: var(--t-color-accent-border-hover); background: var(--t-glass-row-hover); }
 
-#chat .mes .t-rewrite-inline-toolbar button.t-rewrite-inline-confirm { border-color: rgba(122, 203, 159, 0.52); color: #d8f5e4; }
+#chat .mes .t-rewrite-inline-toolbar button.t-rewrite-inline-confirm { border-color: var(--t-color-success-border); color: var(--t-glass-text); }
 
 #chat .mes .t-rewrite-inline-toolbar button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-#chat .mes .t-rewrite-inline-count { color: #a9bfd1; padding: 2px 4px; }
+#chat .mes .t-rewrite-inline-count { color: var(--t-glass-text-secondary); padding: 2px 4px; }
 
 #chat .mes .t-rewrite-select-sentence { border-radius: 5px; padding: 0 2px; cursor: pointer; transition: background-color 0.16s ease, box-shadow 0.16s ease; }
 
-#chat .mes .t-rewrite-select-sentence:hover { background: rgba(144, 205, 244, 0.14); box-shadow: inset 0 0 0 1px rgba(144, 205, 244, 0.32); }
+#chat .mes .t-rewrite-select-sentence:hover { background: var(--t-color-accent-soft); box-shadow: inset 0 0 0 1px var(--t-color-accent-border); }
 
-#chat .mes .t-rewrite-select-sentence.selected { background: rgba(122, 203, 159, 0.22); box-shadow: inset 0 0 0 1px rgba(122, 203, 159, 0.52); }
+#chat .mes .t-rewrite-select-sentence.selected { background: var(--t-color-success-soft); box-shadow: inset 0 0 0 1px var(--t-color-success-border); }
 
 #chat .mes .t-rewrite-mark {
     position: relative;
@@ -18146,9 +18287,9 @@ body.titania-debug-mode #chat titania-memory::before {
     border-radius: 5px;
     padding: 0 2px;
     margin: 0;
-    border: 1px solid rgba(122, 203, 159, 0.3);
-    background: linear-gradient(180deg, rgba(122, 203, 159, 0.14) 0%, rgba(122, 203, 159, 0.08) 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--t-color-success-border);
+    background: var(--t-gradient-success-fill);
+    box-shadow: var(--t-shadow-inset-hairline);
     transition: background-color 0.2s ease, border-color 0.2s ease;
     animation: t-rewrite-mark-fade-in 0.2s ease;
 }
@@ -18159,9 +18300,9 @@ body.titania-debug-mode #chat titania-memory::before {
     margin-right: 4px;
     padding: 0 4px;
     border-radius: 999px;
-    border: 1px solid rgba(122, 203, 159, 0.38);
-    background: rgba(122, 203, 159, 0.16);
-    color: #ccefdc;
+    border: 1px solid var(--t-color-success-border);
+    background: var(--t-color-success-veil);
+    color: var(--t-glass-text);
     font-size: 10px;
     line-height: 1.45;
     letter-spacing: 0.1px;
@@ -18171,8 +18312,8 @@ body.titania-debug-mode #chat titania-memory::before {
 }
 
 #chat .mes .t-rewrite-mark:hover {
-    border-color: rgba(122, 203, 159, 0.45);
-    background: linear-gradient(180deg, rgba(122, 203, 159, 0.19) 0%, rgba(122, 203, 159, 0.12) 100%);
+    border-color: var(--t-color-success-border);
+    background: var(--t-color-success-soft);
 }
 
 

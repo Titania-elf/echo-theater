@@ -24,8 +24,44 @@
     /* 替换 31 次 rgba(255,255,255,.08) */
     --t-color-surface-active: rgb(var(--t-c-neutral-13-rgb) / .15);
     /* 替换 21 次 */
+    --t-color-surface-veil: rgb(var(--t-c-neutral-13-rgb) / .03);
+    /* 极淡白膜 —— 空状态框 / 图标钮静息底，替换 .015~.04 五档 */
+    --t-color-surface-recess: rgb(0 0 0 / .2);
+    /* 压暗一档 —— 工具条 / 统计条 / 分区条，替换 rgba(0,0,0,.1~.2) */
+    --t-color-surface-recess-strong: rgb(0 0 0 / .3);
+    /* 压暗两档 —— 卡片头，替换 rgba(0,0,0,.3)
+       （白膜是「加亮」，本对是「压暗」；两个方向都需要，否则 feature 层只能写字面量） */
     --t-color-scrim: rgb(0 0 0 / .6);
     /* 遮罩，= 现 .t-overlay 的 rgba(0,0,0,.6) */
+
+    /* ---- 冷调玻璃表面（elevation 的第二套）----
+       插件实际存在两套表面语言：中性灰（主窗口一系）与冷调玻璃（改写面板、
+       大纲入口菜单一系）。后者不是笔误 —— 18 个值共享同一色相轴，
+       是刻意的「冷玻璃 + 背景模糊」质感。
+
+       为什么不复用 --t-color-surface* 那套：冷玻璃面板的层级方向是**反的**
+       ——卡片比窗口底更暗（越深表示越"里面"），而中性那套是越浅越抬起。
+       两者语义冲突，硬套会让 raised/sunken 名不副实，故独立成族。 */
+    --t-glass-window: rgb(var(--t-c-cool-2-rgb) / .95);
+    /* 窗口根 / 页头页脚，替换 rgba(19,22,30,.94~.96) 与 rgba(16,22,31,.85~.9) */
+    --t-glass-body: rgb(var(--t-c-cool-2-rgb));
+    /* 不透明正文底（渐变洗色的基底），替换 #12161d */
+    --t-glass-card: rgb(var(--t-c-cool-1-rgb) / .85);
+    /* 卡片 / 分区 / 数据行，替换 rgba(10,15,22,.84~.9) 与 rgba(13,19,28,.78) */
+    --t-glass-field: rgb(var(--t-c-cool-0-rgb) / .9);
+    /* 输入框 / textarea / 代码块，替换 rgba(7,11,18,.9) 与 rgba(8,13,20,.8~.82) */
+    --t-glass-row: rgb(var(--t-c-cool-3-rgb) / .6);
+    /* 可折叠卡片外壳，替换 rgba(22,27,36,.6) 与 rgba(18,28,38,.8) */
+    --t-glass-row-head: rgb(var(--t-c-cool-4-rgb) / .7);
+    /* 折叠卡片头 / 列表项 hover，替换 rgba(28,34,44,.7) 与 rgba(18,29,43,.72) */
+    --t-glass-row-hover: rgb(var(--t-c-cool-5-rgb) / .7);
+    /* 折叠卡片头 hover，替换 rgba(34,42,54,.7) */
+    --t-glass-text: rgb(var(--t-c-cool-12-rgb));
+    /* 冷玻璃表面的正文，替换 #d7e7f5 / #dff0ff / #d8f5e4 / #ccefdc */
+    --t-glass-text-secondary: rgb(var(--t-c-cool-10-rgb));
+    /* 冷玻璃表面的次要文字，替换 #a9bfd1 一族 */
+    --t-glass-text-muted: rgb(var(--t-c-cool-8-rgb));
+    /* 冷玻璃表面的弱提示，替换 #7f96aa 一族 */
 
     /* ---- 文本 ---- */
     --t-color-text: rgb(var(--t-c-neutral-12-rgb));
@@ -45,7 +81,11 @@
     --t-color-border-strong: rgb(var(--t-c-neutral-7-rgb));
     /* #444 */
     --t-color-border-subtle: rgb(var(--t-c-neutral-13-rgb) / .1);
-    /* 替换 39 次 */
+    /* 替换 39 次；同时吃掉改写面板的 .12/.13/.14 三档（差 4% 不可见） */
+    --t-color-border-glass: rgb(var(--t-c-neutral-13-rgb) / .18);
+    /* 玻璃面板的可见描边，替换 .16/.18/.2 三档 */
+    --t-color-border-cool: rgb(var(--t-c-cool-8-rgb) / .3);
+    /* 冷调描边，替换项目内 rgba(120,150,170,.25~.35) 共 20 次 */
 
     /* ---- 强调 / 交互（蓝）----
        事实上的交互色是 #90cdf4（64 次），与品牌金显式分离（解 S3）：
@@ -55,8 +95,12 @@
     --t-color-accent-active: rgb(var(--t-c-blue-rgb) / .7);
     --t-color-accent-soft: rgb(var(--t-c-blue-rgb) / .12);
     /* 替换 14+9 次 */
+    --t-color-accent-soft-strong: rgb(var(--t-c-blue-rgb) / .22);
+    /* 选中态 / 激活 tab 的底色，替换 .22/.24/.32 三档 */
     --t-color-accent-border: rgb(var(--t-c-blue-rgb) / .35);
-    /* 替换 13+7 次 */
+    /* 替换 13+7 次；同时吃掉 .38/.42/.44/.45/.5 五档 */
+    --t-color-accent-border-hover: rgb(var(--t-c-blue-rgb) / .6);
+    /* hover 时的描边，替换 .55/.6/.65 三档 */
     --t-color-focus-ring: rgb(var(--t-c-blue-rgb) / .4);
 
     /* ---- 品牌（金）—— 与 accent 显式分离，解决 S3 ---- */
@@ -67,18 +111,26 @@
     --t-color-brand-border: rgb(var(--t-c-gold-rgb) / .55);
     /* = 现 .t-btn-soft 的边框 */
 
-    /* ---- 反馈色 ---- */
+    /* ---- 反馈色 ----
+       soft = 底色（≈.2），veil = 更淡的底色（≈.12），border = 描边（≈.45）。
+       四个色族对称补齐，避免「有 danger-border 却没有 success-border」
+       那样逼着 feature 层写字面量。 */
     --t-color-danger: rgb(var(--t-c-red-rgb));
     --t-color-danger-soft: rgb(var(--t-c-red-rgb) / .2);
     --t-color-danger-border: rgb(var(--t-c-red-rgb) / .4);
     --t-color-success: rgb(var(--t-c-green-rgb));
     --t-color-success-soft: rgb(var(--t-c-green-rgb) / .2);
+    --t-color-success-veil: rgb(var(--t-c-green-rgb) / .12);
+    --t-color-success-border: rgb(var(--t-c-green-rgb) / .45);
     --t-color-warning: rgb(var(--t-c-amber-rgb));
     --t-color-warning-soft: rgb(var(--t-c-amber-rgb) / .2);
+    --t-color-warning-border: rgb(var(--t-c-amber-rgb) / .5);
     --t-color-notify: rgb(var(--t-c-mint-rgb));
     /* #55efc4 */
     --t-color-decor: rgb(var(--t-c-violet-rgb));
     /* #a29bfe 装饰 */
+    --t-color-decor-soft: rgb(var(--t-c-violet-rgb) / .2);
+    --t-color-decor-border: rgb(var(--t-c-violet-rgb) / .52);
 
     /* ---- 阴影 ---- */
     --t-shadow-xs: 0 1px 3px rgb(0 0 0 / .2);
@@ -98,6 +150,10 @@
     --t-shadow-inset-hairline: inset 0 1px 0 rgb(255 255 255 / .06);
     /* 以上 3 个 glow 替换现有 12 个各不相同的
        "0 4~6px 12~20px rgba(强调色, .3~.5)" */
+    --t-shadow-inset-gloss: inset 0 1px 0 rgb(255 255 255 / .18);
+    /* 玻璃按钮顶边高光，比 hairline 明显一档；替换 .1~.26 共 8 处 */
+    --t-shadow-lift: 0 10px 22px rgb(var(--t-c-cool-5-rgb) / .32);
+    /* hover 抬起时的冷调投影，替换 rgba(17,34,54,.28~.32) */
 
     /* ---- 复合过渡：按交互场景而非按属性 ----
        同时用于消灭 54 处 `transition: all`（审计 A20）：
@@ -127,4 +183,38 @@
     /* = 现 .t-title-container::before */
     --t-gradient-surface: linear-gradient(180deg, rgb(255 255 255 / .04),
             rgb(255 255 255 / .015));
+    /* 卡片顶部微光，需叠在底色之上使用：
+       background: var(--t-gradient-surface), var(--t-glass-card); */
+
+    /* ---- 冷调玻璃质感的渐变（改写面板一系）---- */
+    --t-gradient-glass-head: linear-gradient(180deg, rgb(var(--t-c-cool-4-rgb) / .9) 0%,
+            rgb(var(--t-c-cool-2-rgb) / .85) 100%);
+    /* 窗口页头 */
+    --t-gradient-glass-btn: linear-gradient(140deg, rgb(255 255 255 / .12),
+            rgb(255 255 255 / .04));
+    /* 玻璃按钮静息，替换 140deg/145deg 两组近似配方 */
+    --t-gradient-glass-btn-hover: linear-gradient(140deg, rgb(var(--t-c-blue-rgb) / .22),
+            rgb(255 255 255 / .06));
+    /* 玻璃按钮 hover */
+    --t-gradient-glass-wash: radial-gradient(circle at 100% 0%,
+            rgb(var(--t-c-blue-rgb) / .1) 0%, rgb(var(--t-c-blue-rgb) / 0) 36%),
+        radial-gradient(circle at 0% 100%,
+            rgb(var(--t-c-gold-rgb) / .08) 0%, rgb(var(--t-c-gold-rgb) / 0) 32%),
+        var(--t-glass-body);
+    /* 正文区的双角洗色（含不透明基底），现 4 处逐字节相同 */
+    --t-gradient-accent-brand: linear-gradient(135deg, rgb(var(--t-c-blue-rgb) / .18),
+            rgb(var(--t-c-gold-rgb) / .16));
+    /* 主操作按钮：交互蓝 → 品牌金 */
+
+    /* ---- 反馈色填充（需叠在卡片底色之上）----
+       原为「深绿/深红实色渐变到近黑」，改为「反馈色低透明度覆盖」：
+       前者无法跟随主题（浅色主题下深绿会变成脏块），后者可以。 */
+    --t-gradient-success-fill: linear-gradient(180deg, rgb(var(--t-c-green-rgb) / .14) 0%,
+            rgb(var(--t-c-green-rgb) / .07) 100%);
+    --t-gradient-danger-fill: linear-gradient(180deg, rgb(var(--t-c-red-rgb) / .14) 0%,
+            rgb(var(--t-c-red-rgb) / .07) 100%);
+    --t-gradient-badge-flow: linear-gradient(120deg, rgb(var(--t-c-blue-rgb) / .15) 0%,
+            rgb(var(--t-c-gold-rgb) / .22) 35%, rgb(var(--t-c-green-rgb) / .2) 70%,
+            rgb(var(--t-c-blue-rgb) / .15) 100%);
+    /* 自动改写徽章的流动底，配合 @keyframes t-rewrite-badge-flow */
 }

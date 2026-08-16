@@ -7,9 +7,12 @@
    完全绕过分层架构；只要样式还在 JS 里，其中的颜色就无法 token 化、
    也无法跟随主题切换。这是「注入样式解耦」的第 2/4 步。
 
-   ── 本次只搬家，不改值 ──
-   全部声明（含 25 处 hex、9 处 rgba 与 1 个 @media 断点）逐字节照搬自原 JS 模板，
-   未做 token 化，以保证本步视觉零变化。token 化在四步搬完后统一进行。
+   ── token 化（注入样式解耦 4/4）──
+   34 处颜色字面量已全部换成语义 token。本对话框属**中性灰**一系
+   （不是改写面板那套冷调玻璃），故直接消费 --t-color-* 标准角色。
+
+   原本用的是 flat-ui 配色（#2ecc71 / #f39c12 / #3498db / #9b59b6 / #e74c3c），
+   已收敛到插件统一的反馈色族 —— 这是本步会看到的主要外观变化。
    ============================================================ */
 
 .t-cleaning-preview-box {
@@ -21,8 +24,8 @@
     display: flex;
     gap: 20px;
     padding: 12px 16px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid #333;
+    background: var(--t-color-surface-recess);
+    border-bottom: 1px solid var(--t-color-border);
     flex-wrap: wrap;
 }
 
@@ -30,16 +33,16 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 0.9em;
 }
 
 .t-cleaning-stat i {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-cleaning-stat strong {
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-cleaning-config-bar {
@@ -47,13 +50,13 @@
     align-items: center;
     gap: 10px;
     padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.1);
-    border-bottom: 1px solid #333;
+    background: var(--t-color-surface-recess);
+    border-bottom: 1px solid var(--t-color-border);
     flex-wrap: wrap;
 }
 
 .t-cleaning-config-bar .t-config-label {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.85em;
 }
 
@@ -73,17 +76,17 @@
 }
 
 .t-config-enabled {
-    background: rgba(46, 204, 113, 0.2);
-    color: #2ecc71;
+    background: var(--t-color-success-soft);
+    color: var(--t-color-success);
 }
 
 .t-config-disabled {
-    background: rgba(136, 136, 136, 0.2);
-    color: #666;
+    background: var(--t-color-surface-active);
+    color: var(--t-color-text-faint);
 }
 
 .t-custom-tags {
-    color: #f39c12;
+    color: var(--t-color-warning);
     font-size: 0.8em;
     margin-left: auto;
 }
@@ -96,14 +99,14 @@
 
 .t-cleaning-sample {
     margin-bottom: 16px;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 8px;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
 }
 
 .t-cleaning-sample.t-sample-invalid {
-    border-color: rgba(243, 156, 18, 0.5);
+    border-color: var(--t-color-warning-border);
 }
 
 .t-sample-header {
@@ -111,8 +114,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 14px;
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid #333;
+    background: var(--t-color-surface-recess-strong);
+    border-bottom: 1px solid var(--t-color-border);
 }
 
 .t-sample-role {
@@ -123,15 +126,15 @@
 }
 
 .t-role-user {
-    color: #3498db;
+    color: var(--t-color-accent);
 }
 
 .t-role-char {
-    color: #9b59b6;
+    color: var(--t-color-decor);
 }
 
 .t-sample-stats {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.85em;
     display: flex;
     align-items: center;
@@ -139,16 +142,16 @@
 }
 
 .t-reduction {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-reduction.t-has-reduction {
-    color: #2ecc71;
+    color: var(--t-color-success);
 }
 
 .t-invalid-badge {
-    background: rgba(243, 156, 18, 0.2);
-    color: #f39c12;
+    background: var(--t-color-warning-soft);
+    color: var(--t-color-warning);
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.85em;
@@ -158,17 +161,17 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1px;
-    background: #333;
+    background: var(--t-color-border);
 }
 
 .t-sample-pane {
-    background: #1e1e2e;
+    background: var(--t-color-surface);
 }
 
 .t-pane-header {
     padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.2);
-    color: #888;
+    background: var(--t-color-surface-recess);
+    color: var(--t-color-text-muted);
     font-size: 0.8em;
     display: flex;
     align-items: center;
@@ -176,18 +179,18 @@
 }
 
 .t-pane-original .t-pane-header {
-    color: #e74c3c;
+    color: var(--t-color-danger);
 }
 
 .t-pane-cleaned .t-pane-header {
-    color: #2ecc71;
+    color: var(--t-color-success);
 }
 
 .t-pane-body {
     padding: 12px;
     font-size: 0.9em;
     line-height: 1.5;
-    color: #ccc;
+    color: var(--t-color-text);
     max-height: 200px;
     overflow-y: auto;
     white-space: pre-wrap;
@@ -198,12 +201,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.85em;
 }
 
 .t-footer-hint i {
-    color: #3498db;
+    color: var(--t-color-accent);
 }
 
 @media (max-width: 768px) {

@@ -24,8 +24,8 @@
       "title": "消费但未声明的 --t-* 变量",
       "violations": 0,
       "metrics": {
-        "CSS 已声明 --t-*": 163,
-        "被消费种类": 97,
+        "CSS 已声明 --t-*": 208,
+        "被消费种类": 132,
         "仅 JS 声明（B5）": 4
       }
     },
@@ -68,13 +68,13 @@
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1284,
-        "rgb/rgba字面量": 1022,
-        "合计": 2306,
-        "  00-tokens": "hex 10 / rgb 45",
+        "hex字面量": 1249,
+        "rgb/rgba字面量": 1026,
+        "合计": 2275,
+        "  00-tokens": "hex 10 / rgb 89",
         "  01-base": "hex 25 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
-        "  04-features": "hex 1241 / rgb 952",
+        "  04-features": "hex 1206 / rgb 912",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
     },
@@ -112,9 +112,9 @@
     },
     "A13": {
       "title": "字节级重复声明块（≥4 声明）",
-      "violations": 38,
+      "violations": 37,
       "metrics": {
-        "重复组数": 38
+        "重复组数": 37
       }
     },
     "A16": {
@@ -176,8 +176,8 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16393,
-    "规则条数": 2284,
+    "CSS 总行数": 16534,
+    "规则条数": 2285,
     "border-radius 声明 / 不同值": "360 / 41",
     "box-shadow 声明 / 不同值": "126 / 90",
     "font-size (px / em)": "165 / 330",

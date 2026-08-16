@@ -7,39 +7,40 @@
    当前内容来自文本改写功能注入到聊天区的元素：
    #chat .mes 下的改写徽章 / 行内工具条 / 改写标记，以及 #titania-rewrite-entry-btn。
    后续若有其它注入 ST DOM 的样式（chatInjectButton 等），也应集中到本文件。
-   ── 本次只搬家，不改值 ──
-   全部声明逐字节照搬自 src/ui/rewriteEntryButton.js 的
-   REWRITE_PANEL_CSS 与 REWRITE_SETTINGS_BUTTON_CSS，未做 token 化，
-   以保证本步视觉零变化。token 化在四步搬完后统一进行并单独发版。
+
+   ── token 化（注入样式解耦 4/4）──
+   33 处颜色字面量已换成 token。这些控件虽挂在 ST 聊天区，但自身带有
+   冷玻璃暗色背景，故消费 --t-glass-* 角色而不继承 ST 正文色；同时不进入
+   插件按钮组件体系。这是 ADR-02 在 token 层面的边界。
    ============================================================ */
 
 #titania-rewrite-entry-btn { margin-left: 6px; }
 
-#titania-rewrite-entry-btn i { color: #90cdf4; }
+#titania-rewrite-entry-btn i { color: var(--t-color-accent); }
 
-#titania-rewrite-entry-btn:hover i { color: #b9def8; }
+#titania-rewrite-entry-btn:hover i { color: var(--t-color-text-strong); }
 
-#chat .mes .t-rewrite-auto-badge { position: absolute; right: 10px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #dff0ff; background: rgba(15, 24, 35, 0.88); border: 1px solid rgba(144, 205, 244, 0.45); border-radius: 999px; padding: 3px 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); background-image: linear-gradient(120deg, rgba(144, 205, 244, 0.15) 0%, rgba(191, 161, 95, 0.22) 35%, rgba(122, 203, 159, 0.2) 70%, rgba(144, 205, 244, 0.15) 100%); background-size: 220% 220%; animation: t-rewrite-badge-flow 1.4s linear infinite; }
+#chat .mes .t-rewrite-auto-badge { position: absolute; right: 10px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--t-glass-text); background: var(--t-glass-window); border: 1px solid var(--t-color-accent-border); border-radius: 999px; padding: 3px 8px; box-shadow: var(--t-shadow-md); background-image: var(--t-gradient-badge-flow); background-size: 220% 220%; animation: t-rewrite-badge-flow 1.4s linear infinite; }
 
-#chat .mes .t-rewrite-auto-badge i { color: #90cdf4; animation: t-rewrite-badge-icon 0.95s ease-in-out infinite; }
+#chat .mes .t-rewrite-auto-badge i { color: var(--t-color-accent); animation: t-rewrite-badge-icon 0.95s ease-in-out infinite; }
 
 #chat .mes .t-rewrite-inline-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0 8px; font-size: 12px; }
 
-#chat .mes .t-rewrite-inline-toolbar button { border: 1px solid rgba(144, 205, 244, 0.38); border-radius: 999px; background: rgba(15, 24, 35, 0.82); color: #dff0ff; padding: 3px 9px; line-height: 1.35; cursor: pointer; }
+#chat .mes .t-rewrite-inline-toolbar button { border: 1px solid var(--t-color-accent-border); border-radius: 999px; background: var(--t-glass-window); color: var(--t-glass-text); padding: 3px 9px; line-height: 1.35; cursor: pointer; }
 
-#chat .mes .t-rewrite-inline-toolbar button:hover { border-color: rgba(144, 205, 244, 0.65); background: rgba(34, 54, 76, 0.86); }
+#chat .mes .t-rewrite-inline-toolbar button:hover { border-color: var(--t-color-accent-border-hover); background: var(--t-glass-row-hover); }
 
-#chat .mes .t-rewrite-inline-toolbar button.t-rewrite-inline-confirm { border-color: rgba(122, 203, 159, 0.52); color: #d8f5e4; }
+#chat .mes .t-rewrite-inline-toolbar button.t-rewrite-inline-confirm { border-color: var(--t-color-success-border); color: var(--t-glass-text); }
 
 #chat .mes .t-rewrite-inline-toolbar button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-#chat .mes .t-rewrite-inline-count { color: #a9bfd1; padding: 2px 4px; }
+#chat .mes .t-rewrite-inline-count { color: var(--t-glass-text-secondary); padding: 2px 4px; }
 
 #chat .mes .t-rewrite-select-sentence { border-radius: 5px; padding: 0 2px; cursor: pointer; transition: background-color 0.16s ease, box-shadow 0.16s ease; }
 
-#chat .mes .t-rewrite-select-sentence:hover { background: rgba(144, 205, 244, 0.14); box-shadow: inset 0 0 0 1px rgba(144, 205, 244, 0.32); }
+#chat .mes .t-rewrite-select-sentence:hover { background: var(--t-color-accent-soft); box-shadow: inset 0 0 0 1px var(--t-color-accent-border); }
 
-#chat .mes .t-rewrite-select-sentence.selected { background: rgba(122, 203, 159, 0.22); box-shadow: inset 0 0 0 1px rgba(122, 203, 159, 0.52); }
+#chat .mes .t-rewrite-select-sentence.selected { background: var(--t-color-success-soft); box-shadow: inset 0 0 0 1px var(--t-color-success-border); }
 
 #chat .mes .t-rewrite-mark {
     position: relative;
@@ -47,9 +48,9 @@
     border-radius: 5px;
     padding: 0 2px;
     margin: 0;
-    border: 1px solid rgba(122, 203, 159, 0.3);
-    background: linear-gradient(180deg, rgba(122, 203, 159, 0.14) 0%, rgba(122, 203, 159, 0.08) 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--t-color-success-border);
+    background: var(--t-gradient-success-fill);
+    box-shadow: var(--t-shadow-inset-hairline);
     transition: background-color 0.2s ease, border-color 0.2s ease;
     animation: t-rewrite-mark-fade-in 0.2s ease;
 }
@@ -60,9 +61,9 @@
     margin-right: 4px;
     padding: 0 4px;
     border-radius: 999px;
-    border: 1px solid rgba(122, 203, 159, 0.38);
-    background: rgba(122, 203, 159, 0.16);
-    color: #ccefdc;
+    border: 1px solid var(--t-color-success-border);
+    background: var(--t-color-success-veil);
+    color: var(--t-glass-text);
     font-size: 10px;
     line-height: 1.45;
     letter-spacing: 0.1px;
@@ -72,6 +73,6 @@
 }
 
 #chat .mes .t-rewrite-mark:hover {
-    border-color: rgba(122, 203, 159, 0.45);
-    background: linear-gradient(180deg, rgba(122, 203, 159, 0.19) 0%, rgba(122, 203, 159, 0.12) 100%);
+    border-color: var(--t-color-success-border);
+    background: var(--t-color-success-soft);
 }
