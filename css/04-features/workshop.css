@@ -41,7 +41,7 @@
    热区/居中/无 margin/user-select 已由 02-components/icon-button.css 提供（修 B13）。 */
 #t-ws-view .t-header .t-header-actions .t-icon-btn {
     --t-icon-btn-size: 36px;
-    font-size: 1.35em;
+    --t-icon-btn-font-size: 1.35em;
 }
 
 /* .t-close 尚未纳入组件（理由见 02-components/icon-button.css），仍需在此自行构造方形热区 */
@@ -595,7 +595,7 @@
     }
 
     #t-ws-view .t-header .t-header-actions .t-icon-btn {
-        font-size: 1.3em;
+        --t-icon-btn-font-size: 1.3em;
     }
 
     #t-ws-view .t-header .t-header-actions .t-close,

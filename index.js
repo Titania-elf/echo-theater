@@ -3206,6 +3206,7 @@ textarea.t-input {
 
 .t-icon-btn {
     --t-icon-btn-size: 32px;
+    --t-icon-btn-font-size: 1.2em;
 
     display: inline-flex;
     align-items: center;
@@ -3220,6 +3221,7 @@ textarea.t-input {
     border-radius: var(--t-radius-container);
     background: transparent;
     color: var(--t-color-text-secondary);
+    font-size: var(--t-icon-btn-font-size);
     line-height: 1;
     cursor: pointer;
     transition: var(--t-transition-hover);
@@ -4082,7 +4084,7 @@ textarea.t-input {
 #t-main-view .t-header .t-header-actions .t-icon-btn {
     /* \u70ED\u533A/\u5C45\u4E2D/\u65E0 margin \u5DF2\u7531 02-components/icon-button.css \u63D0\u4F9B\uFF08\u4FEE B13\uFF09\u3002
        \u8FD9\u91CC\u53EA\u4FDD\u7559\u672C\u89C6\u56FE\u81EA\u5DF1\u7684\u6392\u7248\u51B3\u5B9A\uFF1A\u5B57\u5F62\u5927\u5C0F\u3002 */
-    font-size: 1.5em;
+    --t-icon-btn-font-size: 1.5em;
 }
 
 #t-main-view .t-header .t-header-actions .t-close {
@@ -5188,7 +5190,7 @@ textarea.t-input {
     #t-main-view .t-header .t-header-actions .t-icon-btn {
         /* \u53EA\u6536\u5B57\u5F62\u4E0D\u6536\u70ED\u533A\uFF1A30px \u5DF2\u662F\u89E6\u5C4F\u70B9\u51FB\u7684\u4E0B\u9650\uFF0C\u518D\u5C0F\u4F1A\u96BE\u70B9\u3002
            \u56FE\u6807\u6700\u591A 5 \u4E2A\u65F6 1.3em \u51E0\u4E4E\u9876\u6EE1\u65B9\u5757\uFF0C\u663E\u5F97\u62E5\u6324\uFF0C\u7F29\u5230 1.15em \u7559\u51FA\u547C\u5438\u611F\u3002 */
-        font-size: 1.15em;
+        --t-icon-btn-font-size: 1.15em;
         --t-icon-btn-size: 30px;
     }
 
@@ -9992,7 +9994,7 @@ textarea.t-input {
    \u70ED\u533A/\u5C45\u4E2D/\u65E0 margin/user-select \u5DF2\u7531 02-components/icon-button.css \u63D0\u4F9B\uFF08\u4FEE B13\uFF09\u3002 */
 #t-ws-view .t-header .t-header-actions .t-icon-btn {
     --t-icon-btn-size: 36px;
-    font-size: 1.35em;
+    --t-icon-btn-font-size: 1.35em;
 }
 
 /* .t-close \u5C1A\u672A\u7EB3\u5165\u7EC4\u4EF6\uFF08\u7406\u7531\u89C1 02-components/icon-button.css\uFF09\uFF0C\u4ECD\u9700\u5728\u6B64\u81EA\u884C\u6784\u9020\u65B9\u5F62\u70ED\u533A */
@@ -10546,7 +10548,7 @@ textarea.t-input {
     }
 
     #t-ws-view .t-header .t-header-actions .t-icon-btn {
-        font-size: 1.3em;
+        --t-icon-btn-font-size: 1.3em;
     }
 
     #t-ws-view .t-header .t-header-actions .t-close,

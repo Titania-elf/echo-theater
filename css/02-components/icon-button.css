@@ -24,6 +24,7 @@
 
 .t-icon-btn {
     --t-icon-btn-size: 32px;
+    --t-icon-btn-font-size: 1.2em;
 
     display: inline-flex;
     align-items: center;
@@ -38,6 +39,7 @@
     border-radius: var(--t-radius-container);
     background: transparent;
     color: var(--t-color-text-secondary);
+    font-size: var(--t-icon-btn-font-size);
     line-height: 1;
     cursor: pointer;
     transition: var(--t-transition-hover);
