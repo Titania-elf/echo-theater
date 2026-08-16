@@ -5,7 +5,12 @@
     "type": "module",
     "scripts": {
         "build": "node build.js",
-        "build:watch": "node build.js --watch"
+        "build:watch": "node build.js --watch",
+        "prebuild": "node scripts/css-audit.js",
+        "css:audit": "node scripts/css-audit.js",
+        "css:audit:strict": "node scripts/css-audit.js --strict",
+        "css:audit:compare": "node scripts/css-audit.js --compare",
+        "css:audit:baseline": "node scripts/css-audit.js --update-baseline"
     },
     "devDependencies": {
         "esbuild": "^0.24.0"

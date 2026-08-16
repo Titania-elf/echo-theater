@@ -1,0 +1,175 @@
+{
+  "checks": {
+    "A14": {
+      "title": "manifest.js 与磁盘双向一致",
+      "violations": 0,
+      "metrics": {
+        "清单文件数": 13,
+        "磁盘文件数": 13
+      }
+    },
+    "A15": {
+      "title": "main-window-legacy.css 紧跟 main-window.css",
+      "violations": 0,
+      "metrics": {
+        "位置": "4 → 5"
+      }
+    },
+    "A10": {
+      "title": "禁止使用 CSS @layer",
+      "violations": 0,
+      "metrics": {}
+    },
+    "A11": {
+      "title": "消费但未声明的 --t-* 变量",
+      "violations": 0,
+      "metrics": {
+        "CSS 已声明 --t-*": 8,
+        "被消费种类": 9,
+        "仅 JS 声明（B5）": 4
+      }
+    },
+    "A22": {
+      "title": "悬空 animation 引用 / 孤儿 @keyframes",
+      "violations": 0,
+      "metrics": {
+        "定义": 22,
+        "引用种类": 23
+      }
+    },
+    "A7": {
+      "title": "@keyframes 集中声明且带 t- 前缀",
+      "violations": 0,
+      "metrics": {
+        "keyframes总数": 22
+      }
+    },
+    "A8": {
+      "title": "全局伪元素选择器带 .t-root 作用域",
+      "violations": 4,
+      "metrics": {}
+    },
+    "A9": {
+      "title": "!important 紧邻注释说明其对抗的宿主规则",
+      "violations": 74,
+      "metrics": {
+        "important总数": 76
+      }
+    },
+    "A1": {
+      "title": "各层颜色字面量计数",
+      "violations": 0,
+      "metrics": {
+        "hex字面量": 1187,
+        "rgb/rgba字面量": 760,
+        "合计": 1947,
+        "  01-base": "hex 40 / rgb 21",
+        "  04-features": "hex 1139 / rgb 731",
+        "  (内嵌 HTML)": "hex 8 / rgb 8"
+      }
+    },
+    "A2": {
+      "title": "组件层禁止 ID 选择器",
+      "violations": null,
+      "metrics": {}
+    },
+    "A3": {
+      "title": "组件层禁止颜色字面量",
+      "violations": null,
+      "metrics": {}
+    },
+    "A4": {
+      "title": "组件层禁止直接引用 --t-c-* 原语",
+      "violations": null,
+      "metrics": {}
+    },
+    "A5": {
+      "title": "feature 层禁止重定义组件类的视觉属性",
+      "violations": null,
+      "metrics": {}
+    },
+    "A6": {
+      "title": "feature 之间禁止交叉引用类名",
+      "violations": 34,
+      "metrics": {}
+    },
+    "A12": {
+      "title": "跨文件重复定义的顶层类",
+      "violations": 6,
+      "metrics": {
+        "冲突类数": 6
+      }
+    },
+    "A13": {
+      "title": "字节级重复声明块（≥4 声明）",
+      "violations": 23,
+      "metrics": {
+        "重复组数": 23
+      }
+    },
+    "A16": {
+      "title": "src/**/*.js 的 inline style 计数",
+      "violations": 0,
+      "metrics": {
+        "静态": 556,
+        "数据驱动": 27,
+        "合计": 583,
+        "  src/ui/settingsWindow.js": "201（静态 190）",
+        "  src/ui/mainWindow.js": "71（静态 68）",
+        "  src/ui/loreReviewWindow.js": "58（静态 53）",
+        "  src/ui/scriptManager.js": "57（静态 57）",
+        "  src/ui/storyOutlineWindow.js": "47（静态 47）"
+      }
+    },
+    "A17": {
+      "title": "inline style 中的硬编码颜色",
+      "violations": 261,
+      "metrics": {
+        "命中数": 261
+      }
+    },
+    "A18": {
+      "title": "@media 断点在约定集合内",
+      "violations": 5,
+      "metrics": {
+        "@media 块": 34,
+        "其中指针/hover 查询": 3,
+        "JS matchMedia": 4,
+        "不同断点": 7,
+        "断点分布": "480px×1 600px×17 620px×1 700px×1 768px×13 769px×1 900px×1"
+      }
+    },
+    "A19": {
+      "title": "z-index 通过 token 声明",
+      "violations": 84,
+      "metrics": {
+        "不同取值": 41
+      }
+    },
+    "A20": {
+      "title": "禁止 transition: all",
+      "violations": 54,
+      "metrics": {
+        "transition 声明总数": 134,
+        "含 all": 54,
+        "其中 all 0.2s": 47
+      }
+    },
+    "A21": {
+      "title": "挂载点清单核对（$(\"body\").append / ensureOverlay）",
+      "violations": 0,
+      "metrics": {
+        "body.append 挂载点": 34,
+        "ensureOverlay 调用": 8
+      }
+    }
+  },
+  "scale": {
+    "CSS 总行数": 14642,
+    "规则条数": 1970,
+    "border-radius 声明 / 不同值": "318 / 37",
+    "box-shadow 声明 / 不同值": "102 / 73",
+    "font-size (px / em)": "161 / 264",
+    "padding / gap 声明": "480 / 333"
+  }
+}
