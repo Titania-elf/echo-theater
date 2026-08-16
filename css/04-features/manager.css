@@ -566,7 +566,7 @@
 
     /* 移动端隐藏桌面侧边栏，显示下拉选择器 */
     .t-mgr-sidebar {
-        display: none !important;
+        display: none;
     }
 
     .t-mgr-mobile-cat {
@@ -584,7 +584,7 @@
     }
 
     .t-batch-active .t-mgr-list {
-        padding-bottom: 60px !important;
+        padding-bottom: 60px;
     }
 
     .t-mgr-overview {

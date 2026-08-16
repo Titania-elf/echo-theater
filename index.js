@@ -9880,7 +9880,7 @@ textarea.t-input {
 
     /* \u79FB\u52A8\u7AEF\u9690\u85CF\u684C\u9762\u4FA7\u8FB9\u680F\uFF0C\u663E\u793A\u4E0B\u62C9\u9009\u62E9\u5668 */
     .t-mgr-sidebar {
-        display: none !important;
+        display: none;
     }
 
     .t-mgr-mobile-cat {
@@ -9898,7 +9898,7 @@ textarea.t-input {
     }
 
     .t-batch-active .t-mgr-list {
-        padding-bottom: 60px !important;
+        padding-bottom: 60px;
     }
 
     .t-mgr-overview {
