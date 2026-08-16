@@ -16,6 +16,8 @@
    ============================================================ */
 
 .t-btn {
+    --t-btn-font-size: var(--t-text-body);
+    --t-btn-color: var(--t-color-text);
     /* ⚠ 刻意保持 display: flex，未采用 plan.md §6.3 的 inline-flex。
        两者差别不是视觉而是布局语义：在块级容器里 flex 会撑满宽度、
        inline-flex 只占内容宽度。全库按钮的父容器类型未逐一核实，
@@ -30,9 +32,9 @@
     border: 1px solid var(--t-color-border-strong);
     border-radius: var(--t-radius-control);
     background: var(--t-color-surface-raised);
-    color: var(--t-color-text);
+    color: var(--t-btn-color);
     font-family: inherit;
-    font-size: var(--t-text-body);
+    font-size: var(--t-btn-font-size);
     font-weight: var(--t-font-weight-semibold);
     line-height: var(--t-line-height-tight);
     text-align: center;

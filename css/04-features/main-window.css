@@ -207,7 +207,7 @@
 
     .t-cont-history-header-actions .t-btn {
         padding: 5px 7px;
-        font-size: 12px;
+        --t-btn-font-size: 12px;
     }
 }
 
@@ -2624,8 +2624,8 @@
 
 .t-cont-history-header-actions .t-btn {
     padding: 5px 8px;
-    color: #a98888;
-    font-size: 10px;
+    --t-btn-color: #a98888;
+    --t-btn-font-size: 10px;
 }
 
 .t-cont-history-header i,
@@ -2896,7 +2896,7 @@
 
 .t-cont-history-actions .t-btn {
     padding: 6px 9px;
-    font-size: 11px;
+    --t-btn-font-size: 11px;
 }
 
 @media screen and (max-width: 600px) {
@@ -3392,7 +3392,7 @@
 
     .t-ce-actions .t-btn {
         padding: 8px 12px;
-        font-size: 0.85em;
+        --t-btn-font-size: 0.85em;
     }
 }
 

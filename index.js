@@ -2983,6 +2983,8 @@ textarea.t-input {
    ============================================================ */
 
 .t-btn {
+    --t-btn-font-size: var(--t-text-body);
+    --t-btn-color: var(--t-color-text);
     /* \u26A0 \u523B\u610F\u4FDD\u6301 display: flex\uFF0C\u672A\u91C7\u7528 plan.md \xA76.3 \u7684 inline-flex\u3002
        \u4E24\u8005\u5DEE\u522B\u4E0D\u662F\u89C6\u89C9\u800C\u662F\u5E03\u5C40\u8BED\u4E49\uFF1A\u5728\u5757\u7EA7\u5BB9\u5668\u91CC flex \u4F1A\u6491\u6EE1\u5BBD\u5EA6\u3001
        inline-flex \u53EA\u5360\u5185\u5BB9\u5BBD\u5EA6\u3002\u5168\u5E93\u6309\u94AE\u7684\u7236\u5BB9\u5668\u7C7B\u578B\u672A\u9010\u4E00\u6838\u5B9E\uFF0C
@@ -2997,9 +2999,9 @@ textarea.t-input {
     border: 1px solid var(--t-color-border-strong);
     border-radius: var(--t-radius-control);
     background: var(--t-color-surface-raised);
-    color: var(--t-color-text);
+    color: var(--t-btn-color);
     font-family: inherit;
-    font-size: var(--t-text-body);
+    font-size: var(--t-btn-font-size);
     font-weight: var(--t-font-weight-semibold);
     line-height: var(--t-line-height-tight);
     text-align: center;
@@ -4266,7 +4268,7 @@ textarea.t-input {
 
     .t-cont-history-header-actions .t-btn {
         padding: 5px 7px;
-        font-size: 12px;
+        --t-btn-font-size: 12px;
     }
 }
 
@@ -6683,8 +6685,8 @@ textarea.t-input {
 
 .t-cont-history-header-actions .t-btn {
     padding: 5px 8px;
-    color: #a98888;
-    font-size: 10px;
+    --t-btn-color: #a98888;
+    --t-btn-font-size: 10px;
 }
 
 .t-cont-history-header i,
@@ -6955,7 +6957,7 @@ textarea.t-input {
 
 .t-cont-history-actions .t-btn {
     padding: 6px 9px;
-    font-size: 11px;
+    --t-btn-font-size: 11px;
 }
 
 @media screen and (max-width: 600px) {
@@ -7451,7 +7453,7 @@ textarea.t-input {
 
     .t-ce-actions .t-btn {
         padding: 8px 12px;
-        font-size: 0.85em;
+        --t-btn-font-size: 0.85em;
     }
 }
 
@@ -10280,7 +10282,7 @@ textarea.t-input {
 .t-ws-card-actions .t-btn {
     flex: 1;
     padding: 5px 4px;
-    font-size: 0.78em;
+    --t-btn-font-size: 0.78em;
     white-space: nowrap;
 }
 
@@ -10626,7 +10628,7 @@ textarea.t-input {
     }
 
     .t-ws-card-actions .t-btn {
-        font-size: 0.72em;
+        --t-btn-font-size: 0.72em;
         padding: 5px 2px;
     }
 }
