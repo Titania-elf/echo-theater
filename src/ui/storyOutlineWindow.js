@@ -562,7 +562,7 @@ function openOpeningSourcePickerDialog(initialChatIndex = -1) {
     return new Promise((resolve) => {
         $("#t-outline-opening-picker").remove();
         const html = `
-        <div id="t-outline-opening-picker" class="t-dialog-overlay">
+        <div id="t-outline-opening-picker" class="t-dialog-overlay t-root">
             <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-comment-dots"></i> 选择聊天记录参考来源</span>
@@ -631,7 +631,7 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
         $("#t-outline-opening-picker").remove();
         $("#t-opening-detail-dialog").remove();
         const html = `
-        <div id="t-outline-opening-picker" class="t-dialog-overlay">
+        <div id="t-outline-opening-picker" class="t-dialog-overlay t-root">
             <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-book-open"></i> 选择参考开场白</span>
@@ -657,7 +657,7 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
             if (!entry) return;
             $("#t-opening-detail-dialog").remove();
             const detailHtml = `
-            <div id="t-opening-detail-dialog" class="t-dialog-overlay">
+            <div id="t-opening-detail-dialog" class="t-dialog-overlay t-root">
                 <div class="t-dialog-box" style="max-width: 780px; max-height: 84vh;">
                     <div class="t-dialog-header">
                         <span><i class="fa-solid fa-file-lines"></i> 开场白 ${entry.openingIndex + 1} 详情</span>
@@ -942,7 +942,7 @@ export async function openPromptTemplateManager() {
     }));
 
     const html = `
-    <div id="t-outline-prompt-manager" class="t-dialog-overlay">
+    <div id="t-outline-prompt-manager" class="t-dialog-overlay t-root">
         <div class="t-dialog-box t-outline-settings-dialog">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-sliders"></i> 设置</span>
@@ -1602,7 +1602,7 @@ function openPlanCreationDialog() {
     const draftStoryInput = String($("#t-outline-story-input").val() || "").trim();
 
     const html = `
-    <div id="t-outline-create-plan-dialog" class="t-dialog-overlay">
+    <div id="t-outline-create-plan-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 620px; max-height: 84vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-plus"></i> 新建方案</span>
@@ -1929,7 +1929,7 @@ export function openSceneHubWindow() {
     sceneHubSelectedKey = "";
 
     const html = `
-    <div id="t-scene-hub-overlay" class="t-overlay">
+    <div id="t-scene-hub-overlay" class="t-overlay t-root">
         <div class="t-window t-story-outline-window">
             <div class="t-window-header">
                 <div class="t-window-title"><i class="fa-solid fa-clapperboard"></i> 细纲情节</div>
@@ -1992,7 +1992,7 @@ export function openOutlineEntryDialog() {
     const hasPlans = getPlans().length > 0;
 
     const html = `
-    <div id="t-outline-entry-dialog" class="t-dialog-overlay">
+    <div id="t-outline-entry-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 420px;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-list-check"></i> 选择入口</span>
@@ -2087,7 +2087,7 @@ function showPlanDetailDialog(planId) {
     if (!plan) return;
     $("#t-outline-plan-detail-dialog").remove();
     const html = `
-    <div id="t-outline-plan-detail-dialog" class="t-dialog-overlay" data-plan-id="${plan.id}">
+    <div id="t-outline-plan-detail-dialog" class="t-dialog-overlay t-root" data-plan-id="${plan.id}">
         <div class="t-dialog-box" style="max-width: 900px; max-height: 88vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-open"></i> <span id="t-plan-detail-dialog-title"></span></span>
@@ -2173,7 +2173,7 @@ function showPlanInstructionDialog(plan) {
     $("#t-outline-plan-instruction-dialog").remove();
 
     const html = `
-    <div id="t-outline-plan-instruction-dialog" class="t-dialog-overlay">
+    <div id="t-outline-plan-instruction-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 780px; max-height: 82vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-file-lines"></i> 故事指令 · ${escapeHtml(planName)}</span>
@@ -2428,7 +2428,7 @@ function showRawResponseDialog(rawContent, options = {}) {
 
     $("#t-outline-raw-dialog").remove();
     const html = `
-    <div id="t-outline-raw-dialog" class="t-dialog-overlay">
+    <div id="t-outline-raw-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 820px; max-height: 82vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-code"></i> ${escapeHtml(title)}</span>
@@ -3557,7 +3557,7 @@ export function openStoryOutlineWindow() {
     const defaultPlanName = createPlanName(getCurrentCharCardName());
 
     const html = `
-    <div id="t-story-outline-overlay" class="t-overlay">
+    <div id="t-story-outline-overlay" class="t-overlay t-root">
         <div class="t-window t-story-outline-window">
             <div class="t-window-header">
                 <div class="t-window-title"><i class="fa-solid fa-list-check"></i> 大纲生成</div>
@@ -3678,7 +3678,7 @@ export function openStoryOutlineWindow() {
                         <button id="t-outline-add-fab" class="t-outline-add-fab" aria-expanded="false" aria-controls="t-outline-add-sheet" title="新增条目">
                             <i class="fa-solid fa-plus"></i>
                         </button>
-                        <div id="t-outline-add-sheet" class="t-outline-add-sheet" role="menu" aria-label="新增条目类型">
+                        <div id="t-outline-add-sheet" class="t-outline-add-sheet t-root" role="menu" aria-label="新增条目类型">
                             <button id="t-outline-add-outline-item" class="t-btn" role="menuitem"><i class="fa-solid fa-table"></i> 新增大纲条目</button>
                             <button id="t-outline-add-scene-item" class="t-btn" role="menuitem"><i class="fa-solid fa-clapperboard"></i> 新增细纲条目</button>
                         </div>

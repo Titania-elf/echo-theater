@@ -41,8 +41,8 @@ const COLOR_KEYWORD_WHITELIST = ['transparent', 'currentcolor', 'inherit', 'init
 /** 由宿主（SillyTavern / FontAwesome）提供的动画名，不视为悬空 */
 const EXTERNAL_ANIMATIONS = new Set(['fa-spin', 'fa-beat', 'fa-fade', 'fa-flip', 'fa-pulse', 'fa-shake', 'fa-spin-pulse']);
 
-/** Phase 0 即阻断的检查项（plan.md §11.1 左列） */
-const PHASE0_BLOCKING = new Set(['A10', 'A11', 'A14', 'A15', 'A22']);
+/** Phase 0 即阻断的检查项（plan.md §11.1 左列 + 本项目补充的 A22 / A23） */
+const PHASE0_BLOCKING = new Set(['A10', 'A11', 'A14', 'A15', 'A22', 'A23']);
 
 // ─────────────────────────────────────────────────────────────
 // 最小 CSS 解析
@@ -432,7 +432,10 @@ check('A11', '—', '消费但未声明的 --t-* 变量', () => {
             '仅 JS 声明（B5）': jsOnly.length,
         },
         note: jsOnly.length
-            ? `仅 JS 运行时声明、CSS 层无兜底值（B5，Phase 1 修）：\n           ${jsOnly.join('\n           ')}`
+            ? `仅 JS 运行时声明、CSS 层无兜底值（B5）。刻意不在 :root 补默认值：\n           `
+            + `--t-border-color 有 5 种互不相同的 fallback，补默认值会改色。\n           `
+            + `详见 css/00-tokens/legacy-aliases.css 的说明，留待 Phase 4 按语义拆分。\n           `
+            + jsOnly.join('\n           ')
             : null,
     };
 });
@@ -479,6 +482,58 @@ check('A22', 'R6', '悬空 animation 引用 / 孤儿 @keyframes', () => {
         if (!referenced.has(name)) violations.push({ loc, msg: `@keyframes ${name} 无人引用（孤儿定义）` });
     }
     return { violations, metrics: { 定义: defined.size, 引用种类: referenced.size } };
+});
+
+// ── A23：CSS 语法完整性（注释嵌套 / 花括号平衡）────────────────
+// CSS 注释不能嵌套：`/* 外层 /* 内层 */ 其余正文 */` 中第一个 */ 就闭合了注释，
+// 其后的注释正文变成非法 CSS —— 浏览器静默丢弃，不报错。写长段说明注释时极易踩到
+// （本项目在 Phase 1 写 scope.css 时就踩过一次）。故列为阻断项。
+check('A23', '—', 'CSS 语法完整性（注释嵌套 / 花括号平衡）', () => {
+    const violations = [];
+    for (const f of styleSources) {
+        const src = f.raw;
+        // 注释嵌套
+        let i = 0, line = 1;
+        while (i < src.length) {
+            if (src[i] === '\n') { line++; i++; continue; }
+            if (src[i] === '/' && src[i + 1] === '*') {
+                const startLine = line;
+                i += 2;
+                let innerLine = null;
+                while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) {
+                    if (src[i] === '\n') line++;
+                    if (src[i] === '/' && src[i + 1] === '*' && innerLine === null) innerLine = line;
+                    i++;
+                }
+                if (innerLine !== null) {
+                    violations.push({
+                        loc: `${f.rel}:${startLine}`,
+                        msg: `注释内第 ${innerLine} 行出现嵌套 /*，会提前闭合注释并使其后正文成为非法 CSS`,
+                    });
+                }
+                i += 2;
+                continue;
+            }
+            i++;
+        }
+        // 花括号平衡（在剥离注释与字符串之后）
+        const stripped = stripComments(src);
+        let depth = 0, minDepth = 0;
+        for (let k = 0; k < stripped.length; k++) {
+            const ch = stripped[k];
+            if (ch === '"' || ch === "'") {
+                const q = ch; k++;
+                while (k < stripped.length && stripped[k] !== q) { if (stripped[k] === '\\') k++; k++; }
+                continue;
+            }
+            if (ch === '{') depth++;
+            else if (ch === '}') { depth--; if (depth < minDepth) minDepth = depth; }
+        }
+        if (depth !== 0 || minDepth < 0) {
+            violations.push({ loc: f.rel, msg: `花括号不平衡（净 ${depth}，最低 ${minDepth}）` });
+        }
+    }
+    return { violations };
 });
 
 // ── A7：@keyframes 只能在 01-base/keyframes.css 且带 t- 前缀（R6）──
@@ -851,9 +906,10 @@ check('A20', '—', '禁止 transition: all', () => {
     };
 });
 
-// ── A21：挂载点清单核对 ─────────────────────────────────────
-check('A21', '—', '挂载点清单核对（$("body").append / ensureOverlay）', () => {
+// ── A21：挂载点与 .t-root 覆盖情况 ─────────────────────────────
+check('A21', '—', '挂载点清点与 .t-root 覆盖', () => {
     const sites = [];
+    let tRootTags = 0;
     for (const f of jsFiles) {
         const lineAt = makeLineLookup(f.raw);
         for (const m of f.raw.matchAll(/\$\(\s*["']body["']\s*\)\s*\.\s*append/g)) {
@@ -862,13 +918,19 @@ check('A21', '—', '挂载点清单核对（$("body").append / ensureOverlay）
         for (const m of f.raw.matchAll(/ensureOverlay\s*\(/g)) {
             sites.push({ loc: `${f.rel}:${lineAt(m.index)}`, kind: 'ensureOverlay' });
         }
+        tRootTags += (f.raw.match(/class="[^"]*\bt-root\b[^"]*"/g) || []).length;
     }
-    const bodyAppend = sites.filter(s => s.kind === 'body.append');
-    const overlay = sites.filter(s => s.kind === 'ensureOverlay');
+    const bodyAppend = sites.filter(s => s.kind === 'body.append').length;
+    const overlay = sites.filter(s => s.kind === 'ensureOverlay').length;
     return {
         violations: [],
-        metrics: { 'body.append 挂载点': bodyAppend.length, 'ensureOverlay 调用': overlay.length },
-        note: 'Phase 1 需给这些挂载点加 .t-root（plan.md §8.2）。当前为清点，不判定对错',
+        metrics: {
+            'body.append 调用点': bodyAppend,
+            'ensureOverlay 调用点': overlay,
+            '带 .t-root 的元素': tRootTags,
+        },
+        note: 'body.append 调用点数 ≠ 挂载根数（同一根可被多处复用、也有非根元素直接 append）。'
+            + '新增窗口/弹窗根时记得带上 .t-root，否则该处会丢失排版基准（plan.md §8.2、风险 R5）',
     };
 });
 

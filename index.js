@@ -1766,29 +1766,524 @@ function loadCssFiles() {
   style.id = styleId;
   style.textContent = `/* Titania Theater - Bundled CSS */
 
+/* === 00-tokens/primitives.css === */
+/* ============================================================
+   00-tokens/primitives.css \u2014\u2014 \u539F\u8BED\u5C42
+
+   \u4E0E\u4E3B\u9898\u65E0\u5173\u7684\u539F\u59CB\u5C3A\u5EA6\u3002\u53EA\u88AB semantic / theme \u5C42\u6D88\u8D39\u3002
+   \u7EC4\u4EF6\u5C42\u7981\u6B62\u76F4\u63A5\u5F15\u7528\u672C\u6587\u4EF6\u7684\u4EFB\u4F55\u53D8\u91CF\uFF08\u89C4\u5219 R3b\uFF0C\u5BA1\u8BA1 A4\uFF09\u3002
+
+   \u5168\u90E8\u521D\u59CB\u503C\u53D6\u81EA 5.2.5 \u7684\u73B0\u6709\u9AD8\u9891\u5B9E\u6D4B\u503C\uFF0C\u4E0D\u53D1\u660E\u65B0\u6570\u503C \u2014\u2014
+   \u56E0\u6B64 Phase 1 \u843D\u5730\u540E\u89C6\u89C9\u96F6\u53D8\u5316\u3002\u6CE8\u91CA\u91CC\u7684\u6B21\u6570\u4E3A\u5B9E\u6D4B\u51FA\u73B0\u9891\u6B21\u3002
+   ============================================================ */
+:root {
+    /* ---- \u4E2D\u6027\u9636\uFF1A\u6536\u655B\u73B0\u72B6 25 \u4E2A\u503C \u2192 14 \u9636 ---- */
+    --t-c-neutral-0-rgb: 18 18 18;
+    /* #121212  \u73B0 10 \u6B21\uFF0C\u7A97\u53E3\u5E95 */
+    --t-c-neutral-1-rgb: 26 26 26;
+    /* #1a1a1a  \u5408\u5E76 #181818/#1a1a1a/#1d1d1d */
+    --t-c-neutral-2-rgb: 30 30 30;
+    /* #1e1e1e  \u73B0 26 \u6B21 */
+    --t-c-neutral-3-rgb: 34 34 34;
+    /* #222     \u5408\u5E76 #222/#232323/#242424 */
+    --t-c-neutral-4-rgb: 42 42 42;
+    /* #2a2a2a  \u5408\u5E76 #252525/#2a2a2a/#2b2b2b/#2d2d2d */
+    --t-c-neutral-5-rgb: 51 51 51;
+    /* #333     \u73B0 74 \u6B21\uFF0C\u5355\u503C\u6700\u9AD8\u9891 */
+    --t-c-neutral-6-rgb: 58 58 58;
+    /* #3a3a3a  \u5408\u5E76 #383838/#3a3a3a */
+    --t-c-neutral-7-rgb: 68 68 68;
+    /* #444     \u73B0 42 \u6B21 */
+    --t-c-neutral-8-rgb: 102 102 102;
+    /* #666     \u5408\u5E76 #555/#666/#777 */
+    --t-c-neutral-9-rgb: 136 136 136;
+    /* #888     \u73B0 35 \u6B21 */
+    --t-c-neutral-10-rgb: 170 170 170;
+    /* #aaa     \u5408\u5E76 #999/#aaa/#bbb */
+    --t-c-neutral-11-rgb: 204 204 204;
+    /* #ccc     \u5408\u5E76 #ccc/#ddd */
+    --t-c-neutral-12-rgb: 238 238 238;
+    /* #eee     \u73B0 22 \u6B21 */
+    --t-c-neutral-13-rgb: 255 255 255;
+    /* #fff     \u73B0 59 \u6B21 */
+
+    /* ---- \u8272\u76F8\uFF1A\u5168\u90E8\u53D6\u81EA\u73B0\u6709\u9AD8\u9891\u503C\uFF0C\u4E0D\u65B0\u589E ----
+       \u7528 RGB \u901A\u9053\u4E09\u5143\u7EC4\u800C\u975E hex\uFF0C\u56E0\u4E3A rgba() \u65E0\u6CD5\u63A5\u6536 hex \u53D8\u91CF\uFF0C
+       \u800C\u9879\u76EE\u6709 749 \u5904 rgba() \u5B57\u9762\u91CF\u5F85 token \u5316\uFF08ADR-04\uFF09\u3002
+       \u6D88\u8D39\u65B9\u5F0F\uFF1Argb(var(--t-c-blue-rgb) / .12) */
+    --t-c-gold-rgb: 191 161 95;
+    /* #bfa15f  48 \u6B21\uFF0C\u54C1\u724C\u8272 */
+    --t-c-blue-rgb: 144 205 244;
+    /* #90cdf4  64 \u6B21\uFF0C\u4EA4\u4E92\u8272\uFF08\u7B2C\u4E8C\u9AD8\u9891\u4E14\u539F\u672C\u65E0\u53D8\u91CF\uFF09 */
+    --t-c-mint-rgb: 85 239 196;
+    /* #55efc4  18 \u6B21\uFF0C\u901A\u77E5\u8272 */
+    --t-c-red-rgb: 255 107 107;
+    /* #ff6b6b  \u6536\u655B 4 \u4E2A\u7EA2\uFF08#ff6b6b/#f56565/#e74c3c/#ff9d9d\uFF09 */
+    --t-c-green-rgb: 72 187 120;
+    /* #48bb78  \u6536\u655B 2 \u5957\u7EFF */
+    --t-c-amber-rgb: 245 158 11;
+    /* #f59e0b  \u6536\u655B 3 \u4E2A\u9EC4\uFF08#f59e0b/#feca57/#ecc94b\uFF09 */
+    --t-c-violet-rgb: 162 155 254;
+    /* #a29bfe  \u88C5\u9970\u8272 */
+
+    /* ---- \u95F4\u8DDD\uFF1A4pt \u57FA\u51C6 ---- */
+    --t-space-2xs: 2px;
+    /* gap 2px \xD76 */
+    --t-space-xs: 4px;
+    /* gap 4px \xD717 */
+    --t-space-sm: 6px;
+    /* gap 6px \xD755 */
+    --t-space-md: 8px;
+    /* gap 8px \xD798 + padding 8px \xD727 \u2014\u2014 \u4E3B\u529B */
+    --t-space-lg: 12px;
+    /* gap 12px \xD713 + padding 12px \xD725 */
+    --t-space-xl: 16px;
+    --t-space-2xl: 20px;
+    --t-space-3xl: 24px;
+
+    /* ---- \u95F4\u8DDD\u8FC7\u6E21\u522B\u540D \u26A0 ----
+       \u9879\u76EE\u73B0\u5B58\u300C4 \u500D\u6570\u300D\u4E0E\u300C5 \u500D\u6570\u300D\u4E24\u5957\u95F4\u8DDD\u7CFB\u7EDF\uFF0C10px/15px \u662F\u6700\u9AD8\u9891\u7684 5 \u500D\u6570\u503C\u3002
+       \u6545\u610F\u7528\u503C\u547D\u540D\uFF08\u901A\u5E38\u662F\u53CD\u6A21\u5F0F\uFF09\uFF0C\u56E0\u4E3A\u5B83\u4EEC\u7684\u552F\u4E00\u7528\u9014\u5C31\u662F\u88AB\u5220\u9664\u3002
+       Phase 1 \u53EA\u505A\u300C\u5B57\u9762\u91CF \u2192 \u53D8\u91CF\u300D\u7B49\u4EF7\u66FF\u6362\uFF1BPhase 7 \u624D\u5F52\u5E76\uFF0C\u5355\u72EC\u53D1\u7248\u3002 */
+    --t-space-10: 10px;
+    /* 119 \u5904\uFF08padding 44 + gap 75\uFF09\u2192 \u76EE\u6807\u5F52\u5165 md(8) \u6216 lg(12) */
+    --t-space-15: 15px;
+    /* 27 \u5904 \u2192 \u76EE\u6807\u5F52\u5165 xl(16) */
+
+    /* ---- \u5706\u89D2 ----
+       \u5DF2\u51B3\u7B56\uFF1A\u63A7\u4EF6\uFF08button/input/select/badge\uFF09= md(6px)\uFF1B
+               \u5BB9\u5668\uFF08card/panel\uFF09= lg(8px)\uFF1B\u7A97\u53E3/\u5F39\u7A97 = 2xl(12px)\u3002
+       \u73B0\u6709 11 \u4E2A\u6563\u503C\uFF085/7/11/14/15/16/20/25/30/50/99px\uFF09\u5168\u90E8\u5F52\u5165\u6700\u8FD1\u6863\u3002
+       \u8BED\u4E49\u89D2\u8272\u89C1 semantic.css\u3002 */
+    --t-radius-xs: 3px;
+    /* 12 \u6B21 */
+    --t-radius-sm: 4px;
+    /* 40 \u6B21 */
+    --t-radius-md: 6px;
+    /* 64 \u6B21 */
+    --t-radius-lg: 8px;
+    /* 60 \u6B21 */
+    --t-radius-xl: 10px;
+    /* 29 \u6B21 */
+    --t-radius-2xl: 12px;
+    /* 16 \u6B21 */
+    --t-radius-pill: 999px;
+    /* 10 \u6B21 */
+    --t-radius-full: 50%;
+    /* 22 \u6B21\uFF0C\u5706\u5F62\u56FE\u6807\u94AE */
+
+    /* ---- \u5B57\u53F7\uFF1A\u76F8\u5BF9\u5BB9\u5668\u57FA\u51C6\u7684 em \u68AF\u7EA7 ----
+       \u7528 em \u4E0D\u7528 rem\uFF08ADR-05\uFF09\uFF1AUI \u7F29\u653E\u9760\u5BB9\u5668\u4E0A\u7684
+       font-size: calc(12px * var(--t-ui-font-scale)) \u5B9E\u73B0\uFF0C
+       rem \u76F8\u5BF9 html \u6839\u5B57\u53F7\u4F1A\u5B8C\u5168\u7ED5\u8FC7\u8BE5\u673A\u5236\uFF0C\u5BFC\u81F4\u7F29\u653E\u5931\u6548\u3002 */
+    --t-font-size-2xs: 0.72em;
+    /* \u22489px   \u5408\u5E76 0.66/0.7/0.72/0.74 */
+    --t-font-size-xs: 0.8em;
+    /* \u224810px  \u5408\u5E76 0.75/0.78/0.8/0.82 */
+    --t-font-size-sm: 0.85em;
+    /* \u224810px  \u5408\u5E76 0.84/0.85/0.86/0.88 */
+    --t-font-size-md: 0.9em;
+    /* \u224811px  \u73B0 61 \u6B21\uFF0C\u6700\u9AD8\u9891 */
+    --t-font-size-base: 1em;
+    /* =12px */
+    --t-font-size-lg: 1.1em;
+    --t-font-size-xl: 1.25em;
+    /* \u5408\u5E76 1.2/1.3 */
+    --t-font-size-2xl: 1.5em;
+
+    --t-font-weight-normal: 400;
+    --t-font-weight-medium: 500;
+    --t-font-weight-semibold: 600;
+    --t-font-weight-bold: 700;
+    /* \u73B0\u6709 22 \u5904\u5199 \`bold\`\uFF0C\u7EDF\u4E00\u4E3A\u6570\u503C */
+    --t-font-weight-black: 800;
+    /* .t-title-main */
+
+    --t-line-height-tight: 1.2;
+    --t-line-height-snug: 1.35;
+    --t-line-height-base: 1.5;
+    --t-line-height-relaxed: 1.6;
+
+    /* ---- \u65F6\u957F\u4E0E\u7F13\u52A8 ---- */
+    --t-duration-instant: 0.1s;
+    --t-duration-fast: 0.16s;
+    /* \u5408\u5E76\u73B0\u6709 0.16/0.18 \u7CFB\u5217 */
+    --t-duration-base: 0.2s;
+    /* \u73B0 60 \u6B21 */
+    --t-duration-slow: 0.3s;
+    --t-duration-slower: 0.45s;
+
+    --t-ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+    --t-ease-out: ease-out;
+    --t-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* \u73B0\u6709 \xD72 */
+    --t-ease-decel: cubic-bezier(0.16, 1, 0.3, 1);
+    /* \u73B0\u6709 \xD71 */
+
+    /* ---- \u5C42\u7EA7\u9884\u7B97\uFF08\u6536\u655B CSS 37 + JS 10 \u4E2A\u503C\uFF09---- */
+    --t-z-base: 0;
+    --t-z-raised: 10;
+    --t-z-sticky: 100;
+    --t-z-float: 9000;
+    /* \u60AC\u6D6E\u7403 / \u8BA1\u65F6\u5668 / \u6ED1\u51FA\u83DC\u5355 */
+    --t-z-overlay: 20000;
+    /* \u4E3B\u906E\u7F69\uFF08\u4FDD\u6301\u73B0\u503C\uFF09 */
+    --t-z-window: 20010;
+    /* \u7A97\u53E3\uFF08\u73B0 20001\uFF09 */
+    --t-z-dialog: 20100;
+    /* \u4E8C\u7EA7\u5F39\u7A97\uFF08\u73B0\u4E5F\u662F 20001\uFF0C\u4E0E\u7A97\u53E3\u540C\u7EA7\uFF0C\u9760 DOM \u987A\u5E8F\u4FA5\u5E78\u751F\u6548\uFF09 */
+    --t-z-popover: 20200;
+    /* \u4E0B\u62C9 / \u9009\u62E9\u5668 / \u66F4\u591A\u83DC\u5355 */
+    --t-z-toast: 20300;
+
+    /* ---- \u5B57\u4F53\u65CF\uFF08\u6CBF\u7528\u73B0\u503C\uFF0C\u539F\u5728 base.css:16-21\uFF09---- */
+    /* \u5168\u5C40\u5B57\u4F53 \u2014\u2014 \u7528\u6237\u53EF\u81EA\u5B9A\u4E49\uFF0C\u5E94\u7528\u4E8E UI \u548C\u5185\u5BB9\u533A\u57DF */
+    --t-font-global: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    /* \u7B49\u5BBD\u5B57\u4F53 \u2014\u2014 \u56FA\u5B9A\u7528\u4E8E\u4EE3\u7801\u7F16\u8F91\u5668\u548C\u65E5\u5FD7\uFF0C\u4E0D\u53D7\u7528\u6237\u8BBE\u7F6E\u5F71\u54CD */
+    --t-font-mono: "Consolas", "Monaco", "Courier New", monospace;
+
+    /* UI \u7F29\u653E\u7CFB\u6570 \u2014\u2014 settingsWindow.js \u4F1A\u628A\u5B83\u5199\u5230 documentElement \u4E0A\u8986\u76D6\u672C\u9ED8\u8BA4\u503C */
+    --t-ui-font-scale: 1;
+    /* \u63D2\u4EF6 UI \u57FA\u51C6\u5B57\u53F7 \u2014\u2014 \u7528\u4E8E\u7ED9 B8 \u90A3 6 \u4E2A\u6F0F\u6389\u57FA\u51C6\u7684\u5F39\u7A97\u6839\u7EDF\u4E00\u8865\u4E0A */
+    --t-font-size-root: calc(12px * var(--t-ui-font-scale, 1));
+}
+
+/* ---- \u65AD\u70B9\u7EA6\u5B9A\uFF08CSS \u53D8\u91CF\u4E0D\u80FD\u7528\u4E8E @media\uFF0C\u9760\u7EA6\u5B9A + \u5BA1\u8BA1 A18 \u4FDD\u8BC1\uFF09----
+   --t-bp-mobile   600px   \u4E3B\u65AD\u70B9\uFF08\u73B0 16 \u6B21\uFF09
+   --t-bp-tablet   768px   \u6B21\u65AD\u70B9\uFF08\u73B0 CSS 12 \u6B21 + JS 4 \u6B21\uFF09
+   --t-bp-desktop  920px   \u5BBD\u5C4F\uFF08\u73B0 JS 1 \u6B21\uFF09
+   \u9700\u5F52\u5E76\u7684\u6563\u503C\uFF1A480 / 620 / 700 / 769 / 900px\uFF08Phase 7\uFF09
+   JS \u4FA7 matchMedia \u5B57\u7B26\u4E32\u5E94\u96C6\u4E2D\u5230\u4E00\u5904\u5E38\u91CF\u5BFC\u51FA\uFF0C\u907F\u514D JS/CSS \u65AD\u70B9\u4E0D\u540C\u6B65\u3002 */
+
+
+/* === 00-tokens/semantic.css === */
+/* ============================================================
+   00-tokens/semantic.css \u2014\u2014 \u8BED\u4E49\u5C42\uFF08\u4E0E\u4E3B\u9898\u65E0\u5173\u7684\u90E8\u5206\uFF09
+
+   \u672C\u6587\u4EF6\u627F\u8F7D\u300C\u8BED\u4E49\u89D2\u8272 \u2192 \u539F\u8BED\u300D\u7684\u7ED1\u5B9A\u4E2D**\u4E0D\u968F\u4E3B\u9898\u53D8\u5316**\u7684\u90A3\u4E00\u534A\uFF1A
+   \u5706\u89D2\u89D2\u8272\u3001\u95F4\u8DDD\u89D2\u8272\u3001\u6392\u7248\u89D2\u8272\u3002
+   \u968F\u4E3B\u9898\u53D8\u5316\u7684\u90A3\u4E00\u534A\uFF08\u989C\u8272 / \u9634\u5F71 / \u6E10\u53D8 / \u8FC7\u6E21\uFF09\u5728 theme-*.css\u3002
+
+   \u7EC4\u4EF6\u5C42\u53EA\u5141\u8BB8\u6D88\u8D39\u672C\u6587\u4EF6\u4E0E theme-*.css \u7684 token\uFF0C
+   \u7981\u6B62\u76F4\u63A5\u5F15\u7528 primitives.css \u7684 --t-c-* / --t-radius-* \u7B49\u539F\u8BED\uFF08R3b\uFF09\u3002
+
+   \u2500\u2500 \u8BED\u4E49 token \u5951\u7EA6 \u2500\u2500
+   \u4E0B\u65B9\u6BCF\u4E2A token \u90FD\u5199\u660E\u300C\u7528\u5728\u54EA\u300D\u3002\u65B0\u589E\u7EC4\u4EF6\u65F6\u5148\u5728\u8FD9\u91CC\u627E\u89D2\u8272\uFF0C
+   \u627E\u4E0D\u5230\u518D\u8003\u8651\u52A0\u65B0 token \u2014\u2014 \u800C\u4E0D\u662F\u76F4\u63A5\u5199\u5B57\u9762\u91CF\u6216\u5F15\u7528\u539F\u8BED\u3002
+   ============================================================ */
+:root {
+
+    /* ---- \u5706\u89D2\u89D2\u8272\uFF08plan.md \xA75.1 \u5DF2\u51B3\u7B56\uFF09---- */
+    --t-radius-control: var(--t-radius-md);
+    /* 6px  \u2014\u2014 button / input / select / badge \u7B49\u63A7\u4EF6 */
+    --t-radius-container: var(--t-radius-lg);
+    /* 8px  \u2014\u2014 card / panel \u7B49\u5BB9\u5668 */
+    --t-radius-window: var(--t-radius-2xl);
+    /* 12px \u2014\u2014 \u7A97\u53E3 / \u5F39\u7A97\u6839 */
+    --t-radius-inline: var(--t-radius-sm);
+    /* 4px  \u2014\u2014 \u5185\u8054\u5C0F\u5143\u7D20\uFF08tag / code / \u7F29\u7565\u56FE\uFF09 */
+    --t-radius-circle: var(--t-radius-full);
+    /* 50%  \u2014\u2014 \u5706\u5F62\u56FE\u6807\u94AE / \u5934\u50CF */
+    --t-radius-track: var(--t-radius-pill);
+    /* 999px \u2014\u2014 \u8FDB\u5EA6\u6761 / \u5F00\u5173\u8F68\u9053 / \u80F6\u56CA\u6309\u94AE */
+
+    /* ---- \u95F4\u8DDD\u89D2\u8272 ---- */
+    --t-gap-inline: var(--t-space-sm);
+    /* 6px  \u2014\u2014 \u56FE\u6807\u4E0E\u6587\u5B57\u4E4B\u95F4\u3001\u6309\u94AE\u7EC4\u5185 */
+    --t-gap-stack: var(--t-space-md);
+    /* 8px  \u2014\u2014 \u8868\u5355\u884C\u4E4B\u95F4\u3001\u5217\u8868\u9879\u4E4B\u95F4 */
+    --t-gap-section: var(--t-space-xl);
+    /* 16px \u2014\u2014 \u533A\u5757\u4E4B\u95F4 */
+
+    --t-pad-control: var(--t-space-md) var(--t-space-lg);
+    /* 8px 12px \u2014\u2014 \u63A7\u4EF6\u5185\u8FB9\u8DDD */
+    --t-pad-container: var(--t-space-lg);
+    /* 12px \u2014\u2014 \u5361\u7247 / \u9762\u677F\u5185\u8FB9\u8DDD */
+    --t-pad-window: var(--t-space-lg) var(--t-space-15);
+    /* 12px 15px \u2014\u2014 \u7A97\u53E3\u5934/\u811A\u5185\u8FB9\u8DDD\uFF08\u6CBF\u7528\u73B0\u503C\uFF0C15px \u5F85 Phase 7 \u5F52\u5E76\uFF09 */
+
+    /* ---- \u6392\u7248\u89D2\u8272 ---- */
+    --t-text-body: var(--t-font-size-md);
+    /* 0.9em \u2014\u2014 \u6B63\u6587\u9ED8\u8BA4\uFF08\u73B0 61 \u6B21\uFF0C\u6700\u9AD8\u9891\uFF09 */
+    --t-text-label: var(--t-font-size-sm);
+    /* 0.85em \u2014\u2014 \u8868\u5355\u6807\u7B7E */
+    --t-text-caption: var(--t-font-size-xs);
+    /* 0.8em \u2014\u2014 \u8F85\u52A9\u8BF4\u660E / \u8BA1\u6570 */
+    --t-text-micro: var(--t-font-size-2xs);
+    /* 0.72em \u2014\u2014 \u89D2\u6807 / \u6781\u5C0F\u63D0\u793A */
+    --t-text-title: var(--t-font-size-xl);
+    /* 1.25em \u2014\u2014 \u7A97\u53E3\u6807\u9898 */
+    --t-text-subtitle: var(--t-font-size-lg);
+    /* 1.1em \u2014\u2014 \u533A\u5757\u6807\u9898 */
+
+    --t-leading-ui: var(--t-line-height-snug);
+    /* 1.35 \u2014\u2014 \u63A7\u4EF6\u4E0E\u7D27\u51D1 UI */
+    --t-leading-prose: var(--t-line-height-relaxed);
+    /* 1.6  \u2014\u2014 \u957F\u6587\u672C\u9605\u8BFB\u533A */
+}
+
+
+
+/* === 00-tokens/theme-dark.css === */
+/* ============================================================
+   00-tokens/theme-dark.css \u2014\u2014 \u6697\u8272\u4E3B\u9898
+
+   \u8BED\u4E49 token \u5230\u539F\u8BED\u7684\u7ED1\u5B9A\uFF0C\u7B49\u4EF7\u4E8E\u5F53\u524D\u89C6\u89C9\u7684\u5F62\u5F0F\u5316\u3002
+   Light Theme \u53EA\u9700\u65B0\u589E theme-light.css \u91CD\u65B0\u7ED1\u5B9A\u540C\u4E00\u6279 token \u540D\uFF0C
+   \u4E0D\u9700\u8981\u78B0\u4EFB\u4F55\u7EC4\u4EF6\u6587\u4EF6\u6216 feature \u6587\u4EF6\u3002
+
+   \`:root\` \u4E0E \`:root[data-t-theme="dark"]\` \u53CC\u9009\u62E9\u5668\uFF1A\u524D\u8005\u662F\u9ED8\u8BA4\u503C
+   \uFF08\u672A\u8BBE\u7F6E data-t-theme \u5C5E\u6027\u65F6\u751F\u6548\uFF09\uFF0C\u540E\u8005\u4F9B\u663E\u5F0F\u5207\u6362\u3002
+   ============================================================ */
+:root,
+:root[data-t-theme="dark"] {
+
+    /* ---- \u8868\u9762\u5C42\uFF08elevation\uFF09---- */
+    --t-color-bg: rgb(var(--t-c-neutral-0-rgb));
+    /* #121212 \u7A97\u53E3\u5E95 */
+    --t-color-surface: rgb(var(--t-c-neutral-2-rgb));
+    /* #1e1e1e \u9762\u677F */
+    --t-color-surface-raised: rgb(var(--t-c-neutral-4-rgb));
+    /* #2a2a2a \u5361\u7247 / \u63A7\u4EF6\u5E95 */
+    --t-color-surface-sunken: rgb(var(--t-c-neutral-1-rgb));
+    /* #1a1a1a \u8F93\u5165\u6846\u5E95 / \u4EE3\u7801\u5757 */
+    --t-color-surface-hover: rgb(var(--t-c-neutral-13-rgb) / .08);
+    /* \u66FF\u6362 31 \u6B21 rgba(255,255,255,.08) */
+    --t-color-surface-active: rgb(var(--t-c-neutral-13-rgb) / .15);
+    /* \u66FF\u6362 21 \u6B21 */
+    --t-color-scrim: rgb(0 0 0 / .6);
+    /* \u906E\u7F69\uFF0C= \u73B0 .t-overlay \u7684 rgba(0,0,0,.6) */
+
+    /* ---- \u6587\u672C ---- */
+    --t-color-text: rgb(var(--t-c-neutral-12-rgb));
+    /* #eee\uFF0C= \u73B0 .t-box \u7684 color */
+    --t-color-text-strong: rgb(var(--t-c-neutral-13-rgb));
+    --t-color-text-secondary: rgb(var(--t-c-neutral-10-rgb));
+    /* #aaa */
+    --t-color-text-muted: rgb(var(--t-c-neutral-9-rgb));
+    /* #888 */
+    --t-color-text-faint: rgb(var(--t-c-neutral-8-rgb));
+    /* #666 \u2014\u2014 42 \u6B21 + \u5927\u91CF inline */
+    --t-color-text-on-accent: rgb(var(--t-c-neutral-0-rgb));
+
+    /* ---- \u8FB9\u6846 ---- */
+    --t-color-border: rgb(var(--t-c-neutral-5-rgb));
+    /* #333 \u2014\u2014 74 \u6B21 */
+    --t-color-border-strong: rgb(var(--t-c-neutral-7-rgb));
+    /* #444 */
+    --t-color-border-subtle: rgb(var(--t-c-neutral-13-rgb) / .1);
+    /* \u66FF\u6362 39 \u6B21 */
+
+    /* ---- \u5F3A\u8C03 / \u4EA4\u4E92\uFF08\u84DD\uFF09----
+       \u4E8B\u5B9E\u4E0A\u7684\u4EA4\u4E92\u8272\u662F #90cdf4\uFF0864 \u6B21\uFF09\uFF0C\u4E0E\u54C1\u724C\u91D1\u663E\u5F0F\u5206\u79BB\uFF08\u89E3 S3\uFF09\uFF1A
+       \u91D1\u8272\u5728\u6D45\u5E95\u4E0A\u5BF9\u6BD4\u5EA6\u4E0D\u8DB3\uFF0C\u4E0D\u80FD\u540C\u65F6\u5145\u5F53\u7126\u70B9\u8272\u3002 */
+    --t-color-accent: rgb(var(--t-c-blue-rgb));
+    --t-color-accent-hover: rgb(var(--t-c-blue-rgb) / .85);
+    --t-color-accent-active: rgb(var(--t-c-blue-rgb) / .7);
+    --t-color-accent-soft: rgb(var(--t-c-blue-rgb) / .12);
+    /* \u66FF\u6362 14+9 \u6B21 */
+    --t-color-accent-border: rgb(var(--t-c-blue-rgb) / .35);
+    /* \u66FF\u6362 13+7 \u6B21 */
+    --t-color-focus-ring: rgb(var(--t-c-blue-rgb) / .4);
+
+    /* ---- \u54C1\u724C\uFF08\u91D1\uFF09\u2014\u2014 \u4E0E accent \u663E\u5F0F\u5206\u79BB\uFF0C\u89E3\u51B3 S3 ---- */
+    --t-color-brand: rgb(var(--t-c-gold-rgb));
+    /* #bfa15f */
+    --t-color-brand-soft: rgb(var(--t-c-gold-rgb) / .14);
+    /* = \u73B0 .t-btn-soft \u7684\u503C */
+    --t-color-brand-border: rgb(var(--t-c-gold-rgb) / .55);
+    /* = \u73B0 .t-btn-soft \u7684\u8FB9\u6846 */
+
+    /* ---- \u53CD\u9988\u8272 ---- */
+    --t-color-danger: rgb(var(--t-c-red-rgb));
+    --t-color-danger-soft: rgb(var(--t-c-red-rgb) / .2);
+    --t-color-danger-border: rgb(var(--t-c-red-rgb) / .4);
+    --t-color-success: rgb(var(--t-c-green-rgb));
+    --t-color-success-soft: rgb(var(--t-c-green-rgb) / .2);
+    --t-color-warning: rgb(var(--t-c-amber-rgb));
+    --t-color-warning-soft: rgb(var(--t-c-amber-rgb) / .2);
+    --t-color-notify: rgb(var(--t-c-mint-rgb));
+    /* #55efc4 */
+    --t-color-decor: rgb(var(--t-c-violet-rgb));
+    /* #a29bfe \u88C5\u9970 */
+
+    /* ---- \u9634\u5F71 ---- */
+    --t-shadow-xs: 0 1px 3px rgb(0 0 0 / .2);
+    --t-shadow-sm: 0 2px 8px rgb(0 0 0 / .2);
+    /* \u73B0\u6709 \xD72 */
+    --t-shadow-md: 0 4px 15px rgb(0 0 0 / .3);
+    /* \u73B0\u6709 \xD71 */
+    --t-shadow-lg: 0 10px 30px rgb(0 0 0 / .5);
+    /* \u73B0\u6709 \xD73\uFF0C\u5F39\u7A97 */
+    --t-shadow-xl: 0 10px 40px rgb(0 0 0 / .8);
+    /* \u73B0\u6709 \xD76\uFF0C\u4E3B\u7A97\u53E3\uFF08= .t-box\uFF09 */
+    --t-shadow-focus: 0 0 0 3px var(--t-color-focus-ring);
+    /* \u63A8\u5E7F\u73B0\u6709\u96CF\u5F62 \xD73 */
+    --t-shadow-glow-accent: 0 4px 14px rgb(var(--t-c-blue-rgb) / .35);
+    --t-shadow-glow-success: 0 4px 14px rgb(var(--t-c-green-rgb) / .35);
+    --t-shadow-glow-danger: 0 4px 14px rgb(var(--t-c-red-rgb) / .35);
+    --t-shadow-inset-hairline: inset 0 1px 0 rgb(255 255 255 / .06);
+    /* \u4EE5\u4E0A 3 \u4E2A glow \u66FF\u6362\u73B0\u6709 12 \u4E2A\u5404\u4E0D\u76F8\u540C\u7684
+       "0 4~6px 12~20px rgba(\u5F3A\u8C03\u8272, .3~.5)" */
+
+    /* ---- \u590D\u5408\u8FC7\u6E21\uFF1A\u6309\u4EA4\u4E92\u573A\u666F\u800C\u975E\u6309\u5C5E\u6027 ----
+       \u540C\u65F6\u7528\u4E8E\u6D88\u706D 54 \u5904 \`transition: all\`\uFF08\u5BA1\u8BA1 A20\uFF09\uFF1A
+       \`all\` \u4F1A\u628A width/height/transform/box-shadow \u4E00\u8D77\u7EB3\u5165\u8FC7\u6E21\uFF0C
+       \u662F\u79FB\u52A8\u7AEF\u6389\u5E27\u6839\u56E0\u3002 */
+    --t-transition-hover: background-color var(--t-duration-base) var(--t-ease-standard),
+        border-color var(--t-duration-base) var(--t-ease-standard),
+        color var(--t-duration-base) var(--t-ease-standard);
+    --t-transition-focus: box-shadow var(--t-duration-fast) var(--t-ease-out),
+        border-color var(--t-duration-fast) var(--t-ease-out);
+    --t-transition-active: transform var(--t-duration-instant) var(--t-ease-out);
+    --t-transition-dialog: opacity var(--t-duration-slow) var(--t-ease-decel),
+        transform var(--t-duration-slow) var(--t-ease-decel);
+    --t-transition-modal: opacity var(--t-duration-base) var(--t-ease-out),
+        visibility var(--t-duration-base) var(--t-ease-out);
+
+    /* ---- \u6E10\u53D8 ----
+       \u5FC5\u987B\u5355\u72EC token \u5316\uFF1A\u989C\u8272 token \u4E0D\u4F1A\u81EA\u52A8\u9002\u914D\u6E10\u53D8\uFF0C
+       \u6D45\u8272\u4E3B\u9898\u4E0B\u53EF\u80FD\u9700\u8981\u5B8C\u5168\u4E0D\u540C\u7684\u914D\u65B9\uFF08plan.md \xA79.2\uFF09\u3002 */
+    --t-gradient-title: linear-gradient(135deg, #e0c3fc 0%, #ff9a9e 100%);
+    /* = \u73B0 .t-title-main */
+    --t-gradient-title-sub: linear-gradient(90deg, #ff9a9e, #e0c3fc);
+    /* = \u73B0 .t-title-sub */
+    --t-gradient-accent: linear-gradient(90deg, #4a9eff, #667eea);
+    --t-gradient-notify: linear-gradient(90deg, #55efc4, #00cec9);
+    --t-gradient-brand-bar: linear-gradient(to bottom, #ff9a9e, #fad0c4);
+    /* = \u73B0 .t-title-container::before */
+    --t-gradient-surface: linear-gradient(180deg, rgb(255 255 255 / .04),
+            rgb(255 255 255 / .015));
+}
+
+
+/* === 00-tokens/legacy-aliases.css === */
+/* ============================================================
+   00-tokens/legacy-aliases.css \u2014\u2014 \u8FC7\u6E21\u517C\u5BB9\u5C42 \u26A0 Phase 7 \u5220\u9664
+
+   \u8BA9 12 \u4E2A CSS \u6587\u4EF6\u91CC\u73B0\u5B58\u7684\u65E7\u53D8\u91CF\u540D\u7EE7\u7EED\u5DE5\u4F5C\u3002\u8FD9 5 \u4E2A\u53D8\u91CF\u539F\u5148\u5E26\u7740
+   \u5B57\u9762\u91CF\u58F0\u660E\u5728 base.css:3-14\uFF0C\u73B0\u5DF2\u6539\u4E3A\u6307\u5411\u65B0 token \u2014\u2014 \u56E0\u6B64\u65E7\u5F15\u7528
+   \u4E00\u884C\u4E0D\u6539\u4E5F\u80FD\u5DE5\u4F5C\uFF0C\u800C\u4E3B\u9898\u5207\u6362\u4F1A\u540C\u65F6\u5F71\u54CD\u5B83\u4EEC\u3002
+
+   \u5220\u9664\u524D\u63D0\uFF1A\u5BA1\u8BA1\u62A5\u544A\u96F6\u5F15\u7528\u3002\u5220\u9664\u52A8\u4F5C = \u5220\u672C\u6587\u4EF6 + \u8DD1 css:audit\u3002
+
+   \u2500\u2500 \u503C\u7B49\u4EF7\u6027\u6838\u5BF9\uFF08Phase 1 \u8981\u6C42\u89C6\u89C9\u96F6\u53D8\u5316\uFF0C\u9010\u4E2A\u9A8C\u8BC1\u8FC7\uFF09\u2500\u2500
+     --t-theme    #bfa15f \u2192 rgb(191 161 95) \u2705 \u9010\u5B57\u8282\u76F8\u540C
+     --t-notify   #55efc4 \u2192 rgb(85 239 196) \u2705
+     --t-bg-dark  #121212 \u2192 rgb(18 18 18)   \u2705
+     --t-bg-panel #1e1e1e \u2192 rgb(30 30 30)   \u2705
+     --t-border   #333    \u2192 rgb(51 51 51)   \u2705
+   ============================================================ */
+:root {
+    --t-theme: var(--t-color-brand);
+    /* \u4E3B\u9898\u8272\uFF08\u91D1\u8272\uFF09 */
+    --t-notify: var(--t-color-notify);
+    /* \u901A\u77E5\u8272\uFF08\u9752\u8272\uFF09 */
+    --t-bg-dark: var(--t-color-bg);
+    /* \u6DF1\u8272\u80CC\u666F */
+    --t-bg-panel: var(--t-color-surface);
+    /* \u9762\u677F\u80CC\u666F */
+    --t-border: var(--t-color-border);
+    /* \u8FB9\u6846\u8272 */
+}
+
+/* ============================================================
+   \u5173\u4E8E\u7F3A\u9677 B5\uFF1A\u4E3A\u4EC0\u4E48\u8FD9\u91CC**\u6CA1\u6709**\u58F0\u660E\u90A3 4 \u4E2A\u300C\u6D88\u8D39\u4F46\u672A\u58F0\u660E\u300D\u7684\u53D8\u91CF
+
+   plan.md \xA75.3 \u539F\u672C\u8981\u6C42\u5728\u6B64\u8865\u4E0A --t-border-color / --t-border-color-rgba /
+   --t-bg-color\uFF08\u5B9E\u6D4B\u5E94\u4E3A 4 \u4E2A\uFF0C\u53E6\u6709 --t-size \u6F0F\u8BB0\uFF09\uFF0C\u4EE5\u6D88\u9664\u9690\u5F0F\u5951\u7EA6\u3002
+   \u5B9E\u6D4B\u540E\u786E\u8BA4**\u4E0D\u80FD\u8FD9\u4E48\u505A**\uFF0C\u5426\u5219\u4F1A\u9020\u6210\u89C6\u89C9\u56DE\u5F52\uFF1A
+
+   --t-border-color \u5728 14 \u5904\u88AB\u6D88\u8D39\uFF0C\u5374\u5E26\u7740 5 \u79CD\u4E92\u4E0D\u76F8\u540C\u7684 fallback\uFF1A
+       var(--t-border-color, #55efc4)   \xD75   \u901A\u77E5\u8272\uFF08\u9752\uFF09
+       var(--t-border-color, #a29bfe)   \xD73   \u88C5\u9970\u8272\uFF08\u7D2B\uFF09
+       var(--t-border-color, #90cdf4)   \xD73   \u4EA4\u4E92\u8272\uFF08\u84DD\uFF09
+       var(--t-border-color, #74b9ff)   \xD72
+       var(--t-border-color, #444)      \xD71
+   \u4E00\u65E6\u5728 :root \u4E0A\u7ED9\u51FA\u4EFB\u4F55\u5355\u4E00\u9ED8\u8BA4\u503C\uFF0C\u8FD9 14 \u5904\u91CC\u672A\u88AB JS \u8D4B\u503C\u7684\u90A3\u4E9B
+   \u4F1A\u5168\u90E8\u6539\u8272\u3002\u6700\u76F4\u63A5\u7684\u53D7\u5BB3\u8005\u662F\u8BBE\u7F6E\u9875\u9884\u89C8\u7403\uFF1Akeyframes.css \u7684
+   t-notify-glow \u7528 var(--t-border-color, #55efc4)\uFF0C\u800C\u9884\u89C8\u7403\u4E0D\u8BBE\u7F6E\u8BE5\u53D8\u91CF\uFF0C
+   \u8865\u4E0A :root \u9ED8\u8BA4\u503C\u4F1A\u8BA9\u5B83\u7684\u547C\u5438\u5149\u6655\u7531\u9752\u53D8\u84DD\u3002
+
+   \u8FD9 4 \u4E2A\u53D8\u91CF\u7531 floatingBtn.js:604-609 \u7684 btn.css({...}) \u5199\u5728
+   #titania-float-btn \u5143\u7D20\u4E0A\uFF0C\u662F**\u6570\u636E\u9A71\u52A8\u7684\u6B63\u786E\u7528\u6CD5**\uFF08\u7528\u6237\u53EF\u81EA\u5B9A\u4E49\u60AC\u6D6E\u7403
+   \u914D\u8272\u4E0E\u5C3A\u5BF8\uFF09\uFF0Cplan.md \u4E5F\u660E\u786E\u8981\u6C42\u4E0D\u8981\u6539\u5B83\u3002\u771F\u6B63\u7684\u95EE\u9898\u4E0D\u662F\u300C\u7F3A :root \u9ED8\u8BA4\u503C\u300D\uFF0C
+   \u800C\u662F\u300C\u540C\u4E00\u4E2A\u53D8\u91CF\u88AB\u5F53\u6210 4 \u79CD\u8BED\u4E49\u5728\u7528\u300D\u2014\u2014 \u90A3\u5C5E\u4E8E\u7EC4\u4EF6\u5316\u8303\u7574\uFF0C
+   \u7559\u5F85 Phase 4 \u89C4\u8303\u60AC\u6D6E\u7403\u7EC4\u4EF6\u65F6\u6309\u8BED\u4E49\u62C6\u5206\u6210\u72EC\u7ACB\u53D8\u91CF\u3002
+
+   \u5BA1\u8BA1 A11 \u5DF2\u6309\u4E09\u6001\u5224\u5B9A\u5904\u7406\u8FD9\u79CD\u60C5\u51B5\uFF1ACSS \u5C42\u672A\u58F0\u660E\u4F46 JS \u6709\u58F0\u660E \u2192 \u62A5\u544A\u4E0D\u963B\u65AD\uFF0C
+   \u65E2\u4E0D\u8BEF\u62A5\u4E5F\u4E0D\u63A9\u76D6\u3002
+   ============================================================ */
+
+
+/* === 01-base/scope.css === */
+/* ============================================================
+   01-base/scope.css \u2014\u2014 \u63D2\u4EF6 UI \u7684\u4F5C\u7528\u57DF\u6839 \`.t-root\`
+
+   \`.t-root\` \u663E\u5F0F\u6807\u51FA\u300C\u63D2\u4EF6 UI \u7684\u8FB9\u754C\u300D\u3002\u6B64\u524D\u8FD9\u4E2A\u8FB9\u754C\u662F\u9690\u5F0F\u7684\u3001\u9760 \`t-\`
+   \u7C7B\u540D\u524D\u7F00\u731C\u7684\uFF0C\u5BFC\u81F4\uFF1A
+     - B8\uFF1A6 \u4E2A\u5F39\u7A97\u6839\u6CA1\u6709\u6392\u7248\u57FA\u51C6\uFF0C\u5185\u90E8 em \u76F8\u5BF9 ST body(15px) \u89E3\u6790\uFF0C
+           \u7528\u6237\u7684\u300CUI \u7F29\u653E\u300D\u8BBE\u7F6E\u5728\u8FD9\u4E9B\u5F39\u7A97\u5185\u5B8C\u5168\u5931\u6548
+     - B9\uFF1A.t-model-dialog-box \u7D22\u6027\u5199\u6B7B font-family \u7ED5\u8FC7\u7528\u6237\u8BBE\u7F6E
+   \u6302\u8F7D\u70B9\u6E05\u5355\u89C1 plan.md \xA78.2\uFF0C\u7531\u5BA1\u8BA1 A21 \u6E05\u70B9\u3002
+
+   \u26A0 \u6CE8\u5165 ST DOM \u7684\u6309\u94AE\u672C\u4F53\uFF08.titania-inject-btn / .titania-recall-btn\uFF09
+     **\u4E0D\u52A0** .t-root \u2014\u2014 \u4F9D ADR-02 \u5B83\u4EEC\u8981\u7EE7\u627F ST \u7684 .mes_button \u89C2\u611F\u3002
+   ============================================================ */
+
+.t-root {
+    /* \u6392\u7248\u57FA\u51C6 \u2014\u2014 \u4FEE B8 / B9\u3002
+       ST \u7684 body \u662F font-family: var(--mainFontFamily) / font-size: 15px\uFF0C
+       \u63D2\u4EF6\u57FA\u51C6\u662F 12px\uFF0C\u4E24\u8005\u4E0D\u4E00\u81F4\u6B63\u662F B8 \u7684\u6210\u56E0\u3002 */
+    font-family: var(--t-font-global);
+    font-size: var(--t-font-size-root);
+    /* calc(12px * var(--t-ui-font-scale, 1)) */
+    color: var(--t-color-text);
+}
+
+/* \u76D2\u6A21\u578B\u81EA\u6D3D\uFF1A\u4E0D\u4F9D\u8D56\u5BBF\u4E3B\u3002
+   \u6CE8\uFF1AST \u5DF2\u5728 style.css:133 \u8BBE\u4E86 \`* { box-sizing: border-box }\`\uFF0C
+   \u6240\u4EE5\u672C\u6761\u5F53\u524D\u662F\u65E0\u64CD\u4F5C\uFF1B\u5199\u51FA\u6765\u662F\u4E3A\u4E86\u63D2\u4EF6\u4E0D\u4F9D\u8D56\u8BE5\u5BBF\u4E3B\u884C\u4E3A\u3002 */
+.t-root,
+.t-root *,
+.t-root *::before,
+.t-root *::after {
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   \u4EE5\u4E0B\u4E24\u6761 plan.md \xA78.1 \u5217\u5165\u672C\u6587\u4EF6\uFF0C\u4F46**\u672C\u9636\u6BB5\u523B\u610F\u4E0D\u843D\u5730**\uFF0C
+   \u56E0\u4E3A\u5B83\u4EEC\u90FD\u4F1A\u9020\u6210 plan.md \xA712.2 \u672A\u8BC4\u4F30\u5230\u7684\u53EF\u89C1\u53D8\u5316\u3002
+
+   1) line-height: var(--t-line-height-base)  \u2014\u2014 \u503C\u4E3A 1.5
+      \u5B9E\u6D4B ST \u7684 body **\u6CA1\u6709**\u8BBE\u7F6E line-height\uFF0C\u6545\u63D2\u4EF6 UI \u73B0\u5728\u7EE7\u627F\u7684\u662F
+      \u6D4F\u89C8\u5668\u9ED8\u8BA4\u503C\uFF08normal\uFF0C\u591A\u6570\u5B57\u4F53\u7EA6 1.2\uFF09\u3002\u4E00\u65E6\u5728 .t-root \u4E0A\u8BBE 1.5\uFF0C
+      \u6240\u6709\u672A\u81EA\u884C\u58F0\u660E line-height \u7684\u63D2\u4EF6\u5143\u7D20\u884C\u8DDD\u90FD\u4F1A\u53D8\u5927 \u2014\u2014 \u4F1A\u6539\u53D8\u7A97\u53E3\u9AD8\u5EA6\u3001
+      \u5F15\u8D77\u6587\u672C\u6362\u884C\u4F4D\u7F6E\u53D8\u5316\u3002\u5168\u5E93\u4EC5 67 \u5904\u81EA\u884C\u58F0\u660E\u4E86 line-height\uFF0C
+      \u4E5F\u5C31\u662F\u8BF4\u7EDD\u5927\u591A\u6570\u5143\u7D20\u90FD\u4F1A\u53D7\u5F71\u54CD\u3002
+      plan.md \xA712.2 \u7684\u300C\u5DF2\u77E5\u89C6\u89C9\u53D8\u5316\u300D\u6E05\u5355\u91CC\u6CA1\u6709\u8FD9\u4E00\u6761\uFF0C\u5C5E\u8BA1\u5212\u9057\u6F0F\u3002
+      \u5E94\u4F5C\u4E3A\u72EC\u7ACB\u4E00\u6B65\u5B9E\u65BD\u5E76\u5355\u72EC\u6BD4\u5BF9\uFF0C\u4E0D\u4E0E token \u843D\u76D8\u6DF7\u5728\u4E00\u8D77\u3002
+
+   2) color-scheme: dark
+      \u5B9E\u6D4B ST \u7684 body \u8BBE\u4E86 \`color-scheme: only light\`\uFF0C\u8FD9\u6B63\u662F S2 \u7684\u6839\u56E0\uFF1A
+      \u63D2\u4EF6\u7684 45 \u4E2A checkbox + 16 \u4E2A radio + 5 \u4E2A range \u5168\u90E8\u6309\u6D45\u8272\u6E32\u67D3\u3002
+      \u5728 .t-root \u4E0A\u6539\u4E3A dark \u4F1A\u8BA9\u8FD9 66 \u4E2A\u539F\u751F\u63A7\u4EF6\u5916\u89C2\u7ACB\u523B\u7FFB\u8F6C \u2014\u2014 \u8FD9\u662F
+      **\u4FEE\u590D**\uFF0C\u4F46\u5C5E\u4E8E plan.md \xA712.4 \u660E\u786E\u5217\u7ED9 Phase 3 \u7684\u4EFB\u52A1
+      \uFF08\u300Ccolor-scheme: dark \u843D\u5730\uFF0C\u63A5\u7BA1 \u2026\u2026 \u89E3 S2\u300D\uFF09\uFF0C
+      \u4E14\u9700\u8981\u5728 ST \u6DF1\u8272 / \u6D45\u8272 / \u7B2C\u4E09\u65B9\u4E3B\u9898\u4E0B\u9010\u4E00\u9A8C\u8BC1\u3002
+      \u4FDD\u7559\u7ED9 Phase 3\uFF0C\u4E0E\u62C6\u9664 base.css \u7684 3 \u5904 input !important \u4E00\u8D77\u505A\u3002
+   ============================================================ */
+
+
 /* === 01-base/base.css === */
 /* css/01-base/base.css - \u57FA\u7840\u7EC4\u4EF6\u4E0E\u5DE5\u5177\u7C7B */
 
-:root {
-    /* \u989C\u8272\u53D8\u91CF */
-    --t-theme: #bfa15f;
-    /* \u4E3B\u9898\u8272 (\u91D1\u8272) */
-    --t-notify: #55efc4;
-    /* \u901A\u77E5\u8272 (\u9752\u8272) */
-    --t-bg-dark: #121212;
-    /* \u6DF1\u8272\u80CC\u666F */
-    --t-bg-panel: #1e1e1e;
-    /* \u9762\u677F\u80CC\u666F */
-    --t-border: #333;
-    /* \u8FB9\u6846\u8272 */
-
-    /* \u5B57\u4F53\u53D8\u91CF */
-    /* \u5168\u5C40\u5B57\u4F53 - \u7528\u6237\u53EF\u81EA\u5B9A\u4E49\uFF0C\u5E94\u7528\u4E8E UI \u548C\u5185\u5BB9\u533A\u57DF */
-    --t-font-global: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    /* \u7B49\u5BBD\u5B57\u4F53 - \u56FA\u5B9A\u7528\u4E8E\u4EE3\u7801\u7F16\u8F91\u5668\u548C\u65E5\u5FD7\uFF0C\u4E0D\u53D7\u7528\u6237\u8BBE\u7F6E\u5F71\u54CD */
-    --t-font-mono: "Consolas", "Monaco", "Courier New", monospace;
-    --t-ui-font-scale: 1;
-}
+/* \u539F :root \u53D8\u91CF\u5757\uFF085 \u4E2A\u989C\u8272 + 2 \u4E2A\u5B57\u4F53\u65CF + --t-ui-font-scale\uFF09\u5DF2\u8FC1\u81F3 00-tokens/\uFF1A
+     \u989C\u8272 5 \u4E2A  \u2192 00-tokens/legacy-aliases.css\uFF08\u6539\u4E3A\u6307\u5411\u65B0\u8BED\u4E49 token\uFF0C\u503C\u9010\u5B57\u8282\u76F8\u540C\uFF09
+     \u5B57\u4F53\u65CF / --t-ui-font-scale / --t-font-size-root \u2192 00-tokens/primitives.css
+   \u5FC5\u987B\u8FC1\u8D70\u800C\u4E0D\u80FD\u4E24\u5904\u5E76\u5B58\uFF1A00-tokens \u5728 manifest \u4E2D\u6392\u5728 01-base **\u4E4B\u524D**\uFF0C
+   \u82E5\u6B64\u5904\u4FDD\u7559\u5B57\u9762\u91CF\u58F0\u660E\uFF0C\u5B83\u4F1A\u8986\u76D6 legacy-aliases.css \u7684 token \u6620\u5C04\uFF0C
+   \u4F7F\u517C\u5BB9\u5C42\u53D8\u6210\u6B7B\u4EE3\u7801\u3001\u4E3B\u9898\u5207\u6362\u5BF9\u65E7\u53D8\u91CF\u540D\u5931\u6548\u3002 */
 
 /* \u906E\u7F69\u5C42 */
 .t-overlay {
@@ -2844,7 +3339,8 @@ textarea.t-input {
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* \u539F\u5199\u6B7B font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif \u2014\u2014 \u7ED5\u8FC7\u4E86
+       \u7528\u6237\u81EA\u5B9A\u4E49\u5B57\u4F53\u8BBE\u7F6E\uFF08\u7F3A\u9677 B9\uFF09\u3002\u73B0\u7EE7\u627F .t-root \u63D0\u4F9B\u7684 --t-font-global\u3002 */
     color: #e2e8f0;
 }
 
@@ -16420,7 +16916,7 @@ function ensureFeatureCss(fileName) {
 }
 function ensureOverlay() {
   if ($("#t-overlay").length === 0) {
-    const overlayHtml = '<div id="t-overlay" class="t-overlay"></div>';
+    const overlayHtml = '<div id="t-overlay" class="t-overlay t-root"></div>';
     $("body").append(overlayHtml);
   }
   return $("#t-overlay");
@@ -16429,7 +16925,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css"];
   }
 });
 
@@ -18263,7 +18759,7 @@ function openFavsWindow() {
   });
   const charList = ["\u5168\u90E8\u89D2\u8272", ...[...charIndex].sort()];
   const html = `
-    <div class="t-box t-fav-container" id="t-favs-view">
+    <div class="t-box t-root t-fav-container" id="t-favs-view">
         <div class="t-header" style="flex-shrink:0;">
             <span class="t-title-main">\u{1F4D6} \u6536\u85CF\u753B\u5ECA</span>
             <span class="t-close" id="t-fav-close">&times;</span>
@@ -19186,7 +19682,7 @@ function openFavsWindow() {
       $("#t-fav-export-sheet").remove();
       const sheetHtml = `
                 <div id="t-fav-export-sheet" class="t-fav-export-sheet-backdrop">
-                    <div class="t-fav-export-sheet">
+                    <div class="t-fav-export-sheet t-root">
                         <div class="t-fav-export-sheet-title">\u56FE\u7247\u5BFC\u51FA\u9009\u9879</div>
                         <div class="t-fav-export-sheet-desc">\u8BF7\u9009\u62E9\u5BFC\u51FA\u65F6\u662F\u5426\u5BF9 User \u540D\u79F0\u6253\u7801</div>
 
@@ -19507,7 +20003,7 @@ function openCharImageManager(onCloseCallback) {
     return foundAvatar;
   };
   const html = `
-    <div class="t-img-mgr-overlay" id="t-img-mgr">
+    <div class="t-img-mgr-overlay t-root" id="t-img-mgr">
         <div class="t-img-mgr-box">
             <div class="t-header">
                 <span class="t-title-main">\u{1F5BC}\uFE0F \u89D2\u8272\u56FE\u9274\u7BA1\u7406</span>
@@ -19826,7 +20322,7 @@ async function showDebugInfo() {
     $mainView.hide();
   }
   const html = `
-    <div class="t-box" id="t-debug-view" style="max-width:1400px; width:95vw; height:92vh; display:flex; flex-direction:column;">
+    <div class="t-box t-root" id="t-debug-view" style="max-width:1400px; width:95vw; height:92vh; display:flex; flex-direction:column;">
         <div class="t-header" style="flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-layer-group" style="color:#74b9ff;"></i>
@@ -20043,7 +20539,7 @@ function showDiagnosticsWindow() {
     $mainView.hide();
   }
   const html = `
-    <div class="t-box t-diagnostics-container" id="t-diagnostics-view">
+    <div class="t-box t-root t-diagnostics-container" id="t-diagnostics-view">
         <div class="t-header" style="flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-stethoscope" style="color:#ff9f43;"></i>
@@ -21110,7 +21606,7 @@ function openOpeningSourcePickerDialog(initialChatIndex = -1) {
   return new Promise((resolve) => {
     $("#t-outline-opening-picker").remove();
     const html = `
-        <div id="t-outline-opening-picker" class="t-dialog-overlay">
+        <div id="t-outline-opening-picker" class="t-dialog-overlay t-root">
             <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-comment-dots"></i> \u9009\u62E9\u804A\u5929\u8BB0\u5F55\u53C2\u8003\u6765\u6E90</span>
@@ -21173,7 +21669,7 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
     $("#t-outline-opening-picker").remove();
     $("#t-opening-detail-dialog").remove();
     const html = `
-        <div id="t-outline-opening-picker" class="t-dialog-overlay">
+        <div id="t-outline-opening-picker" class="t-dialog-overlay t-root">
             <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-book-open"></i> \u9009\u62E9\u53C2\u8003\u5F00\u573A\u767D</span>
@@ -21197,7 +21693,7 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
       if (!entry) return;
       $("#t-opening-detail-dialog").remove();
       const detailHtml = `
-            <div id="t-opening-detail-dialog" class="t-dialog-overlay">
+            <div id="t-opening-detail-dialog" class="t-dialog-overlay t-root">
                 <div class="t-dialog-box" style="max-width: 780px; max-height: 84vh;">
                     <div class="t-dialog-header">
                         <span><i class="fa-solid fa-file-lines"></i> \u5F00\u573A\u767D ${entry.openingIndex + 1} \u8BE6\u60C5</span>
@@ -21461,7 +21957,7 @@ async function openPromptTemplateManager() {
     foreshadowing: item.foreshadowing || ""
   }));
   const html = `
-    <div id="t-outline-prompt-manager" class="t-dialog-overlay">
+    <div id="t-outline-prompt-manager" class="t-dialog-overlay t-root">
         <div class="t-dialog-box t-outline-settings-dialog">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-sliders"></i> \u8BBE\u7F6E</span>
@@ -22061,7 +22557,7 @@ function openPlanCreationDialog() {
   const defaultPlanName = createPlanName(getCurrentCharCardName());
   const draftStoryInput = String($("#t-outline-story-input").val() || "").trim();
   const html = `
-    <div id="t-outline-create-plan-dialog" class="t-dialog-overlay">
+    <div id="t-outline-create-plan-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 620px; max-height: 84vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-plus"></i> \u65B0\u5EFA\u65B9\u6848</span>
@@ -22350,7 +22846,7 @@ function openSceneHubWindow() {
   $("#t-scene-hub-overlay").remove();
   sceneHubSelectedKey = "";
   const html = `
-    <div id="t-scene-hub-overlay" class="t-overlay">
+    <div id="t-scene-hub-overlay" class="t-overlay t-root">
         <div class="t-window t-story-outline-window">
             <div class="t-window-header">
                 <div class="t-window-title"><i class="fa-solid fa-clapperboard"></i> \u7EC6\u7EB2\u60C5\u8282</div>
@@ -22406,7 +22902,7 @@ function openOutlineEntryDialog() {
   $("#t-outline-entry-dialog").remove();
   const hasPlans = getPlans().length > 0;
   const html = `
-    <div id="t-outline-entry-dialog" class="t-dialog-overlay">
+    <div id="t-outline-entry-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 420px;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-list-check"></i> \u9009\u62E9\u5165\u53E3</span>
@@ -22491,7 +22987,7 @@ function showPlanDetailDialog(planId) {
   if (!plan) return;
   $("#t-outline-plan-detail-dialog").remove();
   const html = `
-    <div id="t-outline-plan-detail-dialog" class="t-dialog-overlay" data-plan-id="${plan.id}">
+    <div id="t-outline-plan-detail-dialog" class="t-dialog-overlay t-root" data-plan-id="${plan.id}">
         <div class="t-dialog-box" style="max-width: 900px; max-height: 88vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-open"></i> <span id="t-plan-detail-dialog-title"></span></span>
@@ -22568,7 +23064,7 @@ function showPlanInstructionDialog(plan) {
   const planName = plan.name || "\u672A\u547D\u540D\u65B9\u6848";
   $("#t-outline-plan-instruction-dialog").remove();
   const html = `
-    <div id="t-outline-plan-instruction-dialog" class="t-dialog-overlay">
+    <div id="t-outline-plan-instruction-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 780px; max-height: 82vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-file-lines"></i> \u6545\u4E8B\u6307\u4EE4 \xB7 ${escapeHtml4(planName)}</span>
@@ -22786,7 +23282,7 @@ function showRawResponseDialog(rawContent, options = {}) {
   const defaultContent = String(rawContent || lastRawResponse || rawResponseHistory[0]?.content || "");
   $("#t-outline-raw-dialog").remove();
   const html = `
-    <div id="t-outline-raw-dialog" class="t-dialog-overlay">
+    <div id="t-outline-raw-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 820px; max-height: 82vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-code"></i> ${escapeHtml4(title)}</span>
@@ -23776,7 +24272,7 @@ function openStoryOutlineWindow() {
   sceneEditorItemIndex = -1;
   const defaultPlanName = createPlanName(getCurrentCharCardName());
   const html = `
-    <div id="t-story-outline-overlay" class="t-overlay">
+    <div id="t-story-outline-overlay" class="t-overlay t-root">
         <div class="t-window t-story-outline-window">
             <div class="t-window-header">
                 <div class="t-window-title"><i class="fa-solid fa-list-check"></i> \u5927\u7EB2\u751F\u6210</div>
@@ -23897,7 +24393,7 @@ function openStoryOutlineWindow() {
                         <button id="t-outline-add-fab" class="t-outline-add-fab" aria-expanded="false" aria-controls="t-outline-add-sheet" title="\u65B0\u589E\u6761\u76EE">
                             <i class="fa-solid fa-plus"></i>
                         </button>
-                        <div id="t-outline-add-sheet" class="t-outline-add-sheet" role="menu" aria-label="\u65B0\u589E\u6761\u76EE\u7C7B\u578B">
+                        <div id="t-outline-add-sheet" class="t-outline-add-sheet t-root" role="menu" aria-label="\u65B0\u589E\u6761\u76EE\u7C7B\u578B">
                             <button id="t-outline-add-outline-item" class="t-btn" role="menuitem"><i class="fa-solid fa-table"></i> \u65B0\u589E\u5927\u7EB2\u6761\u76EE</button>
                             <button id="t-outline-add-scene-item" class="t-btn" role="menuitem"><i class="fa-solid fa-clapperboard"></i> \u65B0\u589E\u7EC6\u7EB2\u6761\u76EE</button>
                         </div>
@@ -25614,7 +26110,7 @@ function bindLivePanelEvents() {
 function openLivePanel() {
   closeLivePanel();
   const html = `
-    <div id="${LIVE_OVERLAY_ID}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${LIVE_OVERLAY_ID}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-rewrite-live-window">
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-wave-square"></i> \u5B9E\u65F6\u54CD\u5E94</div>
@@ -25867,7 +26363,7 @@ function openSettingsPanel() {
   const activeScheme = schemes.find((s) => s.id === rewriteData.active_scheme_id) || null;
   const schemeOptions = schemes.map((s) => `<option value="${escapeHtml5(s.id)}" ${s.id === (activeScheme?.id || "") ? "selected" : ""}>${escapeHtml5(s.name)}</option>`).join("");
   const html = `
-    <div id="${SETTINGS_OVERLAY_ID}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${SETTINGS_OVERLAY_ID}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-rewrite-settings-window">
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-sliders"></i> \u6587\u672C\u6539\u5199\u8BBE\u7F6E</div>
@@ -26054,7 +26550,7 @@ function openPanel() {
   const scheme = getActiveScheme();
   const categories = getActiveSchemeCategories();
   const html = `
-    <div id="${OVERLAY_ID}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${OVERLAY_ID}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-rewrite-window">
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-highlighter"></i> \u6587\u672C\u6539\u5199</div>
@@ -28945,7 +29441,7 @@ async function showProfileConfigDialog(onSave) {
     }
   };
   const html = `
-    <div id="t-lore-settings-dialog" class="t-dialog-overlay">
+    <div id="t-lore-settings-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box t-lore-settings-window">
             <div class="t-dialog-header t-lore-settings-header">
                 <span><i class="fa-solid fa-gear"></i> \u8BBE\u7F6E</span>
@@ -29285,7 +29781,7 @@ function showRawResponseDialog2(rawContent, isError = false) {
   const title = isError ? "\u89E3\u6790\u5931\u8D25 - \u539F\u59CB\u54CD\u5E94" : "AI \u539F\u59CB\u54CD\u5E94";
   const headerClass = isError ? "t-dialog-header-error" : "";
   const html = `
-    <div id="t-raw-response-dialog" class="t-dialog-overlay">
+    <div id="t-raw-response-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 800px; max-height: 80vh;">
             <div class="t-dialog-header ${headerClass}">
                 <span><i class="fa-solid fa-code"></i> ${title}</span>
@@ -29371,7 +29867,7 @@ async function showLoreReviewWindow() {
   currentCharacterId = "loading...";
   currentCharacterName = "\u52A0\u8F7D\u4E2D...";
   const html = `
-    <div id="t-lore-review-overlay" class="t-overlay">
+    <div id="t-lore-review-overlay" class="t-overlay t-root">
         <div class="t-window t-lore-review-window" style="max-width: 1000px;">
             <div class="t-window-header">
                 <div class="t-window-title">
@@ -30731,7 +31227,7 @@ function showPromptPreviewDialog(messages, stats = {}) {
         `;
   }
   const html = `
-    <div id="t-prompt-view-dialog" class="t-dialog-overlay">
+    <div id="t-prompt-view-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 900px; max-height: 85vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-eye"></i> \u63D0\u793A\u8BCD\u9884\u89C8${stats.isExtractMode ? " (\u8BBE\u5B9A\u63D0\u53D6)" : " (\u667A\u80FD\u603B\u7ED3)"}</span>
@@ -30876,7 +31372,7 @@ function showCleaningPreviewDialog(samples) {
         </div>
     `).join("");
   const html = `
-    <div id="t-cleaning-preview-dialog" class="t-dialog-overlay">
+    <div id="t-cleaning-preview-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box t-cleaning-preview-box" style="max-width: 1000px; max-height: 85vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-broom"></i> \u6587\u672C\u6E05\u6D17\u9884\u89C8</span>
@@ -31346,7 +31842,7 @@ async function openRecallPanel() {
     status = { available: false, vectorCount: 0, message: "\u72B6\u6001\u68C0\u67E5\u5931\u8D25" };
   }
   const html = `
-    <div class="t-box t-recall-container" id="t-recall-view">
+    <div class="t-box t-root t-recall-container" id="t-recall-view">
         <div class="t-header" style="flex-shrink:0;">
             <span class="t-title-main"><i class="fa-solid fa-lightbulb"></i> \u8BB0\u5FC6\u53EC\u56DE</span>
             <span class="t-recall-status-badge ${status.available ? "available" : "unavailable"}" style="margin-left: auto; margin-right: 15px; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background: ${status.available ? "#2a4a3a" : "#4a2a2a"}; color: ${status.available ? "#4caf50" : "#ff6b6b"};">
@@ -32055,7 +32551,7 @@ function openSettingsWindow() {
     $mainView.hide();
   }
   const html = `
-    <div class="t-box" id="t-settings-view">
+    <div class="t-box t-root" id="t-settings-view">
         <div class="t-header"><span class="t-title-main">\u2699\uFE0F \u8BBE\u7F6E</span><span class="t-close" id="t-set-close">&times;</span></div>
         <div class="t-set-body">
             <div class="t-set-nav">
@@ -34142,7 +34638,7 @@ function openWorkshopWindow(source = "manager") {
   }
   const sortOptions = Object.entries(SORT_MODES).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join("");
   const html = `
-    <div class="t-box" id="t-ws-view">
+    <div class="t-box t-root" id="t-ws-view">
         <div class="t-header">
             <div class="t-title-container">
                 <div class="t-title-main">\u56DE\u58F0\u5DE5\u574A</div>
@@ -34303,8 +34799,8 @@ function openWorkshopWindow(source = "manager") {
   const openPreview = async (item) => {
     const downloads = Number(item.downloads) || 0;
     const previewHtml = `
-        <div id="t-ws-preview-overlay" class="t-ws-preview-overlay">
-            <div class="t-box t-ws-preview-box">
+        <div id="t-ws-preview-overlay" class="t-ws-preview-overlay t-root">
+            <div class="t-box t-root t-ws-preview-box">
                 <div class="t-header">
                     <span class="t-title-main" style="font-size:1.15em;">${esc(item.name)}</span>
                     <div class="t-header-actions">
@@ -34508,7 +35004,7 @@ function openScriptManager() {
     return ["\u5168\u90E8", ...sortedCats];
   };
   const html = `
-    <div class="t-box" id="t-mgr-view">
+    <div class="t-box t-root" id="t-mgr-view">
         <div class="t-header"><span class="t-title-main">\u{1F4C2} \u5267\u672C\u8D44\u6E90\u7BA1\u7406</span><span class="t-close" id="t-mgr-close">&times;</span></div>
         <div class="t-mgr-body">
             <div class="t-mgr-sidebar" id="t-mgr-sidebar-desktop">
@@ -34561,7 +35057,7 @@ function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-imp-modal" class="t-imp-modal">
+        <div id="t-imp-modal" class="t-imp-modal t-root">
             <div class="t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u{1F4E5} \u5BFC\u5165\u5267\u672C</h3>
                 <div class="t-imp-row">
@@ -34584,7 +35080,7 @@ function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-export-modal" class="t-imp-modal">
+        <div id="t-export-modal" class="t-imp-modal t-root">
             <div class="t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u{1F4E4} \u5BFC\u51FA\u5267\u672C</h3>
                 <div class="t-imp-row">
@@ -34613,7 +35109,7 @@ function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-move-modal" class="t-imp-modal">
+        <div id="t-move-modal" class="t-imp-modal t-root">
             <div class="t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u{1F4C1} \u79FB\u52A8\u5230\u5206\u7C7B</h3>
                 <div class="t-imp-row">
@@ -34628,7 +35124,7 @@ function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-cat-rename-modal" class="t-imp-modal">
+        <div id="t-cat-rename-modal" class="t-imp-modal t-root">
             <div class="t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u270F\uFE0F \u91CD\u547D\u540D\u5206\u7C7B</h3>
                 <div class="t-imp-row">
@@ -35164,7 +35660,7 @@ function openEditor(id3, source = "main") {
   const existingCats = [...new Set(GlobalState.runtimeScripts.map((s) => s.category).filter((c) => c))].sort();
   const dataListOpts = existingCats.map((c) => `<option value="${c}">`).join("");
   const html = `
-    <div class="t-box" id="t-editor-view">
+    <div class="t-box t-root" id="t-editor-view">
         <div class="t-header"><span class="t-title-main">${isPreset ? "\u67E5\u770B" : isEdit ? "\u7F16\u8F91" : "\u65B0\u5EFA"}</span></div>
         <div class="t-body">
             <div style="display:flex; gap:10px; margin-bottom:5px;">
@@ -35208,7 +35704,7 @@ function openEditor(id3, source = "main") {
     $("#t-editor-view").hide();
     const largeEditHtml = `
         <div id="t-large-edit-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:20000; display:flex; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
-            <div class="t-box" id="t-large-edit-view" style="width:100%; max-width:800px; height:90vh; max-height:90vh; margin:auto; display:flex; flex-direction:column;">
+            <div class="t-box t-root" id="t-large-edit-view" style="width:100%; max-width:800px; height:90vh; max-height:90vh; margin:auto; display:flex; flex-direction:column;">
                 <div class="t-header" style="flex-shrink:0;">
                     <span class="t-title-main">\u5927\u5C4F\u7F16\u8F91\u6A21\u5F0F</span>
                     <span class="t-close" id="ed-large-close">&times;</span>
@@ -35943,8 +36439,8 @@ __export(modern_exports, {
 function renderHtml(viewData) {
   const { defaultCtx } = viewData;
   return `
-    <div id="t-overlay" class="t-overlay">
-        <div class="t-box" id="t-main-view">
+    <div id="t-overlay" class="t-overlay t-root">
+        <div class="t-box t-root" id="t-main-view">
 
             <div class="t-header" style="flex-shrink:0;">
                 <div class="t-title-container" style="display:flex; flex-direction:column; overflow:hidden;">
@@ -36350,8 +36846,8 @@ __export(legacy_exports, {
 function renderHtml2(viewData) {
   const { defaultCtx } = viewData;
   return `
-    <div id="t-overlay" class="t-overlay">
-        <div class="t-box" id="t-main-view">
+    <div id="t-overlay" class="t-overlay t-root">
+        <div class="t-box t-root" id="t-main-view">
 
             <div class="t-header" style="flex-shrink:0;">
                 <div class="t-title-container" style="display:flex; flex-direction:column; overflow:hidden;">
@@ -38164,7 +38660,7 @@ async function openWorldInfoSelector() {
   const showEntryPreview = (title, content) => {
     $q(".t-wi-preview-modal").remove();
     const $modal = $(`
-            <div class="t-wi-preview-modal">
+            <div class="t-wi-preview-modal t-root">
                 <div class="t-wi-preview-box">
                     <div class="t-wi-preview-header">
                         <span class="t-wi-preview-title">${title}</span>
@@ -39227,7 +39723,7 @@ function showSlideMenu() {
   const btnRect = $btn[0].getBoundingClientRect();
   const btnSize = $btn.outerWidth() || 56;
   const isOnLeft = btnRect.left < window.innerWidth / 2;
-  const backdrop = $(`<div id="titania-menu-backdrop"></div>`);
+  const backdrop = $(`<div id="titania-menu-backdrop" class="t-root"></div>`);
   const enabledButtons = getEnabledToolbarButtons();
   const menuContent = enabledButtons.map((btn) => `
         <div class="t-menu-icon-btn ${btn.cssClass}" data-btn-id="${btn.id}" title="${btn.title}">
@@ -39235,7 +39731,7 @@ function showSlideMenu() {
         </div>
     `).join("");
   const slideMenu = $(`
-        <div id="titania-slide-menu" class="t-horizontal">
+        <div id="titania-slide-menu" class="t-horizontal t-root">
             ${menuContent}
         </div>
     `);
@@ -39401,8 +39897,8 @@ function createFloatingButton() {
   const bgColorRgba = hexToRgba(bgColor, bgOpacity);
   const btnText = app.content ?? "\u{1F3AD}";
   const btnContent = isImageDataUri ? `<img src="${app.content}">` : `<span style="position:relative; z-index:2;">${btnText}</span>`;
-  const btn = $(`<div id="titania-float-btn" data-animation="${animationType}">${btnContent}</div>`);
-  const timer = $(`<div id="titania-timer">0.0s</div>`);
+  const btn = $(`<div id="titania-float-btn" class="t-root" data-animation="${animationType}">${btnContent}</div>`);
+  const timer = $(`<div id="titania-timer" class="t-root">0.0s</div>`);
   btn.css({
     "--t-size": `${size}px`,
     "--t-border-color": borderColor,
@@ -42522,7 +43018,7 @@ function showUpdateDialog(update) {
         </section>
     `).join("");
   $("body").append(`
-        <div id="titania-update-overlay" class="titania-update-overlay">
+        <div id="titania-update-overlay" class="titania-update-overlay t-root">
             <div class="titania-update-dialog" role="dialog" aria-modal="true" aria-labelledby="titania-update-title">
                 <header class="titania-update-header">
                     <div>
@@ -42850,7 +43346,7 @@ function openInjectPickerWindow(mesid) {
   const visibleDefault = lastVisibleChoice === null ? cfg.visibleToAI : lastVisibleChoice;
   const floorLabel = Number.isFinite(mesid) ? `\u7B2C ${mesid} \u697C` : "\u5F53\u524D\u697C\u5C42";
   const html = `
-    <div id="${OVERLAY_ID2}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${OVERLAY_ID2}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-chat-inject-window">
             <div class="t-window-header">
                 <div class="t-window-title">

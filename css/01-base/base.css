@@ -1,25 +1,11 @@
 /* css/01-base/base.css - 基础组件与工具类 */
 
-:root {
-    /* 颜色变量 */
-    --t-theme: #bfa15f;
-    /* 主题色 (金色) */
-    --t-notify: #55efc4;
-    /* 通知色 (青色) */
-    --t-bg-dark: #121212;
-    /* 深色背景 */
-    --t-bg-panel: #1e1e1e;
-    /* 面板背景 */
-    --t-border: #333;
-    /* 边框色 */
-
-    /* 字体变量 */
-    /* 全局字体 - 用户可自定义，应用于 UI 和内容区域 */
-    --t-font-global: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    /* 等宽字体 - 固定用于代码编辑器和日志，不受用户设置影响 */
-    --t-font-mono: "Consolas", "Monaco", "Courier New", monospace;
-    --t-ui-font-scale: 1;
-}
+/* 原 :root 变量块（5 个颜色 + 2 个字体族 + --t-ui-font-scale）已迁至 00-tokens/：
+     颜色 5 个  → 00-tokens/legacy-aliases.css（改为指向新语义 token，值逐字节相同）
+     字体族 / --t-ui-font-scale / --t-font-size-root → 00-tokens/primitives.css
+   必须迁走而不能两处并存：00-tokens 在 manifest 中排在 01-base **之前**，
+   若此处保留字面量声明，它会覆盖 legacy-aliases.css 的 token 映射，
+   使兼容层变成死代码、主题切换对旧变量名失效。 */
 
 /* 遮罩层 */
 .t-overlay {

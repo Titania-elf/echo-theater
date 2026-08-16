@@ -2612,7 +2612,7 @@ function openLivePanel() {
     closeLivePanel();
 
     const html = `
-    <div id="${LIVE_OVERLAY_ID}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${LIVE_OVERLAY_ID}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-rewrite-live-window">
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-wave-square"></i> 实时响应</div>
@@ -2878,7 +2878,7 @@ function openSettingsPanel() {
     const schemeOptions = schemes.map(s => `<option value="${escapeHtml(s.id)}" ${s.id === (activeScheme?.id || "") ? "selected" : ""}>${escapeHtml(s.name)}</option>`).join("");
 
     const html = `
-    <div id="${SETTINGS_OVERLAY_ID}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${SETTINGS_OVERLAY_ID}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-rewrite-settings-window">
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-sliders"></i> 文本改写设置</div>
@@ -3062,7 +3062,7 @@ function openPanel() {
     const categories = getActiveSchemeCategories();
 
     const html = `
-    <div id="${OVERLAY_ID}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${OVERLAY_ID}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-rewrite-window">
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-highlighter"></i> 文本改写</div>

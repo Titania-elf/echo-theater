@@ -210,7 +210,7 @@ async function showProfileConfigDialog(onSave) {
     };
 
     const html = `
-    <div id="t-lore-settings-dialog" class="t-dialog-overlay">
+    <div id="t-lore-settings-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box t-lore-settings-window">
             <div class="t-dialog-header t-lore-settings-header">
                 <span><i class="fa-solid fa-gear"></i> 设置</span>
@@ -586,7 +586,7 @@ function showRawResponseDialog(rawContent, isError = false) {
     const headerClass = isError ? "t-dialog-header-error" : "";
 
     const html = `
-    <div id="t-raw-response-dialog" class="t-dialog-overlay">
+    <div id="t-raw-response-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 800px; max-height: 80vh;">
             <div class="t-dialog-header ${headerClass}">
                 <span><i class="fa-solid fa-code"></i> ${title}</span>
@@ -698,7 +698,7 @@ export async function showLoreReviewWindow() {
 
     // 构建基础 HTML
     const html = `
-    <div id="t-lore-review-overlay" class="t-overlay">
+    <div id="t-lore-review-overlay" class="t-overlay t-root">
         <div class="t-window t-lore-review-window" style="max-width: 1000px;">
             <div class="t-window-header">
                 <div class="t-window-title">
@@ -2446,7 +2446,7 @@ function showPromptPreviewDialog(messages, stats = {}) {
     }
 
     const html = `
-    <div id="t-prompt-view-dialog" class="t-dialog-overlay">
+    <div id="t-prompt-view-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box" style="max-width: 900px; max-height: 85vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-eye"></i> 提示词预览${stats.isExtractMode ? ' (设定提取)' : ' (智能总结)'}</span>
@@ -2622,7 +2622,7 @@ function showCleaningPreviewDialog(samples) {
     `).join('');
 
     const html = `
-    <div id="t-cleaning-preview-dialog" class="t-dialog-overlay">
+    <div id="t-cleaning-preview-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box t-cleaning-preview-box" style="max-width: 1000px; max-height: 85vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-broom"></i> 文本清洗预览</span>

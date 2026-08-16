@@ -135,7 +135,7 @@ export function openWorkshopWindow(source = 'manager') {
         .map(([k, v]) => `<option value="${k}">${v.label}</option>`).join("");
 
     const html = `
-    <div class="t-box" id="t-ws-view">
+    <div class="t-box t-root" id="t-ws-view">
         <div class="t-header">
             <div class="t-title-container">
                 <div class="t-title-main">回声工坊</div>
@@ -315,8 +315,8 @@ export function openWorkshopWindow(source = 'manager') {
     const openPreview = async (item) => {
         const downloads = Number(item.downloads) || 0;
         const previewHtml = `
-        <div id="t-ws-preview-overlay" class="t-ws-preview-overlay">
-            <div class="t-box t-ws-preview-box">
+        <div id="t-ws-preview-overlay" class="t-ws-preview-overlay t-root">
+            <div class="t-box t-root t-ws-preview-box">
                 <div class="t-header">
                     <span class="t-title-main" style="font-size:1.15em;">${esc(item.name)}</span>
                     <div class="t-header-actions">

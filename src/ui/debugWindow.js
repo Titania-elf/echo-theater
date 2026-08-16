@@ -173,7 +173,7 @@ export async function showDebugInfo() {
     }
 
     const html = `
-    <div class="t-box" id="t-debug-view" style="max-width:1400px; width:95vw; height:92vh; display:flex; flex-direction:column;">
+    <div class="t-box t-root" id="t-debug-view" style="max-width:1400px; width:95vw; height:92vh; display:flex; flex-direction:column;">
         <div class="t-header" style="flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-layer-group" style="color:#74b9ff;"></i>
@@ -437,7 +437,7 @@ export function showDiagnosticsWindow() {
     }
 
     const html = `
-    <div class="t-box t-diagnostics-container" id="t-diagnostics-view">
+    <div class="t-box t-root t-diagnostics-container" id="t-diagnostics-view">
         <div class="t-header" style="flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-stethoscope" style="color:#ff9f43;"></i>

@@ -21,8 +21,8 @@ export function renderHtml(viewData) {
     const { defaultCtx } = viewData;
 
     return `
-    <div id="t-overlay" class="t-overlay">
-        <div class="t-box" id="t-main-view">
+    <div id="t-overlay" class="t-overlay t-root">
+        <div class="t-box t-root" id="t-main-view">
 
             <div class="t-header" style="flex-shrink:0;">
                 <div class="t-title-container" style="display:flex; flex-direction:column; overflow:hidden;">

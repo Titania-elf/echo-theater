@@ -454,7 +454,8 @@
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* 原写死 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif —— 绕过了
+       用户自定义字体设置（缺陷 B9）。现继承 .t-root 提供的 --t-font-global。 */
     color: #e2e8f0;
 }
 

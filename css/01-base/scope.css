@@ -1,0 +1,56 @@
+/* ============================================================
+   01-base/scope.css —— 插件 UI 的作用域根 `.t-root`
+
+   `.t-root` 显式标出「插件 UI 的边界」。此前这个边界是隐式的、靠 `t-`
+   类名前缀猜的，导致：
+     - B8：6 个弹窗根没有排版基准，内部 em 相对 ST body(15px) 解析，
+           用户的「UI 缩放」设置在这些弹窗内完全失效
+     - B9：.t-model-dialog-box 索性写死 font-family 绕过用户设置
+   挂载点清单见 plan.md §8.2，由审计 A21 清点。
+
+   ⚠ 注入 ST DOM 的按钮本体（.titania-inject-btn / .titania-recall-btn）
+     **不加** .t-root —— 依 ADR-02 它们要继承 ST 的 .mes_button 观感。
+   ============================================================ */
+
+.t-root {
+    /* 排版基准 —— 修 B8 / B9。
+       ST 的 body 是 font-family: var(--mainFontFamily) / font-size: 15px，
+       插件基准是 12px，两者不一致正是 B8 的成因。 */
+    font-family: var(--t-font-global);
+    font-size: var(--t-font-size-root);
+    /* calc(12px * var(--t-ui-font-scale, 1)) */
+    color: var(--t-color-text);
+}
+
+/* 盒模型自洽：不依赖宿主。
+   注：ST 已在 style.css:133 设了 `* { box-sizing: border-box }`，
+   所以本条当前是无操作；写出来是为了插件不依赖该宿主行为。 */
+.t-root,
+.t-root *,
+.t-root *::before,
+.t-root *::after {
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   以下两条 plan.md §8.1 列入本文件，但**本阶段刻意不落地**，
+   因为它们都会造成 plan.md §12.2 未评估到的可见变化。
+
+   1) line-height: var(--t-line-height-base)  —— 值为 1.5
+      实测 ST 的 body **没有**设置 line-height，故插件 UI 现在继承的是
+      浏览器默认值（normal，多数字体约 1.2）。一旦在 .t-root 上设 1.5，
+      所有未自行声明 line-height 的插件元素行距都会变大 —— 会改变窗口高度、
+      引起文本换行位置变化。全库仅 67 处自行声明了 line-height，
+      也就是说绝大多数元素都会受影响。
+      plan.md §12.2 的「已知视觉变化」清单里没有这一条，属计划遗漏。
+      应作为独立一步实施并单独比对，不与 token 落盘混在一起。
+
+   2) color-scheme: dark
+      实测 ST 的 body 设了 `color-scheme: only light`，这正是 S2 的根因：
+      插件的 45 个 checkbox + 16 个 radio + 5 个 range 全部按浅色渲染。
+      在 .t-root 上改为 dark 会让这 66 个原生控件外观立刻翻转 —— 这是
+      **修复**，但属于 plan.md §12.4 明确列给 Phase 3 的任务
+      （「color-scheme: dark 落地，接管 …… 解 S2」），
+      且需要在 ST 深色 / 浅色 / 第三方主题下逐一验证。
+      保留给 Phase 3，与拆除 base.css 的 3 处 input !important 一起做。
+   ============================================================ */

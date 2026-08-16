@@ -60,7 +60,7 @@ export function openScriptManager() {
 
     // HTML 结构 (样式见 css/manager.css)
     const html = `
-    <div class="t-box" id="t-mgr-view">
+    <div class="t-box t-root" id="t-mgr-view">
         <div class="t-header"><span class="t-title-main">📂 剧本资源管理</span><span class="t-close" id="t-mgr-close">&times;</span></div>
         <div class="t-mgr-body">
             <div class="t-mgr-sidebar" id="t-mgr-sidebar-desktop">
@@ -113,7 +113,7 @@ export function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-imp-modal" class="t-imp-modal">
+        <div id="t-imp-modal" class="t-imp-modal t-root">
             <div class="t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📥 导入剧本</h3>
                 <div class="t-imp-row">
@@ -136,7 +136,7 @@ export function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-export-modal" class="t-imp-modal">
+        <div id="t-export-modal" class="t-imp-modal t-root">
             <div class="t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📤 导出剧本</h3>
                 <div class="t-imp-row">
@@ -165,7 +165,7 @@ export function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-move-modal" class="t-imp-modal">
+        <div id="t-move-modal" class="t-imp-modal t-root">
             <div class="t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📁 移动到分类</h3>
                 <div class="t-imp-row">
@@ -180,7 +180,7 @@ export function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-cat-rename-modal" class="t-imp-modal">
+        <div id="t-cat-rename-modal" class="t-imp-modal t-root">
             <div class="t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">✏️ 重命名分类</h3>
                 <div class="t-imp-row">
@@ -837,7 +837,7 @@ export function openEditor(id, source = 'main') {
     const dataListOpts = existingCats.map(c => `<option value="${c}">`).join("");
 
     const html = `
-    <div class="t-box" id="t-editor-view">
+    <div class="t-box t-root" id="t-editor-view">
         <div class="t-header"><span class="t-title-main">${isPreset ? '查看' : (isEdit ? '编辑' : '新建')}</span></div>
         <div class="t-body">
             <div style="display:flex; gap:10px; margin-bottom:5px;">
@@ -890,7 +890,7 @@ export function openEditor(id, source = 'main') {
         // 使用 padding 确保在手机端也能正确居中显示
         const largeEditHtml = `
         <div id="t-large-edit-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:20000; display:flex; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
-            <div class="t-box" id="t-large-edit-view" style="width:100%; max-width:800px; height:90vh; max-height:90vh; margin:auto; display:flex; flex-direction:column;">
+            <div class="t-box t-root" id="t-large-edit-view" style="width:100%; max-width:800px; height:90vh; max-height:90vh; margin:auto; display:flex; flex-direction:column;">
                 <div class="t-header" style="flex-shrink:0;">
                     <span class="t-title-main">大屏编辑模式</span>
                     <span class="t-close" id="ed-large-close">&times;</span>

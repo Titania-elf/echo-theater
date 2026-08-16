@@ -4,15 +4,15 @@
       "title": "manifest.js 与磁盘双向一致",
       "violations": 0,
       "metrics": {
-        "清单文件数": 14,
-        "磁盘文件数": 14
+        "清单文件数": 19,
+        "磁盘文件数": 19
       }
     },
     "A15": {
       "title": "main-window-legacy.css 紧跟 main-window.css",
       "violations": 0,
       "metrics": {
-        "位置": "5 → 6"
+        "位置": "10 → 11"
       }
     },
     "A10": {
@@ -24,8 +24,8 @@
       "title": "消费但未声明的 --t-* 变量",
       "violations": 0,
       "metrics": {
-        "CSS 已声明 --t-*": 8,
-        "被消费种类": 9,
+        "CSS 已声明 --t-*": 158,
+        "被消费种类": 61,
         "仅 JS 声明（B5）": 4
       }
     },
@@ -36,6 +36,11 @@
         "定义": 22,
         "引用种类": 23
       }
+    },
+    "A23": {
+      "title": "CSS 语法完整性（注释嵌套 / 花括号平衡）",
+      "violations": 0,
+      "metrics": {}
     },
     "A7": {
       "title": "@keyframes 集中声明且带 t- 前缀",
@@ -54,19 +59,20 @@
     },
     "A9": {
       "title": "!important 紧邻注释说明其对抗的宿主规则",
-      "violations": 74,
+      "violations": 75,
       "metrics": {
-        "important总数": 76
+        "important总数": 77
       }
     },
     "A1": {
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1187,
-        "rgb/rgba字面量": 760,
-        "合计": 1947,
-        "  01-base": "hex 40 / rgb 21",
+        "hex字面量": 1192,
+        "rgb/rgba字面量": 805,
+        "合计": 1997,
+        "  00-tokens": "hex 10 / rgb 45",
+        "  01-base": "hex 35 / rgb 21",
         "  04-features": "hex 1139 / rgb 731",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
@@ -159,17 +165,18 @@
       }
     },
     "A21": {
-      "title": "挂载点清单核对（$(\"body\").append / ensureOverlay）",
+      "title": "挂载点清点与 .t-root 覆盖",
       "violations": 0,
       "metrics": {
-        "body.append 挂载点": 34,
-        "ensureOverlay 调用": 8
+        "body.append 调用点": 34,
+        "ensureOverlay 调用点": 8,
+        "带 .t-root 的元素": 49
       }
     }
   },
   "scale": {
-    "CSS 总行数": 14724,
-    "规则条数": 1970,
+    "CSS 总行数": 15210,
+    "规则条数": 1975,
     "border-radius 声明 / 不同值": "318 / 37",
     "box-shadow 声明 / 不同值": "102 / 73",
     "font-size (px / em)": "161 / 264",

@@ -678,7 +678,7 @@ export function openFavsWindow() {
 
     // HTML 结构 (样式见 css/favs.css)
     const html = `
-    <div class="t-box t-fav-container" id="t-favs-view">
+    <div class="t-box t-root t-fav-container" id="t-favs-view">
         <div class="t-header" style="flex-shrink:0;">
             <span class="t-title-main">📖 收藏画廊</span>
             <span class="t-close" id="t-fav-close">&times;</span>
@@ -1768,7 +1768,7 @@ export function openFavsWindow() {
 
             const sheetHtml = `
                 <div id="t-fav-export-sheet" class="t-fav-export-sheet-backdrop">
-                    <div class="t-fav-export-sheet">
+                    <div class="t-fav-export-sheet t-root">
                         <div class="t-fav-export-sheet-title">图片导出选项</div>
                         <div class="t-fav-export-sheet-desc">请选择导出时是否对 User 名称打码</div>
 
@@ -2180,7 +2180,7 @@ export function openCharImageManager(onCloseCallback) {
 
     // HTML 结构 (样式见 css/favs.css)
     const html = `
-    <div class="t-img-mgr-overlay" id="t-img-mgr">
+    <div class="t-img-mgr-overlay t-root" id="t-img-mgr">
         <div class="t-img-mgr-box">
             <div class="t-header">
                 <span class="t-title-main">🖼️ 角色图鉴管理</span>

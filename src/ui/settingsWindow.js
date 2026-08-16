@@ -186,7 +186,7 @@ export function openSettingsWindow() {
 
     // HTML 结构 (样式见 css/settings.css)
     const html = `
-    <div class="t-box" id="t-settings-view">
+    <div class="t-box t-root" id="t-settings-view">
         <div class="t-header"><span class="t-title-main">⚙️ 设置</span><span class="t-close" id="t-set-close">&times;</span></div>
         <div class="t-set-body">
             <div class="t-set-nav">

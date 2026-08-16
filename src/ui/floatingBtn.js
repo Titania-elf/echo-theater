@@ -311,7 +311,7 @@ export function showSlideMenu() {
     const isOnLeft = btnRect.left < window.innerWidth / 2;
 
     // 创建遮罩（用于点击外部关闭）
-    const backdrop = $(`<div id="titania-menu-backdrop"></div>`);
+    const backdrop = $(`<div id="titania-menu-backdrop" class="t-root"></div>`);
 
     // 动态构建菜单内容（横向图标栏，无文字标签）
     // 不再根据生成状态切换，始终显示功能按钮
@@ -324,7 +324,7 @@ export function showSlideMenu() {
 
     // 创建横向菜单容器
     const slideMenu = $(`
-        <div id="titania-slide-menu" class="t-horizontal">
+        <div id="titania-slide-menu" class="t-horizontal t-root">
             ${menuContent}
         </div>
     `);
@@ -594,10 +594,10 @@ export function createFloatingButton() {
         ? `<img src="${app.content}">`
         : `<span style="position:relative; z-index:2;">${btnText}</span>`;
 
-    const btn = $(`<div id="titania-float-btn" data-animation="${animationType}">${btnContent}</div>`);
+    const btn = $(`<div id="titania-float-btn" class="t-root" data-animation="${animationType}">${btnContent}</div>`);
 
     // 2. 创建计时器元素
-    const timer = $(`<div id="titania-timer">0.0s</div>`);
+    const timer = $(`<div id="titania-timer" class="t-root">0.0s</div>`);
 
     // 3. 应用动态尺寸、边框颜色和背景颜色（带透明度）
     btn.css({

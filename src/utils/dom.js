@@ -8,7 +8,7 @@ import { cssFileList } from "../../css/manifest.js";
  */
 export function ensureOverlay() {
     if ($("#t-overlay").length === 0) {
-        const overlayHtml = `<div id="t-overlay" class="t-overlay"></div>`;
+        const overlayHtml = `<div id="t-overlay" class="t-overlay t-root"></div>`;
         $("body").append(overlayHtml);
     }
     return $("#t-overlay");

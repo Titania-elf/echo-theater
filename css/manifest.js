@@ -8,10 +8,22 @@
 // 顺序约束由 scripts/css-audit.js 断言(A14 文件存在性 / A15 legacy 紧跟主文件)。
 
 export const CSS_LAYERS = [
+    // 【第 0 层:Design Tokens】必须最先加载：其余各层都消费这里的变量
+    {
+        layer: '00-tokens', files: [
+            'primitives.css',      // 与主题无关的原始尺度（组件层禁止直接引用，R3b）
+            'semantic.css',        // 语义角色中不随主题变化的部分（圆角/间距/排版）
+            'theme-dark.css',      // 暗色主题：语义 → 原语绑定（= 当前视觉）
+            // 'theme-light.css',  ← Phase 6 之后新增
+            'legacy-aliases.css',  // ⚠ 旧变量名 → 新 token（Phase 7 删除）
+        ]
+    },
+
     // 【第 1 层:作用域与基础】
-    // Phase 1 起 base.css 将拆分为 scope.css / typography.css / scrollbar.css
+    // Phase 1 起 base.css 将继续拆分为 typography.css 等
     {
         layer: '01-base', files: [
+            'scope.css',       // ★ .t-root：插件 UI 的作用域根（修 B8/B9）
             'base.css',
             'scrollbar.css',   // 带作用域的滚动条外观（修 B2）
             'keyframes.css',   // 全库唯一的 @keyframes 声明处（规则 R6）

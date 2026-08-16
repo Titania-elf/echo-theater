@@ -2117,7 +2117,7 @@ async function openWorldInfoSelector() {
     const showEntryPreview = (title, content) => {
         $q(".t-wi-preview-modal").remove();
         const $modal = $(`
-            <div class="t-wi-preview-modal">
+            <div class="t-wi-preview-modal t-root">
                 <div class="t-wi-preview-box">
                     <div class="t-wi-preview-header">
                         <span class="t-wi-preview-title">${title}</span>
