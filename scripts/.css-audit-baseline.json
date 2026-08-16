@@ -68,14 +68,14 @@
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1222,
-        "rgb/rgba字面量": 983,
-        "合计": 2205,
+        "hex字面量": 1220,
+        "rgb/rgba字面量": 981,
+        "合计": 2201,
         "  00-tokens": "hex 10 / rgb 89",
         "  01-base": "hex 25 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
         "  03-layout": "hex 0 / rgb 0",
-        "  04-features": "hex 1179 / rgb 869",
+        "  04-features": "hex 1177 / rgb 867",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
     },
@@ -96,7 +96,7 @@
     },
     "A5": {
       "title": "feature 层禁止重定义组件类的视觉属性",
-      "violations": 5,
+      "violations": 0,
       "metrics": {}
     },
     "A6": {
@@ -182,6 +182,6 @@
     "border-radius 声明 / 不同值": "354 / 41",
     "box-shadow 声明 / 不同值": "119 / 83",
     "font-size (px / em)": "162 / 317",
-    "padding / gap 声明": "548 / 394"
+    "padding / gap 声明": "547 / 394"
   }
 }

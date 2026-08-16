@@ -141,6 +141,18 @@
     border-color: transparent;
 }
 
+.t-btn--quiet {
+    background: var(--t-color-surface-hover);
+    border-color: transparent;
+    color: var(--t-color-text-secondary);
+}
+
+.t-btn--quiet:hover:not(:disabled) {
+    background: var(--t-color-surface-active);
+    color: var(--t-color-text-strong);
+    border-color: transparent;
+}
+
 .t-btn--glass {
     height: 30px;
     min-height: 30px;

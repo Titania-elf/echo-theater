@@ -154,18 +154,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.t-list-actions .t-btn {
-    padding: 2px 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: #a0aec0;
-}
-
-.t-list-actions .t-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-}
-
 .t-lore-list {
     flex: 1;
     overflow-y: auto;

@@ -773,8 +773,8 @@ export async function showLoreReviewWindow() {
                         <div class="t-list-header">
                             <span>提取结果</span>
                             <div class="t-list-actions">
-                                <button id="t-btn-select-all" class="t-btn t-btn-xs">全选</button>
-                                <button id="t-btn-deselect-all" class="t-btn t-btn-xs">全不选</button>
+                                <button id="t-btn-select-all" class="t-btn t-btn--quiet t-btn--xs">全选</button>
+                                <button id="t-btn-deselect-all" class="t-btn t-btn--quiet t-btn--xs">全不选</button>
                             </div>
                         </div>
                         <div id="t-lore-entries-list" class="t-lore-list">

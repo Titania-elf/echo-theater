@@ -3108,6 +3108,18 @@ textarea.t-input {
     border-color: transparent;
 }
 
+.t-btn--quiet {
+    background: var(--t-color-surface-hover);
+    border-color: transparent;
+    color: var(--t-color-text-secondary);
+}
+
+.t-btn--quiet:hover:not(:disabled) {
+    background: var(--t-color-surface-active);
+    color: var(--t-color-text-strong);
+    border-color: transparent;
+}
+
 .t-btn--glass {
     height: 30px;
     min-height: 30px;
@@ -12809,18 +12821,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.t-list-actions .t-btn {
-    padding: 2px 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: #a0aec0;
-}
-
-.t-list-actions .t-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
 }
 
 .t-lore-list {
@@ -30711,8 +30711,8 @@ async function showLoreReviewWindow() {
                         <div class="t-list-header">
                             <span>\u63D0\u53D6\u7ED3\u679C</span>
                             <div class="t-list-actions">
-                                <button id="t-btn-select-all" class="t-btn t-btn-xs">\u5168\u9009</button>
-                                <button id="t-btn-deselect-all" class="t-btn t-btn-xs">\u5168\u4E0D\u9009</button>
+                                <button id="t-btn-select-all" class="t-btn t-btn--quiet t-btn--xs">\u5168\u9009</button>
+                                <button id="t-btn-deselect-all" class="t-btn t-btn--quiet t-btn--xs">\u5168\u4E0D\u9009</button>
                             </div>
                         </div>
                         <div id="t-lore-entries-list" class="t-lore-list">
