@@ -3125,13 +3125,6 @@
     border-color: rgba(144, 205, 244, 0.3);
 }
 
-.t-queue-script-item input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: #90cdf4;
-    cursor: pointer;
-}
-
 .t-queue-script-info {
     flex: 1;
     min-width: 0;

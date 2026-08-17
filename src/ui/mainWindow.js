@@ -3027,7 +3027,7 @@ function openQueueSettingsWindow() {
                 <div class="t-queue-script-list" id="t-queue-script-list">
                     ${GlobalState.runtimeScripts.map(s => `
                         <div class="t-queue-script-item ${qState.manualItems.includes(s.id) ? 'selected' : ''}" data-id="${s.id}">
-                            <input type="checkbox" ${qState.manualItems.includes(s.id) ? 'checked' : ''}>
+                            <input type="checkbox" class="t-choice-input t-choice-input--accent" ${qState.manualItems.includes(s.id) ? 'checked' : ''}>
                             <div class="t-queue-script-info">
                                 <div class="t-queue-script-name">${s.name}</div>
                                 <div class="t-queue-script-cat">${s.category || (s._type === 'preset' ? '官方预设' : '未分类')}</div>

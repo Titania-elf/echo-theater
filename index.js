@@ -7294,13 +7294,6 @@ textarea.t-input {
     border-color: rgba(144, 205, 244, 0.3);
 }
 
-.t-queue-script-item input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: #90cdf4;
-    cursor: pointer;
-}
-
 .t-queue-script-info {
     flex: 1;
     min-width: 0;
@@ -39841,7 +39834,7 @@ function openQueueSettingsWindow() {
                 <div class="t-queue-script-list" id="t-queue-script-list">
                     ${GlobalState.runtimeScripts.map((s) => `
                         <div class="t-queue-script-item ${qState.manualItems.includes(s.id) ? "selected" : ""}" data-id="${s.id}">
-                            <input type="checkbox" ${qState.manualItems.includes(s.id) ? "checked" : ""}>
+                            <input type="checkbox" class="t-choice-input t-choice-input--accent" ${qState.manualItems.includes(s.id) ? "checked" : ""}>
                             <div class="t-queue-script-info">
                                 <div class="t-queue-script-name">${s.name}</div>
                                 <div class="t-queue-script-cat">${s.category || (s._type === "preset" ? "\u5B98\u65B9\u9884\u8BBE" : "\u672A\u5206\u7C7B")}</div>
