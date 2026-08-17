@@ -11,7 +11,16 @@
     accent-color: var(--t-color-brand);
 }
 
+.t-root .t-choice-input--accent {
+    accent-color: var(--t-color-accent);
+}
+
 .t-root .t-choice-input--lg {
+    width: 18px;
+    height: 18px;
+}
+
+.t-root .t-choice-input--responsive-lg {
     width: 18px;
     height: 18px;
 }
@@ -26,4 +35,11 @@
 
 .t-root .t-choice-input--muted-disabled:disabled {
     opacity: 0.5;
+}
+
+@media screen and (max-width: 600px) {
+    .t-root .t-choice-input--responsive-lg {
+        width: 16px;
+        height: 16px;
+    }
 }

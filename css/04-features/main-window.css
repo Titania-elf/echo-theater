@@ -279,13 +279,6 @@
     user-select: none;
 }
 
-.t-toggle-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #90cdf4;
-    cursor: pointer;
-}
-
 .t-toggle-text {
     font-size: 0.9em;
     font-weight: bold;
@@ -317,8 +310,7 @@
 }
 
 .t-subtoggle.disabled,
-.t-subtoggle.disabled .t-toggle-label,
-.t-subtoggle.disabled input[type="checkbox"] {
+.t-subtoggle.disabled .t-toggle-label {
     cursor: not-allowed;
 }
 
@@ -1185,12 +1177,6 @@
     .t-history-group .t-toggle-label {
         gap: 6px;
         min-width: 0;
-    }
-
-    .t-history-group .t-toggle-label input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        flex-shrink: 0;
     }
 
     .t-mode-toggle {

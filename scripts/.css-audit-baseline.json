@@ -68,14 +68,14 @@
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1205,
+        "hex字面量": 1204,
         "rgb/rgba字面量": 981,
-        "合计": 2186,
+        "合计": 2185,
         "  00-tokens": "hex 10 / rgb 100",
         "  01-base": "hex 20 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
         "  03-layout": "hex 0 / rgb 0",
-        "  04-features": "hex 1167 / rgb 856",
+        "  04-features": "hex 1166 / rgb 856",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
     },
@@ -143,11 +143,11 @@
       "title": "@media 断点在约定集合内",
       "violations": 8,
       "metrics": {
-        "@media 块": 40,
+        "@media 块": 41,
         "其中指针/hover 查询": 3,
         "JS matchMedia": 4,
         "不同断点": 9,
-        "断点分布": "420px×1 480px×1 600px×18 620px×1 700px×2 768px×15 900px×1 980px×1 1200px×1"
+        "断点分布": "420px×1 480px×1 600px×19 620px×1 700px×2 768px×15 900px×1 980px×1 1200px×1"
       }
     },
     "A19": {
@@ -177,8 +177,8 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16368,
-    "规则条数": 2260,
+    "CSS 总行数": 16370,
+    "规则条数": 2261,
     "border-radius 声明 / 不同值": "353 / 41",
     "box-shadow 声明 / 不同值": "119 / 85",
     "font-size (px / em)": "162 / 316",

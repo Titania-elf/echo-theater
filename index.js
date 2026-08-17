@@ -3346,7 +3346,16 @@ textarea.t-input {
     accent-color: var(--t-color-brand);
 }
 
+.t-root .t-choice-input--accent {
+    accent-color: var(--t-color-accent);
+}
+
 .t-root .t-choice-input--lg {
+    width: 18px;
+    height: 18px;
+}
+
+.t-root .t-choice-input--responsive-lg {
     width: 18px;
     height: 18px;
 }
@@ -3361,6 +3370,13 @@ textarea.t-input {
 
 .t-root .t-choice-input--muted-disabled:disabled {
     opacity: 0.5;
+}
+
+@media screen and (max-width: 600px) {
+    .t-root .t-choice-input--responsive-lg {
+        width: 16px;
+        height: 16px;
+    }
 }
 
 
@@ -4422,13 +4438,6 @@ textarea.t-input {
     user-select: none;
 }
 
-.t-toggle-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #90cdf4;
-    cursor: pointer;
-}
-
 .t-toggle-text {
     font-size: 0.9em;
     font-weight: bold;
@@ -4460,8 +4469,7 @@ textarea.t-input {
 }
 
 .t-subtoggle.disabled,
-.t-subtoggle.disabled .t-toggle-label,
-.t-subtoggle.disabled input[type="checkbox"] {
+.t-subtoggle.disabled .t-toggle-label {
     cursor: not-allowed;
 }
 
@@ -5328,12 +5336,6 @@ textarea.t-input {
     .t-history-group .t-toggle-label {
         gap: 6px;
         min-width: 0;
-    }
-
-    .t-history-group .t-toggle-label input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        flex-shrink: 0;
     }
 
     .t-mode-toggle {
@@ -36938,13 +36940,13 @@ function renderHtml(viewData) {
                 <div class="t-history-group">
                     <div class="t-history-toggle" id="t-history-toggle">
                         <label class="t-toggle-label">
-                            <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
+                            <input type="checkbox" id="t-use-history" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
                             <span class="t-toggle-text">\u{1F4DC} \u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
                         </label>
                     </div>
                     <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD">
                         <label class="t-toggle-label">
-                            <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? "checked" : ""}>
+                            <input type="checkbox" id="t-history-ai-only" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.historyAiOnly ? "checked" : ""}>
                             <span class="t-toggle-text">\u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
                         </label>
                     </div>
@@ -37345,13 +37347,13 @@ function renderHtml2(viewData) {
                 <div class="t-history-group">
                     <div class="t-history-toggle" id="t-history-toggle">
                         <label class="t-toggle-label">
-                            <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
+                            <input type="checkbox" id="t-use-history" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
                             <span class="t-toggle-text">\u{1F4DC} \u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
                         </label>
                     </div>
                     <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD">
                         <label class="t-toggle-label">
-                            <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? "checked" : ""}>
+                            <input type="checkbox" id="t-history-ai-only" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.historyAiOnly ? "checked" : ""}>
                             <span class="t-toggle-text">\u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
                         </label>
                     </div>
