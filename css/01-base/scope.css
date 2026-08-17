@@ -5,7 +5,8 @@
    类名前缀猜的，导致：
      - B8：6 个弹窗根没有排版基准，内部 em 相对 ST body(15px) 解析，
            用户的「UI 缩放」设置在这些弹窗内完全失效
-     - B9：.t-model-dialog-box 索性写死 font-family 绕过用户设置
+     - B9：旧 .t-model-dialog-box 曾写死 font-family 绕过用户设置
+           （该弹窗系统确认为死代码，已在 Phase 4 删除）
    挂载点清单见 plan.md §8.2，由审计 A21 清点。
 
    ⚠ 注入 ST DOM 的按钮本体（.titania-inject-btn / .titania-recall-btn）
