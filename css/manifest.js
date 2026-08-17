@@ -36,6 +36,7 @@ export const CSS_LAYERS = [
             'button.css',
             'icon-button.css',
             'field.css',
+            'choice-input.css',
             '_legacy.css',     // ⚠ 旧类名 → 新实现映射，必须在全部组件之后（Phase 7 删除）
         ]
     },

@@ -3332,6 +3332,31 @@ textarea.t-input {
 }
 
 
+/* === 02-components/choice-input.css === */
+/* Native checkbox and radio inputs. Feature CSS owns surrounding layout only. */
+.t-root .t-choice-input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: var(--t-color-brand);
+    cursor: pointer;
+}
+
+.t-root .t-choice-input--lg {
+    width: 18px;
+    height: 18px;
+}
+
+.t-root .t-choice-input:disabled {
+    cursor: not-allowed;
+}
+
+.t-root .t-choice-input--muted-disabled:disabled {
+    opacity: 0.5;
+}
+
+
 /* === 02-components/_legacy.css === */
 /* ============================================================
    02-components/_legacy.css \u2014\u2014 \u65E7\u7C7B\u540D \u2192 \u65B0\u5B9E\u73B0\u6620\u5C04 \u26A0 Phase 7 \u5220\u9664
@@ -8848,18 +8873,6 @@ textarea.t-input {
     background: #2a2a2a;
 }
 
-.t-toolbar-item input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: #bfa15f;
-}
-
-.t-toolbar-item input[type="checkbox"]:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 .t-toolbar-item i {
     font-size: 1.1em;
     width: 24px;
@@ -9251,18 +9264,6 @@ textarea.t-input {
     align-items: center;
     margin: 0;
     cursor: pointer;
-}
-
-.t-header-action-switch input {
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    accent-color: #bfa15f;
-    cursor: pointer;
-}
-
-.t-header-action-switch input:disabled {
-    cursor: not-allowed;
 }
 
 @media (max-width: 600px) {
@@ -18194,7 +18195,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
   }
 });
 
@@ -33198,23 +33199,23 @@ function openSettingsWindow() {
                             </p>
                             <div class="t-toolbar-config" id="t-toolbar-config">
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk" data-btn-id="main" checked disabled>
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="main" checked disabled>
                                     <i class="fa-solid fa-masks-theater" style="color:#74b9ff;"></i>
                                     <span>\u6253\u5F00\u5267\u573A</span>
                                     <span class="t-toolbar-hint">(\u5FC5\u9009)</span>
                                 </label>
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk" data-btn-id="settings">
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="settings">
                                     <i class="fa-solid fa-gear" style="color:#aaa;"></i>
                                     <span>\u8BBE\u7F6E</span>
                                 </label>
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk" data-btn-id="favs">
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="favs">
                                     <i class="fa-solid fa-star" style="color:#ffd93d;"></i>
                                     <span>\u6536\u85CF\u5939</span>
                                 </label>
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk" data-btn-id="scripts">
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="scripts">
                                     <i class="fa-solid fa-scroll" style="color:#bfa15f;"></i>
                                     <span>\u5267\u672C\u7BA1\u7406</span>
                                 </label>
@@ -34689,7 +34690,7 @@ function openSettingsWindow() {
                 <i class="fa-solid ${meta.icon} t-header-action-icon"></i>
                 <span class="t-header-action-label"></span>
                 <label class="t-header-action-switch">
-                    <input type="checkbox" class="t-header-action-chk" data-action-id="${id3}" ${checked ? "checked" : ""}>
+                    <input type="checkbox" class="t-header-action-chk t-choice-input" data-action-id="${id3}" ${checked ? "checked" : ""}>
                 </label>
             </div>`);
       $card.find(".t-header-action-label").text(meta.label);

@@ -1,0 +1,22 @@
+/* Native checkbox and radio inputs. Feature CSS owns surrounding layout only. */
+.t-root .t-choice-input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: var(--t-color-brand);
+    cursor: pointer;
+}
+
+.t-root .t-choice-input--lg {
+    width: 18px;
+    height: 18px;
+}
+
+.t-root .t-choice-input:disabled {
+    cursor: not-allowed;
+}
+
+.t-root .t-choice-input--muted-disabled:disabled {
+    opacity: 0.5;
+}

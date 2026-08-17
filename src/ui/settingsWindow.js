@@ -348,23 +348,23 @@ export function openSettingsWindow() {
                             </p>
                             <div class="t-toolbar-config" id="t-toolbar-config">
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk" data-btn-id="main" checked disabled>
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="main" checked disabled>
                                     <i class="fa-solid fa-masks-theater" style="color:#74b9ff;"></i>
                                     <span>打开剧场</span>
                                     <span class="t-toolbar-hint">(必选)</span>
                                 </label>
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk" data-btn-id="settings">
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="settings">
                                     <i class="fa-solid fa-gear" style="color:#aaa;"></i>
                                     <span>设置</span>
                                 </label>
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk" data-btn-id="favs">
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="favs">
                                     <i class="fa-solid fa-star" style="color:#ffd93d;"></i>
                                     <span>收藏夹</span>
                                 </label>
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk" data-btn-id="scripts">
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="scripts">
                                     <i class="fa-solid fa-scroll" style="color:#bfa15f;"></i>
                                     <span>剧本管理</span>
                                 </label>
@@ -2064,7 +2064,7 @@ export function openSettingsWindow() {
                 <i class="fa-solid ${meta.icon} t-header-action-icon"></i>
                 <span class="t-header-action-label"></span>
                 <label class="t-header-action-switch">
-                    <input type="checkbox" class="t-header-action-chk" data-action-id="${id}" ${checked ? "checked" : ""}>
+                    <input type="checkbox" class="t-header-action-chk t-choice-input" data-action-id="${id}" ${checked ? "checked" : ""}>
                 </label>
             </div>`);
             $card.find(".t-header-action-label").text(meta.label);
