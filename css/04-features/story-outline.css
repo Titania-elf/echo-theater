@@ -10,7 +10,7 @@
     background: linear-gradient(180deg, rgba(12, 18, 24, 0.96), rgba(9, 14, 20, 0.96));
 }
 
-.t-dialog-overlay {
+.t-dialog-overlay--outline {
     position: fixed;
     top: 0;
     right: 0;
@@ -28,7 +28,7 @@
     z-index: 20040;
 }
 
-.t-dialog-box {
+.t-dialog-overlay--outline > .t-dialog-box {
     width: min(920px, 96vw);
     margin: 0 auto;
     max-height: min(82dvh, 82vh);

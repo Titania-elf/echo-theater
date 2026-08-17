@@ -15345,7 +15345,7 @@ body.titania-debug-mode #chat titania-memory::before {
     background: linear-gradient(180deg, rgba(12, 18, 24, 0.96), rgba(9, 14, 20, 0.96));
 }
 
-.t-dialog-overlay {
+.t-dialog-overlay--outline {
     position: fixed;
     top: 0;
     right: 0;
@@ -15363,7 +15363,7 @@ body.titania-debug-mode #chat titania-memory::before {
     z-index: 20040;
 }
 
-.t-dialog-box {
+.t-dialog-overlay--outline > .t-dialog-box {
     width: min(920px, 96vw);
     margin: 0 auto;
     max-height: min(82dvh, 82vh);
@@ -22847,7 +22847,7 @@ function openOpeningSourcePickerDialog(initialChatIndex = -1) {
   return new Promise((resolve) => {
     $("#t-outline-opening-picker").remove();
     const html = `
-        <div id="t-outline-opening-picker" class="t-dialog-overlay t-root">
+        <div id="t-outline-opening-picker" class="t-dialog-overlay t-dialog-overlay--outline t-root">
             <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-comment-dots"></i> \u9009\u62E9\u804A\u5929\u8BB0\u5F55\u53C2\u8003\u6765\u6E90</span>
@@ -22910,7 +22910,7 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
     $("#t-outline-opening-picker").remove();
     $("#t-opening-detail-dialog").remove();
     const html = `
-        <div id="t-outline-opening-picker" class="t-dialog-overlay t-root">
+        <div id="t-outline-opening-picker" class="t-dialog-overlay t-dialog-overlay--outline t-root">
             <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-book-open"></i> \u9009\u62E9\u53C2\u8003\u5F00\u573A\u767D</span>
@@ -22934,7 +22934,7 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
       if (!entry) return;
       $("#t-opening-detail-dialog").remove();
       const detailHtml = `
-            <div id="t-opening-detail-dialog" class="t-dialog-overlay t-root">
+            <div id="t-opening-detail-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
                 <div class="t-dialog-box" style="max-width: 780px; max-height: 84vh;">
                     <div class="t-dialog-header">
                         <span><i class="fa-solid fa-file-lines"></i> \u5F00\u573A\u767D ${entry.openingIndex + 1} \u8BE6\u60C5</span>
@@ -23198,7 +23198,7 @@ async function openPromptTemplateManager() {
     foreshadowing: item.foreshadowing || ""
   }));
   const html = `
-    <div id="t-outline-prompt-manager" class="t-dialog-overlay t-root">
+    <div id="t-outline-prompt-manager" class="t-dialog-overlay t-dialog-overlay--outline t-root">
         <div class="t-dialog-box t-outline-settings-dialog">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-sliders"></i> \u8BBE\u7F6E</span>
@@ -23798,7 +23798,7 @@ function openPlanCreationDialog() {
   const defaultPlanName = createPlanName(getCurrentCharCardName());
   const draftStoryInput = String($("#t-outline-story-input").val() || "").trim();
   const html = `
-    <div id="t-outline-create-plan-dialog" class="t-dialog-overlay t-root">
+    <div id="t-outline-create-plan-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
         <div class="t-dialog-box" style="max-width: 620px; max-height: 84vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-plus"></i> \u65B0\u5EFA\u65B9\u6848</span>
@@ -24143,7 +24143,7 @@ function openOutlineEntryDialog() {
   $("#t-outline-entry-dialog").remove();
   const hasPlans = getPlans().length > 0;
   const html = `
-    <div id="t-outline-entry-dialog" class="t-dialog-overlay t-root">
+    <div id="t-outline-entry-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
         <div class="t-dialog-box" style="max-width: 420px;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-list-check"></i> \u9009\u62E9\u5165\u53E3</span>
@@ -24228,7 +24228,7 @@ function showPlanDetailDialog(planId) {
   if (!plan) return;
   $("#t-outline-plan-detail-dialog").remove();
   const html = `
-    <div id="t-outline-plan-detail-dialog" class="t-dialog-overlay t-root" data-plan-id="${plan.id}">
+    <div id="t-outline-plan-detail-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root" data-plan-id="${plan.id}">
         <div class="t-dialog-box" style="max-width: 900px; max-height: 88vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-open"></i> <span id="t-plan-detail-dialog-title"></span></span>
@@ -24305,7 +24305,7 @@ function showPlanInstructionDialog(plan) {
   const planName = plan.name || "\u672A\u547D\u540D\u65B9\u6848";
   $("#t-outline-plan-instruction-dialog").remove();
   const html = `
-    <div id="t-outline-plan-instruction-dialog" class="t-dialog-overlay t-root">
+    <div id="t-outline-plan-instruction-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
         <div class="t-dialog-box" style="max-width: 780px; max-height: 82vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-file-lines"></i> \u6545\u4E8B\u6307\u4EE4 \xB7 ${escapeHtml4(planName)}</span>
@@ -24523,7 +24523,7 @@ function showRawResponseDialog(rawContent, options = {}) {
   const defaultContent = String(rawContent || lastRawResponse || rawResponseHistory[0]?.content || "");
   $("#t-outline-raw-dialog").remove();
   const html = `
-    <div id="t-outline-raw-dialog" class="t-dialog-overlay t-root">
+    <div id="t-outline-raw-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
         <div class="t-dialog-box" style="max-width: 820px; max-height: 82vh;">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-code"></i> ${escapeHtml4(title)}</span>

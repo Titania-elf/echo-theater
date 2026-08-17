@@ -44,11 +44,9 @@ export function cssLinkId(file) {
  * 现统一从 manifest 解析路径，且 id 与 loadCssFiles 一致 —— 于是开发模式下它
  * 天然成为空操作（文件已由 loadCssFiles 加载），打包模式下补一个 <link>。
  *
- * ⚠ 打包模式下这个后置 <link> 会把该文件重新排到 bundle 之后，从而改变层叠顺序。
- *   lore-review.css:799/815 与 story-outline.css:13/31 都在顶层定义
- *   .t-dialog-overlay / .t-dialog-box，因此「哪个弹窗尺寸生效」取决于最后打开过
- *   哪个窗口（缺陷 B6）。此处刻意保留原行为以保证 Phase 0 视觉零变化，
- *   B6 由 Phase 4 统一 dialog 组件时修复。
+ * 打包模式下的后置 <link> 会改变 feature CSS 的加载顺序，因此 feature 规则必须
+ * 自带作用域。story-outline 的 dialog 尺寸已由 `.t-dialog-overlay--outline`
+ * 限定，不再随 lore/story 窗口的打开顺序变化。
  */
 export function ensureFeatureCss(fileName) {
     const file = cssFileList().find(p => p.endsWith(`/${fileName}`));
