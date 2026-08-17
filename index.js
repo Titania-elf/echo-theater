@@ -2117,6 +2117,12 @@ function loadCssFiles() {
     /* ---- \u5F39\u7A97\u8868\u9762 ---- */
     --t-color-dialog-scrim: rgb(0 0 0 / .7);
     --t-color-dialog-scrim-outline: rgb(0 0 0 / .65);
+    /* \u7A97\u53E3\u5185\u906E\u7F69\u6BD4\u89C6\u53E3\u7EA7\u66F4\u91CD\uFF1A\u906E\u7684\u662F\u63D2\u4EF6\u81EA\u5DF1\u7684\u7A97\u53E3\u5E95\uFF0C\u9700\u8981\u538B\u4F4F\u5E95\u4E0B\u7684\u5185\u5BB9\u3002
+       \u26A0 .8 \u4E0E .85 \u53EA\u5DEE 0.05\uFF0C\u8089\u773C\u51E0\u4E4E\u4E0D\u53EF\u5206\uFF1B\u62C6\u6210\u4E24\u6863\u7EAF\u7CB9\u662F\u4E3A\u4E86\u8BA9
+       .t-imp-modal / .t-img-mgr-overlay \u8FC1\u79FB\u5230\u7EC4\u4EF6\u5C42\u65F6\u9010\u5B57\u8282\u7B49\u4EF7
+       \uFF08\u672C\u9879\u76EE\u6CA1\u6709\u89C6\u89C9\u57FA\u7EBF\uFF0C\u89C1 CLAUDE.md\uFF09\u3002Phase 6 \u7EDF\u4E00 scrim \u9636\u68AF\u65F6\u53EF\u5408\u5E76\u3002 */
+    --t-color-dialog-scrim-strong: rgb(0 0 0 / .8);
+    --t-color-dialog-scrim-strongest: rgb(0 0 0 / .85);
     --t-color-dialog-surface: rgb(30 30 35 / .98);
     --t-color-dialog-close: rgb(var(--t-c-cool-9-rgb));
     --t-color-dialog-close-hover: rgb(var(--t-c-neutral-13-rgb) / .1);
@@ -2984,7 +2990,7 @@ function loadCssFiles() {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--t-color-dialog-scrim);
+    background: var(--t-dialog-scrim, var(--t-color-dialog-scrim));
     z-index: 20001;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
@@ -3000,6 +3006,34 @@ function loadCssFiles() {
     box-sizing: border-box;
     background: var(--t-color-dialog-scrim-outline);
     z-index: 20040;
+}
+
+/* \u7A97\u53E3\u5185\u906E\u7F69 \u2014\u2014 \u94FA\u6EE1\u6700\u8FD1\u7684\u5B9A\u4F4D\u7956\u5148\uFF08\u63D2\u4EF6\u81EA\u5DF1\u7684\u7A97\u53E3\uFF09\u800C\u4E0D\u662F\u89C6\u53E3\u3002
+   \u4E0E\u89C6\u53E3\u7EA7\u906E\u7F69\u7684\u4E24\u5904\u5DEE\u522B\u90FD\u5728\u8FD9\u91CC\u6536\u53E3\uFF1A
+     1) position: absolute \u2014\u2014 \u53EA\u906E\u4F4F\u5BBF\u4E3B\u7A97\u53E3\uFF0C\u7A97\u53E3\u5916\u7684 ST \u754C\u9762\u7167\u5E38\u53EF\u89C1\uFF1B
+     2) \u53BB\u6389 backdrop-filter \u2014\u2014 \u7A97\u53E3\u5185\u906E\u7F69\u82E5\u4FDD\u7559\u6A21\u7CCA\u4F1A\u628A\u5BBF\u4E3B\u7A97\u53E3\u5185\u5BB9\u4E00\u8D77\u7CCA\u6389\uFF1B
+        \u4E14 backdrop-filter \u4F1A\u4E3A\u5185\u90E8 fixed \u540E\u4EE3\u521B\u5EFA\u5305\u542B\u5757\uFF0C\u6539\u53D8\u5176\u5B9A\u4F4D\u57FA\u51C6\u3002
+   scrim \u6DF1\u6D45\u7531\u6D88\u8D39\u8005\u901A\u8FC7 --t-dialog-scrim \u6307\u5B9A\uFF08\u672C\u7EC4\u4EF6\u7684\u9ED8\u8BA4\u503C\u662F .7\uFF09\u3002
+   \u6D88\u8D39\u8005\uFF1A.t-imp-modal\uFF08\u811A\u672C\u7BA1\u7406\u5668 4 \u4E2A\u5F39\u7A97\uFF09\u3001.t-wi-preview-modal\u3001.t-img-mgr-overlay\u3002 */
+.t-dialog-overlay--contained {
+    position: absolute;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* \u6241\u5E73\u5F39\u7A97\u8868\u9762 \u2014\u2014 \u5171\u4EAB\u7684\u300C\u5E95 / \u63CF\u8FB9 / \u5706\u89D2 / \u6295\u5F71\u300D\u56DB\u5143\u7EC4\u3002
+   \u523B\u610F**\u4E0D\u505A** .t-dialog-box \u7684\u4FEE\u9970\u7C7B\uFF1A.t-dialog-box \u8FD8\u5E26\u7740
+   width / max-width / max-height / overflow / display / flex-direction \u4E00\u6574\u5957\u5E03\u5C40\uFF0C
+   \u800C\u8FD9\u4E09\u4E2A\u6D88\u8D39\u8005\u7684\u5C3A\u5BF8\u4E0E\u5185\u90E8\u6392\u5217\u5404\u4E0D\u76F8\u540C\uFF08400px \u5B9A\u5BBD\u5757 / 90%+max-height 70% /
+   600px+70vh\uFF09\uFF0C\u5957\u57FA\u7C7B\u4F1A\u8FEB\u4F7F feature \u53CD\u5411\u4E2D\u548C 6 \u6761\u5E03\u5C40\u58F0\u660E \u2014\u2014 \u58F0\u660E\u603B\u6570\u53CD\u800C\u4E0A\u5347\u3002
+   \u6D88\u8D39\u8005\uFF1A.t-imp-box\u3001.t-wi-preview-box\u3001.t-img-mgr-box\u3002
+   \u4E09\u8005\u539F\u672C\u7684 background / border / border-radius \u9010\u5B57\u8282\u76F8\u540C\uFF08#1e1e1e / #444 / 8px\uFF09\u3002
+   \u6295\u5F71\u9ED8\u8BA4 --t-shadow-lg\uFF0C\u56FE\u9274\u7BA1\u7406\u7528 --t-dialog-panel-shadow \u62AC\u5230 --t-shadow-xl\u3002 */
+.t-dialog-panel {
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-container);
+    box-shadow: var(--t-dialog-panel-shadow, var(--t-shadow-lg));
 }
 
 .t-dialog-box {
@@ -3094,6 +3128,12 @@ function loadCssFiles() {
         bottom: 0;
         padding: 10px;
         box-sizing: border-box;
+    }
+
+    /* \u7A97\u53E3\u5185\u906E\u7F69\u4E0D\u9700\u8981\u8FD9\u5C42\u89C6\u53E3\u8FB9\u8DDD\uFF1A\u5BBF\u4E3B\u7A97\u53E3\u672C\u8EAB\u5DF2\u7ECF\u6709\u5916\u8FB9\u8DDD\uFF0C
+       \u518D\u52A0 10px \u4F1A\u628A\u5C45\u4E2D\u7684\u8868\u9762\u6324\u5C0F\u4E00\u5708\uFF08\u8FC1\u79FB\u524D\u8FD9\u4E09\u4E2A\u5F39\u7A97\u6CA1\u6709 padding\uFF09\u3002 */
+    .t-dialog-overlay--contained {
+        padding: 0;
     }
 
     .t-dialog-overlay--outline {
@@ -6176,17 +6216,10 @@ textarea.t-input {
     background: rgba(144, 205, 244, 0.1);
 }
 
-/* \u9884\u89C8\u5F39\u7A97 */
+/* \u9884\u89C8\u5F39\u7A97 \u2014\u2014 \u906E\u7F69\u4E0E\u8868\u9762\u57FA\u7840\u89C1 02-components/dialog.css
+   \uFF08.t-dialog-overlay + .t-dialog-overlay--contained / .t-dialog-panel\uFF09\u3002
+   scrim \u7528\u7EC4\u4EF6\u9ED8\u8BA4\u7684 .7\uFF0C\u6545\u4E0D\u8BBE --t-dialog-scrim\u3002 */
 .t-wi-preview-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     z-index: 3100;
     animation: t-fade-in 0.15s;
 }
@@ -6195,12 +6228,8 @@ textarea.t-input {
     width: 90%;
     max-width: 550px;
     max-height: 70%;
-    background: #1e1e1e;
-    border: 1px solid #444;
-    border-radius: 8px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .t-wi-preview-header {
@@ -9813,28 +9842,21 @@ textarea.t-input {
     border-radius: 0 0 8px 8px;
 }
 
-/* \u5BFC\u5165 Modal */
+/* \u5BFC\u5165 Modal \u2014\u2014 \u906E\u7F69\u4E0E\u8868\u9762\u57FA\u7840\u89C1 02-components/dialog.css
+   \uFF08.t-dialog-overlay + .t-dialog-overlay--contained / .t-dialog-panel\uFF09\u3002
+   \u8FD9\u91CC\u53EA\u4FDD\u7559\u4E1A\u52A1\u5DEE\u5F02\uFF1Ascrim \u6DF1\u6D45\u3001\u5806\u53E0\u5C42\u7EA7\u3001\u521D\u59CB\u9690\u85CF\u3002 */
 .t-imp-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    --t-dialog-scrim: var(--t-color-dialog-scrim-strong);
     z-index: 2000;
+    /* \u521D\u59CB\u9690\u85CF\uFF1BJS \u7528 .css("display","flex") / .hide() \u5207\u6362\uFF0C
+       \u5C45\u4E2D\u7531\u7EC4\u4EF6\u5C42\u7684 align-items / justify-content \u63D0\u4F9B\u3002 */
     display: none;
-    justify-content: center;
-    align-items: center;
 }
 
 .t-imp-box {
     width: 400px;
     max-width: 90%;
-    background: #1e1e1e;
-    border: 1px solid #444;
-    border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .t-imp-row {
@@ -11405,31 +11427,22 @@ textarea.t-input {
     box-sizing: border-box;
 }
 
-/* \u56FE\u9274\u7BA1\u7406 overlay */
+/* \u56FE\u9274\u7BA1\u7406 overlay \u2014\u2014 \u906E\u7F69\u4E0E\u8868\u9762\u57FA\u7840\u89C1 02-components/dialog.css
+   \uFF08.t-dialog-overlay + .t-dialog-overlay--contained / .t-dialog-panel\uFF09\u3002 */
 .t-img-mgr-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.85);
+    --t-dialog-scrim: var(--t-color-dialog-scrim-strongest);
     z-index: 50;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     animation: t-fade-in 0.2s;
 }
 
 .t-img-mgr-box {
+    /* \u56FE\u9274\u8868\u9762\u6BD4\u53E6\u4E24\u4E2A\u6D88\u8D39\u8005\u6295\u5F71\u66F4\u91CD\uFF08\u539F 0 10px 40px rgba(0,0,0,.8)\uFF09 */
+    --t-dialog-panel-shadow: var(--t-shadow-xl);
     width: 600px;
     max-width: 95%;
     height: 70vh;
-    background: #1e1e1e;
-    border: 1px solid #444;
-    border-radius: 8px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
 }
 
 .t-img-list {
@@ -21064,8 +21077,8 @@ function openCharImageManager(onCloseCallback) {
     return foundAvatar;
   };
   const html = `
-    <div class="t-img-mgr-overlay t-root" id="t-img-mgr">
-        <div class="t-img-mgr-box">
+    <div class="t-dialog-overlay t-dialog-overlay--contained t-img-mgr-overlay t-root" id="t-img-mgr">
+        <div class="t-dialog-panel t-img-mgr-box">
             <div class="t-header">
                 <span class="t-title-main">\u{1F5BC}\uFE0F \u89D2\u8272\u56FE\u9274\u7BA1\u7406</span>
                 <span class="t-close" id="t-img-close">&times;</span>
@@ -35334,8 +35347,8 @@ function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-imp-modal" class="t-imp-modal t-root">
-            <div class="t-imp-box">
+        <div id="t-imp-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u{1F4E5} \u5BFC\u5165\u5267\u672C</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u5B58\u5165\u5206\u7C7B:</span>
@@ -35357,8 +35370,8 @@ function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-export-modal" class="t-imp-modal t-root">
-            <div class="t-imp-box">
+        <div id="t-export-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u{1F4E4} \u5BFC\u51FA\u5267\u672C</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u5BFC\u51FA\u8303\u56F4:</span>
@@ -35386,8 +35399,8 @@ function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-move-modal" class="t-imp-modal t-root">
-            <div class="t-imp-box">
+        <div id="t-move-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u{1F4C1} \u79FB\u52A8\u5230\u5206\u7C7B</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u76EE\u6807\u5206\u7C7B:</span>
@@ -35401,8 +35414,8 @@ function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-cat-rename-modal" class="t-imp-modal t-root">
-            <div class="t-imp-box">
+        <div id="t-cat-rename-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u270F\uFE0F \u91CD\u547D\u540D\u5206\u7C7B</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u5F53\u524D\u5206\u7C7B: <span id="t-rename-old" style="color:#bfa15f;"></span></span>
@@ -38937,8 +38950,8 @@ async function openWorldInfoSelector() {
   const showEntryPreview = (title, content) => {
     $q(".t-wi-preview-modal").remove();
     const $modal = $(`
-            <div class="t-wi-preview-modal t-root">
-                <div class="t-wi-preview-box">
+            <div class="t-dialog-overlay t-dialog-overlay--contained t-wi-preview-modal t-root">
+                <div class="t-dialog-panel t-wi-preview-box">
                     <div class="t-wi-preview-header">
                         <span class="t-wi-preview-title">${title}</span>
                         <span class="t-wi-preview-close">&times;</span>

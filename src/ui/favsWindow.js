@@ -2180,8 +2180,8 @@ export function openCharImageManager(onCloseCallback) {
 
     // HTML 结构 (样式见 css/favs.css)
     const html = `
-    <div class="t-img-mgr-overlay t-root" id="t-img-mgr">
-        <div class="t-img-mgr-box">
+    <div class="t-dialog-overlay t-dialog-overlay--contained t-img-mgr-overlay t-root" id="t-img-mgr">
+        <div class="t-dialog-panel t-img-mgr-box">
             <div class="t-header">
                 <span class="t-title-main">🖼️ 角色图鉴管理</span>
                 <span class="t-close" id="t-img-close">&times;</span>

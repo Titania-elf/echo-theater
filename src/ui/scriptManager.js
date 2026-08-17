@@ -113,8 +113,8 @@ export function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-imp-modal" class="t-imp-modal t-root">
-            <div class="t-imp-box">
+        <div id="t-imp-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📥 导入剧本</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">存入分类:</span>
@@ -136,8 +136,8 @@ export function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-export-modal" class="t-imp-modal t-root">
-            <div class="t-imp-box">
+        <div id="t-export-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📤 导出剧本</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">导出范围:</span>
@@ -165,8 +165,8 @@ export function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-move-modal" class="t-imp-modal t-root">
-            <div class="t-imp-box">
+        <div id="t-move-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📁 移动到分类</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">目标分类:</span>
@@ -180,8 +180,8 @@ export function openScriptManager() {
             </div>
         </div>
         
-        <div id="t-cat-rename-modal" class="t-imp-modal t-root">
-            <div class="t-imp-box">
+        <div id="t-cat-rename-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">✏️ 重命名分类</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">当前分类: <span id="t-rename-old" style="color:#bfa15f;"></span></span>

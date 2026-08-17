@@ -50,6 +50,12 @@
     /* ---- 弹窗表面 ---- */
     --t-color-dialog-scrim: rgb(0 0 0 / .7);
     --t-color-dialog-scrim-outline: rgb(0 0 0 / .65);
+    /* 窗口内遮罩比视口级更重：遮的是插件自己的窗口底，需要压住底下的内容。
+       ⚠ .8 与 .85 只差 0.05，肉眼几乎不可分；拆成两档纯粹是为了让
+       .t-imp-modal / .t-img-mgr-overlay 迁移到组件层时逐字节等价
+       （本项目没有视觉基线，见 CLAUDE.md）。Phase 6 统一 scrim 阶梯时可合并。 */
+    --t-color-dialog-scrim-strong: rgb(0 0 0 / .8);
+    --t-color-dialog-scrim-strongest: rgb(0 0 0 / .85);
     --t-color-dialog-surface: rgb(30 30 35 / .98);
     --t-color-dialog-close: rgb(var(--t-c-cool-9-rgb));
     --t-color-dialog-close-hover: rgb(var(--t-c-neutral-13-rgb) / .1);

@@ -1915,17 +1915,10 @@
     background: rgba(144, 205, 244, 0.1);
 }
 
-/* 预览弹窗 */
+/* 预览弹窗 —— 遮罩与表面基础见 02-components/dialog.css
+   （.t-dialog-overlay + .t-dialog-overlay--contained / .t-dialog-panel）。
+   scrim 用组件默认的 .7，故不设 --t-dialog-scrim。 */
 .t-wi-preview-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     z-index: 3100;
     animation: t-fade-in 0.15s;
 }
@@ -1934,12 +1927,8 @@
     width: 90%;
     max-width: 550px;
     max-height: 70%;
-    background: #1e1e1e;
-    border: 1px solid #444;
-    border-radius: 8px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .t-wi-preview-header {

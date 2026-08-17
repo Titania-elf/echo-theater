@@ -13,7 +13,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--t-color-dialog-scrim);
+    background: var(--t-dialog-scrim, var(--t-color-dialog-scrim));
     z-index: 20001;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
@@ -29,6 +29,34 @@
     box-sizing: border-box;
     background: var(--t-color-dialog-scrim-outline);
     z-index: 20040;
+}
+
+/* 窗口内遮罩 —— 铺满最近的定位祖先（插件自己的窗口）而不是视口。
+   与视口级遮罩的两处差别都在这里收口：
+     1) position: absolute —— 只遮住宿主窗口，窗口外的 ST 界面照常可见；
+     2) 去掉 backdrop-filter —— 窗口内遮罩若保留模糊会把宿主窗口内容一起糊掉；
+        且 backdrop-filter 会为内部 fixed 后代创建包含块，改变其定位基准。
+   scrim 深浅由消费者通过 --t-dialog-scrim 指定（本组件的默认值是 .7）。
+   消费者：.t-imp-modal（脚本管理器 4 个弹窗）、.t-wi-preview-modal、.t-img-mgr-overlay。 */
+.t-dialog-overlay--contained {
+    position: absolute;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* 扁平弹窗表面 —— 共享的「底 / 描边 / 圆角 / 投影」四元组。
+   刻意**不做** .t-dialog-box 的修饰类：.t-dialog-box 还带着
+   width / max-width / max-height / overflow / display / flex-direction 一整套布局，
+   而这三个消费者的尺寸与内部排列各不相同（400px 定宽块 / 90%+max-height 70% /
+   600px+70vh），套基类会迫使 feature 反向中和 6 条布局声明 —— 声明总数反而上升。
+   消费者：.t-imp-box、.t-wi-preview-box、.t-img-mgr-box。
+   三者原本的 background / border / border-radius 逐字节相同（#1e1e1e / #444 / 8px）。
+   投影默认 --t-shadow-lg，图鉴管理用 --t-dialog-panel-shadow 抬到 --t-shadow-xl。 */
+.t-dialog-panel {
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-container);
+    box-shadow: var(--t-dialog-panel-shadow, var(--t-shadow-lg));
 }
 
 .t-dialog-box {
@@ -123,6 +151,12 @@
         bottom: 0;
         padding: 10px;
         box-sizing: border-box;
+    }
+
+    /* 窗口内遮罩不需要这层视口边距：宿主窗口本身已经有外边距，
+       再加 10px 会把居中的表面挤小一圈（迁移前这三个弹窗没有 padding）。 */
+    .t-dialog-overlay--contained {
+        padding: 0;
     }
 
     .t-dialog-overlay--outline {

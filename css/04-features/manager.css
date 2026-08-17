@@ -416,28 +416,21 @@
     border-radius: 0 0 8px 8px;
 }
 
-/* 导入 Modal */
+/* 导入 Modal —— 遮罩与表面基础见 02-components/dialog.css
+   （.t-dialog-overlay + .t-dialog-overlay--contained / .t-dialog-panel）。
+   这里只保留业务差异：scrim 深浅、堆叠层级、初始隐藏。 */
 .t-imp-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    --t-dialog-scrim: var(--t-color-dialog-scrim-strong);
     z-index: 2000;
+    /* 初始隐藏；JS 用 .css("display","flex") / .hide() 切换，
+       居中由组件层的 align-items / justify-content 提供。 */
     display: none;
-    justify-content: center;
-    align-items: center;
 }
 
 .t-imp-box {
     width: 400px;
     max-width: 90%;
-    background: #1e1e1e;
-    border: 1px solid #444;
-    border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .t-imp-row {
