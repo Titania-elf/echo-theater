@@ -72,6 +72,11 @@ export const CSS_LAYERS = [
             'continuation.css',     // .t-cont-* / .t-continuation-*  主动续写
             'queue.css',            // .t-queue-*  队列设置窗口与进度条
             'content-editor.css',   // .t-ce-*   内容编辑器
+            // ST 扩展设置抽屉 + 更新弹窗。原先一半在 settings.css 前 273 行、
+            // 一半在 settings.html 的内联 <style> 里（缺陷 B10），Phase 4g 合并至此。
+            // 内联 <style> 原在 body,层叠上晚于 head 注入的插件 CSS;这里的选择器
+            // 全库仅此一处定义、宿主与其余第三方扩展亦无同名类,故位置无影响。
+            'settings-drawer.css',
             'settings.css',
             'manager.css',
             'workshop.css',    // ← dom.js 原先漏掉的文件(B1)

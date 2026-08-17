@@ -9396,8 +9396,27 @@ textarea.t-input {
 
 
 
-/* === 04-features/settings.css === */
-/* css/04-features/settings.css - \u8BBE\u7F6E\u7A97\u53E3 */
+/* === 04-features/settings-drawer.css === */
+/* css/04-features/settings-drawer.css - ST \u6269\u5C55\u8BBE\u7F6E\u62BD\u5C49
+ *
+ * \u4F5C\u7528\u57DF\uFF1A\`#extensions_settings2\` \u5185\u7531 settings.html \u6CE8\u5165\u7684\u62BD\u5C49\uFF0C\u4EE5\u53CA\u66F4\u65B0\u5F39\u7A97\u3002
+ * \u8FD9\u4E9B\u5143\u7D20\u6CE8\u5165\u8FDB ST \u81EA\u5DF1\u7684 DOM\uFF0C\u4F9D ADR-02 **\u4E0D\u52A0 \`.t-root\`**\u3001\u4E5F\u4E0D\u8FDB\u7EC4\u4EF6\u4F53\u7CFB
+ * \uFF08plan.md:659\uFF1A\`.titania-mini-btn\` \u9700\u4E0E ST \u62BD\u5C49\u89C2\u611F\u4E00\u81F4\uFF09\u3002
+ *
+ * \u672C\u6587\u4EF6\u5408\u5E76\u4E86\u539F\u5148\u5206\u5C45\u4E24\u5904\u7684\u540C\u4E00\u7EC4\u4EF6\uFF08\u7F3A\u9677 B10\uFF09\uFF1A
+ *   - \u4E0A\u534A\u90E8\u5206\u6765\u81EA settings.css \u7684\u524D 273 \u884C\uFF08\u66F4\u65B0\u5361\u7247 / \u66F4\u65B0\u5F39\u7A97\uFF09\uFF1B
+ *   - \u4E0B\u534A\u90E8\u5206\u6765\u81EA settings.html \u5185\u8054 \`<style>\`\uFF08\u62BD\u5C49\u5916\u58F3 / \u5F00\u5173\u884C / .titania-mini-btn\uFF09\u3002
+ *
+ * \u26A0 \u4E24\u90E8\u5206\u7684\u5148\u540E\u987A\u5E8F\u4E0D\u53EF\u5BF9\u8C03\u3002\`.titania-update-check\` \u4E0E \`.titania-mini-btn\`
+ *   \u90FD\u662F (0,1,0) \u4E14\u540C\u65F6\u547D\u4E2D\u68C0\u67E5\u6309\u94AE\uFF0C\u4E8C\u8005\u7684 \`padding\` \u51B2\u7A81\uFF08\`0\` vs \`0 10px\`\uFF09
+ *   \u539F\u5148\u9760\u300Cbody \u5185\u8054 style \u665A\u4E8E head\u300D\u7531\u540E\u8005\u80DC\u51FA\u3002\u5408\u5E76\u540E\u6539\u7531\u672C\u6587\u4EF6\u5185\u7684\u987A\u5E8F\u51B3\u5B9A\uFF0C
+ *   \u6545 settings.css \u5757\u5FC5\u987B\u5728\u524D\u3001settings.html \u5757\u5FC5\u987B\u5728\u540E\u3002
+ *
+ * \u4F4D\u7F6E\u65E0\u5173\u6027\uFF1A\u672C\u6587\u4EF6\u7684\u5168\u90E8\u9009\u62E9\u5668\uFF08.titania-update-* / .titania-mini-btn /
+ * .titania-panel-* / .titania-switch-* / .titania-backup-* / .titania-card-title /
+ * .titania-version-badge / #titania-settings-drawer\uFF09\u5728 css/ \u4E2D\u4EC5\u6B64\u4E00\u5904\u5B9A\u4E49\uFF0C
+ * \u5BBF\u4E3B ST \u4E0E\u5176\u4F59 6 \u4E2A\u7B2C\u4E09\u65B9\u6269\u5C55\u5747\u65E0\u540C\u540D\u7C7B\uFF0C\u6545\u672C\u6587\u4EF6\u5728\u6E05\u5355\u4E2D\u7684\u4F4D\u7F6E\u4E0D\u5F71\u54CD\u5C42\u53E0\u3002
+ */
 
 .titania-update-card {
     border-color: rgba(98, 217, 188, 0.28);
@@ -9670,6 +9689,132 @@ textarea.t-input {
         padding: 12px 16px 14px;
     }
 }
+
+/* ===== \u4EE5\u4E0B\u8FC1\u81EA settings.html \u7684\u5185\u8054 <style>\uFF08\u4FEE B10\uFF09===== */
+
+#titania-settings-drawer .inline-drawer-content {
+    padding-top: 10px;
+}
+
+.titania-header-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.titania-panel-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.titania-panel-card {
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+}
+
+.titania-card-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #d8e4f0;
+}
+
+.titania-switch-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.titania-switch-row:last-child {
+    margin-bottom: 0;
+}
+
+.titania-switch-text {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.titania-switch-main {
+    color: #dce7f3;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.titania-switch-text small {
+    color: #93a8bb;
+    line-height: 1.4;
+    font-size: 11px;
+}
+
+.titania-version-badge {
+    background: rgba(100, 100, 100, 0.3);
+    color: #888;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.titania-backup-desc {
+    color: #93a8bb;
+    line-height: 1.45;
+    font-size: 11px;
+    margin-bottom: 8px;
+}
+
+.titania-backup-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.titania-mini-btn {
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.03);
+    color: #d5e2ef;
+    border-radius: 8px;
+    min-height: 30px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.titania-mini-btn.is-export {
+    border-color: rgba(85, 239, 196, 0.65);
+    color: #72efd0;
+}
+
+.titania-mini-btn.is-import {
+    border-color: rgba(144, 205, 244, 0.65);
+    color: #9acff5;
+}
+
+.titania-mini-btn:hover:not(:disabled) {
+    filter: brightness(1.06);
+}
+
+.titania-mini-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+/* === 04-features/settings.css === */
+/* css/04-features/settings.css - \u63D2\u4EF6\u81EA\u5DF1\u7684\u8BBE\u7F6E\u7A97\u53E3\uFF08#t-settings-view\uFF09
+ * ST \u6269\u5C55\u62BD\u5C49\u4E0E\u66F4\u65B0\u5F39\u7A97\u5DF2\u8FC1\u5F80 settings-drawer.css\uFF08\u4FEE B10\uFF09\u3002 */
 
 #t-settings-view {
     width: 800px;
@@ -18735,7 +18880,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/wi-selector.css", "04-features/continuation.css", "04-features/queue.css", "04-features/content-editor.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/wi-selector.css", "04-features/continuation.css", "04-features/queue.css", "04-features/content-editor.css", "04-features/settings-drawer.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
   }
 });
 

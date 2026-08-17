@@ -4,8 +4,8 @@
       "title": "manifest.js 与磁盘双向一致",
       "violations": 0,
       "metrics": {
-        "清单文件数": 39,
-        "磁盘文件数": 39
+        "清单文件数": 40,
+        "磁盘文件数": 40
       }
     },
     "A15": {
@@ -75,8 +75,7 @@
         "  01-base": "hex 18 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
         "  03-layout": "hex 0 / rgb 0",
-        "  04-features": "hex 1091 / rgb 797",
-        "  (内嵌 HTML)": "hex 8 / rgb 8"
+        "  04-features": "hex 1099 / rgb 805"
       }
     },
     "A2": {
@@ -177,7 +176,7 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16891,
+    "CSS 总行数": 16913,
     "规则条数": 2217,
     "border-radius 声明 / 不同值": "342 / 43",
     "box-shadow 声明 / 不同值": "116 / 87",
