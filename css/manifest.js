@@ -65,6 +65,13 @@ export const CSS_LAYERS = [
             // 全部只被 mainWindow.js 消费、剧本管理器一个都不用（Phase 4c 拆出）。
             // 位置按归属排；这些类全库仅此一处定义，故位置对层叠无影响。
             'script-picker.css',
+            // Phase 4f 从 main-window.css 按类名前缀拆出（纯搬运）。必须排在
+            // main-window-legacy.css **之后**才能满足 A15；这是安全的 ——
+            // legacy 只覆盖底栏 / run 按钮 / 工具面板一族，不碰这四个家族。
+            'wi-selector.css',      // .t-wi-*   世界书条目选择器
+            'continuation.css',     // .t-cont-* / .t-continuation-*  主动续写
+            'queue.css',            // .t-queue-*  队列设置窗口与进度条
+            'content-editor.css',   // .t-ce-*   内容编辑器
             'settings.css',
             'manager.css',
             'workshop.css',    // ← dom.js 原先漏掉的文件(B1)

@@ -1,0 +1,881 @@
+/* ============================================================
+   04-features/continuation.css —— 主动续写（上下文选择 + 聊天历史）
+
+   Phase 4f 从 main-window.css 按类名前缀 `.t-cont-` / `.t-continuation-`
+   拆出（纯搬运，声明未改）。
+   ============================================================ */
+
+/* 主动续写历史管理模式 */
+.t-cont-history-heading {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.t-cont-history-heading strong,
+.t-cont-history-heading span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-cont-history-heading span {
+    color: #888;
+    font-size: 12px;
+}
+
+.t-cont-history-scope {
+    max-width: 92px;
+    height: 30px;
+    padding: 0 6px;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    background: #242424;
+    color: #ccc;
+    font-size: 11px;
+}
+
+.t-cont-select-wrap {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+}
+
+.t-cont-history-panel.is-managing .t-cont-history-session-toggle,
+.t-cont-history-panel.is-managing .t-cont-history-branch-title,
+.t-cont-history-panel.is-managing .t-cont-history-round-head {
+    gap: 6px;
+}
+
+.t-cont-history-panel.is-managing .t-cont-history-session-toggle {
+    cursor: default;
+}
+
+/* 分支标题在批量管理下仍可折叠，保留指针以示可点 */
+.t-cont-history-panel.is-managing .t-cont-history-branch-title {
+    cursor: pointer;
+}
+
+.t-cont-history-bulk-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border-top: 1px solid #333;
+    background: #181818;
+    flex-shrink: 0;
+}
+
+.t-cont-history-bulk-bar span {
+    color: #aaa;
+    font-size: 12px;
+}
+
+.t-cont-history-bulk-bar .danger {
+    color: #ffd6d6;
+    border-color: rgba(248, 113, 113, .45);
+    background: rgba(185, 28, 28, .18);
+}
+
+@media (max-width: 620px) {
+.t-cont-history-heading span {
+        display: none;
+    }
+
+.t-cont-history-header-actions .t-btn {
+        padding: 5px 7px;
+        --t-btn-font-size: 12px;
+    }
+}
+
+.t-continuation-stack {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+/* 快捷指令行：左边可横滑，右边固定住编辑器和工具两个入口。
+   固定在右侧而不是左侧 —— 左侧固定会挡住「还能往右滑」的暗示，
+   而且快捷指令才是这一行的主体，该先被看到。 */
+.t-continuation-shortcuts-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.t-continuation-shortcuts {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.t-continuation-shortcuts-fixed {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+.t-continuation-shortcuts::-webkit-scrollbar {
+    display: none;
+}
+
+.t-continuation-quick {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    position: relative;
+    border: 1px solid #3a3a3a;
+    border-radius: 7px;
+    background: #222;
+}
+
+.t-continuation-history-btn,
+.t-continuation-context-btn,
+.t-continuation-send {
+    height: 36px;
+    margin: 0 4px;
+    padding: 0 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #888;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.t-continuation-history-btn:hover,
+.t-continuation-context-btn:hover,
+.t-continuation-context-btn.active {
+    background: #303030;
+    color: #ddd;
+}
+
+.t-continuation-input-wrap {
+    min-width: 0;
+    flex: 1;
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.t-continuation-input-wrap textarea {
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+    padding: 11px 8px 9px;
+    resize: none;
+    overflow-y: auto;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #eee;
+    font: inherit;
+    font-size: 13px;
+    line-height: 18px;
+    box-sizing: border-box;
+}
+
+.t-continuation-input-wrap textarea::placeholder {
+    color: #777;
+}
+
+.t-continuation-input-wrap textarea:focus {
+    box-shadow: none;
+}
+
+.t-continuation-quick:focus-within {
+    border-color: rgba(191, 161, 95, .58);
+}
+
+.t-continuation-send {
+    width: 38px;
+    margin-left: 0;
+    background: #bfa15f;
+    color: #171717;
+}
+
+.t-continuation-send:hover:not(:disabled) {
+    background: #d0b575;
+}
+
+.t-continuation-send.is-stop {
+    border-color: rgba(255, 107, 107, .55);
+    background: #d95757;
+    color: #fff;
+}
+
+.t-continuation-send.is-stop:hover {
+    background: #e86868;
+}
+
+/* 重演：跟发送键同规格。发送是主操作用实心，重演用描边，
+   两个挨着才不会误点 */
+.t-continuation-replay {
+    height: 36px;
+    width: 34px;
+    margin: 0 2px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border: 1px solid #3f3f3f;
+    border-radius: 5px;
+    background: transparent;
+    color: #999;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color .18s, color .18s, background .18s;
+}
+
+.t-continuation-replay:hover:not(:disabled) {
+    border-color: rgba(191, 161, 95, .55);
+    background: #2b2b2b;
+    color: #d0b575;
+}
+
+.t-continuation-replay:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.t-continuation-replay:disabled,
+.t-continuation-send:disabled,
+.t-continuation-history-btn:disabled,
+.t-continuation-context-btn:disabled,
+.t-continuation-input-wrap textarea:disabled {
+    cursor: not-allowed;
+    opacity: .42;
+}
+
+.t-continuation-context-popover {
+    position: absolute;
+    z-index: 120;
+    bottom: calc(100% + 9px);
+    border: 1px solid #444;
+    border-radius: 7px;
+    background: #1d1d1d;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, .48);
+}
+
+.t-continuation-context-popover[hidden] {
+    display: none;
+}
+
+.t-continuation-context-popover {
+    right: 46px;
+    width: 248px;
+    padding: 12px;
+}
+
+.t-continuation-context-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.t-continuation-context-head strong {
+    color: #eee;
+    font-size: 13px;
+}
+
+.t-continuation-context-head span,
+.t-continuation-context-stats {
+    color: #888;
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+.t-continuation-stepper {
+    margin: 12px 0 10px;
+    display: grid;
+    grid-template-columns: 34px 1fr 34px;
+    align-items: center;
+    gap: 8px;
+}
+
+.t-continuation-stepper button {
+    width: 34px;
+    height: 32px;
+    border: 1px solid #444;
+    border-radius: 5px;
+    background: #292929;
+    color: #ccc;
+    cursor: pointer;
+}
+
+.t-continuation-stepper button:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+.t-continuation-stepper span {
+    color: #bbb;
+    font-size: 12px;
+    text-align: center;
+}
+
+.t-continuation-stepper strong {
+    color: #bfa15f;
+    font-size: 17px;
+}
+
+.t-continuation-context-stats.is-warning {
+    color: #ff7675;
+}
+
+@media screen and (max-width: 600px) {
+.t-continuation-stack {
+        gap: 6px;
+    }
+
+.t-continuation-quick {
+        height: 46px;
+    }
+
+.t-continuation-history-btn {
+        width: 38px;
+        height: 42px;
+        margin: 0 2px;
+        padding: 0 5px;
+    }
+
+.t-continuation-input-wrap textarea {
+        height: 42px;
+        padding: 12px 5px 10px;
+        font-size: 12px;
+    }
+
+.t-continuation-context-btn {
+        width: 38px;
+        height: 42px;
+        margin: 0;
+        padding: 0;
+        font-size: 13px;
+    }
+
+.t-continuation-context-btn i {
+        display: none;
+    }
+
+.t-continuation-send {
+        width: 38px;
+        height: 42px;
+        margin-right: 4px;
+        padding: 0;
+    }
+
+.t-continuation-context-popover {
+        position: fixed;
+        left: 8px;
+        right: 8px;
+        bottom: 62px;
+        width: auto;
+        box-sizing: border-box;
+    }
+}
+
+.t-cont-inline-actions {
+    position: absolute;
+    right: 10px;
+    bottom: 24px;
+    z-index: 155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px 3px 8px;
+    border: 1px solid rgba(191, 161, 95, 0.16);
+    border-radius: 999px;
+    background: rgba(12, 12, 12, 0.72);
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 10px;
+    backdrop-filter: blur(5px);
+    opacity: 0.45;
+    transition: opacity 0.2s, border-color 0.2s;
+}
+
+.t-cont-inline-actions:hover {
+    opacity: 1;
+    border-color: rgba(191, 161, 95, 0.45);
+}
+
+.t-cont-inline-actions button {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #bfa15f;
+    cursor: pointer;
+}
+
+.t-cont-inline-actions button:hover {
+    background: rgba(191, 161, 95, 0.15);
+}
+
+.t-cont-inline-actions.is-menu-open {
+    opacity: 1;
+    border-color: rgba(191, 161, 95, 0.45);
+}
+
+.t-cont-inline-actions.is-menu-open > #t-cont-inline-branch {
+    background: rgba(191, 161, 95, 0.2);
+    transform: rotate(90deg);
+}
+
+#t-cont-inline-branch {
+    transition: background 0.18s, transform 0.18s;
+}
+
+.t-cont-inline-branch-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px) scale(0.96);
+    transform-origin: bottom right;
+    transition: visibility 0.18s, opacity 0.18s, transform 0.18s;
+}
+
+.t-cont-inline-actions.is-menu-open .t-cont-inline-branch-menu {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+.t-cont-inline-branch-option {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.t-cont-inline-branch-option span {
+    padding: 4px 8px;
+    border: 1px solid rgba(191, 161, 95, 0.22);
+    border-radius: 999px;
+    background: rgba(12, 12, 12, 0.88);
+    color: #c9b98f;
+    font-size: 10px;
+    line-height: 1.2;
+    backdrop-filter: blur(5px);
+}
+
+.t-cont-inline-actions .t-cont-inline-branch-option button {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: 1px solid rgba(191, 161, 95, 0.35);
+    background: rgba(18, 18, 18, 0.92);
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.35);
+}
+
+.t-cont-inline-actions .t-cont-inline-branch-option button:hover {
+    border-color: rgba(191, 161, 95, 0.7);
+    background: rgba(191, 161, 95, 0.2);
+}
+
+.t-cont-regeneration-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 11px;
+    border: 1px solid rgba(191, 161, 95, 0.35);
+    border-radius: 8px;
+    background: rgba(191, 161, 95, 0.08);
+    color: #cbbd9e;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* ===== 主动续写聊天历史 ===== */
+.t-cont-history-panel {
+    position: absolute;
+    inset: 12px;
+    z-index: 3100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #464138;
+    border-radius: 12px;
+    background: #151515;
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.72);
+}
+
+.t-cont-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 52px;
+    padding: 0 16px;
+    border-bottom: 1px solid #333;
+    background: #1d1d1d;
+}
+
+.t-cont-history-header>div,
+.t-cont-history-round-head,
+.t-cont-history-round-title,
+.t-cont-history-actions {
+    display: flex;
+    align-items: center;
+}
+
+.t-cont-history-header>div {
+    gap: 9px;
+}
+
+.t-cont-history-header .t-cont-history-header-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.t-cont-history-header-actions .t-btn {
+    padding: 5px 8px;
+    --t-btn-color: #a98888;
+    --t-btn-font-size: 10px;
+}
+
+.t-cont-history-header i,
+.t-cont-history-branch-title i {
+    color: #bfa15f;
+}
+
+.t-cont-history-header span {
+    color: #777;
+    font-size: 11px;
+}
+
+.t-cont-history-body {
+    flex: 1;
+    overflow: auto;
+    padding: 14px;
+}
+
+.t-cont-history-empty {
+    display: grid;
+    min-height: 180px;
+    place-items: center;
+    color: #777;
+    font-size: 13px;
+}
+
+.t-cont-history-session {
+    margin-bottom: 12px;
+    border: 1px solid #343434;
+    border-radius: 12px;
+    background: #171717;
+}
+
+.t-cont-history-session:last-child {
+    margin-bottom: 0;
+}
+
+.t-cont-history-session.is-open {
+    border-color: rgba(191, 161, 95, 0.32);
+}
+
+.t-cont-history-session-toggle {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 11px;
+    background: #202020;
+    color: #ddd4c2;
+    cursor: pointer;
+    text-align: left;
+}
+
+.t-cont-history-session.is-open .t-cont-history-session-toggle {
+    border-radius: 11px 11px 0 0;
+    border-bottom: 1px solid #343434;
+}
+
+.t-cont-history-session-toggle > i {
+    color: #bfa15f;
+    font-size: 10px;
+    transition: transform 0.18s;
+}
+
+.t-cont-history-session.is-open .t-cont-history-session-toggle > i {
+    transform: rotate(90deg);
+}
+
+.t-cont-history-session-toggle > span {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-cont-history-session-toggle > small {
+    margin-left: auto;
+    flex-shrink: 0;
+    color: #777;
+    font-size: 10px;
+}
+
+.t-cont-history-session-body {
+    padding: 10px;
+}
+
+.t-cont-history-session-body[hidden] {
+    display: none;
+}
+
+.t-cont-history-branch {
+    margin-bottom: 14px;
+    overflow: hidden;
+    border: 1px solid #303030;
+    border-radius: 10px;
+    background: #191919;
+}
+
+.t-cont-history-branch.is-active {
+    border-color: rgba(191, 161, 95, 0.42);
+}
+
+.t-cont-history-branch-title {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid #303030;
+    color: #d6d0c3;
+    background: #202020;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+}
+
+.t-cont-history-branch:not(.is-open) .t-cont-history-branch-title {
+    border-bottom-color: transparent;
+}
+
+.t-cont-history-branch-chevron {
+    flex-shrink: 0;
+    font-size: 10px;
+    transition: transform 0.18s;
+}
+
+.t-cont-history-branch.is-open .t-cont-history-branch-chevron {
+    transform: rotate(90deg);
+}
+
+.t-cont-history-branch-body[hidden] {
+    display: none;
+}
+
+.t-cont-history-branch-heading {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.t-cont-history-branch-heading strong {
+    overflow: hidden;
+    color: #e4ddcf;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 分支编号是扫列表时的主要区分点，给它一枚标记避免混在时间里 */
+.t-cont-history-branch-no {
+    margin-left: 7px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(191, 161, 95, 0.14);
+    color: #bfa15f;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 600;
+    vertical-align: 1px;
+}
+
+.t-cont-history-branch-heading span {
+    color: #8c857a;
+    font-size: 10px;
+    line-height: 1.35;
+}
+
+.t-cont-history-branch-title small {
+    margin-left: auto;
+    color: #777;
+    flex-shrink: 0;
+}
+
+.t-cont-history-round {
+    padding: 12px;
+    border-bottom: 1px solid #292929;
+}
+
+.t-cont-history-round:last-child {
+    border-bottom: 0;
+}
+
+.t-cont-history-round-head {
+    justify-content: space-between;
+}
+
+.t-cont-history-round-title {
+    gap: 8px;
+    color: #ddd;
+}
+
+.t-cont-history-round-title span {
+    color: #666;
+    font-size: 10px;
+}
+
+.t-cont-history-toggle {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+}
+
+.t-cont-history-toggle:hover {
+    color: #bfa15f;
+    background: rgba(191, 161, 95, 0.1);
+}
+
+.t-cont-history-instruction {
+    margin-top: 7px;
+    color: #b7a989;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.t-cont-history-preview {
+    margin-top: 5px;
+    overflow: hidden;
+    color: #777;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-cont-history-full {
+    margin-top: 10px;
+    overflow: hidden;
+    border: 1px solid #303030;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.t-cont-history-full iframe {
+    display: block;
+    width: 100%;
+    height: 300px;
+    border: 0;
+}
+
+.t-cont-history-cross-hint {
+    margin-top: 9px;
+    padding: 5px 8px;
+    border-left: 2px solid rgba(191, 161, 95, 0.55);
+    border-radius: 0 4px 4px 0;
+    background: rgba(191, 161, 95, 0.08);
+    color: #9a8a63;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.t-cont-history-actions {
+    gap: 7px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.t-cont-history-actions .t-btn {
+    padding: 6px 9px;
+    --t-btn-font-size: 11px;
+}
+
+@media screen and (max-width: 600px) {
+.t-cont-inline-actions > span {
+        display: none;
+    }
+
+.t-cont-inline-actions {
+        padding-left: 4px;
+    }
+
+.t-cont-history-panel {
+        inset: 5px;
+    }
+
+.t-cont-history-body {
+        padding: 8px;
+    }
+
+.t-cont-history-session-toggle {
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+
+.t-cont-history-session-toggle > .t-cont-select-wrap {
+        flex: 0 0 auto;
+    }
+
+.t-cont-history-session-toggle > span:not(.t-cont-select-wrap) {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+.t-cont-history-session-toggle > small {
+        width: auto;
+        margin-left: auto;
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+.t-cont-history-session-body {
+        padding: 6px;
+    }
+
+.t-cont-history-actions .t-btn {
+        flex: 1;
+    }
+}
+

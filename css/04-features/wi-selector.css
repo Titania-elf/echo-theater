@@ -1,0 +1,738 @@
+/* ============================================================
+   04-features/wi-selector.css —— 世界书条目选择器
+
+   Phase 4f 从 main-window.css 按类名前缀 `.t-wi-` 拆出（纯搬运，声明未改）。
+   ============================================================ */
+
+/* ===== 世界书条目选择器 ===== */
+/* 选择器面板 */
+.t-wi-selector {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 860px;
+    max-height: 80vh;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    animation: t-fade-in 0.2s;
+}
+/* `.t-wi-header` 的基础视觉已迁至 02-components/panel.css 的 `.t-panel-header`
+   （与 .t-queue-header / .t-ce-header 逐字节相同，A13 重复组）。
+   本文件只剩下方移动端的 padding 收紧。 */
+.t-wi-mode-bar {
+    padding: 10px 15px;
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+    display: flex;
+    gap: 20px;
+    flex-shrink: 0;
+}
+
+.t-wi-mode-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 0.9em;
+}
+
+.t-wi-mode-label input:checked+span {
+    color: #90cdf4;
+    font-weight: bold;
+}
+
+.t-wi-body {
+    flex-grow: 1;
+    overflow: hidden;
+    padding: 10px;
+    min-height: 0;
+    position: relative;
+    z-index: 0;
+}
+
+/* 标准标签页：整行分区，选中项通过底部指示线表达当前页面。 */
+.t-wi-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-shrink: 0;
+    border-bottom: 1px solid #333;
+    background: #1e1e1e;
+    position: relative;
+    z-index: 2;
+}
+
+.t-wi-tab-btn {
+    appearance: none;
+    position: relative;
+    min-width: 0;
+    min-height: 42px;
+    padding: 10px 12px 9px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #999;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.86em;
+    letter-spacing: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.t-wi-tab-btn:hover {
+    color: #d0d0d0;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.t-wi-tab-btn::after {
+    content: "";
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    bottom: -1px;
+    height: 2px;
+    background: transparent;
+}
+
+.t-wi-tab-btn.active {
+    color: #90cdf4;
+    font-weight: 600;
+    background: rgba(144, 205, 244, 0.055);
+}
+
+.t-wi-tab-btn.active::after {
+    background: #90cdf4;
+}
+
+.t-wi-tab-btn:focus-visible {
+    outline: 2px solid rgba(144, 205, 244, 0.75);
+    outline-offset: -3px;
+}
+
+.t-wi-tab-count {
+    color: #777;
+    font-size: 0.82em;
+    font-variant-numeric: tabular-nums;
+}
+
+.t-wi-tab-btn.active .t-wi-tab-count {
+    color: #90cdf4;
+}
+
+.t-wi-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 10px;
+    overflow: hidden;
+    height: 100%;
+    min-height: 0;
+}
+
+.t-wi-books-pane {
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #1d1d1d;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.t-wi-books-header {
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    color: #999;
+    font-size: 0.8em;
+}
+
+.t-wi-books-list {
+    overflow-y: auto;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* 桌面端不需要下拉，卡片列表已经全部展开 */
+.t-wi-book-select {
+    display: none;
+}
+
+.t-wi-book-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 9px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    color: #bbb;
+    transition: all 0.2s;
+}
+
+.t-wi-book-item:hover {
+    background: #252525;
+    border-color: #3b3b3b;
+}
+
+.t-wi-book-item.selected {
+    color: #dff1ff;
+    background: rgba(144, 205, 244, 0.12);
+    border-color: rgba(144, 205, 244, 0.35);
+}
+
+.t-wi-book-item-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4d4d4d;
+    flex-shrink: 0;
+}
+
+.t-wi-book-item-dot.active {
+    background: #55efc4;
+    box-shadow: 0 0 6px rgba(85, 239, 196, 0.6);
+}
+
+.t-wi-book-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.86em;
+}
+
+.t-wi-booklist-empty {
+    color: #666;
+    font-size: 0.84em;
+    text-align: center;
+    padding: 20px 10px;
+}
+
+.t-wi-entry-pane {
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #191919;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* 条目区头部：上排书名+徽章，下排搜索框+全选按钮。
+   移动端会把上排整个隐藏，只留下排一条工具行 */
+.t-wi-entry-pane-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.t-wi-entry-pane-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.t-wi-entry-pane-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.t-wi-entry-pane-title {
+    color: #ddd;
+    font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-wi-entry-pane-badge {
+    flex-shrink: 0;
+    font-size: 0.72em;
+    padding: 2px 7px;
+    border-radius: 99px;
+    border: 1px solid #444;
+    color: #888;
+    background: #232323;
+}
+
+.t-wi-entry-pane-badge.active {
+    color: #55efc4;
+    border-color: rgba(85, 239, 196, 0.45);
+    background: rgba(85, 239, 196, 0.08);
+}
+
+.t-wi-entry-pane-badge.inactive {
+    color: #999;
+}
+
+/* 条目搜索（按标题过滤）。现在是工具行里的一个 flex 子项，
+   自身不再有 padding / 下边框 —— 那些已经上移到 .t-wi-entry-pane-header */
+.t-wi-entry-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.t-wi-entry-search .t-wi-search-icon {
+    position: absolute;
+    left: 10px;
+    color: #666;
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.t-wi-entry-search input {
+    width: 100%;
+    height: 30px;
+    padding: 0 28px 0 30px;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    background: #222;
+    color: #ddd;
+    font-size: 12px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.t-wi-entry-search input:focus {
+    outline: none;
+    border-color: rgba(144, 205, 244, 0.5);
+}
+
+.t-wi-entry-search input::placeholder {
+    color: #666;
+}
+
+.t-wi-search-clear {
+    position: absolute;
+    right: 8px;
+    display: none;
+    color: #888;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+.t-wi-entry-pane-tools .t-btn {
+    flex-shrink: 0;
+}
+
+/* 「隐藏已禁用」：纯视图过滤，视觉上比两个动作按钮轻一档 */
+.t-wi-hide-disabled {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    padding: 0 6px;
+    color: #888;
+    font-size: 0.8em;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+
+.t-wi-hide-disabled:hover {
+    color: #bbb;
+}
+
+/* 勾选后用禁用标记的同色，和条目上那个「酒馆中已禁用」徽章呼应 */
+.t-wi-hide-disabled:has(input:checked) {
+    color: var(--t-color-warning-muted);
+}
+
+.t-wi-search-clear:hover {
+    color: #ddd;
+}
+
+.t-wi-entry-search.has-query .t-wi-search-clear {
+    display: block;
+}
+
+.t-wi-title-hit {
+    background: rgba(144, 205, 244, 0.25);
+    color: #cfe8ff;
+    border-radius: 2px;
+}
+
+.t-wi-entry-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    min-height: 0;
+    overscroll-behavior: contain;
+}
+
+.t-wi-empty {
+    text-align: center;
+    color: #666;
+    padding: 40px;
+    font-size: 0.9em;
+}
+
+.t-wi-book {
+    margin-bottom: 10px;
+}
+
+.t-wi-book-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #252525;
+    border-radius: 6px;
+    font-weight: bold;
+    color: #ddd;
+}
+
+/* 可折叠的世界书标题 */
+.t-wi-book-header.t-wi-collapsible {
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.t-wi-book-header.t-wi-collapsible:hover {
+    background: #2a2a2a;
+}
+
+/* 折叠箭头图标 */
+.t-wi-collapse-icon {
+    color: #666;
+    font-size: 0.9em;
+    transition: transform 0.2s;
+    width: 12px;
+}
+
+.t-wi-collapse-icon.t-wi-expanded {
+    transform: rotate(90deg);
+}
+
+.t-wi-book-name {
+    flex-grow: 1;
+}
+
+.t-wi-book-stat {
+    color: #888;
+    font-size: 0.8em;
+    font-weight: normal;
+}
+
+/* 世界书分组全选按钮 */
+.t-wi-book-toggle {
+    margin-left: auto;
+    padding: 2px 8px;
+    font-size: 0.75em;
+    font-weight: normal;
+    color: #90cdf4;
+    background: rgba(144, 205, 244, 0.1);
+    border: 1px solid rgba(144, 205, 244, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-wi-book-toggle:hover {
+    background: rgba(144, 205, 244, 0.2);
+    color: #fff;
+}
+
+.t-wi-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0 0 20px;
+    /* 展开时不限制高度，让父容器 .t-wi-body 负责滚动 */
+    max-height: none;
+    overflow: visible;
+    transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+}
+
+/* 折叠状态 */
+.t-wi-entries.t-wi-collapsed {
+    max-height: 0;
+    padding-top: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.t-wi-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-wi-entry:hover {
+    background: #2a2a2a;
+    border-color: #444;
+}
+
+.t-wi-entry.selected {
+    background: rgba(144, 205, 244, 0.1);
+    border-color: rgba(144, 205, 244, 0.3);
+}
+
+.t-wi-entry-check {
+    padding-top: 2px;
+    flex-shrink: 0;
+}
+
+.t-wi-entry-content {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.t-wi-entry-title {
+    font-weight: bold;
+    color: #eee;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.t-wi-uid {
+    font-size: 0.75em;
+    color: #666;
+    font-weight: normal;
+}
+
+.t-wi-entry-preview {
+    font-size: 0.8em;
+    color: #888;
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* 条目操作按钮区 */
+.t-wi-entry-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding-top: 2px;
+}
+
+/* 眼睛预览按钮 */
+.t-wi-preview-btn {
+    color: #666;
+    font-size: 1em;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.t-wi-preview-btn:hover {
+    color: #90cdf4;
+    background: rgba(144, 205, 244, 0.1);
+}
+
+/* 预览弹窗 —— 遮罩与表面基础见 02-components/dialog.css
+   （.t-dialog-overlay + .t-dialog-overlay--contained / .t-dialog-panel）。
+   scrim 用组件默认的 .7，故不设 --t-dialog-scrim。 */
+.t-wi-preview-modal {
+    z-index: 3100;
+    animation: t-fade-in 0.15s;
+}
+
+.t-wi-preview-box {
+    width: 90%;
+    max-width: 550px;
+    max-height: 70%;
+    display: flex;
+    flex-direction: column;
+}
+
+.t-wi-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: #252525;
+    border-bottom: 1px solid #333;
+    border-radius: 8px 8px 0 0;
+}
+
+.t-wi-preview-title {
+    font-weight: bold;
+    color: #eee;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-wi-preview-close {
+    font-size: 1.5em;
+    color: #888;
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1;
+}
+
+.t-wi-preview-close:hover {
+    color: #fff;
+}
+
+.t-wi-preview-content {
+    padding: 15px;
+    overflow-y: auto;
+    color: #ccc;
+    font-size: 0.9em;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* `.t-wi-footer` 的基础视觉已迁至 02-components/panel.css 的 `.t-panel-footer`
+   （与 .t-queue-footer / .t-ce-footer 逐字节相同，A13 重复组）。
+   本文件只剩下方移动端的 padding 收紧。 */
+#t-wi-stat {
+    color: #888;
+    font-size: 0.9em;
+}
+
+@media screen and (max-width: 600px) {
+/* 面板拉到近满屏。用父容器百分比而不是 vh/dvh：
+       .t-wi-selector 绝对定位在 #t-main-view 内，而 .t-box 是 overflow:hidden，
+       所以 100% 就是主窗口可视高度，且不受移动浏览器地址栏伸缩影响 */
+.t-wi-selector {
+        width: 95%;
+        top: 8px;
+        max-height: calc(100% - 16px);
+    }
+
+.t-wi-mode-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+/* 标题栏和标签栏各自压薄。两者是兄弟节点而非父子，
+       没法靠 CSS 合并成一行，真要合并得改 DOM 并牺牲桌面端的分隔线，不划算 */
+.t-wi-header {
+        padding: 10px 12px;
+    }
+
+/* 标签栏在窄屏保留：●/○ 只标示单本书激活与否，替代不了「只看已激活」这个筛选，
+       移动端否则会锁死在「全部世界书」（currentViewMode 的初值）。
+       改为压薄而非隐藏 —— 高度从 42px 降到 36px，仍在指尖可点范围内。
+       isolation 隔开 z-index 层叠，避免被 body 的滚动层盖住；
+       touch-action 关掉双击缩放，消除移动浏览器约 300ms 的点击延迟 */
+.t-wi-tabs {
+        isolation: isolate;
+    }
+
+.t-wi-tab-btn {
+        min-height: 36px;
+        padding: 8px 8px 7px;
+        font-size: 0.82em;
+        gap: 5px;
+        touch-action: manipulation;
+    }
+
+.t-wi-action-bar {
+        padding: 6px 12px;
+    }
+
+.t-wi-body {
+        padding: 8px;
+    }
+
+.t-wi-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 8px;
+        height: 100%;
+        min-height: 0;
+    }
+
+/* 160px 的卡片竖列换成一个原生下拉。
+       之前试过横滑芯片条，真机上滑不动，已弃用 */
+.t-wi-books-pane {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        max-height: none;
+    }
+
+.t-wi-books-header,
+    .t-wi-books-list {
+        display: none;
+    }
+
+.t-wi-book-select {
+        display: block;
+        width: 100%;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        background: #222;
+        color: #ddd;
+        font-size: 13px;
+        box-sizing: border-box;
+    }
+
+.t-wi-book-select:disabled {
+        color: #777;
+    }
+
+.t-wi-entry-pane {
+        min-height: 0;
+    }
+
+/* 书名那行隐藏 —— 上面的下拉框已经显示了当前选中的书 */
+.t-wi-entry-pane-heading {
+        display: none;
+    }
+
+.t-wi-entry-pane-header {
+        padding: 8px 10px;
+    }
+
+/* 搜索框独占一行，两个按钮加「隐藏已禁用」共用下一行。
+       挤在同一行时搜索框（flex:1, min-width:0）会被压到只剩百来像素 */
+.t-wi-entry-pane-tools {
+        flex-wrap: wrap;
+    }
+
+.t-wi-entry-pane-tools .t-wi-entry-search {
+        flex: 1 0 100%;
+    }
+
+.t-wi-entry-list {
+        padding: 8px;
+    }
+
+.t-wi-footer {
+        padding: 10px 12px;
+    }
+}
+
