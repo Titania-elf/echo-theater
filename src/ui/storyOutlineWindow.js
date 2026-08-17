@@ -949,13 +949,13 @@ export async function openPromptTemplateManager() {
                 <div class="t-dialog-close" id="t-prompt-manager-close"><i class="fa-solid fa-times"></i></div>
             </div>
 
-            <div class="t-set-body">
-                <div class="t-set-nav">
-                    <div class="t-set-tab-btn active" data-tab="runtime">⚙️ 运行设置</div>
-                    <div class="t-set-tab-btn" data-tab="prompt">📜 提示词模板</div>
+            <div class="t-set-shell-body t-set-body">
+                <div class="t-set-shell-nav t-set-nav">
+                    <div class="t-set-shell-tab t-set-tab-btn active" data-tab="runtime">⚙️ 运行设置</div>
+                    <div class="t-set-shell-tab t-set-tab-btn" data-tab="prompt">📜 提示词模板</div>
                 </div>
 
-                <div class="t-set-content">
+                <div class="t-set-shell-content t-set-content">
                     <div id="t-outline-page-runtime" class="t-set-page active">
                         ${renderApiConnectionEditorHTML({
                             ids: {

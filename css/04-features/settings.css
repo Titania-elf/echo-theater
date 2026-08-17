@@ -282,61 +282,14 @@
     overflow: hidden;
 }
 
-.t-set-body {
-    flex-grow: 1;
-    display: flex;
-    overflow: hidden;
-    min-height: 0;
-}
+/* `.t-set-body` / `.t-set-nav` / `.t-set-tab-btn`（含 :hover 与 .active）/
+   `.t-set-content` 的基础视觉已迁至 02-components/settings-shell.css 的
+   `.t-set-shell-*`。这批原先是**裸类、无作用域**，对全部四个设置界面都生效 ——
+   它既是「设置窗口的样式」也是另外三个界面的隐式基类，放在 feature 层是错位。
 
-/* 侧边导航 */
-.t-set-nav {
-    width: 160px;
-    background: #181818;
-    border-right: 1px solid #333;
-    padding: 10px 0;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    min-height: 0;
-    max-height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-    -webkit-overflow-scrolling: touch;
-}
-
-.t-set-tab-btn {
-    padding: 12px 20px;
-    color: #888;
-    cursor: pointer;
-    transition: 0.2s;
-    font-size: 0.95em;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.t-set-tab-btn:hover {
-    background: #222;
-    color: #ccc;
-}
-
-.t-set-tab-btn.active {
-    background: #2a2a2a;
-    color: #bfa15f;
-    border-left: 3px solid #bfa15f;
-    font-weight: bold;
-}
-
-/* 内容页 */
-.t-set-content {
-    flex-grow: 1;
-    padding: 20px;
-    overflow-y: auto;
-    background: #121212;
-}
+   本文件保留的只有下方 @600px 的响应式覆盖（仍用 `.t-set-*` 选择器，
+   故不触发 A5）。`.t-set-page` / `.t-set-page.active` 也留在本文件，
+   理由见 settings-shell.css 头部注释。 */
 
 .t-set-page {
     display: none;

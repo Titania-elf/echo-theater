@@ -216,12 +216,12 @@ async function showProfileConfigDialog(onSave) {
                 <span><i class="fa-solid fa-gear"></i> 设置</span>
                 <div class="t-dialog-close" id="t-profile-dialog-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-set-body">
-                <div class="t-set-nav">
-                    <div class="t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-link"></i> API 连接</div>
-                    <div class="t-set-tab-btn" data-tab="embedding"><i class="fa-solid fa-brain"></i> Embedding</div>
+            <div class="t-set-shell-body t-set-glass-body t-set-body">
+                <div class="t-set-shell-nav t-set-glass-nav t-set-nav">
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-link"></i> API 连接</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="embedding"><i class="fa-solid fa-brain"></i> Embedding</div>
                 </div>
-                <div class="t-set-content">
+                <div class="t-set-shell-content t-set-glass-content t-set-content">
                     <div class="t-set-page active" data-page="api">
                         ${renderApiConnectionEditorHTML({
                             ids: {

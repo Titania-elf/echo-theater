@@ -2129,6 +2129,16 @@ function loadCssFiles() {
        \u6CE8\u610F\u5B83\u4E0E\u4E0A\u9762\u7684\u7A97\u53E3\u6807\u9898\u680F\u5E95\u53EA\u5DEE\u4E00\u70B9\u70B9\uFF0836 36 36 vs 36 37 48\uFF09\u4F46\u786E\u5B9E\u4E0D\u540C\uFF1A
        \u9762\u677F\u5934\u662F\u4E2D\u6027\u7070\uFF0C\u7A97\u53E3\u6807\u9898\u680F\u504F\u7D2B\u3002\u5408\u5E76\u524D\u9700\u8981\u8089\u773C\u786E\u8BA4\u4E24\u8005\u53EF\u4EE5\u7EDF\u4E00\u3002 */
 
+    /* ---- \u8BBE\u7F6E\u5916\u58F3\uFF08\u4FA7\u8FB9\u5BFC\u822A + \u6807\u7B7E + \u5185\u5BB9\u533A\uFF09----
+       \u89D2\u8272\u5316\u547D\u540D\u800C\u4E0D\u662F\u52A0\u901A\u7528\u8272\u9636\u6863\u4F4D\uFF1A#181818 \u4E0E #ccc \u90FD\u843D\u5728\u73B0\u6709\u4E2D\u6027\u9636\u4E4B\u95F4
+       \uFF0824 \u5728 18/26 \u4E4B\u95F4\u3001204 \u5728 170/238 \u4E4B\u95F4\uFF09\uFF0C\u8865\u6210\u901A\u7528\u6863\u4F4D\u5BB9\u6613\u88AB\u8BEF\u7528\u3002 */
+    --t-color-set-nav-surface: rgb(24 24 24);
+    /* #181818 \u4FA7\u8FB9\u5BFC\u822A\u5E95 */
+    --t-color-set-tab-hover-surface: rgb(var(--t-c-neutral-3-rgb));
+    /* #222 \u6807\u7B7E hover \u5E95 */
+    --t-color-set-tab-hover-text: rgb(var(--t-c-neutral-11-rgb));
+    /* #ccc \u6807\u7B7E hover \u6587\u5B57 */
+
     /* ---- \u5F39\u7A97\u8868\u9762 ---- */
     --t-color-dialog-scrim: rgb(0 0 0 / .7);
     --t-color-dialog-scrim-outline: rgb(0 0 0 / .65);
@@ -2171,6 +2181,25 @@ function loadCssFiles() {
     /* \u51B7\u73BB\u7483\u8868\u9762\u7684\u6B21\u8981\u6587\u5B57\uFF0C\u66FF\u6362 #a9bfd1 \u4E00\u65CF */
     --t-glass-text-muted: rgb(var(--t-c-cool-8-rgb));
     /* \u51B7\u73BB\u7483\u8868\u9762\u7684\u5F31\u63D0\u793A\uFF0C\u66FF\u6362 #7f96aa \u4E00\u65CF */
+
+    /* \u51B7\u73BB\u7483\u7248\u8BBE\u7F6E\u5916\u58F3\uFF08lore-review \u4E0E rewrite \u7684\u8BBE\u7F6E\u5BF9\u8BDD\u6846\u5171\u7528\uFF09\u3002
+       \u8FD9\u56DB\u4E2A\u503C\u90FD\u4E0D\u5728\u51B7\u8272\u9636\u4E0A\uFF0C\u662F\u72EC\u7ACB\u7684\u4E00\u6863\uFF0C\u6545\u4FDD\u7559\u7CBE\u786E\u503C\uFF1A
+       18 24 33 \u5728 cool-2(18 22 29) \u4E0E cool-3(22 27 36) \u4E4B\u95F4\uFF1B
+       153 173 190 \u5728 cool-8(120 150 170) \u4E0E cool-9(160 174 192) \u4E4B\u95F4\uFF1B
+       215 231 245 \u5728 cool-11(203 213 224) \u4E0E cool-12(226 232 240) \u4E4B\u95F4\uFF1B
+       185 216 238 \u540C\u6837\u4E0D\u5728\u9636\u4E0A\u3002 */
+    --t-glass-nav: rgb(18 24 33 / .9);
+    /* rgba(18,24,33,.9) \u4FA7\u8FB9\u5BFC\u822A\u5E95 */
+    --t-glass-tab-text: rgb(153 173 190);
+    /* #99adbe \u6807\u7B7E\u9759\u606F\u6587\u5B57 */
+    --t-glass-tab-text-hover: rgb(215 231 245);
+    /* #d7e7f5 */
+    --t-glass-tab-text-active: rgb(185 216 238);
+    /* #b9d8ee */
+    --t-glass-tab-hover-surface: rgb(var(--t-c-neutral-13-rgb) / .05);
+    /* rgba(255,255,255,.05)\u3002\u73B0\u6709\u767D\u819C\u53EA\u6709 .03/.06/.08 \u4E09\u6863\uFF0C\u8FD9\u91CC\u662F\u7B2C\u56DB\u6863 */
+    --t-glass-tab-active-surface: rgb(var(--t-c-blue-rgb) / .16);
+    --t-glass-tab-active-border: rgb(var(--t-c-blue-rgb) / .86);
 
     /* ---- \u6587\u672C ---- */
     --t-color-text: rgb(var(--t-c-neutral-12-rgb));
@@ -2326,7 +2355,11 @@ function loadCssFiles() {
         radial-gradient(circle at 0% 100%,
             rgb(var(--t-c-gold-rgb) / .08) 0%, rgb(var(--t-c-gold-rgb) / 0) 32%),
         var(--t-glass-body);
-    /* \u6B63\u6587\u533A\u7684\u53CC\u89D2\u6D17\u8272\uFF08\u542B\u4E0D\u900F\u660E\u57FA\u5E95\uFF09\uFF0C\u73B0 4 \u5904\u9010\u5B57\u8282\u76F8\u540C */
+    /* \u6B63\u6587\u533A\u7684\u53CC\u89D2\u6D17\u8272\uFF08\u542B\u4E0D\u900F\u660E\u57FA\u5E95\uFF09\uFF0C\u73B0 4 \u5904\u9010\u5B57\u8282\u76F8\u540C\u3002
+       Phase 4d-3 \u8D77\u88AB 02-components/settings-shell.css \u7684 \`.t-set-glass-content\`
+       \u6D88\u8D39\uFF0C\u66FF\u6389\u4E86\u5176\u4E2D 2 \u5904\uFF08\u4E16\u754C\u4E66\u8BBE\u7F6E + \u6539\u5199\u8BBE\u7F6E\u7684\u5185\u5BB9\u533A\uFF09\u3002
+       rewrite.css \u91CC\u8FD8\u6709 3 \u5904 \`radial-gradient(circle at 100% 0%\` \u5B57\u9762\u91CF\uFF0C
+       \u4F46\u672A\u9010\u4E00\u6838\u5BF9\u662F\u5426\u4E0E\u672C\u914D\u65B9\u5B8C\u5168\u76F8\u540C \u2014\u2014 \u5C5E Phase 6 \u7684\u6536\u53E3\u8303\u56F4\u3002 */
     --t-gradient-accent-brand: linear-gradient(135deg, rgb(var(--t-c-blue-rgb) / .18),
             rgb(var(--t-c-gold-rgb) / .16));
     /* \u4E3B\u64CD\u4F5C\u6309\u94AE\uFF1A\u4EA4\u4E92\u84DD \u2192 \u54C1\u724C\u91D1 */
@@ -3072,6 +3105,160 @@ function loadCssFiles() {
     align-items: center;
     border-radius: 0 0 var(--t-radius-panel) var(--t-radius-panel);
     flex-shrink: 0;
+}
+
+
+/* === 02-components/settings-shell.css === */
+/* ============================================================
+   02-components/settings-shell.css \u2014\u2014 \u8BBE\u7F6E\u754C\u9762\u5916\u58F3\uFF08\u4FA7\u8FB9\u5BFC\u822A + \u6807\u7B7E + \u5185\u5BB9\u533A\uFF09
+
+   \u56DB\u4E2A\u754C\u9762\u5171\u7528\u8FD9\u5957\u5916\u58F3\uFF1A\u8BBE\u7F6E\u7A97\u53E3\u3001\u7EC6\u7EB2\u63D0\u793A\u8BCD\u7BA1\u7406\u5668\u3001
+   \u4E16\u754C\u4E66\u8BBE\u7F6E\u5BF9\u8BDD\u6846\u3001\u6539\u5199\u8BBE\u7F6E\u6D6E\u5C42\u3002\u5B83\u6709\u4E24\u5957\u8868\u9762\u8BED\u8A00\uFF1A
+
+     .t-set-shell-*   \u4E2D\u6027\u7070 + \u54C1\u724C\u91D1\uFF08\u8BBE\u7F6E\u7A97\u53E3\u3001\u7EC6\u7EB2\u63D0\u793A\u8BCD\u7BA1\u7406\u5668\uFF09
+     .t-set-glass-*   \u51B7\u8C03\u73BB\u7483 + \u4EA4\u4E92\u84DD\uFF08\u4E16\u754C\u4E66\u8BBE\u7F6E\u3001\u6539\u5199\u8BBE\u7F6E\uFF09
+
+   glass \u662F**\u53E0\u52A0**\u5728 shell \u4E4B\u4E0A\u7684\u4FEE\u9970\uFF0C\u4E0D\u662F\u66FF\u4EE3 \u2014\u2014 \u5143\u7D20\u8981\u540C\u65F6\u5E26\u4E24\u4E2A\u7C7B\u3002
+   \u539F\u56E0\uFF1Aglass \u53EA\u8986\u76D6 7 \u4E2A\u5C5E\u6027\uFF0Cnav \u7684 flex-shrink / min-height / max-height /
+   overflow-x / overscroll-behavior / scrollbar-gutter / -webkit-overflow-scrolling
+   \u8FD9 7 \u6761\u4E00\u76F4\u662F\u4ECE\u4E2D\u6027\u57FA\u7C7B\u7EE7\u627F\u7684\u3002\u8FD9\u4E5F\u6B63\u662F\u8FC1\u79FB\u524D\u7684\u5C42\u53E0\u7ED3\u6784
+   \uFF08settings.css \u7684\u88F8\u7C7B + \u5404\u81EA ID \u4F5C\u7528\u57DF\u7684\u8986\u76D6\uFF09\u3002
+
+   \u2500\u2500 \u4E3A\u4EC0\u4E48\u4E0D\u76F4\u63A5\u6CBF\u7528 \`.t-set-body\` / \`.t-set-tab-btn\` \u8FD9\u6279\u7C7B\u540D \u2500\u2500
+   \u4F1A\u7834\u6389\u73B0\u5728\u901A\u8FC7\u7684 A5\uFF1A\u5BA1\u8BA1\u7528\u300C\u9009\u62E9\u5668\u6700\u540E\u4E00\u4E2A\u590D\u5408\u6BB5\u300D\u5224\u5B9A\u7EC4\u4EF6\u7C7B\u5F52\u5C5E\uFF0C
+   \u4E00\u65E6 \`.t-set-nav\` \u6210\u4E3A\u7EC4\u4EF6\u7C7B\uFF0C\u5404 feature \u7684 @media \u8986\u76D6\u91CC\u90A3\u4E9B
+   \`border-*\` / \`background\` \u5C31\u90FD\u53D8\u6210\u300Cfeature \u91CD\u5B9A\u4E49\u7EC4\u4EF6\u7C7B\u89C6\u89C9\u5C5E\u6027\u300D\u3002
+   \u800C\u90A3\u4E9B @media \u8986\u76D6**\u5FC5\u987B**\u7559\u5728 feature \u2014\u2014 \u56DB\u4E2A\u754C\u9762\u7684\u65AD\u70B9\u5404\u4E0D\u76F8\u540C
+   \uFF08settings 600px\u3001\u7EC6\u7EB2/\u4E16\u754C\u4E66 768px\u3001\u6539\u5199 700px\uFF09\uFF0C\u7EC4\u4EF6\u5C42\u65E0\u6CD5\u8868\u8FBE
+   \u300C\u540C\u4E00\u4E2A\u7EC4\u4EF6\u5728\u4E0D\u540C\u6D88\u8D39\u8005\u5904\u7528\u4E0D\u540C\u65AD\u70B9\u300D\u3002\u5F52\u5E76\u65AD\u70B9\u5C5E Phase 7\u3002
+
+   \u6240\u4EE5\uFF1A\u7EC4\u4EF6\u5C42\u7528\u65B0\u7C7B\u540D\u627F\u8F7D\u57FA\u7840\u89C6\u89C9\uFF0Cfeature \u5C42\u7EE7\u7EED\u7528 \`.t-set-*\` \u505A
+   \u54CD\u5E94\u5F0F\u8986\u76D6\u3002\u5143\u7D20\u4E0A\u4E24\u5957\u7C7B\u540D\u5E76\u5B58\uFF0C\u4E0E 4a-4 \u7684 \`.t-dialog-panel t-imp-box\`\u3001
+   4b-3 \u7684 \`.t-panel-header t-wi-header\` \u662F\u540C\u4E00\u4E2A\u6A21\u5F0F\u3002
+
+   \u2500\u2500 \u4ECD\u7559\u5728 04-features/settings.css \u7684\u4E24\u6761\uFF08\u4E0D\u662F\u9057\u6F0F\uFF09\u2500\u2500
+   \`.t-set-page\` / \`.t-set-page.active\` \u53EA\u6709 \`display: none\` / \`block\`\uFF0C
+   \u6CA1\u6709 glass \u53D8\u4F53\u3001\u6CA1\u6709\u91CD\u590D\u3001\u4E5F\u6CA1\u6709\u4EFB\u4F55 @media \u8986\u76D6\u5B83\u4EEC\uFF0C
+   \u642C\u8FDB\u6765\u53EA\u4F1A\u591A\u51FA 16 \u5904\u6807\u8BB0\u6539\u52A8\u800C\u96F6\u6536\u76CA\u3002
+   ============================================================ */
+
+/* \u2500\u2500 \u4E2D\u6027\u7070 + \u54C1\u724C\u91D1\uFF08\u57FA\u7840\uFF09\u2500\u2500 */
+
+.t-set-shell-body {
+    flex-grow: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.t-set-shell-nav {
+    width: 160px;
+    background: var(--t-color-set-nav-surface);
+    border-right: 1px solid var(--t-color-border);
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
+}
+
+.t-set-shell-tab {
+    padding: 12px 20px;
+    color: var(--t-color-text-muted);
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.95em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.t-set-shell-tab:hover {
+    background: var(--t-color-set-tab-hover-surface);
+    color: var(--t-color-set-tab-hover-text);
+}
+
+.t-set-shell-tab.active {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-brand);
+    border-left: 3px solid var(--t-color-brand);
+    font-weight: bold;
+}
+
+.t-set-shell-content {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: var(--t-color-bg);
+}
+
+/* \u2500\u2500 \u51B7\u8C03\u73BB\u7483 + \u4EA4\u4E92\u84DD\uFF08\u4FEE\u9970\uFF0C\u5FC5\u987B\u53E0\u5728\u4E0A\u9762\u90A3\u5957\u4E4B\u4E0A\uFF09\u2500\u2500
+   \u58F0\u660E\u987A\u5E8F\u5FC5\u987B\u665A\u4E8E .t-set-shell-*\uFF1A\u4E24\u8005\u7279\u5F02\u5EA6\u76F8\u540C\uFF0C\u9760\u6E90\u7801\u987A\u5E8F\u51B3\u80DC\u3002 */
+
+.t-set-glass-body {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.t-set-glass-nav {
+    /* \u5BBD\u5EA6\u4E0D\u5728\u8FD9\u91CC\u5B9A\uFF1A\u4E16\u754C\u4E66\u8BBE\u7F6E\u662F 170px\u3001\u6539\u5199\u8BBE\u7F6E\u662F 180px\uFF0C
+       \u5404\u81EA\u5728 feature \u5C42\u7528 .t-set-nav \u6307\u5B9A\uFF08width \u662F\u5E03\u5C40\u5C5E\u6027\uFF0C\u4E0D\u53D7 A5 \u9650\u5236\uFF09\u3002 */
+    background: var(--t-glass-nav);
+    border-right: 1px solid var(--t-color-border-subtle);
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.t-set-glass-tab {
+    padding: 11px 14px;
+    color: var(--t-glass-tab-text);
+    cursor: pointer;
+    /* \u4FDD\u7559 \`all\`\uFF1A\u8FC1\u79FB\u524D\u4E24\u5904\u90FD\u662F \`all 0.16s ease\`\uFF0C\u6536\u6210\u4E00\u5904\u540E A20 \u53CD\u800C -1\u3002
+       \u6539\u6210\u5177\u4F53\u5C5E\u6027\u5217\u8868\u662F\u884C\u4E3A\u53D8\u66F4\uFF08\u4F1A\u5C11\u8FC7\u6E21\u82E5\u5E72\u5C5E\u6027\uFF09\uFF0C\u5C5E Phase 7 \u7684 A20 \u6E05\u7406\u3002 */
+    transition: all 0.16s ease;
+    font-size: 0.86em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-left: 3px solid transparent;
+}
+
+.t-set-glass-tab:hover {
+    background: var(--t-glass-tab-hover-surface);
+    color: var(--t-glass-tab-text-hover);
+}
+
+.t-set-glass-tab.active {
+    color: var(--t-glass-tab-text-active);
+    background: var(--t-glass-tab-active-surface);
+    /* \u7528\u7B80\u5199\u800C\u975E border-left-color \u957F\u5199\uFF1A\`.t-set-shell-tab.active\` \u7684
+       \`border-left: 3px solid var(--t-color-brand)\` \u4E0E\u672C\u6761\u7279\u5F02\u5EA6\u76F8\u540C(0,2,0)\uFF0C
+       \u53EA\u9760\u6E90\u7801\u987A\u5E8F\u51B3\u80DC\u3002\u82E5\u8FD9\u91CC\u53EA\u5199\u957F\u5199\uFF0C\u7B80\u5199\u7684 width/style \u4F1A\u6765\u81EA\u91D1\u8272\u90A3\u6761\u3001
+       color \u6765\u81EA\u672C\u6761 \u2014\u2014 \u7ED3\u679C\u867D\u7136\u76F8\u540C\uFF0C\u4F46\u7B80\u5199/\u957F\u5199\u4EA4\u53C9\u6781\u6613\u88AB\u540E\u4EBA\u6539\u9519\u3002
+       \u8FC1\u79FB\u524D\u7684\u503C\u662F \`3px solid rgba(144,205,244,.86)\`\uFF0C\u6B64\u5904\u9010\u5B57\u8282\u7B49\u4EF7\u3002 */
+    border-left: 3px solid var(--t-glass-tab-active-border);
+    font-weight: 700;
+}
+
+.t-set-glass-content {
+    flex: 1;
+    min-width: 0;
+    padding: 14px;
+    overflow-y: auto;
+    /* --t-gradient-glass-wash \u662F Phase 1 \u5C31\u4E3A\u8FD9\u4E2A\u914D\u65B9\u5EFA\u597D\u7684 token
+       \uFF08\u6CE8\u91CA\u5199\u300C\u73B0 4 \u5904\u9010\u5B57\u8282\u76F8\u540C\u300D\uFF09\uFF0C\u4F46\u4E00\u76F4\u6CA1\u843D\u5730\u3002\u8FD9\u91CC\u662F\u7B2C\u4E00\u6B21\u771F\u6B63\u4F7F\u7528\uFF1A
+       \u53CC\u89D2\u6D17\u8272 + \u4E0D\u900F\u660E\u57FA\u5E95 var(--t-glass-body) = #12161d\uFF0C\u4E0E\u539F\u503C\u9010\u5B57\u8282\u76F8\u7B49\u3002 */
+    background: var(--t-gradient-glass-wash);
 }
 
 
@@ -8670,61 +8857,14 @@ textarea.t-input {
     overflow: hidden;
 }
 
-.t-set-body {
-    flex-grow: 1;
-    display: flex;
-    overflow: hidden;
-    min-height: 0;
-}
+/* \`.t-set-body\` / \`.t-set-nav\` / \`.t-set-tab-btn\`\uFF08\u542B :hover \u4E0E .active\uFF09/
+   \`.t-set-content\` \u7684\u57FA\u7840\u89C6\u89C9\u5DF2\u8FC1\u81F3 02-components/settings-shell.css \u7684
+   \`.t-set-shell-*\`\u3002\u8FD9\u6279\u539F\u5148\u662F**\u88F8\u7C7B\u3001\u65E0\u4F5C\u7528\u57DF**\uFF0C\u5BF9\u5168\u90E8\u56DB\u4E2A\u8BBE\u7F6E\u754C\u9762\u90FD\u751F\u6548 \u2014\u2014
+   \u5B83\u65E2\u662F\u300C\u8BBE\u7F6E\u7A97\u53E3\u7684\u6837\u5F0F\u300D\u4E5F\u662F\u53E6\u5916\u4E09\u4E2A\u754C\u9762\u7684\u9690\u5F0F\u57FA\u7C7B\uFF0C\u653E\u5728 feature \u5C42\u662F\u9519\u4F4D\u3002
 
-/* \u4FA7\u8FB9\u5BFC\u822A */
-.t-set-nav {
-    width: 160px;
-    background: #181818;
-    border-right: 1px solid #333;
-    padding: 10px 0;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    min-height: 0;
-    max-height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-    -webkit-overflow-scrolling: touch;
-}
-
-.t-set-tab-btn {
-    padding: 12px 20px;
-    color: #888;
-    cursor: pointer;
-    transition: 0.2s;
-    font-size: 0.95em;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.t-set-tab-btn:hover {
-    background: #222;
-    color: #ccc;
-}
-
-.t-set-tab-btn.active {
-    background: #2a2a2a;
-    color: #bfa15f;
-    border-left: 3px solid #bfa15f;
-    font-weight: bold;
-}
-
-/* \u5185\u5BB9\u9875 */
-.t-set-content {
-    flex-grow: 1;
-    padding: 20px;
-    overflow-y: auto;
-    background: #121212;
-}
+   \u672C\u6587\u4EF6\u4FDD\u7559\u7684\u53EA\u6709\u4E0B\u65B9 @600px \u7684\u54CD\u5E94\u5F0F\u8986\u76D6\uFF08\u4ECD\u7528 \`.t-set-*\` \u9009\u62E9\u5668\uFF0C
+   \u6545\u4E0D\u89E6\u53D1 A5\uFF09\u3002\`.t-set-page\` / \`.t-set-page.active\` \u4E5F\u7559\u5728\u672C\u6587\u4EF6\uFF0C
+   \u7406\u7531\u89C1 settings-shell.css \u5934\u90E8\u6CE8\u91CA\u3002 */
 
 .t-set-page {
     display: none;
@@ -13603,53 +13743,13 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     border-bottom: 1px solid rgba(255, 255, 255, 0.09);
 }
 
-#t-lore-settings-dialog .t-set-body {
-    flex: 1;
-    display: flex;
-    min-height: 0;
-    overflow: hidden;
-}
+/* \u672C\u5BF9\u8BDD\u6846\u7684\u8BBE\u7F6E\u5916\u58F3\uFF08body / nav / tab / content\uFF09\u5DF2\u8FC1\u81F3
+   02-components/settings-shell.css \u7684 \`.t-set-glass-*\` \u2014\u2014 \u4E0E rewrite.css \u7684
+   \u6539\u5199\u8BBE\u7F6E\u6D6E\u5C42\u9010\u5B57\u8282\u76F8\u540C\uFF08\u53EA\u6709 nav \u7684 width \u4E0D\u540C\uFF1A\u672C\u5904 170px\u3001\u90A3\u8FB9 180px\uFF09\u3002
+   width \u662F\u5E03\u5C40\u5C5E\u6027\uFF0C\u7559\u5728\u4E0B\u9762\u3002 */
 
 #t-lore-settings-dialog .t-set-nav {
     width: 170px;
-    background: rgba(18, 24, 33, 0.9);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 10px 0;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-}
-
-#t-lore-settings-dialog .t-set-tab-btn {
-    padding: 11px 14px;
-    color: #99adbe;
-    cursor: pointer;
-    transition: all 0.16s ease;
-    font-size: 0.86em;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-left: 3px solid transparent;
-}
-
-#t-lore-settings-dialog .t-set-tab-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #d7e7f5;
-}
-
-#t-lore-settings-dialog .t-set-tab-btn.active {
-    color: #b9d8ee;
-    background: rgba(144, 205, 244, 0.16);
-    border-left-color: rgba(144, 205, 244, 0.86);
-    font-weight: 700;
-}
-
-#t-lore-settings-dialog .t-set-content {
-    flex: 1;
-    min-width: 0;
-    padding: 14px;
-    overflow-y: auto;
-    background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d;
 }
 
 /* \`.t-set-page\` / \`.t-set-page.active\` \u53EA\u6709 \`display: none\` / \`display: block\`\uFF0C
@@ -13849,7 +13949,12 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         flex: 0 0 auto;
         min-width: max-content;
         justify-content: center;
-        background: transparent;
+        /* \u539F\u6709\u4E00\u6761 \`background: transparent\`\uFF0C\u5DF2\u5220\u9664\u3002
+           \u5B83\u5728\u8FC1\u79FB\u524D\u662F**\u7A7A\u64CD\u4F5C**\uFF1A\u9759\u606F\u6001\u672C\u6765\u5C31\u6CA1\u6709\u4EFB\u4F55\u89C4\u5219\u7ED9 tab \u8BBE\u8FC7\u5E95\u8272
+           \uFF08\u91D1\u8272\u57FA\u7C7B\u4E0E\u51B7\u73BB\u7483\u57FA\u7C7B\u90FD\u53EA\u5728 :hover / .active \u4E0A\u8BBE background\uFF09\u3002
+           \u4F46\u8FC1\u79FB\u540E\u5B83\u4F1A\u53D8\u6210\u6709\u5BB3\u7684 \u2014\u2014 \u672C\u6761\u662F (1,1,0)\uFF0C\u5E26 ID\uFF0C\u4F1A\u538B\u8FC7\u7EC4\u4EF6\u5C42
+           \`.t-set-glass-tab:hover\` \u7684 (0,2,0)\uFF0C\u628A\u7A84\u5C4F\u4E0B\u7684 hover \u767D\u819C\u5403\u6389\u3002
+           \`.active\` \u90A3\u6761\u7684 background: transparent \u662F\u5FC5\u8981\u7684\uFF0C\u4FDD\u7559\u5728\u4E0B\u9762\u3002 */
     }
 
     #t-lore-settings-dialog .t-set-tab-btn.active {
@@ -17445,17 +17550,11 @@ body.titania-debug-mode #chat titania-memory::before {
 
 #t-rewrite-settings-overlay .t-rewrite-settings-window { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; height: min(90vh, 940px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.96); border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
 
-#t-rewrite-settings-overlay .t-set-body { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+/* \u672C\u6D6E\u5C42\u7684\u8BBE\u7F6E\u5916\u58F3\uFF08body / nav / tab / content\uFF09\u5DF2\u8FC1\u81F3
+   02-components/settings-shell.css \u7684 \`.t-set-glass-*\` \u2014\u2014 \u4E0E lore-review.css \u7684
+   \u4E16\u754C\u4E66\u8BBE\u7F6E\u5BF9\u8BDD\u6846\u9010\u5B57\u8282\u76F8\u540C\uFF08\u53EA\u6709 nav \u7684 width \u4E0D\u540C\uFF1A\u90A3\u8FB9 170px\u3001\u672C\u5904 180px\uFF09\u3002 */
 
-#t-rewrite-settings-overlay .t-set-nav { width: 180px; background: rgba(18, 24, 33, 0.9); border-right: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 0; display: flex; flex-direction: column; overflow-y: auto; }
-
-#t-rewrite-settings-overlay .t-set-tab-btn { padding: 11px 14px; color: #99adbe; cursor: pointer; transition: all 0.16s ease; font-size: 0.86em; display: flex; align-items: center; gap: 8px; border-left: 3px solid transparent; }
-
-#t-rewrite-settings-overlay .t-set-tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #d7e7f5; }
-
-#t-rewrite-settings-overlay .t-set-tab-btn.active { color: #b9d8ee; background: rgba(144, 205, 244, 0.16); border-left-color: rgba(144, 205, 244, 0.86); font-weight: 700; }
-
-#t-rewrite-settings-overlay .t-set-content { flex: 1; min-width: 0; padding: 14px; overflow-y: auto; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
+#t-rewrite-settings-overlay .t-set-nav { width: 180px; }
 
 /* \`.t-set-page\` / \`.t-set-page.active\` \u4E0E settings.css \u7684\u88F8\u7C7B\u9010\u5B57\u8282\u76F8\u540C
    \uFF08\u88F8\u7C7B\u65E0\u4F5C\u7528\u57DF\uFF0C\u5BF9\u672C overlay \u4E00\u6837\u751F\u6548\uFF09\uFF0C\u4E14\u65E0\u4EFB\u4F55 @media \u89C4\u5219\u52A8\u5B83\u4EEC \u2014\u2014
@@ -17765,6 +17864,10 @@ body.titania-debug-mode #chat titania-memory::before {
  scrollbar-gutter: stable;
  -webkit-overflow-scrolling: touch;
  }
+    /* \u4E0B\u4E00\u6761\u672B\u5C3E\u539F\u6709 \`background: transparent\`\uFF0C\u5DF2\u5220\u9664 \u2014\u2014 \u7406\u7531\u4E0E lore-review.css
+       @768 \u6BB5\u843D\u91CC\u7684\u540C\u540D\u89C4\u5219\u76F8\u540C\uFF1A\u8FC1\u79FB\u524D\u662F\u7A7A\u64CD\u4F5C\uFF08\u9759\u606F\u6001\u672C\u65E0\u4EBA\u7ED9 tab \u8BBE\u5E95\u8272\uFF09\uFF0C
+       \u8FC1\u79FB\u540E\u4F1A\u56E0\u5E26 ID \u7684 (1,1,0) \u538B\u8FC7\u7EC4\u4EF6\u5C42 \`.t-set-glass-tab:hover\` \u7684 (0,2,0)\uFF0C
+       \u5403\u6389\u7A84\u5C4F hover \u767D\u819C\u3002\`.active\` \u90A3\u6761\u7684 background: transparent \u5FC5\u8981\uFF0C\u4FDD\u7559\u3002 */
     #t-rewrite-settings-overlay .t-set-tab-btn {
  border-left: none;
  border-bottom: 3px solid transparent;
@@ -17779,7 +17882,6 @@ body.titania-debug-mode #chat titania-memory::before {
  flex: 0 0 auto;
  min-width: max-content;
  justify-content: center;
- background: transparent;
  }
     #t-rewrite-settings-overlay .t-set-tab-btn.active {
  border-bottom-color: rgba(144, 205, 244, 0.8);
@@ -18031,7 +18133,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
   }
 });
 
@@ -23070,13 +23172,13 @@ async function openPromptTemplateManager() {
                 <div class="t-dialog-close" id="t-prompt-manager-close"><i class="fa-solid fa-times"></i></div>
             </div>
 
-            <div class="t-set-body">
-                <div class="t-set-nav">
-                    <div class="t-set-tab-btn active" data-tab="runtime">\u2699\uFE0F \u8FD0\u884C\u8BBE\u7F6E</div>
-                    <div class="t-set-tab-btn" data-tab="prompt">\u{1F4DC} \u63D0\u793A\u8BCD\u6A21\u677F</div>
+            <div class="t-set-shell-body t-set-body">
+                <div class="t-set-shell-nav t-set-nav">
+                    <div class="t-set-shell-tab t-set-tab-btn active" data-tab="runtime">\u2699\uFE0F \u8FD0\u884C\u8BBE\u7F6E</div>
+                    <div class="t-set-shell-tab t-set-tab-btn" data-tab="prompt">\u{1F4DC} \u63D0\u793A\u8BCD\u6A21\u677F</div>
                 </div>
 
-                <div class="t-set-content">
+                <div class="t-set-shell-content t-set-content">
                     <div id="t-outline-page-runtime" class="t-set-page active">
                         ${renderApiConnectionEditorHTML({
     ids: {
@@ -27466,15 +27568,15 @@ function openSettingsPanel() {
                 </div>
             </div>
 
-            <div class="t-set-body">
-                <div class="t-set-nav">
-                    <div class="t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-plug"></i> API \u8FDE\u63A5</div>
-                    <div class="t-set-tab-btn" data-tab="runtime"><i class="fa-solid fa-sliders"></i> \u8FD0\u884C\u8BBE\u7F6E</div>
-                    <div class="t-set-tab-btn" data-tab="prompt"><i class="fa-solid fa-file-lines"></i> \u63D0\u793A\u8BCD\u7BA1\u7406</div>
-                    <div class="t-set-tab-btn" data-tab="scheme"><i class="fa-solid fa-list-check"></i> \u89C4\u5219\u65B9\u6848</div>
+            <div class="t-set-shell-body t-set-glass-body t-set-body">
+                <div class="t-set-shell-nav t-set-glass-nav t-set-nav">
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-plug"></i> API \u8FDE\u63A5</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="runtime"><i class="fa-solid fa-sliders"></i> \u8FD0\u884C\u8BBE\u7F6E</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="prompt"><i class="fa-solid fa-file-lines"></i> \u63D0\u793A\u8BCD\u7BA1\u7406</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="scheme"><i class="fa-solid fa-list-check"></i> \u89C4\u5219\u65B9\u6848</div>
                 </div>
 
-                <div class="t-set-content">
+                <div class="t-set-shell-content t-set-glass-content t-set-content">
                     <div id="t-rewrite-page-api" class="t-set-page active">
                         ${renderApiConnectionEditorHTML({
     ids: {
@@ -30026,12 +30128,12 @@ async function showProfileConfigDialog(onSave) {
                 <span><i class="fa-solid fa-gear"></i> \u8BBE\u7F6E</span>
                 <div class="t-dialog-close" id="t-profile-dialog-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-set-body">
-                <div class="t-set-nav">
-                    <div class="t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-link"></i> API \u8FDE\u63A5</div>
-                    <div class="t-set-tab-btn" data-tab="embedding"><i class="fa-solid fa-brain"></i> Embedding</div>
+            <div class="t-set-shell-body t-set-glass-body t-set-body">
+                <div class="t-set-shell-nav t-set-glass-nav t-set-nav">
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-link"></i> API \u8FDE\u63A5</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="embedding"><i class="fa-solid fa-brain"></i> Embedding</div>
                 </div>
-                <div class="t-set-content">
+                <div class="t-set-shell-content t-set-glass-content t-set-content">
                     <div class="t-set-page active" data-page="api">
                         ${renderApiConnectionEditorHTML({
     ids: {
@@ -32875,19 +32977,19 @@ function openSettingsWindow() {
   const html = `
     <div class="t-box t-root" id="t-settings-view">
         <div class="t-header"><span class="t-title-main">\u2699\uFE0F \u8BBE\u7F6E</span><span class="t-close" id="t-set-close">&times;</span></div>
-        <div class="t-set-body">
-            <div class="t-set-nav">
-                <div class="t-set-tab-btn active" data-tab="prompts">\u{1F4DC} \u63D0\u793A\u8BCD\u7BA1\u7406</div>
-                <div class="t-set-tab-btn" data-tab="data">\u{1F5C2}\uFE0F \u5267\u672C\u7BA1\u7406</div>
-                <div class="t-set-tab-btn" data-tab="connection">\u{1F50C} API \u8FDE\u63A5</div>
-                <div class="t-set-tab-btn" data-tab="automation">\u{1F916} \u81EA\u52A8\u5316</div>
-                <div class="t-set-tab-btn" data-tab="appearance">\u{1F3A8} \u5916\u89C2\u8BBE\u7F6E</div>
-                <div class="t-set-tab-btn" data-tab="toolbar">\u{1F6E0}\uFE0F \u5FEB\u6377\u5DE5\u5177\u680F</div>
-                <div class="t-set-tab-btn" data-tab="theme">\u{1F58C}\uFE0F \u4E3B\u9898\u6837\u5F0F</div>
-                <div class="t-set-tab-btn" data-tab="director">\u{1F3AC} \u5BFC\u6F14\u6A21\u5F0F</div>
+        <div class="t-set-shell-body t-set-body">
+            <div class="t-set-shell-nav t-set-nav">
+                <div class="t-set-shell-tab t-set-tab-btn active" data-tab="prompts">\u{1F4DC} \u63D0\u793A\u8BCD\u7BA1\u7406</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="data">\u{1F5C2}\uFE0F \u5267\u672C\u7BA1\u7406</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="connection">\u{1F50C} API \u8FDE\u63A5</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="automation">\u{1F916} \u81EA\u52A8\u5316</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="appearance">\u{1F3A8} \u5916\u89C2\u8BBE\u7F6E</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="toolbar">\u{1F6E0}\uFE0F \u5FEB\u6377\u5DE5\u5177\u680F</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="theme">\u{1F58C}\uFE0F \u4E3B\u9898\u6837\u5F0F</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="director">\u{1F3AC} \u5BFC\u6F14\u6A21\u5F0F</div>
             </div>
 
-            <div class="t-set-content">
+            <div class="t-set-shell-content t-set-content">
                 <!-- Tab 5: \u5916\u89C2 -->
                 <div id="page-appearance" class="t-set-page">
                     <div class="t-preview-container">

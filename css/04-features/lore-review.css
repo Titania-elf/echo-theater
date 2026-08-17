@@ -737,53 +737,13 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     border-bottom: 1px solid rgba(255, 255, 255, 0.09);
 }
 
-#t-lore-settings-dialog .t-set-body {
-    flex: 1;
-    display: flex;
-    min-height: 0;
-    overflow: hidden;
-}
+/* 本对话框的设置外壳（body / nav / tab / content）已迁至
+   02-components/settings-shell.css 的 `.t-set-glass-*` —— 与 rewrite.css 的
+   改写设置浮层逐字节相同（只有 nav 的 width 不同：本处 170px、那边 180px）。
+   width 是布局属性，留在下面。 */
 
 #t-lore-settings-dialog .t-set-nav {
     width: 170px;
-    background: rgba(18, 24, 33, 0.9);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 10px 0;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-}
-
-#t-lore-settings-dialog .t-set-tab-btn {
-    padding: 11px 14px;
-    color: #99adbe;
-    cursor: pointer;
-    transition: all 0.16s ease;
-    font-size: 0.86em;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-left: 3px solid transparent;
-}
-
-#t-lore-settings-dialog .t-set-tab-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #d7e7f5;
-}
-
-#t-lore-settings-dialog .t-set-tab-btn.active {
-    color: #b9d8ee;
-    background: rgba(144, 205, 244, 0.16);
-    border-left-color: rgba(144, 205, 244, 0.86);
-    font-weight: 700;
-}
-
-#t-lore-settings-dialog .t-set-content {
-    flex: 1;
-    min-width: 0;
-    padding: 14px;
-    overflow-y: auto;
-    background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d;
 }
 
 /* `.t-set-page` / `.t-set-page.active` 只有 `display: none` / `display: block`，
@@ -983,7 +943,12 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         flex: 0 0 auto;
         min-width: max-content;
         justify-content: center;
-        background: transparent;
+        /* 原有一条 `background: transparent`，已删除。
+           它在迁移前是**空操作**：静息态本来就没有任何规则给 tab 设过底色
+           （金色基类与冷玻璃基类都只在 :hover / .active 上设 background）。
+           但迁移后它会变成有害的 —— 本条是 (1,1,0)，带 ID，会压过组件层
+           `.t-set-glass-tab:hover` 的 (0,2,0)，把窄屏下的 hover 白膜吃掉。
+           `.active` 那条的 background: transparent 是必要的，保留在下面。 */
     }
 
     #t-lore-settings-dialog .t-set-tab-btn.active {

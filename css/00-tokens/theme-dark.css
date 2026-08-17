@@ -57,6 +57,16 @@
        注意它与上面的窗口标题栏底只差一点点（36 36 36 vs 36 37 48）但确实不同：
        面板头是中性灰，窗口标题栏偏紫。合并前需要肉眼确认两者可以统一。 */
 
+    /* ---- 设置外壳（侧边导航 + 标签 + 内容区）----
+       角色化命名而不是加通用色阶档位：#181818 与 #ccc 都落在现有中性阶之间
+       （24 在 18/26 之间、204 在 170/238 之间），补成通用档位容易被误用。 */
+    --t-color-set-nav-surface: rgb(24 24 24);
+    /* #181818 侧边导航底 */
+    --t-color-set-tab-hover-surface: rgb(var(--t-c-neutral-3-rgb));
+    /* #222 标签 hover 底 */
+    --t-color-set-tab-hover-text: rgb(var(--t-c-neutral-11-rgb));
+    /* #ccc 标签 hover 文字 */
+
     /* ---- 弹窗表面 ---- */
     --t-color-dialog-scrim: rgb(0 0 0 / .7);
     --t-color-dialog-scrim-outline: rgb(0 0 0 / .65);
@@ -99,6 +109,25 @@
     /* 冷玻璃表面的次要文字，替换 #a9bfd1 一族 */
     --t-glass-text-muted: rgb(var(--t-c-cool-8-rgb));
     /* 冷玻璃表面的弱提示，替换 #7f96aa 一族 */
+
+    /* 冷玻璃版设置外壳（lore-review 与 rewrite 的设置对话框共用）。
+       这四个值都不在冷色阶上，是独立的一档，故保留精确值：
+       18 24 33 在 cool-2(18 22 29) 与 cool-3(22 27 36) 之间；
+       153 173 190 在 cool-8(120 150 170) 与 cool-9(160 174 192) 之间；
+       215 231 245 在 cool-11(203 213 224) 与 cool-12(226 232 240) 之间；
+       185 216 238 同样不在阶上。 */
+    --t-glass-nav: rgb(18 24 33 / .9);
+    /* rgba(18,24,33,.9) 侧边导航底 */
+    --t-glass-tab-text: rgb(153 173 190);
+    /* #99adbe 标签静息文字 */
+    --t-glass-tab-text-hover: rgb(215 231 245);
+    /* #d7e7f5 */
+    --t-glass-tab-text-active: rgb(185 216 238);
+    /* #b9d8ee */
+    --t-glass-tab-hover-surface: rgb(var(--t-c-neutral-13-rgb) / .05);
+    /* rgba(255,255,255,.05)。现有白膜只有 .03/.06/.08 三档，这里是第四档 */
+    --t-glass-tab-active-surface: rgb(var(--t-c-blue-rgb) / .16);
+    --t-glass-tab-active-border: rgb(var(--t-c-blue-rgb) / .86);
 
     /* ---- 文本 ---- */
     --t-color-text: rgb(var(--t-c-neutral-12-rgb));
@@ -254,7 +283,11 @@
         radial-gradient(circle at 0% 100%,
             rgb(var(--t-c-gold-rgb) / .08) 0%, rgb(var(--t-c-gold-rgb) / 0) 32%),
         var(--t-glass-body);
-    /* 正文区的双角洗色（含不透明基底），现 4 处逐字节相同 */
+    /* 正文区的双角洗色（含不透明基底），现 4 处逐字节相同。
+       Phase 4d-3 起被 02-components/settings-shell.css 的 `.t-set-glass-content`
+       消费，替掉了其中 2 处（世界书设置 + 改写设置的内容区）。
+       rewrite.css 里还有 3 处 `radial-gradient(circle at 100% 0%` 字面量，
+       但未逐一核对是否与本配方完全相同 —— 属 Phase 6 的收口范围。 */
     --t-gradient-accent-brand: linear-gradient(135deg, rgb(var(--t-c-blue-rgb) / .18),
             rgb(var(--t-c-gold-rgb) / .16));
     /* 主操作按钮：交互蓝 → 品牌金 */

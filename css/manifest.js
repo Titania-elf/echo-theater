@@ -35,6 +35,7 @@ export const CSS_LAYERS = [
         layer: '02-components', files: [
             'window.css',      // 窗口外壳（目前只有 .t-header）
             'panel.css',       // 窗口内分区面板的头/脚
+            'settings-shell.css', // 设置界面外壳：中性灰基础 + 冷玻璃修饰
             'dialog.css',
             'button.css',
             'icon-button.css',

@@ -2367,15 +2367,15 @@ function openSettingsPanel() {
                 </div>
             </div>
 
-            <div class="t-set-body">
-                <div class="t-set-nav">
-                    <div class="t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-plug"></i> API 连接</div>
-                    <div class="t-set-tab-btn" data-tab="runtime"><i class="fa-solid fa-sliders"></i> 运行设置</div>
-                    <div class="t-set-tab-btn" data-tab="prompt"><i class="fa-solid fa-file-lines"></i> 提示词管理</div>
-                    <div class="t-set-tab-btn" data-tab="scheme"><i class="fa-solid fa-list-check"></i> 规则方案</div>
+            <div class="t-set-shell-body t-set-glass-body t-set-body">
+                <div class="t-set-shell-nav t-set-glass-nav t-set-nav">
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-plug"></i> API 连接</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="runtime"><i class="fa-solid fa-sliders"></i> 运行设置</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="prompt"><i class="fa-solid fa-file-lines"></i> 提示词管理</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="scheme"><i class="fa-solid fa-list-check"></i> 规则方案</div>
                 </div>
 
-                <div class="t-set-content">
+                <div class="t-set-shell-content t-set-glass-content t-set-content">
                     <div id="t-rewrite-page-api" class="t-set-page active">
                         ${renderApiConnectionEditorHTML({
                             ids: {

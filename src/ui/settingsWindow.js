@@ -188,19 +188,19 @@ export function openSettingsWindow() {
     const html = `
     <div class="t-box t-root" id="t-settings-view">
         <div class="t-header"><span class="t-title-main">⚙️ 设置</span><span class="t-close" id="t-set-close">&times;</span></div>
-        <div class="t-set-body">
-            <div class="t-set-nav">
-                <div class="t-set-tab-btn active" data-tab="prompts">📜 提示词管理</div>
-                <div class="t-set-tab-btn" data-tab="data">🗂️ 剧本管理</div>
-                <div class="t-set-tab-btn" data-tab="connection">🔌 API 连接</div>
-                <div class="t-set-tab-btn" data-tab="automation">🤖 自动化</div>
-                <div class="t-set-tab-btn" data-tab="appearance">🎨 外观设置</div>
-                <div class="t-set-tab-btn" data-tab="toolbar">🛠️ 快捷工具栏</div>
-                <div class="t-set-tab-btn" data-tab="theme">🖌️ 主题样式</div>
-                <div class="t-set-tab-btn" data-tab="director">🎬 导演模式</div>
+        <div class="t-set-shell-body t-set-body">
+            <div class="t-set-shell-nav t-set-nav">
+                <div class="t-set-shell-tab t-set-tab-btn active" data-tab="prompts">📜 提示词管理</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="data">🗂️ 剧本管理</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="connection">🔌 API 连接</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="automation">🤖 自动化</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="appearance">🎨 外观设置</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="toolbar">🛠️ 快捷工具栏</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="theme">🖌️ 主题样式</div>
+                <div class="t-set-shell-tab t-set-tab-btn" data-tab="director">🎬 导演模式</div>
             </div>
 
-            <div class="t-set-content">
+            <div class="t-set-shell-content t-set-content">
                 <!-- Tab 5: 外观 -->
                 <div id="page-appearance" class="t-set-page">
                     <div class="t-preview-container">
