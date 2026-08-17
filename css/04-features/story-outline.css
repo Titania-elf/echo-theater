@@ -10,30 +10,6 @@
     background: linear-gradient(180deg, rgba(12, 18, 24, 0.96), rgba(9, 14, 20, 0.96));
 }
 
-.t-dialog-overlay--outline {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    min-height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    box-sizing: border-box;
-    background: rgba(0, 0, 0, 0.65);
-    z-index: 20040;
-}
-
-.t-dialog-overlay--outline > .t-dialog-box {
-    width: min(920px, 96vw);
-    margin: 0 auto;
-    max-height: min(82dvh, 82vh);
-}
-
 #t-outline-prompt-manager .t-outline-settings-dialog {
     width: min(1100px, 96vw);
     max-width: min(1100px, 96vw);
@@ -1216,24 +1192,6 @@
 }
 
 @media (max-width: 768px) {
-    .t-dialog-overlay {
-        align-items: center;
-        justify-content: center;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        min-height: 100dvh;
-        overflow: auto;
-    }
-
-    .t-dialog-box {
-        margin: auto;
-        max-height: min(82dvh, 82vh);
-    }
-
     #t-outline-prompt-manager .t-set-nav {
         width: 100%;
         border-right: none;

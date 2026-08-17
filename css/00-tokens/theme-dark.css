@@ -47,6 +47,14 @@
     --t-color-scrim: rgb(0 0 0 / .6);
     /* 遮罩，= 现 .t-overlay 的 rgba(0,0,0,.6) */
 
+    /* ---- 弹窗表面 ---- */
+    --t-color-dialog-scrim: rgb(0 0 0 / .7);
+    --t-color-dialog-scrim-outline: rgb(0 0 0 / .65);
+    --t-color-dialog-surface: rgb(30 30 35 / .98);
+    --t-color-dialog-close: rgb(var(--t-c-cool-9-rgb));
+    --t-color-dialog-close-hover: rgb(var(--t-c-neutral-13-rgb) / .1);
+    --t-color-dialog-label: rgb(var(--t-c-cool-11-rgb));
+
     /* ---- 冷调玻璃表面（elevation 的第二套）----
        插件实际存在两套表面语言：中性灰（主窗口一系）与冷调玻璃（改写面板、
        大纲入口菜单一系）。后者不是笔误 —— 18 个值共享同一色相轴，
@@ -167,6 +175,8 @@
     /* 现有 ×1 */
     --t-shadow-lg: 0 10px 30px rgb(0 0 0 / .5);
     /* 现有 ×3，弹窗 */
+    --t-shadow-dialog: 0 20px 50px rgb(0 0 0 / .5);
+    /* 现有 .t-dialog-box 的深层投影 */
     --t-shadow-xl: 0 10px 40px rgb(0 0 0 / .8);
     /* 现有 ×6，主窗口（= .t-box） */
     --t-shadow-focus: 0 0 0 3px var(--t-color-focus-ring);

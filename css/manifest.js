@@ -33,6 +33,7 @@ export const CSS_LAYERS = [
     // 【第 2 层:语义化组件】禁止页面/ID 选择器与颜色字面量（R2/R3a/R3b）
     {
         layer: '02-components', files: [
+            'dialog.css',
             'button.css',
             'icon-button.css',
             'field.css',
@@ -64,8 +65,7 @@ export const CSS_LAYERS = [
             'debug.css',
             'lore-review.css',
             'memory-recall.css',
-            // ⚠ story-outline.css 目前在最末,其顶层 .t-dialog-* 定义会污染
-            //   lore-review 的对话框(缺陷 B6)。Phase 4 修复,届时可前移。
+            // story-outline 的 dialog 尺寸已通过组件修饰类隔离,不再依赖加载顺序。
             'story-outline.css',
             // 以下为从 JS 运行时注入迁出的样式。它们原先靠「注入得晚」无条件取胜，
             // 现在服从层叠顺序；因全部带 ID 作用域，位置对结果无影响。

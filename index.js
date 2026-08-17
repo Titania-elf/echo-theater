@@ -2114,6 +2114,14 @@ function loadCssFiles() {
     --t-color-scrim: rgb(0 0 0 / .6);
     /* \u906E\u7F69\uFF0C= \u73B0 .t-overlay \u7684 rgba(0,0,0,.6) */
 
+    /* ---- \u5F39\u7A97\u8868\u9762 ---- */
+    --t-color-dialog-scrim: rgb(0 0 0 / .7);
+    --t-color-dialog-scrim-outline: rgb(0 0 0 / .65);
+    --t-color-dialog-surface: rgb(30 30 35 / .98);
+    --t-color-dialog-close: rgb(var(--t-c-cool-9-rgb));
+    --t-color-dialog-close-hover: rgb(var(--t-c-neutral-13-rgb) / .1);
+    --t-color-dialog-label: rgb(var(--t-c-cool-11-rgb));
+
     /* ---- \u51B7\u8C03\u73BB\u7483\u8868\u9762\uFF08elevation \u7684\u7B2C\u4E8C\u5957\uFF09----
        \u63D2\u4EF6\u5B9E\u9645\u5B58\u5728\u4E24\u5957\u8868\u9762\u8BED\u8A00\uFF1A\u4E2D\u6027\u7070\uFF08\u4E3B\u7A97\u53E3\u4E00\u7CFB\uFF09\u4E0E\u51B7\u8C03\u73BB\u7483\uFF08\u6539\u5199\u9762\u677F\u3001
        \u5927\u7EB2\u5165\u53E3\u83DC\u5355\u4E00\u7CFB\uFF09\u3002\u540E\u8005\u4E0D\u662F\u7B14\u8BEF \u2014\u2014 18 \u4E2A\u503C\u5171\u4EAB\u540C\u4E00\u8272\u76F8\u8F74\uFF0C
@@ -2234,6 +2242,8 @@ function loadCssFiles() {
     /* \u73B0\u6709 \xD71 */
     --t-shadow-lg: 0 10px 30px rgb(0 0 0 / .5);
     /* \u73B0\u6709 \xD73\uFF0C\u5F39\u7A97 */
+    --t-shadow-dialog: 0 20px 50px rgb(0 0 0 / .5);
+    /* \u73B0\u6709 .t-dialog-box \u7684\u6DF1\u5C42\u6295\u5F71 */
     --t-shadow-xl: 0 10px 40px rgb(0 0 0 / .8);
     /* \u73B0\u6709 \xD76\uFF0C\u4E3B\u7A97\u53E3\uFF08= .t-box\uFF09 */
     --t-shadow-focus: 0 0 0 3px var(--t-color-focus-ring);
@@ -2955,6 +2965,148 @@ function loadCssFiles() {
 
 /* rewriteEntryButton.js */
 @keyframes t-rewrite-mark-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+
+/* === 02-components/dialog.css === */
+/* ============================================================
+   02-components/dialog.css \u2014\u2014 \u5F39\u7A97\u7EC4\u4EF6
+
+   \u5171\u7528\u7ED3\u6784\u7531\u7EC4\u4EF6\u5C42\u8D1F\u8D23\uFF1Bfeature \u53EA\u4FDD\u7559\u4E1A\u52A1\u5E03\u5C40\uFF0C\u5C3A\u5BF8\u5DEE\u5F02\u901A\u8FC7\u4FEE\u9970\u7C7B\u8868\u8FBE\u3002
+   ============================================================ */
+
+.t-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--t-color-dialog-scrim);
+    z-index: 20001;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.t-dialog-overlay--outline {
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    min-height: 100dvh;
+    padding: 10px;
+    box-sizing: border-box;
+    background: var(--t-color-dialog-scrim-outline);
+    z-index: 20040;
+}
+
+.t-dialog-box {
+    width: 90%;
+    max-width: 500px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--t-color-dialog-surface);
+    border: 1px solid var(--t-color-field-dialog-border);
+    border-radius: var(--t-radius-window);
+    box-shadow: var(--t-shadow-dialog);
+}
+
+.t-dialog-overlay--outline > .t-dialog-box {
+    width: min(920px, 96vw);
+    margin: 0 auto;
+    max-height: min(82dvh, 82vh);
+}
+
+.t-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--t-color-surface-recess);
+    border-bottom: 1px solid var(--t-color-border-faint);
+    color: var(--t-color-text-cool);
+    font-weight: var(--t-font-weight-semibold);
+}
+
+.t-dialog-header i {
+    margin-right: 8px;
+    color: var(--t-color-accent);
+}
+
+.t-dialog-close {
+    padding: 5px 10px;
+    border-radius: var(--t-radius-inline);
+    color: var(--t-color-dialog-close);
+    cursor: pointer;
+    transition: var(--t-transition-hover);
+}
+
+.t-dialog-close:hover {
+    background: var(--t-color-dialog-close-hover);
+    color: var(--t-color-text-strong);
+}
+
+.t-dialog-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.t-dialog-body :is(.t-form-group) {
+    margin-bottom: 20px;
+}
+
+.t-dialog-body :is(.t-form-label) {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--t-color-dialog-label);
+    font-weight: var(--t-font-weight-medium);
+    font-size: var(--t-text-body);
+}
+
+.t-dialog-body small {
+    display: block;
+    margin-top: 5px;
+    color: var(--t-color-text-faint);
+    font-size: var(--t-text-caption);
+}
+
+.t-dialog-footer {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: var(--t-dialog-footer-background, var(--t-color-surface-recess));
+    border-top: 1px solid var(--t-dialog-footer-border, var(--t-color-border-faint));
+}
+
+.t-dialog-footer .t-btn {
+    padding: 8px 16px;
+}
+
+@media (max-width: 768px) {
+    .t-dialog-overlay {
+        right: 0;
+        bottom: 0;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .t-dialog-overlay--outline {
+        overflow: auto;
+    }
+
+    .t-dialog-box {
+        width: 95%;
+        max-width: 95%;
+        max-height: 85vh;
+        margin: auto;
+        position: relative;
+    }
+}
 
 
 /* === 02-components/button.css === */
@@ -13518,103 +13670,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     margin: 0 5px;
 }
 
-/* \u914D\u7F6E\u5F39\u7A97\u6837\u5F0F */
-.t-dialog-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 20001;
-    /* \u9AD8\u4E8E\u4E3B overlay (20000) */
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-}
-
-.t-dialog-box {
-    background: rgba(30, 30, 35, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 85vh;
-    overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-}
-
-.t-dialog-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    font-weight: 600;
-    color: #e2e8f0;
-}
-
-.t-dialog-header i {
-    margin-right: 8px;
-    color: #90cdf4;
-}
-
-.t-dialog-close {
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: all 0.2s;
-    color: #a0aec0;
-}
-
-.t-dialog-close:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-}
-
-.t-dialog-body {
-    padding: 20px;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.t-dialog-body .t-form-group {
-    margin-bottom: 20px;
-}
-
-.t-dialog-body .t-form-label {
-    display: block;
-    margin-bottom: 8px;
-    color: #cbd5e0;
-    font-weight: 500;
-    font-size: 0.9em;
-}
-
-.t-dialog-body small {
-    display: block;
-    margin-top: 5px;
-    color: #666;
-    font-size: 0.8em;
-}
-
-.t-dialog-footer {
-    padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.2);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
-
-.t-dialog-footer .t-btn {
-    padding: 8px 16px;
-}
-
 /* \u667A\u80FD\u63D0\u53D6\u4E0E\u603B\u7ED3\u8BBE\u7F6E\u7A97\u53E3\uFF08\u5BF9\u9F50\u4E3B\u8BBE\u7F6E\u7A97\u53E3\u98CE\u683C\uFF09 */
 #t-lore-settings-dialog {
     z-index: 30070;
@@ -13746,13 +13801,13 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     color: #8da5b8;
 }
 
-#t-lore-settings-dialog .t-dialog-footer.t-lore-settings-footer {
+#t-lore-settings-dialog .t-lore-settings-footer.t-dialog-footer {
     padding: 10px 14px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    --t-dialog-footer-border: rgba(255, 255, 255, 0.1);
+    --t-dialog-footer-background: rgba(16, 22, 31, 0.9);
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    background: rgba(16, 22, 31, 0.9);
 }
 
 /* \u65B9\u6848\u4FE1\u606F\u6846 */
@@ -13847,31 +13902,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 /* \u79FB\u52A8\u7AEF\u914D\u7F6E\u5F39\u7A97\u9002\u914D */
 @media (max-width: 768px) {
-
-    /* \u786E\u4FDD\u5F39\u7A97\u8986\u76D6\u5C42\u5728\u79FB\u52A8\u7AEF\u6B63\u786E\u5C45\u4E2D */
-    .t-dialog-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px;
-        box-sizing: border-box;
-    }
-
-    .t-dialog-box {
-        width: 95%;
-        max-width: 95%;
-        max-height: 85vh;
-        margin: auto;
-        position: relative;
-        /* \u786E\u4FDD\u4E0D\u53D7\u7236\u5143\u7D20\u5F71\u54CD */
-    }
 
     .t-config-info-bar {
         padding: 8px 15px;
@@ -15345,30 +15375,6 @@ body.titania-debug-mode #chat titania-memory::before {
     background: linear-gradient(180deg, rgba(12, 18, 24, 0.96), rgba(9, 14, 20, 0.96));
 }
 
-.t-dialog-overlay--outline {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    min-height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    box-sizing: border-box;
-    background: rgba(0, 0, 0, 0.65);
-    z-index: 20040;
-}
-
-.t-dialog-overlay--outline > .t-dialog-box {
-    width: min(920px, 96vw);
-    margin: 0 auto;
-    max-height: min(82dvh, 82vh);
-}
-
 #t-outline-prompt-manager .t-outline-settings-dialog {
     width: min(1100px, 96vw);
     max-width: min(1100px, 96vw);
@@ -16551,24 +16557,6 @@ body.titania-debug-mode #chat titania-memory::before {
 }
 
 @media (max-width: 768px) {
-    .t-dialog-overlay {
-        align-items: center;
-        justify-content: center;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        min-height: 100dvh;
-        overflow: auto;
-    }
-
-    .t-dialog-box {
-        margin: auto;
-        max-height: min(82dvh, 82vh);
-    }
-
     #t-outline-prompt-manager .t-set-nav {
         width: 100%;
         border-right: none;
@@ -18166,7 +18154,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
   }
 });
 
