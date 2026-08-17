@@ -15093,19 +15093,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     border-color: rgba(102, 126, 234, 0.4);
 }
 
-.t-recall-result-checkbox {
-    display: flex;
-    align-items: flex-start;
-    padding-top: 2px;
-}
-
-.t-recall-result-checkbox input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: #667eea;
-}
-
 .t-recall-result-content {
     flex: 1;
     min-width: 0;

@@ -68,14 +68,14 @@
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1192,
+        "hex字面量": 1191,
         "rgb/rgba字面量": 982,
-        "合计": 2174,
+        "合计": 2173,
         "  00-tokens": "hex 10 / rgb 113",
         "  01-base": "hex 20 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
         "  03-layout": "hex 0 / rgb 0",
-        "  04-features": "hex 1154 / rgb 844",
+        "  04-features": "hex 1153 / rgb 844",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
     },
@@ -177,8 +177,8 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16356,
-    "规则条数": 2257,
+    "CSS 总行数": 16343,
+    "规则条数": 2255,
     "border-radius 声明 / 不同值": "353 / 41",
     "box-shadow 声明 / 不同值": "119 / 85",
     "font-size (px / em)": "162 / 316",
