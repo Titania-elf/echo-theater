@@ -8572,6 +8572,258 @@ textarea.t-input {
 }
 
 
+/* === 04-features/script-picker.css === */
+/* ============================================================
+   04-features/script-picker.css \u2014\u2014 \u4E3B\u7A97\u53E3\u7684\u5267\u672C\u9009\u62E9\u5668\u9762\u677F
+
+   \u8FD9\u4E00\u65CF\u6837\u5F0F\u539F\u5148\u6574\u6BB5\u5199\u5728 04-features/manager.css \u91CC\uFF0C\u4F46**\u96F6\u4E2A**\u89C4\u5219\u88AB
+   \u5267\u672C\u7BA1\u7406\u5668\u6D88\u8D39 \u2014\u2014 13 \u4E2A\u7C7B\u540D\u5168\u90E8\u53EA\u51FA\u73B0\u5728 src/ui/mainWindow.js\uFF1A
+
+     .t-selector-panel  .t-sel-header  .t-sel-body  .t-sel-sidebar
+     .t-sel-grid  .t-sel-footer  .t-sel-cat-btn  .t-sel-search-input
+     .t-sel-sort-select  .t-script-card  .t-card-title  .t-card-desc
+     .t-card-stats
+
+   \uFF08\`.t-mgr-*\` \u4E00\u65CF\u624D\u662F\u5267\u672C\u7BA1\u7406\u5668\u81EA\u5DF1\u7684\uFF0C\u4ECD\u7559\u5728 manager.css\u3002\uFF09
+
+   \u2500\u2500 \u4E3A\u4EC0\u4E48\u6362\u6587\u4EF6\u4F4D\u7F6E\u4E0D\u5F71\u54CD\u5C42\u53E0 \u2500\u2500
+   \u8FD9 13 \u4E2A\u7C7B\u5728\u5168\u5E93**\u53EA\u6709\u672C\u6587\u4EF6\u4E00\u5904\u5B9A\u4E49**\uFF08\u8FC1\u79FB\u524D\u53EA\u6709 manager.css \u4E00\u5904\uFF09\uFF0C
+   \u6CA1\u6709\u4EFB\u4F55\u5176\u5B83\u6587\u4EF6\u6309\u540C\u540D\u7C7B\u6216\u540E\u4EE3\u9009\u62E9\u5668\u8986\u76D6\u5B83\u4EEC\uFF0C\u6545\u672C\u6587\u4EF6\u5728 manifest \u4E2D
+   \u7684\u4F4D\u7F6E\u5BF9\u5C42\u53E0\u7ED3\u679C\u65E0\u5F71\u54CD\u3002\u653E\u5728 main-window-legacy.css \u4E4B\u540E\u662F\u6309\u300C\u5F52\u5C5E\u300D
+   \u6392\u7684\uFF1A\u5B83\u5C5E\u4E8E\u4E3B\u7A97\u53E3\u7684\u529F\u80FD\uFF0C\u4E0D\u5C5E\u4E8E\u5267\u672C\u7BA1\u7406\u5668\u3002
+
+   \u26A0 \`.t-card-title\` / \`.t-card-desc\` / \`.t-card-stats\` \u4E09\u4E2A\u540D\u5B57\u8FC7\u4E8E\u7B3C\u7EDF\uFF0C
+     \u662F A12 \u7684\u9690\u60A3\uFF08\u4EFB\u4F55 feature \u518D\u5B9A\u4E49\u540C\u540D\u88F8\u7C7B\u5C31\u4F1A\u649E\u8F66\uFF09\u3002\u672C\u6279\u53EA\u642C\u5BB6\u3001
+     \u4E0D\u6539\u540D\uFF0C\u907F\u514D\u628A\u300C\u642C\u8FD0\u300D\u548C\u300C\u91CD\u547D\u540D\u300D\u6DF7\u5728\u540C\u4E00\u4E2A\u63D0\u4EA4\u91CC\u3002
+     \u6539\u540D\u65F6\u8BB0\u5F97\u540C\u6B65 mainWindow.js:2638-2640\u3002
+   ============================================================ */
+
+/* \u5267\u672C\u9009\u62E9\u5668\u9762\u677F */
+.t-selector-panel {
+    position: absolute;
+    top: 80px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    background: rgba(18, 18, 18, 0.98);
+    backdrop-filter: blur(10px);
+    z-index: 2001;
+    border-radius: 8px;
+    border: 1px solid #444;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    animation: t-fade-in 0.2s;
+}
+
+.t-sel-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1e1e1e;
+    border-radius: 8px 8px 0 0;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* \u5267\u672C\u9009\u62E9\u5668\u641C\u7D22\u6846 */
+.t-sel-search-input {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: #eee;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    width: 150px;
+    transition: 0.2s;
+}
+
+.t-sel-sort-select {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: #eee;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.t-sel-search-input:focus {
+    outline: none;
+    border-color: #bfa15f;
+    width: 180px;
+}
+
+.t-sel-search-input::placeholder {
+    color: #666;
+}
+
+.t-sel-body {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.t-sel-sidebar {
+    width: 160px;
+    background: #181818;
+    border-right: 1px solid #333;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.t-sel-grid {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    align-content: start;
+}
+
+.t-sel-cat-btn {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: #888;
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: 0.2s;
+    text-align: left;
+}
+
+.t-sel-cat-btn:hover {
+    background: #252525;
+    color: #ddd;
+}
+
+.t-sel-cat-btn.active {
+    background: #333;
+    color: #fff;
+    font-weight: bold;
+    border-left: 3px solid #bfa15f;
+}
+
+.t-script-card {
+    background: #252525;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.t-script-card:hover {
+    transform: translateY(-2px);
+    border-color: #555;
+    background: #2a2a2a;
+}
+
+.t-card-title {
+    font-weight: bold;
+    color: #eee;
+    font-size: 1em;
+}
+
+.t-card-desc {
+    font-size: 0.8em;
+    color: #777;
+    line-height: 1.3;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.t-card-stats {
+    font-size: 0.74em;
+    color: #8e8e8e;
+    margin-top: 2px;
+}
+
+.t-sel-footer {
+    padding: 7px 12px;
+    font-size: 0.78em;
+    color: #7f7f7f;
+    border-top: 1px solid #333;
+    background: #1a1a1a;
+    border-radius: 0 0 8px 8px;
+}
+
+/* \u2500\u2500 \u79FB\u52A8\u7AEF\u9002\u914D \u2500\u2500 */
+@media screen and (max-width: 600px) {
+    .t-selector-panel {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+    }
+
+    .t-sel-body {
+        flex-direction: column;
+    }
+
+    .t-sel-sidebar {
+        width: 100%;
+        max-height: 50px;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: none;
+        border-bottom: 1px solid #333;
+        padding: 5px;
+        gap: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* \u79FB\u52A8\u7AEF\u641C\u7D22\u6846\u9002\u914D */
+    .t-sel-search-input {
+        width: 120px;
+    }
+
+    .t-sel-search-input:focus {
+        width: 140px;
+    }
+
+    .t-sel-sort-select {
+        min-width: 100px;
+        max-width: 120px;
+    }
+
+    .t-sel-cat-btn {
+        text-align: center;
+        border-left: none;
+        padding: 6px 12px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        background: #222;
+        border: 1px solid #333;
+    }
+
+    .t-sel-cat-btn.active {
+        background: #bfa15f;
+        color: #000;
+        border: 1px solid #bfa15f;
+        border-left: 1px solid #bfa15f;
+    }
+
+    .t-sel-grid {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+}
+
+
 /* === 04-features/settings.css === */
 /* css/04-features/settings.css - \u8BBE\u7F6E\u7A97\u53E3 */
 
@@ -9885,166 +10137,6 @@ textarea.t-input {
     animation: t-slide-up 0.2s;
 }
 
-/* \u5267\u672C\u9009\u62E9\u5668\u9762\u677F */
-.t-selector-panel {
-    position: absolute;
-    top: 80px;
-    left: 20px;
-    right: 20px;
-    bottom: 20px;
-    background: rgba(18, 18, 18, 0.98);
-    backdrop-filter: blur(10px);
-    z-index: 2001;
-    border-radius: 8px;
-    border: 1px solid #444;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-    animation: t-fade-in 0.2s;
-}
-
-.t-sel-header {
-    padding: 10px 15px;
-    border-bottom: 1px solid #333;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #1e1e1e;
-    border-radius: 8px 8px 0 0;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-/* \u5267\u672C\u9009\u62E9\u5668\u641C\u7D22\u6846 */
-.t-sel-search-input {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.85em;
-    width: 150px;
-    transition: 0.2s;
-}
-
-.t-sel-sort-select {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
-    padding: 5px 8px;
-    border-radius: 4px;
-    font-size: 0.85em;
-}
-
-.t-sel-search-input:focus {
-    outline: none;
-    border-color: #bfa15f;
-    width: 180px;
-}
-
-.t-sel-search-input::placeholder {
-    color: #666;
-}
-
-.t-sel-body {
-    display: flex;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-.t-sel-sidebar {
-    width: 160px;
-    background: #181818;
-    border-right: 1px solid #333;
-    padding: 10px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    flex-shrink: 0;
-}
-
-.t-sel-grid {
-    flex-grow: 1;
-    padding: 15px;
-    overflow-y: auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 10px;
-    align-content: start;
-}
-
-.t-sel-cat-btn {
-    padding: 8px 12px;
-    cursor: pointer;
-    color: #888;
-    border-radius: 4px;
-    font-size: 0.9em;
-    transition: 0.2s;
-    text-align: left;
-}
-
-.t-sel-cat-btn:hover {
-    background: #252525;
-    color: #ddd;
-}
-
-.t-sel-cat-btn.active {
-    background: #333;
-    color: #fff;
-    font-weight: bold;
-    border-left: 3px solid #bfa15f;
-}
-
-.t-script-card {
-    background: #252525;
-    border: 1px solid #333;
-    border-radius: 6px;
-    padding: 12px;
-    cursor: pointer;
-    transition: 0.2s;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.t-script-card:hover {
-    transform: translateY(-2px);
-    border-color: #555;
-    background: #2a2a2a;
-}
-
-.t-card-title {
-    font-weight: bold;
-    color: #eee;
-    font-size: 1em;
-}
-
-.t-card-desc {
-    font-size: 0.8em;
-    color: #777;
-    line-height: 1.3;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-}
-
-.t-card-stats {
-    font-size: 0.74em;
-    color: #8e8e8e;
-    margin-top: 2px;
-}
-
-.t-sel-footer {
-    padding: 7px 12px;
-    font-size: 0.78em;
-    color: #7f7f7f;
-    border-top: 1px solid #333;
-    background: #1a1a1a;
-    border-radius: 0 0 8px 8px;
-}
-
 /* \u5BFC\u5165 Modal \u2014\u2014 \u906E\u7F69\u4E0E\u8868\u9762\u57FA\u7840\u89C1 02-components/dialog.css
    \uFF08.t-dialog-overlay + .t-dialog-overlay--contained / .t-dialog-panel\uFF09\u3002
    \u8FD9\u91CC\u53EA\u4FDD\u7559\u4E1A\u52A1\u5DEE\u5F02\uFF1Ascrim \u6DF1\u6D45\u3001\u5806\u53E0\u5C42\u7EA7\u3001\u521D\u59CB\u9690\u85CF\u3002 */
@@ -10244,68 +10336,6 @@ textarea.t-input {
     #t-mgr-view {
         height: 80vh;
         max-height: 85vh;
-    }
-
-    .t-selector-panel {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
-    }
-
-    .t-sel-body {
-        flex-direction: column;
-    }
-
-    .t-sel-sidebar {
-        width: 100%;
-        max-height: 50px;
-        flex-direction: row;
-        overflow-x: auto;
-        overflow-y: hidden;
-        border-right: none;
-        border-bottom: 1px solid #333;
-        padding: 5px;
-        gap: 8px;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    /* \u79FB\u52A8\u7AEF\u641C\u7D22\u6846\u9002\u914D */
-    .t-sel-search-input {
-        width: 120px;
-    }
-
-    .t-sel-search-input:focus {
-        width: 140px;
-    }
-
-    .t-sel-sort-select {
-        min-width: 100px;
-        max-width: 120px;
-    }
-
-    .t-sel-cat-btn {
-        text-align: center;
-        border-left: none;
-        padding: 6px 12px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        background: #222;
-        border: 1px solid #333;
-    }
-
-    .t-sel-cat-btn.active {
-        background: #bfa15f;
-        color: #000;
-        border: 1px solid #bfa15f;
-        border-left: 1px solid #bfa15f;
-    }
-
-    .t-sel-grid {
-        grid-template-columns: 1fr;
-        padding: 10px;
     }
 }
 
@@ -18133,7 +18163,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
   }
 });
 

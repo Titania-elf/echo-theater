@@ -61,6 +61,10 @@ export const CSS_LAYERS = [
             'main-window.css',
             // ⚠ 必须紧跟 main-window.css:经典布局靠后置覆盖少量冲突规则(审计 A15)
             'main-window-legacy.css',
+            // 主窗口的剧本选择器面板。原先整段写在 manager.css 里，但 13 个类名
+            // 全部只被 mainWindow.js 消费、剧本管理器一个都不用（Phase 4c 拆出）。
+            // 位置按归属排；这些类全库仅此一处定义，故位置对层叠无影响。
+            'script-picker.css',
             'settings.css',
             'manager.css',
             'workshop.css',    // ← dom.js 原先漏掉的文件(B1)
