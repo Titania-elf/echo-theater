@@ -34,6 +34,7 @@ export const CSS_LAYERS = [
     {
         layer: '02-components', files: [
             'window.css',      // 窗口外壳（目前只有 .t-header）
+            'panel.css',       // 窗口内分区面板的头/脚
             'dialog.css',
             'button.css',
             'icon-button.css',

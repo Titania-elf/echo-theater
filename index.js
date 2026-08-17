@@ -2018,6 +2018,11 @@ function loadCssFiles() {
     /* 6px  \u2014\u2014 button / input / select / badge \u7B49\u63A7\u4EF6 */
     --t-radius-container: var(--t-radius-lg);
     /* 8px  \u2014\u2014 card / panel \u7B49\u5BB9\u5668 */
+    --t-radius-panel: var(--t-radius-xl);
+    /* 10px \u2014\u2014 \u7A97\u53E3**\u5185\u90E8**\u5206\u533A\u9762\u677F\u7684\u5934/\u811A\uFF08.t-panel-header / .t-panel-footer\uFF09
+       \u26A0 \u8FC7\u6E21 token\uFF1A\u8BED\u4E49\u4E0A\u4E0E --t-radius-container(8px) \u91CD\u53E0\uFF0C\u4F46\u73B0\u6709\u4EE3\u7801\u8FD9\u4E09\u5904
+         \u9762\u677F\u5199\u7684\u5C31\u662F 10px\uFF0C\u6536\u53E3\u65F6\u82E5\u6539\u6210 8px \u5C31\u662F\u89C6\u89C9\u53D8\u66F4\u3002Phase 7 \u5F52\u5E76\u5706\u89D2
+         \u9636\u68AF\u65F6\u5E94\u628A\u5B83\u5408\u5E76\u8FDB --t-radius-container\uFF0C\u5E76\u5355\u72EC\u6BD4\u5BF9\u90A3\u4E00\u6B65\u3002 */
     --t-radius-window: var(--t-radius-2xl);
     /* 12px \u2014\u2014 \u7A97\u53E3 / \u5F39\u7A97\u6839 */
     --t-radius-inline: var(--t-radius-sm);
@@ -2118,6 +2123,11 @@ function loadCssFiles() {
     --t-color-window-header: rgb(36 37 48);
     /* #242530 \u7A97\u53E3\u6807\u9898\u680F\u5E95\u3002\u65E2\u4E0D\u5728\u4E2D\u6027\u9636\uFF0830/34 \u4E24\u6863\u90FD\u4E0D\u7B49\uFF09\u4E5F\u4E0D\u5728\u51B7\u8272\u9636
        \uFF0822 27 36 / 28 34 44 \u90FD\u4E0D\u7B49\uFF09\u2014\u2014 \u5B83\u7565\u504F\u7D2B\uFF0C\u662F\u72EC\u7ACB\u7684\u4E00\u6863\uFF0C\u5148\u4FDD\u7559\u7CBE\u786E\u503C\u3002 */
+    --t-color-panel-header: rgb(36 36 36);
+    /* #242424 \u7A97\u53E3**\u5185\u90E8**\u5206\u533A\u9762\u677F\u7684\u5934\u5E95\uFF08.t-panel-header\uFF09\u3002
+       \u4E2D\u6027\u9636\u6CA1\u6709\u8FD9\u4E00\u6863\uFF08\u843D\u5728 #222 \u4E0E #2a2a2a \u4E4B\u95F4\uFF09\uFF0C\u5148\u4FDD\u7559\u7CBE\u786E\u503C\u3002
+       \u6CE8\u610F\u5B83\u4E0E\u4E0A\u9762\u7684\u7A97\u53E3\u6807\u9898\u680F\u5E95\u53EA\u5DEE\u4E00\u70B9\u70B9\uFF0836 36 36 vs 36 37 48\uFF09\u4F46\u786E\u5B9E\u4E0D\u540C\uFF1A
+       \u9762\u677F\u5934\u662F\u4E2D\u6027\u7070\uFF0C\u7A97\u53E3\u6807\u9898\u680F\u504F\u7D2B\u3002\u5408\u5E76\u524D\u9700\u8981\u8089\u773C\u786E\u8BA4\u4E24\u8005\u53EF\u4EE5\u7EDF\u4E00\u3002 */
 
     /* ---- \u5F39\u7A97\u8868\u9762 ---- */
     --t-color-dialog-scrim: rgb(0 0 0 / .7);
@@ -3018,6 +3028,50 @@ function loadCssFiles() {
     .t-header {
         padding: 10px;
     }
+}
+
+
+/* === 02-components/panel.css === */
+/* ============================================================
+   02-components/panel.css \u2014\u2014 \u7A97\u53E3\u5185\u5206\u533A\u9762\u677F\u7684\u5934 / \u811A
+
+   \u6536\u53E3 A13 \u62A5\u544A\u7684\u4E24\u7EC4\u300C3 \u5904 8 \u6761\u5B8C\u5168\u76F8\u540C\u300D\u7684\u91CD\u590D\uFF08\u90FD\u5728 main-window.css\uFF09\uFF1A
+
+     .t-wi-header  / .t-queue-header  / .t-ce-header    \u2192 .t-panel-header
+     .t-wi-footer  / .t-queue-footer  / .t-ce-footer    \u2192 .t-panel-footer
+
+   \u2500\u2500 \u53EA\u505A\u5934\u548C\u811A\uFF0C\u4E0D\u505A\u5BB9\u5668\u4E0E body \u2500\u2500
+   \u4E09\u4E2A\u9762\u677F\u7684 body\uFF08.t-wi-body / .t-queue-body / .t-ce-body\uFF09\u58F0\u660E\u5404\u4E0D\u76F8\u540C\uFF0C
+   A13 \u4E5F\u6CA1\u628A\u5B83\u4EEC\u62A5\u6210\u91CD\u590D\u7EC4\uFF1B\u5916\u5C42\u5BB9\u5668\u540C\u7406\u3002\u4E3A\u53EA\u6709\u4E00\u4E2A\u6D88\u8D39\u8005\u3001\u53C8\u6CA1\u6709\u91CD\u590D\u7684
+   \u6837\u5F0F\u5EFA\u62BD\u8C61\u662F\u8D1F\u6536\u76CA\uFF0C\u6545\u8FD9\u91CC\u4E0D\u78B0\uFF08\u89C1 \u672A\u5B8C\u6210.md \xA74.5\uFF09\u3002
+
+   \u2500\u2500 \u4E0E 02-components/window.css \u7684 .t-header \u7684\u533A\u522B\uFF08\u52FF\u5408\u5E76\uFF09\u2500\u2500
+     .t-header       **\u7A97\u53E3**\u6807\u9898\u680F\uFF1A\u5E95 #242530\uFF08\u504F\u7D2B\uFF09\u3001\u63CF\u8FB9 #444\u3001\u65E0\u5706\u89D2
+     .t-panel-header \u7A97\u53E3**\u5185\u90E8**\u5206\u533A\u9762\u677F\u7684\u5934\uFF1A\u5E95 #242424\uFF08\u4E2D\u6027\u7070\uFF09\u3001
+                     \u63CF\u8FB9 #333\u3001\u4E0A\u5706\u89D2 10px
+   \u4E24\u8005\u5E95\u8272\u53EA\u5DEE\u4E00\u70B9\uFF0836 37 48 vs 36 36 36\uFF09\uFF0C\u4F46\u4E00\u4E2A\u504F\u7D2B\u4E00\u4E2A\u4E2D\u6027\uFF0C\u662F\u4E24\u5957\u4E1C\u897F\u3002
+   ============================================================ */
+
+.t-panel-header {
+    padding: 12px 15px;
+    background: var(--t-color-panel-header);
+    border-bottom: 1px solid var(--t-color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: var(--t-radius-panel) var(--t-radius-panel) 0 0;
+    flex-shrink: 0;
+}
+
+.t-panel-footer {
+    padding: 12px 15px;
+    background: var(--t-color-surface);
+    border-top: 1px solid var(--t-color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0 0 var(--t-radius-panel) var(--t-radius-panel);
+    flex-shrink: 0;
 }
 
 
@@ -5717,16 +5771,9 @@ textarea.t-input {
     animation: t-fade-in 0.2s;
 }
 
-.t-wi-header {
-    padding: 12px 15px;
-    background: #242424;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 10px 10px 0 0;
-    flex-shrink: 0;
-}
+/* \`.t-wi-header\` \u7684\u57FA\u7840\u89C6\u89C9\u5DF2\u8FC1\u81F3 02-components/panel.css \u7684 \`.t-panel-header\`
+   \uFF08\u4E0E .t-queue-header / .t-ce-header \u9010\u5B57\u8282\u76F8\u540C\uFF0CA13 \u91CD\u590D\u7EC4\uFF09\u3002
+   \u672C\u6587\u4EF6\u53EA\u5269\u4E0B\u65B9\u79FB\u52A8\u7AEF\u7684 padding \u6536\u7D27\u3002 */
 
 /* \u7248\u672C\u53F7\u5FBD\u7AE0 */
 .t-version-badge {
@@ -6327,16 +6374,9 @@ textarea.t-input {
     word-break: break-word;
 }
 
-.t-wi-footer {
-    padding: 12px 15px;
-    background: #1e1e1e;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 0 0 10px 10px;
-    flex-shrink: 0;
-}
+/* \`.t-wi-footer\` \u7684\u57FA\u7840\u89C6\u89C9\u5DF2\u8FC1\u81F3 02-components/panel.css \u7684 \`.t-panel-footer\`
+   \uFF08\u4E0E .t-queue-footer / .t-ce-footer \u9010\u5B57\u8282\u76F8\u540C\uFF0CA13 \u91CD\u590D\u7EC4\uFF09\u3002
+   \u672C\u6587\u4EF6\u53EA\u5269\u4E0B\u65B9\u79FB\u52A8\u7AEF\u7684 padding \u6536\u7D27\u3002 */
 
 #t-wi-stat {
     color: #888;
@@ -7275,16 +7315,8 @@ textarea.t-input {
     animation: t-fade-in 0.2s;
 }
 
-.t-queue-header {
-    padding: 12px 15px;
-    background: #242424;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 10px 10px 0 0;
-    flex-shrink: 0;
-}
+/* \`.t-queue-header\` \u7684\u89C6\u89C9\u5168\u90E8\u7531 02-components/panel.css \u7684 \`.t-panel-header\` \u63D0\u4F9B\uFF0C
+   \u672C\u6587\u4EF6\u4E0D\u518D\u9700\u8981\u4EFB\u4F55\u58F0\u660E\u3002 */
 
 .t-queue-body {
     flex-grow: 1;
@@ -7487,16 +7519,8 @@ textarea.t-input {
 }
 
 /* \u5E95\u90E8 */
-.t-queue-footer {
-    padding: 12px 15px;
-    background: #1e1e1e;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 0 0 10px 10px;
-    flex-shrink: 0;
-}
+/* \`.t-queue-footer\` \u7684\u89C6\u89C9\u5168\u90E8\u7531 02-components/panel.css \u7684 \`.t-panel-footer\` \u63D0\u4F9B\uFF0C
+   \u672C\u6587\u4EF6\u4E0D\u518D\u9700\u8981\u4EFB\u4F55\u58F0\u660E\u3002 */
 
 .t-queue-status {
     display: flex;
@@ -7596,16 +7620,8 @@ textarea.t-input {
     animation: t-fade-in 0.2s;
 }
 
-.t-ce-header {
-    padding: 12px 15px;
-    background: #242424;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 10px 10px 0 0;
-    flex-shrink: 0;
-}
+/* \`.t-ce-header\` \u7684\u89C6\u89C9\u5168\u90E8\u7531 02-components/panel.css \u7684 \`.t-panel-header\` \u63D0\u4F9B\uFF0C
+   \u672C\u6587\u4EF6\u4E0D\u518D\u9700\u8981\u4EFB\u4F55\u58F0\u660E\u3002 */
 
 .t-ce-body {
     flex-grow: 1;
@@ -7654,16 +7670,8 @@ textarea.t-input {
     background: #555;
 }
 
-.t-ce-footer {
-    padding: 12px 15px;
-    background: #1e1e1e;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 0 0 10px 10px;
-    flex-shrink: 0;
-}
+/* \`.t-ce-footer\` \u7684\u89C6\u89C9\u5168\u90E8\u7531 02-components/panel.css \u7684 \`.t-panel-footer\` \u63D0\u4F9B\uFF0C
+   \u672C\u6587\u4EF6\u4E0D\u518D\u9700\u8981\u4EFB\u4F55\u58F0\u660E\u3002 */
 
 .t-ce-stats {
     color: #666;
@@ -18064,7 +18072,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
   }
 });
 
@@ -37586,7 +37594,7 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
     }).join("") : `<div style="color:#777; font-size:12px;">\u6682\u65E0\u6700\u8FD1\u7EED\u5199\u6307\u4EE4</div>`;
     const html = `
         <div id="t-continuation-editor" class="t-content-editor">
-            <div class="t-ce-header">
+            <div class="t-panel-header t-ce-header">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <i class="fa-solid fa-wand-magic-sparkles" style="color:#bfa15f;"></i>
                     <span style="font-weight:bold;">\u7EED\u5199\u64CD\u4F5C\u53F0</span>
@@ -37625,7 +37633,7 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
 
             </div>
 
-            <div class="t-ce-footer">
+            <div class="t-panel-footer t-ce-footer">
                 <div class="t-ce-stats"><span id="t-cont-char-count-footer">0 \u5B57</span></div>
                 <div class="t-ce-actions">
                     <button class="t-btn" id="t-cont-cancel">\u53D6\u6D88</button>
@@ -38822,7 +38830,7 @@ async function openWorldInfoSelector() {
   };
   const loadingHtml = `
     <div id="t-wi-selector" class="t-wi-selector">
-        <div class="t-wi-header">
+        <div class="t-panel-header t-wi-header">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-book-atlas" style="color:#90cdf4;"></i>
                 <span style="font-weight:bold;">\u4E16\u754C\u4E66\u7BA1\u7406</span>
@@ -38929,7 +38937,7 @@ async function openWorldInfoSelector() {
   };
   const html = `
     <div id="t-wi-selector" class="t-wi-selector">
-        <div class="t-wi-header">
+        <div class="t-panel-header t-wi-header">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-book-atlas" style="color:#90cdf4;"></i>
                 <span style="font-weight:bold;">\u4E16\u754C\u4E66\u7BA1\u7406</span>
@@ -38979,7 +38987,7 @@ async function openWorldInfoSelector() {
             </div>
         </div>
 
-        <div class="t-wi-footer">
+        <div class="t-panel-footer t-wi-footer">
             <span id="t-wi-stat">\u5DF2\u9009: 0/0</span>
             <button class="t-btn primary" id="t-wi-save" ${allBooks.length === 0 ? "disabled" : ""}>\u4FDD\u5B58</button>
         </div>
@@ -39586,7 +39594,7 @@ function openContentEditor() {
   const currentContent = GlobalState.lastGeneratedContent || "";
   const html = `
     <div id="t-content-editor" class="t-content-editor">
-        <div class="t-ce-header">
+        <div class="t-panel-header t-ce-header">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-pen-nib" style="color:#bfa15f;"></i>
                 <span style="font-weight:bold;">\u7F16\u8F91\u5185\u5BB9</span>
@@ -39597,7 +39605,7 @@ function openContentEditor() {
         <div class="t-ce-body">
             <textarea id="t-ce-textarea" class="t-ce-textarea" spellcheck="false"></textarea>
         </div>
-        <div class="t-ce-footer">
+        <div class="t-panel-footer t-ce-footer">
             <div class="t-ce-stats">
                 <span id="t-ce-char-count">\u5B57\u7B26: ${currentContent.length}</span>
             </div>
@@ -39665,7 +39673,7 @@ function openQueueSettingsWindow() {
   )].sort((a, b) => a === "\u5168\u90E8" ? -1 : b === "\u5168\u90E8" ? 1 : a.localeCompare(b));
   const html = `
     <div id="t-queue-settings" class="t-queue-settings">
-        <div class="t-queue-header">
+        <div class="t-panel-header t-queue-header">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-layer-group" style="color:#90cdf4;"></i>
                 <span style="font-weight:bold;">\u961F\u5217\u751F\u6210\u8BBE\u7F6E</span>
@@ -39748,7 +39756,7 @@ function openQueueSettingsWindow() {
             </div>
         </div>
         
-        <div class="t-queue-footer">
+        <div class="t-panel-footer t-queue-footer">
             <div class="t-queue-status" id="t-queue-status">
                 ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:#55efc4;"></i> \u961F\u5217\u5DF2\u6FC0\u6D3B' : '<i class="fa-solid fa-circle" style="color:#666;"></i> \u961F\u5217\u672A\u6FC0\u6D3B'}
             </div>

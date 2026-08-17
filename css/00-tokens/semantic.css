@@ -19,6 +19,11 @@
     /* 6px  —— button / input / select / badge 等控件 */
     --t-radius-container: var(--t-radius-lg);
     /* 8px  —— card / panel 等容器 */
+    --t-radius-panel: var(--t-radius-xl);
+    /* 10px —— 窗口**内部**分区面板的头/脚（.t-panel-header / .t-panel-footer）
+       ⚠ 过渡 token：语义上与 --t-radius-container(8px) 重叠，但现有代码这三处
+         面板写的就是 10px，收口时若改成 8px 就是视觉变更。Phase 7 归并圆角
+         阶梯时应把它合并进 --t-radius-container，并单独比对那一步。 */
     --t-radius-window: var(--t-radius-2xl);
     /* 12px —— 窗口 / 弹窗根 */
     --t-radius-inline: var(--t-radius-sm);

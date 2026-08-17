@@ -275,7 +275,7 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
 
         const html = `
         <div id="t-continuation-editor" class="t-content-editor">
-            <div class="t-ce-header">
+            <div class="t-panel-header t-ce-header">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <i class="fa-solid fa-wand-magic-sparkles" style="color:#bfa15f;"></i>
                     <span style="font-weight:bold;">续写操作台</span>
@@ -314,7 +314,7 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
 
             </div>
 
-            <div class="t-ce-footer">
+            <div class="t-panel-footer t-ce-footer">
                 <div class="t-ce-stats"><span id="t-cont-char-count-footer">0 字</span></div>
                 <div class="t-ce-actions">
                     <button class="t-btn" id="t-cont-cancel">取消</button>
@@ -1893,7 +1893,7 @@ async function openWorldInfoSelector() {
 
     const loadingHtml = `
     <div id="t-wi-selector" class="t-wi-selector">
-        <div class="t-wi-header">
+        <div class="t-panel-header t-wi-header">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-book-atlas" style="color:#90cdf4;"></i>
                 <span style="font-weight:bold;">世界书管理</span>
@@ -2025,7 +2025,7 @@ async function openWorldInfoSelector() {
 
     const html = `
     <div id="t-wi-selector" class="t-wi-selector">
-        <div class="t-wi-header">
+        <div class="t-panel-header t-wi-header">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-book-atlas" style="color:#90cdf4;"></i>
                 <span style="font-weight:bold;">世界书管理</span>
@@ -2075,7 +2075,7 @@ async function openWorldInfoSelector() {
             </div>
         </div>
 
-        <div class="t-wi-footer">
+        <div class="t-panel-footer t-wi-footer">
             <span id="t-wi-stat">已选: 0/0</span>
             <button class="t-btn primary" id="t-wi-save" ${allBooks.length === 0 ? "disabled" : ""}>保存</button>
         </div>
@@ -2862,7 +2862,7 @@ function openContentEditor() {
 
     const html = `
     <div id="t-content-editor" class="t-content-editor">
-        <div class="t-ce-header">
+        <div class="t-panel-header t-ce-header">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-pen-nib" style="color:#bfa15f;"></i>
                 <span style="font-weight:bold;">编辑内容</span>
@@ -2873,7 +2873,7 @@ function openContentEditor() {
         <div class="t-ce-body">
             <textarea id="t-ce-textarea" class="t-ce-textarea" spellcheck="false"></textarea>
         </div>
-        <div class="t-ce-footer">
+        <div class="t-panel-footer t-ce-footer">
             <div class="t-ce-stats">
                 <span id="t-ce-char-count">字符: ${currentContent.length}</span>
             </div>
@@ -2979,7 +2979,7 @@ function openQueueSettingsWindow() {
 
     const html = `
     <div id="t-queue-settings" class="t-queue-settings">
-        <div class="t-queue-header">
+        <div class="t-panel-header t-queue-header">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-layer-group" style="color:#90cdf4;"></i>
                 <span style="font-weight:bold;">队列生成设置</span>
@@ -3062,7 +3062,7 @@ function openQueueSettingsWindow() {
             </div>
         </div>
         
-        <div class="t-queue-footer">
+        <div class="t-panel-footer t-queue-footer">
             <div class="t-queue-status" id="t-queue-status">
                 ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:#55efc4;"></i> 队列已激活' : '<i class="fa-solid fa-circle" style="color:#666;"></i> 队列未激活'}
             </div>

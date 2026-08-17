@@ -1369,16 +1369,9 @@
     animation: t-fade-in 0.2s;
 }
 
-.t-wi-header {
-    padding: 12px 15px;
-    background: #242424;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 10px 10px 0 0;
-    flex-shrink: 0;
-}
+/* `.t-wi-header` 的基础视觉已迁至 02-components/panel.css 的 `.t-panel-header`
+   （与 .t-queue-header / .t-ce-header 逐字节相同，A13 重复组）。
+   本文件只剩下方移动端的 padding 收紧。 */
 
 /* 版本号徽章 */
 .t-version-badge {
@@ -1979,16 +1972,9 @@
     word-break: break-word;
 }
 
-.t-wi-footer {
-    padding: 12px 15px;
-    background: #1e1e1e;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 0 0 10px 10px;
-    flex-shrink: 0;
-}
+/* `.t-wi-footer` 的基础视觉已迁至 02-components/panel.css 的 `.t-panel-footer`
+   （与 .t-queue-footer / .t-ce-footer 逐字节相同，A13 重复组）。
+   本文件只剩下方移动端的 padding 收紧。 */
 
 #t-wi-stat {
     color: #888;
@@ -2927,16 +2913,8 @@
     animation: t-fade-in 0.2s;
 }
 
-.t-queue-header {
-    padding: 12px 15px;
-    background: #242424;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 10px 10px 0 0;
-    flex-shrink: 0;
-}
+/* `.t-queue-header` 的视觉全部由 02-components/panel.css 的 `.t-panel-header` 提供，
+   本文件不再需要任何声明。 */
 
 .t-queue-body {
     flex-grow: 1;
@@ -3139,16 +3117,8 @@
 }
 
 /* 底部 */
-.t-queue-footer {
-    padding: 12px 15px;
-    background: #1e1e1e;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 0 0 10px 10px;
-    flex-shrink: 0;
-}
+/* `.t-queue-footer` 的视觉全部由 02-components/panel.css 的 `.t-panel-footer` 提供，
+   本文件不再需要任何声明。 */
 
 .t-queue-status {
     display: flex;
@@ -3248,16 +3218,8 @@
     animation: t-fade-in 0.2s;
 }
 
-.t-ce-header {
-    padding: 12px 15px;
-    background: #242424;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 10px 10px 0 0;
-    flex-shrink: 0;
-}
+/* `.t-ce-header` 的视觉全部由 02-components/panel.css 的 `.t-panel-header` 提供，
+   本文件不再需要任何声明。 */
 
 .t-ce-body {
     flex-grow: 1;
@@ -3306,16 +3268,8 @@
     background: #555;
 }
 
-.t-ce-footer {
-    padding: 12px 15px;
-    background: #1e1e1e;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 0 0 10px 10px;
-    flex-shrink: 0;
-}
+/* `.t-ce-footer` 的视觉全部由 02-components/panel.css 的 `.t-panel-footer` 提供，
+   本文件不再需要任何声明。 */
 
 .t-ce-stats {
     color: #666;
