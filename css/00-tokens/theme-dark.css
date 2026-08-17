@@ -47,6 +47,11 @@
     --t-color-scrim: rgb(0 0 0 / .6);
     /* 遮罩，= 现 .t-overlay 的 rgba(0,0,0,.6) */
 
+    /* ---- 窗口外壳 ---- */
+    --t-color-window-header: rgb(36 37 48);
+    /* #242530 窗口标题栏底。既不在中性阶（30/34 两档都不等）也不在冷色阶
+       （22 27 36 / 28 34 44 都不等）—— 它略偏紫，是独立的一档，先保留精确值。 */
+
     /* ---- 弹窗表面 ---- */
     --t-color-dialog-scrim: rgb(0 0 0 / .7);
     --t-color-dialog-scrim-outline: rgb(0 0 0 / .65);

@@ -4,15 +4,15 @@
       "title": "manifest.js 与磁盘双向一致",
       "violations": 0,
       "metrics": {
-        "清单文件数": 31,
-        "磁盘文件数": 31
+        "清单文件数": 32,
+        "磁盘文件数": 32
       }
     },
     "A15": {
       "title": "main-window-legacy.css 紧跟 main-window.css",
       "violations": 0,
       "metrics": {
-        "位置": "18 → 19"
+        "位置": "19 → 20"
       }
     },
     "A10": {
@@ -24,8 +24,8 @@
       "title": "消费但未声明的 --t-* 变量",
       "violations": 0,
       "metrics": {
-        "CSS 已声明 --t-*": 251,
-        "被消费种类": 194,
+        "CSS 已声明 --t-*": 252,
+        "被消费种类": 195,
         "仅 JS 声明（B5）": 4
       }
     },
@@ -59,20 +59,20 @@
     },
     "A9": {
       "title": "!important 紧邻注释说明其对抗的宿主规则",
-      "violations": 0,
+      "violations": 1,
       "metrics": {
-        "important总数": 27
+        "important总数": 28
       }
     },
     "A1": {
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1166,
-        "rgb/rgba字面量": 962,
-        "合计": 2128,
-        "  00-tokens": "hex 10 / rgb 122",
-        "  01-base": "hex 20 / rgb 17",
+        "hex字面量": 1164,
+        "rgb/rgba字面量": 963,
+        "合计": 2127,
+        "  00-tokens": "hex 10 / rgb 123",
+        "  01-base": "hex 18 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
         "  03-layout": "hex 0 / rgb 0",
         "  04-features": "hex 1128 / rgb 815",
@@ -106,9 +106,9 @@
     },
     "A12": {
       "title": "跨文件重复定义的顶层类",
-      "violations": 2,
+      "violations": 1,
       "metrics": {
-        "冲突类数": 2
+        "冲突类数": 1
       }
     },
     "A13": {
@@ -143,11 +143,11 @@
       "title": "@media 断点在约定集合内",
       "violations": 8,
       "metrics": {
-        "@media 块": 42,
+        "@media 块": 43,
         "其中指针/hover 查询": 3,
         "JS matchMedia": 4,
         "不同断点": 9,
-        "断点分布": "420px×1 480px×1 600px×19 620px×1 700px×2 768px×16 900px×1 980px×1 1200px×1"
+        "断点分布": "420px×1 480px×1 600px×20 620px×1 700px×2 768px×16 900px×1 980px×1 1200px×1"
       }
     },
     "A19": {
@@ -177,7 +177,7 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16174,
+    "CSS 总行数": 16218,
     "规则条数": 2237,
     "border-radius 声明 / 不同值": "346 / 42",
     "box-shadow 声明 / 不同值": "116 / 87",

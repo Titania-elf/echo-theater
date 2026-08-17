@@ -33,6 +33,7 @@ export const CSS_LAYERS = [
     // 【第 2 层:语义化组件】禁止页面/ID 选择器与颜色字面量（R2/R3a/R3b）
     {
         layer: '02-components', files: [
+            'window.css',      // 窗口外壳（目前只有 .t-header）
             'dialog.css',
             'button.css',
             'icon-button.css',

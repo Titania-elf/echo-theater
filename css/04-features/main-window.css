@@ -1096,10 +1096,9 @@
         border-radius: 10px 10px 0 0;
     }
 
-    /* 顶部栏紧凑化 */
-    .t-header {
-        padding: 10px;
-    }
+    /* 顶部栏紧凑化：裸 `.t-header { padding: 10px }` 已迁至
+       02-components/window.css（Phase 4b，修 A12）。它无作用域、对全部窗口
+       生效，本就不属于 main-window 私有样式。 */
 
     /* 图标间距收窄：桌面下的 8px gap 在窄屏会把标题挤到截断
        （.t-title-container 是 overflow:hidden） */

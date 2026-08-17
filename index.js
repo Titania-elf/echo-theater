@@ -2114,6 +2114,11 @@ function loadCssFiles() {
     --t-color-scrim: rgb(0 0 0 / .6);
     /* \u906E\u7F69\uFF0C= \u73B0 .t-overlay \u7684 rgba(0,0,0,.6) */
 
+    /* ---- \u7A97\u53E3\u5916\u58F3 ---- */
+    --t-color-window-header: rgb(36 37 48);
+    /* #242530 \u7A97\u53E3\u6807\u9898\u680F\u5E95\u3002\u65E2\u4E0D\u5728\u4E2D\u6027\u9636\uFF0830/34 \u4E24\u6863\u90FD\u4E0D\u7B49\uFF09\u4E5F\u4E0D\u5728\u51B7\u8272\u9636
+       \uFF0822 27 36 / 28 34 44 \u90FD\u4E0D\u7B49\uFF09\u2014\u2014 \u5B83\u7565\u504F\u7D2B\uFF0C\u662F\u72EC\u7ACB\u7684\u4E00\u6863\uFF0C\u5148\u4FDD\u7559\u7CBE\u786E\u503C\u3002 */
+
     /* ---- \u5F39\u7A97\u8868\u9762 ---- */
     --t-color-dialog-scrim: rgb(0 0 0 / .7);
     --t-color-dialog-scrim-outline: rgb(0 0 0 / .65);
@@ -2492,16 +2497,10 @@ function loadCssFiles() {
     overflow: hidden;
 }
 
-/* \u9876\u90E8\u6807\u9898\u680F */
-.t-header {
-    padding: 12px 15px;
-    border-bottom: 1px solid #444;
-    background: #242530;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
+/* \u9876\u90E8\u6807\u9898\u680F \`.t-header\` \u5DF2\u8FC1\u81F3 02-components/window.css\uFF08Phase 4b\uFF09\u3002
+   \u5FC5\u987B\u8FC1\u8D70\u800C\u4E0D\u80FD\u4E24\u5904\u5E76\u5B58\uFF1Amain-window.css \u7684\u79FB\u52A8\u7AEF\u6BB5\u843D\u91CC\u8FD8\u6709\u4E00\u6761\u88F8
+   \`.t-header { padding: 10px }\`\uFF0C\u4E24\u5904\u88F8\u7C7B\u5B9A\u4E49\u5C31\u662F A12 \u7684\u51B2\u7A81\u9879\uFF1B
+   \u6536\u53E3\u5230\u7EC4\u4EF6\u5C42\u540E\u90A3\u6761\u8986\u76D6\u4E5F\u4E00\u5E76\u642C\u4E86\u8FC7\u53BB\u3002 */
 
 .t-title-container {
     display: flex;
@@ -2972,6 +2971,54 @@ function loadCssFiles() {
 
 /* rewriteEntryButton.js */
 @keyframes t-rewrite-mark-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+
+/* === 02-components/window.css === */
+/* ============================================================
+   02-components/window.css \u2014\u2014 \u7A97\u53E3\u5916\u58F3\u7EC4\u4EF6
+
+   \u76EE\u524D\u53EA\u63A5\u7BA1 \`.t-header\`\uFF08\u7A97\u53E3\u6807\u9898\u680F\uFF09\u3002\u5B83\u539F\u5148\u5728 01-base/base.css\uFF0C
+   \u540C\u65F6 04-features/main-window.css \u7684\u79FB\u52A8\u7AEF\u6BB5\u843D\u91CC\u8FD8\u6709\u4E00\u6761\u88F8 \`.t-header\`
+   \u8986\u76D6 \u2014\u2014 \u4E24\u5904\u6784\u6210 A12 \u7684\u8DE8\u6587\u4EF6\u88F8\u7C7B\u51B2\u7A81\uFF0C\u672C\u6587\u4EF6\u662F\u6536\u53E3\u70B9\u3002
+
+   \u2500\u2500 \u4ECD\u7559\u5728 01-base/base.css \u7684\u7A97\u53E3\u5916\u58F3\u7C7B\uFF08\u5C1A\u672A\u8FC1\u79FB\uFF0C\u52FF\u4EE5\u4E3A\u9057\u6F0F\uFF09\u2500\u2500
+     .t-overlay          \u63D2\u4EF6 UI \u7684\u6302\u8F7D\u6839\uFF0C\u5E26 font-size !important \u57FA\u51C6\uFF0C
+                         \u8BED\u4E49\u4E0A\u66F4\u63A5\u8FD1\u300C\u4F5C\u7528\u57DF\u6839\u300D\u800C\u4E0D\u662F\u7EC4\u4EF6\uFF0C\u8FC1\u79FB\u524D\u8981\u5148\u60F3\u6E05\u695A
+                         \u5B83\u4E0E 01-base/scope.css \u7684 .t-root \u662F\u4EC0\u4E48\u5173\u7CFB\u3002
+     .t-box              \u901A\u7528\u7A97\u53E3\u5BB9\u5668\u3002\u542B 4 \u5904\u989C\u8272\u5B57\u9762\u91CF\u4E0E var(--t-bg-dark)
+                         \u65E7\u53D8\u91CF\uFF0C\u8FC1\u8FDB\u7EC4\u4EF6\u5C42\u524D\u5FC5\u987B\u5148\u8865\u8BED\u4E49 token\uFF08R3a/R3b\uFF09\u3002
+     .t-title-container  ::before \u88C5\u9970\u6761\u662F linear-gradient(#ff9a9e, #fad0c4)
+     .t-title-main       linear-gradient(#e0c3fc, #ff9a9e) + background-clip:text
+     .t-title-sub        linear-gradient(#ff9a9e, #e0c3fc) + background-clip:text
+                         \u8FD9\u4E09\u4E2A\u5171 4 \u4E2A\u6E10\u53D8\u8272\u5B57\u9762\u91CF\uFF0C\u9700\u8981\u4E00\u7EC4 gradient token
+                         \u624D\u80FD\u8FDB\u7EC4\u4EF6\u5C42\uFF0C\u5C5E Phase 6\u300C\u8865\u9F50 gradient token\u300D\u7684\u8303\u56F4\u3002
+     .t-close            base.css:106 \u7684\u6CE8\u91CA\u660E\u786E\u8BF4\u5B83\u4E0E .t-tool-btn \u523B\u610F\u7559\u5728
+     .t-tool-btn         \u672C\u5C42\u672A\u7EDF\u4E00\uFF0C\u7406\u7531\u89C1 02-components/_legacy.css \u672B\u5C3E\u3002
+   ============================================================ */
+
+.t-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--t-color-border-strong);
+    background: var(--t-color-window-header);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* \u7A84\u5C4F\u6536\u7D27\u5185\u8FB9\u8DDD\u3002
+   \u8FD9\u6761\u539F\u672C\u662F 04-features/main-window.css \u79FB\u52A8\u7AEF\u6BB5\u843D\u91CC\u7684\u88F8 \`.t-header\` \u89C4\u5219
+   \uFF08\u539F\u6CE8\u91CA\u5199\u300C\u9876\u90E8\u680F\u7D27\u51D1\u5316\u300D\uFF09\uFF0C\u4F46\u9009\u62E9\u5668\u6CA1\u6709\u4F5C\u7528\u57DF\uFF0C\u5B9E\u9645\u5BF9\u5168\u90E8 9 \u4E2A\u7A97\u53E3\u7684
+   \u6807\u9898\u680F\u90FD\u751F\u6548\u3002\u8FC1\u5230\u7EC4\u4EF6\u5C42\u53EA\u662F\u628A\u8FD9\u4E2A\u65E2\u6709\u4E8B\u5B9E\u663E\u5F0F\u5316\uFF0C\u884C\u4E3A\u9010\u5B57\u8282\u4E0D\u53D8\u3002
+
+   \u26A0 \u4E0D\u8981\u300C\u987A\u624B\u300D\u6539\u6210 \`#t-main-view .t-header\` \u6765\u6D88\u9664\u51B2\u7A81\uFF1A\u90A3\u4F1A\u8BA9
+     debug / favs / lore-review / memory-recall / settings / workshop /
+     scriptManager \u7B49\u7A97\u53E3\u5728\u7A84\u5C4F\u5931\u53BB\u8FD9\u5904\u6536\u7D27\uFF0C\u662F\u8DE8 9 \u4E2A\u7A97\u53E3\u7684\u884C\u4E3A\u53D8\u66F4\u3002 */
+@media screen and (max-width: 600px) {
+    .t-header {
+        padding: 10px;
+    }
+}
 
 
 /* === 02-components/dialog.css === */
@@ -5397,10 +5444,9 @@ textarea.t-input {
         border-radius: 10px 10px 0 0;
     }
 
-    /* \u9876\u90E8\u680F\u7D27\u51D1\u5316 */
-    .t-header {
-        padding: 10px;
-    }
+    /* \u9876\u90E8\u680F\u7D27\u51D1\u5316\uFF1A\u88F8 \`.t-header { padding: 10px }\` \u5DF2\u8FC1\u81F3
+       02-components/window.css\uFF08Phase 4b\uFF0C\u4FEE A12\uFF09\u3002\u5B83\u65E0\u4F5C\u7528\u57DF\u3001\u5BF9\u5168\u90E8\u7A97\u53E3
+       \u751F\u6548\uFF0C\u672C\u5C31\u4E0D\u5C5E\u4E8E main-window \u79C1\u6709\u6837\u5F0F\u3002 */
 
     /* \u56FE\u6807\u95F4\u8DDD\u6536\u7A84\uFF1A\u684C\u9762\u4E0B\u7684 8px gap \u5728\u7A84\u5C4F\u4F1A\u628A\u6807\u9898\u6324\u5230\u622A\u65AD
        \uFF08.t-title-container \u662F overflow:hidden\uFF09 */
@@ -17999,7 +18045,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
   }
 });
 

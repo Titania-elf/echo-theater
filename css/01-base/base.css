@@ -44,16 +44,10 @@
     overflow: hidden;
 }
 
-/* 顶部标题栏 */
-.t-header {
-    padding: 12px 15px;
-    border-bottom: 1px solid #444;
-    background: #242530;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
+/* 顶部标题栏 `.t-header` 已迁至 02-components/window.css（Phase 4b）。
+   必须迁走而不能两处并存：main-window.css 的移动端段落里还有一条裸
+   `.t-header { padding: 10px }`，两处裸类定义就是 A12 的冲突项；
+   收口到组件层后那条覆盖也一并搬了过去。 */
 
 .t-title-container {
     display: flex;
