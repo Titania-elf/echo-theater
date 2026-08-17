@@ -1934,95 +1934,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     gap: 10px;
 }
 
-.t-radio-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.t-radio-label:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.15);
-}
-
-.t-radio-label input[type="radio"] {
-    width: 18px;
-    height: 18px;
-    margin: 0;
-    margin-top: 2px;
-    cursor: pointer;
-    accent-color: #90cdf4;
-}
-
-.t-radio-label input[type="radio"]:checked+span {
-    color: #90cdf4;
-}
-
-.t-radio-label span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #e2e8f0;
-    font-weight: 500;
-    font-size: 0.95em;
-}
-
-.t-radio-label span i {
-    font-size: 0.9em;
-    width: 16px;
-    text-align: center;
-}
-
-.t-radio-label small {
-    display: block;
-    color: #718096;
-    font-size: 0.8em;
-    margin-top: 4px;
-    margin-left: 28px;
-}
-
-/* 选中状态 */
-.t-radio-label:has(input[type="radio"]:checked) {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
-}
-
-/* 替换模式 - 橙色 */
-.t-radio-label:has(input[value="replace"]:checked) {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.3);
-}
-
-.t-radio-label:has(input[value="replace"]:checked) span {
-    color: #f59e0b;
-}
-
-/* 追加模式 - 绿色 */
-.t-radio-label:has(input[value="append"]:checked) {
-    background: rgba(72, 187, 120, 0.1);
-    border-color: rgba(72, 187, 120, 0.3);
-}
-
-.t-radio-label:has(input[value="append"]:checked) span {
-    color: #48bb78;
-}
-
-/* 前置模式 - 蓝色 */
-.t-radio-label:has(input[value="prepend"]:checked) {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
-}
-
-.t-radio-label:has(input[value="prepend"]:checked) span {
-    color: #90cdf4;
-}
-
 /* 移动端适配 */
 @media (max-width: 768px) {
     .t-original-content-section {
@@ -2038,14 +1949,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         margin-top: 12px;
     }
 
-    .t-radio-label {
-        padding: 10px;
-    }
-
-    .t-radio-label small {
-        margin-left: 0;
-        margin-top: 6px;
-    }
 }
 
 /* ========== 增量向量化状态样式 ========== */

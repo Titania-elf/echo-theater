@@ -1,0 +1,81 @@
+/* Selectable card built around a native radio input. */
+.t-root .t-radio-card {
+    --t-radio-card-accent: var(--t-color-accent);
+    --t-radio-card-selected-bg: var(--t-color-accent-veil);
+    --t-radio-card-selected-border: var(--t-color-accent-border-subtle);
+
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: var(--t-color-surface-veil);
+    border: 1px solid var(--t-color-border-faint);
+    border-radius: var(--t-radius-control);
+    cursor: pointer;
+    transition: var(--t-transition-hover);
+}
+
+.t-root .t-radio-card:hover {
+    background: var(--t-color-surface-hover-subtle);
+    border-color: var(--t-color-border-hover-subtle);
+}
+
+.t-root .t-radio-card:has(.t-choice-input:checked) {
+    background: var(--t-radio-card-selected-bg);
+    border-color: var(--t-radio-card-selected-border);
+}
+
+.t-root .t-radio-card--warning {
+    --t-radio-card-accent: var(--t-color-warning);
+    --t-radio-card-selected-bg: var(--t-color-warning-veil-subtle);
+    --t-radio-card-selected-border: var(--t-color-warning-border-subtle);
+}
+
+.t-root .t-radio-card--success {
+    --t-radio-card-accent: var(--t-color-success);
+    --t-radio-card-selected-bg: var(--t-color-success-veil-subtle);
+    --t-radio-card-selected-border: var(--t-color-success-border-subtle);
+}
+
+.t-root .t-radio-card > .t-choice-input {
+    margin-top: 2px;
+    accent-color: var(--t-color-accent);
+}
+
+.t-root .t-radio-card__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--t-color-text-cool);
+    font-weight: 500;
+    font-size: 0.95em;
+}
+
+.t-root .t-radio-card:has(.t-choice-input:checked) .t-radio-card__title {
+    color: var(--t-radio-card-accent);
+}
+
+.t-root .t-radio-card__title i {
+    width: 16px;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+.t-root .t-radio-card__description {
+    display: block;
+    margin-top: 4px;
+    margin-left: 28px;
+    color: var(--t-color-text-cool-muted);
+    font-size: 0.8em;
+}
+
+@media (max-width: 768px) {
+    .t-root .t-radio-card {
+        padding: 10px;
+    }
+
+    .t-root .t-radio-card__description {
+        margin-top: 6px;
+        margin-left: 0;
+    }
+}

@@ -4,15 +4,15 @@
       "title": "manifest.js 与磁盘双向一致",
       "violations": 0,
       "metrics": {
-        "清单文件数": 29,
-        "磁盘文件数": 29
+        "清单文件数": 30,
+        "磁盘文件数": 30
       }
     },
     "A15": {
       "title": "main-window-legacy.css 紧跟 main-window.css",
       "violations": 0,
       "metrics": {
-        "位置": "16 → 17"
+        "位置": "17 → 18"
       }
     },
     "A10": {
@@ -24,8 +24,8 @@
       "title": "消费但未声明的 --t-* 变量",
       "violations": 0,
       "metrics": {
-        "CSS 已声明 --t-*": 223,
-        "被消费种类": 159,
+        "CSS 已声明 --t-*": 237,
+        "被消费种类": 175,
         "仅 JS 声明（B5）": 4
       }
     },
@@ -68,14 +68,14 @@
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1200,
-        "rgb/rgba字面量": 982,
-        "合计": 2182,
-        "  00-tokens": "hex 10 / rgb 101",
+        "hex字面量": 1193,
+        "rgb/rgba字面量": 981,
+        "合计": 2174,
+        "  00-tokens": "hex 10 / rgb 112",
         "  01-base": "hex 20 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
         "  03-layout": "hex 0 / rgb 0",
-        "  04-features": "hex 1162 / rgb 856",
+        "  04-features": "hex 1155 / rgb 844",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
     },
@@ -143,11 +143,11 @@
       "title": "@media 断点在约定集合内",
       "violations": 8,
       "metrics": {
-        "@media 块": 41,
+        "@media 块": 42,
         "其中指针/hover 查询": 3,
         "JS matchMedia": 4,
         "不同断点": 9,
-        "断点分布": "420px×1 480px×1 600px×19 620px×1 700px×2 768px×15 900px×1 980px×1 1200px×1"
+        "断点分布": "420px×1 480px×1 600px×19 620px×1 700px×2 768px×16 900px×1 980px×1 1200px×1"
       }
     },
     "A19": {
@@ -159,11 +159,11 @@
     },
     "A20": {
       "title": "禁止 transition: all",
-      "violations": 50,
+      "violations": 49,
       "metrics": {
         "transition 声明总数": 138,
-        "含 all": 50,
-        "其中 all 0.2s": 40
+        "含 all": 49,
+        "其中 all 0.2s": 39
       }
     },
     "A21": {
@@ -177,8 +177,8 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16359,
-    "规则条数": 2261,
+    "CSS 总行数": 16355,
+    "规则条数": 2257,
     "border-radius 声明 / 不同值": "353 / 41",
     "box-shadow 声明 / 不同值": "119 / 85",
     "font-size (px / em)": "162 / 316",

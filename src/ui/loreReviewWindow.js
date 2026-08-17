@@ -853,20 +853,20 @@ export async function showLoreReviewWindow() {
                                 <div class="t-save-mode-section">
                                     <label>保存模式:</label>
                                     <div class="t-save-mode-options">
-                                        <label class="t-radio-label">
-                                            <input type="radio" name="t-save-mode" value="replace" checked>
-                                            <span><i class="fa-solid fa-exchange-alt"></i> 替换</span>
-                                            <small>用新内容替换原有内容</small>
+                                        <label class="t-radio-label t-radio-card t-radio-card--warning">
+                                            <input type="radio" class="t-choice-input t-choice-input--lg" name="t-save-mode" value="replace" checked>
+                                            <span class="t-radio-card__title"><i class="fa-solid fa-exchange-alt"></i> 替换</span>
+                                            <small class="t-radio-card__description">用新内容替换原有内容</small>
                                         </label>
-                                        <label class="t-radio-label">
-                                            <input type="radio" name="t-save-mode" value="append">
-                                            <span><i class="fa-solid fa-plus"></i> 追加</span>
-                                            <small>在原有内容后追加新内容</small>
+                                        <label class="t-radio-label t-radio-card t-radio-card--success">
+                                            <input type="radio" class="t-choice-input t-choice-input--lg" name="t-save-mode" value="append">
+                                            <span class="t-radio-card__title"><i class="fa-solid fa-plus"></i> 追加</span>
+                                            <small class="t-radio-card__description">在原有内容后追加新内容</small>
                                         </label>
-                                        <label class="t-radio-label">
-                                            <input type="radio" name="t-save-mode" value="prepend">
-                                            <span><i class="fa-solid fa-arrow-up"></i> 前置</span>
-                                            <small>在原有内容前插入新内容</small>
+                                        <label class="t-radio-label t-radio-card">
+                                            <input type="radio" class="t-choice-input t-choice-input--lg" name="t-save-mode" value="prepend">
+                                            <span class="t-radio-card__title"><i class="fa-solid fa-arrow-up"></i> 前置</span>
+                                            <small class="t-radio-card__description">在原有内容前插入新内容</small>
                                         </label>
                                     </div>
                                 </div>

@@ -37,6 +37,7 @@
     --t-color-surface-active: rgb(var(--t-c-neutral-13-rgb) / .15);
     /* 替换 21 次 */
     --t-color-surface-veil: rgb(var(--t-c-neutral-13-rgb) / .03);
+    --t-color-surface-hover-subtle: rgb(var(--t-c-neutral-13-rgb) / .06);
     /* 极淡白膜 —— 空状态框 / 图标钮静息底，替换 .015~.04 五档 */
     --t-color-surface-recess: rgb(0 0 0 / .2);
     /* 压暗一档 —— 工具条 / 统计条 / 分区条，替换 rgba(0,0,0,.1~.2) */
@@ -84,6 +85,8 @@
     --t-color-text-muted: rgb(var(--t-c-neutral-9-rgb));
     /* #888 */
     --t-color-text-faint: rgb(var(--t-c-neutral-8-rgb));
+    --t-color-text-cool: rgb(var(--t-c-cool-12-rgb));
+    --t-color-text-cool-muted: rgb(var(--t-c-cool-7-rgb));
     /* #666 —— 42 次 + 大量 inline */
     --t-color-text-on-accent: rgb(var(--t-c-neutral-0-rgb));
 
@@ -95,6 +98,8 @@
     --t-color-border-control: rgb(var(--t-c-neutral-6-rgb));
     /* #3a3a3a 控件边框 */
     --t-color-border-subtle: rgb(var(--t-c-neutral-13-rgb) / .1);
+    --t-color-border-faint: rgb(var(--t-c-neutral-13-rgb) / .08);
+    --t-color-border-hover-subtle: rgb(var(--t-c-neutral-13-rgb) / .15);
     /* 替换 39 次；同时吃掉改写面板的 .12/.13/.14 三档（差 4% 不可见） */
     --t-color-border-glass: rgb(var(--t-c-neutral-13-rgb) / .18);
     /* 玻璃面板的可见描边，替换 .16/.18/.2 三档 */
@@ -108,10 +113,12 @@
     --t-color-accent-hover: rgb(var(--t-c-blue-rgb) / .85);
     --t-color-accent-active: rgb(var(--t-c-blue-rgb) / .7);
     --t-color-accent-soft: rgb(var(--t-c-blue-rgb) / .12);
+    --t-color-accent-veil: rgb(var(--t-c-blue-rgb) / .1);
     /* 替换 14+9 次 */
     --t-color-accent-soft-strong: rgb(var(--t-c-blue-rgb) / .22);
     /* 选中态 / 激活 tab 的底色，替换 .22/.24/.32 三档 */
     --t-color-accent-border: rgb(var(--t-c-blue-rgb) / .35);
+    --t-color-accent-border-subtle: rgb(var(--t-c-blue-rgb) / .3);
     /* 替换 13+7 次；同时吃掉 .38/.42/.44/.45/.5 五档 */
     --t-color-accent-border-hover: rgb(var(--t-c-blue-rgb) / .6);
     /* hover 时的描边，替换 .55/.6/.65 三档 */
@@ -135,11 +142,15 @@
     --t-color-success: rgb(var(--t-c-green-rgb));
     --t-color-success-soft: rgb(var(--t-c-green-rgb) / .2);
     --t-color-success-veil: rgb(var(--t-c-green-rgb) / .12);
+    --t-color-success-veil-subtle: rgb(var(--t-c-green-rgb) / .1);
     --t-color-success-border: rgb(var(--t-c-green-rgb) / .45);
+    --t-color-success-border-subtle: rgb(var(--t-c-green-rgb) / .3);
     --t-color-warning: rgb(var(--t-c-amber-rgb));
     --t-color-warning-muted: rgb(255 185 104);
     --t-color-warning-soft: rgb(var(--t-c-amber-rgb) / .2);
+    --t-color-warning-veil-subtle: rgb(var(--t-c-amber-rgb) / .1);
     --t-color-warning-border: rgb(var(--t-c-amber-rgb) / .5);
+    --t-color-warning-border-subtle: rgb(var(--t-c-amber-rgb) / .3);
     --t-color-notify: rgb(var(--t-c-mint-rgb));
     /* #55efc4 */
     --t-color-decor: rgb(var(--t-c-violet-rgb));

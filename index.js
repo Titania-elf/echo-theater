@@ -2104,6 +2104,7 @@ function loadCssFiles() {
     --t-color-surface-active: rgb(var(--t-c-neutral-13-rgb) / .15);
     /* \u66FF\u6362 21 \u6B21 */
     --t-color-surface-veil: rgb(var(--t-c-neutral-13-rgb) / .03);
+    --t-color-surface-hover-subtle: rgb(var(--t-c-neutral-13-rgb) / .06);
     /* \u6781\u6DE1\u767D\u819C \u2014\u2014 \u7A7A\u72B6\u6001\u6846 / \u56FE\u6807\u94AE\u9759\u606F\u5E95\uFF0C\u66FF\u6362 .015~.04 \u4E94\u6863 */
     --t-color-surface-recess: rgb(0 0 0 / .2);
     /* \u538B\u6697\u4E00\u6863 \u2014\u2014 \u5DE5\u5177\u6761 / \u7EDF\u8BA1\u6761 / \u5206\u533A\u6761\uFF0C\u66FF\u6362 rgba(0,0,0,.1~.2) */
@@ -2151,6 +2152,8 @@ function loadCssFiles() {
     --t-color-text-muted: rgb(var(--t-c-neutral-9-rgb));
     /* #888 */
     --t-color-text-faint: rgb(var(--t-c-neutral-8-rgb));
+    --t-color-text-cool: rgb(var(--t-c-cool-12-rgb));
+    --t-color-text-cool-muted: rgb(var(--t-c-cool-7-rgb));
     /* #666 \u2014\u2014 42 \u6B21 + \u5927\u91CF inline */
     --t-color-text-on-accent: rgb(var(--t-c-neutral-0-rgb));
 
@@ -2162,6 +2165,8 @@ function loadCssFiles() {
     --t-color-border-control: rgb(var(--t-c-neutral-6-rgb));
     /* #3a3a3a \u63A7\u4EF6\u8FB9\u6846 */
     --t-color-border-subtle: rgb(var(--t-c-neutral-13-rgb) / .1);
+    --t-color-border-faint: rgb(var(--t-c-neutral-13-rgb) / .08);
+    --t-color-border-hover-subtle: rgb(var(--t-c-neutral-13-rgb) / .15);
     /* \u66FF\u6362 39 \u6B21\uFF1B\u540C\u65F6\u5403\u6389\u6539\u5199\u9762\u677F\u7684 .12/.13/.14 \u4E09\u6863\uFF08\u5DEE 4% \u4E0D\u53EF\u89C1\uFF09 */
     --t-color-border-glass: rgb(var(--t-c-neutral-13-rgb) / .18);
     /* \u73BB\u7483\u9762\u677F\u7684\u53EF\u89C1\u63CF\u8FB9\uFF0C\u66FF\u6362 .16/.18/.2 \u4E09\u6863 */
@@ -2175,10 +2180,12 @@ function loadCssFiles() {
     --t-color-accent-hover: rgb(var(--t-c-blue-rgb) / .85);
     --t-color-accent-active: rgb(var(--t-c-blue-rgb) / .7);
     --t-color-accent-soft: rgb(var(--t-c-blue-rgb) / .12);
+    --t-color-accent-veil: rgb(var(--t-c-blue-rgb) / .1);
     /* \u66FF\u6362 14+9 \u6B21 */
     --t-color-accent-soft-strong: rgb(var(--t-c-blue-rgb) / .22);
     /* \u9009\u4E2D\u6001 / \u6FC0\u6D3B tab \u7684\u5E95\u8272\uFF0C\u66FF\u6362 .22/.24/.32 \u4E09\u6863 */
     --t-color-accent-border: rgb(var(--t-c-blue-rgb) / .35);
+    --t-color-accent-border-subtle: rgb(var(--t-c-blue-rgb) / .3);
     /* \u66FF\u6362 13+7 \u6B21\uFF1B\u540C\u65F6\u5403\u6389 .38/.42/.44/.45/.5 \u4E94\u6863 */
     --t-color-accent-border-hover: rgb(var(--t-c-blue-rgb) / .6);
     /* hover \u65F6\u7684\u63CF\u8FB9\uFF0C\u66FF\u6362 .55/.6/.65 \u4E09\u6863 */
@@ -2202,11 +2209,15 @@ function loadCssFiles() {
     --t-color-success: rgb(var(--t-c-green-rgb));
     --t-color-success-soft: rgb(var(--t-c-green-rgb) / .2);
     --t-color-success-veil: rgb(var(--t-c-green-rgb) / .12);
+    --t-color-success-veil-subtle: rgb(var(--t-c-green-rgb) / .1);
     --t-color-success-border: rgb(var(--t-c-green-rgb) / .45);
+    --t-color-success-border-subtle: rgb(var(--t-c-green-rgb) / .3);
     --t-color-warning: rgb(var(--t-c-amber-rgb));
     --t-color-warning-muted: rgb(255 185 104);
     --t-color-warning-soft: rgb(var(--t-c-amber-rgb) / .2);
+    --t-color-warning-veil-subtle: rgb(var(--t-c-amber-rgb) / .1);
     --t-color-warning-border: rgb(var(--t-c-amber-rgb) / .5);
+    --t-color-warning-border-subtle: rgb(var(--t-c-amber-rgb) / .3);
     --t-color-notify: rgb(var(--t-c-mint-rgb));
     /* #55efc4 */
     --t-color-decor: rgb(var(--t-c-violet-rgb));
@@ -3394,6 +3405,90 @@ textarea.t-input {
     .t-root .t-choice-input--responsive-lg {
         width: 16px;
         height: 16px;
+    }
+}
+
+
+/* === 02-components/radio-card.css === */
+/* Selectable card built around a native radio input. */
+.t-root .t-radio-card {
+    --t-radio-card-accent: var(--t-color-accent);
+    --t-radio-card-selected-bg: var(--t-color-accent-veil);
+    --t-radio-card-selected-border: var(--t-color-accent-border-subtle);
+
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: var(--t-color-surface-veil);
+    border: 1px solid var(--t-color-border-faint);
+    border-radius: var(--t-radius-control);
+    cursor: pointer;
+    transition: var(--t-transition-hover);
+}
+
+.t-root .t-radio-card:hover {
+    background: var(--t-color-surface-hover-subtle);
+    border-color: var(--t-color-border-hover-subtle);
+}
+
+.t-root .t-radio-card:has(.t-choice-input:checked) {
+    background: var(--t-radio-card-selected-bg);
+    border-color: var(--t-radio-card-selected-border);
+}
+
+.t-root .t-radio-card--warning {
+    --t-radio-card-accent: var(--t-color-warning);
+    --t-radio-card-selected-bg: var(--t-color-warning-veil-subtle);
+    --t-radio-card-selected-border: var(--t-color-warning-border-subtle);
+}
+
+.t-root .t-radio-card--success {
+    --t-radio-card-accent: var(--t-color-success);
+    --t-radio-card-selected-bg: var(--t-color-success-veil-subtle);
+    --t-radio-card-selected-border: var(--t-color-success-border-subtle);
+}
+
+.t-root .t-radio-card > .t-choice-input {
+    margin-top: 2px;
+    accent-color: var(--t-color-accent);
+}
+
+.t-root .t-radio-card__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--t-color-text-cool);
+    font-weight: 500;
+    font-size: 0.95em;
+}
+
+.t-root .t-radio-card:has(.t-choice-input:checked) .t-radio-card__title {
+    color: var(--t-radio-card-accent);
+}
+
+.t-root .t-radio-card__title i {
+    width: 16px;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+.t-root .t-radio-card__description {
+    display: block;
+    margin-top: 4px;
+    margin-left: 28px;
+    color: var(--t-color-text-cool-muted);
+    font-size: 0.8em;
+}
+
+@media (max-width: 768px) {
+    .t-root .t-radio-card {
+        padding: 10px;
+    }
+
+    .t-root .t-radio-card__description {
+        margin-top: 6px;
+        margin-left: 0;
     }
 }
 
@@ -14640,95 +14735,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     gap: 10px;
 }
 
-.t-radio-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.t-radio-label:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.15);
-}
-
-.t-radio-label input[type="radio"] {
-    width: 18px;
-    height: 18px;
-    margin: 0;
-    margin-top: 2px;
-    cursor: pointer;
-    accent-color: #90cdf4;
-}
-
-.t-radio-label input[type="radio"]:checked+span {
-    color: #90cdf4;
-}
-
-.t-radio-label span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #e2e8f0;
-    font-weight: 500;
-    font-size: 0.95em;
-}
-
-.t-radio-label span i {
-    font-size: 0.9em;
-    width: 16px;
-    text-align: center;
-}
-
-.t-radio-label small {
-    display: block;
-    color: #718096;
-    font-size: 0.8em;
-    margin-top: 4px;
-    margin-left: 28px;
-}
-
-/* \u9009\u4E2D\u72B6\u6001 */
-.t-radio-label:has(input[type="radio"]:checked) {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
-}
-
-/* \u66FF\u6362\u6A21\u5F0F - \u6A59\u8272 */
-.t-radio-label:has(input[value="replace"]:checked) {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.3);
-}
-
-.t-radio-label:has(input[value="replace"]:checked) span {
-    color: #f59e0b;
-}
-
-/* \u8FFD\u52A0\u6A21\u5F0F - \u7EFF\u8272 */
-.t-radio-label:has(input[value="append"]:checked) {
-    background: rgba(72, 187, 120, 0.1);
-    border-color: rgba(72, 187, 120, 0.3);
-}
-
-.t-radio-label:has(input[value="append"]:checked) span {
-    color: #48bb78;
-}
-
-/* \u524D\u7F6E\u6A21\u5F0F - \u84DD\u8272 */
-.t-radio-label:has(input[value="prepend"]:checked) {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
-}
-
-.t-radio-label:has(input[value="prepend"]:checked) span {
-    color: #90cdf4;
-}
-
 /* \u79FB\u52A8\u7AEF\u9002\u914D */
 @media (max-width: 768px) {
     .t-original-content-section {
@@ -14744,14 +14750,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         margin-top: 12px;
     }
 
-    .t-radio-label {
-        padding: 10px;
-    }
-
-    .t-radio-label small {
-        margin-left: 0;
-        margin-top: 6px;
-    }
 }
 
 /* ========== \u589E\u91CF\u5411\u91CF\u5316\u72B6\u6001\u6837\u5F0F ========== */
@@ -18180,7 +18178,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
   }
 });
 
@@ -30750,20 +30748,20 @@ async function showLoreReviewWindow() {
                                 <div class="t-save-mode-section">
                                     <label>\u4FDD\u5B58\u6A21\u5F0F:</label>
                                     <div class="t-save-mode-options">
-                                        <label class="t-radio-label">
-                                            <input type="radio" name="t-save-mode" value="replace" checked>
-                                            <span><i class="fa-solid fa-exchange-alt"></i> \u66FF\u6362</span>
-                                            <small>\u7528\u65B0\u5185\u5BB9\u66FF\u6362\u539F\u6709\u5185\u5BB9</small>
+                                        <label class="t-radio-label t-radio-card t-radio-card--warning">
+                                            <input type="radio" class="t-choice-input t-choice-input--lg" name="t-save-mode" value="replace" checked>
+                                            <span class="t-radio-card__title"><i class="fa-solid fa-exchange-alt"></i> \u66FF\u6362</span>
+                                            <small class="t-radio-card__description">\u7528\u65B0\u5185\u5BB9\u66FF\u6362\u539F\u6709\u5185\u5BB9</small>
                                         </label>
-                                        <label class="t-radio-label">
-                                            <input type="radio" name="t-save-mode" value="append">
-                                            <span><i class="fa-solid fa-plus"></i> \u8FFD\u52A0</span>
-                                            <small>\u5728\u539F\u6709\u5185\u5BB9\u540E\u8FFD\u52A0\u65B0\u5185\u5BB9</small>
+                                        <label class="t-radio-label t-radio-card t-radio-card--success">
+                                            <input type="radio" class="t-choice-input t-choice-input--lg" name="t-save-mode" value="append">
+                                            <span class="t-radio-card__title"><i class="fa-solid fa-plus"></i> \u8FFD\u52A0</span>
+                                            <small class="t-radio-card__description">\u5728\u539F\u6709\u5185\u5BB9\u540E\u8FFD\u52A0\u65B0\u5185\u5BB9</small>
                                         </label>
-                                        <label class="t-radio-label">
-                                            <input type="radio" name="t-save-mode" value="prepend">
-                                            <span><i class="fa-solid fa-arrow-up"></i> \u524D\u7F6E</span>
-                                            <small>\u5728\u539F\u6709\u5185\u5BB9\u524D\u63D2\u5165\u65B0\u5185\u5BB9</small>
+                                        <label class="t-radio-label t-radio-card">
+                                            <input type="radio" class="t-choice-input t-choice-input--lg" name="t-save-mode" value="prepend">
+                                            <span class="t-radio-card__title"><i class="fa-solid fa-arrow-up"></i> \u524D\u7F6E</span>
+                                            <small class="t-radio-card__description">\u5728\u539F\u6709\u5185\u5BB9\u524D\u63D2\u5165\u65B0\u5185\u5BB9</small>
                                         </label>
                                     </div>
                                 </div>
