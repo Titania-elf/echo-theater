@@ -13652,13 +13652,9 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d;
 }
 
-#t-lore-settings-dialog .t-set-page {
-    display: none;
-}
-
-#t-lore-settings-dialog .t-set-page.active {
-    display: block;
-}
+/* \`.t-set-page\` / \`.t-set-page.active\` \u53EA\u6709 \`display: none\` / \`display: block\`\uFF0C
+   \u4E0E settings.css \u7684\u88F8\u7C7B\u9010\u5B57\u8282\u76F8\u540C\uFF08\u88F8\u7C7B\u65E0\u4F5C\u7528\u57DF\uFF0C\u5BF9\u672C\u5BF9\u8BDD\u6846\u4E00\u6837\u751F\u6548\uFF09\uFF0C
+   \u4E14\u5168\u5E93\u6CA1\u6709\u4EFB\u4F55 @media \u89C4\u5219\u52A8\u8FD9\u4E24\u4E2A\u7C7B \u2014\u2014 \u7EAF\u5197\u4F59\uFF0C\u5DF2\u5220\u9664\uFF08A13 \u91CD\u590D\u7EC4\uFF09\u3002 */
 
 #t-lore-settings-dialog .t-form-group {
     margin-bottom: 14px;
@@ -15299,46 +15295,12 @@ body.titania-debug-mode #chat titania-memory::before {
     max-height: min(88dvh, 88vh);
 }
 
-#t-outline-prompt-manager .t-set-body {
-    flex-grow: 1;
-    display: flex;
-    overflow: hidden;
-    min-height: 0;
-}
-
-#t-outline-prompt-manager .t-set-nav {
-    width: 160px;
-    background: #181818;
-    border-right: 1px solid #333;
-    padding: 10px 0;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    min-height: 0;
-    max-height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-/* \u63D0\u793A\u8BCD\u7BA1\u7406\u5668\u7684 tab \u590D\u7528 settings.css \u7684 \`.t-set-tab-btn\` \u88F8\u7C7B\uFF08\u8BE5\u88F8\u7C7B\u65E0\u4F5C\u7528\u57DF\uFF0C
-   \u5BF9\u672C\u7A97\u53E3\u4E00\u6837\u751F\u6548\uFF09\u3002\u539F\u5148\u8FD9\u91CC\u7528 \`#t-outline-prompt-manager\` \u628A base / :hover /
-   .active \u4E09\u6761**\u6574\u5957\u91CD\u58F0\u660E**\uFF0C\u4E14\u4E0E settings.css \u7684\u503C\u9010\u5B57\u8282\u76F8\u540C \u2014\u2014 \u7EAF\u5197\u4F59\uFF0C
-   \u5DF2\u5220\u9664\uFF08A13 \u91CD\u590D\u7EC4\uFF09\u3002\u684C\u9762\u7AEF\u5916\u89C2\u4E0D\u53D8\uFF0C\u79FB\u52A8\u7AEF\u89C1\u4E0B\u65B9 @768 \u6BB5\u843D\u7684\u8BF4\u660E\u3002 */
-
-#t-outline-prompt-manager .t-set-content {
-    flex-grow: 1;
-    padding: 20px;
-    overflow-y: auto;
-    background: #121212;
-}
-
-#t-outline-prompt-manager .t-set-page {
-    display: none;
-}
-
-#t-outline-prompt-manager .t-set-page.active {
-    display: block;
-}
+/* \u63D0\u793A\u8BCD\u7BA1\u7406\u5668\u6574\u5957\u590D\u7528 settings.css \u7684 \`.t-set-*\` \u88F8\u7C7B \u2014\u2014 \u90A3\u6279\u88F8\u7C7B\u6CA1\u6709\u4F5C\u7528\u57DF\uFF0C
+   \u5BF9\u672C\u7A97\u53E3\u4E00\u6837\u751F\u6548\u3002\u539F\u5148\u8FD9\u91CC\u628A body / nav / content / page / page.active
+   \u4E94\u6761**\u6574\u5957\u91CD\u58F0\u660E**\uFF0C\u503C\u4E0E settings \u5B8C\u5168\u4E00\u81F4\uFF08nav \u53EA\u662F\u5C11\u5199\u4E86 3 \u6761\u6EDA\u52A8\u6761\u5C5E\u6027\uFF0C
+   \u90A3 3 \u6761\u672C\u6765\u4E5F\u4ECE\u88F8\u7C7B\u7EE7\u627F\uFF09\uFF0C\u5C5E\u7EAF\u5197\u4F59\uFF0C\u5DF2\u5220\u9664\uFF08A13 \u91CD\u590D\u7EC4\uFF09\u3002
+   \u684C\u9762\u7AEF\u4E0E\u79FB\u52A8\u7AEF\u5916\u89C2\u5747\u4E0D\u53D8\uFF0C\u9A8C\u8BC1\u89C1\u63D0\u4EA4\u4FE1\u606F\u3002
+   \u672C\u7A97\u53E3\u771F\u6B63\u7684\u5DEE\u5F02\u53EA\u5269\u4E0B\u65B9\u7684 @768 \u6BB5\u843D\u3002 */
 
 #t-outline-prompt-manager .t-form-group {
     margin-bottom: 20px;
@@ -16465,6 +16427,13 @@ body.titania-debug-mode #chat titania-memory::before {
         gap: 6px;
         flex-direction: row;
         flex-wrap: wrap;
+        /* \u672C\u7A97\u53E3\u7684\u7A84\u5C4F\u5BFC\u822A\u662F\u300C\u6362\u884C\u7684 chip \u7F51\u683C\u300D\uFF0C\u4E0D\u662F\u6A2A\u5411\u6EDA\u52A8\u6761\u3002
+           \u8FD9\u6761\u539F\u5148\u4E0D\u7528\u5199\uFF1A\u5220\u6389\u7684\u90A3\u6761\u975E media \u7684 \`#t-outline-prompt-manager
+           .t-set-nav\`\uFF08\u7279\u5F02\u5EA6 1,1,0\uFF09\u91CC\u5E26\u7740 overflow-x: hidden\uFF0C\u538B\u8FC7\u4E86
+           settings.css @600px \u91CC \`.t-set-nav\`\uFF080,1,0\uFF09\u7684 overflow-x: auto\u3002
+           ID \u89C4\u5219\u4E00\u5220\uFF0Cauto \u5C31\u4F1A\u8D62\uFF0Cchip \u7684 min-width:120px \u5728\u6781\u7A84\u5C4F\u4E0B
+           \u53EF\u80FD\u6491\u51FA\u4E00\u6761\u6A2A\u5411\u6EDA\u52A8\u6761 \u2014\u2014 \u6545\u663E\u5F0F\u9489\u4F4F\u539F\u503C\u3002 */
+        overflow-x: hidden;
     }
 
     #t-outline-prompt-manager .t-set-tab-btn {
@@ -17488,9 +17457,9 @@ body.titania-debug-mode #chat titania-memory::before {
 
 #t-rewrite-settings-overlay .t-set-content { flex: 1; min-width: 0; padding: 14px; overflow-y: auto; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
 
-#t-rewrite-settings-overlay .t-set-page { display: none; }
-
-#t-rewrite-settings-overlay .t-set-page.active { display: block; }
+/* \`.t-set-page\` / \`.t-set-page.active\` \u4E0E settings.css \u7684\u88F8\u7C7B\u9010\u5B57\u8282\u76F8\u540C
+   \uFF08\u88F8\u7C7B\u65E0\u4F5C\u7528\u57DF\uFF0C\u5BF9\u672C overlay \u4E00\u6837\u751F\u6548\uFF09\uFF0C\u4E14\u65E0\u4EFB\u4F55 @media \u89C4\u5219\u52A8\u5B83\u4EEC \u2014\u2014
+   \u7EAF\u5197\u4F59\uFF0C\u5DF2\u5220\u9664\uFF08A13 \u91CD\u590D\u7EC4\uFF09\u3002 */
 
 #t-rewrite-settings-overlay .t-form-group { margin-bottom: 14px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.86); }
 

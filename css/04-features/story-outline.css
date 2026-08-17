@@ -16,46 +16,12 @@
     max-height: min(88dvh, 88vh);
 }
 
-#t-outline-prompt-manager .t-set-body {
-    flex-grow: 1;
-    display: flex;
-    overflow: hidden;
-    min-height: 0;
-}
-
-#t-outline-prompt-manager .t-set-nav {
-    width: 160px;
-    background: #181818;
-    border-right: 1px solid #333;
-    padding: 10px 0;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    min-height: 0;
-    max-height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-/* 提示词管理器的 tab 复用 settings.css 的 `.t-set-tab-btn` 裸类（该裸类无作用域，
-   对本窗口一样生效）。原先这里用 `#t-outline-prompt-manager` 把 base / :hover /
-   .active 三条**整套重声明**，且与 settings.css 的值逐字节相同 —— 纯冗余，
-   已删除（A13 重复组）。桌面端外观不变，移动端见下方 @768 段落的说明。 */
-
-#t-outline-prompt-manager .t-set-content {
-    flex-grow: 1;
-    padding: 20px;
-    overflow-y: auto;
-    background: #121212;
-}
-
-#t-outline-prompt-manager .t-set-page {
-    display: none;
-}
-
-#t-outline-prompt-manager .t-set-page.active {
-    display: block;
-}
+/* 提示词管理器整套复用 settings.css 的 `.t-set-*` 裸类 —— 那批裸类没有作用域，
+   对本窗口一样生效。原先这里把 body / nav / content / page / page.active
+   五条**整套重声明**，值与 settings 完全一致（nav 只是少写了 3 条滚动条属性，
+   那 3 条本来也从裸类继承），属纯冗余，已删除（A13 重复组）。
+   桌面端与移动端外观均不变，验证见提交信息。
+   本窗口真正的差异只剩下方的 @768 段落。 */
 
 #t-outline-prompt-manager .t-form-group {
     margin-bottom: 20px;
@@ -1182,6 +1148,13 @@
         gap: 6px;
         flex-direction: row;
         flex-wrap: wrap;
+        /* 本窗口的窄屏导航是「换行的 chip 网格」，不是横向滚动条。
+           这条原先不用写：删掉的那条非 media 的 `#t-outline-prompt-manager
+           .t-set-nav`（特异度 1,1,0）里带着 overflow-x: hidden，压过了
+           settings.css @600px 里 `.t-set-nav`（0,1,0）的 overflow-x: auto。
+           ID 规则一删，auto 就会赢，chip 的 min-width:120px 在极窄屏下
+           可能撑出一条横向滚动条 —— 故显式钉住原值。 */
+        overflow-x: hidden;
     }
 
     #t-outline-prompt-manager .t-set-tab-btn {

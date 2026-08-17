@@ -152,9 +152,9 @@
 
 #t-rewrite-settings-overlay .t-set-content { flex: 1; min-width: 0; padding: 14px; overflow-y: auto; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
 
-#t-rewrite-settings-overlay .t-set-page { display: none; }
-
-#t-rewrite-settings-overlay .t-set-page.active { display: block; }
+/* `.t-set-page` / `.t-set-page.active` 与 settings.css 的裸类逐字节相同
+   （裸类无作用域，对本 overlay 一样生效），且无任何 @media 规则动它们 ——
+   纯冗余，已删除（A13 重复组）。 */
 
 #t-rewrite-settings-overlay .t-form-group { margin-bottom: 14px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.86); }
 

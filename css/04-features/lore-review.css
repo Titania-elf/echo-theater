@@ -786,13 +786,9 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d;
 }
 
-#t-lore-settings-dialog .t-set-page {
-    display: none;
-}
-
-#t-lore-settings-dialog .t-set-page.active {
-    display: block;
-}
+/* `.t-set-page` / `.t-set-page.active` 只有 `display: none` / `display: block`，
+   与 settings.css 的裸类逐字节相同（裸类无作用域，对本对话框一样生效），
+   且全库没有任何 @media 规则动这两个类 —— 纯冗余，已删除（A13 重复组）。 */
 
 #t-lore-settings-dialog .t-form-group {
     margin-bottom: 14px;
