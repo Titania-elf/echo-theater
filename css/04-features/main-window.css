@@ -419,8 +419,17 @@
     font-size: 1.2em;
 }
 
-/* Filter & Dice */
-.t-action-group {
+/* Filter & Dice —— `.t-trigger-card` 的同级动作簇，同属 `.t-mobile-row`。
+   原名 `.t-action-group` 与 lore-review.css 的同名类撞车（A12）：那边是
+   带 h4 标题的表单分区（配 `.t-action-item`），和这里的横向按钮簇不是同一
+   组件，故按 `.t-trigger-*` 家族的既有命名重命名本侧，不做合并。
+
+   ⚠ 改名同时去掉了一处反向泄漏：lore-review.css 排在本文件**之后**、
+     特异度同为 (0,1,0)，它的 `margin-bottom: 15px` 原先会落到这个簇上。
+     `.t-mobile-row` 是 flex 且 align-items 取默认 stretch，那 15px 让
+     筛选/骰子按钮比旁边的 `.t-trigger-card` 矮 15px、下方留出空隙。
+     现已与 trigger card 齐高（Phase 4b-2 确认的预期外观）。 */
+.t-trigger-actions {
     display: flex;
     gap: 5px;
     flex-shrink: 0;
@@ -1187,7 +1196,7 @@
         height: 100%;
     }
 
-    .t-action-group {
+    .t-trigger-actions {
         height: 100%;
     }
 

@@ -93,7 +93,7 @@ export function renderHtml(viewData) {
                         <i class="fa-solid fa-chevron-down t-chevron"></i>
                     </div>
 
-                    <div class="t-action-group">
+                    <div class="t-trigger-actions">
                         <div class="t-filter-btn" id="t-btn-filter" title="筛选随机范围">
                             <i class="fa-solid fa-filter"></i>
                         </div>

@@ -4767,8 +4767,17 @@ textarea.t-input {
     font-size: 1.2em;
 }
 
-/* Filter & Dice */
-.t-action-group {
+/* Filter & Dice \u2014\u2014 \`.t-trigger-card\` \u7684\u540C\u7EA7\u52A8\u4F5C\u7C07\uFF0C\u540C\u5C5E \`.t-mobile-row\`\u3002
+   \u539F\u540D \`.t-action-group\` \u4E0E lore-review.css \u7684\u540C\u540D\u7C7B\u649E\u8F66\uFF08A12\uFF09\uFF1A\u90A3\u8FB9\u662F
+   \u5E26 h4 \u6807\u9898\u7684\u8868\u5355\u5206\u533A\uFF08\u914D \`.t-action-item\`\uFF09\uFF0C\u548C\u8FD9\u91CC\u7684\u6A2A\u5411\u6309\u94AE\u7C07\u4E0D\u662F\u540C\u4E00
+   \u7EC4\u4EF6\uFF0C\u6545\u6309 \`.t-trigger-*\` \u5BB6\u65CF\u7684\u65E2\u6709\u547D\u540D\u91CD\u547D\u540D\u672C\u4FA7\uFF0C\u4E0D\u505A\u5408\u5E76\u3002
+
+   \u26A0 \u6539\u540D\u540C\u65F6\u53BB\u6389\u4E86\u4E00\u5904\u53CD\u5411\u6CC4\u6F0F\uFF1Alore-review.css \u6392\u5728\u672C\u6587\u4EF6**\u4E4B\u540E**\u3001
+     \u7279\u5F02\u5EA6\u540C\u4E3A (0,1,0)\uFF0C\u5B83\u7684 \`margin-bottom: 15px\` \u539F\u5148\u4F1A\u843D\u5230\u8FD9\u4E2A\u7C07\u4E0A\u3002
+     \`.t-mobile-row\` \u662F flex \u4E14 align-items \u53D6\u9ED8\u8BA4 stretch\uFF0C\u90A3 15px \u8BA9
+     \u7B5B\u9009/\u9AB0\u5B50\u6309\u94AE\u6BD4\u65C1\u8FB9\u7684 \`.t-trigger-card\` \u77EE 15px\u3001\u4E0B\u65B9\u7559\u51FA\u7A7A\u9699\u3002
+     \u73B0\u5DF2\u4E0E trigger card \u9F50\u9AD8\uFF08Phase 4b-2 \u786E\u8BA4\u7684\u9884\u671F\u5916\u89C2\uFF09\u3002 */
+.t-trigger-actions {
     display: flex;
     gap: 5px;
     flex-shrink: 0;
@@ -5535,7 +5544,7 @@ textarea.t-input {
         height: 100%;
     }
 
-    .t-action-group {
+    .t-trigger-actions {
         height: 100%;
     }
 
@@ -14059,6 +14068,16 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     font-weight: 500;
 }
 
+/* \u5411\u91CF\u5316\u9762\u677F\u7684\u5206\u533A\u5BB9\u5668\u3002\u914D \`.t-action-item\` / \`.t-action-row\` \u4F7F\u7528\uFF0C
+   \u5185\u90E8\u662F h4 \u2192 \u8BF4\u660E \u2192 \u6309\u94AE\u7684\u7EB5\u5411\u6D41\u3002
+
+   \u26A0 Phase 4b-2 \u524D\u8FD9\u91CC\u6709\u4E2A\u8DE8 feature \u6CC4\u6F0F\uFF1Amain-window.css \u6709\u4E2A\u540C\u540D
+     \`.t-action-group\`\uFF08\u6A2A\u5411\u6309\u94AE\u7C07\uFF0C\u89C1 A12\uFF09\uFF0C\u5B83\u5728 manifest \u91CC\u6392\u5728
+     lore-review.css **\u4E4B\u524D**\u3001\u7279\u5F02\u5EA6\u540C\u4E3A (0,1,0)\uFF0C\u6240\u4EE5\u5B83\u7684
+     \`display: flex; gap: 5px; flex-shrink: 0\` \u4F1A\u4E00\u5E76\u4F5C\u7528\u5230\u8FD9\u56DB\u4E2A\u5206\u533A\u4E0A\uFF0C
+     \u628A h4 / \u8BF4\u660E / \u6309\u94AE\u6324\u6210\u4E00\u884C\u3002main-window \u4FA7\u5DF2\u6539\u540D \`.t-trigger-actions\`\uFF0C
+     \u8FD9\u91CC\u6062\u590D\u4E3A block \u6D41 \u2014\u2014 \u4E5F\u5C31\u662F \`.t-action-item\` \u4E0E\u4E0B\u9762 h4 \u7684
+     margin-bottom \u672C\u6765\u9884\u671F\u7684\u6392\u7248\u3002 */
 .t-action-group {
     margin-bottom: 15px;
 }
@@ -36828,7 +36847,7 @@ function renderHtml(viewData) {
                         <i class="fa-solid fa-chevron-down t-chevron"></i>
                     </div>
 
-                    <div class="t-action-group">
+                    <div class="t-trigger-actions">
                         <div class="t-filter-btn" id="t-btn-filter" title="\u7B5B\u9009\u968F\u673A\u8303\u56F4">
                             <i class="fa-solid fa-filter"></i>
                         </div>
@@ -37235,7 +37254,7 @@ function renderHtml2(viewData) {
                         <i class="fa-solid fa-chevron-down t-chevron"></i>
                     </div>
 
-                    <div class="t-action-group">
+                    <div class="t-trigger-actions">
                         <div class="t-filter-btn" id="t-btn-filter" title="\u7B5B\u9009\u968F\u673A\u8303\u56F4">
                             <i class="fa-solid fa-filter"></i>
                         </div>

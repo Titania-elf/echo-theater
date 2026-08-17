@@ -1210,6 +1210,16 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     font-weight: 500;
 }
 
+/* 向量化面板的分区容器。配 `.t-action-item` / `.t-action-row` 使用，
+   内部是 h4 → 说明 → 按钮的纵向流。
+
+   ⚠ Phase 4b-2 前这里有个跨 feature 泄漏：main-window.css 有个同名
+     `.t-action-group`（横向按钮簇，见 A12），它在 manifest 里排在
+     lore-review.css **之前**、特异度同为 (0,1,0)，所以它的
+     `display: flex; gap: 5px; flex-shrink: 0` 会一并作用到这四个分区上，
+     把 h4 / 说明 / 按钮挤成一行。main-window 侧已改名 `.t-trigger-actions`，
+     这里恢复为 block 流 —— 也就是 `.t-action-item` 与下面 h4 的
+     margin-bottom 本来预期的排版。 */
 .t-action-group {
     margin-bottom: 15px;
 }
