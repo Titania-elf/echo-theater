@@ -2153,7 +2153,7 @@ function renderPlanHub() {
                 </div>
                 <div class="t-plan-card-actions">
                     <label class="t-plan-source-radio" title="选择后，细纲情节页将从该方案读取并使用场景内容">
-                        <input type="radio" name="t-plan-scene-source" data-action="set-scene-source" data-plan-id="${plan.id}" ${isSource ? "checked" : ""}>
+                        <input type="radio" class="t-choice-input t-choice-input--cyan-muted" name="t-plan-scene-source" data-action="set-scene-source" data-plan-id="${plan.id}" ${isSource ? "checked" : ""}>
                         <span>作为细纲来源</span>
                     </label>
                     <div class="t-plan-source-note">说明：勾选后，细纲情节页会优先使用该方案中的场景。</div>

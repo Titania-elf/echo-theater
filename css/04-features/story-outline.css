@@ -444,10 +444,6 @@
     font-size: 12px;
 }
 
-.t-plan-source-radio input[type="radio"] {
-    accent-color: #75d8d8;
-}
-
 .t-plan-card-actions {
     display: flex;
     flex-wrap: wrap;

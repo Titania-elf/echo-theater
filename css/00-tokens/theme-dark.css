@@ -152,6 +152,7 @@
     --t-color-warning-border: rgb(var(--t-c-amber-rgb) / .5);
     --t-color-warning-border-subtle: rgb(var(--t-c-amber-rgb) / .3);
     --t-color-notify: rgb(var(--t-c-mint-rgb));
+    --t-color-cyan-muted: rgb(117 216 216);
     /* #55efc4 */
     --t-color-decor: rgb(var(--t-c-violet-rgb));
     /* #a29bfe 装饰 */

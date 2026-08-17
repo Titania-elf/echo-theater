@@ -19,6 +19,10 @@
     accent-color: var(--t-color-warning-muted);
 }
 
+.t-root .t-choice-input--cyan-muted {
+    accent-color: var(--t-color-cyan-muted);
+}
+
 .t-root .t-choice-input--sm {
     width: 14px;
     height: 14px;

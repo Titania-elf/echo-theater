@@ -2219,6 +2219,7 @@ function loadCssFiles() {
     --t-color-warning-border: rgb(var(--t-c-amber-rgb) / .5);
     --t-color-warning-border-subtle: rgb(var(--t-c-amber-rgb) / .3);
     --t-color-notify: rgb(var(--t-c-mint-rgb));
+    --t-color-cyan-muted: rgb(117 216 216);
     /* #55efc4 */
     --t-color-decor: rgb(var(--t-c-violet-rgb));
     /* #a29bfe \u88C5\u9970 */
@@ -3364,6 +3365,10 @@ textarea.t-input {
 
 .t-root .t-choice-input--warning-muted {
     accent-color: var(--t-color-warning-muted);
+}
+
+.t-root .t-choice-input--cyan-muted {
+    accent-color: var(--t-color-cyan-muted);
 }
 
 .t-root .t-choice-input--sm {
@@ -15787,10 +15792,6 @@ body.titania-debug-mode #chat titania-memory::before {
     font-size: 12px;
 }
 
-.t-plan-source-radio input[type="radio"] {
-    accent-color: #75d8d8;
-}
-
 .t-plan-card-actions {
     display: flex;
     flex-wrap: wrap;
@@ -24299,7 +24300,7 @@ function renderPlanHub() {
                 </div>
                 <div class="t-plan-card-actions">
                     <label class="t-plan-source-radio" title="\u9009\u62E9\u540E\uFF0C\u7EC6\u7EB2\u60C5\u8282\u9875\u5C06\u4ECE\u8BE5\u65B9\u6848\u8BFB\u53D6\u5E76\u4F7F\u7528\u573A\u666F\u5185\u5BB9">
-                        <input type="radio" name="t-plan-scene-source" data-action="set-scene-source" data-plan-id="${plan.id}" ${isSource ? "checked" : ""}>
+                        <input type="radio" class="t-choice-input t-choice-input--cyan-muted" name="t-plan-scene-source" data-action="set-scene-source" data-plan-id="${plan.id}" ${isSource ? "checked" : ""}>
                         <span>\u4F5C\u4E3A\u7EC6\u7EB2\u6765\u6E90</span>
                     </label>
                     <div class="t-plan-source-note">\u8BF4\u660E\uFF1A\u52FE\u9009\u540E\uFF0C\u7EC6\u7EB2\u60C5\u8282\u9875\u4F1A\u4F18\u5148\u4F7F\u7528\u8BE5\u65B9\u6848\u4E2D\u7684\u573A\u666F\u3002</div>
