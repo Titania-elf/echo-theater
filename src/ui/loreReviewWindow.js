@@ -918,7 +918,7 @@ export async function showLoreReviewWindow() {
                         </div>
                         <div class="t-control-group">
                             <label>
-                                <input type="checkbox" id="t-use-vector-search" disabled>
+                                <input type="checkbox" id="t-use-vector-search" class="t-choice-input t-choice-input--inline-gap t-choice-input--muted-disabled" disabled>
                                 使用语义检索增强
                             </label>
                         </div>

@@ -1407,19 +1407,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     color: #f56565;
 }
 
-/* Checkbox 样式优化 */
-.t-control-group input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    margin-right: 6px;
-    cursor: pointer;
-}
-
-.t-control-group input[type="checkbox"]:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 /* ========== 自定义提示词区域样式 ========== */
 .t-custom-prompt-section {
     background: rgba(0, 0, 0, 0.15);

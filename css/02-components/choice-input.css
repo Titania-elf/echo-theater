@@ -4,13 +4,20 @@
     height: 16px;
     margin: 0;
     flex-shrink: 0;
-    accent-color: var(--t-color-brand);
     cursor: pointer;
+}
+
+.t-root .t-choice-input--brand {
+    accent-color: var(--t-color-brand);
 }
 
 .t-root .t-choice-input--lg {
     width: 18px;
     height: 18px;
+}
+
+.t-root .t-choice-input--inline-gap {
+    margin-right: 6px;
 }
 
 .t-root .t-choice-input:disabled {

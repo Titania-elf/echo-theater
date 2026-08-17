@@ -3339,13 +3339,20 @@ textarea.t-input {
     height: 16px;
     margin: 0;
     flex-shrink: 0;
-    accent-color: var(--t-color-brand);
     cursor: pointer;
+}
+
+.t-root .t-choice-input--brand {
+    accent-color: var(--t-color-brand);
 }
 
 .t-root .t-choice-input--lg {
     width: 18px;
     height: 18px;
+}
+
+.t-root .t-choice-input--inline-gap {
+    margin-right: 6px;
 }
 
 .t-root .t-choice-input:disabled {
@@ -14113,19 +14120,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 .t-index-status.t-index-empty {
     background: rgba(245, 101, 101, 0.2);
     color: #f56565;
-}
-
-/* Checkbox \u6837\u5F0F\u4F18\u5316 */
-.t-control-group input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    margin-right: 6px;
-    cursor: pointer;
-}
-
-.t-control-group input[type="checkbox"]:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 /* ========== \u81EA\u5B9A\u4E49\u63D0\u793A\u8BCD\u533A\u57DF\u6837\u5F0F ========== */
@@ -30830,7 +30824,7 @@ async function showLoreReviewWindow() {
                         </div>
                         <div class="t-control-group">
                             <label>
-                                <input type="checkbox" id="t-use-vector-search" disabled>
+                                <input type="checkbox" id="t-use-vector-search" class="t-choice-input t-choice-input--inline-gap t-choice-input--muted-disabled" disabled>
                                 \u4F7F\u7528\u8BED\u4E49\u68C0\u7D22\u589E\u5F3A
                             </label>
                         </div>
@@ -33199,23 +33193,23 @@ function openSettingsWindow() {
                             </p>
                             <div class="t-toolbar-config" id="t-toolbar-config">
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="main" checked disabled>
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="main" checked disabled>
                                     <i class="fa-solid fa-masks-theater" style="color:#74b9ff;"></i>
                                     <span>\u6253\u5F00\u5267\u573A</span>
                                     <span class="t-toolbar-hint">(\u5FC5\u9009)</span>
                                 </label>
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="settings">
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="settings">
                                     <i class="fa-solid fa-gear" style="color:#aaa;"></i>
                                     <span>\u8BBE\u7F6E</span>
                                 </label>
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="favs">
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="favs">
                                     <i class="fa-solid fa-star" style="color:#ffd93d;"></i>
                                     <span>\u6536\u85CF\u5939</span>
                                 </label>
                                 <label class="t-toolbar-item">
-                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="scripts">
+                                    <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="scripts">
                                     <i class="fa-solid fa-scroll" style="color:#bfa15f;"></i>
                                     <span>\u5267\u672C\u7BA1\u7406</span>
                                 </label>
@@ -34690,7 +34684,7 @@ function openSettingsWindow() {
                 <i class="fa-solid ${meta.icon} t-header-action-icon"></i>
                 <span class="t-header-action-label"></span>
                 <label class="t-header-action-switch">
-                    <input type="checkbox" class="t-header-action-chk t-choice-input" data-action-id="${id3}" ${checked ? "checked" : ""}>
+                    <input type="checkbox" class="t-header-action-chk t-choice-input t-choice-input--brand" data-action-id="${id3}" ${checked ? "checked" : ""}>
                 </label>
             </div>`);
       $card.find(".t-header-action-label").text(meta.label);
