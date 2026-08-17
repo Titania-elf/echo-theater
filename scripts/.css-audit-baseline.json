@@ -68,14 +68,14 @@
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1152,
+        "hex字面量": 1147,
         "rgb/rgba字面量": 964,
-        "合计": 2116,
+        "合计": 2111,
         "  00-tokens": "hex 10 / rgb 124",
         "  01-base": "hex 18 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
         "  03-layout": "hex 0 / rgb 0",
-        "  04-features": "hex 1116 / rgb 815",
+        "  04-features": "hex 1111 / rgb 815",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
     },
@@ -113,9 +113,9 @@
     },
     "A13": {
       "title": "字节级重复声明块（≥4 声明）",
-      "violations": 29,
+      "violations": 28,
       "metrics": {
-        "重复组数": 29
+        "重复组数": 28
       }
     },
     "A16": {
@@ -161,7 +161,7 @@
       "title": "禁止 transition: all",
       "violations": 47,
       "metrics": {
-        "transition 声明总数": 137,
+        "transition 声明总数": 136,
         "含 all": 47,
         "其中 all 0.2s": 37
       }
@@ -177,11 +177,11 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16243,
-    "规则条数": 2233,
+    "CSS 总行数": 16233,
+    "规则条数": 2230,
     "border-radius 声明 / 不同值": "342 / 43",
     "box-shadow 声明 / 不同值": "116 / 87",
-    "font-size (px / em)": "162 / 310",
-    "padding / gap 声明": "532 / 391"
+    "font-size (px / em)": "162 / 309",
+    "padding / gap 声明": "531 / 390"
   }
 }

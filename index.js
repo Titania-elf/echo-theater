@@ -15320,28 +15320,10 @@ body.titania-debug-mode #chat titania-memory::before {
     overflow-x: hidden;
 }
 
-#t-outline-prompt-manager .t-set-tab-btn {
-    padding: 12px 20px;
-    color: #888;
-    cursor: pointer;
-    transition: 0.2s;
-    font-size: 0.95em;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#t-outline-prompt-manager .t-set-tab-btn:hover {
-    background: #222;
-    color: #ccc;
-}
-
-#t-outline-prompt-manager .t-set-tab-btn.active {
-    background: #2a2a2a;
-    color: #bfa15f;
-    border-left: 3px solid #bfa15f;
-    font-weight: bold;
-}
+/* \u63D0\u793A\u8BCD\u7BA1\u7406\u5668\u7684 tab \u590D\u7528 settings.css \u7684 \`.t-set-tab-btn\` \u88F8\u7C7B\uFF08\u8BE5\u88F8\u7C7B\u65E0\u4F5C\u7528\u57DF\uFF0C
+   \u5BF9\u672C\u7A97\u53E3\u4E00\u6837\u751F\u6548\uFF09\u3002\u539F\u5148\u8FD9\u91CC\u7528 \`#t-outline-prompt-manager\` \u628A base / :hover /
+   .active \u4E09\u6761**\u6574\u5957\u91CD\u58F0\u660E**\uFF0C\u4E14\u4E0E settings.css \u7684\u503C\u9010\u5B57\u8282\u76F8\u540C \u2014\u2014 \u7EAF\u5197\u4F59\uFF0C
+   \u5DF2\u5220\u9664\uFF08A13 \u91CD\u590D\u7EC4\uFF09\u3002\u684C\u9762\u7AEF\u5916\u89C2\u4E0D\u53D8\uFF0C\u79FB\u52A8\u7AEF\u89C1\u4E0B\u65B9 @768 \u6BB5\u843D\u7684\u8BF4\u660E\u3002 */
 
 #t-outline-prompt-manager .t-set-content {
     flex-grow: 1;
@@ -16496,6 +16478,14 @@ body.titania-debug-mode #chat titania-memory::before {
 
     #t-outline-prompt-manager .t-set-tab-btn.active {
         border-left: 1px solid #bfa15f;
+        /* \u7A84\u5C4F tab \u662F\u300C\u5706\u89D2 chip\u300D\u5F62\u6001\uFF08\u4E0A\u9762\u90A3\u6761\u7ED9\u4E86 border + border-radius\uFF09\uFF0C
+           \u6FC0\u6D3B\u6001\u8981\u6709\u586B\u5145\u8272\u624D\u770B\u5F97\u51FA\u6765\u3002
+           \u8FD9\u6761 background \u539F\u5148\u4E0D\u7528\u5199\uFF1A\u5220\u6389\u7684\u90A3\u6761\u975E media \u7684
+           \`#t-outline-prompt-manager .t-set-tab-btn.active\`\uFF08\u7279\u5F02\u5EA6 1,2,0\uFF09
+           \u538B\u8FC7\u4E86 settings.css @600px \u91CC \`.t-set-tab-btn.active\`\uFF080,2,0\uFF09\u7684
+           \`background: transparent\`\u3002ID \u89C4\u5219\u4E00\u5220\uFF0Ctransparent \u5C31\u4F1A\u8D62\uFF0C
+           chip \u7684\u586B\u5145\u4F1A\u6D88\u5931 \u2014\u2014 \u6545\u5728\u6B64\u663E\u5F0F\u9489\u4F4F\u539F\u503C\u3002 */
+        background: #2a2a2a;
     }
 
     #t-outline-prompt-manager .t-set-content {

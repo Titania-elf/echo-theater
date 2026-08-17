@@ -37,28 +37,10 @@
     overflow-x: hidden;
 }
 
-#t-outline-prompt-manager .t-set-tab-btn {
-    padding: 12px 20px;
-    color: #888;
-    cursor: pointer;
-    transition: 0.2s;
-    font-size: 0.95em;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#t-outline-prompt-manager .t-set-tab-btn:hover {
-    background: #222;
-    color: #ccc;
-}
-
-#t-outline-prompt-manager .t-set-tab-btn.active {
-    background: #2a2a2a;
-    color: #bfa15f;
-    border-left: 3px solid #bfa15f;
-    font-weight: bold;
-}
+/* 提示词管理器的 tab 复用 settings.css 的 `.t-set-tab-btn` 裸类（该裸类无作用域，
+   对本窗口一样生效）。原先这里用 `#t-outline-prompt-manager` 把 base / :hover /
+   .active 三条**整套重声明**，且与 settings.css 的值逐字节相同 —— 纯冗余，
+   已删除（A13 重复组）。桌面端外观不变，移动端见下方 @768 段落的说明。 */
 
 #t-outline-prompt-manager .t-set-content {
     flex-grow: 1;
@@ -1213,6 +1195,14 @@
 
     #t-outline-prompt-manager .t-set-tab-btn.active {
         border-left: 1px solid #bfa15f;
+        /* 窄屏 tab 是「圆角 chip」形态（上面那条给了 border + border-radius），
+           激活态要有填充色才看得出来。
+           这条 background 原先不用写：删掉的那条非 media 的
+           `#t-outline-prompt-manager .t-set-tab-btn.active`（特异度 1,2,0）
+           压过了 settings.css @600px 里 `.t-set-tab-btn.active`（0,2,0）的
+           `background: transparent`。ID 规则一删，transparent 就会赢，
+           chip 的填充会消失 —— 故在此显式钉住原值。 */
+        background: #2a2a2a;
     }
 
     #t-outline-prompt-manager .t-set-content {
