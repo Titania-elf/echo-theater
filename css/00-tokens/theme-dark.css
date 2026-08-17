@@ -137,6 +137,7 @@
     --t-color-success-veil: rgb(var(--t-c-green-rgb) / .12);
     --t-color-success-border: rgb(var(--t-c-green-rgb) / .45);
     --t-color-warning: rgb(var(--t-c-amber-rgb));
+    --t-color-warning-muted: rgb(255 185 104);
     --t-color-warning-soft: rgb(var(--t-c-amber-rgb) / .2);
     --t-color-warning-border: rgb(var(--t-c-amber-rgb) / .5);
     --t-color-notify: rgb(var(--t-c-mint-rgb));

@@ -2204,6 +2204,7 @@ function loadCssFiles() {
     --t-color-success-veil: rgb(var(--t-c-green-rgb) / .12);
     --t-color-success-border: rgb(var(--t-c-green-rgb) / .45);
     --t-color-warning: rgb(var(--t-c-amber-rgb));
+    --t-color-warning-muted: rgb(255 185 104);
     --t-color-warning-soft: rgb(var(--t-c-amber-rgb) / .2);
     --t-color-warning-border: rgb(var(--t-c-amber-rgb) / .5);
     --t-color-notify: rgb(var(--t-c-mint-rgb));
@@ -3348,6 +3349,15 @@ textarea.t-input {
 
 .t-root .t-choice-input--accent {
     accent-color: var(--t-color-accent);
+}
+
+.t-root .t-choice-input--warning-muted {
+    accent-color: var(--t-color-warning-muted);
+}
+
+.t-root .t-choice-input--sm {
+    width: 14px;
+    height: 14px;
 }
 
 .t-root .t-choice-input--lg {
@@ -5885,18 +5895,9 @@ textarea.t-input {
     color: #bbb;
 }
 
-.t-wi-hide-disabled input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    margin: 0;
-    accent-color: #ffb968;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
 /* \u52FE\u9009\u540E\u7528\u7981\u7528\u6807\u8BB0\u7684\u540C\u8272\uFF0C\u548C\u6761\u76EE\u4E0A\u90A3\u4E2A\u300C\u9152\u9986\u4E2D\u5DF2\u7981\u7528\u300D\u5FBD\u7AE0\u547C\u5E94 */
 .t-wi-hide-disabled:has(input:checked) {
-    color: #ffb968;
+    color: var(--t-color-warning-muted);
 }
 
 .t-wi-search-clear:hover {
@@ -39095,7 +39096,7 @@ async function openWorldInfoSelector() {
                         <button type="button" class="t-btn t-btn-xs" id="t-wi-current-select-all">\u5168\u9009</button>
                         <button type="button" class="t-btn t-btn-xs" id="t-wi-current-select-none">\u53D6\u6D88\u5168\u9009</button>
                         <label class="t-wi-hide-disabled" id="t-wi-hide-disabled-label" title="\u4EC5\u4ECE\u5217\u8868\u91CC\u9690\u85CF\uFF0C\u4E0D\u6539\u52A8\u5DF2\u4FDD\u5B58\u7684\u52FE\u9009\u3002\u5DF2\u52FE\u9009\u7684\u7981\u7528\u6761\u76EE\u4ECD\u4F1A\u6CE8\u5165">
-                            <input type="checkbox" id="t-wi-hide-disabled" ${hideDisabled ? "checked" : ""}>
+                            <input type="checkbox" id="t-wi-hide-disabled" class="t-choice-input t-choice-input--warning-muted t-choice-input--sm" ${hideDisabled ? "checked" : ""}>
                             <span>\u9690\u85CF\u5DF2\u7981\u7528</span>
                         </label>
                     </div>

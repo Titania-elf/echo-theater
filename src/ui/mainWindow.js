@@ -2064,7 +2064,7 @@ async function openWorldInfoSelector() {
                         <button type="button" class="t-btn t-btn-xs" id="t-wi-current-select-all">全选</button>
                         <button type="button" class="t-btn t-btn-xs" id="t-wi-current-select-none">取消全选</button>
                         <label class="t-wi-hide-disabled" id="t-wi-hide-disabled-label" title="仅从列表里隐藏，不改动已保存的勾选。已勾选的禁用条目仍会注入">
-                            <input type="checkbox" id="t-wi-hide-disabled" ${hideDisabled ? "checked" : ""}>
+                            <input type="checkbox" id="t-wi-hide-disabled" class="t-choice-input t-choice-input--warning-muted t-choice-input--sm" ${hideDisabled ? "checked" : ""}>
                             <span>隐藏已禁用</span>
                         </label>
                     </div>

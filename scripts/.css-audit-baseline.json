@@ -24,8 +24,8 @@
       "title": "消费但未声明的 --t-* 变量",
       "violations": 0,
       "metrics": {
-        "CSS 已声明 --t-*": 222,
-        "被消费种类": 158,
+        "CSS 已声明 --t-*": 223,
+        "被消费种类": 159,
         "仅 JS 声明（B5）": 4
       }
     },
@@ -68,14 +68,14 @@
       "title": "各层颜色字面量计数",
       "violations": 0,
       "metrics": {
-        "hex字面量": 1204,
-        "rgb/rgba字面量": 981,
-        "合计": 2185,
-        "  00-tokens": "hex 10 / rgb 100",
+        "hex字面量": 1202,
+        "rgb/rgba字面量": 982,
+        "合计": 2184,
+        "  00-tokens": "hex 10 / rgb 101",
         "  01-base": "hex 20 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
         "  03-layout": "hex 0 / rgb 0",
-        "  04-features": "hex 1166 / rgb 856",
+        "  04-features": "hex 1164 / rgb 856",
         "  (内嵌 HTML)": "hex 8 / rgb 8"
       }
     },
@@ -177,8 +177,8 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16370,
-    "规则条数": 2261,
+    "CSS 总行数": 16371,
+    "规则条数": 2262,
     "border-radius 声明 / 不同值": "353 / 41",
     "box-shadow 声明 / 不同值": "119 / 85",
     "font-size (px / em)": "162 / 316",

@@ -1726,18 +1726,9 @@
     color: #bbb;
 }
 
-.t-wi-hide-disabled input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    margin: 0;
-    accent-color: #ffb968;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
 /* 勾选后用禁用标记的同色，和条目上那个「酒馆中已禁用」徽章呼应 */
 .t-wi-hide-disabled:has(input:checked) {
-    color: #ffb968;
+    color: var(--t-color-warning-muted);
 }
 
 .t-wi-search-clear:hover {

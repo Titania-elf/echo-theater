@@ -15,6 +15,15 @@
     accent-color: var(--t-color-accent);
 }
 
+.t-root .t-choice-input--warning-muted {
+    accent-color: var(--t-color-warning-muted);
+}
+
+.t-root .t-choice-input--sm {
+    width: 14px;
+    height: 14px;
+}
+
 .t-root .t-choice-input--lg {
     width: 18px;
     height: 18px;
