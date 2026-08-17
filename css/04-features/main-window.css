@@ -150,19 +150,6 @@
     flex: 0 0 auto;
 }
 
-.t-cont-select {
-    width: 16px;
-    height: 16px;
-    margin: 0 8px 0 0;
-    accent-color: #90cdf4;
-    cursor: pointer;
-}
-
-.t-cont-select:disabled {
-    cursor: not-allowed;
-    opacity: .45;
-}
-
 .t-cont-history-panel.is-managing .t-cont-history-session-toggle,
 .t-cont-history-panel.is-managing .t-cont-history-branch-title,
 .t-cont-history-panel.is-managing .t-cont-history-round-head {

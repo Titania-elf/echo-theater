@@ -577,7 +577,7 @@ async function openContinuationHistory(preferredScriptId = "") {
     if (preferredIndex > 0) sessions.unshift(sessions.splice(preferredIndex, 1)[0]);
 
     const selectionCheckbox = (level, chatId, scriptId, branchKey = "", roundKey = "", disabled = false) => continuationHistoryManaging
-        ? `<input class="t-cont-select" type="checkbox" data-selection-level="${level}" data-chat-id="${escapeHtmlText(chatId)}" data-script-id="${escapeHtmlText(scriptId)}" data-branch-key="${escapeHtmlText(branchKey)}" data-round-key="${escapeHtmlText(roundKey)}" ${disabled ? "disabled" : ""} aria-label="选择${level === "session" ? "剧本" : level === "branch" ? "分支" : "轮次"}">`
+        ? `<input class="t-cont-select t-choice-input t-choice-input--accent t-choice-input--inline-gap-md t-choice-input--subdued-disabled" type="checkbox" data-selection-level="${level}" data-chat-id="${escapeHtmlText(chatId)}" data-script-id="${escapeHtmlText(scriptId)}" data-branch-key="${escapeHtmlText(branchKey)}" data-round-key="${escapeHtmlText(roundKey)}" ${disabled ? "disabled" : ""} aria-label="选择${level === "session" ? "剧本" : level === "branch" ? "分支" : "轮次"}">`
         : "";
     const sessionsHtml = sessions.map((session, sessionIndex) => {
         const isOpen = sessionIndex === 0;

@@ -3374,12 +3374,20 @@ textarea.t-input {
     margin-right: 6px;
 }
 
+.t-root .t-choice-input--inline-gap-md {
+    margin-right: 8px;
+}
+
 .t-root .t-choice-input:disabled {
     cursor: not-allowed;
 }
 
 .t-root .t-choice-input--muted-disabled:disabled {
     opacity: 0.5;
+}
+
+.t-root .t-choice-input--subdued-disabled:disabled {
+    opacity: 0.45;
 }
 
 @media screen and (max-width: 600px) {
@@ -4317,19 +4325,6 @@ textarea.t-input {
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
-}
-
-.t-cont-select {
-    width: 16px;
-    height: 16px;
-    margin: 0 8px 0 0;
-    accent-color: #90cdf4;
-    cursor: pointer;
-}
-
-.t-cont-select:disabled {
-    cursor: not-allowed;
-    opacity: .45;
 }
 
 .t-cont-history-panel.is-managing .t-cont-history-session-toggle,
@@ -37964,7 +37959,7 @@ async function openContinuationHistory(preferredScriptId = "") {
   }
   const preferredIndex = sessions.findIndex((session) => session.scriptId === preferredScriptId);
   if (preferredIndex > 0) sessions.unshift(sessions.splice(preferredIndex, 1)[0]);
-  const selectionCheckbox = (level, chatId, scriptId, branchKey = "", roundKey = "", disabled = false) => continuationHistoryManaging ? `<input class="t-cont-select" type="checkbox" data-selection-level="${level}" data-chat-id="${escapeHtmlText2(chatId)}" data-script-id="${escapeHtmlText2(scriptId)}" data-branch-key="${escapeHtmlText2(branchKey)}" data-round-key="${escapeHtmlText2(roundKey)}" ${disabled ? "disabled" : ""} aria-label="\u9009\u62E9${level === "session" ? "\u5267\u672C" : level === "branch" ? "\u5206\u652F" : "\u8F6E\u6B21"}">` : "";
+  const selectionCheckbox = (level, chatId, scriptId, branchKey = "", roundKey = "", disabled = false) => continuationHistoryManaging ? `<input class="t-cont-select t-choice-input t-choice-input--accent t-choice-input--inline-gap-md t-choice-input--subdued-disabled" type="checkbox" data-selection-level="${level}" data-chat-id="${escapeHtmlText2(chatId)}" data-script-id="${escapeHtmlText2(scriptId)}" data-branch-key="${escapeHtmlText2(branchKey)}" data-round-key="${escapeHtmlText2(roundKey)}" ${disabled ? "disabled" : ""} aria-label="\u9009\u62E9${level === "session" ? "\u5267\u672C" : level === "branch" ? "\u5206\u652F" : "\u8F6E\u6B21"}">` : "";
   const sessionsHtml = sessions.map((session, sessionIndex) => {
     const isOpen = sessionIndex === 0;
     const hasActiveBranch = session.branches.some((item) => item.isActive);

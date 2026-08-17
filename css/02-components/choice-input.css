@@ -38,12 +38,20 @@
     margin-right: 6px;
 }
 
+.t-root .t-choice-input--inline-gap-md {
+    margin-right: 8px;
+}
+
 .t-root .t-choice-input:disabled {
     cursor: not-allowed;
 }
 
 .t-root .t-choice-input--muted-disabled:disabled {
     opacity: 0.5;
+}
+
+.t-root .t-choice-input--subdued-disabled:disabled {
+    opacity: 0.45;
 }
 
 @media screen and (max-width: 600px) {
