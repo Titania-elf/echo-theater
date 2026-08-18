@@ -242,7 +242,7 @@ export function openSettingsWindow() {
                         </div>
                         <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                             <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">透明度:</span>
-                            <input type="range" id="p-border-opacity" min="0" max="100" step="5" value="${tempApp.border_opacity}" style="flex:1;">
+                            <input class="t-flex-1" type="range" id="p-border-opacity" min="0" max="100" step="5" value="${tempApp.border_opacity}">
                             <span id="p-border-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.border_opacity}%</span>
                         </div>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">此颜色将应用于悬浮球边框及动画效果</p>
@@ -264,7 +264,7 @@ export function openSettingsWindow() {
                         </div>
                         <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                             <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">透明度:</span>
-                            <input type="range" id="p-bg-opacity" min="0" max="100" step="5" value="${tempApp.bg_opacity}" style="flex:1;">
+                            <input class="t-flex-1" type="range" id="p-bg-opacity" min="0" max="100" step="5" value="${tempApp.bg_opacity}">
                             <span id="p-bg-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.bg_opacity}%</span>
                         </div>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">球体的背景填充颜色（透明度为0时完全透明）</p>
@@ -291,7 +291,7 @@ export function openSettingsWindow() {
                             <input id="p-emoji-input" class="t-input" value="${tempApp.type === 'emoji' ? tempApp.content : '🎭'}" style="width:100px; text-align:center; font-size:1.5em;">
                         </div>
                         <div id="box-image" style="display:${tempApp.type === 'image' ? 'block' : 'none'}">
-                            <input type="file" id="p-file-input" accept="image/*" style="display:none;">
+                            <input class="is-hidden" type="file" id="p-file-input" accept="image/*">
                             <div class="t-upload-card" id="btn-upload-card" title="点击更换图片"><i class="fa-solid fa-camera fa-2x"></i><span>点击上传</span></div>
                         </div>
                     </div>
@@ -436,7 +436,7 @@ export function openSettingsWindow() {
                         <div id="t-font-upload-options" style="display:${fontSettings.source === 'upload' ? 'block' : 'none'}; background:var(--t-color-surface-sunken); padding:15px; border-radius:6px; margin-top:15px; border:1px solid var(--t-color-border);">
                             <div class="t-form-group" style="margin-bottom:15px;">
                                 <label class="t-form-label">选择字体文件</label>
-                                <input type="file" id="t-font-file-input" accept=".woff2,.woff,.ttf,.otf" style="display:none;">
+                                <input class="is-hidden" type="file" id="t-font-file-input" accept=".woff2,.woff,.ttf,.otf">
                                 <div style="display:flex; align-items:center; gap:10px;">
                                     <button id="btn-font-upload" class="t-tool-btn" style="padding:8px 15px;"><i class="fa-solid fa-upload"></i> 选择文件</button>
                                     <span id="t-font-file-name" style="color:var(--t-color-text-muted); font-size:0.9em;">${fontSettings.font_data ? '已上传字体文件' : '未选择文件'}</span>
@@ -484,7 +484,7 @@ export function openSettingsWindow() {
                     <div class="t-form-group">
                         <label class="t-form-label">🎨 CSS 主题方案</label>
                         <div style="display:flex; gap:8px; margin-bottom:10px;">
-                            <select id="t-css-theme-select" class="t-input" style="flex:1;"></select>
+                            <select id="t-css-theme-select" class="t-input t-flex-1"></select>
                             <button id="btn-css-theme-add" class="t-tool-btn" title="保存为新方案"><i class="fa-solid fa-plus"></i></button>
                             <button id="btn-css-theme-rename" class="t-tool-btn" title="重命名当前方案"><i class="fa-solid fa-pen"></i></button>
                             <button id="btn-css-theme-del" class="t-tool-btn" title="删除当前方案" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
@@ -556,7 +556,7 @@ export function openSettingsWindow() {
                         </div>
                     </div>
                     
-                    <input type="file" id="t-css-file-input" accept=".json" style="display:none;">
+                    <input class="is-hidden" type="file" id="t-css-file-input" accept=".json">
                 </div>
 
                 <!-- Tab 3: 连接 -->
@@ -635,7 +635,7 @@ export function openSettingsWindow() {
                     <div class="t-form-group">
                         <label class="t-form-label">📝 文笔参考方案</label>
                         <div style="display:flex; gap:8px; margin-bottom:10px;">
-                            <select id="set-style-select" class="t-input" style="flex:1;"></select>
+                            <select id="set-style-select" class="t-input t-flex-1"></select>
                             <button id="btn-style-add" class="t-tool-btn" title="保存为新方案"><i class="fa-solid fa-plus"></i></button>
                             <button id="btn-style-rename" class="t-tool-btn" title="重命名当前方案"><i class="fa-solid fa-pen"></i></button>
                             <button id="btn-style-del" class="t-tool-btn" title="删除当前方案" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>

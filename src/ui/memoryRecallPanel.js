@@ -81,9 +81,8 @@ export async function openRecallPanel() {
             <div style="display: flex; gap: 10px; align-items: center;">
                 <input type="text"
                        id="t-recall-query"
-                       class="t-input"
+                       class="t-input t-flex-1"
                        placeholder="输入要检索的内容（留空使用最近消息）..."
-                       style="flex: 1;"
                        ${!status.available ? 'disabled' : ''}>
                 <button id="t-recall-search-btn"
                         class="t-btn t-btn-primary"

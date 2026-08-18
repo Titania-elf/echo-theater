@@ -4,15 +4,15 @@
       "title": "manifest.js 与磁盘双向一致",
       "violations": 0,
       "metrics": {
-        "清单文件数": 40,
-        "磁盘文件数": 40
+        "清单文件数": 41,
+        "磁盘文件数": 41
       }
     },
     "A15": {
       "title": "main-window-legacy.css 紧跟 main-window.css",
       "violations": 0,
       "metrics": {
-        "位置": "21 → 22"
+        "位置": "22 → 23"
       }
     },
     "A10": {
@@ -121,14 +121,14 @@
       "title": "src/**/*.js 的 inline style 计数",
       "violations": 0,
       "metrics": {
-        "静态": 535,
+        "静态": 508,
         "数据驱动": 26,
-        "合计": 561,
-        "  src/ui/settingsWindow.js": "201（静态 190）",
-        "  src/ui/loreReviewWindow.js": "58（静态 53）",
-        "  src/ui/scriptManager.js": "57（静态 57）",
+        "合计": 534,
+        "  src/ui/settingsWindow.js": "194（静态 183）",
+        "  src/ui/loreReviewWindow.js": "55（静态 50）",
         "  src/ui/mainWindow.js": "49（静态 47）",
-        "  src/ui/storyOutlineWindow.js": "47（静态 47）"
+        "  src/ui/storyOutlineWindow.js": "46（静态 46）",
+        "  src/ui/scriptManager.js": "44（静态 44）"
       }
     },
     "A17": {
@@ -176,8 +176,8 @@
     }
   },
   "scale": {
-    "CSS 总行数": 17115,
-    "规则条数": 2240,
+    "CSS 总行数": 17152,
+    "规则条数": 2242,
     "border-radius 声明 / 不同值": "344 / 43",
     "box-shadow 声明 / 不同值": "116 / 87",
     "font-size (px / em)": "171 / 309",

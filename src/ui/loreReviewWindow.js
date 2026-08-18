@@ -273,7 +273,7 @@ async function showProfileConfigDialog(onSave) {
 
                             <label class="t-form-label" style="margin-top:8px;">Embedding 模型</label>
                             <div class="t-lore-settings-model-row">
-                                <select id="t-lore-embed-model" class="t-input t-input--glass" style="flex:1;"></select>
+                                <select id="t-lore-embed-model" class="t-input t-input--glass t-flex-1"></select>
                                 <button id="t-lore-embed-fetch-models" class="t-btn t-btn-xs" type="button" title="获取模型列表"><i class="fa-solid fa-rotate"></i></button>
                             </div>
 
@@ -1052,7 +1052,7 @@ export async function showLoreReviewWindow() {
                         <div class="t-action-group">
                             <div class="t-action-item">
                                 <div class="t-build-index-buttons">
-                                    <button id="t-btn-build-index" class="t-btn t-btn-primary" style="flex: 1;">
+                                    <button id="t-btn-build-index" class="t-btn t-btn-primary t-flex-1">
                                         <i class="fa-solid fa-plus"></i> 增量更新
                                     </button>
                                     <button id="t-btn-rebuild-index" class="t-btn" title="清除现有索引并完整重建">
@@ -1106,7 +1106,7 @@ export async function showLoreReviewWindow() {
                         </div>
                     </div>
 
-                    <input type="file" id="t-import-vector-file" accept=".json" style="display: none;">
+                    <input class="is-hidden" type="file" id="t-import-vector-file" accept=".json">
                 </div>
             </div>
         </div>

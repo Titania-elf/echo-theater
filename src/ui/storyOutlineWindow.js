@@ -2435,7 +2435,7 @@ function showRawResponseDialog(rawContent, options = {}) {
                 <div class="t-dialog-close" id="t-outline-raw-close"><i class="fa-solid fa-times"></i></div>
             </div>
             <div class="t-dialog-body" style="padding: 12px;">
-                ${historyOptions ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="color:#9eb4c8;white-space:nowrap;">历史记录</span><select id="t-outline-raw-history" class="t-outline-select" style="flex:1;">${historyOptions}</select></div>` : ""}
+                ${historyOptions ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="color:#9eb4c8;white-space:nowrap;">历史记录</span><select id="t-outline-raw-history" class="t-outline-select t-flex-1">${historyOptions}</select></div>` : ""}
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span id="t-outline-raw-length" style="color:#8ea0b3;">长度: ${defaultContent.length} 字符</span>

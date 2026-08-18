@@ -4181,6 +4181,45 @@ textarea.t-input {
 }
 
 
+/* === 03-layout/utilities.css === */
+/* ============================================================
+   03-layout/utilities.css \u2014\u2014 \u5E03\u5C40\u57FA\u5143
+
+   \u26A0 \u5EFA\u8FD9\u4E2A\u6587\u4EF6\u662F\u6709\u6570\u636E\u652F\u6491\u7684\uFF0C\u4E0D\u662F\u968F\u624B\u52A0 utility\u3002\u4EA4\u63A5\u6587\u6863 \xA75 \u660E\u4EE4
+   \u300C\u4E0D\u8981\u5236\u9020\u51E0\u5341\u4E2A\u4E00\u6B21\u6027 utility\u300D\uFF0C\u6240\u4EE5\u5148\u505A\u4E86\u5168\u5E93\u76D8\u70B9\uFF08535 \u4E2A\u9759\u6001 inline
+   style \u5C5E\u6027\u3001\u6309\u5355\u6761\u58F0\u660E\u7EDF\u8BA1\uFF09\uFF1A
+
+     display:flex        93 \u6B21      align-items:center   52 \u6B21
+     display:none        55 \u6B21      cursor:pointer       39 \u6B21
+     gap:10px            30 \u6B21      flex:1               27 \u6B21
+
+   \u6BCF\u4E2A\u90FD\u662F\u88AB\u7528 20-90 \u6B21\u7684\u57FA\u5143\uFF0C\u800C\u975E\u4E00\u6B21\u6027\u5199\u6CD5\u3002\u4E14 535 \u4E2A\u5C5E\u6027\u91CC 223 \u4E2A
+   \uFF0842%\uFF09\u53EA\u542B\u4E00\u6761\u58F0\u660E \u2014\u2014 \u5176\u4E2D flex:1 \u5360 19 \u4E2A\u3001display:none \u5360 37 \u4E2A\uFF0C
+   \u4E00\u4E2A\u7C7B\u5C31\u80FD\u6574\u6761\u6E05\u6389\u3002
+
+   \u672C\u6587\u4EF6\u53EA\u6536\u300C\u8BED\u4E49\u4E2D\u7ACB\u3001\u7EAF\u6392\u5217\u300D\u7684\u58F0\u660E\u3002\u5E26\u89C6\u89C9\u7684\uFF08\u989C\u8272/\u8FB9\u6846/\u5706\u89D2/\u5B57\u53F7\uFF09
+   \u4E00\u5F8B\u4E0D\u8FDB\u8FD9\u91CC\uFF0C\u8D70\u7EC4\u4EF6\u5C42\u6216 feature \u5C42\u3002
+
+   \u26A0 \u52A0\u65B0 utility \u524D\u5148\u91CD\u8DD1\u90A3\u4EFD\u76D8\u70B9\u3002\u9891\u6B21\u4F4E\u4E8E 10 \u6B21\u7684\u4E0D\u8981\u8FDB\u6765 \u2014\u2014
+   \u5B81\u53EF\u5728 feature \u6587\u4EF6\u91CC\u5199\u4E00\u6761\u5E26\u8BED\u4E49\u540D\u7684\u89C4\u5219\u3002
+   ============================================================ */
+
+/* flex \u5B50\u9879\u5360\u6EE1\u5269\u4F59\u7A7A\u95F4\u3002\u5168\u5E93 27 \u6B21\uFF0C\u5176\u4E2D 19 \u6B21\u662F\u300C\u6574\u4E2A style \u5C5E\u6027\u53EA\u6709\u8FD9\u4E00\u6761\u300D\u3002 */
+.t-flex-1 {
+    flex: 1;
+}
+
+/* \u9690\u85CF\u3002
+   \u26A0 \u53EA\u7528\u4E8E**\u7ED3\u6784\u4E0A\u6C38\u4E45\u9690\u85CF**\u7684\u5143\u7D20\uFF08\u5982\u89E6\u53D1\u5F0F file input\uFF09\uFF0C
+   \u4E0D\u8981\u7528\u4E8E\u300C\u521D\u59CB\u9690\u85CF\u3001\u4E4B\u540E\u7531 jQuery \u663E\u793A\u300D\u7684\u5143\u7D20 \u2014\u2014
+   jQuery 3 \u7684 showHide() \u5BF9\u300C\u88AB\u6837\u5F0F\u8868\u9690\u85CF\u300D\u7684\u5143\u7D20\u4F1A\u9000\u56DE
+   getDefaultDisplay()\uFF0C\u7ED9 <div> \u8BBE display:block\uFF0C\u9700\u8981 flex/grid \u7684\u5BB9\u5668
+   \u4F1A\u5C31\u6B64\u9519\u7248\u3002\u5224\u5B9A\u65B9\u6CD5\u4E0E\u5DF2\u77E5\u9677\u9631\u89C1\u4EA4\u63A5\u6587\u6863 \xA75b\u3002 */
+.is-hidden {
+    display: none;
+}
+
+
 /* === 04-features/floating.css === */
 /* css/04-features/floating.css - \u60AC\u6D6E\u7403 */
 
@@ -19082,7 +19121,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/wi-selector.css", "04-features/continuation.css", "04-features/queue.css", "04-features/content-editor.css", "04-features/settings-drawer.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "03-layout/utilities.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/wi-selector.css", "04-features/continuation.css", "04-features/queue.css", "04-features/content-editor.css", "04-features/settings-drawer.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
   }
 });
 
@@ -22175,7 +22214,7 @@ function openCharImageManager(onCloseCallback) {
             </div>
         </div>
         <!-- \u9690\u85CF\u7684\u6587\u4EF6\u4E0A\u4F20 input -->
-        <input type="file" id="t-img-upload-input" accept="image/*" style="display:none;">
+        <input class="is-hidden" type="file" id="t-img-upload-input" accept="image/*">
     </div>`;
   $("#t-favs-view").append(html);
   const tempMap = JSON.parse(JSON.stringify(data.character_map));
@@ -25446,7 +25485,7 @@ function showRawResponseDialog(rawContent, options = {}) {
                 <div class="t-dialog-close" id="t-outline-raw-close"><i class="fa-solid fa-times"></i></div>
             </div>
             <div class="t-dialog-body" style="padding: 12px;">
-                ${historyOptions ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="color:#9eb4c8;white-space:nowrap;">\u5386\u53F2\u8BB0\u5F55</span><select id="t-outline-raw-history" class="t-outline-select" style="flex:1;">${historyOptions}</select></div>` : ""}
+                ${historyOptions ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="color:#9eb4c8;white-space:nowrap;">\u5386\u53F2\u8BB0\u5F55</span><select id="t-outline-raw-history" class="t-outline-select t-flex-1">${historyOptions}</select></div>` : ""}
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span id="t-outline-raw-length" style="color:#8ea0b3;">\u957F\u5EA6: ${defaultContent.length} \u5B57\u7B26</span>
@@ -31134,7 +31173,7 @@ async function showProfileConfigDialog(onSave) {
 
                             <label class="t-form-label" style="margin-top:8px;">Embedding \u6A21\u578B</label>
                             <div class="t-lore-settings-model-row">
-                                <select id="t-lore-embed-model" class="t-input t-input--glass" style="flex:1;"></select>
+                                <select id="t-lore-embed-model" class="t-input t-input--glass t-flex-1"></select>
                                 <button id="t-lore-embed-fetch-models" class="t-btn t-btn-xs" type="button" title="\u83B7\u53D6\u6A21\u578B\u5217\u8868"><i class="fa-solid fa-rotate"></i></button>
                             </div>
 
@@ -31851,7 +31890,7 @@ async function showLoreReviewWindow() {
                         <div class="t-action-group">
                             <div class="t-action-item">
                                 <div class="t-build-index-buttons">
-                                    <button id="t-btn-build-index" class="t-btn t-btn-primary" style="flex: 1;">
+                                    <button id="t-btn-build-index" class="t-btn t-btn-primary t-flex-1">
                                         <i class="fa-solid fa-plus"></i> \u589E\u91CF\u66F4\u65B0
                                     </button>
                                     <button id="t-btn-rebuild-index" class="t-btn" title="\u6E05\u9664\u73B0\u6709\u7D22\u5F15\u5E76\u5B8C\u6574\u91CD\u5EFA">
@@ -31905,7 +31944,7 @@ async function showLoreReviewWindow() {
                         </div>
                     </div>
 
-                    <input type="file" id="t-import-vector-file" accept=".json" style="display: none;">
+                    <input class="is-hidden" type="file" id="t-import-vector-file" accept=".json">
                 </div>
             </div>
         </div>
@@ -33271,9 +33310,8 @@ async function openRecallPanel() {
             <div style="display: flex; gap: 10px; align-items: center;">
                 <input type="text"
                        id="t-recall-query"
-                       class="t-input"
+                       class="t-input t-flex-1"
                        placeholder="\u8F93\u5165\u8981\u68C0\u7D22\u7684\u5185\u5BB9\uFF08\u7559\u7A7A\u4F7F\u7528\u6700\u8FD1\u6D88\u606F\uFF09..."
-                       style="flex: 1;"
                        ${!status.available ? "disabled" : ""}>
                 <button id="t-recall-search-btn"
                         class="t-btn t-btn-primary"
@@ -33980,7 +34018,7 @@ function openSettingsWindow() {
                         </div>
                         <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                             <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">\u900F\u660E\u5EA6:</span>
-                            <input type="range" id="p-border-opacity" min="0" max="100" step="5" value="${tempApp.border_opacity}" style="flex:1;">
+                            <input class="t-flex-1" type="range" id="p-border-opacity" min="0" max="100" step="5" value="${tempApp.border_opacity}">
                             <span id="p-border-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.border_opacity}%</span>
                         </div>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">\u6B64\u989C\u8272\u5C06\u5E94\u7528\u4E8E\u60AC\u6D6E\u7403\u8FB9\u6846\u53CA\u52A8\u753B\u6548\u679C</p>
@@ -34002,7 +34040,7 @@ function openSettingsWindow() {
                         </div>
                         <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                             <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">\u900F\u660E\u5EA6:</span>
-                            <input type="range" id="p-bg-opacity" min="0" max="100" step="5" value="${tempApp.bg_opacity}" style="flex:1;">
+                            <input class="t-flex-1" type="range" id="p-bg-opacity" min="0" max="100" step="5" value="${tempApp.bg_opacity}">
                             <span id="p-bg-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.bg_opacity}%</span>
                         </div>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">\u7403\u4F53\u7684\u80CC\u666F\u586B\u5145\u989C\u8272\uFF08\u900F\u660E\u5EA6\u4E3A0\u65F6\u5B8C\u5168\u900F\u660E\uFF09</p>
@@ -34029,7 +34067,7 @@ function openSettingsWindow() {
                             <input id="p-emoji-input" class="t-input" value="${tempApp.type === "emoji" ? tempApp.content : "\u{1F3AD}"}" style="width:100px; text-align:center; font-size:1.5em;">
                         </div>
                         <div id="box-image" style="display:${tempApp.type === "image" ? "block" : "none"}">
-                            <input type="file" id="p-file-input" accept="image/*" style="display:none;">
+                            <input class="is-hidden" type="file" id="p-file-input" accept="image/*">
                             <div class="t-upload-card" id="btn-upload-card" title="\u70B9\u51FB\u66F4\u6362\u56FE\u7247"><i class="fa-solid fa-camera fa-2x"></i><span>\u70B9\u51FB\u4E0A\u4F20</span></div>
                         </div>
                     </div>
@@ -34174,7 +34212,7 @@ function openSettingsWindow() {
                         <div id="t-font-upload-options" style="display:${fontSettings.source === "upload" ? "block" : "none"}; background:var(--t-color-surface-sunken); padding:15px; border-radius:6px; margin-top:15px; border:1px solid var(--t-color-border);">
                             <div class="t-form-group" style="margin-bottom:15px;">
                                 <label class="t-form-label">\u9009\u62E9\u5B57\u4F53\u6587\u4EF6</label>
-                                <input type="file" id="t-font-file-input" accept=".woff2,.woff,.ttf,.otf" style="display:none;">
+                                <input class="is-hidden" type="file" id="t-font-file-input" accept=".woff2,.woff,.ttf,.otf">
                                 <div style="display:flex; align-items:center; gap:10px;">
                                     <button id="btn-font-upload" class="t-tool-btn" style="padding:8px 15px;"><i class="fa-solid fa-upload"></i> \u9009\u62E9\u6587\u4EF6</button>
                                     <span id="t-font-file-name" style="color:var(--t-color-text-muted); font-size:0.9em;">${fontSettings.font_data ? "\u5DF2\u4E0A\u4F20\u5B57\u4F53\u6587\u4EF6" : "\u672A\u9009\u62E9\u6587\u4EF6"}</span>
@@ -34222,7 +34260,7 @@ function openSettingsWindow() {
                     <div class="t-form-group">
                         <label class="t-form-label">\u{1F3A8} CSS \u4E3B\u9898\u65B9\u6848</label>
                         <div style="display:flex; gap:8px; margin-bottom:10px;">
-                            <select id="t-css-theme-select" class="t-input" style="flex:1;"></select>
+                            <select id="t-css-theme-select" class="t-input t-flex-1"></select>
                             <button id="btn-css-theme-add" class="t-tool-btn" title="\u4FDD\u5B58\u4E3A\u65B0\u65B9\u6848"><i class="fa-solid fa-plus"></i></button>
                             <button id="btn-css-theme-rename" class="t-tool-btn" title="\u91CD\u547D\u540D\u5F53\u524D\u65B9\u6848"><i class="fa-solid fa-pen"></i></button>
                             <button id="btn-css-theme-del" class="t-tool-btn" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
@@ -34294,7 +34332,7 @@ function openSettingsWindow() {
                         </div>
                     </div>
                     
-                    <input type="file" id="t-css-file-input" accept=".json" style="display:none;">
+                    <input class="is-hidden" type="file" id="t-css-file-input" accept=".json">
                 </div>
 
                 <!-- Tab 3: \u8FDE\u63A5 -->
@@ -34373,7 +34411,7 @@ function openSettingsWindow() {
                     <div class="t-form-group">
                         <label class="t-form-label">\u{1F4DD} \u6587\u7B14\u53C2\u8003\u65B9\u6848</label>
                         <div style="display:flex; gap:8px; margin-bottom:10px;">
-                            <select id="set-style-select" class="t-input" style="flex:1;"></select>
+                            <select id="set-style-select" class="t-input t-flex-1"></select>
                             <button id="btn-style-add" class="t-tool-btn" title="\u4FDD\u5B58\u4E3A\u65B0\u65B9\u6848"><i class="fa-solid fa-plus"></i></button>
                             <button id="btn-style-rename" class="t-tool-btn" title="\u91CD\u547D\u540D\u5F53\u524D\u65B9\u6848"><i class="fa-solid fa-pen"></i></button>
                             <button id="btn-style-del" class="t-tool-btn" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
@@ -36212,7 +36250,7 @@ function openWorkshopWindow(source = "manager") {
                         </div>
                     </section>
                     <div class="t-btn-row">
-                        <button class="t-btn primary" id="t-ws-pv-get" style="flex:1;">\u4E0B\u8F7D\u5230\u672C\u5730</button>
+                        <button class="t-btn primary t-flex-1" id="t-ws-pv-get">\u4E0B\u8F7D\u5230\u672C\u5730</button>
                     </div>
                 </div>
             </div>
@@ -36441,14 +36479,14 @@ function openScriptManager() {
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u9009\u62E9\u6587\u4EF6 (.txt):</span>
                     <div style="display:flex; gap:10px; align-items:center; background:var(--t-color-surface-well); padding:5px; border-radius:4px; border:1px solid var(--t-color-border);">
-                        <input type="file" id="t-file-input-m" accept=".txt" style="display:none;">
+                        <input class="is-hidden" type="file" id="t-file-input-m" accept=".txt">
                         <button id="t-btn-choose-file" class="t-btn" style="font-size:0.9em; padding:4px 10px;">\u{1F4C2} \u6D4F\u89C8\u6587\u4EF6...</button>
                         <span id="t-file-name-label" style="font-size:0.85em; color:var(--t-color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">\u672A\u9009\u62E9\u6587\u4EF6</span>
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-imp-cancel" class="t-btn" style="flex:1;">\u53D6\u6D88</button>
-                    <button id="t-imp-ok" class="t-btn primary" style="flex:1;">\u5F00\u59CB\u5BFC\u5165</button>
+                    <button id="t-imp-cancel" class="t-btn t-flex-1">\u53D6\u6D88</button>
+                    <button id="t-imp-ok" class="t-btn primary t-flex-1">\u5F00\u59CB\u5BFC\u5165</button>
                 </div>
             </div>
         </div>
@@ -36476,8 +36514,8 @@ function openScriptManager() {
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-exp-cancel" class="t-btn" style="flex:1;">\u53D6\u6D88</button>
-                    <button id="t-exp-ok" class="t-btn primary" style="flex:1;">\u5F00\u59CB\u5BFC\u51FA</button>
+                    <button id="t-exp-cancel" class="t-btn t-flex-1">\u53D6\u6D88</button>
+                    <button id="t-exp-ok" class="t-btn primary t-flex-1">\u5F00\u59CB\u5BFC\u51FA</button>
                 </div>
             </div>
         </div>
@@ -36491,8 +36529,8 @@ function openScriptManager() {
                     <datalist id="t-move-cat-list"></datalist>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-move-cancel" class="t-btn" style="flex:1;">\u53D6\u6D88</button>
-                    <button id="t-move-ok" class="t-btn primary" style="flex:1;">\u786E\u8BA4\u79FB\u52A8</button>
+                    <button id="t-move-cancel" class="t-btn t-flex-1">\u53D6\u6D88</button>
+                    <button id="t-move-ok" class="t-btn primary t-flex-1">\u786E\u8BA4\u79FB\u52A8</button>
                 </div>
             </div>
         </div>
@@ -36508,8 +36546,8 @@ function openScriptManager() {
                     <input id="t-rename-new" class="t-input" placeholder="\u8F93\u5165\u65B0\u7684\u5206\u7C7B\u540D\u79F0" style="width:100%;">
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-rename-cancel" class="t-btn" style="flex:1;">\u53D6\u6D88</button>
-                    <button id="t-rename-ok" class="t-btn primary" style="flex:1;">\u786E\u8BA4\u91CD\u547D\u540D</button>
+                    <button id="t-rename-cancel" class="t-btn t-flex-1">\u53D6\u6D88</button>
+                    <button id="t-rename-ok" class="t-btn primary t-flex-1">\u786E\u8BA4\u91CD\u547D\u540D</button>
                 </div>
             </div>
         </div>
@@ -37057,8 +37095,8 @@ function openEditor(id3, source = "main") {
             <textarea id="ed-prompt" class="t-input" rows="6" ${isPreset ? "disabled" : ""}>${data.prompt}</textarea>
             
             <div class="t-btn-row">
-                ${!isPreset ? '<button id="ed-save" class="t-btn primary" style="flex:1;">\u4FDD\u5B58</button>' : ""}
-                <button id="ed-cancel" class="t-btn" style="flex:1;">\u8FD4\u56DE</button>
+                ${!isPreset ? '<button id="ed-save" class="t-btn primary t-flex-1">\u4FDD\u5B58</button>' : ""}
+                <button id="ed-cancel" class="t-btn t-flex-1">\u8FD4\u56DE</button>
             </div>
         </div>
     </div>`;
@@ -37085,8 +37123,8 @@ function openEditor(id3, source = "main") {
                 <div class="t-body" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
                     <textarea id="ed-large-text" class="t-input" style="flex:1; resize:none; font-family:monospace; line-height:1.5; font-size:14px; min-height:0;">${originalContent}</textarea>
                     <div class="t-btn-row" style="flex-shrink:0; margin-top:10px;">
-                        <button id="ed-large-ok" class="t-btn primary" style="flex:1;">\u786E\u8BA4\u4FDD\u5B58</button>
-                        <button id="ed-large-cancel" class="t-btn" style="flex:1;">\u53D6\u6D88</button>
+                        <button id="ed-large-ok" class="t-btn primary t-flex-1">\u786E\u8BA4\u4FDD\u5B58</button>
+                        <button id="ed-large-cancel" class="t-btn t-flex-1">\u53D6\u6D88</button>
                     </div>
                 </div>
             </div>

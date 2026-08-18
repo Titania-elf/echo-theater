@@ -124,14 +124,14 @@ export function openScriptManager() {
                 <div class="t-imp-row">
                     <span class="t-imp-label">选择文件 (.txt):</span>
                     <div style="display:flex; gap:10px; align-items:center; background:var(--t-color-surface-well); padding:5px; border-radius:4px; border:1px solid var(--t-color-border);">
-                        <input type="file" id="t-file-input-m" accept=".txt" style="display:none;">
+                        <input class="is-hidden" type="file" id="t-file-input-m" accept=".txt">
                         <button id="t-btn-choose-file" class="t-btn" style="font-size:0.9em; padding:4px 10px;">📂 浏览文件...</button>
                         <span id="t-file-name-label" style="font-size:0.85em; color:var(--t-color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">未选择文件</span>
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-imp-cancel" class="t-btn" style="flex:1;">取消</button>
-                    <button id="t-imp-ok" class="t-btn primary" style="flex:1;">开始导入</button>
+                    <button id="t-imp-cancel" class="t-btn t-flex-1">取消</button>
+                    <button id="t-imp-ok" class="t-btn primary t-flex-1">开始导入</button>
                 </div>
             </div>
         </div>
@@ -159,8 +159,8 @@ export function openScriptManager() {
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-exp-cancel" class="t-btn" style="flex:1;">取消</button>
-                    <button id="t-exp-ok" class="t-btn primary" style="flex:1;">开始导出</button>
+                    <button id="t-exp-cancel" class="t-btn t-flex-1">取消</button>
+                    <button id="t-exp-ok" class="t-btn primary t-flex-1">开始导出</button>
                 </div>
             </div>
         </div>
@@ -174,8 +174,8 @@ export function openScriptManager() {
                     <datalist id="t-move-cat-list"></datalist>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-move-cancel" class="t-btn" style="flex:1;">取消</button>
-                    <button id="t-move-ok" class="t-btn primary" style="flex:1;">确认移动</button>
+                    <button id="t-move-cancel" class="t-btn t-flex-1">取消</button>
+                    <button id="t-move-ok" class="t-btn primary t-flex-1">确认移动</button>
                 </div>
             </div>
         </div>
@@ -191,8 +191,8 @@ export function openScriptManager() {
                     <input id="t-rename-new" class="t-input" placeholder="输入新的分类名称" style="width:100%;">
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-rename-cancel" class="t-btn" style="flex:1;">取消</button>
-                    <button id="t-rename-ok" class="t-btn primary" style="flex:1;">确认重命名</button>
+                    <button id="t-rename-cancel" class="t-btn t-flex-1">取消</button>
+                    <button id="t-rename-ok" class="t-btn primary t-flex-1">确认重命名</button>
                 </div>
             </div>
         </div>
@@ -861,8 +861,8 @@ export function openEditor(id, source = 'main') {
             <textarea id="ed-prompt" class="t-input" rows="6" ${isPreset ? 'disabled' : ''}>${data.prompt}</textarea>
             
             <div class="t-btn-row">
-                ${!isPreset ? '<button id="ed-save" class="t-btn primary" style="flex:1;">保存</button>' : ''}
-                <button id="ed-cancel" class="t-btn" style="flex:1;">返回</button>
+                ${!isPreset ? '<button id="ed-save" class="t-btn primary t-flex-1">保存</button>' : ''}
+                <button id="ed-cancel" class="t-btn t-flex-1">返回</button>
             </div>
         </div>
     </div>`;
@@ -898,8 +898,8 @@ export function openEditor(id, source = 'main') {
                 <div class="t-body" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
                     <textarea id="ed-large-text" class="t-input" style="flex:1; resize:none; font-family:monospace; line-height:1.5; font-size:14px; min-height:0;">${originalContent}</textarea>
                     <div class="t-btn-row" style="flex-shrink:0; margin-top:10px;">
-                        <button id="ed-large-ok" class="t-btn primary" style="flex:1;">确认保存</button>
-                        <button id="ed-large-cancel" class="t-btn" style="flex:1;">取消</button>
+                        <button id="ed-large-ok" class="t-btn primary t-flex-1">确认保存</button>
+                        <button id="ed-large-cancel" class="t-btn t-flex-1">取消</button>
                     </div>
                 </div>
             </div>

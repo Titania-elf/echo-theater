@@ -50,6 +50,9 @@ export const CSS_LAYERS = [
     {
         layer: '03-layout', files: [
             'button-groups.css',
+            // Phase 5b-2 新增。收口高频布局基元（.t-flex-1 / .is-hidden）。
+            // ⚠ 加新 utility 前必须先重跑全库频次盘点，理由见该文件头部注释。
+            'utilities.css',
         ]
     },
 

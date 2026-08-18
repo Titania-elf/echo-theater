@@ -2195,7 +2195,7 @@ export function openCharImageManager(onCloseCallback) {
             </div>
         </div>
         <!-- 隐藏的文件上传 input -->
-        <input type="file" id="t-img-upload-input" accept="image/*" style="display:none;">
+        <input class="is-hidden" type="file" id="t-img-upload-input" accept="image/*">
     </div>`;
 
     $("#t-favs-view").append(html);

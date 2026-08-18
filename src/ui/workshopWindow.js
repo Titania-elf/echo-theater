@@ -355,7 +355,7 @@ export function openWorkshopWindow(source = 'manager') {
                         </div>
                     </section>
                     <div class="t-btn-row">
-                        <button class="t-btn primary" id="t-ws-pv-get" style="flex:1;">下载到本地</button>
+                        <button class="t-btn primary t-flex-1" id="t-ws-pv-get">下载到本地</button>
                     </div>
                 </div>
             </div>
