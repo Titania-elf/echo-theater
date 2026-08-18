@@ -349,23 +349,23 @@ export function openSettingsWindow() {
                             <div class="t-toolbar-config" id="t-toolbar-config">
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="main" checked disabled>
-                                    <i class="fa-solid fa-masks-theater" style="color:#74b9ff;"></i>
+                                    <i class="fa-solid fa-masks-theater t-toolbar-icon--theater"></i>
                                     <span>打开剧场</span>
                                     <span class="t-toolbar-hint">(必选)</span>
                                 </label>
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="settings">
-                                    <i class="fa-solid fa-gear" style="color:var(--t-color-text-secondary);"></i>
+                                    <i class="fa-solid fa-gear t-toolbar-icon--gear"></i>
                                     <span>设置</span>
                                 </label>
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="favs">
-                                    <i class="fa-solid fa-star" style="color:#ffd93d;"></i>
+                                    <i class="fa-solid fa-star t-toolbar-icon--fav"></i>
                                     <span>收藏夹</span>
                                 </label>
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="scripts">
-                                    <i class="fa-solid fa-scroll" style="color:var(--t-color-brand);"></i>
+                                    <i class="fa-solid fa-scroll t-toolbar-icon--script"></i>
                                     <span>剧本管理</span>
                                 </label>
                             </div>
@@ -443,7 +443,7 @@ export function openSettingsWindow() {
                                 </div>
                                 <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">
                                     支持 .woff2 (推荐)、.woff、.ttf、.otf 格式<br>
-                                    <span style="color:#f1c40f;">⚠️ 字体文件将以 Base64 存储，建议不超过 2MB</span>
+                                    <span class="t-set-font-warn">⚠️ 字体文件将以 Base64 存储，建议不超过 2MB</span>
                                 </p>
                             </div>
                             <div class="t-form-group" style="margin-bottom:0;">
@@ -457,7 +457,7 @@ export function openSettingsWindow() {
                             <label style="cursor:pointer; display:flex; align-items:flex-start; gap:12px;">
                                 <input type="checkbox" id="t-font-force-override" ${fontSettings.force_override ? 'checked' : ''} style="margin-top:3px;">
                                 <div>
-                                    <div style="color:#feca57; font-weight:bold;">⚡ 强制覆盖内联字体</div>
+                                    <div class="t-set-warn-title">⚡ 强制覆盖内联字体</div>
                                     <div style="font-size:0.8em; color:var(--t-color-text-muted); margin-top:3px;">
                                         开启后，自定义字体将使用 !important 覆盖模型生成的内联 font-family 样式。<br>
                                         <span style="color:var(--t-color-danger);">注意：这可能破坏模型刻意设计的特殊字体效果。</span>
@@ -489,7 +489,7 @@ export function openSettingsWindow() {
                             <button id="btn-css-theme-rename" class="t-tool-btn" title="重命名当前方案"><i class="fa-solid fa-pen"></i></button>
                             <button id="btn-css-theme-del" class="t-tool-btn" title="删除当前方案" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <div id="css-theme-unsaved-hint" style="display:none; color:#feca57; font-size:0.8em; margin-bottom:8px;">
+                        <div id="css-theme-unsaved-hint" class="t-set-unsaved-hint">
                             <i class="fa-solid fa-circle-exclamation"></i> 当前内容有修改，切换方案前请先保存
                         </div>
                     </div>
@@ -610,7 +610,7 @@ export function openSettingsWindow() {
                             maxTokensHintHtml: `<p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             控制 AI 单次输出的最大 Token 数量。<br>
                             <span style="color:var(--t-color-notify);">✓ 仅对自定义 API 方案生效</span>，ST 主连接使用全局设置。<br>
-                            <span style="color:#feca57;">⚠️ 设置过高可能超出模型限制导致报错</span>
+                            <span class="t-set-warn">⚠️ 设置过高可能超出模型限制导致报错</span>
                         </p>`,
                         },
                     })}
@@ -640,7 +640,7 @@ export function openSettingsWindow() {
                             <button id="btn-style-rename" class="t-tool-btn" title="重命名当前方案"><i class="fa-solid fa-pen"></i></button>
                             <button id="btn-style-del" class="t-tool-btn" title="删除当前方案" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <div id="style-unsaved-hint" style="display:none; color:#feca57; font-size:0.8em; margin-bottom:8px;">
+                        <div id="style-unsaved-hint" class="t-set-unsaved-hint">
                             <i class="fa-solid fa-circle-exclamation"></i> 当前内容有修改，切换方案前请先保存
                         </div>
                         <textarea id="set-dir-style" class="t-input" rows="6" placeholder="粘贴你喜欢的文笔段落...（最多1000字）" maxlength="1000"></textarea>
@@ -698,7 +698,7 @@ export function openSettingsWindow() {
                                     <option value="3" ${(data.auto_continue?.max_retries || 2) === 3 ? 'selected' : ''}>3 次</option>
                                     <option value="5" ${(data.auto_continue?.max_retries || 2) === 5 ? 'selected' : ''}>5 次</option>
                                 </select>
-                                <p style="font-size:0.75em; color:#555; margin-top:5px;">超过此次数后将停止续写，显示已获取的内容。</p>
+                                <p class="t-set-field-hint">超过此次数后将停止续写，显示已获取的内容。</p>
                             </div>
                             <div class="t-form-group">
                                 <label class="t-form-label">截断检测模式</label>
@@ -707,7 +707,7 @@ export function openSettingsWindow() {
                                     <option value="sentence" ${(data.auto_continue?.detection_mode || 'html') === 'sentence' ? 'selected' : ''}>📝 句子完整性检测</option>
                                     <option value="both" ${(data.auto_continue?.detection_mode || 'html') === 'both' ? 'selected' : ''}>🔍 双重检测 (更严格)</option>
                                 </select>
-                                <p style="font-size:0.75em; color:#555; margin-top:5px;">
+                                <p class="t-set-field-hint">
                                     HTML 检测：检查标签是否闭合<br>
                                     句子检测：检查是否以完整句子结束
                                 </p>
@@ -778,7 +778,7 @@ export function openSettingsWindow() {
                         <div style="background:var(--t-color-surface-inset); border:1px solid var(--t-color-border); padding:20px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
                             <div>
                                 <div style="font-size:1.1em; color:var(--t-color-text); font-weight:bold;"><i class="fa-solid fa-scroll" style="color:var(--t-color-brand); margin-right:8px;"></i>剧本管理器</div>
-                                <div style="font-size:0.85em; color:#777; margin-top:5px;">当前拥有自定义剧本: ${(data.user_scripts || []).length} 个</div>
+                                <div class="t-set-stat-sub">当前拥有自定义剧本: ${(data.user_scripts || []).length} 个</div>
                             </div>
                             <button id="btn-open-mgr" class="t-btn primary" style="padding: 8px 20px;"><i class="fa-solid fa-list-check"></i> 打开管理</button>
                         </div>
@@ -787,7 +787,7 @@ export function openSettingsWindow() {
                         <div class="t-form-label">已隐藏的官方预设剧本</div>
                         <div style="background:var(--t-color-surface-inset); border:1px solid var(--t-color-border); padding:15px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
                             <div><div style="font-size:1.1em; color:var(--t-color-text);">共 ${(data.disabled_presets || []).length} 个</div><div style="font-size:0.8em; color:var(--t-color-text-faint);">这些预设在列表中已被隐藏</div></div>
-                            <button id="btn-restore-presets" class="t-btn" style="border:1px solid #555;" ${(data.disabled_presets || []).length === 0 ? 'disabled' : ''}>♻️ 恢复所有</button>
+                            <button id="btn-restore-presets" class="t-btn" ${(data.disabled_presets || []).length === 0 ? 'disabled' : ''}>♻️ 恢复所有</button>
                         </div>
                     </div>
                 </div>
@@ -2126,7 +2126,7 @@ export function openSettingsWindow() {
     const renderLogView = () => {
         const logs = TitaniaLogger.logs;
         if (!logs || logs.length === 0) {
-            $("#t-log-viewer").html('<div style="text-align:center; margin-top:100px; color:#555;">暂无日志</div>');
+            $("#t-log-viewer").html('<div class="t-set-log-empty">暂无日志</div>');
             return;
         }
         let html = "";

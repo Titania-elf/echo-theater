@@ -10984,6 +10984,100 @@ textarea.t-input {
 
 }
 
+/* ============================================================
+   Phase 5b-10\uFF1A\u4ECE settingsWindow.js \u7684\u5185\u8054 style \u8FC1\u51FA\uFF0814 \u4E2A\u5C5E\u6027\uFF09\u3002
+
+   \u26A0 \u989C\u8272\u4E00\u5F8B\u4FDD\u7559\u539F\u503C\uFF1A\u672C\u6587\u4EF6 105 \u5904\u989C\u8272\u5B57\u9762\u91CF\u3001\u4EC5 4 \u5904 token\uFF0C
+   \u5355\u72EC\u6362\u8FD9\u51E0\u5904\u4F1A\u4E0E\u5168\u6587\u4E0D\u4E00\u81F4\u3002\u6574\u4F53 token \u5316\u5F52 Phase 6\u3002
+   ============================================================ */
+
+/* \u2500\u2500 \u5DE5\u5177\u680F\u9879\u7684\u56FE\u6807\u8272 \u2500\u2500
+   4 \u4E2A\u5DE5\u5177\u680F\u9879\u5404\u4E00\u8272\u3002\u523B\u610F\u628A 4 \u4E2A\u90FD\u8FC1\u8FC7\u6765\uFF08\u5176\u4E2D gear / script \u539F\u672C\u7528\u7684\u5C31\u662F
+   token\uFF0C\u4E0D\u7B97 A17\uFF09\uFF0C\u5426\u5219\u4F1A\u7559\u4E0B\u300C2 \u4E2A\u5185\u8054 + 2 \u4E2A\u5728 CSS\u300D\u7684\u5272\u88C2\u72B6\u6001\u3002
+   \u26A0 \u4E0A\u65B9 .t-toolbar-item i \u53EA\u8BBE font-size / width / text-align\uFF0C\u4E0D\u8BBE color\uFF0C
+   \u6545\u8FD9\u91CC (0,1,0) \u4E0D\u4F1A\u88AB\u5B83\u7684 (0,1,1) \u538B\u6389\u3002 */
+.t-toolbar-icon--theater {
+    color: #74b9ff;
+}
+
+.t-toolbar-icon--gear {
+    color: var(--t-color-text-secondary);
+}
+
+.t-toolbar-icon--fav {
+    color: #ffd93d;
+}
+
+.t-toolbar-icon--script {
+    color: var(--t-color-brand);
+}
+
+/* \u2500\u2500 \u8B66\u544A\u6587\u5B57 \u2500\u2500
+   #feca57 \u5728\u8BBE\u7F6E\u7A97\u53E3\u91CC\u51FA\u73B0 4 \u6B21\uFF08\u672C\u8282 3 \u4E2A\u7C7B\u5171 4 \u5904\u7528\uFF09\uFF0C\u662F\u672C\u7A97\u53E3\u7684\u8B66\u544A\u8272\u3002
+   \u26A0 .t-set-font-warn \u7528\u7684\u662F**\u53E6\u4E00\u4E2A\u9EC4** #f1c40f \u2014\u2014 \u5168\u5E93\u7B2C 5 \u79CD\u9EC4
+   \uFF08\u5DF2\u6709 #f59e0b / #feca57 / #ecc94b / #ffd93d\uFF09\u3002\u539F\u503C\u4FDD\u7559\uFF0C
+   \u5F52\u5E76\u5F52 Phase 6\uFF0C\u4EA4\u63A5\u6587\u6863 \xA75a \u7684\u5BB6\u65CF\u8868\u5DF2\u767B\u8BB0\u3002 */
+.t-set-warn {
+    color: #feca57;
+}
+
+.t-set-warn-title {
+    color: #feca57;
+    font-weight: bold;
+}
+
+.t-set-font-warn {
+    color: #f1c40f;
+}
+
+/* \u300C\u6709\u672A\u4FDD\u5B58\u6539\u52A8\u300D\u63D0\u793A\u30022 \u5904\u5728\u7528\uFF08CSS \u4E3B\u9898\u9875\u3001\u6837\u5F0F\u9875\uFF09\u3002
+   \u26A0 display:none \u5199\u5728\u7C7B\u91CC\u662F**\u6545\u610F\u7684**\uFF1A\u8FD9\u4E24\u4E2A\u5143\u7D20\u7531
+   $(...).hide() / .show() / .toggle(hasChanges) \u63A7\u5236\u663E\u9690\u3002
+   \u4E24\u8005\u90FD\u662F <div> \u4E14\u672C\u7C7B\u4E4B\u5916\u65E0\u4EFB\u4F55\u89C4\u5219\u8BBE\u5B83\u4EEC\u7684 display\uFF0C\u6240\u4EE5
+   jQuery \u7684 getDefaultDisplay() \u56DE\u9000\u503C block \u4E0E\u81EA\u7136\u503C\u4E00\u81F4\uFF0C\u4E0D\u4F1A\u9519\u7248\u3002
+   \u5224\u5B9A\u65B9\u6CD5\u4E0E\u53CD\u4F8B\u89C1\u4EA4\u63A5\u6587\u6863 \xA75b\u300Cdisplay:none \u2192 \u72B6\u6001\u7C7B\u300D\u3002 */
+.t-set-unsaved-hint {
+    display: none;
+    color: #feca57;
+    font-size: 0.8em;
+    margin-bottom: 8px;
+}
+
+/* \u2500\u2500 \u8BF4\u660E\u5C0F\u5B57 \u2500\u2500
+   2 \u5904\u5728\u7528\uFF08\u7EED\u5199\u91CD\u8BD5\u6B21\u6570\u3001\u68C0\u6D4B\u6A21\u5F0F\uFF09\u3002
+   \u26A0 \u4E0E settingsWindow.js:446 \u90A3\u4E2A <p>\uFF08font-size \u76F8\u540C\u4F46\u7528
+   var(--t-color-text-faint) \u4E14 margin-top:8px\uFF09\u4E0D\u662F\u4E00\u5957\uFF0C\u523B\u610F\u4E0D\u5408\u5E76\u3002 */
+.t-set-field-hint {
+    font-size: 0.75em;
+    color: #555;
+    margin-top: 5px;
+}
+
+/* \u7EDF\u8BA1\u5361\u7247\u7684\u526F\u6807\u9898\uFF08"\u5F53\u524D\u62E5\u6709\u81EA\u5B9A\u4E49\u5267\u672C: N \u4E2A"\uFF09\u3002 */
+.t-set-stat-sub {
+    font-size: 0.85em;
+    color: #777;
+    margin-top: 5px;
+}
+
+/* \u300C\u6062\u590D\u6240\u6709\u300D\u6309\u94AE\u7684\u63CF\u8FB9\u3002
+   \u26A0 \u5FC5\u987B\u7528 ID\uFF1Abutton.css \u7684 .t-btn:hover:not(:disabled) \u662F (0,3,0) \u4E14\u8BBE\u4E86
+   border-color\uFF0C\u4EFB\u4F55 (0,1,0) \u7684\u7C7B\u90FD\u4F1A\u5728\u60AC\u505C\u65F6\u88AB\u5B83\u593A\u8D70\u8FB9\u6846\u8272\u3002
+   \u539F\u5148\u9760\u5185\u8054\u538B\u8FC7\u5B83\uFF0C\u73B0\u5728\u9760 (1,0,0)\u3002\u540C 5b-7 \u7684 #t-diag-clear\u3002 */
+#btn-restore-presets {
+    border: 1px solid #555;
+}
+
+/* \u65E5\u5FD7\u67E5\u770B\u5668\u7A7A\u6001\u3002
+   \u26A0 \u5168\u5E93\u7B2C 21 \u4E2A\u7A7A\u6001\u7C7B\uFF0C\u4E14 margin-top:100px \u4E0E\u5176\u4F59\u90FD\u4E0D\u540C
+   \uFF08\u5176\u5B83\u662F 50px / padding 30px / 40px / 26px 12px\uFF09\u3002
+   \u5408\u5E76\u4E00\u5B9A\u6539\u89C6\u89C9\uFF0C\u5F52 Phase 6/7\uFF0C\u89C1\u4EA4\u63A5\u6587\u6863 \xA75b\u300C\u7A7A\u6001\u7C7B\u5DF2\u6709 20+ \u4E2A\u300D\u3002 */
+.t-set-log-empty {
+    text-align: center;
+    margin-top: 100px;
+    color: #555;
+}
+
 
 /* === 04-features/manager.css === */
 /* css/04-features/manager.css - \u5267\u672C\u7BA1\u7406 */
@@ -34674,23 +34768,23 @@ function openSettingsWindow() {
                             <div class="t-toolbar-config" id="t-toolbar-config">
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="main" checked disabled>
-                                    <i class="fa-solid fa-masks-theater" style="color:#74b9ff;"></i>
+                                    <i class="fa-solid fa-masks-theater t-toolbar-icon--theater"></i>
                                     <span>\u6253\u5F00\u5267\u573A</span>
                                     <span class="t-toolbar-hint">(\u5FC5\u9009)</span>
                                 </label>
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="settings">
-                                    <i class="fa-solid fa-gear" style="color:var(--t-color-text-secondary);"></i>
+                                    <i class="fa-solid fa-gear t-toolbar-icon--gear"></i>
                                     <span>\u8BBE\u7F6E</span>
                                 </label>
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="favs">
-                                    <i class="fa-solid fa-star" style="color:#ffd93d;"></i>
+                                    <i class="fa-solid fa-star t-toolbar-icon--fav"></i>
                                     <span>\u6536\u85CF\u5939</span>
                                 </label>
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="scripts">
-                                    <i class="fa-solid fa-scroll" style="color:var(--t-color-brand);"></i>
+                                    <i class="fa-solid fa-scroll t-toolbar-icon--script"></i>
                                     <span>\u5267\u672C\u7BA1\u7406</span>
                                 </label>
                             </div>
@@ -34768,7 +34862,7 @@ function openSettingsWindow() {
                                 </div>
                                 <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">
                                     \u652F\u6301 .woff2 (\u63A8\u8350)\u3001.woff\u3001.ttf\u3001.otf \u683C\u5F0F<br>
-                                    <span style="color:#f1c40f;">\u26A0\uFE0F \u5B57\u4F53\u6587\u4EF6\u5C06\u4EE5 Base64 \u5B58\u50A8\uFF0C\u5EFA\u8BAE\u4E0D\u8D85\u8FC7 2MB</span>
+                                    <span class="t-set-font-warn">\u26A0\uFE0F \u5B57\u4F53\u6587\u4EF6\u5C06\u4EE5 Base64 \u5B58\u50A8\uFF0C\u5EFA\u8BAE\u4E0D\u8D85\u8FC7 2MB</span>
                                 </p>
                             </div>
                             <div class="t-form-group" style="margin-bottom:0;">
@@ -34782,7 +34876,7 @@ function openSettingsWindow() {
                             <label style="cursor:pointer; display:flex; align-items:flex-start; gap:12px;">
                                 <input type="checkbox" id="t-font-force-override" ${fontSettings.force_override ? "checked" : ""} style="margin-top:3px;">
                                 <div>
-                                    <div style="color:#feca57; font-weight:bold;">\u26A1 \u5F3A\u5236\u8986\u76D6\u5185\u8054\u5B57\u4F53</div>
+                                    <div class="t-set-warn-title">\u26A1 \u5F3A\u5236\u8986\u76D6\u5185\u8054\u5B57\u4F53</div>
                                     <div style="font-size:0.8em; color:var(--t-color-text-muted); margin-top:3px;">
                                         \u5F00\u542F\u540E\uFF0C\u81EA\u5B9A\u4E49\u5B57\u4F53\u5C06\u4F7F\u7528 !important \u8986\u76D6\u6A21\u578B\u751F\u6210\u7684\u5185\u8054 font-family \u6837\u5F0F\u3002<br>
                                         <span style="color:var(--t-color-danger);">\u6CE8\u610F\uFF1A\u8FD9\u53EF\u80FD\u7834\u574F\u6A21\u578B\u523B\u610F\u8BBE\u8BA1\u7684\u7279\u6B8A\u5B57\u4F53\u6548\u679C\u3002</span>
@@ -34814,7 +34908,7 @@ function openSettingsWindow() {
                             <button id="btn-css-theme-rename" class="t-tool-btn" title="\u91CD\u547D\u540D\u5F53\u524D\u65B9\u6848"><i class="fa-solid fa-pen"></i></button>
                             <button id="btn-css-theme-del" class="t-tool-btn" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <div id="css-theme-unsaved-hint" style="display:none; color:#feca57; font-size:0.8em; margin-bottom:8px;">
+                        <div id="css-theme-unsaved-hint" class="t-set-unsaved-hint">
                             <i class="fa-solid fa-circle-exclamation"></i> \u5F53\u524D\u5185\u5BB9\u6709\u4FEE\u6539\uFF0C\u5207\u6362\u65B9\u6848\u524D\u8BF7\u5148\u4FDD\u5B58
                         </div>
                     </div>
@@ -34935,7 +35029,7 @@ function openSettingsWindow() {
       maxTokensHintHtml: `<p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             \u63A7\u5236 AI \u5355\u6B21\u8F93\u51FA\u7684\u6700\u5927 Token \u6570\u91CF\u3002<br>
                             <span style="color:var(--t-color-notify);">\u2713 \u4EC5\u5BF9\u81EA\u5B9A\u4E49 API \u65B9\u6848\u751F\u6548</span>\uFF0CST \u4E3B\u8FDE\u63A5\u4F7F\u7528\u5168\u5C40\u8BBE\u7F6E\u3002<br>
-                            <span style="color:#feca57;">\u26A0\uFE0F \u8BBE\u7F6E\u8FC7\u9AD8\u53EF\u80FD\u8D85\u51FA\u6A21\u578B\u9650\u5236\u5BFC\u81F4\u62A5\u9519</span>
+                            <span class="t-set-warn">\u26A0\uFE0F \u8BBE\u7F6E\u8FC7\u9AD8\u53EF\u80FD\u8D85\u51FA\u6A21\u578B\u9650\u5236\u5BFC\u81F4\u62A5\u9519</span>
                         </p>`
     }
   })}
@@ -34965,7 +35059,7 @@ function openSettingsWindow() {
                             <button id="btn-style-rename" class="t-tool-btn" title="\u91CD\u547D\u540D\u5F53\u524D\u65B9\u6848"><i class="fa-solid fa-pen"></i></button>
                             <button id="btn-style-del" class="t-tool-btn" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <div id="style-unsaved-hint" style="display:none; color:#feca57; font-size:0.8em; margin-bottom:8px;">
+                        <div id="style-unsaved-hint" class="t-set-unsaved-hint">
                             <i class="fa-solid fa-circle-exclamation"></i> \u5F53\u524D\u5185\u5BB9\u6709\u4FEE\u6539\uFF0C\u5207\u6362\u65B9\u6848\u524D\u8BF7\u5148\u4FDD\u5B58
                         </div>
                         <textarea id="set-dir-style" class="t-input" rows="6" placeholder="\u7C98\u8D34\u4F60\u559C\u6B22\u7684\u6587\u7B14\u6BB5\u843D...\uFF08\u6700\u591A1000\u5B57\uFF09" maxlength="1000"></textarea>
@@ -35023,7 +35117,7 @@ function openSettingsWindow() {
                                     <option value="3" ${(data.auto_continue?.max_retries || 2) === 3 ? "selected" : ""}>3 \u6B21</option>
                                     <option value="5" ${(data.auto_continue?.max_retries || 2) === 5 ? "selected" : ""}>5 \u6B21</option>
                                 </select>
-                                <p style="font-size:0.75em; color:#555; margin-top:5px;">\u8D85\u8FC7\u6B64\u6B21\u6570\u540E\u5C06\u505C\u6B62\u7EED\u5199\uFF0C\u663E\u793A\u5DF2\u83B7\u53D6\u7684\u5185\u5BB9\u3002</p>
+                                <p class="t-set-field-hint">\u8D85\u8FC7\u6B64\u6B21\u6570\u540E\u5C06\u505C\u6B62\u7EED\u5199\uFF0C\u663E\u793A\u5DF2\u83B7\u53D6\u7684\u5185\u5BB9\u3002</p>
                             </div>
                             <div class="t-form-group">
                                 <label class="t-form-label">\u622A\u65AD\u68C0\u6D4B\u6A21\u5F0F</label>
@@ -35032,7 +35126,7 @@ function openSettingsWindow() {
                                     <option value="sentence" ${(data.auto_continue?.detection_mode || "html") === "sentence" ? "selected" : ""}>\u{1F4DD} \u53E5\u5B50\u5B8C\u6574\u6027\u68C0\u6D4B</option>
                                     <option value="both" ${(data.auto_continue?.detection_mode || "html") === "both" ? "selected" : ""}>\u{1F50D} \u53CC\u91CD\u68C0\u6D4B (\u66F4\u4E25\u683C)</option>
                                 </select>
-                                <p style="font-size:0.75em; color:#555; margin-top:5px;">
+                                <p class="t-set-field-hint">
                                     HTML \u68C0\u6D4B\uFF1A\u68C0\u67E5\u6807\u7B7E\u662F\u5426\u95ED\u5408<br>
                                     \u53E5\u5B50\u68C0\u6D4B\uFF1A\u68C0\u67E5\u662F\u5426\u4EE5\u5B8C\u6574\u53E5\u5B50\u7ED3\u675F
                                 </p>
@@ -35103,7 +35197,7 @@ function openSettingsWindow() {
                         <div style="background:var(--t-color-surface-inset); border:1px solid var(--t-color-border); padding:20px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
                             <div>
                                 <div style="font-size:1.1em; color:var(--t-color-text); font-weight:bold;"><i class="fa-solid fa-scroll" style="color:var(--t-color-brand); margin-right:8px;"></i>\u5267\u672C\u7BA1\u7406\u5668</div>
-                                <div style="font-size:0.85em; color:#777; margin-top:5px;">\u5F53\u524D\u62E5\u6709\u81EA\u5B9A\u4E49\u5267\u672C: ${(data.user_scripts || []).length} \u4E2A</div>
+                                <div class="t-set-stat-sub">\u5F53\u524D\u62E5\u6709\u81EA\u5B9A\u4E49\u5267\u672C: ${(data.user_scripts || []).length} \u4E2A</div>
                             </div>
                             <button id="btn-open-mgr" class="t-btn primary" style="padding: 8px 20px;"><i class="fa-solid fa-list-check"></i> \u6253\u5F00\u7BA1\u7406</button>
                         </div>
@@ -35112,7 +35206,7 @@ function openSettingsWindow() {
                         <div class="t-form-label">\u5DF2\u9690\u85CF\u7684\u5B98\u65B9\u9884\u8BBE\u5267\u672C</div>
                         <div style="background:var(--t-color-surface-inset); border:1px solid var(--t-color-border); padding:15px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
                             <div><div style="font-size:1.1em; color:var(--t-color-text);">\u5171 ${(data.disabled_presets || []).length} \u4E2A</div><div style="font-size:0.8em; color:var(--t-color-text-faint);">\u8FD9\u4E9B\u9884\u8BBE\u5728\u5217\u8868\u4E2D\u5DF2\u88AB\u9690\u85CF</div></div>
-                            <button id="btn-restore-presets" class="t-btn" style="border:1px solid #555;" ${(data.disabled_presets || []).length === 0 ? "disabled" : ""}>\u267B\uFE0F \u6062\u590D\u6240\u6709</button>
+                            <button id="btn-restore-presets" class="t-btn" ${(data.disabled_presets || []).length === 0 ? "disabled" : ""}>\u267B\uFE0F \u6062\u590D\u6240\u6709</button>
                         </div>
                     </div>
                 </div>
@@ -36219,7 +36313,7 @@ function openSettingsWindow() {
   const renderLogView = () => {
     const logs = TitaniaLogger.logs;
     if (!logs || logs.length === 0) {
-      $("#t-log-viewer").html('<div style="text-align:center; margin-top:100px; color:#555;">\u6682\u65E0\u65E5\u5FD7</div>');
+      $("#t-log-viewer").html('<div class="t-set-log-empty">\u6682\u65E0\u65E5\u5FD7</div>');
       return;
     }
     let html2 = "";

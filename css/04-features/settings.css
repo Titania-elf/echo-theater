@@ -778,3 +778,97 @@
     }
 
 }
+
+/* ============================================================
+   Phase 5b-10：从 settingsWindow.js 的内联 style 迁出（14 个属性）。
+
+   ⚠ 颜色一律保留原值：本文件 105 处颜色字面量、仅 4 处 token，
+   单独换这几处会与全文不一致。整体 token 化归 Phase 6。
+   ============================================================ */
+
+/* ── 工具栏项的图标色 ──
+   4 个工具栏项各一色。刻意把 4 个都迁过来（其中 gear / script 原本用的就是
+   token，不算 A17），否则会留下「2 个内联 + 2 个在 CSS」的割裂状态。
+   ⚠ 上方 .t-toolbar-item i 只设 font-size / width / text-align，不设 color，
+   故这里 (0,1,0) 不会被它的 (0,1,1) 压掉。 */
+.t-toolbar-icon--theater {
+    color: #74b9ff;
+}
+
+.t-toolbar-icon--gear {
+    color: var(--t-color-text-secondary);
+}
+
+.t-toolbar-icon--fav {
+    color: #ffd93d;
+}
+
+.t-toolbar-icon--script {
+    color: var(--t-color-brand);
+}
+
+/* ── 警告文字 ──
+   #feca57 在设置窗口里出现 4 次（本节 3 个类共 4 处用），是本窗口的警告色。
+   ⚠ .t-set-font-warn 用的是**另一个黄** #f1c40f —— 全库第 5 种黄
+   （已有 #f59e0b / #feca57 / #ecc94b / #ffd93d）。原值保留，
+   归并归 Phase 6，交接文档 §5a 的家族表已登记。 */
+.t-set-warn {
+    color: #feca57;
+}
+
+.t-set-warn-title {
+    color: #feca57;
+    font-weight: bold;
+}
+
+.t-set-font-warn {
+    color: #f1c40f;
+}
+
+/* 「有未保存改动」提示。2 处在用（CSS 主题页、样式页）。
+   ⚠ display:none 写在类里是**故意的**：这两个元素由
+   $(...).hide() / .show() / .toggle(hasChanges) 控制显隐。
+   两者都是 <div> 且本类之外无任何规则设它们的 display，所以
+   jQuery 的 getDefaultDisplay() 回退值 block 与自然值一致，不会错版。
+   判定方法与反例见交接文档 §5b「display:none → 状态类」。 */
+.t-set-unsaved-hint {
+    display: none;
+    color: #feca57;
+    font-size: 0.8em;
+    margin-bottom: 8px;
+}
+
+/* ── 说明小字 ──
+   2 处在用（续写重试次数、检测模式）。
+   ⚠ 与 settingsWindow.js:446 那个 <p>（font-size 相同但用
+   var(--t-color-text-faint) 且 margin-top:8px）不是一套，刻意不合并。 */
+.t-set-field-hint {
+    font-size: 0.75em;
+    color: #555;
+    margin-top: 5px;
+}
+
+/* 统计卡片的副标题（"当前拥有自定义剧本: N 个"）。 */
+.t-set-stat-sub {
+    font-size: 0.85em;
+    color: #777;
+    margin-top: 5px;
+}
+
+/* 「恢复所有」按钮的描边。
+   ⚠ 必须用 ID：button.css 的 .t-btn:hover:not(:disabled) 是 (0,3,0) 且设了
+   border-color，任何 (0,1,0) 的类都会在悬停时被它夺走边框色。
+   原先靠内联压过它，现在靠 (1,0,0)。同 5b-7 的 #t-diag-clear。 */
+#btn-restore-presets {
+    border: 1px solid #555;
+}
+
+/* 日志查看器空态。
+   ⚠ 全库第 21 个空态类，且 margin-top:100px 与其余都不同
+   （其它是 50px / padding 30px / 40px / 26px 12px）。
+   合并一定改视觉，归 Phase 6/7，见交接文档 §5b「空态类已有 20+ 个」。 */
+.t-set-log-empty {
+    text-align: center;
+    margin-top: 100px;
+    color: #555;
+}
