@@ -355,7 +355,7 @@ export function openSettingsWindow() {
                                 </label>
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="settings">
-                                    <i class="fa-solid fa-gear" style="color:#aaa;"></i>
+                                    <i class="fa-solid fa-gear" style="color:var(--t-color-text-secondary);"></i>
                                     <span>设置</span>
                                 </label>
                                 <label class="t-toolbar-item">

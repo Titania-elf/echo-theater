@@ -430,7 +430,7 @@ export function openWorkshopWindow(source = 'manager') {
             $("#t-ws-stats").empty();
             $("#t-ws-list").addClass("t-ws-grid-empty").html(`
                 <div class="t-ws-placeholder">
-                    <i class="fa-solid fa-plug-circle-xmark" style="color:#ff6b6b;"></i>
+                    <i class="fa-solid fa-plug-circle-xmark" style="color:var(--t-color-danger);"></i>
                     <div class="t-ws-ph-title">${esc(e.message)}</div>
                     <div class="t-ws-ph-desc">工坊部署在 Cloudflare，部分网络环境可能无法访问</div>
                     <button class="t-btn t-btn-soft" id="t-ws-retry">重试</button>

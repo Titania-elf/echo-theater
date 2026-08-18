@@ -686,7 +686,7 @@ export function openFavsWindow() {
         
         <!-- 普通工具栏：抽屉内为同一套真实控件，桌面端 display:contents 平铺，移动端折叠为下拉面板 -->
         <div class="t-fav-toolbar" id="t-fav-toolbar-normal">
-            <i class="fa-solid fa-filter t-fav-filter-icon" style="color:#666;"></i>
+            <i class="fa-solid fa-filter t-fav-filter-icon" style="color:var(--t-color-text-faint);"></i>
             <select id="t-fav-filter-char" class="t-fav-filter-select">
                 ${charList.map(c => `<option value="${c}">${c}</option>`).join('')}
             </select>
@@ -710,7 +710,7 @@ export function openFavsWindow() {
             <div style="display:flex; align-items:center; gap:10px; flex-grow:1;">
                 <button id="t-btn-select-all" class="t-tool-btn"><i class="fa-regular fa-square-check"></i> 全选</button>
                 <button id="t-btn-deselect-all" class="t-tool-btn"><i class="fa-regular fa-square"></i> 取消全选</button>
-                <span id="t-edit-count" style="color:#888; font-size:0.9em;">已选择 0 项</span>
+                <span id="t-edit-count" style="color:var(--t-color-text-muted); font-size:0.9em;">已选择 0 项</span>
                 <div id="t-edit-pager" style="display:none; align-items:center; gap:8px; margin-left:8px;">
                     <button id="t-edit-page-prev" class="t-tool-btn" title="上一页"><i class="fa-solid fa-chevron-left"></i></button>
                     <span id="t-edit-page-stat" style="color:#8f949b; font-size:0.85em; min-width:180px; text-align:center;">第 1/1 页</span>
@@ -733,10 +733,10 @@ export function openFavsWindow() {
         <div class="t-fav-reader" id="t-fav-reader">
             <div class="t-read-header">
                 <div style="display:flex; align-items:center; gap:15px; overflow:hidden; flex-grow:1;">
-                    <i class="fa-solid fa-chevron-left" id="t-read-back" style="cursor:pointer; font-size:1.2em; padding:5px; color:#aaa;"></i>
+                    <i class="fa-solid fa-chevron-left" id="t-read-back" style="cursor:pointer; font-size:1.2em; padding:5px; color:var(--t-color-text-secondary);"></i>
                     <div style="display:flex; flex-direction:column; justify-content:center; overflow:hidden;">
                         <div id="t-read-meta" class="t-read-meta-text" style="font-weight:bold; color:#ccc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
-                        <div id="t-read-index" style="font-size:0.75em; color:#666;">0 / 0</div>
+                        <div id="t-read-index" style="font-size:0.75em; color:var(--t-color-text-faint);">0 / 0</div>
                     </div>
                 </div>
                 <div class="t-read-actions">
@@ -2186,11 +2186,11 @@ export function openCharImageManager(onCloseCallback) {
                 <span class="t-title-main">🖼️ 角色图鉴管理</span>
                 <span class="t-close" id="t-img-close">&times;</span>
             </div>
-            <div style="padding:10px 15px; background:#2a2a2a; color:#888; font-size:0.85em; border-bottom:1px solid #333;">
+            <div style="padding:10px 15px; background:var(--t-color-surface-raised); color:var(--t-color-text-muted); font-size:0.85em; border-bottom:1px solid var(--t-color-border);">
                 <i class="fa-solid fa-circle-info"></i> 设置图片后，该角色所有收藏卡片将自动使用此背景。优先读取“图鉴设置”，其次读取“单卡数据”。
             </div>
             <div class="t-img-list" id="t-img-list-container"></div>
-            <div style="padding:15px; border-top:1px solid #333; text-align:right;">
+            <div style="padding:15px; border-top:1px solid var(--t-color-border); text-align:right;">
                 <button class="t-btn primary" id="t-img-save">💾 保存并应用</button>
             </div>
         </div>
@@ -2229,7 +2229,7 @@ export function openCharImageManager(onCloseCallback) {
                         <button class="t-act-btn auto btn-auto-find" title="尝试从系统角色列表抓取头像" data-char="${char}"><i class="fa-solid fa-wand-magic-sparkles"></i> 自动</button>
                         <button class="t-act-btn btn-upload" title="上传本地图片" data-char="${char}"><i class="fa-solid fa-upload"></i></button>
                         <button class="t-act-btn btn-url" title="输入图片 URL" data-char="${char}"><i class="fa-solid fa-link"></i></button>
-                        ${hasImg ? `<button class="t-act-btn btn-clear" title="清除" data-char="${char}" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        ${hasImg ? `<button class="t-act-btn btn-clear" title="清除" data-char="${char}" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>` : ''}
                     </div>
                 </div>
             `);

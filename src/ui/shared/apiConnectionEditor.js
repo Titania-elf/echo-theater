@@ -152,11 +152,11 @@ export function renderApiConnectionEditorHTML(options = {}) {
         : "";
 
     const maxTokensBlock = flags.showMaxTokens
-        ? `<div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+        ? `<div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                 <label class="t-form-label">${escapeHtml(labels.maxTokens)}</label>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <input type="number" id="${escapeHtml(ids.maxTokensId || "")}" class="${escapeHtml(classes.input)}" value="${escapeHtml(values.maxTokens)}" min="256" max="32768" step="256" style="width:120px;">
-                    <span style="font-size:0.85em; color:#888;">范围: 256 ~ 32768</span>
+                    <span style="font-size:0.85em; color:var(--t-color-text-muted);">范围: 256 ~ 32768</span>
                 </div>
                 ${values.maxTokensHintHtml || ""}
             </div>`
@@ -168,7 +168,7 @@ export function renderApiConnectionEditorHTML(options = {}) {
             <div class="t-prof-header">
                 <select id="${escapeHtml(ids.profileSelectId || "")}" class="${escapeHtml(classes.profileSelect)}"></select>
                 <button id="${escapeHtml(ids.profileAddId || "")}" class="${escapeHtml(classes.button)}" title="新建方案"><i class="fa-solid fa-plus"></i></button>
-                ${flags.showDeleteProfile ? `<button id="${escapeHtml(ids.profileDeleteId || "")}" class="${escapeHtml(classes.button)}" title="删除当前方案" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>` : ""}
+                ${flags.showDeleteProfile ? `<button id="${escapeHtml(ids.profileDeleteId || "")}" class="${escapeHtml(classes.button)}" title="删除当前方案" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>` : ""}
             </div>
             ${profileNameBlock}
             <div id="${escapeHtml(ids.profileTipId || "")}" style="margin-top:8px; font-size:0.8em; color:#8da5b8;"></div>
@@ -178,7 +178,7 @@ export function renderApiConnectionEditorHTML(options = {}) {
             <div class="t-form-group">
                 <label class="t-form-label">${escapeHtml(labels.apiUrl)}</label>
                 <input id="${escapeHtml(ids.apiUrlId || "")}" class="${escapeHtml(classes.input)}" placeholder="${escapeHtml(placeholders.apiUrl)}">
-                <div id="${escapeHtml(ids.urlHintId || "")}" style="font-size:0.8em; color:#666; margin-top:5px; display:none;"><i class="fa-solid fa-link"></i> 正在读取 ST 全局设置：<span id="${escapeHtml(ids.stUrlDisplayId || "")}"></span></div>
+                <div id="${escapeHtml(ids.urlHintId || "")}" style="font-size:0.8em; color:var(--t-color-text-faint); margin-top:5px; display:none;"><i class="fa-solid fa-link"></i> 正在读取 ST 全局设置：<span id="${escapeHtml(ids.stUrlDisplayId || "")}"></span></div>
             </div>
             <div class="t-form-group"><label class="t-form-label">${escapeHtml(labels.apiKey)}</label><input id="${escapeHtml(ids.apiKeyId || "")}" type="password" class="${escapeHtml(classes.input)}" placeholder="${escapeHtml(placeholders.apiKey)}"></div>
             <div class="t-form-group">

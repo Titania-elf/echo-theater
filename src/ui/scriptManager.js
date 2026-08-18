@@ -93,12 +93,12 @@ export function openScriptManager() {
                     <button id="t-mgr-workshop-btn" class="t-tool-btn" title="回声工坊"><i class="fa-solid fa-store"></i> 工坊</button>
                     <button id="t-mgr-import-btn" class="t-tool-btn" title="导入"><i class="fa-solid fa-file-import"></i></button>
                     <button id="t-mgr-export-btn" class="t-tool-btn" title="导出"><i class="fa-solid fa-file-export"></i></button>
-                    <button id="t-mgr-batch-toggle" class="t-tool-btn" style="border:1px solid #444;" title="批量管理">
+                    <button id="t-mgr-batch-toggle" class="t-tool-btn" style="border:1px solid var(--t-color-border-strong);" title="批量管理">
                         <i class="fa-solid fa-list-check"></i> 管理
                     </button>
                 </div>
                 <div class="t-mgr-overview" id="t-mgr-overview"></div>
-                <div class="t-mgr-header-row t-batch-elem" style="padding: 8px 15px; background: #2a2a2a; border-bottom: 1px solid #333; color: #ccc; font-size: 0.9em; flex-shrink:0;">
+                <div class="t-mgr-header-row t-batch-elem" style="padding: 8px 15px; background: var(--t-color-surface-raised); border-bottom: 1px solid var(--t-color-border); color: #ccc; font-size: 0.9em; flex-shrink:0;">
                     <label style="display:flex; align-items:center; cursor:pointer;">
                         <input type="checkbox" id="t-mgr-select-all" style="margin-right:10px;"> 全选当前列表
                     </label>
@@ -106,16 +106,16 @@ export function openScriptManager() {
                 <div class="t-mgr-list" id="t-mgr-list-container"></div>
                 <div class="t-mgr-footer-bar t-batch-elem">
                     <span id="t-batch-count-label">已选: 0</span>
-                    <button id="t-mgr-move-to" class="t-tool-btn" style="color:#bfa15f; border-color:#bfa15f;">📁 移动到</button>
-                    <button id="t-mgr-export-selected" class="t-tool-btn" style="color:#90cdf4; border-color:#90cdf4;">📤 导出</button>
-                    <button id="t-mgr-del-confirm" class="t-tool-btn" style="color:#ff6b6b; border-color:#ff6b6b;">🗑️ 删除</button>
+                    <button id="t-mgr-move-to" class="t-tool-btn" style="color:var(--t-color-brand); border-color:#bfa15f;">📁 移动到</button>
+                    <button id="t-mgr-export-selected" class="t-tool-btn" style="color:var(--t-color-accent); border-color:#90cdf4;">📤 导出</button>
+                    <button id="t-mgr-del-confirm" class="t-tool-btn" style="color:var(--t-color-danger); border-color:#ff6b6b;">🗑️ 删除</button>
                 </div>
             </div>
         </div>
         
         <div id="t-imp-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
             <div class="t-dialog-panel t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📥 导入剧本</h3>
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">📥 导入剧本</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">存入分类:</span>
                     <input id="t-imp-cat-m" list="t-cat-dl-m" class="t-input" placeholder="输入或选择分类 (可选)" style="width:100%;">
@@ -123,10 +123,10 @@ export function openScriptManager() {
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">选择文件 (.txt):</span>
-                    <div style="display:flex; gap:10px; align-items:center; background:#111; padding:5px; border-radius:4px; border:1px solid #333;">
+                    <div style="display:flex; gap:10px; align-items:center; background:#111; padding:5px; border-radius:4px; border:1px solid var(--t-color-border);">
                         <input type="file" id="t-file-input-m" accept=".txt" style="display:none;">
                         <button id="t-btn-choose-file" class="t-btn" style="font-size:0.9em; padding:4px 10px;">📂 浏览文件...</button>
-                        <span id="t-file-name-label" style="font-size:0.85em; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">未选择文件</span>
+                        <span id="t-file-name-label" style="font-size:0.85em; color:var(--t-color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">未选择文件</span>
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
@@ -138,10 +138,10 @@ export function openScriptManager() {
         
         <div id="t-export-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
             <div class="t-dialog-panel t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📤 导出剧本</h3>
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">📤 导出剧本</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">导出范围:</span>
-                    <div style="background:#111; padding:10px; border-radius:4px; border:1px solid #333; display:flex; flex-direction:column; gap:8px;">
+                    <div style="background:#111; padding:10px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; flex-direction:column; gap:8px;">
                         <label><input type="radio" name="exp-scope" value="all" checked> 导出全部用户剧本</label>
                         <label><input type="radio" name="exp-scope" value="category"> 导出指定分类</label>
                         <label><input type="radio" name="exp-scope" value="current"> 导出当前列表 (<span id="exp-current-count">0</span> 个)</label>
@@ -153,7 +153,7 @@ export function openScriptManager() {
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">导出格式:</span>
-                    <div style="background:#111; padding:5px; border-radius:4px; border:1px solid #333; display:flex; gap:15px;">
+                    <div style="background:#111; padding:5px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; gap:15px;">
                         <label><input type="radio" name="exp-format" value="txt" checked> TXT (纯文本)</label>
                         <label><input type="radio" name="exp-format" value="json"> JSON (结构化)</label>
                     </div>
@@ -167,7 +167,7 @@ export function openScriptManager() {
         
         <div id="t-move-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
             <div class="t-dialog-panel t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📁 移动到分类</h3>
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">📁 移动到分类</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">目标分类:</span>
                     <input id="t-move-cat" list="t-move-cat-list" class="t-input" placeholder="输入或选择分类" style="width:100%;">
@@ -182,9 +182,9 @@ export function openScriptManager() {
         
         <div id="t-cat-rename-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
             <div class="t-dialog-panel t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">✏️ 重命名分类</h3>
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">✏️ 重命名分类</h3>
                 <div class="t-imp-row">
-                    <span class="t-imp-label">当前分类: <span id="t-rename-old" style="color:#bfa15f;"></span></span>
+                    <span class="t-imp-label">当前分类: <span id="t-rename-old" style="color:var(--t-color-brand);"></span></span>
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">新名称:</span>
@@ -422,7 +422,7 @@ export function openScriptManager() {
                         <div class="t-mgr-item-stats">${statsLine}</div>
                     </div>
                     <div style="padding-left:10px;">
-                        <i class="fa-solid fa-pen" style="color:#666; cursor:pointer;"></i>
+                        <i class="fa-solid fa-pen" style="color:var(--t-color-text-faint); cursor:pointer;"></i>
                     </div>
                 </div>
             `);

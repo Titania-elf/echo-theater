@@ -20722,7 +20722,7 @@ function openFavsWindow() {
         
         <!-- \u666E\u901A\u5DE5\u5177\u680F\uFF1A\u62BD\u5C49\u5185\u4E3A\u540C\u4E00\u5957\u771F\u5B9E\u63A7\u4EF6\uFF0C\u684C\u9762\u7AEF display:contents \u5E73\u94FA\uFF0C\u79FB\u52A8\u7AEF\u6298\u53E0\u4E3A\u4E0B\u62C9\u9762\u677F -->
         <div class="t-fav-toolbar" id="t-fav-toolbar-normal">
-            <i class="fa-solid fa-filter t-fav-filter-icon" style="color:#666;"></i>
+            <i class="fa-solid fa-filter t-fav-filter-icon" style="color:var(--t-color-text-faint);"></i>
             <select id="t-fav-filter-char" class="t-fav-filter-select">
                 ${charList.map((c) => `<option value="${c}">${c}</option>`).join("")}
             </select>
@@ -20746,7 +20746,7 @@ function openFavsWindow() {
             <div style="display:flex; align-items:center; gap:10px; flex-grow:1;">
                 <button id="t-btn-select-all" class="t-tool-btn"><i class="fa-regular fa-square-check"></i> \u5168\u9009</button>
                 <button id="t-btn-deselect-all" class="t-tool-btn"><i class="fa-regular fa-square"></i> \u53D6\u6D88\u5168\u9009</button>
-                <span id="t-edit-count" style="color:#888; font-size:0.9em;">\u5DF2\u9009\u62E9 0 \u9879</span>
+                <span id="t-edit-count" style="color:var(--t-color-text-muted); font-size:0.9em;">\u5DF2\u9009\u62E9 0 \u9879</span>
                 <div id="t-edit-pager" style="display:none; align-items:center; gap:8px; margin-left:8px;">
                     <button id="t-edit-page-prev" class="t-tool-btn" title="\u4E0A\u4E00\u9875"><i class="fa-solid fa-chevron-left"></i></button>
                     <span id="t-edit-page-stat" style="color:#8f949b; font-size:0.85em; min-width:180px; text-align:center;">\u7B2C 1/1 \u9875</span>
@@ -20769,10 +20769,10 @@ function openFavsWindow() {
         <div class="t-fav-reader" id="t-fav-reader">
             <div class="t-read-header">
                 <div style="display:flex; align-items:center; gap:15px; overflow:hidden; flex-grow:1;">
-                    <i class="fa-solid fa-chevron-left" id="t-read-back" style="cursor:pointer; font-size:1.2em; padding:5px; color:#aaa;"></i>
+                    <i class="fa-solid fa-chevron-left" id="t-read-back" style="cursor:pointer; font-size:1.2em; padding:5px; color:var(--t-color-text-secondary);"></i>
                     <div style="display:flex; flex-direction:column; justify-content:center; overflow:hidden;">
                         <div id="t-read-meta" class="t-read-meta-text" style="font-weight:bold; color:#ccc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
-                        <div id="t-read-index" style="font-size:0.75em; color:#666;">0 / 0</div>
+                        <div id="t-read-index" style="font-size:0.75em; color:var(--t-color-text-faint);">0 / 0</div>
                     </div>
                 </div>
                 <div class="t-read-actions">
@@ -21964,11 +21964,11 @@ function openCharImageManager(onCloseCallback) {
                 <span class="t-title-main">\u{1F5BC}\uFE0F \u89D2\u8272\u56FE\u9274\u7BA1\u7406</span>
                 <span class="t-close" id="t-img-close">&times;</span>
             </div>
-            <div style="padding:10px 15px; background:#2a2a2a; color:#888; font-size:0.85em; border-bottom:1px solid #333;">
+            <div style="padding:10px 15px; background:var(--t-color-surface-raised); color:var(--t-color-text-muted); font-size:0.85em; border-bottom:1px solid var(--t-color-border);">
                 <i class="fa-solid fa-circle-info"></i> \u8BBE\u7F6E\u56FE\u7247\u540E\uFF0C\u8BE5\u89D2\u8272\u6240\u6709\u6536\u85CF\u5361\u7247\u5C06\u81EA\u52A8\u4F7F\u7528\u6B64\u80CC\u666F\u3002\u4F18\u5148\u8BFB\u53D6\u201C\u56FE\u9274\u8BBE\u7F6E\u201D\uFF0C\u5176\u6B21\u8BFB\u53D6\u201C\u5355\u5361\u6570\u636E\u201D\u3002
             </div>
             <div class="t-img-list" id="t-img-list-container"></div>
-            <div style="padding:15px; border-top:1px solid #333; text-align:right;">
+            <div style="padding:15px; border-top:1px solid var(--t-color-border); text-align:right;">
                 <button class="t-btn primary" id="t-img-save">\u{1F4BE} \u4FDD\u5B58\u5E76\u5E94\u7528</button>
             </div>
         </div>
@@ -22000,7 +22000,7 @@ function openCharImageManager(onCloseCallback) {
                         <button class="t-act-btn auto btn-auto-find" title="\u5C1D\u8BD5\u4ECE\u7CFB\u7EDF\u89D2\u8272\u5217\u8868\u6293\u53D6\u5934\u50CF" data-char="${char}"><i class="fa-solid fa-wand-magic-sparkles"></i> \u81EA\u52A8</button>
                         <button class="t-act-btn btn-upload" title="\u4E0A\u4F20\u672C\u5730\u56FE\u7247" data-char="${char}"><i class="fa-solid fa-upload"></i></button>
                         <button class="t-act-btn btn-url" title="\u8F93\u5165\u56FE\u7247 URL" data-char="${char}"><i class="fa-solid fa-link"></i></button>
-                        ${hasImg ? `<button class="t-act-btn btn-clear" title="\u6E05\u9664" data-char="${char}" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>` : ""}
+                        ${hasImg ? `<button class="t-act-btn btn-clear" title="\u6E05\u9664" data-char="${char}" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>` : ""}
                     </div>
                 </div>
             `);
@@ -22503,7 +22503,7 @@ function showDiagnosticsWindow() {
             <span class="t-close" id="t-diag-close">&times;</span>
         </div>
         
-        <div style="padding:15px; background:#181818; border-bottom:1px solid #333;">
+        <div style="padding:15px; background:#181818; border-bottom:1px solid var(--t-color-border);">
             <div style="background: rgba(255, 159, 67, 0.1); border:1px solid rgba(255, 159, 67, 0.3); padding:12px; border-radius:6px;">
                 <div style="font-weight:bold; color:#feca57; font-size:0.9em; margin-bottom:5px;">
                     <i class="fa-solid fa-triangle-exclamation"></i> \u62A5\u9519\u6392\u67E5\u6307\u5357
@@ -22516,17 +22516,17 @@ function showDiagnosticsWindow() {
         </div>
         
         <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; padding:15px;">
-            <div style="font-weight:bold; color:#aaa; margin-bottom:10px;">
-                <i class="fa-solid fa-scroll"></i> \u5B9E\u65F6\u65E5\u5FD7 <span style="font-size:0.8em; color:#666;">(\u5185\u5B58\u7F13\u5B58 50 \u6761)</span>
+            <div style="font-weight:bold; color:var(--t-color-text-secondary); margin-bottom:10px;">
+                <i class="fa-solid fa-scroll"></i> \u5B9E\u65F6\u65E5\u5FD7 <span style="font-size:0.8em; color:var(--t-color-text-faint);">(\u5185\u5B58\u7F13\u5B58 50 \u6761)</span>
             </div>
             <div class="t-log-box" id="t-diag-log-viewer" style="flex:1; overflow-y:auto;"></div>
         </div>
         
-        <div style="padding:15px; background:#181818; border-top:1px solid #333; display:flex; gap:10px;">
+        <div style="padding:15px; background:#181818; border-top:1px solid var(--t-color-border); display:flex; gap:10px;">
             <button id="t-diag-refresh" class="t-btn">
                 <i class="fa-solid fa-rotate-right"></i> \u5237\u65B0\u65E5\u5FD7
             </button>
-            <button id="t-diag-clear" class="t-btn" style="color:#ff6b6b; border-color:#ff6b6b;">
+            <button id="t-diag-clear" class="t-btn" style="color:var(--t-color-danger); border-color:#ff6b6b;">
                 <i class="fa-solid fa-trash"></i> \u6E05\u7A7A\u65E5\u5FD7
             </button>
             <button id="t-diag-export" class="t-btn primary" style="margin-left:auto;">
@@ -22771,11 +22771,11 @@ function renderApiConnectionEditorHTML(options = {}) {
   };
   const profileNameBlock = flags.showProfileName ? `<div id="${escapeHtml3(ids.profileMetaId || "")}"><label class="t-form-label">${escapeHtml3(labels.profileName)}</label><input id="${escapeHtml3(ids.profileNameId || "")}" class="${escapeHtml3(classes.input)}" value="" placeholder="${escapeHtml3(placeholders.profileName)}"></div>` : "";
   const streamBlock = flags.showStream ? `<div class="t-form-group"><label style="cursor:pointer; display:flex; align-items:center;"><input type="checkbox" id="${escapeHtml3(ids.streamId || "")}" ${values.stream ? "checked" : ""} style="margin-right:10px;"> ${escapeHtml3(labels.stream)}</label></div>` : "";
-  const maxTokensBlock = flags.showMaxTokens ? `<div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+  const maxTokensBlock = flags.showMaxTokens ? `<div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                 <label class="t-form-label">${escapeHtml3(labels.maxTokens)}</label>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <input type="number" id="${escapeHtml3(ids.maxTokensId || "")}" class="${escapeHtml3(classes.input)}" value="${escapeHtml3(values.maxTokens)}" min="256" max="32768" step="256" style="width:120px;">
-                    <span style="font-size:0.85em; color:#888;">\u8303\u56F4: 256 ~ 32768</span>
+                    <span style="font-size:0.85em; color:var(--t-color-text-muted);">\u8303\u56F4: 256 ~ 32768</span>
                 </div>
                 ${values.maxTokensHintHtml || ""}
             </div>` : "";
@@ -22785,7 +22785,7 @@ function renderApiConnectionEditorHTML(options = {}) {
             <div class="t-prof-header">
                 <select id="${escapeHtml3(ids.profileSelectId || "")}" class="${escapeHtml3(classes.profileSelect)}"></select>
                 <button id="${escapeHtml3(ids.profileAddId || "")}" class="${escapeHtml3(classes.button)}" title="\u65B0\u5EFA\u65B9\u6848"><i class="fa-solid fa-plus"></i></button>
-                ${flags.showDeleteProfile ? `<button id="${escapeHtml3(ids.profileDeleteId || "")}" class="${escapeHtml3(classes.button)}" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>` : ""}
+                ${flags.showDeleteProfile ? `<button id="${escapeHtml3(ids.profileDeleteId || "")}" class="${escapeHtml3(classes.button)}" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>` : ""}
             </div>
             ${profileNameBlock}
             <div id="${escapeHtml3(ids.profileTipId || "")}" style="margin-top:8px; font-size:0.8em; color:#8da5b8;"></div>
@@ -22795,7 +22795,7 @@ function renderApiConnectionEditorHTML(options = {}) {
             <div class="t-form-group">
                 <label class="t-form-label">${escapeHtml3(labels.apiUrl)}</label>
                 <input id="${escapeHtml3(ids.apiUrlId || "")}" class="${escapeHtml3(classes.input)}" placeholder="${escapeHtml3(placeholders.apiUrl)}">
-                <div id="${escapeHtml3(ids.urlHintId || "")}" style="font-size:0.8em; color:#666; margin-top:5px; display:none;"><i class="fa-solid fa-link"></i> \u6B63\u5728\u8BFB\u53D6 ST \u5168\u5C40\u8BBE\u7F6E\uFF1A<span id="${escapeHtml3(ids.stUrlDisplayId || "")}"></span></div>
+                <div id="${escapeHtml3(ids.urlHintId || "")}" style="font-size:0.8em; color:var(--t-color-text-faint); margin-top:5px; display:none;"><i class="fa-solid fa-link"></i> \u6B63\u5728\u8BFB\u53D6 ST \u5168\u5C40\u8BBE\u7F6E\uFF1A<span id="${escapeHtml3(ids.stUrlDisplayId || "")}"></span></div>
             </div>
             <div class="t-form-group"><label class="t-form-label">${escapeHtml3(labels.apiKey)}</label><input id="${escapeHtml3(ids.apiKeyId || "")}" type="password" class="${escapeHtml3(classes.input)}" placeholder="${escapeHtml3(placeholders.apiKey)}"></div>
             <div class="t-form-group">
@@ -31224,7 +31224,7 @@ function showRawResponseDialog2(rawContent, isError = false) {
                 ` : ""}
                 <div style="padding: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="color: #888; font-size: 0.9em;">
+                        <span style="color: var(--t-color-text-muted); font-size: 0.9em;">
                             <i class="fa-solid fa-file-lines"></i> \u54CD\u5E94\u957F\u5EA6: ${rawContent?.length || 0} \u5B57\u7B26
                         </span>
                         <button id="t-btn-copy-raw" class="t-btn t-btn-xs">
@@ -31233,7 +31233,7 @@ function showRawResponseDialog2(rawContent, isError = false) {
                     </div>
                     <pre id="t-raw-response-content" style="
                         background: #1a1a2e;
-                        border: 1px solid #333;
+                        border: 1px solid var(--t-color-border);
                         border-radius: 6px;
                         padding: 15px;
                         max-height: 50vh;
@@ -31563,7 +31563,7 @@ async function showLoreReviewWindow() {
                             <div class="t-empty-state">
                                 <i class="fa-solid fa-file-alt"></i>
                                 <p>\u70B9\u51FB\u300C\u751F\u6210\u603B\u7ED3\u300D\u5F00\u59CB\u5206\u6790\u804A\u5929\u5386\u53F2</p>
-                                <small style="color: #666;">\u542F\u7528\u300C\u8BED\u4E49\u68C0\u7D22\u589E\u5F3A\u300D\u53EF\u4EE5\u53EC\u56DE\u76F8\u5173\u7684\u5386\u53F2\u4E8B\u4EF6</small>
+                                <small style="color: var(--t-color-text-faint);">\u542F\u7528\u300C\u8BED\u4E49\u68C0\u7D22\u589E\u5F3A\u300D\u53EF\u4EE5\u53EC\u56DE\u76F8\u5173\u7684\u5386\u53F2\u4E8B\u4EF6</small>
                             </div>
                         </div>
                     </div>
@@ -31684,7 +31684,7 @@ async function showLoreReviewWindow() {
 
                         <div class="t-action-group" style="margin-top: 20px;">
                             <h4><i class="fa-solid fa-broom"></i> \u6587\u672C\u6E05\u6D17\u9884\u89C8</h4>
-                            <p style="color: #888; font-size: 0.85em; margin-bottom: 10px;">
+                            <p style="color: var(--t-color-text-muted); font-size: 0.85em; margin-bottom: 10px;">
                                 \u9884\u89C8\u5411\u91CF\u5316\u524D\u7684\u6587\u672C\u6E05\u6D17\u6548\u679C\uFF0C\u67E5\u770B\u54EA\u4E9B\u5185\u5BB9\u4F1A\u88AB\u79FB\u9664\u3002
                             </p>
                             <button id="t-btn-preview-cleaning" class="t-btn">
@@ -31694,7 +31694,7 @@ async function showLoreReviewWindow() {
 
                         <div class="t-action-group" style="margin-top: 20px;">
                             <h4><i class="fa-solid fa-plug"></i> Embedding API \u914D\u7F6E</h4>
-                            <p style="color: #888; font-size: 0.85em; margin-bottom: 10px;">
+                            <p style="color: var(--t-color-text-muted); font-size: 0.85em; margin-bottom: 10px;">
                                 \u5411\u91CF\u5316\u9700\u8981\u4E13\u7528\u7684 Embedding API\uFF0C\u8BF7\u5728\u300C\u8BBE\u7F6E\u300D\u4E2D\u914D\u7F6E\u3002
                             </p>
                             <button id="t-btn-test-embedding" class="t-btn">
@@ -33065,7 +33065,7 @@ async function openRecallPanel() {
             <span class="t-close" id="t-recall-close">&times;</span>
         </div>
         
-        <div class="t-recall-toolbar" style="padding: 15px; border-bottom: 1px solid #333; background: #1a1a1a;">
+        <div class="t-recall-toolbar" style="padding: 15px; border-bottom: 1px solid var(--t-color-border); background: var(--t-color-surface-sunken);">
             <div style="display: flex; gap: 10px; align-items: center;">
                 <input type="text"
                        id="t-recall-query"
@@ -33081,7 +33081,7 @@ async function openRecallPanel() {
             </div>
             
             <div style="display: flex; gap: 15px; margin-top: 10px;">
-                <label style="display: flex; align-items: center; gap: 5px; color: #aaa; font-size: 0.9em;">
+                <label style="display: flex; align-items: center; gap: 5px; color: var(--t-color-text-secondary); font-size: 0.9em;">
                     \u6700\u5927\u6570\u91CF:
                     <select id="t-recall-max-results" class="t-input" style="width: 70px; padding: 4px;">
                         <option value="5">5</option>
@@ -33090,7 +33090,7 @@ async function openRecallPanel() {
                         <option value="20">20</option>
                     </select>
                 </label>
-                <label style="display: flex; align-items: center; gap: 5px; color: #aaa; font-size: 0.9em;">
+                <label style="display: flex; align-items: center; gap: 5px; color: var(--t-color-text-secondary); font-size: 0.9em;">
                     \u6700\u5C0F\u76F8\u4F3C\u5EA6:
                     <select id="t-recall-min-score" class="t-input" style="width: 70px; padding: 4px;">
                         <option value="0.4">40%</option>
@@ -33102,24 +33102,24 @@ async function openRecallPanel() {
             </div>
         </div>
         
-        <div style="padding: 10px 15px; background: #2a2a2a; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #888;">\u68C0\u7D22\u7ED3\u679C</span>
+        <div style="padding: 10px 15px; background: var(--t-color-surface-raised); border-bottom: 1px solid var(--t-color-border); display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--t-color-text-muted);">\u68C0\u7D22\u7ED3\u679C</span>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <button id="t-recall-select-all" class="t-tool-btn" disabled>\u5168\u9009</button>
                 <button id="t-recall-deselect-all" class="t-tool-btn" disabled>\u53D6\u6D88</button>
-                <span id="t-recall-selected-count" style="color: #888; font-size: 0.9em;">\u5DF2\u9009: 0</span>
+                <span id="t-recall-selected-count" style="color: var(--t-color-text-muted); font-size: 0.9em;">\u5DF2\u9009: 0</span>
             </div>
         </div>
         
         <div class="t-recall-results-area" style="flex: 1; overflow-y: auto; padding: 10px;">
             <div id="t-recall-results-list">
-                <div style="text-align: center; padding: 40px; color: #666;">
+                <div style="text-align: center; padding: 40px; color: var(--t-color-text-faint);">
                     ${status.available ? "\u8F93\u5165\u5173\u952E\u8BCD\u5E76\u70B9\u51FB\u68C0\u7D22" : "\u8BF7\u5148\u5EFA\u7ACB\u5411\u91CF\u7D22\u5F15"}
                 </div>
             </div>
         </div>
         
-        <div style="padding: 15px; border-top: 1px solid #333; display: flex; justify-content: flex-end; gap: 10px; background: #1a1a1a;">
+        <div style="padding: 15px; border-top: 1px solid var(--t-color-border); display: flex; justify-content: flex-end; gap: 10px; background: var(--t-color-surface-sunken);">
             <button id="t-recall-cancel" class="t-btn">\u53D6\u6D88</button>
             <button id="t-recall-append" class="t-btn t-btn-primary" disabled>
                 <i class="fa-solid fa-paperclip"></i> \u9644\u52A0\u5230\u8F93\u5165\u6846
@@ -33183,18 +33183,18 @@ async function handleSearch() {
   const minScore = parseFloat($("#t-recall-min-score").val()) || 0.5;
   isSearching = true;
   $("#t-recall-search-btn").html('<i class="fa-solid fa-spinner fa-spin"></i> \u68C0\u7D22\u4E2D...').prop("disabled", true);
-  $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: #888;"><i class="fa-solid fa-spinner fa-spin"></i> \u68C0\u7D22\u4E2D...</div>');
+  $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: var(--t-color-text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> \u68C0\u7D22\u4E2D...</div>');
   try {
     searchResults = await recallMemories(query, { maxResults, minScore });
     selectedIndices.clear();
     if (searchResults.length === 0) {
-      $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: #666;">\u672A\u627E\u5230\u76F8\u5173\u8BB0\u5FC6</div>');
+      $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: var(--t-color-text-faint);">\u672A\u627E\u5230\u76F8\u5173\u8BB0\u5FC6</div>');
     } else {
       renderResults();
     }
   } catch (e) {
     TitaniaLogger.error("\u68C0\u7D22\u5931\u8D25", e);
-    $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: #ff6b6b;">' + e.message + "</div>");
+    $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: var(--t-color-danger);">' + e.message + "</div>");
     if (window.toastr) {
       toastr.error(e.message, "\u68C0\u7D22\u5931\u8D25");
     }
@@ -33211,7 +33211,7 @@ function renderResults() {
     const isSelected = selectedIndices.has(index);
     const scoreColor = scorePercent >= 70 ? "#4caf50" : scorePercent >= 50 ? "#ff9800" : "#888";
     const displayText = escapeHtml7(result.text).substring(0, 300) + (result.text.length > 300 ? "..." : "");
-    return '<div class="t-recall-result-item" data-index="' + index + '" style="display: flex; gap: 10px; padding: 12px; margin-bottom: 8px; background: ' + (isSelected ? "#2a3a4a" : "#1e1e1e") + "; border: 1px solid " + (isSelected ? "#4a9eff" : "#333") + '; border-radius: 8px; cursor: pointer; transition: all 0.2s;"><div style="flex-shrink: 0; padding-top: 2px;"><input type="checkbox" ' + (isSelected ? "checked" : "") + ' style="cursor: pointer;"></div><div style="flex: 1; min-width: 0;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><span style="color: #888; font-size: 0.85em;">#' + result.messageIndex + '</span><span style="color: ' + scoreColor + '; font-weight: bold; font-size: 0.9em;">' + scorePercent + '%</span></div><div style="color: #ccc; font-size: 0.9em; line-height: 1.5; word-break: break-word;">' + displayText + "</div></div></div>";
+    return '<div class="t-recall-result-item" data-index="' + index + '" style="display: flex; gap: 10px; padding: 12px; margin-bottom: 8px; background: ' + (isSelected ? "#2a3a4a" : "#1e1e1e") + "; border: 1px solid " + (isSelected ? "#4a9eff" : "#333") + '; border-radius: 8px; cursor: pointer; transition: all 0.2s;"><div style="flex-shrink: 0; padding-top: 2px;"><input type="checkbox" ' + (isSelected ? "checked" : "") + ' style="cursor: pointer;"></div><div style="flex: 1; min-width: 0;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><span style="color: var(--t-color-text-muted); font-size: 0.85em;">#' + result.messageIndex + '</span><span style="color: ' + scoreColor + '; font-weight: bold; font-size: 0.9em;">' + scorePercent + '%</span></div><div style="color: #ccc; font-size: 0.9em; line-height: 1.5; word-break: break-word;">' + displayText + "</div></div></div>";
   }).join("");
   $resultsList.html(html);
   $resultsList.find(".t-recall-result-item").each(function() {
@@ -33891,7 +33891,7 @@ function openSettingsWindow() {
                                 </label>
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="settings">
-                                    <i class="fa-solid fa-gear" style="color:#aaa;"></i>
+                                    <i class="fa-solid fa-gear" style="color:var(--t-color-text-secondary);"></i>
                                     <span>\u8BBE\u7F6E</span>
                                 </label>
                                 <label class="t-toolbar-item">
@@ -36080,7 +36080,7 @@ function openWorkshopWindow(source = "manager") {
       $("#t-ws-stats").empty();
       $("#t-ws-list").addClass("t-ws-grid-empty").html(`
                 <div class="t-ws-placeholder">
-                    <i class="fa-solid fa-plug-circle-xmark" style="color:#ff6b6b;"></i>
+                    <i class="fa-solid fa-plug-circle-xmark" style="color:var(--t-color-danger);"></i>
                     <div class="t-ws-ph-title">${esc(e.message)}</div>
                     <div class="t-ws-ph-desc">\u5DE5\u574A\u90E8\u7F72\u5728 Cloudflare\uFF0C\u90E8\u5206\u7F51\u7EDC\u73AF\u5883\u53EF\u80FD\u65E0\u6CD5\u8BBF\u95EE</div>
                     <button class="t-btn t-btn-soft" id="t-ws-retry">\u91CD\u8BD5</button>
@@ -36208,12 +36208,12 @@ function openScriptManager() {
                     <button id="t-mgr-workshop-btn" class="t-tool-btn" title="\u56DE\u58F0\u5DE5\u574A"><i class="fa-solid fa-store"></i> \u5DE5\u574A</button>
                     <button id="t-mgr-import-btn" class="t-tool-btn" title="\u5BFC\u5165"><i class="fa-solid fa-file-import"></i></button>
                     <button id="t-mgr-export-btn" class="t-tool-btn" title="\u5BFC\u51FA"><i class="fa-solid fa-file-export"></i></button>
-                    <button id="t-mgr-batch-toggle" class="t-tool-btn" style="border:1px solid #444;" title="\u6279\u91CF\u7BA1\u7406">
+                    <button id="t-mgr-batch-toggle" class="t-tool-btn" style="border:1px solid var(--t-color-border-strong);" title="\u6279\u91CF\u7BA1\u7406">
                         <i class="fa-solid fa-list-check"></i> \u7BA1\u7406
                     </button>
                 </div>
                 <div class="t-mgr-overview" id="t-mgr-overview"></div>
-                <div class="t-mgr-header-row t-batch-elem" style="padding: 8px 15px; background: #2a2a2a; border-bottom: 1px solid #333; color: #ccc; font-size: 0.9em; flex-shrink:0;">
+                <div class="t-mgr-header-row t-batch-elem" style="padding: 8px 15px; background: var(--t-color-surface-raised); border-bottom: 1px solid var(--t-color-border); color: #ccc; font-size: 0.9em; flex-shrink:0;">
                     <label style="display:flex; align-items:center; cursor:pointer;">
                         <input type="checkbox" id="t-mgr-select-all" style="margin-right:10px;"> \u5168\u9009\u5F53\u524D\u5217\u8868
                     </label>
@@ -36221,16 +36221,16 @@ function openScriptManager() {
                 <div class="t-mgr-list" id="t-mgr-list-container"></div>
                 <div class="t-mgr-footer-bar t-batch-elem">
                     <span id="t-batch-count-label">\u5DF2\u9009: 0</span>
-                    <button id="t-mgr-move-to" class="t-tool-btn" style="color:#bfa15f; border-color:#bfa15f;">\u{1F4C1} \u79FB\u52A8\u5230</button>
-                    <button id="t-mgr-export-selected" class="t-tool-btn" style="color:#90cdf4; border-color:#90cdf4;">\u{1F4E4} \u5BFC\u51FA</button>
-                    <button id="t-mgr-del-confirm" class="t-tool-btn" style="color:#ff6b6b; border-color:#ff6b6b;">\u{1F5D1}\uFE0F \u5220\u9664</button>
+                    <button id="t-mgr-move-to" class="t-tool-btn" style="color:var(--t-color-brand); border-color:#bfa15f;">\u{1F4C1} \u79FB\u52A8\u5230</button>
+                    <button id="t-mgr-export-selected" class="t-tool-btn" style="color:var(--t-color-accent); border-color:#90cdf4;">\u{1F4E4} \u5BFC\u51FA</button>
+                    <button id="t-mgr-del-confirm" class="t-tool-btn" style="color:var(--t-color-danger); border-color:#ff6b6b;">\u{1F5D1}\uFE0F \u5220\u9664</button>
                 </div>
             </div>
         </div>
         
         <div id="t-imp-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
             <div class="t-dialog-panel t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u{1F4E5} \u5BFC\u5165\u5267\u672C</h3>
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">\u{1F4E5} \u5BFC\u5165\u5267\u672C</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u5B58\u5165\u5206\u7C7B:</span>
                     <input id="t-imp-cat-m" list="t-cat-dl-m" class="t-input" placeholder="\u8F93\u5165\u6216\u9009\u62E9\u5206\u7C7B (\u53EF\u9009)" style="width:100%;">
@@ -36238,10 +36238,10 @@ function openScriptManager() {
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u9009\u62E9\u6587\u4EF6 (.txt):</span>
-                    <div style="display:flex; gap:10px; align-items:center; background:#111; padding:5px; border-radius:4px; border:1px solid #333;">
+                    <div style="display:flex; gap:10px; align-items:center; background:#111; padding:5px; border-radius:4px; border:1px solid var(--t-color-border);">
                         <input type="file" id="t-file-input-m" accept=".txt" style="display:none;">
                         <button id="t-btn-choose-file" class="t-btn" style="font-size:0.9em; padding:4px 10px;">\u{1F4C2} \u6D4F\u89C8\u6587\u4EF6...</button>
-                        <span id="t-file-name-label" style="font-size:0.85em; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">\u672A\u9009\u62E9\u6587\u4EF6</span>
+                        <span id="t-file-name-label" style="font-size:0.85em; color:var(--t-color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">\u672A\u9009\u62E9\u6587\u4EF6</span>
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
@@ -36253,10 +36253,10 @@ function openScriptManager() {
         
         <div id="t-export-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
             <div class="t-dialog-panel t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u{1F4E4} \u5BFC\u51FA\u5267\u672C</h3>
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">\u{1F4E4} \u5BFC\u51FA\u5267\u672C</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u5BFC\u51FA\u8303\u56F4:</span>
-                    <div style="background:#111; padding:10px; border-radius:4px; border:1px solid #333; display:flex; flex-direction:column; gap:8px;">
+                    <div style="background:#111; padding:10px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; flex-direction:column; gap:8px;">
                         <label><input type="radio" name="exp-scope" value="all" checked> \u5BFC\u51FA\u5168\u90E8\u7528\u6237\u5267\u672C</label>
                         <label><input type="radio" name="exp-scope" value="category"> \u5BFC\u51FA\u6307\u5B9A\u5206\u7C7B</label>
                         <label><input type="radio" name="exp-scope" value="current"> \u5BFC\u51FA\u5F53\u524D\u5217\u8868 (<span id="exp-current-count">0</span> \u4E2A)</label>
@@ -36268,7 +36268,7 @@ function openScriptManager() {
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u5BFC\u51FA\u683C\u5F0F:</span>
-                    <div style="background:#111; padding:5px; border-radius:4px; border:1px solid #333; display:flex; gap:15px;">
+                    <div style="background:#111; padding:5px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; gap:15px;">
                         <label><input type="radio" name="exp-format" value="txt" checked> TXT (\u7EAF\u6587\u672C)</label>
                         <label><input type="radio" name="exp-format" value="json"> JSON (\u7ED3\u6784\u5316)</label>
                     </div>
@@ -36282,7 +36282,7 @@ function openScriptManager() {
         
         <div id="t-move-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
             <div class="t-dialog-panel t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u{1F4C1} \u79FB\u52A8\u5230\u5206\u7C7B</h3>
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">\u{1F4C1} \u79FB\u52A8\u5230\u5206\u7C7B</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u76EE\u6807\u5206\u7C7B:</span>
                     <input id="t-move-cat" list="t-move-cat-list" class="t-input" placeholder="\u8F93\u5165\u6216\u9009\u62E9\u5206\u7C7B" style="width:100%;">
@@ -36297,9 +36297,9 @@ function openScriptManager() {
         
         <div id="t-cat-rename-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
             <div class="t-dialog-panel t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">\u270F\uFE0F \u91CD\u547D\u540D\u5206\u7C7B</h3>
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">\u270F\uFE0F \u91CD\u547D\u540D\u5206\u7C7B</h3>
                 <div class="t-imp-row">
-                    <span class="t-imp-label">\u5F53\u524D\u5206\u7C7B: <span id="t-rename-old" style="color:#bfa15f;"></span></span>
+                    <span class="t-imp-label">\u5F53\u524D\u5206\u7C7B: <span id="t-rename-old" style="color:var(--t-color-brand);"></span></span>
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u65B0\u540D\u79F0:</span>
@@ -36481,7 +36481,7 @@ function openScriptManager() {
                         <div class="t-mgr-item-stats">${statsLine}</div>
                     </div>
                     <div style="padding-left:10px;">
-                        <i class="fa-solid fa-pen" style="color:#666; cursor:pointer;"></i>
+                        <i class="fa-solid fa-pen" style="color:var(--t-color-text-faint); cursor:pointer;"></i>
                     </div>
                 </div>
             `);
@@ -38404,15 +38404,15 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
         <div id="t-continuation-editor" class="t-content-editor">
             <div class="t-panel-header t-ce-header">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color:#bfa15f;"></i>
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--t-color-brand);"></i>
                     <span style="font-weight:bold;">\u7EED\u5199\u64CD\u4F5C\u53F0</span>
-                    <span style="font-size:0.8em; color:#666;">\u652F\u6301 Ctrl+Enter \u5FEB\u901F\u53D1\u9001</span>
+                    <span style="font-size:0.8em; color:var(--t-color-text-faint);">\u652F\u6301 Ctrl+Enter \u5FEB\u901F\u53D1\u9001</span>
                 </div>
                 <div class="t-close" id="t-cont-close">&times;</div>
             </div>
 
             <div class="t-ce-body" style="display:flex; flex-direction:column; gap:10px; overflow:auto;">
-                <div style="color:#888; font-size:12px;">\u53EF\u7559\u7A7A\u8868\u793A\u201C\u81EA\u7136\u7EED\u5199\u201D\uFF1B\u4F1A\u57FA\u4E8E\u5F53\u524D\u5267\u573A\u4E0A\u4E0B\u6587\u7EE7\u7EED\u751F\u6210\u3002</div>
+                <div style="color:var(--t-color-text-muted); font-size:12px;">\u53EF\u7559\u7A7A\u8868\u793A\u201C\u81EA\u7136\u7EED\u5199\u201D\uFF1B\u4F1A\u57FA\u4E8E\u5F53\u524D\u5267\u573A\u4E0A\u4E0B\u6587\u7EE7\u7EED\u751F\u6210\u3002</div>
 
                 <textarea id="t-cont-input" class="t-ce-textarea" placeholder="\u4F8B\u5982\uFF1A\u8BA9\u4E24\u4EBA\u77DB\u76FE\u5347\u7EA7\uFF0C\u4F46\u4FDD\u6301\u514B\u5236\uFF0C\u4E0D\u8981\u7ACB\u523B\u548C\u89E3\u3002" spellcheck="false" style="height:auto; min-height:160px; flex:1;"></textarea>
 
@@ -38421,18 +38421,18 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="color:#aaa; font-size:12px;">\u6700\u8FD1\u4F7F\u7528\uFF08\u6700\u591A ${CONTINUATION_RECENT_MAX} \u6761\uFF0C\u70B9\u51FB\u590D\u7528\uFF09</div>
+                    <div style="color:var(--t-color-text-secondary); font-size:12px;">\u6700\u8FD1\u4F7F\u7528\uFF08\u6700\u591A ${CONTINUATION_RECENT_MAX} \u6761\uFF0C\u70B9\u51FB\u590D\u7528\uFF09</div>
                     <div id="t-cont-recent-list" style="display:flex; gap:8px; flex-wrap:wrap; max-height:88px; overflow:auto;">${recentHtml}</div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:8px; border:1px solid #333; border-radius:8px; padding:10px; background:#1e1e1e;">
+                <div style="display:flex; flex-direction:column; gap:8px; border:1px solid var(--t-color-border); border-radius:8px; padding:10px; background:var(--t-color-surface);">
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
                         <div style="color:#ddd; font-size:12px;">${regenerationTarget ? "\u5206\u652F\u4E0A\u4E0B\u6587" : "\u6CE8\u5165\u6700\u8FD1\u7EED\u5199\u6761\u6570\uFF08\u6B63\u6587+\u6307\u4EE4\uFF09"}</div>
                         <div id="t-cont-rounds-total" style="color:#9aa; font-size:12px;">\u5DF2\u751F\u6210\u8F6E\u6B21\uFF1A0</div>
                     </div>
                     <div style="display:${regenerationTarget ? "none" : "flex"}; align-items:center; gap:8px; flex-wrap:wrap;">
                         <input type="number" id="t-cont-inject-count" class="t-input" min="3" max="20" step="1" value="${selectedInjectRounds}" placeholder="\u8BF7\u8F93\u5165 3-20" style="width:100px; padding:4px 8px; font-size:12px;">
-                        <span style="color:#888; font-size:12px;">\u6761\uFF083-20 \u6761\uFF09</span>
+                        <span style="color:var(--t-color-text-muted); font-size:12px;">\u6761\uFF083-20 \u6761\uFF09</span>
                     </div>
                     <div id="t-cont-context-estimate" style="color:#9aa; font-size:12px;">${regenerationTarget ? `\u5C06\u5B8C\u6574\u6CE8\u5165\u76EE\u6807\u8F6E\u4E4B\u524D\u7684 ${Math.max(0, regenerationTarget.round - 1)} \u8F6E\u5185\u5BB9` : "\u9884\u4F30\u4E0A\u4E0B\u6587\u957F\u5EA6\uFF1A0 \u5B57\u7B26 (~0 tokens)"}</div>
                 </div>
@@ -39224,7 +39224,7 @@ async function openMainWindow() {
       setTimeout(() => btn.html(originalHtml), 1e3);
     } catch (err) {
       console.error("Titania: \u590D\u5236\u5931\u8D25", err);
-      btn.html('<i class="fa-solid fa-xmark" style="color:#ff6b6b;"></i>');
+      btn.html('<i class="fa-solid fa-xmark" style="color:var(--t-color-danger);"></i>');
       setTimeout(() => btn.html(originalHtml), 1500);
       if (window.toastr) {
         toastr.error("\u590D\u5236\u5931\u8D25\uFF1A" + (err.message || "\u8BF7\u68C0\u67E5\u6D4F\u89C8\u5668\u6743\u9650"), "Titania");
@@ -39640,13 +39640,13 @@ async function openWorldInfoSelector() {
     <div id="t-wi-selector" class="t-wi-selector">
         <div class="t-panel-header t-wi-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-book-atlas" style="color:#90cdf4;"></i>
+                <i class="fa-solid fa-book-atlas" style="color:var(--t-color-accent);"></i>
                 <span style="font-weight:bold;">\u4E16\u754C\u4E66\u7BA1\u7406</span>
             </div>
             <div class="t-close" id="t-wi-close">&times;</div>
         </div>
         <div class="t-wi-body" style="display:flex; align-items:center; justify-content:center; min-height:200px;">
-            <div style="text-align:center; color:#888;">
+            <div style="text-align:center; color:var(--t-color-text-muted);">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size:2em; margin-bottom:10px;"></i>
                 <div>\u6B63\u5728\u52A0\u8F7D\u4E16\u754C\u4E66\u6570\u636E...</div>
             </div>
@@ -39692,7 +39692,7 @@ async function openWorldInfoSelector() {
             <div style="text-align:center; color:#e74c3c; padding:20px;">
                 <i class="fa-solid fa-exclamation-triangle" style="font-size:2em; margin-bottom:10px;"></i>
                 <div style="margin-bottom:10px;">\u52A0\u8F7D\u4E16\u754C\u4E66\u6570\u636E\u5931\u8D25</div>
-                <div style="font-size:0.9em; color:#888;">${e.message}</div>
+                <div style="font-size:0.9em; color:var(--t-color-text-muted);">${e.message}</div>
                 <button class="t-btn t-wi-load-error-close" style="margin-top:15px;">\u5173\u95ED</button>
             </div>
         `);
@@ -39747,9 +39747,9 @@ async function openWorldInfoSelector() {
     <div id="t-wi-selector" class="t-wi-selector">
         <div class="t-panel-header t-wi-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-book-atlas" style="color:#90cdf4;"></i>
+                <i class="fa-solid fa-book-atlas" style="color:var(--t-color-accent);"></i>
                 <span style="font-weight:bold;">\u4E16\u754C\u4E66\u7BA1\u7406</span>
-                <span style="font-size:0.8em; color:#666;">${ctx.charName}</span>
+                <span style="font-size:0.8em; color:var(--t-color-text-faint);">${ctx.charName}</span>
             </div>
             <div class="t-close" id="t-wi-close">&times;</div>
         </div>
@@ -40059,7 +40059,7 @@ async function openWorldInfoSelector() {
     renderBookList();
     const $body = $q("#t-wi-entry-list");
     $body.html(`
-            <div style="text-align:center; color:#888; padding:30px 10px;">
+            <div style="text-align:center; color:var(--t-color-text-muted); padding:30px 10px;">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size:1.6em; margin-bottom:10px;"></i>
                 <div>\u6B63\u5728\u52A0\u8F7D\u300C${escapeHtmlText2(requestedBookName)}\u300D...</div>
             </div>
@@ -40189,7 +40189,7 @@ function showScriptSelector(initialFilter = "ALL") {
   const html = `
     <div id="t-selector-panel" class="t-selector-panel">
         <div class="t-sel-header">
-            <div style="font-weight:bold; color:#ccc;">\u{1F4DA} \u9009\u62E9\u5267\u672C <span style="font-size:0.8em; color:#666; font-weight:normal; margin-left:10px;">(\u5171 ${list.length} \u4E2A)</span></div>
+            <div style="font-weight:bold; color:#ccc;">\u{1F4DA} \u9009\u62E9\u5267\u672C <span style="font-size:0.8em; color:var(--t-color-text-faint); font-weight:normal; margin-left:10px;">(\u5171 ${list.length} \u4E2A)</span></div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <select id="t-sel-sort" class="t-sel-sort-select" title="\u6392\u5E8F\u65B9\u5F0F">
                     <option value="smart">\u667A\u80FD\u6392\u5E8F</option>
@@ -40404,9 +40404,9 @@ function openContentEditor() {
     <div id="t-content-editor" class="t-content-editor">
         <div class="t-panel-header t-ce-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-pen-nib" style="color:#bfa15f;"></i>
+                <i class="fa-solid fa-pen-nib" style="color:var(--t-color-brand);"></i>
                 <span style="font-weight:bold;">\u7F16\u8F91\u5185\u5BB9</span>
-                <span style="font-size:0.8em; color:#666;">\u76F4\u63A5\u7F16\u8F91 HTML \u6E90\u7801</span>
+                <span style="font-size:0.8em; color:var(--t-color-text-faint);">\u76F4\u63A5\u7F16\u8F91 HTML \u6E90\u7801</span>
             </div>
             <div class="t-close" id="t-ce-close">&times;</div>
         </div>
@@ -40483,7 +40483,7 @@ function openQueueSettingsWindow() {
     <div id="t-queue-settings" class="t-queue-settings">
         <div class="t-panel-header t-queue-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-layer-group" style="color:#90cdf4;"></i>
+                <i class="fa-solid fa-layer-group" style="color:var(--t-color-accent);"></i>
                 <span style="font-weight:bold;">\u961F\u5217\u751F\u6210\u8BBE\u7F6E</span>
             </div>
             <div class="t-close" id="t-queue-close">&times;</div>
@@ -40525,7 +40525,7 @@ function openQueueSettingsWindow() {
             
             <!-- \u624B\u52A8\u6A21\u5F0F\u8BBE\u7F6E -->
             <div class="t-queue-manual-panel" id="t-queue-manual-panel" style="${qState.mode === "manual" ? "" : "display:none;"}">
-                <div class="t-queue-label">\u9009\u62E9\u5267\u672C <span style="color:#666; font-size:0.85em;">(\u5DF2\u9009 <span id="t-queue-selected-count">${qState.manualItems.length}</span> \u4E2A)</span></div>
+                <div class="t-queue-label">\u9009\u62E9\u5267\u672C <span style="color:var(--t-color-text-faint); font-size:0.85em;">(\u5DF2\u9009 <span id="t-queue-selected-count">${qState.manualItems.length}</span> \u4E2A)</span></div>
                 <div class="t-queue-script-list" id="t-queue-script-list">
                     ${GlobalState.runtimeScripts.map((s) => `
                         <div class="t-queue-script-item ${qState.manualItems.includes(s.id) ? "selected" : ""}" data-id="${s.id}">
@@ -40544,9 +40544,9 @@ function openQueueSettingsWindow() {
             </div>
             
             <!-- \u901A\u7528\u8BBE\u7F6E -->
-            <div class="t-queue-section" style="border-top:1px solid #333; padding-top:12px; margin-top:5px;">
+            <div class="t-queue-section" style="border-top:1px solid var(--t-color-border); padding-top:12px; margin-top:5px;">
                 <div class="t-queue-row">
-                    <div class="t-queue-label">\u751F\u6210\u95F4\u9694 <span style="color:#666; font-size:0.85em;">(\u79D2)</span></div>
+                    <div class="t-queue-label">\u751F\u6210\u95F4\u9694 <span style="color:var(--t-color-text-faint); font-size:0.85em;">(\u79D2)</span></div>
                     <div class="t-queue-control">
                         <button class="t-queue-num-btn" id="t-queue-interval-dec">-</button>
                         <span class="t-queue-num-value" id="t-queue-interval-value">${qState.interval}</span>
@@ -40566,7 +40566,7 @@ function openQueueSettingsWindow() {
         
         <div class="t-panel-footer t-queue-footer">
             <div class="t-queue-status" id="t-queue-status">
-                ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:#55efc4;"></i> \u961F\u5217\u5DF2\u6FC0\u6D3B' : '<i class="fa-solid fa-circle" style="color:#666;"></i> \u961F\u5217\u672A\u6FC0\u6D3B'}
+                ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:#55efc4;"></i> \u961F\u5217\u5DF2\u6FC0\u6D3B' : '<i class="fa-solid fa-circle" style="color:var(--t-color-text-faint);"></i> \u961F\u5217\u672A\u6FC0\u6D3B'}
             </div>
             <div class="t-queue-actions">
                 <button class="t-btn" id="t-queue-cancel">\u53D6\u6D88</button>
@@ -42152,7 +42152,7 @@ function showInteractiveFAB(scriptName, html, reasons) {
                 padding: 10px 14px;
                 background: linear-gradient(90deg, #4a9eff, #6ab0ff);
                 border-radius: 20px;
-                color: #fff;
+                color: var(--t-color-text-strong);
                 font-size: 0.9em;
                 font-weight: bold;
                 cursor: pointer;
@@ -42168,8 +42168,8 @@ function showInteractiveFAB(scriptName, html, reasons) {
                 align-items: center;
                 gap: 8px;
                 padding: 10px 14px;
-                background: #2a2a2a;
-                border: 1px solid #444;
+                background: var(--t-color-surface-raised);
+                border: 1px solid var(--t-color-border-strong);
                 border-radius: 20px;
                 color: #ccc;
                 font-size: 0.9em;
@@ -42543,16 +42543,16 @@ async function handleGenerate(forceScriptId = null, silent = false, generationOv
       const userConfirmed = await new Promise((resolve) => {
         const confirmHtml = `
                 <div id="t-confirm-overlay" style="position:fixed; inset:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:99999; display:flex; align-items:center; justify-content:center;">
-                    <div style="background:#1e1e1e; border:1px solid #444; border-radius:10px; padding:25px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); margin:auto;">
+                    <div style="background:var(--t-color-surface); border:1px solid var(--t-color-border-strong); border-radius:10px; padding:25px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); margin:auto;">
                         <div style="font-size:2em; margin-bottom:15px;">\u{1F4DA}</div>
-                        <div style="color:#fff; margin-bottom:20px; font-size:1.1em;">${confirmMsg}</div>
-                        <label style="display:flex; align-items:center; justify-content:center; gap:8px; color:#aaa; font-size:0.9em; margin-bottom:20px; cursor:pointer;">
+                        <div style="color:var(--t-color-text-strong); margin-bottom:20px; font-size:1.1em;">${confirmMsg}</div>
+                        <label style="display:flex; align-items:center; justify-content:center; gap:8px; color:var(--t-color-text-secondary); font-size:0.9em; margin-bottom:20px; cursor:pointer;">
                             <input type="checkbox" id="t-confirm-skip" style="width:16px; height:16px; cursor:pointer;">
                             <span>\u672C\u6B21\u4F1A\u8BDD\u5185\u4E0D\u518D\u63D0\u793A</span>
                         </label>
                         <div style="display:flex; gap:15px; justify-content:center;">
-                            <button id="t-confirm-yes" style="padding:10px 30px; background:#4a9eff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:1em;">\u662F</button>
-                            <button id="t-confirm-no" style="padding:10px 30px; background:#555; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:1em;">\u5426</button>
+                            <button id="t-confirm-yes" style="padding:10px 30px; background:#4a9eff; color:var(--t-color-text-strong); border:none; border-radius:6px; cursor:pointer; font-size:1em;">\u662F</button>
+                            <button id="t-confirm-no" style="padding:10px 30px; background:#555; color:var(--t-color-text-strong); border:none; border-radius:6px; cursor:pointer; font-size:1em;">\u5426</button>
                         </div>
                     </div>
                 </div>`;

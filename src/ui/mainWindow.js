@@ -277,15 +277,15 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
         <div id="t-continuation-editor" class="t-content-editor">
             <div class="t-panel-header t-ce-header">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color:#bfa15f;"></i>
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--t-color-brand);"></i>
                     <span style="font-weight:bold;">续写操作台</span>
-                    <span style="font-size:0.8em; color:#666;">支持 Ctrl+Enter 快速发送</span>
+                    <span style="font-size:0.8em; color:var(--t-color-text-faint);">支持 Ctrl+Enter 快速发送</span>
                 </div>
                 <div class="t-close" id="t-cont-close">&times;</div>
             </div>
 
             <div class="t-ce-body" style="display:flex; flex-direction:column; gap:10px; overflow:auto;">
-                <div style="color:#888; font-size:12px;">可留空表示“自然续写”；会基于当前剧场上下文继续生成。</div>
+                <div style="color:var(--t-color-text-muted); font-size:12px;">可留空表示“自然续写”；会基于当前剧场上下文继续生成。</div>
 
                 <textarea id="t-cont-input" class="t-ce-textarea" placeholder="例如：让两人矛盾升级，但保持克制，不要立刻和解。" spellcheck="false" style="height:auto; min-height:160px; flex:1;"></textarea>
 
@@ -294,18 +294,18 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="color:#aaa; font-size:12px;">最近使用（最多 ${CONTINUATION_RECENT_MAX} 条，点击复用）</div>
+                    <div style="color:var(--t-color-text-secondary); font-size:12px;">最近使用（最多 ${CONTINUATION_RECENT_MAX} 条，点击复用）</div>
                     <div id="t-cont-recent-list" style="display:flex; gap:8px; flex-wrap:wrap; max-height:88px; overflow:auto;">${recentHtml}</div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:8px; border:1px solid #333; border-radius:8px; padding:10px; background:#1e1e1e;">
+                <div style="display:flex; flex-direction:column; gap:8px; border:1px solid var(--t-color-border); border-radius:8px; padding:10px; background:var(--t-color-surface);">
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
                         <div style="color:#ddd; font-size:12px;">${regenerationTarget ? "分支上下文" : "注入最近续写条数（正文+指令）"}</div>
                         <div id="t-cont-rounds-total" style="color:#9aa; font-size:12px;">已生成轮次：0</div>
                     </div>
                     <div style="display:${regenerationTarget ? "none" : "flex"}; align-items:center; gap:8px; flex-wrap:wrap;">
                         <input type="number" id="t-cont-inject-count" class="t-input" min="3" max="20" step="1" value="${selectedInjectRounds}" placeholder="请输入 3-20" style="width:100px; padding:4px 8px; font-size:12px;">
-                        <span style="color:#888; font-size:12px;">条（3-20 条）</span>
+                        <span style="color:var(--t-color-text-muted); font-size:12px;">条（3-20 条）</span>
                     </div>
                     <div id="t-cont-context-estimate" style="color:#9aa; font-size:12px;">${regenerationTarget ? `将完整注入目标轮之前的 ${Math.max(0, regenerationTarget.round - 1)} 轮内容` : "预估上下文长度：0 字符 (~0 tokens)"}</div>
                 </div>
@@ -1272,7 +1272,7 @@ export async function openMainWindow() {
         } catch (err) {
             console.error("Titania: 复制失败", err);
             // 图标变红色表示失败
-            btn.html('<i class="fa-solid fa-xmark" style="color:#ff6b6b;"></i>');
+            btn.html('<i class="fa-solid fa-xmark" style="color:var(--t-color-danger);"></i>');
             setTimeout(() => btn.html(originalHtml), 1500);
 
             if (window.toastr) {
@@ -1895,13 +1895,13 @@ async function openWorldInfoSelector() {
     <div id="t-wi-selector" class="t-wi-selector">
         <div class="t-panel-header t-wi-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-book-atlas" style="color:#90cdf4;"></i>
+                <i class="fa-solid fa-book-atlas" style="color:var(--t-color-accent);"></i>
                 <span style="font-weight:bold;">世界书管理</span>
             </div>
             <div class="t-close" id="t-wi-close">&times;</div>
         </div>
         <div class="t-wi-body" style="display:flex; align-items:center; justify-content:center; min-height:200px;">
-            <div style="text-align:center; color:#888;">
+            <div style="text-align:center; color:var(--t-color-text-muted);">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size:2em; margin-bottom:10px;"></i>
                 <div>正在加载世界书数据...</div>
             </div>
@@ -1952,7 +1952,7 @@ async function openWorldInfoSelector() {
             <div style="text-align:center; color:#e74c3c; padding:20px;">
                 <i class="fa-solid fa-exclamation-triangle" style="font-size:2em; margin-bottom:10px;"></i>
                 <div style="margin-bottom:10px;">加载世界书数据失败</div>
-                <div style="font-size:0.9em; color:#888;">${e.message}</div>
+                <div style="font-size:0.9em; color:var(--t-color-text-muted);">${e.message}</div>
                 <button class="t-btn t-wi-load-error-close" style="margin-top:15px;">关闭</button>
             </div>
         `);
@@ -2027,9 +2027,9 @@ async function openWorldInfoSelector() {
     <div id="t-wi-selector" class="t-wi-selector">
         <div class="t-panel-header t-wi-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-book-atlas" style="color:#90cdf4;"></i>
+                <i class="fa-solid fa-book-atlas" style="color:var(--t-color-accent);"></i>
                 <span style="font-weight:bold;">世界书管理</span>
-                <span style="font-size:0.8em; color:#666;">${ctx.charName}</span>
+                <span style="font-size:0.8em; color:var(--t-color-text-faint);">${ctx.charName}</span>
             </div>
             <div class="t-close" id="t-wi-close">&times;</div>
         </div>
@@ -2396,7 +2396,7 @@ async function openWorldInfoSelector() {
 
         const $body = $q("#t-wi-entry-list");
         $body.html(`
-            <div style="text-align:center; color:#888; padding:30px 10px;">
+            <div style="text-align:center; color:var(--t-color-text-muted); padding:30px 10px;">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size:1.6em; margin-bottom:10px;"></i>
                 <div>正在加载「${escapeHtmlText(requestedBookName)}」...</div>
             </div>
@@ -2573,7 +2573,7 @@ function showScriptSelector(initialFilter = "ALL") {
     const html = `
     <div id="t-selector-panel" class="t-selector-panel">
         <div class="t-sel-header">
-            <div style="font-weight:bold; color:#ccc;">📚 选择剧本 <span style="font-size:0.8em; color:#666; font-weight:normal; margin-left:10px;">(共 ${list.length} 个)</span></div>
+            <div style="font-weight:bold; color:#ccc;">📚 选择剧本 <span style="font-size:0.8em; color:var(--t-color-text-faint); font-weight:normal; margin-left:10px;">(共 ${list.length} 个)</span></div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <select id="t-sel-sort" class="t-sel-sort-select" title="排序方式">
                     <option value="smart">智能排序</option>
@@ -2864,9 +2864,9 @@ function openContentEditor() {
     <div id="t-content-editor" class="t-content-editor">
         <div class="t-panel-header t-ce-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-pen-nib" style="color:#bfa15f;"></i>
+                <i class="fa-solid fa-pen-nib" style="color:var(--t-color-brand);"></i>
                 <span style="font-weight:bold;">编辑内容</span>
-                <span style="font-size:0.8em; color:#666;">直接编辑 HTML 源码</span>
+                <span style="font-size:0.8em; color:var(--t-color-text-faint);">直接编辑 HTML 源码</span>
             </div>
             <div class="t-close" id="t-ce-close">&times;</div>
         </div>
@@ -2981,7 +2981,7 @@ function openQueueSettingsWindow() {
     <div id="t-queue-settings" class="t-queue-settings">
         <div class="t-panel-header t-queue-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-layer-group" style="color:#90cdf4;"></i>
+                <i class="fa-solid fa-layer-group" style="color:var(--t-color-accent);"></i>
                 <span style="font-weight:bold;">队列生成设置</span>
             </div>
             <div class="t-close" id="t-queue-close">&times;</div>
@@ -3023,7 +3023,7 @@ function openQueueSettingsWindow() {
             
             <!-- 手动模式设置 -->
             <div class="t-queue-manual-panel" id="t-queue-manual-panel" style="${qState.mode === 'manual' ? '' : 'display:none;'}">
-                <div class="t-queue-label">选择剧本 <span style="color:#666; font-size:0.85em;">(已选 <span id="t-queue-selected-count">${qState.manualItems.length}</span> 个)</span></div>
+                <div class="t-queue-label">选择剧本 <span style="color:var(--t-color-text-faint); font-size:0.85em;">(已选 <span id="t-queue-selected-count">${qState.manualItems.length}</span> 个)</span></div>
                 <div class="t-queue-script-list" id="t-queue-script-list">
                     ${GlobalState.runtimeScripts.map(s => `
                         <div class="t-queue-script-item ${qState.manualItems.includes(s.id) ? 'selected' : ''}" data-id="${s.id}">
@@ -3042,9 +3042,9 @@ function openQueueSettingsWindow() {
             </div>
             
             <!-- 通用设置 -->
-            <div class="t-queue-section" style="border-top:1px solid #333; padding-top:12px; margin-top:5px;">
+            <div class="t-queue-section" style="border-top:1px solid var(--t-color-border); padding-top:12px; margin-top:5px;">
                 <div class="t-queue-row">
-                    <div class="t-queue-label">生成间隔 <span style="color:#666; font-size:0.85em;">(秒)</span></div>
+                    <div class="t-queue-label">生成间隔 <span style="color:var(--t-color-text-faint); font-size:0.85em;">(秒)</span></div>
                     <div class="t-queue-control">
                         <button class="t-queue-num-btn" id="t-queue-interval-dec">-</button>
                         <span class="t-queue-num-value" id="t-queue-interval-value">${qState.interval}</span>
@@ -3064,7 +3064,7 @@ function openQueueSettingsWindow() {
         
         <div class="t-panel-footer t-queue-footer">
             <div class="t-queue-status" id="t-queue-status">
-                ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:#55efc4;"></i> 队列已激活' : '<i class="fa-solid fa-circle" style="color:#666;"></i> 队列未激活'}
+                ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:#55efc4;"></i> 队列已激活' : '<i class="fa-solid fa-circle" style="color:var(--t-color-text-faint);"></i> 队列未激活'}
             </div>
             <div class="t-queue-actions">
                 <button class="t-btn" id="t-queue-cancel">取消</button>

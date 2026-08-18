@@ -446,7 +446,7 @@ export function showDiagnosticsWindow() {
             <span class="t-close" id="t-diag-close">&times;</span>
         </div>
         
-        <div style="padding:15px; background:#181818; border-bottom:1px solid #333;">
+        <div style="padding:15px; background:#181818; border-bottom:1px solid var(--t-color-border);">
             <div style="background: rgba(255, 159, 67, 0.1); border:1px solid rgba(255, 159, 67, 0.3); padding:12px; border-radius:6px;">
                 <div style="font-weight:bold; color:#feca57; font-size:0.9em; margin-bottom:5px;">
                     <i class="fa-solid fa-triangle-exclamation"></i> 报错排查指南
@@ -459,17 +459,17 @@ export function showDiagnosticsWindow() {
         </div>
         
         <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; padding:15px;">
-            <div style="font-weight:bold; color:#aaa; margin-bottom:10px;">
-                <i class="fa-solid fa-scroll"></i> 实时日志 <span style="font-size:0.8em; color:#666;">(内存缓存 50 条)</span>
+            <div style="font-weight:bold; color:var(--t-color-text-secondary); margin-bottom:10px;">
+                <i class="fa-solid fa-scroll"></i> 实时日志 <span style="font-size:0.8em; color:var(--t-color-text-faint);">(内存缓存 50 条)</span>
             </div>
             <div class="t-log-box" id="t-diag-log-viewer" style="flex:1; overflow-y:auto;"></div>
         </div>
         
-        <div style="padding:15px; background:#181818; border-top:1px solid #333; display:flex; gap:10px;">
+        <div style="padding:15px; background:#181818; border-top:1px solid var(--t-color-border); display:flex; gap:10px;">
             <button id="t-diag-refresh" class="t-btn">
                 <i class="fa-solid fa-rotate-right"></i> 刷新日志
             </button>
-            <button id="t-diag-clear" class="t-btn" style="color:#ff6b6b; border-color:#ff6b6b;">
+            <button id="t-diag-clear" class="t-btn" style="color:var(--t-color-danger); border-color:#ff6b6b;">
                 <i class="fa-solid fa-trash"></i> 清空日志
             </button>
             <button id="t-diag-export" class="t-btn primary" style="margin-left:auto;">

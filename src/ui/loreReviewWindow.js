@@ -601,7 +601,7 @@ function showRawResponseDialog(rawContent, isError = false) {
                 ` : ''}
                 <div style="padding: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="color: #888; font-size: 0.9em;">
+                        <span style="color: var(--t-color-text-muted); font-size: 0.9em;">
                             <i class="fa-solid fa-file-lines"></i> 响应长度: ${rawContent?.length || 0} 字符
                         </span>
                         <button id="t-btn-copy-raw" class="t-btn t-btn-xs">
@@ -610,7 +610,7 @@ function showRawResponseDialog(rawContent, isError = false) {
                     </div>
                     <pre id="t-raw-response-content" style="
                         background: #1a1a2e;
-                        border: 1px solid #333;
+                        border: 1px solid var(--t-color-border);
                         border-radius: 6px;
                         padding: 15px;
                         max-height: 50vh;
@@ -966,7 +966,7 @@ export async function showLoreReviewWindow() {
                             <div class="t-empty-state">
                                 <i class="fa-solid fa-file-alt"></i>
                                 <p>点击「生成总结」开始分析聊天历史</p>
-                                <small style="color: #666;">启用「语义检索增强」可以召回相关的历史事件</small>
+                                <small style="color: var(--t-color-text-faint);">启用「语义检索增强」可以召回相关的历史事件</small>
                             </div>
                         </div>
                     </div>
@@ -1087,7 +1087,7 @@ export async function showLoreReviewWindow() {
 
                         <div class="t-action-group" style="margin-top: 20px;">
                             <h4><i class="fa-solid fa-broom"></i> 文本清洗预览</h4>
-                            <p style="color: #888; font-size: 0.85em; margin-bottom: 10px;">
+                            <p style="color: var(--t-color-text-muted); font-size: 0.85em; margin-bottom: 10px;">
                                 预览向量化前的文本清洗效果，查看哪些内容会被移除。
                             </p>
                             <button id="t-btn-preview-cleaning" class="t-btn">
@@ -1097,7 +1097,7 @@ export async function showLoreReviewWindow() {
 
                         <div class="t-action-group" style="margin-top: 20px;">
                             <h4><i class="fa-solid fa-plug"></i> Embedding API 配置</h4>
-                            <p style="color: #888; font-size: 0.85em; margin-bottom: 10px;">
+                            <p style="color: var(--t-color-text-muted); font-size: 0.85em; margin-bottom: 10px;">
                                 向量化需要专用的 Embedding API，请在「设置」中配置。
                             </p>
                             <button id="t-btn-test-embedding" class="t-btn">

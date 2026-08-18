@@ -1292,7 +1292,7 @@ function showInteractiveFAB(scriptName, html, reasons) {
                 padding: 10px 14px;
                 background: linear-gradient(90deg, #4a9eff, #6ab0ff);
                 border-radius: 20px;
-                color: #fff;
+                color: var(--t-color-text-strong);
                 font-size: 0.9em;
                 font-weight: bold;
                 cursor: pointer;
@@ -1308,8 +1308,8 @@ function showInteractiveFAB(scriptName, html, reasons) {
                 align-items: center;
                 gap: 8px;
                 padding: 10px 14px;
-                background: #2a2a2a;
-                border: 1px solid #444;
+                background: var(--t-color-surface-raised);
+                border: 1px solid var(--t-color-border-strong);
                 border-radius: 20px;
                 color: #ccc;
                 font-size: 0.9em;
@@ -1740,16 +1740,16 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
                 // 使用自定义确认框（完全居中）
                 const confirmHtml = `
                 <div id="t-confirm-overlay" style="position:fixed; inset:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:99999; display:flex; align-items:center; justify-content:center;">
-                    <div style="background:#1e1e1e; border:1px solid #444; border-radius:10px; padding:25px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); margin:auto;">
+                    <div style="background:var(--t-color-surface); border:1px solid var(--t-color-border-strong); border-radius:10px; padding:25px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); margin:auto;">
                         <div style="font-size:2em; margin-bottom:15px;">📚</div>
-                        <div style="color:#fff; margin-bottom:20px; font-size:1.1em;">${confirmMsg}</div>
-                        <label style="display:flex; align-items:center; justify-content:center; gap:8px; color:#aaa; font-size:0.9em; margin-bottom:20px; cursor:pointer;">
+                        <div style="color:var(--t-color-text-strong); margin-bottom:20px; font-size:1.1em;">${confirmMsg}</div>
+                        <label style="display:flex; align-items:center; justify-content:center; gap:8px; color:var(--t-color-text-secondary); font-size:0.9em; margin-bottom:20px; cursor:pointer;">
                             <input type="checkbox" id="t-confirm-skip" style="width:16px; height:16px; cursor:pointer;">
                             <span>本次会话内不再提示</span>
                         </label>
                         <div style="display:flex; gap:15px; justify-content:center;">
-                            <button id="t-confirm-yes" style="padding:10px 30px; background:#4a9eff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:1em;">是</button>
-                            <button id="t-confirm-no" style="padding:10px 30px; background:#555; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:1em;">否</button>
+                            <button id="t-confirm-yes" style="padding:10px 30px; background:#4a9eff; color:var(--t-color-text-strong); border:none; border-radius:6px; cursor:pointer; font-size:1em;">是</button>
+                            <button id="t-confirm-no" style="padding:10px 30px; background:#555; color:var(--t-color-text-strong); border:none; border-radius:6px; cursor:pointer; font-size:1em;">否</button>
                         </div>
                     </div>
                 </div>`;
