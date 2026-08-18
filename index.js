@@ -3404,18 +3404,24 @@ function loadCssFiles() {
     flex: 1;
 }
 
-/* .t-dialog-body \u7684\u4E09\u4E2A**\u6B63\u4EA4**\u4FEE\u9970\u7C7B\u3002\u523B\u610F\u4E0D\u5408\u5E76\u6210\u4E00\u4E2A\u300C\u9884\u89C8\u5F39\u7A97\u300D\u590D\u5408\u7C7B\uFF1A
-   \u4E09\u8005\u6309\u9700\u7EC4\u5408\uFF08--flush --clip --stack\uFF09\uFF0C\u4EFB\u610F\u7EC4\u5408\u90FD\u4E0D\u4F1A\u91CD\u590D\u58F0\u660E\u540C\u4E00\u5C5E\u6027\u3002
+/* .t-dialog-body \u7684\u56DB\u4E2A\u4FEE\u9970\u7C7B\u3002\u523B\u610F\u4E0D\u5408\u5E76\u6210\u4E00\u4E2A\u300C\u9884\u89C8\u5F39\u7A97\u300D\u590D\u5408\u7C7B\uFF1A
+   \u6309\u9700\u7EC4\u5408\uFF08--flush --clip --stack\uFF09\uFF0C\u4EFB\u610F\u7EC4\u5408\u90FD\u4E0D\u4F1A\u91CD\u590D\u58F0\u660E\u540C\u4E00\u5C5E\u6027\u3002
+   \u26A0 \u552F\u4E00\u7684\u4F8B\u5916\u662F --flush \u4E0E --tight \u90FD\u6539 padding\uFF0C\u4E8C\u8005\u4E92\u65A5\u3002
 
    \u4E3A\u4EC0\u4E48\u653E\u5728\u7EC4\u4EF6\u5C42\u800C\u4E0D\u662F\u5404 feature \u91CC\uFF1A\u5168\u5E93\u6709 11 \u5904\u5F39\u7A97 body \u5728 JS \u5185\u8054 style \u91CC
    \u6539 padding\uFF08\u672C\u6587\u4EF6 3 \u5904 padding:0\uFF0CstoryOutlineWindow.js 8 \u5904 padding:12px\uFF09\u3002
    \u82E5\u5404 feature \u81EA\u884C\u8986\u76D6 .t-dialog-body\uFF0C\u5F52\u5C5E\u542F\u53D1\u5F0F\uFF08\u5BA1\u8BA1 A6\uFF09\u4F1A\u628A\u8FD9\u4E2A\u7EC4\u4EF6\u7C7B
    \u8BEF\u5224\u6210\u67D0\u4E2A feature \u7684\u79C1\u6709\u7C7B\u5E76\u9010\u4E2A\u62A5\u51B2\u7A81\u3002
 
-   \u26A0 \u4E09\u8005\u90FD\u4E0E .t-dialog-body \u540C\u4E3A (0,1,0)\uFF0C\u9760\u7D27\u968F\u5176\u540E\u53D6\u80DC\uFF0C\u4F4D\u7F6E\u4E0D\u53EF\u4E0A\u79FB\u3002
+   \u26A0 \u56DB\u8005\u90FD\u4E0E .t-dialog-body \u540C\u4E3A (0,1,0)\uFF0C\u9760\u7D27\u968F\u5176\u540E\u53D6\u80DC\uFF0C\u4F4D\u7F6E\u4E0D\u53EF\u4E0A\u79FB\u3002
    --clip \u7528 overflow \u7B80\u5199\u538B\u6389\u57FA\u7C7B\u7684 overflow-y: auto\uFF1B\u57FA\u7C7B\u7684 flex: 1 \u4E0D\u53D7\u5F71\u54CD\u3002 */
 .t-dialog-body--flush {
     padding: 0;
+}
+
+/* 8 \u5904\u5728\u7528\uFF08storyOutlineWindow.js \u7684\u5168\u90E8\u5F39\u7A97\uFF09\u3002\u4E0E --flush \u4E92\u65A5\uFF0C\u4E0D\u8981\u540C\u65F6\u52A0\u3002 */
+.t-dialog-body--tight {
+    padding: 12px;
 }
 
 .t-dialog-body--clip {
@@ -18227,6 +18233,67 @@ body.titania-debug-mode #chat titania-memory::before {
     }
 }
 
+/* ============================================================
+   8 \u4E2A\u5F39\u7A97\u7684\u5916\u58F3\u5C3A\u5BF8\uFF08Phase 5b-5 \u4ECE storyOutlineWindow.js \u7684\u5185\u8054 style \u8FC1\u51FA\uFF09
+
+   \u8FD9\u4E9B\u5F39\u7A97\u5168\u90E8\u5E26 .t-dialog-overlay--outline\uFF0C\u6545 dialog.css \u7684
+   \`.t-dialog-overlay--outline > .t-dialog-box\` \u5DF2\u7ED9\u51FA
+   width: min(920px, 96vw) \u4E0E max-height: min(82dvh, 82vh)\u3002
+   \u4E0B\u9762\u53EA\u8986\u76D6\u5404\u81EA\u4E0D\u540C\u7684 max-width\uFF0C\u4EE5\u53CA max-height \u4E0E\u8BE5\u57FA\u7EBF\u4E0D\u540C\u7684\u90A3\u51E0\u4E2A\u3002
+
+   \u26A0 \u5FC5\u987B\u7528 ID \u5F62\u5F0F\uFF1A(1,1,0) \u624D\u80FD\u538B\u8FC7\u4E0A\u8FF0\u57FA\u7C7B\u7684 (0,2,0)\u3002
+   dialog.css \u523B\u610F\u4E0D\u63D0\u4F9B .t-dialog-box \u7684\u5C3A\u5BF8\u4FEE\u9970\u7C7B\uFF08\u7406\u7531\u89C1\u8BE5\u6587\u4EF6\u6CE8\u91CA\uFF09\uFF0C
+   \u800C\u8FD9 7 \u4E2A\u5C3A\u5BF8\u4E24\u4E24\u4E0D\u540C\uFF0C\u505A\u6210\u4FEE\u9970\u7C7B\u7B49\u4E8E 7 \u4E2A\u4E00\u6B21\u6027\u7C7B\uFF0C\u4E0D\u5982\u6309 ID \u5B9A\u4F4D\u3002
+
+   \u26A0 \u540E\u4E24\u6761\u7684 max-height: 82vh \u770B\u4F3C\u4E0E\u57FA\u7C7B\u7684 min(82dvh, 82vh) \u7B49\u4EF7 \u2014\u2014
+   \u684C\u9762\u7AEF\u786E\u5B9E\u7B49\u4EF7\uFF0C**\u79FB\u52A8\u7AEF\u4E0D\u7B49\u4EF7**\uFF08dvh \u4F1A\u8DDF\u968F\u6D4F\u89C8\u5668\u5DE5\u5177\u680F\u6536\u7F29\uFF09\u3002
+   \u539F\u5185\u8054\u503C\u662F 82vh\uFF0C\u6B64\u5904\u9010\u5B57\u4FDD\u7559\u4EE5\u7EF4\u6301 5b \u7684\u7B49\u503C\u7EAA\u5F8B\u3002
+   \u300C\u8981\u4E0D\u8981\u6539\u7528\u57FA\u7C7B\u7684 dvh \u7248\u672C\u300D\u662F\u79FB\u52A8\u7AEF\u4F53\u9A8C\u6539\u8FDB\uFF0C\u5C5E Phase 7\uFF0C\u4E0D\u8981\u987A\u624B\u505A\u3002
+   ============================================================ */
+
+/* \u5F00\u573A\u767D\u9009\u62E9\u5668\uFF08\u4E24\u6761\u6E32\u67D3\u8DEF\u5F84\u5171\u7528\u540C\u4E00\u4E2A id\uFF09 */
+#t-outline-opening-picker .t-dialog-box {
+    max-width: 760px;
+    max-height: 86vh;
+}
+
+#t-opening-detail-dialog .t-dialog-box {
+    max-width: 780px;
+    max-height: 84vh;
+}
+
+#t-outline-create-plan-dialog .t-dialog-box {
+    max-width: 620px;
+    max-height: 84vh;
+}
+
+/* \u53EA\u8986\u76D6 max-width\uFF1A\u539F\u5185\u8054\u672A\u8BBE max-height\uFF0C\u6CBF\u7528\u57FA\u7C7B\u7684 min(82dvh, 82vh)\u3002 */
+#t-outline-entry-dialog .t-dialog-box {
+    max-width: 420px;
+}
+
+#t-outline-plan-detail-dialog .t-dialog-box {
+    max-width: 900px;
+    max-height: 88vh;
+}
+
+#t-outline-plan-instruction-dialog .t-dialog-box {
+    max-width: 780px;
+    max-height: 82vh;
+}
+
+#t-outline-raw-dialog .t-dialog-box {
+    max-width: 820px;
+    max-height: 82vh;
+}
+
+/* \u5165\u53E3\u5F39\u7A97\u7684\u6309\u94AE\u5217\u3002\u539F\u5185\u8054 style \u91CC\u4E0E padding:12px \u6DF7\u5199\uFF0C
+   padding \u90E8\u5206\u5DF2\u5F52\u5165 .t-dialog-body--tight\uFF0C\u53EA\u5269\u8FD9\u4E24\u6761\u5C5E\u672C\u7EC4\u4EF6\u3002 */
+.t-outline-entry-form {
+    display: grid;
+    gap: 8px;
+}
+
 
 /* === 04-features/outline-entry-menu.css === */
 /* css/04-features/outline-entry-menu.css \u2014\u2014 \u5927\u7EB2\u5165\u53E3\u83DC\u5355
@@ -23954,12 +24021,12 @@ function openOpeningSourcePickerDialog(initialChatIndex = -1) {
     $("#t-outline-opening-picker").remove();
     const html = `
         <div id="t-outline-opening-picker" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-            <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
+            <div class="t-dialog-box">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-comment-dots"></i> \u9009\u62E9\u804A\u5929\u8BB0\u5F55\u53C2\u8003\u6765\u6E90</span>
                     <div class="t-dialog-close" id="t-opening-picker-close"><i class="fa-solid fa-times"></i></div>
                 </div>
-                <div class="t-dialog-body" style="padding: 12px;">
+                <div class="t-dialog-body t-dialog-body--tight">
                     <div id="t-opening-picker-list" class="t-opening-picker-list"></div>
                 </div>
                 <div class="t-dialog-footer">
@@ -24017,12 +24084,12 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
     $("#t-opening-detail-dialog").remove();
     const html = `
         <div id="t-outline-opening-picker" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-            <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
+            <div class="t-dialog-box">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-book-open"></i> \u9009\u62E9\u53C2\u8003\u5F00\u573A\u767D</span>
                     <div class="t-dialog-close" id="t-opening-picker-close"><i class="fa-solid fa-times"></i></div>
                 </div>
-                <div class="t-dialog-body" style="padding: 12px;">
+                <div class="t-dialog-body t-dialog-body--tight">
                     <div id="t-opening-picker-list" class="t-opening-card-grid"></div>
                 </div>
                 <div class="t-dialog-footer">
@@ -24041,12 +24108,12 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
       $("#t-opening-detail-dialog").remove();
       const detailHtml = `
             <div id="t-opening-detail-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-                <div class="t-dialog-box" style="max-width: 780px; max-height: 84vh;">
+                <div class="t-dialog-box">
                     <div class="t-dialog-header">
                         <span><i class="fa-solid fa-file-lines"></i> \u5F00\u573A\u767D ${entry.openingIndex + 1} \u8BE6\u60C5</span>
                         <div class="t-dialog-close" id="t-opening-detail-close"><i class="fa-solid fa-times"></i></div>
                     </div>
-                    <div class="t-dialog-body" style="padding: 12px;">
+                    <div class="t-dialog-body t-dialog-body--tight">
                         <pre class="t-outline-raw-pre">${escapeHtml4(entry.text || "")}</pre>
                     </div>
                     <div class="t-dialog-footer">
@@ -24905,12 +24972,12 @@ function openPlanCreationDialog() {
   const draftStoryInput = String($("#t-outline-story-input").val() || "").trim();
   const html = `
     <div id="t-outline-create-plan-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-        <div class="t-dialog-box" style="max-width: 620px; max-height: 84vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-plus"></i> \u65B0\u5EFA\u65B9\u6848</span>
                 <div class="t-dialog-close" id="t-create-plan-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 <div class="t-plan-tip" style="font-size:13px; margin-bottom:10px;">\u521B\u5EFA\u540E\u4F1A\u76F4\u63A5\u8FDB\u5165\u300C\u5927\u7EB2\u751F\u6210\u300D\u7F16\u8F91\u9875\u3002</div>
                 <label class="t-outline-label">\u65B9\u6848\u540D\u79F0</label>
                 <input id="t-create-plan-name" class="t-outline-input" value="${escapeHtml4(defaultPlanName)}" />
@@ -25250,12 +25317,12 @@ function openOutlineEntryDialog() {
   const hasPlans = getPlans().length > 0;
   const html = `
     <div id="t-outline-entry-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-        <div class="t-dialog-box" style="max-width: 420px;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-list-check"></i> \u9009\u62E9\u5165\u53E3</span>
                 <div class="t-dialog-close" id="t-outline-entry-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px; display:grid; gap:8px;">
+            <div class="t-dialog-body t-dialog-body--tight t-outline-entry-form">
                 <button id="t-outline-entry-open-outline" class="t-btn t-btn-primary"><i class="fa-solid fa-list-check"></i> \u6545\u4E8B\u5927\u7EB2</button>
                 <button id="t-outline-entry-open-scenes" class="t-btn" ${hasPlans ? "" : "disabled"}><i class="fa-solid fa-clapperboard"></i> \u7EC6\u7EB2\u60C5\u8282</button>
                 ${hasPlans ? "" : '<div class="t-plan-tip">\u8BF7\u5148\u81F3\u5C11\u4FDD\u5B58\u4E00\u4E2A\u65B9\u6848\u540E\u518D\u4F7F\u7528\u7EC6\u7EB2\u60C5\u8282</div>'}
@@ -25335,12 +25402,12 @@ function showPlanDetailDialog(planId) {
   $("#t-outline-plan-detail-dialog").remove();
   const html = `
     <div id="t-outline-plan-detail-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root" data-plan-id="${plan.id}">
-        <div class="t-dialog-box" style="max-width: 900px; max-height: 88vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-open"></i> <span id="t-plan-detail-dialog-title"></span></span>
                 <div class="t-dialog-close" id="t-plan-detail-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 <div id="t-plan-detail-dialog-meta" class="t-plan-detail-meta"></div>
                 <div id="t-plan-detail-dialog-content" class="t-plan-preview-body"></div>
             </div>
@@ -25412,12 +25479,12 @@ function showPlanInstructionDialog(plan) {
   $("#t-outline-plan-instruction-dialog").remove();
   const html = `
     <div id="t-outline-plan-instruction-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-        <div class="t-dialog-box" style="max-width: 780px; max-height: 82vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-file-lines"></i> \u6545\u4E8B\u6307\u4EE4 \xB7 ${escapeHtml4(planName)}</span>
                 <div class="t-dialog-close" id="t-plan-instruction-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 <pre class="t-outline-raw-pre">${escapeHtml4(instructionText || "\uFF08\u65E0\uFF09")}</pre>
             </div>
             <div class="t-dialog-footer">
@@ -25630,12 +25697,12 @@ function showRawResponseDialog(rawContent, options = {}) {
   $("#t-outline-raw-dialog").remove();
   const html = `
     <div id="t-outline-raw-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-        <div class="t-dialog-box" style="max-width: 820px; max-height: 82vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-code"></i> ${escapeHtml4(title)}</span>
                 <div class="t-dialog-close" id="t-outline-raw-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 ${historyOptions ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="color:#9eb4c8;white-space:nowrap;">\u5386\u53F2\u8BB0\u5F55</span><select id="t-outline-raw-history" class="t-outline-select t-flex-1">${historyOptions}</select></div>` : ""}
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                     <div style="display:flex;align-items:center;gap:10px;">

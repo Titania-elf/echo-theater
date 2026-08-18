@@ -561,11 +561,25 @@ check('A6', 'R5', 'feature 之间禁止交叉引用类名', () => {
     if (featureFiles.length < 2) return { skipped: '04-features/ 文件不足' };
     // 归属判定：某类名的规则条数在哪个 feature 文件里最多，即归属该文件。
     // 这是启发式（plan.md §7 要求的「类名前缀归属表」尚未人工整理），故仅报告。
+    //
+    // ⚠ 组件层已定义的类**不参与**归属推断。R5 管的是「feature 之间互相引用
+    // 彼此的类名」；组件类属于 02-components，任何 feature 调整它都由 R4/A5 管
+    // （且 A5 明确允许调布局属性）。不排除会让 .t-btn / .t-dialog-box /
+    // .t-dialog-body / .t-form-group 这类共享组件被判成「某个 feature 的私有类」，
+    // 逼着后续迁移为迁就误判去造一次性修饰类 —— 5b-4/5b-5 各被坑过一次。
+    const componentOwned = new Set();
+    for (const f of componentFiles) {
+        for (const r of f.rules) {
+            if (r.isAtContainer || r.isKeyframes) continue;
+            for (const c of topLevelClassTargets(r.selector)) componentOwned.add(c);
+        }
+    }
     const owners = new Map(); // class -> Map(file -> count)
     for (const f of featureFiles) {
         for (const r of f.rules) {
             if (r.isAtContainer || r.isKeyframes) continue;
             for (const c of topLevelClassTargets(r.selector)) {
+                if (componentOwned.has(c)) continue;
                 if (!owners.has(c)) owners.set(c, new Map());
                 const m = owners.get(c);
                 m.set(f.rel, (m.get(f.rel) || 0) + 1);
@@ -584,7 +598,7 @@ check('A6', 'R5', 'feature 之间禁止交叉引用类名', () => {
             });
         }
     }
-    return { violations, note: '归属为启发式推断（按规则条数），需人工整理前缀归属表后转阻断' };
+    return { violations, note: '归属为启发式推断（按规则条数，已排除 02-components 已定义的类），需人工整理前缀归属表后转阻断' };
 });
 
 // ── A12：跨文件重复定义的顶层类 ──────────────────────────────

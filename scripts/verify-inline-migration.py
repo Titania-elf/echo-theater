@@ -267,7 +267,7 @@ def main():
     print('region: %d elements; %d carried inline style, %d declarations'
           % (len(before), n_inline, sum(len(e['decls']) for e in before)))
 
-    bad = checked = 0
+    bad = checked = kept = 0
     for e, ae in zip(before, after):
         if e['tag'] != ae['tag']:
             print('  !! tag mismatch at same position: %s vs %s' % (e['tag'], ae['tag']))
@@ -278,6 +278,17 @@ def main():
         chain = MOUNT + [(t, c, i) for t, c, i in ae['chain']] + [(ae['tag'], ae['cls'], ae['id'])]
         win = resolve(rules, chain, list(e['decls'].keys()))
         for p, v in e['decls'].items():
+            # 本批未迁、仍留在内联里的声明：只核值有没有变，不去 CSS 里找规则。
+            # 没有这一步，部分迁移的区段会把所有未迁声明都报成 <no rule>。
+            still = ae['decls'].get(p)
+            if still is not None:
+                if re.sub(r'\s+', '', still) != re.sub(r'\s+', '', v):
+                    bad += 1
+                    print('  X <%s class="%s" id="%s">  %s: 仍是内联但值变了 %r -> %r'
+                          % (ae['tag'], ' '.join(ae['cls']), ae['id'], p, v, still))
+                else:
+                    kept += 1
+                continue
             checked += 1
             g = win.get(p)
             gv = g[2] if g else '<no rule>'
@@ -288,6 +299,8 @@ def main():
                     print('  X <%s class="%s" id="%s">  %s: was %r now %r%s'
                           % (ae['tag'], ' '.join(ae['cls']), ae['id'], p, v, gv, tail))
     print('\nchecked %d (element,property) pairs; mismatch %d' % (checked, bad))
+    if kept:
+        print('本批未迁、仍为内联且值未变: %d 对（不算已验证，只是本批不涉及）' % kept)
     print('unsupported selectors skipped: %d' % len(unsup))
 
 

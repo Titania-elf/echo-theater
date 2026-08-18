@@ -563,12 +563,12 @@ function openOpeningSourcePickerDialog(initialChatIndex = -1) {
         $("#t-outline-opening-picker").remove();
         const html = `
         <div id="t-outline-opening-picker" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-            <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
+            <div class="t-dialog-box">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-comment-dots"></i> 选择聊天记录参考来源</span>
                     <div class="t-dialog-close" id="t-opening-picker-close"><i class="fa-solid fa-times"></i></div>
                 </div>
-                <div class="t-dialog-body" style="padding: 12px;">
+                <div class="t-dialog-body t-dialog-body--tight">
                     <div id="t-opening-picker-list" class="t-opening-picker-list"></div>
                 </div>
                 <div class="t-dialog-footer">
@@ -632,12 +632,12 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
         $("#t-opening-detail-dialog").remove();
         const html = `
         <div id="t-outline-opening-picker" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-            <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
+            <div class="t-dialog-box">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-book-open"></i> 选择参考开场白</span>
                     <div class="t-dialog-close" id="t-opening-picker-close"><i class="fa-solid fa-times"></i></div>
                 </div>
-                <div class="t-dialog-body" style="padding: 12px;">
+                <div class="t-dialog-body t-dialog-body--tight">
                     <div id="t-opening-picker-list" class="t-opening-card-grid"></div>
                 </div>
                 <div class="t-dialog-footer">
@@ -658,12 +658,12 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
             $("#t-opening-detail-dialog").remove();
             const detailHtml = `
             <div id="t-opening-detail-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-                <div class="t-dialog-box" style="max-width: 780px; max-height: 84vh;">
+                <div class="t-dialog-box">
                     <div class="t-dialog-header">
                         <span><i class="fa-solid fa-file-lines"></i> 开场白 ${entry.openingIndex + 1} 详情</span>
                         <div class="t-dialog-close" id="t-opening-detail-close"><i class="fa-solid fa-times"></i></div>
                     </div>
-                    <div class="t-dialog-body" style="padding: 12px;">
+                    <div class="t-dialog-body t-dialog-body--tight">
                         <pre class="t-outline-raw-pre">${escapeHtml(entry.text || "")}</pre>
                     </div>
                     <div class="t-dialog-footer">
@@ -1603,12 +1603,12 @@ function openPlanCreationDialog() {
 
     const html = `
     <div id="t-outline-create-plan-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-        <div class="t-dialog-box" style="max-width: 620px; max-height: 84vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-plus"></i> 新建方案</span>
                 <div class="t-dialog-close" id="t-create-plan-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 <div class="t-plan-tip" style="font-size:13px; margin-bottom:10px;">创建后会直接进入「大纲生成」编辑页。</div>
                 <label class="t-outline-label">方案名称</label>
                 <input id="t-create-plan-name" class="t-outline-input" value="${escapeHtml(defaultPlanName)}" />
@@ -1993,12 +1993,12 @@ export function openOutlineEntryDialog() {
 
     const html = `
     <div id="t-outline-entry-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-        <div class="t-dialog-box" style="max-width: 420px;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-list-check"></i> 选择入口</span>
                 <div class="t-dialog-close" id="t-outline-entry-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px; display:grid; gap:8px;">
+            <div class="t-dialog-body t-dialog-body--tight t-outline-entry-form">
                 <button id="t-outline-entry-open-outline" class="t-btn t-btn-primary"><i class="fa-solid fa-list-check"></i> 故事大纲</button>
                 <button id="t-outline-entry-open-scenes" class="t-btn" ${hasPlans ? "" : "disabled"}><i class="fa-solid fa-clapperboard"></i> 细纲情节</button>
                 ${hasPlans ? "" : '<div class="t-plan-tip">请先至少保存一个方案后再使用细纲情节</div>'}
@@ -2088,12 +2088,12 @@ function showPlanDetailDialog(planId) {
     $("#t-outline-plan-detail-dialog").remove();
     const html = `
     <div id="t-outline-plan-detail-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root" data-plan-id="${plan.id}">
-        <div class="t-dialog-box" style="max-width: 900px; max-height: 88vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-open"></i> <span id="t-plan-detail-dialog-title"></span></span>
                 <div class="t-dialog-close" id="t-plan-detail-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 <div id="t-plan-detail-dialog-meta" class="t-plan-detail-meta"></div>
                 <div id="t-plan-detail-dialog-content" class="t-plan-preview-body"></div>
             </div>
@@ -2174,12 +2174,12 @@ function showPlanInstructionDialog(plan) {
 
     const html = `
     <div id="t-outline-plan-instruction-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-        <div class="t-dialog-box" style="max-width: 780px; max-height: 82vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-file-lines"></i> 故事指令 · ${escapeHtml(planName)}</span>
                 <div class="t-dialog-close" id="t-plan-instruction-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 <pre class="t-outline-raw-pre">${escapeHtml(instructionText || "（无）")}</pre>
             </div>
             <div class="t-dialog-footer">
@@ -2429,12 +2429,12 @@ function showRawResponseDialog(rawContent, options = {}) {
     $("#t-outline-raw-dialog").remove();
     const html = `
     <div id="t-outline-raw-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-        <div class="t-dialog-box" style="max-width: 820px; max-height: 82vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-code"></i> ${escapeHtml(title)}</span>
                 <div class="t-dialog-close" id="t-outline-raw-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 ${historyOptions ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="color:#9eb4c8;white-space:nowrap;">历史记录</span><select id="t-outline-raw-history" class="t-outline-select t-flex-1">${historyOptions}</select></div>` : ""}
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                     <div style="display:flex;align-items:center;gap:10px;">

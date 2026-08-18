@@ -1725,3 +1725,64 @@
         margin-bottom: 4px;
     }
 }
+
+/* ============================================================
+   8 个弹窗的外壳尺寸（Phase 5b-5 从 storyOutlineWindow.js 的内联 style 迁出）
+
+   这些弹窗全部带 .t-dialog-overlay--outline，故 dialog.css 的
+   `.t-dialog-overlay--outline > .t-dialog-box` 已给出
+   width: min(920px, 96vw) 与 max-height: min(82dvh, 82vh)。
+   下面只覆盖各自不同的 max-width，以及 max-height 与该基线不同的那几个。
+
+   ⚠ 必须用 ID 形式：(1,1,0) 才能压过上述基类的 (0,2,0)。
+   dialog.css 刻意不提供 .t-dialog-box 的尺寸修饰类（理由见该文件注释），
+   而这 7 个尺寸两两不同，做成修饰类等于 7 个一次性类，不如按 ID 定位。
+
+   ⚠ 后两条的 max-height: 82vh 看似与基类的 min(82dvh, 82vh) 等价 ——
+   桌面端确实等价，**移动端不等价**（dvh 会跟随浏览器工具栏收缩）。
+   原内联值是 82vh，此处逐字保留以维持 5b 的等值纪律。
+   「要不要改用基类的 dvh 版本」是移动端体验改进，属 Phase 7，不要顺手做。
+   ============================================================ */
+
+/* 开场白选择器（两条渲染路径共用同一个 id） */
+#t-outline-opening-picker .t-dialog-box {
+    max-width: 760px;
+    max-height: 86vh;
+}
+
+#t-opening-detail-dialog .t-dialog-box {
+    max-width: 780px;
+    max-height: 84vh;
+}
+
+#t-outline-create-plan-dialog .t-dialog-box {
+    max-width: 620px;
+    max-height: 84vh;
+}
+
+/* 只覆盖 max-width：原内联未设 max-height，沿用基类的 min(82dvh, 82vh)。 */
+#t-outline-entry-dialog .t-dialog-box {
+    max-width: 420px;
+}
+
+#t-outline-plan-detail-dialog .t-dialog-box {
+    max-width: 900px;
+    max-height: 88vh;
+}
+
+#t-outline-plan-instruction-dialog .t-dialog-box {
+    max-width: 780px;
+    max-height: 82vh;
+}
+
+#t-outline-raw-dialog .t-dialog-box {
+    max-width: 820px;
+    max-height: 82vh;
+}
+
+/* 入口弹窗的按钮列。原内联 style 里与 padding:12px 混写，
+   padding 部分已归入 .t-dialog-body--tight，只剩这两条属本组件。 */
+.t-outline-entry-form {
+    display: grid;
+    gap: 8px;
+}
