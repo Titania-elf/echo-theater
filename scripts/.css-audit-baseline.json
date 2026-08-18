@@ -133,9 +133,9 @@
     },
     "A17": {
       "title": "inline style 中的硬编码颜色",
-      "violations": 261,
+      "violations": 186,
       "metrics": {
-        "命中数": 261
+        "命中数": 186
       }
     },
     "A18": {

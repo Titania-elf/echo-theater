@@ -33740,7 +33740,7 @@ function openSettingsWindow() {
                 <!-- Tab 5: \u5916\u89C2 -->
                 <div id="page-appearance" class="t-set-page">
                     <div class="t-preview-container">
-                        <div style="font-size:0.8em; color:#666; margin-bottom:15px;">\u52A8\u753B\u6548\u679C\u9884\u89C8</div>
+                        <div style="font-size:0.8em; color:var(--t-color-text-faint); margin-bottom:15px;">\u52A8\u753B\u6548\u679C\u9884\u89C8</div>
                         <div id="p-ball" class="t-preview-ball"></div>
                         <div style="display:flex; gap:10px; margin-top:20px;">
                             <button class="t-tool-btn" id="btn-test-anim">\u25B6\uFE0F \u64AD\u653E\u52A8\u753B</button>
@@ -33777,11 +33777,11 @@ function openSettingsWindow() {
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-                            <span style="font-size:0.85em; color:#888; min-width:60px;">\u900F\u660E\u5EA6:</span>
+                            <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">\u900F\u660E\u5EA6:</span>
                             <input type="range" id="p-border-opacity" min="0" max="100" step="5" value="${tempApp.border_opacity}" style="flex:1;">
-                            <span id="p-border-opacity-val" style="font-size:0.85em; color:#bfa15f; min-width:40px;">${tempApp.border_opacity}%</span>
+                            <span id="p-border-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.border_opacity}%</span>
                         </div>
-                        <p style="font-size:0.75em; color:#666; margin-top:8px;">\u6B64\u989C\u8272\u5C06\u5E94\u7528\u4E8E\u60AC\u6D6E\u7403\u8FB9\u6846\u53CA\u52A8\u753B\u6548\u679C</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">\u6B64\u989C\u8272\u5C06\u5E94\u7528\u4E8E\u60AC\u6D6E\u7403\u8FB9\u6846\u53CA\u52A8\u753B\u6548\u679C</p>
                     </div>
                     
                     <div class="t-form-group">
@@ -33799,22 +33799,22 @@ function openSettingsWindow() {
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-                            <span style="font-size:0.85em; color:#888; min-width:60px;">\u900F\u660E\u5EA6:</span>
+                            <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">\u900F\u660E\u5EA6:</span>
                             <input type="range" id="p-bg-opacity" min="0" max="100" step="5" value="${tempApp.bg_opacity}" style="flex:1;">
-                            <span id="p-bg-opacity-val" style="font-size:0.85em; color:#bfa15f; min-width:40px;">${tempApp.bg_opacity}%</span>
+                            <span id="p-bg-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.bg_opacity}%</span>
                         </div>
-                        <p style="font-size:0.75em; color:#666; margin-top:8px;">\u7403\u4F53\u7684\u80CC\u666F\u586B\u5145\u989C\u8272\uFF08\u900F\u660E\u5EA6\u4E3A0\u65F6\u5B8C\u5168\u900F\u660E\uFF09</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">\u7403\u4F53\u7684\u80CC\u666F\u586B\u5145\u989C\u8272\uFF08\u900F\u660E\u5EA6\u4E3A0\u65F6\u5B8C\u5168\u900F\u660E\uFF09</p>
                     </div>
                     
                     <div class="t-form-group">
-                        <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>\u60AC\u6D6E\u7403\u5C3A\u5BF8</span><span id="p-size-val" style="color:#bfa15f;">${tempApp.size}px</span></div>
+                        <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>\u60AC\u6D6E\u7403\u5C3A\u5BF8</span><span id="p-size-val" style="color:var(--t-color-brand);">${tempApp.size}px</span></div>
                         <input type="range" id="p-size-input" min="40" max="100" step="2" value="${tempApp.size}" style="width:100%;">
                     </div>
 
                     <div class="t-form-group">
-                        <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>UI \u5B57\u4F53\u5927\u5C0F</span><span id="p-ui-font-scale-val" style="color:#bfa15f;">${tempApp.ui_font_scale}%</span></div>
+                        <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>UI \u5B57\u4F53\u5927\u5C0F</span><span id="p-ui-font-scale-val" style="color:var(--t-color-brand);">${tempApp.ui_font_scale}%</span></div>
                         <input type="range" id="p-ui-font-scale" min="80" max="130" step="5" value="${tempApp.ui_font_scale}" style="width:100%;">
-                        <p style="font-size:0.75em; color:#666; margin-top:6px;">\u5F71\u54CD\u63D2\u4EF6\u5168\u90E8\u754C\u9762\u5B57\u4F53\uFF08\u4E0D\u5F71\u54CD\u5185\u5BB9\u533A\u6E32\u67D3\u6587\u672C\uFF09\u3002</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">\u5F71\u54CD\u63D2\u4EF6\u5168\u90E8\u754C\u9762\u5B57\u4F53\uFF08\u4E0D\u5F71\u54CD\u5185\u5BB9\u533A\u6E32\u67D3\u6587\u672C\uFF09\u3002</p>
                     </div>
                     
                     <div class="t-form-group">
@@ -33832,35 +33832,35 @@ function openSettingsWindow() {
                         </div>
                     </div>
                     
-                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                         <label style="cursor:pointer; display:flex; align-items:center;">
                             <input type="checkbox" id="p-show-timer" ${tempApp.show_timer !== false ? "checked" : ""} style="margin-right:10px;">
                             <span style="color:#ccc;">\u23F1\uFE0F \u663E\u793A\u751F\u6210\u8BA1\u65F6\u7EDF\u8BA1</span>
                         </label>
-                        <p style="font-size:0.75em; color:#666; margin-top:5px; margin-left:22px;">\u751F\u6210\u65F6\u5728\u60AC\u6D6E\u7403\u4E0A\u65B9\u663E\u793A\u8017\u65F6</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">\u751F\u6210\u65F6\u5728\u60AC\u6D6E\u7403\u4E0A\u65B9\u663E\u793A\u8017\u65F6</p>
                     </div>
 
-                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                         <label style="color:#ccc; display:block; margin-bottom:8px;">\u{1F3AD} \u5C0F\u5267\u573A\u4E3B\u754C\u9762</label>
                         <select id="p-main-window-mode" class="t-input">
                             <option value="modern" ${mainWindowMode !== "legacy" ? "selected" : ""}>\u65B0\u7248\uFF08\u5DE5\u5177\u7BB1 + \u5E38\u9A7B\u7EED\u5199\u680F\uFF09</option>
                             <option value="legacy" ${mainWindowMode === "legacy" ? "selected" : ""}>\u7ECF\u5178\u7248\uFF08\u53CC\u6F14\u7ECE\u6309\u94AE + \u5DE5\u5177\u7F51\u683C\uFF09</option>
                         </select>
-                        <p style="font-size:0.75em; color:#666; margin-top:6px;">\u4E24\u7248\u529F\u80FD\u5B8C\u5168\u76F8\u540C\uFF0C\u4EC5\u5E03\u5C40\u4E0D\u540C\u3002\u5207\u6362\u540E\u9700\u91CD\u65B0\u6253\u5F00\u5C0F\u5267\u573A\u751F\u6548\u3002</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">\u4E24\u7248\u529F\u80FD\u5B8C\u5168\u76F8\u540C\uFF0C\u4EC5\u5E03\u5C40\u4E0D\u540C\u3002\u5207\u6362\u540E\u9700\u91CD\u65B0\u6253\u5F00\u5C0F\u5267\u573A\u751F\u6548\u3002</p>
                     </div>
 
-                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                         <label style="color:#ccc; display:block; margin-bottom:8px;">\u{1F3A8} \u6807\u9898\u680F\u56FE\u6807 <span id="p-header-actions-count" class="t-header-action-count"></span></label>
                         <div id="p-header-actions" class="t-header-action-list"></div>
-                        <p style="font-size:0.75em; color:#666; margin-top:6px;">\u52FE\u9009\u8981\u5E38\u9A7B\u6807\u9898\u680F\u7684\u529F\u80FD\uFF08\u6700\u591A ${HEADER_ACTION_MAX} \u4E2A\uFF09\uFF0C\u62D6\u52A8\u53EF\u8C03\u6574\u987A\u5E8F\u3002\u6CA1\u9009\u4E2D\u7684\u4F1A\u6536\u8FDB\u6807\u9898\u680F\u7684\u300C\u66F4\u591A\u300D\u83DC\u5355\u3002\u6539\u52A8\u7ACB\u5373\u751F\u6548\u3002</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">\u52FE\u9009\u8981\u5E38\u9A7B\u6807\u9898\u680F\u7684\u529F\u80FD\uFF08\u6700\u591A ${HEADER_ACTION_MAX} \u4E2A\uFF09\uFF0C\u62D6\u52A8\u53EF\u8C03\u6574\u987A\u5E8F\u3002\u6CA1\u9009\u4E2D\u7684\u4F1A\u6536\u8FDB\u6807\u9898\u680F\u7684\u300C\u66F4\u591A\u300D\u83DC\u5355\u3002\u6539\u52A8\u7ACB\u5373\u751F\u6548\u3002</p>
                     </div>
                 </div>
 
                 <!-- Tab 6: \u5FEB\u6377\u5DE5\u5177\u680F -->
                 <div id="page-toolbar" class="t-set-page">
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid #333; margin-bottom:20px;">
-                        <div style="font-weight:bold; color:#bfa15f; margin-bottom:10px;"><i class="fa-solid fa-wand-magic-sparkles"></i> \u5FEB\u6377\u5DE5\u5177\u680F</div>
-                        <div style="font-size:0.85em; color:#888; line-height:1.6;">
+                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                        <div style="font-weight:bold; color:var(--t-color-brand); margin-bottom:10px;"><i class="fa-solid fa-wand-magic-sparkles"></i> \u5FEB\u6377\u5DE5\u5177\u680F</div>
+                        <div style="font-size:0.85em; color:var(--t-color-text-muted); line-height:1.6;">
                             \u542F\u7528\u540E\uFF0C\u70B9\u51FB\u60AC\u6D6E\u7403\u5C06\u5C55\u5F00\u5FEB\u6377\u83DC\u5355\u800C\u975E\u76F4\u63A5\u6253\u5F00\u4E3B\u7A97\u53E3\u3002<br>
                             \u4F60\u53EF\u4EE5\u81EA\u5B9A\u4E49\u83DC\u5355\u4E2D\u663E\u793A\u54EA\u4E9B\u529F\u80FD\u6309\u94AE\u3002
                         </div>
@@ -33871,15 +33871,15 @@ function openSettingsWindow() {
                             <input type="checkbox" id="cfg-toolbar-enabled" ${data.quick_toolbar?.enabled ? "checked" : ""} style="margin-right:10px;">
                             \u542F\u7528\u5FEB\u6377\u5DE5\u5177\u680F
                         </label>
-                        <p style="font-size:0.8em; color:#666; margin-top:5px; margin-left:22px;">
+                        <p style="font-size:0.8em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">
                             \u7981\u7528\u65F6\uFF0C\u70B9\u51FB\u60AC\u6D6E\u7403\u5C06\u76F4\u63A5\u6253\u5F00\u4E3B\u7A97\u53E3
                         </p>
                     </div>
                     
-                    <div id="toolbar-settings-panel" style="display:${data.quick_toolbar?.enabled ? "block" : "none"}; margin-top:20px; padding-top:20px; border-top:1px solid #333;">
+                    <div id="toolbar-settings-panel" style="display:${data.quick_toolbar?.enabled ? "block" : "none"}; margin-top:20px; padding-top:20px; border-top:1px solid var(--t-color-border);">
                         <div class="t-form-group">
                             <label class="t-form-label">\u53EF\u7528\u6309\u94AE</label>
-                            <p style="font-size:0.8em; color:#888; margin-bottom:15px;">
+                            <p style="font-size:0.8em; color:var(--t-color-text-muted); margin-bottom:15px;">
                                 \u52FE\u9009\u8981\u663E\u793A\u7684\u529F\u80FD\u6309\u94AE\uFF08\u6700\u591A5\u4E2A\uFF09
                             </p>
                             <div class="t-toolbar-config" id="t-toolbar-config">
@@ -33901,11 +33901,11 @@ function openSettingsWindow() {
                                 </label>
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="scripts">
-                                    <i class="fa-solid fa-scroll" style="color:#bfa15f;"></i>
+                                    <i class="fa-solid fa-scroll" style="color:var(--t-color-brand);"></i>
                                     <span>\u5267\u672C\u7BA1\u7406</span>
                                 </label>
                             </div>
-                            <div id="t-toolbar-count" style="font-size:0.8em; color:#666; margin-top:10px;">
+                            <div id="t-toolbar-count" style="font-size:0.8em; color:var(--t-color-text-faint); margin-top:10px;">
                                 \u5DF2\u9009\u62E9 3 / 5 \u4E2A\u6309\u94AE
                             </div>
                         </div>
@@ -33916,11 +33916,11 @@ function openSettingsWindow() {
                 <!-- Tab 7: \u4E3B\u9898\u6837\u5F0F -->
                 <div id="page-theme" class="t-set-page">
                     <!-- \u5B57\u4F53\u8BBE\u7F6E\u533A\u57DF -->
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid #333; margin-bottom:20px;">
-                        <div style="font-weight:bold; color:#90cdf4; margin-bottom:15px;"><i class="fa-solid fa-font"></i> \u5168\u5C40\u5B57\u4F53\u8BBE\u7F6E</div>
-                        <p style="font-size:0.85em; color:#888; margin-bottom:15px;">
+                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                        <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:15px;"><i class="fa-solid fa-font"></i> \u5168\u5C40\u5B57\u4F53\u8BBE\u7F6E</div>
+                        <p style="font-size:0.85em; color:var(--t-color-text-muted); margin-bottom:15px;">
                             \u81EA\u5B9A\u4E49\u63D2\u4EF6 UI \u548C\u6E32\u67D3\u5185\u5BB9\u7684\u5B57\u4F53\u3002<br>
-                            <span style="color:#666;">\u6CE8\uFF1A\u4EE3\u7801\u7F16\u8F91\u5668\u548C\u65E5\u5FD7\u4FDD\u6301\u7B49\u5BBD\u5B57\u4F53\u4E0D\u53D7\u5F71\u54CD\u3002</span>
+                            <span style="color:var(--t-color-text-faint);">\u6CE8\uFF1A\u4EE3\u7801\u7F16\u8F91\u5668\u548C\u65E5\u5FD7\u4FDD\u6301\u7B49\u5BBD\u5B57\u4F53\u4E0D\u53D7\u5F71\u54CD\u3002</span>
                         </p>
                         
                         <div class="t-form-group" style="margin-bottom:15px;">
@@ -33929,55 +33929,55 @@ function openSettingsWindow() {
                                 <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "default" || !fontSettings.source ? "#bfa15f" : "#333"};" data-font-source="default">
                                     <input type="radio" name="t-font-source" value="default" ${fontSettings.source === "default" || !fontSettings.source ? "checked" : ""} style="margin-right:12px;">
                                     <div>
-                                        <div style="color:#eee; font-weight:bold;">\u{1F5A5}\uFE0F \u7CFB\u7EDF\u9ED8\u8BA4</div>
-                                        <div style="font-size:0.8em; color:#888;">\u4F7F\u7528\u7CFB\u7EDF\u9ED8\u8BA4\u5B57\u4F53\u6808</div>
+                                        <div style="color:var(--t-color-text); font-weight:bold;">\u{1F5A5}\uFE0F \u7CFB\u7EDF\u9ED8\u8BA4</div>
+                                        <div style="font-size:0.8em; color:var(--t-color-text-muted);">\u4F7F\u7528\u7CFB\u7EDF\u9ED8\u8BA4\u5B57\u4F53\u6808</div>
                                     </div>
                                 </label>
                                 <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "online" ? "#bfa15f" : "#333"};" data-font-source="online">
                                     <input type="radio" name="t-font-source" value="online" ${fontSettings.source === "online" ? "checked" : ""} style="margin-right:12px;">
                                     <div>
-                                        <div style="color:#eee; font-weight:bold;">\u{1F310} \u5728\u7EBF\u5B57\u4F53</div>
-                                        <div style="font-size:0.8em; color:#888;">\u4F7F\u7528 Google Fonts \u7B49\u5728\u7EBF\u670D\u52A1</div>
+                                        <div style="color:var(--t-color-text); font-weight:bold;">\u{1F310} \u5728\u7EBF\u5B57\u4F53</div>
+                                        <div style="font-size:0.8em; color:var(--t-color-text-muted);">\u4F7F\u7528 Google Fonts \u7B49\u5728\u7EBF\u670D\u52A1</div>
                                     </div>
                                 </label>
                                 <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "upload" ? "#bfa15f" : "#333"};" data-font-source="upload">
                                     <input type="radio" name="t-font-source" value="upload" ${fontSettings.source === "upload" ? "checked" : ""} style="margin-right:12px;">
                                     <div>
-                                        <div style="color:#eee; font-weight:bold;">\u{1F4C1} \u4E0A\u4F20\u5B57\u4F53</div>
-                                        <div style="font-size:0.8em; color:#888;">\u4E0A\u4F20\u672C\u5730\u5B57\u4F53\u6587\u4EF6 (.woff2, .ttf)</div>
+                                        <div style="color:var(--t-color-text); font-weight:bold;">\u{1F4C1} \u4E0A\u4F20\u5B57\u4F53</div>
+                                        <div style="font-size:0.8em; color:var(--t-color-text-muted);">\u4E0A\u4F20\u672C\u5730\u5B57\u4F53\u6587\u4EF6 (.woff2, .ttf)</div>
                                     </div>
                                 </label>
                             </div>
                         </div>
                         
                         <!-- \u5728\u7EBF\u5B57\u4F53\u9009\u9879 -->
-                        <div id="t-font-online-options" style="display:${fontSettings.source === "online" ? "block" : "none"}; background:#1a1a1a; padding:15px; border-radius:6px; margin-top:15px; border:1px solid #333;">
+                        <div id="t-font-online-options" style="display:${fontSettings.source === "online" ? "block" : "none"}; background:var(--t-color-surface-sunken); padding:15px; border-radius:6px; margin-top:15px; border:1px solid var(--t-color-border);">
                             <div class="t-form-group" style="margin-bottom:15px;">
                                 <label class="t-form-label">@import URL</label>
                                 <input id="t-font-import-url" class="t-input" value="${fontSettings.import_url || ""}" placeholder="https://fonts.googleapis.com/css2?family=Noto+Sans+SC">
-                                <p style="font-size:0.75em; color:#666; margin-top:5px;">
-                                    \u4ECE <a href="https://fonts.google.com/" target="_blank" style="color:#90cdf4;">Google Fonts</a> \u590D\u5236 @import \u4E2D\u7684 URL
+                                <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px;">
+                                    \u4ECE <a href="https://fonts.google.com/" target="_blank" style="color:var(--t-color-accent);">Google Fonts</a> \u590D\u5236 @import \u4E2D\u7684 URL
                                 </p>
                             </div>
                             <div class="t-form-group" style="margin-bottom:0;">
                                 <label class="t-form-label">\u5B57\u4F53\u540D\u79F0</label>
                                 <input id="t-font-name-online" class="t-input" value="${fontSettings.source === "online" ? fontSettings.font_name || "" : ""}" placeholder="Noto Sans SC">
-                                <p style="font-size:0.75em; color:#666; margin-top:5px;">
+                                <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px;">
                                     \u5B57\u4F53\u7684 font-family \u540D\u79F0\uFF0C\u4F8B\u5982\uFF1ANoto Sans SC, LXGW WenKai
                                 </p>
                             </div>
                         </div>
                         
                         <!-- \u4E0A\u4F20\u5B57\u4F53\u9009\u9879 -->
-                        <div id="t-font-upload-options" style="display:${fontSettings.source === "upload" ? "block" : "none"}; background:#1a1a1a; padding:15px; border-radius:6px; margin-top:15px; border:1px solid #333;">
+                        <div id="t-font-upload-options" style="display:${fontSettings.source === "upload" ? "block" : "none"}; background:var(--t-color-surface-sunken); padding:15px; border-radius:6px; margin-top:15px; border:1px solid var(--t-color-border);">
                             <div class="t-form-group" style="margin-bottom:15px;">
                                 <label class="t-form-label">\u9009\u62E9\u5B57\u4F53\u6587\u4EF6</label>
                                 <input type="file" id="t-font-file-input" accept=".woff2,.woff,.ttf,.otf" style="display:none;">
                                 <div style="display:flex; align-items:center; gap:10px;">
                                     <button id="btn-font-upload" class="t-tool-btn" style="padding:8px 15px;"><i class="fa-solid fa-upload"></i> \u9009\u62E9\u6587\u4EF6</button>
-                                    <span id="t-font-file-name" style="color:#888; font-size:0.9em;">${fontSettings.font_data ? "\u5DF2\u4E0A\u4F20\u5B57\u4F53\u6587\u4EF6" : "\u672A\u9009\u62E9\u6587\u4EF6"}</span>
+                                    <span id="t-font-file-name" style="color:var(--t-color-text-muted); font-size:0.9em;">${fontSettings.font_data ? "\u5DF2\u4E0A\u4F20\u5B57\u4F53\u6587\u4EF6" : "\u672A\u9009\u62E9\u6587\u4EF6"}</span>
                                 </div>
-                                <p style="font-size:0.75em; color:#666; margin-top:8px;">
+                                <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">
                                     \u652F\u6301 .woff2 (\u63A8\u8350)\u3001.woff\u3001.ttf\u3001.otf \u683C\u5F0F<br>
                                     <span style="color:#f1c40f;">\u26A0\uFE0F \u5B57\u4F53\u6587\u4EF6\u5C06\u4EE5 Base64 \u5B58\u50A8\uFF0C\u5EFA\u8BAE\u4E0D\u8D85\u8FC7 2MB</span>
                                 </p>
@@ -33989,27 +33989,27 @@ function openSettingsWindow() {
                         </div>
                         
                         <!-- \u5F3A\u5236\u8986\u76D6\u9009\u9879 -->
-                        <div id="t-font-force-section" style="display:${fontSettings.source !== "default" ? "block" : "none"}; margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                        <div id="t-font-force-section" style="display:${fontSettings.source !== "default" ? "block" : "none"}; margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                             <label style="cursor:pointer; display:flex; align-items:flex-start; gap:12px;">
                                 <input type="checkbox" id="t-font-force-override" ${fontSettings.force_override ? "checked" : ""} style="margin-top:3px;">
                                 <div>
                                     <div style="color:#feca57; font-weight:bold;">\u26A1 \u5F3A\u5236\u8986\u76D6\u5185\u8054\u5B57\u4F53</div>
-                                    <div style="font-size:0.8em; color:#888; margin-top:3px;">
+                                    <div style="font-size:0.8em; color:var(--t-color-text-muted); margin-top:3px;">
                                         \u5F00\u542F\u540E\uFF0C\u81EA\u5B9A\u4E49\u5B57\u4F53\u5C06\u4F7F\u7528 !important \u8986\u76D6\u6A21\u578B\u751F\u6210\u7684\u5185\u8054 font-family \u6837\u5F0F\u3002<br>
-                                        <span style="color:#ff6b6b;">\u6CE8\u610F\uFF1A\u8FD9\u53EF\u80FD\u7834\u574F\u6A21\u578B\u523B\u610F\u8BBE\u8BA1\u7684\u7279\u6B8A\u5B57\u4F53\u6548\u679C\u3002</span>
+                                        <span style="color:var(--t-color-danger);">\u6CE8\u610F\uFF1A\u8FD9\u53EF\u80FD\u7834\u574F\u6A21\u578B\u523B\u610F\u8BBE\u8BA1\u7684\u7279\u6B8A\u5B57\u4F53\u6548\u679C\u3002</span>
                                     </div>
                                 </div>
                             </label>
                         </div>
                         
-                        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px; padding-top:10px; border-top:1px solid #333;">
-                            <button id="btn-font-reset" class="t-tool-btn" style="color:#ff6b6b;"><i class="fa-solid fa-rotate-left"></i> \u6062\u590D\u9ED8\u8BA4</button>
+                        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px; padding-top:10px; border-top:1px solid var(--t-color-border);">
+                            <button id="btn-font-reset" class="t-tool-btn" style="color:var(--t-color-danger);"><i class="fa-solid fa-rotate-left"></i> \u6062\u590D\u9ED8\u8BA4</button>
                         </div>
                     </div>
                     
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid #333; margin-bottom:20px;">
-                        <div style="font-weight:bold; color:#bfa15f; margin-bottom:10px;"><i class="fa-solid fa-palette"></i> \u81EA\u5B9A\u4E49 CSS \u6837\u5F0F</div>
-                        <div style="font-size:0.85em; color:#888; line-height:1.6;">
+                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                        <div style="font-weight:bold; color:var(--t-color-brand); margin-bottom:10px;"><i class="fa-solid fa-palette"></i> \u81EA\u5B9A\u4E49 CSS \u6837\u5F0F</div>
+                        <div style="font-size:0.85em; color:var(--t-color-text-muted); line-height:1.6;">
                             \u5728\u6B64\u8F93\u5165\u81EA\u5B9A\u4E49 CSS \u4EE3\u7801\uFF0C\u53EF\u4EE5\u8986\u76D6\u63D2\u4EF6\u9ED8\u8BA4\u6837\u5F0F\u3002<br>
                             \u4F5C\u7528\u8303\u56F4\uFF1A\u63D2\u4EF6 UI\uFF08\u7A97\u53E3\u3001\u6309\u94AE\u7B49\uFF09\u548C\u5267\u672C\u6E32\u67D3\u533A\u57DF\u3002<br>
                             <span style="color:#55efc4;">\u2728 \u652F\u6301\u4FDD\u5B58\u591A\u4E2A\u4E3B\u9898\u65B9\u6848\uFF0C\u968F\u65F6\u5207\u6362\uFF01</span>
@@ -34023,7 +34023,7 @@ function openSettingsWindow() {
                             <select id="t-css-theme-select" class="t-input" style="flex:1;"></select>
                             <button id="btn-css-theme-add" class="t-tool-btn" title="\u4FDD\u5B58\u4E3A\u65B0\u65B9\u6848"><i class="fa-solid fa-plus"></i></button>
                             <button id="btn-css-theme-rename" class="t-tool-btn" title="\u91CD\u547D\u540D\u5F53\u524D\u65B9\u6848"><i class="fa-solid fa-pen"></i></button>
-                            <button id="btn-css-theme-del" class="t-tool-btn" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
+                            <button id="btn-css-theme-del" class="t-tool-btn" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <div id="css-theme-unsaved-hint" style="display:none; color:#feca57; font-size:0.8em; margin-bottom:8px;">
                             <i class="fa-solid fa-circle-exclamation"></i> \u5F53\u524D\u5185\u5BB9\u6709\u4FEE\u6539\uFF0C\u5207\u6362\u65B9\u6848\u524D\u8BF7\u5148\u4FDD\u5B58
@@ -34036,18 +34036,18 @@ function openSettingsWindow() {
                             <div style="display:flex; gap:8px;">
                                 <button id="btn-css-import" class="t-tool-btn" title="\u5BFC\u5165\u65B9\u6848"><i class="fa-solid fa-file-import"></i> \u5BFC\u5165</button>
                                 <button id="btn-css-export" class="t-tool-btn" title="\u5BFC\u51FA\u65B9\u6848"><i class="fa-solid fa-file-export"></i> \u5BFC\u51FA</button>
-                                <button id="btn-css-reset" class="t-tool-btn" title="\u6E05\u7A7A\u5185\u5BB9" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i> \u6E05\u7A7A</button>
+                                <button id="btn-css-reset" class="t-tool-btn" title="\u6E05\u7A7A\u5185\u5BB9" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i> \u6E05\u7A7A</button>
                             </div>
                         </div>
                         <textarea id="t-custom-css-input" class="t-input t-code-editor" rows="12" placeholder="/* \u5728\u6B64\u8F93\u5165\u81EA\u5B9A\u4E49 CSS */&#10;&#10;/* \u4F8B\u5982\uFF1A\u4FEE\u6539\u4E3B\u7A97\u53E3\u80CC\u666F\u8272 */&#10;.t-box {&#10;    background: #1a1a2e;&#10;}&#10;&#10;/* \u4FEE\u6539\u6807\u9898\u989C\u8272 */&#10;.t-title-main {&#10;    color: #ff6b6b;&#10;}"></textarea>
                         <div style="display:flex; justify-content:space-between; margin-top:8px;">
-                            <span style="font-size:0.75em; color:#666;">\u65B9\u6848\u6570\u91CF: <span id="css-theme-count">0</span>/10</span>
-                            <span id="css-char-count" style="font-size:0.75em; color:#666;">0 \u5B57\u7B26</span>
+                            <span style="font-size:0.75em; color:var(--t-color-text-faint);">\u65B9\u6848\u6570\u91CF: <span id="css-theme-count">0</span>/10</span>
+                            <span id="css-char-count" style="font-size:0.75em; color:var(--t-color-text-faint);">0 \u5B57\u7B26</span>
                         </div>
                     </div>
                     
                     <div class="t-form-group">
-                        <div style="font-weight:bold; color:#90cdf4; margin-bottom:10px;"><i class="fa-solid fa-lightbulb"></i> \u5E38\u7528\u9009\u62E9\u5668\u53C2\u8003</div>
+                        <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:10px;"><i class="fa-solid fa-lightbulb"></i> \u5E38\u7528\u9009\u62E9\u5668\u53C2\u8003</div>
                         <div class="t-css-hints">
                             <div class="t-css-hint-item">
                                 <code>.t-box</code>
@@ -34143,7 +34143,7 @@ function openSettingsWindow() {
       stream: cfg.stream !== false,
       maxTokens: cfg.max_tokens || 4096,
       statusText: "\u586B\u5199 API \u540E\u53EF\u5237\u65B0\u6A21\u578B\u5217\u8868",
-      maxTokensHintHtml: `<p style="font-size:0.75em; color:#666; margin-top:5px; line-height:1.5;">
+      maxTokensHintHtml: `<p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             \u63A7\u5236 AI \u5355\u6B21\u8F93\u51FA\u7684\u6700\u5927 Token \u6570\u91CF\u3002<br>
                             <span style="color:#55efc4;">\u2713 \u4EC5\u5BF9\u81EA\u5B9A\u4E49 API \u65B9\u6848\u751F\u6548</span>\uFF0CST \u4E3B\u8FDE\u63A5\u4F7F\u7528\u5168\u5C40\u8BBE\u7F6E\u3002<br>
                             <span style="color:#feca57;">\u26A0\uFE0F \u8BBE\u7F6E\u8FC7\u9AD8\u53EF\u80FD\u8D85\u51FA\u6A21\u578B\u9650\u5236\u5BFC\u81F4\u62A5\u9519</span>
@@ -34154,7 +34154,7 @@ function openSettingsWindow() {
 
                 <!-- Tab 8: \u5BFC\u6F14\u6A21\u5F0F -->
                 <div id="page-director" class="t-set-page">
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid #333; margin-bottom:20px; color:#888; font-size:0.9em;">
+                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px; color:var(--t-color-text-muted); font-size:0.9em;">
                         <i class="fa-solid fa-circle-info"></i> \u81EA\u5B9A\u4E49\u5BFC\u6F14\u6307\u4EE4\uFF0C\u7528\u4E8E\u63A7\u5236\u751F\u6210\u5185\u5BB9\u7684\u98CE\u683C\u3001\u7BC7\u5E45\u3001\u89C6\u89D2\u7B49\u3002\u652F\u6301\u53D8\u91CF\uFF1A<code style="background:#333; padding:2px 5px; border-radius:3px;">{{char}}</code> \u89D2\u8272\u540D\u3001<code style="background:#333; padding:2px 5px; border-radius:3px;">{{user}}</code> \u7528\u6237\u540D
                     </div>
                     
@@ -34162,8 +34162,8 @@ function openSettingsWindow() {
                         <label class="t-form-label">\u{1F3AC} \u5BFC\u6F14\u6307\u4EE4 (\u81EA\u7531\u7F16\u8F91)</label>
                         <textarea id="set-dir-instruction" class="t-input" rows="5" placeholder="\u4F8B\u5982\uFF1A&#10;- \u7BC7\u5E45\u63A7\u5236\u5728300\u5B57\u5DE6\u53F3&#10;- \u4F7F\u7528\u7B2C\u4E00\u4EBA\u79F0\u53D9\u4E8B&#10;- \u591A\u63CF\u5199\u5185\u5FC3\u6D3B\u52A8\u548C\u73AF\u5883\u6C1B\u56F4&#10;- \u8BED\u8A00\u98CE\u683C\u504F\u5411\u8BD7\u610F\u6587\u827A">${dirCfg.instruction || ""}</textarea>
                         <div style="display:flex; justify-content:space-between; margin-top:5px;">
-                            <span style="font-size:0.75em; color:#666;">\u6B64\u6307\u4EE4\u5C06\u4F5C\u4E3A [Director Instructions] \u6DFB\u52A0\u5230 Prompt \u4E2D</span>
-                            <span id="dir-char-count" style="font-size:0.75em; color:#666;">0/500</span>
+                            <span style="font-size:0.75em; color:var(--t-color-text-faint);">\u6B64\u6307\u4EE4\u5C06\u4F5C\u4E3A [Director Instructions] \u6DFB\u52A0\u5230 Prompt \u4E2D</span>
+                            <span id="dir-char-count" style="font-size:0.75em; color:var(--t-color-text-faint);">0/500</span>
                         </div>
                     </div>
                     
@@ -34174,15 +34174,15 @@ function openSettingsWindow() {
                             <select id="set-style-select" class="t-input" style="flex:1;"></select>
                             <button id="btn-style-add" class="t-tool-btn" title="\u4FDD\u5B58\u4E3A\u65B0\u65B9\u6848"><i class="fa-solid fa-plus"></i></button>
                             <button id="btn-style-rename" class="t-tool-btn" title="\u91CD\u547D\u540D\u5F53\u524D\u65B9\u6848"><i class="fa-solid fa-pen"></i></button>
-                            <button id="btn-style-del" class="t-tool-btn" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
+                            <button id="btn-style-del" class="t-tool-btn" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <div id="style-unsaved-hint" style="display:none; color:#feca57; font-size:0.8em; margin-bottom:8px;">
                             <i class="fa-solid fa-circle-exclamation"></i> \u5F53\u524D\u5185\u5BB9\u6709\u4FEE\u6539\uFF0C\u5207\u6362\u65B9\u6848\u524D\u8BF7\u5148\u4FDD\u5B58
                         </div>
                         <textarea id="set-dir-style" class="t-input" rows="6" placeholder="\u7C98\u8D34\u4F60\u559C\u6B22\u7684\u6587\u7B14\u6BB5\u843D...\uFF08\u6700\u591A1000\u5B57\uFF09" maxlength="1000"></textarea>
                         <div style="display:flex; justify-content:space-between; margin-top:5px;">
-                            <span style="font-size:0.75em; color:#666;">\u65B9\u6848\u6570\u91CF: <span id="style-count">0</span>/10</span>
-                            <span id="style-char-count" style="font-size:0.75em; color:#666;">0/1000</span>
+                            <span style="font-size:0.75em; color:var(--t-color-text-faint);">\u65B9\u6848\u6570\u91CF: <span id="style-count">0</span>/10</span>
+                            <span id="style-char-count" style="font-size:0.75em; color:var(--t-color-text-faint);">0/1000</span>
                         </div>
                     </div>
                 </div>
@@ -34190,11 +34190,11 @@ function openSettingsWindow() {
                 <!-- Tab 4: \u81EA\u52A8\u5316 -->
                 <div id="page-automation" class="t-set-page">
                     <div class="t-form-group">
-                        <label style="cursor:pointer; display:flex; align-items:center; color:#bfa15f; font-weight:bold;">
+                        <label style="cursor:pointer; display:flex; align-items:center; color:var(--t-color-brand); font-weight:bold;">
                             <input type="checkbox" id="cfg-auto" ${cfg.auto_generate ? "checked" : ""} style="margin-right:10px;">
                             \u5F00\u542F\u540E\u53F0\u81EA\u52A8\u6F14\u7ECE
                         </label>
-                        <p style="font-size:0.8em; color:#666; margin-top:5px; margin-left:22px;">\u5F53\u68C0\u6D4B\u5230\u7FA4\u804A\u6D88\u606F\u4E14\u4E0D\u662F\u7528\u6237\u53D1\u9001\u65F6\uFF0C\u6709\u6982\u7387\u81EA\u52A8\u89E6\u53D1\u3002</p>
+                        <p style="font-size:0.8em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">\u5F53\u68C0\u6D4B\u5230\u7FA4\u804A\u6D88\u606F\u4E14\u4E0D\u662F\u7528\u6237\u53D1\u9001\u65F6\uFF0C\u6709\u6982\u7387\u81EA\u52A8\u89E6\u53D1\u3002</p>
                     </div>
                     <div id="auto-settings-panel" style="display:${cfg.auto_generate ? "block" : "none"}; padding-left:22px;">
                         <div class="t-form-group">
@@ -34208,24 +34208,24 @@ function openSettingsWindow() {
                                 <option value="category" ${(cfg.auto_mode || "random") === "category" ? "selected" : ""}>\u{1F3AF} \u6307\u5B9A\u5206\u7C7B\u767D\u540D\u5355 (\u81EA\u5B9A\u4E49)</option>
                             </select>
                         </div>
-                        <div id="auto-cat-container" style="display:none; background:#181818; padding:10px; border:1px solid #333; border-radius:6px; margin-top:10px;">
-                            <div style="font-size:0.8em; color:#888; margin-bottom:8px;">\u8BF7\u52FE\u9009\u5141\u8BB8\u968F\u673A\u62BD\u53D6\u7684\u5206\u7C7B (\u591A\u9009):</div>
+                        <div id="auto-cat-container" style="display:none; background:#181818; padding:10px; border:1px solid var(--t-color-border); border-radius:6px; margin-top:10px;">
+                            <div style="font-size:0.8em; color:var(--t-color-text-muted); margin-bottom:8px;">\u8BF7\u52FE\u9009\u5141\u8BB8\u968F\u673A\u62BD\u53D6\u7684\u5206\u7C7B (\u591A\u9009):</div>
                             <div id="auto-cat-list" style="max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;"></div>
                         </div>
                     </div>
                     
                     <!-- \u81EA\u52A8\u7EED\u5199\u529F\u80FD -->
-                    <div style="margin-top:25px; border-top:1px solid #333; padding-top:20px;">
+                    <div style="margin-top:25px; border-top:1px solid var(--t-color-border); padding-top:20px;">
                         <div class="t-form-group">
-                            <label style="cursor:pointer; display:flex; align-items:center; color:#90cdf4; font-weight:bold;">
+                            <label style="cursor:pointer; display:flex; align-items:center; color:var(--t-color-accent); font-weight:bold;">
                                 <input type="checkbox" id="cfg-auto-continue" ${data.auto_continue?.enabled ? "checked" : ""} style="margin-right:10px;">
                                 \u{1F504} \u5F00\u542F\u81EA\u52A8\u7EED\u5199 (\u5E94\u5BF9 API \u8D85\u65F6\u622A\u65AD)
                             </label>
-                            <p style="font-size:0.8em; color:#666; margin-top:5px; margin-left:22px;">
+                            <p style="font-size:0.8em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">
                                 \u5F53\u68C0\u6D4B\u5230\u751F\u6210\u5185\u5BB9\u88AB\u622A\u65AD\u65F6\uFF0C\u81EA\u52A8\u53D1\u9001\u7EED\u5199\u8BF7\u6C42\u62FC\u63A5\u5B8C\u6574\u5185\u5BB9\u3002
                             </p>
                         </div>
-                        <div id="auto-continue-panel" style="display:${data.auto_continue?.enabled ? "block" : "none"}; padding-left:22px; background:#181818; border:1px solid #333; border-radius:6px; padding:15px; margin-top:10px;">
+                        <div id="auto-continue-panel" style="display:${data.auto_continue?.enabled ? "block" : "none"}; padding-left:22px; background:#181818; border:1px solid var(--t-color-border); border-radius:6px; padding:15px; margin-top:10px;">
                             <div class="t-form-group">
                                 <label class="t-form-label">\u6700\u5927\u7EED\u5199\u6B21\u6570</label>
                                 <select id="cfg-continue-retries" class="t-input" style="width:120px;">
@@ -34257,7 +34257,7 @@ function openSettingsWindow() {
                         </div>
                     </div>
                     
-                    <div class="t-form-group" style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
+                    <div class="t-form-group" style="margin-top:20px; border-top:1px solid var(--t-color-border); padding-top:15px;">
                         <label class="t-form-label">\u5386\u53F2\u8BFB\u53D6\u884C\u6570 (\u5F00\u542F\u300C\u8BFB\u53D6\u804A\u5929\u5386\u53F2\u300D\u65F6\u751F\u6548)</label>
                         <input type="number" id="cfg-history" class="t-input" value="${cfg.history_limit || 10}">
                     </div>
@@ -34266,9 +34266,9 @@ function openSettingsWindow() {
                     <div class="t-form-group" style="margin-top:15px;">
                         <label class="t-form-label">\u{1F4DD} \u804A\u5929\u5386\u53F2\u63D0\u53D6\u6807\u7B7E (\u767D\u540D\u5355)</label>
                         <input type="text" id="cfg-history-whitelist" class="t-input" value="${data.history_extraction?.whitelist || ""}" placeholder="\u4F8B\u5982: content, dialogue, narration">
-                        <p style="font-size:0.75em; color:#666; margin-top:5px; line-height:1.5;">
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             \u7528\u9017\u53F7\u5206\u9694\u591A\u4E2A\u6807\u7B7E\u540D\u3002\u53EA\u63D0\u53D6\u8FD9\u4E9B\u6807\u7B7E\u5185\u7684\u6587\u672C\u4F5C\u4E3A\u5386\u53F2\u4E0A\u4E0B\u6587\u3002<br>
-                            <span style="color:#888;">\u7559\u7A7A\u5219\u5168\u6587\u63D0\u53D6\uFF08\u79FB\u9664\u6240\u6709 HTML \u6807\u7B7E\u540E\u7684\u7EAF\u6587\u672C\uFF09</span><br>
+                            <span style="color:var(--t-color-text-muted);">\u7559\u7A7A\u5219\u5168\u6587\u63D0\u53D6\uFF08\u79FB\u9664\u6240\u6709 HTML \u6807\u7B7E\u540E\u7684\u7EAF\u6587\u672C\uFF09</span><br>
                             <span style="color:#55efc4;">\u793A\u4F8B\uFF1A\u586B\u5199 <code style="background:#333; padding:1px 4px; border-radius:2px;">content</code> \u5219\u53EA\u63D0\u53D6 <code style="background:#333; padding:1px 4px; border-radius:2px;">&lt;content&gt;...&lt;/content&gt;</code> \u4E2D\u7684\u5185\u5BB9</span>
                         </p>
                     </div>
@@ -34277,7 +34277,7 @@ function openSettingsWindow() {
                     <div class="t-form-group" style="margin-top:15px;">
                         <label class="t-form-label">\u{1F6AB} \u804A\u5929\u5386\u53F2\u6392\u9664\u6807\u7B7E (\u9ED1\u540D\u5355)</label>
                         <textarea id="cfg-history-blacklist" class="t-input" rows="4" placeholder="\u6BCF\u884C\u4E00\u6761\u89C4\u5219\uFF0C\u683C\u5F0F\uFF1A\u5F00\u59CB\u6807\u8BB0 \u7ED3\u675F\u6807\u8BB0;&#10;\u4F8B\u5982\uFF1A&#10;&lt;thinking&gt; &lt;/thinking&gt;;&#10;image### ###image;&#10;\u5FC5\u987B\u586B\u5199\u5B8C\u6574\u7684\u6210\u5BF9\u6807\u8BB0\uFF0C\u4E2D\u95F4\u4FDD\u7559\u7A7A\u683C\uFF0C\u884C\u672B\u4F7F\u7528\u82F1\u6587\u5206\u53F7\u3002">${data.history_extraction?.blacklist || ""}</textarea>
-                        <p style="font-size:0.75em; color:#666; margin-top:5px; line-height:1.5;">
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             \u8BFB\u53D6\u804A\u5929\u5386\u53F2\u524D\u5220\u9664\u8FD9\u4E9B\u6210\u5BF9\u6807\u8BB0\u53CA\u5176\u4E2D\u7684\u5185\u5BB9\u3002\u6BCF\u884C\u4E00\u6761\u89C4\u5219\uFF0C\u6807\u8BB0\u4E4B\u95F4\u5FC5\u987B\u6709\u7A7A\u683C\uFF0C\u89C4\u5219\u672B\u5C3E\u5FC5\u987B\u4F7F\u7528\u82F1\u6587\u5206\u53F7 <code style="background:#333; padding:1px 4px; border-radius:2px;">;</code>\u3002
                         </p>
                     </div>
@@ -34285,11 +34285,11 @@ function openSettingsWindow() {
 
                 <!-- Tab 1: \u63D0\u793A\u8BCD\u7BA1\u7406 -->
                 <div id="page-prompts" class="t-set-page active">
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid #333; margin-bottom:20px;">
-                        <div style="font-weight:bold; color:#90cdf4; margin-bottom:8px;"><i class="fa-solid fa-list-check"></i> \u63D0\u793A\u8BCD\u7BA1\u7406</div>
-                        <div style="font-size:0.85em; color:#888; line-height:1.6;">\u7BA1\u7406\u5185\u7F6E\u63D0\u793A\u8BCD\u65B9\u6848\u548C\u5BFC\u5165\u7684 SillyTavern Chat Completion \u9884\u8BBE\u3002\u4E3B\u754C\u9762\u7684\u201C\u9009\u7528\u9884\u8BBE\u201D\u4F7F\u7528\u5F53\u524D\u6D3B\u52A8\u9884\u8BBE\u3002</div>
+                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                        <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:8px;"><i class="fa-solid fa-list-check"></i> \u63D0\u793A\u8BCD\u7BA1\u7406</div>
+                        <div style="font-size:0.85em; color:var(--t-color-text-muted); line-height:1.6;">\u7BA1\u7406\u5185\u7F6E\u63D0\u793A\u8BCD\u65B9\u6848\u548C\u5BFC\u5165\u7684 SillyTavern Chat Completion \u9884\u8BBE\u3002\u4E3B\u754C\u9762\u7684\u201C\u9009\u7528\u9884\u8BBE\u201D\u4F7F\u7528\u5F53\u524D\u6D3B\u52A8\u9884\u8BBE\u3002</div>
                     </div>
-                    <div class="t-form-group" style="background:#181818; padding:15px; border:1px solid #333; border-radius:6px;">
+                    <div class="t-form-group" style="background:#181818; padding:15px; border:1px solid var(--t-color-border); border-radius:6px;">
                         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                             <label class="t-form-label" style="margin:0;">\u67E5\u770B\u65B9\u6848</label>
                             <select id="t-prompt-view" class="t-input" style="width:auto; min-width:150px;">
@@ -34311,9 +34311,9 @@ function openSettingsWindow() {
                 <div id="page-data" class="t-set-page">
                     <div class="t-form-group">
                         <div class="t-form-label">\u81EA\u5B9A\u4E49\u5267\u672C\u5E93</div>
-                        <div style="background:#181818; border:1px solid #333; padding:20px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
+                        <div style="background:#181818; border:1px solid var(--t-color-border); padding:20px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
                             <div>
-                                <div style="font-size:1.1em; color:#eee; font-weight:bold;"><i class="fa-solid fa-scroll" style="color:#bfa15f; margin-right:8px;"></i>\u5267\u672C\u7BA1\u7406\u5668</div>
+                                <div style="font-size:1.1em; color:var(--t-color-text); font-weight:bold;"><i class="fa-solid fa-scroll" style="color:var(--t-color-brand); margin-right:8px;"></i>\u5267\u672C\u7BA1\u7406\u5668</div>
                                 <div style="font-size:0.85em; color:#777; margin-top:5px;">\u5F53\u524D\u62E5\u6709\u81EA\u5B9A\u4E49\u5267\u672C: ${(data.user_scripts || []).length} \u4E2A</div>
                             </div>
                             <button id="btn-open-mgr" class="t-btn primary" style="padding: 8px 20px;"><i class="fa-solid fa-list-check"></i> \u6253\u5F00\u7BA1\u7406</button>
@@ -34321,8 +34321,8 @@ function openSettingsWindow() {
                     </div>
                     <div class="t-form-group">
                         <div class="t-form-label">\u5DF2\u9690\u85CF\u7684\u5B98\u65B9\u9884\u8BBE\u5267\u672C</div>
-                        <div style="background:#181818; border:1px solid #333; padding:15px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
-                            <div><div style="font-size:1.1em; color:#eee;">\u5171 ${(data.disabled_presets || []).length} \u4E2A</div><div style="font-size:0.8em; color:#666;">\u8FD9\u4E9B\u9884\u8BBE\u5728\u5217\u8868\u4E2D\u5DF2\u88AB\u9690\u85CF</div></div>
+                        <div style="background:#181818; border:1px solid var(--t-color-border); padding:15px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
+                            <div><div style="font-size:1.1em; color:var(--t-color-text);">\u5171 ${(data.disabled_presets || []).length} \u4E2A</div><div style="font-size:0.8em; color:var(--t-color-text-faint);">\u8FD9\u4E9B\u9884\u8BBE\u5728\u5217\u8868\u4E2D\u5DF2\u88AB\u9690\u85CF</div></div>
                             <button id="btn-restore-presets" class="t-btn" style="border:1px solid #555;" ${(data.disabled_presets || []).length === 0 ? "disabled" : ""}>\u267B\uFE0F \u6062\u590D\u6240\u6709</button>
                         </div>
                     </div>
@@ -34330,7 +34330,7 @@ function openSettingsWindow() {
                 
             </div>
         </div>
-        <div style="padding:15px; background:#181818; border-top:1px solid #333; display:flex; justify-content:flex-end;">
+        <div style="padding:15px; background:#181818; border-top:1px solid var(--t-color-border); display:flex; justify-content:flex-end;">
             <button id="t-set-save" class="t-btn primary" style="padding:0 30px;">\u{1F4BE} \u4FDD\u5B58\u6240\u6709\u914D\u7F6E</button>
         </div>
     </div>`;
@@ -34889,7 +34889,7 @@ function openSettingsWindow() {
     const allCats = new Set(GlobalState.runtimeScripts.map((s) => s.category || (s._type === "preset" ? "\u5B98\u65B9\u9884\u8BBE" : "\u672A\u5206\u7C7B")));
     const sortedCats = [...allCats].sort();
     if (sortedCats.length === 0) {
-      $list.html('<div style="color:#666;">\u6682\u65E0\u5267\u672C</div>');
+      $list.html('<div style="color:var(--t-color-text-faint);">\u6682\u65E0\u5267\u672C</div>');
       return;
     }
     sortedCats.forEach((cat) => {
@@ -34933,7 +34933,7 @@ function openSettingsWindow() {
     const entries = scheme ? getPresetEntrySummary(scheme) : [];
     const $list = $("#t-prompt-entry-list").empty();
     if (!scheme) {
-      $list.html('<div style="color:#888; padding:12px 0;">\u6682\u65E0\u5BFC\u5165\u7684\u9884\u8BBE</div>');
+      $list.html('<div style="color:var(--t-color-text-muted); padding:12px 0;">\u6682\u65E0\u5BFC\u5165\u7684\u9884\u8BBE</div>');
       return;
     }
     const insertLimit = isPreset ? getPresetInsertLimit(scheme) : -1;

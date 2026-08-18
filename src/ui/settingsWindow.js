@@ -204,7 +204,7 @@ export function openSettingsWindow() {
                 <!-- Tab 5: 外观 -->
                 <div id="page-appearance" class="t-set-page">
                     <div class="t-preview-container">
-                        <div style="font-size:0.8em; color:#666; margin-bottom:15px;">动画效果预览</div>
+                        <div style="font-size:0.8em; color:var(--t-color-text-faint); margin-bottom:15px;">动画效果预览</div>
                         <div id="p-ball" class="t-preview-ball"></div>
                         <div style="display:flex; gap:10px; margin-top:20px;">
                             <button class="t-tool-btn" id="btn-test-anim">▶️ 播放动画</button>
@@ -241,11 +241,11 @@ export function openSettingsWindow() {
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-                            <span style="font-size:0.85em; color:#888; min-width:60px;">透明度:</span>
+                            <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">透明度:</span>
                             <input type="range" id="p-border-opacity" min="0" max="100" step="5" value="${tempApp.border_opacity}" style="flex:1;">
-                            <span id="p-border-opacity-val" style="font-size:0.85em; color:#bfa15f; min-width:40px;">${tempApp.border_opacity}%</span>
+                            <span id="p-border-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.border_opacity}%</span>
                         </div>
-                        <p style="font-size:0.75em; color:#666; margin-top:8px;">此颜色将应用于悬浮球边框及动画效果</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">此颜色将应用于悬浮球边框及动画效果</p>
                     </div>
                     
                     <div class="t-form-group">
@@ -263,22 +263,22 @@ export function openSettingsWindow() {
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-                            <span style="font-size:0.85em; color:#888; min-width:60px;">透明度:</span>
+                            <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">透明度:</span>
                             <input type="range" id="p-bg-opacity" min="0" max="100" step="5" value="${tempApp.bg_opacity}" style="flex:1;">
-                            <span id="p-bg-opacity-val" style="font-size:0.85em; color:#bfa15f; min-width:40px;">${tempApp.bg_opacity}%</span>
+                            <span id="p-bg-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.bg_opacity}%</span>
                         </div>
-                        <p style="font-size:0.75em; color:#666; margin-top:8px;">球体的背景填充颜色（透明度为0时完全透明）</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">球体的背景填充颜色（透明度为0时完全透明）</p>
                     </div>
                     
                     <div class="t-form-group">
-                        <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>悬浮球尺寸</span><span id="p-size-val" style="color:#bfa15f;">${tempApp.size}px</span></div>
+                        <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>悬浮球尺寸</span><span id="p-size-val" style="color:var(--t-color-brand);">${tempApp.size}px</span></div>
                         <input type="range" id="p-size-input" min="40" max="100" step="2" value="${tempApp.size}" style="width:100%;">
                     </div>
 
                     <div class="t-form-group">
-                        <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>UI 字体大小</span><span id="p-ui-font-scale-val" style="color:#bfa15f;">${tempApp.ui_font_scale}%</span></div>
+                        <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>UI 字体大小</span><span id="p-ui-font-scale-val" style="color:var(--t-color-brand);">${tempApp.ui_font_scale}%</span></div>
                         <input type="range" id="p-ui-font-scale" min="80" max="130" step="5" value="${tempApp.ui_font_scale}" style="width:100%;">
-                        <p style="font-size:0.75em; color:#666; margin-top:6px;">影响插件全部界面字体（不影响内容区渲染文本）。</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">影响插件全部界面字体（不影响内容区渲染文本）。</p>
                     </div>
                     
                     <div class="t-form-group">
@@ -296,35 +296,35 @@ export function openSettingsWindow() {
                         </div>
                     </div>
                     
-                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                         <label style="cursor:pointer; display:flex; align-items:center;">
                             <input type="checkbox" id="p-show-timer" ${tempApp.show_timer !== false ? 'checked' : ''} style="margin-right:10px;">
                             <span style="color:#ccc;">⏱️ 显示生成计时统计</span>
                         </label>
-                        <p style="font-size:0.75em; color:#666; margin-top:5px; margin-left:22px;">生成时在悬浮球上方显示耗时</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">生成时在悬浮球上方显示耗时</p>
                     </div>
 
-                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                         <label style="color:#ccc; display:block; margin-bottom:8px;">🎭 小剧场主界面</label>
                         <select id="p-main-window-mode" class="t-input">
                             <option value="modern" ${mainWindowMode !== 'legacy' ? 'selected' : ''}>新版（工具箱 + 常驻续写栏）</option>
                             <option value="legacy" ${mainWindowMode === 'legacy' ? 'selected' : ''}>经典版（双演绎按钮 + 工具网格）</option>
                         </select>
-                        <p style="font-size:0.75em; color:#666; margin-top:6px;">两版功能完全相同，仅布局不同。切换后需重新打开小剧场生效。</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">两版功能完全相同，仅布局不同。切换后需重新打开小剧场生效。</p>
                     </div>
 
-                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                         <label style="color:#ccc; display:block; margin-bottom:8px;">🎨 标题栏图标 <span id="p-header-actions-count" class="t-header-action-count"></span></label>
                         <div id="p-header-actions" class="t-header-action-list"></div>
-                        <p style="font-size:0.75em; color:#666; margin-top:6px;">勾选要常驻标题栏的功能（最多 ${HEADER_ACTION_MAX} 个），拖动可调整顺序。没选中的会收进标题栏的「更多」菜单。改动立即生效。</p>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">勾选要常驻标题栏的功能（最多 ${HEADER_ACTION_MAX} 个），拖动可调整顺序。没选中的会收进标题栏的「更多」菜单。改动立即生效。</p>
                     </div>
                 </div>
 
                 <!-- Tab 6: 快捷工具栏 -->
                 <div id="page-toolbar" class="t-set-page">
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid #333; margin-bottom:20px;">
-                        <div style="font-weight:bold; color:#bfa15f; margin-bottom:10px;"><i class="fa-solid fa-wand-magic-sparkles"></i> 快捷工具栏</div>
-                        <div style="font-size:0.85em; color:#888; line-height:1.6;">
+                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                        <div style="font-weight:bold; color:var(--t-color-brand); margin-bottom:10px;"><i class="fa-solid fa-wand-magic-sparkles"></i> 快捷工具栏</div>
+                        <div style="font-size:0.85em; color:var(--t-color-text-muted); line-height:1.6;">
                             启用后，点击悬浮球将展开快捷菜单而非直接打开主窗口。<br>
                             你可以自定义菜单中显示哪些功能按钮。
                         </div>
@@ -335,15 +335,15 @@ export function openSettingsWindow() {
                             <input type="checkbox" id="cfg-toolbar-enabled" ${(data.quick_toolbar?.enabled) ? 'checked' : ''} style="margin-right:10px;">
                             启用快捷工具栏
                         </label>
-                        <p style="font-size:0.8em; color:#666; margin-top:5px; margin-left:22px;">
+                        <p style="font-size:0.8em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">
                             禁用时，点击悬浮球将直接打开主窗口
                         </p>
                     </div>
                     
-                    <div id="toolbar-settings-panel" style="display:${(data.quick_toolbar?.enabled) ? 'block' : 'none'}; margin-top:20px; padding-top:20px; border-top:1px solid #333;">
+                    <div id="toolbar-settings-panel" style="display:${(data.quick_toolbar?.enabled) ? 'block' : 'none'}; margin-top:20px; padding-top:20px; border-top:1px solid var(--t-color-border);">
                         <div class="t-form-group">
                             <label class="t-form-label">可用按钮</label>
-                            <p style="font-size:0.8em; color:#888; margin-bottom:15px;">
+                            <p style="font-size:0.8em; color:var(--t-color-text-muted); margin-bottom:15px;">
                                 勾选要显示的功能按钮（最多5个）
                             </p>
                             <div class="t-toolbar-config" id="t-toolbar-config">
@@ -365,11 +365,11 @@ export function openSettingsWindow() {
                                 </label>
                                 <label class="t-toolbar-item">
                                     <input type="checkbox" class="t-toolbar-chk t-choice-input t-choice-input--brand t-choice-input--lg t-choice-input--muted-disabled" data-btn-id="scripts">
-                                    <i class="fa-solid fa-scroll" style="color:#bfa15f;"></i>
+                                    <i class="fa-solid fa-scroll" style="color:var(--t-color-brand);"></i>
                                     <span>剧本管理</span>
                                 </label>
                             </div>
-                            <div id="t-toolbar-count" style="font-size:0.8em; color:#666; margin-top:10px;">
+                            <div id="t-toolbar-count" style="font-size:0.8em; color:var(--t-color-text-faint); margin-top:10px;">
                                 已选择 3 / 5 个按钮
                             </div>
                         </div>
@@ -380,11 +380,11 @@ export function openSettingsWindow() {
                 <!-- Tab 7: 主题样式 -->
                 <div id="page-theme" class="t-set-page">
                     <!-- 字体设置区域 -->
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid #333; margin-bottom:20px;">
-                        <div style="font-weight:bold; color:#90cdf4; margin-bottom:15px;"><i class="fa-solid fa-font"></i> 全局字体设置</div>
-                        <p style="font-size:0.85em; color:#888; margin-bottom:15px;">
+                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                        <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:15px;"><i class="fa-solid fa-font"></i> 全局字体设置</div>
+                        <p style="font-size:0.85em; color:var(--t-color-text-muted); margin-bottom:15px;">
                             自定义插件 UI 和渲染内容的字体。<br>
-                            <span style="color:#666;">注：代码编辑器和日志保持等宽字体不受影响。</span>
+                            <span style="color:var(--t-color-text-faint);">注：代码编辑器和日志保持等宽字体不受影响。</span>
                         </p>
                         
                         <div class="t-form-group" style="margin-bottom:15px;">
@@ -393,55 +393,55 @@ export function openSettingsWindow() {
                                 <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === 'default' || !fontSettings.source ? '#bfa15f' : '#333'};" data-font-source="default">
                                     <input type="radio" name="t-font-source" value="default" ${fontSettings.source === 'default' || !fontSettings.source ? 'checked' : ''} style="margin-right:12px;">
                                     <div>
-                                        <div style="color:#eee; font-weight:bold;">🖥️ 系统默认</div>
-                                        <div style="font-size:0.8em; color:#888;">使用系统默认字体栈</div>
+                                        <div style="color:var(--t-color-text); font-weight:bold;">🖥️ 系统默认</div>
+                                        <div style="font-size:0.8em; color:var(--t-color-text-muted);">使用系统默认字体栈</div>
                                     </div>
                                 </label>
                                 <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === 'online' ? '#bfa15f' : '#333'};" data-font-source="online">
                                     <input type="radio" name="t-font-source" value="online" ${fontSettings.source === 'online' ? 'checked' : ''} style="margin-right:12px;">
                                     <div>
-                                        <div style="color:#eee; font-weight:bold;">🌐 在线字体</div>
-                                        <div style="font-size:0.8em; color:#888;">使用 Google Fonts 等在线服务</div>
+                                        <div style="color:var(--t-color-text); font-weight:bold;">🌐 在线字体</div>
+                                        <div style="font-size:0.8em; color:var(--t-color-text-muted);">使用 Google Fonts 等在线服务</div>
                                     </div>
                                 </label>
                                 <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === 'upload' ? '#bfa15f' : '#333'};" data-font-source="upload">
                                     <input type="radio" name="t-font-source" value="upload" ${fontSettings.source === 'upload' ? 'checked' : ''} style="margin-right:12px;">
                                     <div>
-                                        <div style="color:#eee; font-weight:bold;">📁 上传字体</div>
-                                        <div style="font-size:0.8em; color:#888;">上传本地字体文件 (.woff2, .ttf)</div>
+                                        <div style="color:var(--t-color-text); font-weight:bold;">📁 上传字体</div>
+                                        <div style="font-size:0.8em; color:var(--t-color-text-muted);">上传本地字体文件 (.woff2, .ttf)</div>
                                     </div>
                                 </label>
                             </div>
                         </div>
                         
                         <!-- 在线字体选项 -->
-                        <div id="t-font-online-options" style="display:${fontSettings.source === 'online' ? 'block' : 'none'}; background:#1a1a1a; padding:15px; border-radius:6px; margin-top:15px; border:1px solid #333;">
+                        <div id="t-font-online-options" style="display:${fontSettings.source === 'online' ? 'block' : 'none'}; background:var(--t-color-surface-sunken); padding:15px; border-radius:6px; margin-top:15px; border:1px solid var(--t-color-border);">
                             <div class="t-form-group" style="margin-bottom:15px;">
                                 <label class="t-form-label">@import URL</label>
                                 <input id="t-font-import-url" class="t-input" value="${fontSettings.import_url || ""}" placeholder="https://fonts.googleapis.com/css2?family=Noto+Sans+SC">
-                                <p style="font-size:0.75em; color:#666; margin-top:5px;">
-                                    从 <a href="https://fonts.google.com/" target="_blank" style="color:#90cdf4;">Google Fonts</a> 复制 @import 中的 URL
+                                <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px;">
+                                    从 <a href="https://fonts.google.com/" target="_blank" style="color:var(--t-color-accent);">Google Fonts</a> 复制 @import 中的 URL
                                 </p>
                             </div>
                             <div class="t-form-group" style="margin-bottom:0;">
                                 <label class="t-form-label">字体名称</label>
                                 <input id="t-font-name-online" class="t-input" value="${fontSettings.source === 'online' ? (fontSettings.font_name || "") : ""}" placeholder="Noto Sans SC">
-                                <p style="font-size:0.75em; color:#666; margin-top:5px;">
+                                <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px;">
                                     字体的 font-family 名称，例如：Noto Sans SC, LXGW WenKai
                                 </p>
                             </div>
                         </div>
                         
                         <!-- 上传字体选项 -->
-                        <div id="t-font-upload-options" style="display:${fontSettings.source === 'upload' ? 'block' : 'none'}; background:#1a1a1a; padding:15px; border-radius:6px; margin-top:15px; border:1px solid #333;">
+                        <div id="t-font-upload-options" style="display:${fontSettings.source === 'upload' ? 'block' : 'none'}; background:var(--t-color-surface-sunken); padding:15px; border-radius:6px; margin-top:15px; border:1px solid var(--t-color-border);">
                             <div class="t-form-group" style="margin-bottom:15px;">
                                 <label class="t-form-label">选择字体文件</label>
                                 <input type="file" id="t-font-file-input" accept=".woff2,.woff,.ttf,.otf" style="display:none;">
                                 <div style="display:flex; align-items:center; gap:10px;">
                                     <button id="btn-font-upload" class="t-tool-btn" style="padding:8px 15px;"><i class="fa-solid fa-upload"></i> 选择文件</button>
-                                    <span id="t-font-file-name" style="color:#888; font-size:0.9em;">${fontSettings.font_data ? '已上传字体文件' : '未选择文件'}</span>
+                                    <span id="t-font-file-name" style="color:var(--t-color-text-muted); font-size:0.9em;">${fontSettings.font_data ? '已上传字体文件' : '未选择文件'}</span>
                                 </div>
-                                <p style="font-size:0.75em; color:#666; margin-top:8px;">
+                                <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">
                                     支持 .woff2 (推荐)、.woff、.ttf、.otf 格式<br>
                                     <span style="color:#f1c40f;">⚠️ 字体文件将以 Base64 存储，建议不超过 2MB</span>
                                 </p>
@@ -453,27 +453,27 @@ export function openSettingsWindow() {
                         </div>
                         
                         <!-- 强制覆盖选项 -->
-                        <div id="t-font-force-section" style="display:${fontSettings.source !== 'default' ? 'block' : 'none'}; margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                        <div id="t-font-force-section" style="display:${fontSettings.source !== 'default' ? 'block' : 'none'}; margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                             <label style="cursor:pointer; display:flex; align-items:flex-start; gap:12px;">
                                 <input type="checkbox" id="t-font-force-override" ${fontSettings.force_override ? 'checked' : ''} style="margin-top:3px;">
                                 <div>
                                     <div style="color:#feca57; font-weight:bold;">⚡ 强制覆盖内联字体</div>
-                                    <div style="font-size:0.8em; color:#888; margin-top:3px;">
+                                    <div style="font-size:0.8em; color:var(--t-color-text-muted); margin-top:3px;">
                                         开启后，自定义字体将使用 !important 覆盖模型生成的内联 font-family 样式。<br>
-                                        <span style="color:#ff6b6b;">注意：这可能破坏模型刻意设计的特殊字体效果。</span>
+                                        <span style="color:var(--t-color-danger);">注意：这可能破坏模型刻意设计的特殊字体效果。</span>
                                     </div>
                                 </div>
                             </label>
                         </div>
                         
-                        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px; padding-top:10px; border-top:1px solid #333;">
-                            <button id="btn-font-reset" class="t-tool-btn" style="color:#ff6b6b;"><i class="fa-solid fa-rotate-left"></i> 恢复默认</button>
+                        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px; padding-top:10px; border-top:1px solid var(--t-color-border);">
+                            <button id="btn-font-reset" class="t-tool-btn" style="color:var(--t-color-danger);"><i class="fa-solid fa-rotate-left"></i> 恢复默认</button>
                         </div>
                     </div>
                     
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid #333; margin-bottom:20px;">
-                        <div style="font-weight:bold; color:#bfa15f; margin-bottom:10px;"><i class="fa-solid fa-palette"></i> 自定义 CSS 样式</div>
-                        <div style="font-size:0.85em; color:#888; line-height:1.6;">
+                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                        <div style="font-weight:bold; color:var(--t-color-brand); margin-bottom:10px;"><i class="fa-solid fa-palette"></i> 自定义 CSS 样式</div>
+                        <div style="font-size:0.85em; color:var(--t-color-text-muted); line-height:1.6;">
                             在此输入自定义 CSS 代码，可以覆盖插件默认样式。<br>
                             作用范围：插件 UI（窗口、按钮等）和剧本渲染区域。<br>
                             <span style="color:#55efc4;">✨ 支持保存多个主题方案，随时切换！</span>
@@ -487,7 +487,7 @@ export function openSettingsWindow() {
                             <select id="t-css-theme-select" class="t-input" style="flex:1;"></select>
                             <button id="btn-css-theme-add" class="t-tool-btn" title="保存为新方案"><i class="fa-solid fa-plus"></i></button>
                             <button id="btn-css-theme-rename" class="t-tool-btn" title="重命名当前方案"><i class="fa-solid fa-pen"></i></button>
-                            <button id="btn-css-theme-del" class="t-tool-btn" title="删除当前方案" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
+                            <button id="btn-css-theme-del" class="t-tool-btn" title="删除当前方案" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <div id="css-theme-unsaved-hint" style="display:none; color:#feca57; font-size:0.8em; margin-bottom:8px;">
                             <i class="fa-solid fa-circle-exclamation"></i> 当前内容有修改，切换方案前请先保存
@@ -500,18 +500,18 @@ export function openSettingsWindow() {
                             <div style="display:flex; gap:8px;">
                                 <button id="btn-css-import" class="t-tool-btn" title="导入方案"><i class="fa-solid fa-file-import"></i> 导入</button>
                                 <button id="btn-css-export" class="t-tool-btn" title="导出方案"><i class="fa-solid fa-file-export"></i> 导出</button>
-                                <button id="btn-css-reset" class="t-tool-btn" title="清空内容" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i> 清空</button>
+                                <button id="btn-css-reset" class="t-tool-btn" title="清空内容" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i> 清空</button>
                             </div>
                         </div>
                         <textarea id="t-custom-css-input" class="t-input t-code-editor" rows="12" placeholder="/* 在此输入自定义 CSS */&#10;&#10;/* 例如：修改主窗口背景色 */&#10;.t-box {&#10;    background: #1a1a2e;&#10;}&#10;&#10;/* 修改标题颜色 */&#10;.t-title-main {&#10;    color: #ff6b6b;&#10;}"></textarea>
                         <div style="display:flex; justify-content:space-between; margin-top:8px;">
-                            <span style="font-size:0.75em; color:#666;">方案数量: <span id="css-theme-count">0</span>/10</span>
-                            <span id="css-char-count" style="font-size:0.75em; color:#666;">0 字符</span>
+                            <span style="font-size:0.75em; color:var(--t-color-text-faint);">方案数量: <span id="css-theme-count">0</span>/10</span>
+                            <span id="css-char-count" style="font-size:0.75em; color:var(--t-color-text-faint);">0 字符</span>
                         </div>
                     </div>
                     
                     <div class="t-form-group">
-                        <div style="font-weight:bold; color:#90cdf4; margin-bottom:10px;"><i class="fa-solid fa-lightbulb"></i> 常用选择器参考</div>
+                        <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:10px;"><i class="fa-solid fa-lightbulb"></i> 常用选择器参考</div>
                         <div class="t-css-hints">
                             <div class="t-css-hint-item">
                                 <code>.t-box</code>
@@ -607,7 +607,7 @@ export function openSettingsWindow() {
                             stream: cfg.stream !== false,
                             maxTokens: cfg.max_tokens || 4096,
                             statusText: "填写 API 后可刷新模型列表",
-                            maxTokensHintHtml: `<p style="font-size:0.75em; color:#666; margin-top:5px; line-height:1.5;">
+                            maxTokensHintHtml: `<p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             控制 AI 单次输出的最大 Token 数量。<br>
                             <span style="color:#55efc4;">✓ 仅对自定义 API 方案生效</span>，ST 主连接使用全局设置。<br>
                             <span style="color:#feca57;">⚠️ 设置过高可能超出模型限制导致报错</span>
@@ -618,7 +618,7 @@ export function openSettingsWindow() {
 
                 <!-- Tab 8: 导演模式 -->
                 <div id="page-director" class="t-set-page">
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid #333; margin-bottom:20px; color:#888; font-size:0.9em;">
+                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px; color:var(--t-color-text-muted); font-size:0.9em;">
                         <i class="fa-solid fa-circle-info"></i> 自定义导演指令，用于控制生成内容的风格、篇幅、视角等。支持变量：<code style="background:#333; padding:2px 5px; border-radius:3px;">{{char}}</code> 角色名、<code style="background:#333; padding:2px 5px; border-radius:3px;">{{user}}</code> 用户名
                     </div>
                     
@@ -626,8 +626,8 @@ export function openSettingsWindow() {
                         <label class="t-form-label">🎬 导演指令 (自由编辑)</label>
                         <textarea id="set-dir-instruction" class="t-input" rows="5" placeholder="例如：&#10;- 篇幅控制在300字左右&#10;- 使用第一人称叙事&#10;- 多描写内心活动和环境氛围&#10;- 语言风格偏向诗意文艺">${dirCfg.instruction || ""}</textarea>
                         <div style="display:flex; justify-content:space-between; margin-top:5px;">
-                            <span style="font-size:0.75em; color:#666;">此指令将作为 [Director Instructions] 添加到 Prompt 中</span>
-                            <span id="dir-char-count" style="font-size:0.75em; color:#666;">0/500</span>
+                            <span style="font-size:0.75em; color:var(--t-color-text-faint);">此指令将作为 [Director Instructions] 添加到 Prompt 中</span>
+                            <span id="dir-char-count" style="font-size:0.75em; color:var(--t-color-text-faint);">0/500</span>
                         </div>
                     </div>
                     
@@ -638,15 +638,15 @@ export function openSettingsWindow() {
                             <select id="set-style-select" class="t-input" style="flex:1;"></select>
                             <button id="btn-style-add" class="t-tool-btn" title="保存为新方案"><i class="fa-solid fa-plus"></i></button>
                             <button id="btn-style-rename" class="t-tool-btn" title="重命名当前方案"><i class="fa-solid fa-pen"></i></button>
-                            <button id="btn-style-del" class="t-tool-btn" title="删除当前方案" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
+                            <button id="btn-style-del" class="t-tool-btn" title="删除当前方案" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <div id="style-unsaved-hint" style="display:none; color:#feca57; font-size:0.8em; margin-bottom:8px;">
                             <i class="fa-solid fa-circle-exclamation"></i> 当前内容有修改，切换方案前请先保存
                         </div>
                         <textarea id="set-dir-style" class="t-input" rows="6" placeholder="粘贴你喜欢的文笔段落...（最多1000字）" maxlength="1000"></textarea>
                         <div style="display:flex; justify-content:space-between; margin-top:5px;">
-                            <span style="font-size:0.75em; color:#666;">方案数量: <span id="style-count">0</span>/10</span>
-                            <span id="style-char-count" style="font-size:0.75em; color:#666;">0/1000</span>
+                            <span style="font-size:0.75em; color:var(--t-color-text-faint);">方案数量: <span id="style-count">0</span>/10</span>
+                            <span id="style-char-count" style="font-size:0.75em; color:var(--t-color-text-faint);">0/1000</span>
                         </div>
                     </div>
                 </div>
@@ -654,11 +654,11 @@ export function openSettingsWindow() {
                 <!-- Tab 4: 自动化 -->
                 <div id="page-automation" class="t-set-page">
                     <div class="t-form-group">
-                        <label style="cursor:pointer; display:flex; align-items:center; color:#bfa15f; font-weight:bold;">
+                        <label style="cursor:pointer; display:flex; align-items:center; color:var(--t-color-brand); font-weight:bold;">
                             <input type="checkbox" id="cfg-auto" ${cfg.auto_generate ? 'checked' : ''} style="margin-right:10px;">
                             开启后台自动演绎
                         </label>
-                        <p style="font-size:0.8em; color:#666; margin-top:5px; margin-left:22px;">当检测到群聊消息且不是用户发送时，有概率自动触发。</p>
+                        <p style="font-size:0.8em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">当检测到群聊消息且不是用户发送时，有概率自动触发。</p>
                     </div>
                     <div id="auto-settings-panel" style="display:${cfg.auto_generate ? 'block' : 'none'}; padding-left:22px;">
                         <div class="t-form-group">
@@ -672,24 +672,24 @@ export function openSettingsWindow() {
                                 <option value="category" ${(cfg.auto_mode || 'random') === 'category' ? 'selected' : ''}>🎯 指定分类白名单 (自定义)</option>
                             </select>
                         </div>
-                        <div id="auto-cat-container" style="display:none; background:#181818; padding:10px; border:1px solid #333; border-radius:6px; margin-top:10px;">
-                            <div style="font-size:0.8em; color:#888; margin-bottom:8px;">请勾选允许随机抽取的分类 (多选):</div>
+                        <div id="auto-cat-container" style="display:none; background:#181818; padding:10px; border:1px solid var(--t-color-border); border-radius:6px; margin-top:10px;">
+                            <div style="font-size:0.8em; color:var(--t-color-text-muted); margin-bottom:8px;">请勾选允许随机抽取的分类 (多选):</div>
                             <div id="auto-cat-list" style="max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;"></div>
                         </div>
                     </div>
                     
                     <!-- 自动续写功能 -->
-                    <div style="margin-top:25px; border-top:1px solid #333; padding-top:20px;">
+                    <div style="margin-top:25px; border-top:1px solid var(--t-color-border); padding-top:20px;">
                         <div class="t-form-group">
-                            <label style="cursor:pointer; display:flex; align-items:center; color:#90cdf4; font-weight:bold;">
+                            <label style="cursor:pointer; display:flex; align-items:center; color:var(--t-color-accent); font-weight:bold;">
                                 <input type="checkbox" id="cfg-auto-continue" ${(data.auto_continue?.enabled) ? 'checked' : ''} style="margin-right:10px;">
                                 🔄 开启自动续写 (应对 API 超时截断)
                             </label>
-                            <p style="font-size:0.8em; color:#666; margin-top:5px; margin-left:22px;">
+                            <p style="font-size:0.8em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">
                                 当检测到生成内容被截断时，自动发送续写请求拼接完整内容。
                             </p>
                         </div>
-                        <div id="auto-continue-panel" style="display:${(data.auto_continue?.enabled) ? 'block' : 'none'}; padding-left:22px; background:#181818; border:1px solid #333; border-radius:6px; padding:15px; margin-top:10px;">
+                        <div id="auto-continue-panel" style="display:${(data.auto_continue?.enabled) ? 'block' : 'none'}; padding-left:22px; background:#181818; border:1px solid var(--t-color-border); border-radius:6px; padding:15px; margin-top:10px;">
                             <div class="t-form-group">
                                 <label class="t-form-label">最大续写次数</label>
                                 <select id="cfg-continue-retries" class="t-input" style="width:120px;">
@@ -721,7 +721,7 @@ export function openSettingsWindow() {
                         </div>
                     </div>
                     
-                    <div class="t-form-group" style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
+                    <div class="t-form-group" style="margin-top:20px; border-top:1px solid var(--t-color-border); padding-top:15px;">
                         <label class="t-form-label">历史读取行数 (开启「读取聊天历史」时生效)</label>
                         <input type="number" id="cfg-history" class="t-input" value="${cfg.history_limit || 10}">
                     </div>
@@ -730,9 +730,9 @@ export function openSettingsWindow() {
                     <div class="t-form-group" style="margin-top:15px;">
                         <label class="t-form-label">📝 聊天历史提取标签 (白名单)</label>
                         <input type="text" id="cfg-history-whitelist" class="t-input" value="${data.history_extraction?.whitelist || ""}" placeholder="例如: content, dialogue, narration">
-                        <p style="font-size:0.75em; color:#666; margin-top:5px; line-height:1.5;">
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             用逗号分隔多个标签名。只提取这些标签内的文本作为历史上下文。<br>
-                            <span style="color:#888;">留空则全文提取（移除所有 HTML 标签后的纯文本）</span><br>
+                            <span style="color:var(--t-color-text-muted);">留空则全文提取（移除所有 HTML 标签后的纯文本）</span><br>
                             <span style="color:#55efc4;">示例：填写 <code style="background:#333; padding:1px 4px; border-radius:2px;">content</code> 则只提取 <code style="background:#333; padding:1px 4px; border-radius:2px;">&lt;content&gt;...&lt;/content&gt;</code> 中的内容</span>
                         </p>
                     </div>
@@ -741,7 +741,7 @@ export function openSettingsWindow() {
                     <div class="t-form-group" style="margin-top:15px;">
                         <label class="t-form-label">🚫 聊天历史排除标签 (黑名单)</label>
                         <textarea id="cfg-history-blacklist" class="t-input" rows="4" placeholder="每行一条规则，格式：开始标记 结束标记;&#10;例如：&#10;&lt;thinking&gt; &lt;/thinking&gt;;&#10;image### ###image;&#10;必须填写完整的成对标记，中间保留空格，行末使用英文分号。">${data.history_extraction?.blacklist || ""}</textarea>
-                        <p style="font-size:0.75em; color:#666; margin-top:5px; line-height:1.5;">
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             读取聊天历史前删除这些成对标记及其中的内容。每行一条规则，标记之间必须有空格，规则末尾必须使用英文分号 <code style="background:#333; padding:1px 4px; border-radius:2px;">;</code>。
                         </p>
                     </div>
@@ -749,11 +749,11 @@ export function openSettingsWindow() {
 
                 <!-- Tab 1: 提示词管理 -->
                 <div id="page-prompts" class="t-set-page active">
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid #333; margin-bottom:20px;">
-                        <div style="font-weight:bold; color:#90cdf4; margin-bottom:8px;"><i class="fa-solid fa-list-check"></i> 提示词管理</div>
-                        <div style="font-size:0.85em; color:#888; line-height:1.6;">管理内置提示词方案和导入的 SillyTavern Chat Completion 预设。主界面的“选用预设”使用当前活动预设。</div>
+                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                        <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:8px;"><i class="fa-solid fa-list-check"></i> 提示词管理</div>
+                        <div style="font-size:0.85em; color:var(--t-color-text-muted); line-height:1.6;">管理内置提示词方案和导入的 SillyTavern Chat Completion 预设。主界面的“选用预设”使用当前活动预设。</div>
                     </div>
-                    <div class="t-form-group" style="background:#181818; padding:15px; border:1px solid #333; border-radius:6px;">
+                    <div class="t-form-group" style="background:#181818; padding:15px; border:1px solid var(--t-color-border); border-radius:6px;">
                         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                             <label class="t-form-label" style="margin:0;">查看方案</label>
                             <select id="t-prompt-view" class="t-input" style="width:auto; min-width:150px;">
@@ -775,9 +775,9 @@ export function openSettingsWindow() {
                 <div id="page-data" class="t-set-page">
                     <div class="t-form-group">
                         <div class="t-form-label">自定义剧本库</div>
-                        <div style="background:#181818; border:1px solid #333; padding:20px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
+                        <div style="background:#181818; border:1px solid var(--t-color-border); padding:20px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
                             <div>
-                                <div style="font-size:1.1em; color:#eee; font-weight:bold;"><i class="fa-solid fa-scroll" style="color:#bfa15f; margin-right:8px;"></i>剧本管理器</div>
+                                <div style="font-size:1.1em; color:var(--t-color-text); font-weight:bold;"><i class="fa-solid fa-scroll" style="color:var(--t-color-brand); margin-right:8px;"></i>剧本管理器</div>
                                 <div style="font-size:0.85em; color:#777; margin-top:5px;">当前拥有自定义剧本: ${(data.user_scripts || []).length} 个</div>
                             </div>
                             <button id="btn-open-mgr" class="t-btn primary" style="padding: 8px 20px;"><i class="fa-solid fa-list-check"></i> 打开管理</button>
@@ -785,8 +785,8 @@ export function openSettingsWindow() {
                     </div>
                     <div class="t-form-group">
                         <div class="t-form-label">已隐藏的官方预设剧本</div>
-                        <div style="background:#181818; border:1px solid #333; padding:15px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
-                            <div><div style="font-size:1.1em; color:#eee;">共 ${(data.disabled_presets || []).length} 个</div><div style="font-size:0.8em; color:#666;">这些预设在列表中已被隐藏</div></div>
+                        <div style="background:#181818; border:1px solid var(--t-color-border); padding:15px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
+                            <div><div style="font-size:1.1em; color:var(--t-color-text);">共 ${(data.disabled_presets || []).length} 个</div><div style="font-size:0.8em; color:var(--t-color-text-faint);">这些预设在列表中已被隐藏</div></div>
                             <button id="btn-restore-presets" class="t-btn" style="border:1px solid #555;" ${(data.disabled_presets || []).length === 0 ? 'disabled' : ''}>♻️ 恢复所有</button>
                         </div>
                     </div>
@@ -794,7 +794,7 @@ export function openSettingsWindow() {
                 
             </div>
         </div>
-        <div style="padding:15px; background:#181818; border-top:1px solid #333; display:flex; justify-content:flex-end;">
+        <div style="padding:15px; background:#181818; border-top:1px solid var(--t-color-border); display:flex; justify-content:flex-end;">
             <button id="t-set-save" class="t-btn primary" style="padding:0 30px;">💾 保存所有配置</button>
         </div>
     </div>`;
@@ -1537,7 +1537,7 @@ export function openSettingsWindow() {
         const $list = $("#auto-cat-list"); $list.empty();
         const allCats = new Set(GlobalState.runtimeScripts.map(s => s.category || (s._type === 'preset' ? '官方预设' : '未分类')));
         const sortedCats = [...allCats].sort();
-        if (sortedCats.length === 0) { $list.html('<div style="color:#666;">暂无剧本</div>'); return; }
+        if (sortedCats.length === 0) { $list.html('<div style="color:var(--t-color-text-faint);">暂无剧本</div>'); return; }
         sortedCats.forEach(cat => {
             const isChecked = savedCats.includes(cat) ? 'checked' : '';
             $list.append(`<label style="display:flex; align-items:center; cursor:pointer; padding:2px 0;"><input type="checkbox" class="auto-cat-chk" value="${cat}" ${isChecked} style="margin-right:8px;"><span style="color:#ccc; font-size:0.9em;">${cat}</span></label>`);
@@ -1577,7 +1577,7 @@ export function openSettingsWindow() {
         const entries = scheme ? getPresetEntrySummary(scheme) : [];
         const $list = $("#t-prompt-entry-list").empty();
         if (!scheme) {
-            $list.html('<div style="color:#888; padding:12px 0;">暂无导入的预设</div>');
+            $list.html('<div style="color:var(--t-color-text-muted); padding:12px 0;">暂无导入的预设</div>');
             return;
         }
         // 新增条目只开放给导入的预设：内置方案有「恢复默认」，加了也会被一键清掉
