@@ -14515,14 +14515,25 @@ textarea.t-input {
     border-color: #90cdf4;
 }
 
-/* \u9488\u5BF9 datalist \u7684\u8F93\u5165\u6846\u6837\u5F0F\u5FAE\u8C03 */
-input[list]::-webkit-calendar-picker-indicator {
+/* \u9488\u5BF9 datalist \u7684\u8F93\u5165\u6846\u6837\u5F0F\u5FAE\u8C03\u3002
+   \u26A0 \u539F\u5148\u662F**\u65E0\u4F5C\u7528\u57DF**\u7684 \`input[list]::-webkit-calendar-picker-indicator\`\uFF0C
+   \u4F1A\u7ED9\u6574\u4E2A SillyTavern \u91CC\u6240\u6709 <input list> \u7684\u9009\u62E9\u5668\u6307\u793A\u5668\u5957\u4E0A
+   opacity:0.6 + filter:invert(1) \u2014\u2014 \u4E0E B2\uFF08\u6EDA\u52A8\u6761\u6CC4\u6F0F\uFF09\u540C\u7C7B\u7F3A\u9677\u3002
+   \u5DF2\u8865 \`.t-root\` \u524D\u7F00\uFF08CLAUDE.md \u7B2C 5 \u6761 / \u89C4\u5219 R7\uFF09\u3002
+   \u5BA1\u8BA1 A8 \u5F53\u65F6\u6CA1\u6293\u5230\uFF0C\u56E0\u4E3A\u5B83\u7684 GLOBAL_PSEUDO \u767D\u540D\u5355\u91CC\u6CA1\u6709\u8FD9\u4E2A\u4F2A\u5143\u7D20\uFF1B
+   \u540C\u6279\u5DF2\u628A\u8868\u5355\u63A7\u4EF6\u7C7B\u4F2A\u5143\u7D20\u8865\u8FDB scripts/css-audit.js\u3002
+
+   \u26A0 \u53E6\u4E00\u4E2A\u9057\u7559\uFF1A\u8FD9\u6761\u89C4\u5219\u7684**\u6D88\u8D39\u8005\u5168\u5728 scriptManager.js**
+   \uFF08:121 t-imp-cat-m\u3001:173 t-move-cat\u3001:850 ed-cat\uFF09\uFF0C\u672C\u8BE5\u5728 manager.css\u3002
+   \u4E0E 5b-7 \u8BB0\u7684 .t-log-box \u540C\u7C7B\u9519\u4F4D\uFF0C\u4E00\u5E76\u7559\u7ED9 Phase 7 \u505A\u7EAF\u642C\u8FD0\u3002
+   \uFF08\u6CE8\u610F\u6E05\u5355\u91CC manager.css \u65E9\u4E8E lore-review.css\uFF0C\u642C\u8FC7\u53BB\u4F1A\u53D8\u65E9\uFF0C\u987B\u5148\u67E5\u51B2\u7A81\u3002\uFF09 */
+.t-root input[list]::-webkit-calendar-picker-indicator {
     opacity: 0.6;
     filter: invert(1);
     cursor: pointer;
 }
 
-input[list]:hover::-webkit-calendar-picker-indicator {
+.t-root input[list]:hover::-webkit-calendar-picker-indicator {
     opacity: 1;
 }
 

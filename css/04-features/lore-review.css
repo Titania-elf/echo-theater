@@ -115,14 +115,25 @@
     border-color: #90cdf4;
 }
 
-/* 针对 datalist 的输入框样式微调 */
-input[list]::-webkit-calendar-picker-indicator {
+/* 针对 datalist 的输入框样式微调。
+   ⚠ 原先是**无作用域**的 `input[list]::-webkit-calendar-picker-indicator`，
+   会给整个 SillyTavern 里所有 <input list> 的选择器指示器套上
+   opacity:0.6 + filter:invert(1) —— 与 B2（滚动条泄漏）同类缺陷。
+   已补 `.t-root` 前缀（CLAUDE.md 第 5 条 / 规则 R7）。
+   审计 A8 当时没抓到，因为它的 GLOBAL_PSEUDO 白名单里没有这个伪元素；
+   同批已把表单控件类伪元素补进 scripts/css-audit.js。
+
+   ⚠ 另一个遗留：这条规则的**消费者全在 scriptManager.js**
+   （:121 t-imp-cat-m、:173 t-move-cat、:850 ed-cat），本该在 manager.css。
+   与 5b-7 记的 .t-log-box 同类错位，一并留给 Phase 7 做纯搬运。
+   （注意清单里 manager.css 早于 lore-review.css，搬过去会变早，须先查冲突。） */
+.t-root input[list]::-webkit-calendar-picker-indicator {
     opacity: 0.6;
     filter: invert(1);
     cursor: pointer;
 }
 
-input[list]:hover::-webkit-calendar-picker-indicator {
+.t-root input[list]:hover::-webkit-calendar-picker-indicator {
     opacity: 1;
 }
 

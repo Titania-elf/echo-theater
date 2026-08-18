@@ -43,7 +43,11 @@ const COLOR_KEYWORD_WHITELIST = ['transparent', 'currentcolor', 'inherit', 'init
 const EXTERNAL_ANIMATIONS = new Set(['fa-spin', 'fa-beat', 'fa-fade', 'fa-flip', 'fa-pulse', 'fa-shake', 'fa-spin-pulse']);
 
 /** Phase 0 即阻断的检查项（plan.md §11.1 左列 + 本项目补充的 A22 / A23） */
-const PHASE0_BLOCKING = new Set(['A10', 'A11', 'A14', 'A15', 'A22', 'A23']);
+// A8 在 Phase 5b 期间提为阻断项：它抓的是「插件样式穿透到宿主 SillyTavern」，
+// 与 B2（滚动条泄漏）同类，是本项目最严重的一类缺陷。提升时 A8 为 0 违规，
+// 故零成本；此前正因为它只是报告级，input[list]::-webkit-calendar-picker-indicator
+// 无作用域地重写整个 ST 的 datalist 指示器一直没被拦下。
+const PHASE0_BLOCKING = new Set(['A8', 'A10', 'A11', 'A14', 'A15', 'A22', 'A23']);
 
 // ─────────────────────────────────────────────────────────────
 // 输入收集
@@ -411,7 +415,9 @@ check('A7', 'R6', '@keyframes 集中声明且带 t- 前缀', () => {
 // （见 01-base/scrollbar.css 的说明），只看前缀会把正确写法误报为违规。
 check('A8', 'R7', '全局伪元素选择器带插件作用域', () => {
     const violations = [];
-    const GLOBAL_PSEUDO = /::(-webkit-scrollbar[a-z-]*|-webkit-resizer|selection|placeholder|-moz-[a-z-]*placeholder|-webkit-input-placeholder|backdrop)/i;
+    // 表单控件类伪元素同样会穿透到宿主：Phase 5b 期间发现 input[list]::-webkit-calendar-picker-indicator
+    // 无作用域地重写了整个 ST 的 datalist 指示器，而旧白名单抓不到它。
+    const GLOBAL_PSEUDO = /::(-webkit-scrollbar[a-z-]*|-webkit-resizer|selection|placeholder|-moz-[a-z-]*placeholder|-webkit-input-placeholder|backdrop|-webkit-calendar-picker-indicator|-webkit-(inner|outer)-spin-button|-webkit-search-(cancel|decoration)-button|-webkit-file-upload-button|file-selector-button|-webkit-slider-(thumb|runnable-track)|-moz-range-(thumb|track|progress)|-webkit-(progress-bar|progress-value)|marker)/i;
     let scoped = 0, viaRoot = 0;
     for (const f of styleSources) {
         for (const r of f.rules) {
