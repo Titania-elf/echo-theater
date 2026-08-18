@@ -257,57 +257,45 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
             ? recent.map(item => {
                 const encoded = encodeURIComponent(item);
                 const display = item.length > 24 ? `${item.slice(0, 24)}…` : item;
-                return `<button class="t-cont-recent-item" data-text="${encoded}" style="
-                            border:1px solid #3d3d3d;
-                            background:#262626;
-                            color:#ddd;
-                            border-radius:999px;
-                            padding:6px 12px;
-                            font-size:12px;
-                            cursor:pointer;
-                            max-width:100%;
-                            overflow:hidden;
-                            text-overflow:ellipsis;
-                            white-space:nowrap;
-                        " title="${escapeHtmlText(item)}">${escapeHtmlText(display)}</button>`;
+                return `<button class="t-cont-recent-item" data-text="${encoded}" title="${escapeHtmlText(item)}">${escapeHtmlText(display)}</button>`;
             }).join("")
-            : `<div style="color:#777; font-size:12px;">暂无最近续写指令</div>`;
+            : `<div class="t-cont-recent-empty">暂无最近续写指令</div>`;
 
         const html = `
         <div id="t-continuation-editor" class="t-content-editor">
             <div class="t-panel-header t-ce-header">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--t-color-brand);"></i>
-                    <span style="font-weight:bold;">续写操作台</span>
-                    <span style="font-size:0.8em; color:var(--t-color-text-faint);">支持 Ctrl+Enter 快速发送</span>
+                <div class="t-cont-composer-head">
+                    <i class="fa-solid fa-wand-magic-sparkles t-cont-composer-icon"></i>
+                    <span class="t-cont-composer-title">续写操作台</span>
+                    <span class="t-cont-composer-subtitle">支持 Ctrl+Enter 快速发送</span>
                 </div>
                 <div class="t-close" id="t-cont-close">&times;</div>
             </div>
 
-            <div class="t-ce-body" style="display:flex; flex-direction:column; gap:10px; overflow:auto;">
-                <div style="color:var(--t-color-text-muted); font-size:12px;">可留空表示“自然续写”；会基于当前剧场上下文继续生成。</div>
+            <div class="t-ce-body t-ce-body--stack">
+                <div class="t-cont-composer-hint">可留空表示“自然续写”；会基于当前剧场上下文继续生成。</div>
 
-                <textarea id="t-cont-input" class="t-ce-textarea" placeholder="例如：让两人矛盾升级，但保持克制，不要立刻和解。" spellcheck="false" style="height:auto; min-height:160px; flex:1;"></textarea>
+                <textarea id="t-cont-input" class="t-ce-textarea t-ce-textarea--grow" placeholder="例如：让两人矛盾升级，但保持克制，不要立刻和解。" spellcheck="false"></textarea>
 
-                <div style="display:flex; align-items:center; justify-content:flex-end;">
-                    <div id="t-cont-char-count" style="color:#777; font-size:12px;">0 字</div>
+                <div class="t-cont-count-row">
+                    <div id="t-cont-char-count" class="t-cont-char-count">0 字</div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="color:var(--t-color-text-secondary); font-size:12px;">最近使用（最多 ${CONTINUATION_RECENT_MAX} 条，点击复用）</div>
-                    <div id="t-cont-recent-list" style="display:flex; gap:8px; flex-wrap:wrap; max-height:88px; overflow:auto;">${recentHtml}</div>
+                <div class="t-cont-composer-section">
+                    <div class="t-cont-composer-label">最近使用（最多 ${CONTINUATION_RECENT_MAX} 条，点击复用）</div>
+                    <div id="t-cont-recent-list" class="t-cont-recent-list">${recentHtml}</div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:8px; border:1px solid var(--t-color-border); border-radius:8px; padding:10px; background:var(--t-color-surface);">
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                        <div style="color:#ddd; font-size:12px;">${regenerationTarget ? "分支上下文" : "注入最近续写条数（正文+指令）"}</div>
-                        <div id="t-cont-rounds-total" style="color:#9aa; font-size:12px;">已生成轮次：0</div>
+                <div class="t-cont-inject-box">
+                    <div class="t-cont-inject-head">
+                        <div class="t-cont-inject-label">${regenerationTarget ? "分支上下文" : "注入最近续写条数（正文+指令）"}</div>
+                        <div id="t-cont-rounds-total" class="t-cont-rounds-total">已生成轮次：0</div>
                     </div>
-                    <div style="display:${regenerationTarget ? "none" : "flex"}; align-items:center; gap:8px; flex-wrap:wrap;">
-                        <input type="number" id="t-cont-inject-count" class="t-input" min="3" max="20" step="1" value="${selectedInjectRounds}" placeholder="请输入 3-20" style="width:100px; padding:4px 8px; font-size:12px;">
-                        <span style="color:var(--t-color-text-muted); font-size:12px;">条（3-20 条）</span>
+                    <div class="t-cont-inject-row${regenerationTarget ? " is-hidden" : ""}">
+                        <input type="number" id="t-cont-inject-count" class="t-input t-cont-inject-count" min="3" max="20" step="1" value="${selectedInjectRounds}" placeholder="请输入 3-20">
+                        <span class="t-cont-composer-hint">条（3-20 条）</span>
                     </div>
-                    <div id="t-cont-context-estimate" style="color:#9aa; font-size:12px;">${regenerationTarget ? `将完整注入目标轮之前的 ${Math.max(0, regenerationTarget.round - 1)} 轮内容` : "预估上下文长度：0 字符 (~0 tokens)"}</div>
+                    <div id="t-cont-context-estimate" class="t-cont-context-estimate">${regenerationTarget ? `将完整注入目标轮之前的 ${Math.max(0, regenerationTarget.round - 1)} 轮内容` : "预估上下文长度：0 字符 (~0 tokens)"}</div>
                 </div>
 
                 ${regenerationTarget ? `<div class="t-cont-regeneration-note"><i class="fa-solid fa-code-branch"></i> 将从${escapeHtmlText(regenerationTarget.label)}创建分支并重新生成。目标轮之前的全部内容会被注入，原分支会保留。</div>` : ""}
@@ -391,9 +379,9 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
             $contextEstimate.text(`预估上下文长度：${stats.estimatedChars} 字符 (~${stats.estimatedTokens} tokens)`);
 
             if (stats.estimatedTokens > CONTINUATION_TOKEN_WARN_THRESHOLD) {
-                $contextEstimate.css({ color: "#ff7675", fontWeight: "bold" });
+                $contextEstimate.addClass("is-over-budget");
             } else {
-                $contextEstimate.css({ color: "#9aa", fontWeight: "" });
+                $contextEstimate.removeClass("is-over-budget");
             }
         };
 

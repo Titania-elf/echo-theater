@@ -9028,6 +9028,163 @@ textarea.t-input {
 }
 
 
+/* ============================================================
+   \u7EED\u5199\u64CD\u4F5C\u53F0\uFF08openContinuationComposer\uFF09
+   Phase 5b-1 \u4ECE mainWindow.js \u7684 inline style \u8FC1\u5165\uFF0C\u58F0\u660E\u503C\u9010\u6761\u4E0D\u53D8\u3002
+
+   \u5916\u58F3\u590D\u7528\u5185\u5BB9\u7F16\u8F91\u5668\uFF1A\u6839\u5143\u7D20\u5E26 \`.t-content-editor\`\uFF0C\u5934/\u8EAB/\u811A\u7528
+   \`.t-ce-header\` / \`.t-ce-body\` / \`.t-ce-footer\`\uFF08\u89C1 content-editor.css\uFF09\u3002
+   \u672C\u8282\u53EA\u653E\u64CD\u4F5C\u53F0\u81EA\u5DF1\u7684\u5185\u5BB9\u90E8\u5206\u3002
+
+   \u26A0 \u4E0B\u9762 5 \u5904\u300C12px \u8BF4\u660E\u6587\u5B57\u300D\u7528\u4E86 5 \u79CD\u4E0D\u540C\u7070\u5EA6\uFF0C\u662F\u5386\u53F2\u968F\u624B\u53D6\u503C\u800C\u975E\u8BBE\u8BA1\u610F\u56FE\uFF1A
+     .t-cont-composer-hint    #888  (--t-color-text-muted)
+     .t-cont-composer-label   #aaa  (--t-color-text-secondary)
+     .t-cont-inject-label     #ddd
+     .t-cont-char-count       #777
+     .t-cont-rounds-total / .t-cont-context-estimate  #9aa
+   \u672C\u6279\u53EA\u505A\u642C\u8FD0\uFF0C\u523B\u610F\u4FDD\u7559\u539F\u503C\u3002**Phase 6 \u5F52\u5E76\u5019\u9009**\uFF0C\u5F52\u5E76\u4F1A\u6539\u5916\u89C2\uFF0C\u9700\u5355\u72EC\u63D0\u4EA4\u3002
+   ============================================================ */
+
+.t-cont-composer-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.t-cont-composer-icon {
+    color: var(--t-color-brand);
+}
+
+.t-cont-composer-title {
+    font-weight: bold;
+}
+
+.t-cont-composer-subtitle {
+    font-size: 0.8em;
+    color: var(--t-color-text-faint);
+}
+
+.t-cont-composer-hint {
+    font-size: 12px;
+    color: var(--t-color-text-muted);
+}
+
+.t-cont-composer-label {
+    font-size: 12px;
+    color: var(--t-color-text-secondary);
+}
+
+.t-cont-composer-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.t-cont-count-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.t-cont-char-count {
+    font-size: 12px;
+    color: #777;
+}
+
+.t-cont-recent-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    max-height: 88px;
+    overflow: auto;
+}
+
+.t-cont-recent-item {
+    border: 1px solid #3d3d3d;
+    background: #262626;
+    color: #ddd;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-cont-recent-empty {
+    font-size: 12px;
+    color: #777;
+}
+
+.t-cont-inject-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--t-color-border);
+    border-radius: 8px;
+    background: var(--t-color-surface);
+}
+
+.t-cont-inject-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.t-cont-inject-label {
+    font-size: 12px;
+    color: #ddd;
+}
+
+.t-cont-rounds-total {
+    font-size: 12px;
+    color: #9aa;
+}
+
+.t-cont-inject-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* \u91CD\u751F\u6210\u5206\u652F\u65F6\u6574\u884C\u4E0D\u663E\u793A\u3002\u539F\u5148\u662F \`display:\${cond ? "none" : "flex"}\` \u5185\u8054\uFF0C
+   \u6E32\u67D3\u65F6\u4E00\u6B21\u6027\u51B3\u5B9A\u3001\u6B64\u540E\u65E0 JS \u663E\u9690\uFF0C\u6545\u7528\u6E32\u67D3\u671F\u72B6\u6001\u7C7B\u800C\u975E jQuery show/hide\u3002 */
+.t-cont-inject-row.is-hidden {
+    display: none;
+}
+
+/* \u26A0 \u7279\u5F02\u6027\u5FC5\u987B\u591F\u9AD8\uFF0C\u4E14\u5FC5\u987B\u53CC\u5199\u3002\u8BE5 input \u540C\u65F6\u5E26 \`.t-input\`\uFF0C\u800C field.css \u7684\u5B9A\u4E49\u662F
+   \`.t-root.t-box .t-input, .t-root .t-box .t-input\`\uFF080,3,0\uFF09\uFF0C\u58F0\u660E\u4E86
+   \`width:100%\` \u4E0E \`padding:8px 10px\`\u3002\u539F\u5148\u5185\u8054\u65E0\u6761\u4EF6\u53D6\u80DC\uFF1B\u642C\u8FDB CSS \u540E\u82E5\u53EA\u5199
+   \`.t-cont-inject-count\`\uFF080,1,0\uFF09\uFF0C\u8F93\u5165\u6846\u4F1A\u88AB\u62C9\u6EE1\u5BBD\u5E76\u53D8\u9AD8\u3002
+   \u53CC\u5199\u7684\u539F\u56E0\u4E0E field.css \u76F8\u540C\uFF1A\`.t-root\` \u4E0E \`.t-box\` \u540C\u5728 \`#t-main-view\` \u4E00\u4E2A\u5143\u7D20\u4E0A\uFF0C
+   \u53EA\u5199 \`.t-root .t-box ...\`\uFF08\u540E\u4EE3\u5173\u7CFB\uFF09**\u4E0D\u4F1A\u5339\u914D**\u3002\u8FD9\u91CC (0,4,0) outright \u80DC\u51FA\u3002
+   width / padding \u4E0D\u5C5E A5 \u7684\u89C6\u89C9\u5C5E\u6027\uFF0Cfeature \u5C42\u53EF\u4EE5\u8C03\uFF08\u89C4\u5219 R4\uFF09\u3002 */
+.t-root.t-box .t-cont-inject-row .t-cont-inject-count,
+.t-root .t-box .t-cont-inject-row .t-cont-inject-count {
+    width: 100px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.t-cont-context-estimate {
+    font-size: 12px;
+    color: #9aa;
+}
+
+/* \u8D85\u51FA token \u9884\u7B97\u7684\u544A\u8B66\u6001\u3002\u539F\u5148\u7531 JS \`.css({color, fontWeight})\` \u76F4\u63A5\u5199\u5185\u8054\uFF0C
+   \u4E24\u4E2A\u5206\u652F\u7684\u503C\u5206\u522B\u662F #ff7675/bold \u4E0E #9aa/""\uFF08\u540E\u8005\u4E0E\u4E0A\u9762\u7684\u57FA\u7840\u89C4\u5219\u540C\u503C\uFF09\u3002 */
+.t-cont-context-estimate.is-over-budget {
+    color: #ff7675;
+    font-weight: bold;
+}
+
 
 /* === 04-features/queue.css === */
 /* ============================================================
@@ -9354,6 +9511,16 @@ textarea.t-input {
     min-height: 0;
 }
 
+/* \u7EED\u5199\u64CD\u4F5C\u53F0\u7528\u7684\u53D8\u4F53\uFF1A\u5185\u5BB9\u7EB5\u5411\u5806\u53E0\u4E14\u81EA\u8EAB\u53EF\u6EDA\u3002Phase 5b-1 \u4ECE mainWindow.js \u7684
+   inline style \u8FC1\u5165 \u2014\u2014 \u539F\u5185\u8054\u540C\u65F6\u91CD\u590D\u4E86\u57FA\u7840\u89C4\u5219\u7684 \`display:flex\`\uFF08\u5DF2\u7701\u53BB\uFF09
+   \u5E76\u628A \`overflow\` \u4ECE hidden \u8986\u76D6\u6210 auto\u3002\u4FEE\u9970\u7C7B\u653E\u5728\u62E5\u6709 \`.t-ce-*\` \u7684\u672C\u6587\u4EF6\u91CC\uFF0C
+   \u907F\u514D continuation.css \u53CD\u5411\u5F15\u7528\u522B\u4EBA\u7684\u7C7B\u540D\uFF08\u90A3\u4F1A\u63A8\u9AD8 A6\uFF0C\u89C1\u4EA4\u63A5\u6587\u6863 \xA72.7\uFF09\u3002 */
+.t-ce-body--stack {
+    flex-direction: column;
+    gap: 10px;
+    overflow: auto;
+}
+
 .t-ce-textarea {
     width: 100%;
     height: 100%;
@@ -9372,6 +9539,15 @@ textarea.t-input {
 
 .t-ce-textarea:focus {
     border-color: #bfa15f;
+}
+
+/* \u7EED\u5199\u64CD\u4F5C\u53F0\u7528\u7684\u53D8\u4F53\uFF1A\u4E0D\u5403\u6EE1\u9AD8\u5EA6\uFF0C\u6539\u4E3A\u6309\u5185\u5BB9\u4F38\u7F29\u5E76\u53C2\u4E0E flex \u5206\u914D\u3002
+   Phase 5b-1 \u4ECE mainWindow.js \u7684 inline style \u8FC1\u5165\uFF0C\u4E09\u6761\u58F0\u660E\u503C\u4E0D\u53D8\u3002
+   \u26A0 \u5FC5\u987B\u6392\u5728 \`.t-ce-textarea\` \u4E4B\u540E\uFF1A\u4E24\u8005\u540C\u4E3A (0,1,0)\uFF0C\u9760\u6E90\u5E8F\u8986\u76D6 \`height\`\u3002 */
+.t-ce-textarea--grow {
+    height: auto;
+    min-height: 160px;
+    flex: 1;
 }
 
 /* \u7F16\u8F91\u5668\u6EDA\u52A8\u6761\u7F8E\u5316 */
@@ -38412,55 +38588,43 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
     const recentHtml = recent.length > 0 ? recent.map((item) => {
       const encoded = encodeURIComponent(item);
       const display2 = item.length > 24 ? `${item.slice(0, 24)}\u2026` : item;
-      return `<button class="t-cont-recent-item" data-text="${encoded}" style="
-                            border:1px solid #3d3d3d;
-                            background:#262626;
-                            color:#ddd;
-                            border-radius:999px;
-                            padding:6px 12px;
-                            font-size:12px;
-                            cursor:pointer;
-                            max-width:100%;
-                            overflow:hidden;
-                            text-overflow:ellipsis;
-                            white-space:nowrap;
-                        " title="${escapeHtmlText2(item)}">${escapeHtmlText2(display2)}</button>`;
-    }).join("") : `<div style="color:#777; font-size:12px;">\u6682\u65E0\u6700\u8FD1\u7EED\u5199\u6307\u4EE4</div>`;
+      return `<button class="t-cont-recent-item" data-text="${encoded}" title="${escapeHtmlText2(item)}">${escapeHtmlText2(display2)}</button>`;
+    }).join("") : `<div class="t-cont-recent-empty">\u6682\u65E0\u6700\u8FD1\u7EED\u5199\u6307\u4EE4</div>`;
     const html = `
         <div id="t-continuation-editor" class="t-content-editor">
             <div class="t-panel-header t-ce-header">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--t-color-brand);"></i>
-                    <span style="font-weight:bold;">\u7EED\u5199\u64CD\u4F5C\u53F0</span>
-                    <span style="font-size:0.8em; color:var(--t-color-text-faint);">\u652F\u6301 Ctrl+Enter \u5FEB\u901F\u53D1\u9001</span>
+                <div class="t-cont-composer-head">
+                    <i class="fa-solid fa-wand-magic-sparkles t-cont-composer-icon"></i>
+                    <span class="t-cont-composer-title">\u7EED\u5199\u64CD\u4F5C\u53F0</span>
+                    <span class="t-cont-composer-subtitle">\u652F\u6301 Ctrl+Enter \u5FEB\u901F\u53D1\u9001</span>
                 </div>
                 <div class="t-close" id="t-cont-close">&times;</div>
             </div>
 
-            <div class="t-ce-body" style="display:flex; flex-direction:column; gap:10px; overflow:auto;">
-                <div style="color:var(--t-color-text-muted); font-size:12px;">\u53EF\u7559\u7A7A\u8868\u793A\u201C\u81EA\u7136\u7EED\u5199\u201D\uFF1B\u4F1A\u57FA\u4E8E\u5F53\u524D\u5267\u573A\u4E0A\u4E0B\u6587\u7EE7\u7EED\u751F\u6210\u3002</div>
+            <div class="t-ce-body t-ce-body--stack">
+                <div class="t-cont-composer-hint">\u53EF\u7559\u7A7A\u8868\u793A\u201C\u81EA\u7136\u7EED\u5199\u201D\uFF1B\u4F1A\u57FA\u4E8E\u5F53\u524D\u5267\u573A\u4E0A\u4E0B\u6587\u7EE7\u7EED\u751F\u6210\u3002</div>
 
-                <textarea id="t-cont-input" class="t-ce-textarea" placeholder="\u4F8B\u5982\uFF1A\u8BA9\u4E24\u4EBA\u77DB\u76FE\u5347\u7EA7\uFF0C\u4F46\u4FDD\u6301\u514B\u5236\uFF0C\u4E0D\u8981\u7ACB\u523B\u548C\u89E3\u3002" spellcheck="false" style="height:auto; min-height:160px; flex:1;"></textarea>
+                <textarea id="t-cont-input" class="t-ce-textarea t-ce-textarea--grow" placeholder="\u4F8B\u5982\uFF1A\u8BA9\u4E24\u4EBA\u77DB\u76FE\u5347\u7EA7\uFF0C\u4F46\u4FDD\u6301\u514B\u5236\uFF0C\u4E0D\u8981\u7ACB\u523B\u548C\u89E3\u3002" spellcheck="false"></textarea>
 
-                <div style="display:flex; align-items:center; justify-content:flex-end;">
-                    <div id="t-cont-char-count" style="color:#777; font-size:12px;">0 \u5B57</div>
+                <div class="t-cont-count-row">
+                    <div id="t-cont-char-count" class="t-cont-char-count">0 \u5B57</div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="color:var(--t-color-text-secondary); font-size:12px;">\u6700\u8FD1\u4F7F\u7528\uFF08\u6700\u591A ${CONTINUATION_RECENT_MAX} \u6761\uFF0C\u70B9\u51FB\u590D\u7528\uFF09</div>
-                    <div id="t-cont-recent-list" style="display:flex; gap:8px; flex-wrap:wrap; max-height:88px; overflow:auto;">${recentHtml}</div>
+                <div class="t-cont-composer-section">
+                    <div class="t-cont-composer-label">\u6700\u8FD1\u4F7F\u7528\uFF08\u6700\u591A ${CONTINUATION_RECENT_MAX} \u6761\uFF0C\u70B9\u51FB\u590D\u7528\uFF09</div>
+                    <div id="t-cont-recent-list" class="t-cont-recent-list">${recentHtml}</div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:8px; border:1px solid var(--t-color-border); border-radius:8px; padding:10px; background:var(--t-color-surface);">
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                        <div style="color:#ddd; font-size:12px;">${regenerationTarget ? "\u5206\u652F\u4E0A\u4E0B\u6587" : "\u6CE8\u5165\u6700\u8FD1\u7EED\u5199\u6761\u6570\uFF08\u6B63\u6587+\u6307\u4EE4\uFF09"}</div>
-                        <div id="t-cont-rounds-total" style="color:#9aa; font-size:12px;">\u5DF2\u751F\u6210\u8F6E\u6B21\uFF1A0</div>
+                <div class="t-cont-inject-box">
+                    <div class="t-cont-inject-head">
+                        <div class="t-cont-inject-label">${regenerationTarget ? "\u5206\u652F\u4E0A\u4E0B\u6587" : "\u6CE8\u5165\u6700\u8FD1\u7EED\u5199\u6761\u6570\uFF08\u6B63\u6587+\u6307\u4EE4\uFF09"}</div>
+                        <div id="t-cont-rounds-total" class="t-cont-rounds-total">\u5DF2\u751F\u6210\u8F6E\u6B21\uFF1A0</div>
                     </div>
-                    <div style="display:${regenerationTarget ? "none" : "flex"}; align-items:center; gap:8px; flex-wrap:wrap;">
-                        <input type="number" id="t-cont-inject-count" class="t-input" min="3" max="20" step="1" value="${selectedInjectRounds}" placeholder="\u8BF7\u8F93\u5165 3-20" style="width:100px; padding:4px 8px; font-size:12px;">
-                        <span style="color:var(--t-color-text-muted); font-size:12px;">\u6761\uFF083-20 \u6761\uFF09</span>
+                    <div class="t-cont-inject-row${regenerationTarget ? " is-hidden" : ""}">
+                        <input type="number" id="t-cont-inject-count" class="t-input t-cont-inject-count" min="3" max="20" step="1" value="${selectedInjectRounds}" placeholder="\u8BF7\u8F93\u5165 3-20">
+                        <span class="t-cont-composer-hint">\u6761\uFF083-20 \u6761\uFF09</span>
                     </div>
-                    <div id="t-cont-context-estimate" style="color:#9aa; font-size:12px;">${regenerationTarget ? `\u5C06\u5B8C\u6574\u6CE8\u5165\u76EE\u6807\u8F6E\u4E4B\u524D\u7684 ${Math.max(0, regenerationTarget.round - 1)} \u8F6E\u5185\u5BB9` : "\u9884\u4F30\u4E0A\u4E0B\u6587\u957F\u5EA6\uFF1A0 \u5B57\u7B26 (~0 tokens)"}</div>
+                    <div id="t-cont-context-estimate" class="t-cont-context-estimate">${regenerationTarget ? `\u5C06\u5B8C\u6574\u6CE8\u5165\u76EE\u6807\u8F6E\u4E4B\u524D\u7684 ${Math.max(0, regenerationTarget.round - 1)} \u8F6E\u5185\u5BB9` : "\u9884\u4F30\u4E0A\u4E0B\u6587\u957F\u5EA6\uFF1A0 \u5B57\u7B26 (~0 tokens)"}</div>
                 </div>
 
                 ${regenerationTarget ? `<div class="t-cont-regeneration-note"><i class="fa-solid fa-code-branch"></i> \u5C06\u4ECE${escapeHtmlText2(regenerationTarget.label)}\u521B\u5EFA\u5206\u652F\u5E76\u91CD\u65B0\u751F\u6210\u3002\u76EE\u6807\u8F6E\u4E4B\u524D\u7684\u5168\u90E8\u5185\u5BB9\u4F1A\u88AB\u6CE8\u5165\uFF0C\u539F\u5206\u652F\u4F1A\u4FDD\u7559\u3002</div>` : ""}
@@ -38535,9 +38699,9 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
       $roundsTotal.text(`\u5DF2\u751F\u6210\u8F6E\u6B21\uFF1A${stats.totalRounds}`);
       $contextEstimate.text(`\u9884\u4F30\u4E0A\u4E0B\u6587\u957F\u5EA6\uFF1A${stats.estimatedChars} \u5B57\u7B26 (~${stats.estimatedTokens} tokens)`);
       if (stats.estimatedTokens > CONTINUATION_TOKEN_WARN_THRESHOLD) {
-        $contextEstimate.css({ color: "#ff7675", fontWeight: "bold" });
+        $contextEstimate.addClass("is-over-budget");
       } else {
-        $contextEstimate.css({ color: "#9aa", fontWeight: "" });
+        $contextEstimate.removeClass("is-over-budget");
       }
     };
     $input.val(initialText || "");

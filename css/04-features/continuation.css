@@ -879,3 +879,160 @@
     }
 }
 
+
+/* ============================================================
+   续写操作台（openContinuationComposer）
+   Phase 5b-1 从 mainWindow.js 的 inline style 迁入，声明值逐条不变。
+
+   外壳复用内容编辑器：根元素带 `.t-content-editor`，头/身/脚用
+   `.t-ce-header` / `.t-ce-body` / `.t-ce-footer`（见 content-editor.css）。
+   本节只放操作台自己的内容部分。
+
+   ⚠ 下面 5 处「12px 说明文字」用了 5 种不同灰度，是历史随手取值而非设计意图：
+     .t-cont-composer-hint    #888  (--t-color-text-muted)
+     .t-cont-composer-label   #aaa  (--t-color-text-secondary)
+     .t-cont-inject-label     #ddd
+     .t-cont-char-count       #777
+     .t-cont-rounds-total / .t-cont-context-estimate  #9aa
+   本批只做搬运，刻意保留原值。**Phase 6 归并候选**，归并会改外观，需单独提交。
+   ============================================================ */
+
+.t-cont-composer-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.t-cont-composer-icon {
+    color: var(--t-color-brand);
+}
+
+.t-cont-composer-title {
+    font-weight: bold;
+}
+
+.t-cont-composer-subtitle {
+    font-size: 0.8em;
+    color: var(--t-color-text-faint);
+}
+
+.t-cont-composer-hint {
+    font-size: 12px;
+    color: var(--t-color-text-muted);
+}
+
+.t-cont-composer-label {
+    font-size: 12px;
+    color: var(--t-color-text-secondary);
+}
+
+.t-cont-composer-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.t-cont-count-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.t-cont-char-count {
+    font-size: 12px;
+    color: #777;
+}
+
+.t-cont-recent-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    max-height: 88px;
+    overflow: auto;
+}
+
+.t-cont-recent-item {
+    border: 1px solid #3d3d3d;
+    background: #262626;
+    color: #ddd;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-cont-recent-empty {
+    font-size: 12px;
+    color: #777;
+}
+
+.t-cont-inject-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--t-color-border);
+    border-radius: 8px;
+    background: var(--t-color-surface);
+}
+
+.t-cont-inject-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.t-cont-inject-label {
+    font-size: 12px;
+    color: #ddd;
+}
+
+.t-cont-rounds-total {
+    font-size: 12px;
+    color: #9aa;
+}
+
+.t-cont-inject-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* 重生成分支时整行不显示。原先是 `display:${cond ? "none" : "flex"}` 内联，
+   渲染时一次性决定、此后无 JS 显隐，故用渲染期状态类而非 jQuery show/hide。 */
+.t-cont-inject-row.is-hidden {
+    display: none;
+}
+
+/* ⚠ 特异性必须够高，且必须双写。该 input 同时带 `.t-input`，而 field.css 的定义是
+   `.t-root.t-box .t-input, .t-root .t-box .t-input`（0,3,0），声明了
+   `width:100%` 与 `padding:8px 10px`。原先内联无条件取胜；搬进 CSS 后若只写
+   `.t-cont-inject-count`（0,1,0），输入框会被拉满宽并变高。
+   双写的原因与 field.css 相同：`.t-root` 与 `.t-box` 同在 `#t-main-view` 一个元素上，
+   只写 `.t-root .t-box ...`（后代关系）**不会匹配**。这里 (0,4,0) outright 胜出。
+   width / padding 不属 A5 的视觉属性，feature 层可以调（规则 R4）。 */
+.t-root.t-box .t-cont-inject-row .t-cont-inject-count,
+.t-root .t-box .t-cont-inject-row .t-cont-inject-count {
+    width: 100px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.t-cont-context-estimate {
+    font-size: 12px;
+    color: #9aa;
+}
+
+/* 超出 token 预算的告警态。原先由 JS `.css({color, fontWeight})` 直接写内联，
+   两个分支的值分别是 #ff7675/bold 与 #9aa/""（后者与上面的基础规则同值）。 */
+.t-cont-context-estimate.is-over-budget {
+    color: #ff7675;
+    font-weight: bold;
+}

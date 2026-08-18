@@ -14,6 +14,16 @@
     min-height: 0;
 }
 
+/* 续写操作台用的变体：内容纵向堆叠且自身可滚。Phase 5b-1 从 mainWindow.js 的
+   inline style 迁入 —— 原内联同时重复了基础规则的 `display:flex`（已省去）
+   并把 `overflow` 从 hidden 覆盖成 auto。修饰类放在拥有 `.t-ce-*` 的本文件里，
+   避免 continuation.css 反向引用别人的类名（那会推高 A6，见交接文档 §2.7）。 */
+.t-ce-body--stack {
+    flex-direction: column;
+    gap: 10px;
+    overflow: auto;
+}
+
 .t-ce-textarea {
     width: 100%;
     height: 100%;
@@ -32,6 +42,15 @@
 
 .t-ce-textarea:focus {
     border-color: #bfa15f;
+}
+
+/* 续写操作台用的变体：不吃满高度，改为按内容伸缩并参与 flex 分配。
+   Phase 5b-1 从 mainWindow.js 的 inline style 迁入，三条声明值不变。
+   ⚠ 必须排在 `.t-ce-textarea` 之后：两者同为 (0,1,0)，靠源序覆盖 `height`。 */
+.t-ce-textarea--grow {
+    height: auto;
+    min-height: 160px;
+    flex: 1;
 }
 
 /* 编辑器滚动条美化 */
