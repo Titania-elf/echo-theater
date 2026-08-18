@@ -353,6 +353,15 @@
 
 #t-debug-view {
     background: #141414;
+    /* 以下四条原为 JS 内联 style（Phase 5b-7 迁出）。(1,0,0) 压过 base.css 的
+       .t-box (0,1,0)：后者给的是 width:95% / max-width:650px / height:auto。
+       ⚠ 原内联还重复声明了 display:flex 与 flex-direction:column，这两条与
+       .t-box 逐字相同，故**刻意不搬**，让它继续从 .t-box 继承。
+       ⚠ .t-box 的 max-height:85vh 仍然生效，且小于此处的 height:92vh ——
+       实际高度一直是 85vh。这是迁移前的既有行为，本批不改。 */
+    max-width: 1400px;
+    width: 95vw;
+    height: 92vh;
 }
 
 #t-debug-view .t-prompt-source-bar {
@@ -811,4 +820,123 @@
     #t-debug-view .t-prompt-section-content {
         padding-left: 14px;
     }
+}
+
+/* ============================================================
+   诊断日志窗口（#t-diagnostics-view）
+   Phase 5b-7 从 debugWindow.js 的内联 style 迁出。此前这个窗口在 css/ 里
+   **一条规则都没有**，全靠内联撑着。
+
+   ⚠ 颜色保留原值（#ff9f43 / #feca57 / #555 / rgba(255,159,67,…)），
+   不换 --t-color-warning 等：debug.css 有 97 处颜色字面量、仅 10 处 token，
+   单独换这几处会与全文不一致。整体 token 化归 Phase 6。
+   判据见交接文档 §5b「5b-4 的三条经验」第 2 条。
+
+   ⚠ 遗留问题（本批刻意不动，见交接文档 §5b）：
+     · .t-diagnostics-container 挂在窗口根上，但全库无定义 —— 死类名。
+     · .t-log-box 定义在 settings.css:227，注释写着「诊断日志」，
+       唯一消费者却是 debugWindow.js —— B10 式错位，需独立一批做纯搬运。
+   ============================================================ */
+
+/* 两个窗口的表头标题行共用（#t-debug-view 与 #t-diagnostics-view），
+   但图标颜色各不相同，故颜色按窗口分别限定。 */
+.t-dbg-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#t-debug-view .t-dbg-title-row i {
+    color: #74b9ff;
+}
+
+#t-diagnostics-view .t-dbg-title-row i {
+    color: #ff9f43;
+}
+
+/* 顶部说明带与底部操作带。两者的 padding + background 相同，但一个 border-bottom、
+   一个 border-top 且带 flex 排列，刻意写成两个类而不是基类 + 修饰类 ——
+   共同部分只有 2 条声明，抽出来的收益抵不上多一个类名。 */
+.t-diag-notice-band {
+    padding: 15px;
+    background: var(--t-color-surface-inset);
+    border-bottom: 1px solid var(--t-color-border);
+}
+
+.t-diag-actions {
+    padding: 15px;
+    background: var(--t-color-surface-inset);
+    border-top: 1px solid var(--t-color-border);
+    display: flex;
+    gap: 10px;
+}
+
+.t-diag-guide {
+    background: rgba(255, 159, 67, 0.1);
+    border: 1px solid rgba(255, 159, 67, 0.3);
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.t-diag-guide-title {
+    font-weight: bold;
+    color: #feca57;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.t-diag-guide-body {
+    font-size: 0.85em;
+    color: var(--t-color-text-label);
+    line-height: 1.5;
+}
+
+.t-diag-log-section {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+.t-diag-log-title {
+    font-weight: bold;
+    color: var(--t-color-text-secondary);
+    margin-bottom: 10px;
+}
+
+.t-diag-log-hint {
+    font-size: 0.8em;
+    color: var(--t-color-text-faint);
+}
+
+/* ⚠ 必须用 ID：.t-log-box（settings.css:227）设了 height:250px 与
+   overflow-y:auto，(1,0,0) 才能确保 flex:1 主导尺寸。 */
+#t-diag-log-viewer {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* ⚠ 必须用 ID，不能用类：.t-btn:hover:not(:disabled) 是 (0,3,0) 且**设了
+   border-color**，任何 (0,1,0) 的类都会在悬停时丢掉这里的危险色边框。
+   原先靠内联压过它，现在靠 (1,0,0)。这类状态规则验证器查不到，
+   见交接文档 §5b「内联改类时最容易丢的差异」。 */
+#t-diag-clear {
+    color: var(--t-color-danger);
+    border-color: var(--t-color-danger);
+}
+
+#t-diag-export {
+    margin-left: auto;
+}
+
+.t-diag-log-empty {
+    text-align: center;
+    margin-top: 50px;
+    color: #555;
+}
+
+.t-diag-log-empty i {
+    font-size: 2em;
+    margin-bottom: 10px;
 }

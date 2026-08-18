@@ -13582,6 +13582,15 @@ textarea.t-input {
 
 #t-debug-view {
     background: #141414;
+    /* \u4EE5\u4E0B\u56DB\u6761\u539F\u4E3A JS \u5185\u8054 style\uFF08Phase 5b-7 \u8FC1\u51FA\uFF09\u3002(1,0,0) \u538B\u8FC7 base.css \u7684
+       .t-box (0,1,0)\uFF1A\u540E\u8005\u7ED9\u7684\u662F width:95% / max-width:650px / height:auto\u3002
+       \u26A0 \u539F\u5185\u8054\u8FD8\u91CD\u590D\u58F0\u660E\u4E86 display:flex \u4E0E flex-direction:column\uFF0C\u8FD9\u4E24\u6761\u4E0E
+       .t-box \u9010\u5B57\u76F8\u540C\uFF0C\u6545**\u523B\u610F\u4E0D\u642C**\uFF0C\u8BA9\u5B83\u7EE7\u7EED\u4ECE .t-box \u7EE7\u627F\u3002
+       \u26A0 .t-box \u7684 max-height:85vh \u4ECD\u7136\u751F\u6548\uFF0C\u4E14\u5C0F\u4E8E\u6B64\u5904\u7684 height:92vh \u2014\u2014
+       \u5B9E\u9645\u9AD8\u5EA6\u4E00\u76F4\u662F 85vh\u3002\u8FD9\u662F\u8FC1\u79FB\u524D\u7684\u65E2\u6709\u884C\u4E3A\uFF0C\u672C\u6279\u4E0D\u6539\u3002 */
+    max-width: 1400px;
+    width: 95vw;
+    height: 92vh;
 }
 
 #t-debug-view .t-prompt-source-bar {
@@ -14040,6 +14049,125 @@ textarea.t-input {
     #t-debug-view .t-prompt-section-content {
         padding-left: 14px;
     }
+}
+
+/* ============================================================
+   \u8BCA\u65AD\u65E5\u5FD7\u7A97\u53E3\uFF08#t-diagnostics-view\uFF09
+   Phase 5b-7 \u4ECE debugWindow.js \u7684\u5185\u8054 style \u8FC1\u51FA\u3002\u6B64\u524D\u8FD9\u4E2A\u7A97\u53E3\u5728 css/ \u91CC
+   **\u4E00\u6761\u89C4\u5219\u90FD\u6CA1\u6709**\uFF0C\u5168\u9760\u5185\u8054\u6491\u7740\u3002
+
+   \u26A0 \u989C\u8272\u4FDD\u7559\u539F\u503C\uFF08#ff9f43 / #feca57 / #555 / rgba(255,159,67,\u2026)\uFF09\uFF0C
+   \u4E0D\u6362 --t-color-warning \u7B49\uFF1Adebug.css \u6709 97 \u5904\u989C\u8272\u5B57\u9762\u91CF\u3001\u4EC5 10 \u5904 token\uFF0C
+   \u5355\u72EC\u6362\u8FD9\u51E0\u5904\u4F1A\u4E0E\u5168\u6587\u4E0D\u4E00\u81F4\u3002\u6574\u4F53 token \u5316\u5F52 Phase 6\u3002
+   \u5224\u636E\u89C1\u4EA4\u63A5\u6587\u6863 \xA75b\u300C5b-4 \u7684\u4E09\u6761\u7ECF\u9A8C\u300D\u7B2C 2 \u6761\u3002
+
+   \u26A0 \u9057\u7559\u95EE\u9898\uFF08\u672C\u6279\u523B\u610F\u4E0D\u52A8\uFF0C\u89C1\u4EA4\u63A5\u6587\u6863 \xA75b\uFF09\uFF1A
+     \xB7 .t-diagnostics-container \u6302\u5728\u7A97\u53E3\u6839\u4E0A\uFF0C\u4F46\u5168\u5E93\u65E0\u5B9A\u4E49 \u2014\u2014 \u6B7B\u7C7B\u540D\u3002
+     \xB7 .t-log-box \u5B9A\u4E49\u5728 settings.css:227\uFF0C\u6CE8\u91CA\u5199\u7740\u300C\u8BCA\u65AD\u65E5\u5FD7\u300D\uFF0C
+       \u552F\u4E00\u6D88\u8D39\u8005\u5374\u662F debugWindow.js \u2014\u2014 B10 \u5F0F\u9519\u4F4D\uFF0C\u9700\u72EC\u7ACB\u4E00\u6279\u505A\u7EAF\u642C\u8FD0\u3002
+   ============================================================ */
+
+/* \u4E24\u4E2A\u7A97\u53E3\u7684\u8868\u5934\u6807\u9898\u884C\u5171\u7528\uFF08#t-debug-view \u4E0E #t-diagnostics-view\uFF09\uFF0C
+   \u4F46\u56FE\u6807\u989C\u8272\u5404\u4E0D\u76F8\u540C\uFF0C\u6545\u989C\u8272\u6309\u7A97\u53E3\u5206\u522B\u9650\u5B9A\u3002 */
+.t-dbg-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#t-debug-view .t-dbg-title-row i {
+    color: #74b9ff;
+}
+
+#t-diagnostics-view .t-dbg-title-row i {
+    color: #ff9f43;
+}
+
+/* \u9876\u90E8\u8BF4\u660E\u5E26\u4E0E\u5E95\u90E8\u64CD\u4F5C\u5E26\u3002\u4E24\u8005\u7684 padding + background \u76F8\u540C\uFF0C\u4F46\u4E00\u4E2A border-bottom\u3001
+   \u4E00\u4E2A border-top \u4E14\u5E26 flex \u6392\u5217\uFF0C\u523B\u610F\u5199\u6210\u4E24\u4E2A\u7C7B\u800C\u4E0D\u662F\u57FA\u7C7B + \u4FEE\u9970\u7C7B \u2014\u2014
+   \u5171\u540C\u90E8\u5206\u53EA\u6709 2 \u6761\u58F0\u660E\uFF0C\u62BD\u51FA\u6765\u7684\u6536\u76CA\u62B5\u4E0D\u4E0A\u591A\u4E00\u4E2A\u7C7B\u540D\u3002 */
+.t-diag-notice-band {
+    padding: 15px;
+    background: var(--t-color-surface-inset);
+    border-bottom: 1px solid var(--t-color-border);
+}
+
+.t-diag-actions {
+    padding: 15px;
+    background: var(--t-color-surface-inset);
+    border-top: 1px solid var(--t-color-border);
+    display: flex;
+    gap: 10px;
+}
+
+.t-diag-guide {
+    background: rgba(255, 159, 67, 0.1);
+    border: 1px solid rgba(255, 159, 67, 0.3);
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.t-diag-guide-title {
+    font-weight: bold;
+    color: #feca57;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.t-diag-guide-body {
+    font-size: 0.85em;
+    color: var(--t-color-text-label);
+    line-height: 1.5;
+}
+
+.t-diag-log-section {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+.t-diag-log-title {
+    font-weight: bold;
+    color: var(--t-color-text-secondary);
+    margin-bottom: 10px;
+}
+
+.t-diag-log-hint {
+    font-size: 0.8em;
+    color: var(--t-color-text-faint);
+}
+
+/* \u26A0 \u5FC5\u987B\u7528 ID\uFF1A.t-log-box\uFF08settings.css:227\uFF09\u8BBE\u4E86 height:250px \u4E0E
+   overflow-y:auto\uFF0C(1,0,0) \u624D\u80FD\u786E\u4FDD flex:1 \u4E3B\u5BFC\u5C3A\u5BF8\u3002 */
+#t-diag-log-viewer {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* \u26A0 \u5FC5\u987B\u7528 ID\uFF0C\u4E0D\u80FD\u7528\u7C7B\uFF1A.t-btn:hover:not(:disabled) \u662F (0,3,0) \u4E14**\u8BBE\u4E86
+   border-color**\uFF0C\u4EFB\u4F55 (0,1,0) \u7684\u7C7B\u90FD\u4F1A\u5728\u60AC\u505C\u65F6\u4E22\u6389\u8FD9\u91CC\u7684\u5371\u9669\u8272\u8FB9\u6846\u3002
+   \u539F\u5148\u9760\u5185\u8054\u538B\u8FC7\u5B83\uFF0C\u73B0\u5728\u9760 (1,0,0)\u3002\u8FD9\u7C7B\u72B6\u6001\u89C4\u5219\u9A8C\u8BC1\u5668\u67E5\u4E0D\u5230\uFF0C
+   \u89C1\u4EA4\u63A5\u6587\u6863 \xA75b\u300C\u5185\u8054\u6539\u7C7B\u65F6\u6700\u5BB9\u6613\u4E22\u7684\u5DEE\u5F02\u300D\u3002 */
+#t-diag-clear {
+    color: var(--t-color-danger);
+    border-color: var(--t-color-danger);
+}
+
+#t-diag-export {
+    margin-left: auto;
+}
+
+.t-diag-log-empty {
+    text-align: center;
+    margin-top: 50px;
+    color: #555;
+}
+
+.t-diag-log-empty i {
+    font-size: 2em;
+    margin-bottom: 10px;
 }
 
 
@@ -22784,10 +22912,10 @@ async function showDebugInfo() {
     $mainView.hide();
   }
   const html = `
-    <div class="t-box t-root" id="t-debug-view" style="max-width:1400px; width:95vw; height:92vh; display:flex; flex-direction:column;">
+    <div class="t-box t-root" id="t-debug-view">
         <div class="t-header t-shrink-0">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-layer-group" style="color:#74b9ff;"></i>
+            <div class="t-dbg-title-row">
+                <i class="fa-solid fa-layer-group"></i>
                 <span class="t-title-main">\u63D0\u793A\u8BCD\u67E5\u770B</span>
             </div>
             <span class="t-close" id="t-debug-close">&times;</span>
@@ -23003,40 +23131,40 @@ function showDiagnosticsWindow() {
   const html = `
     <div class="t-box t-root t-diagnostics-container" id="t-diagnostics-view">
         <div class="t-header t-shrink-0">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-stethoscope" style="color:#ff9f43;"></i>
+            <div class="t-dbg-title-row">
+                <i class="fa-solid fa-stethoscope"></i>
                 <span class="t-title-main">\u8BCA\u65AD\u65E5\u5FD7</span>
             </div>
             <span class="t-close" id="t-diag-close">&times;</span>
         </div>
         
-        <div style="padding:15px; background:var(--t-color-surface-inset); border-bottom:1px solid var(--t-color-border);">
-            <div style="background: rgba(255, 159, 67, 0.1); border:1px solid rgba(255, 159, 67, 0.3); padding:12px; border-radius:6px;">
-                <div style="font-weight:bold; color:#feca57; font-size:0.9em; margin-bottom:5px;">
+        <div class="t-diag-notice-band">
+            <div class="t-diag-guide">
+                <div class="t-diag-guide-title">
                     <i class="fa-solid fa-triangle-exclamation"></i> \u62A5\u9519\u6392\u67E5\u6307\u5357
                 </div>
-                <div style="font-size:0.85em; color:var(--t-color-text-label); line-height:1.5;">
+                <div class="t-diag-guide-body">
                     \u5982\u679C\u60A8\u9047\u5230\u751F\u6210\u5931\u8D25\u6216\u5185\u5BB9\u88AB\u622A\u65AD\u7684\u60C5\u51B5\uFF0C\u8BF7\u70B9\u51FB\u4E0B\u65B9"\u5BFC\u51FA\u5B8C\u6574\u62A5\u544A"\u6309\u94AE\uFF0C\u5C06\u751F\u6210\u7684 JSON \u6587\u4EF6\u53D1\u9001\u7ED9\u5F00\u53D1\u8005\u3002
                     \u62A5\u544A\u4E2D\u5305\u542B\u60A8\u7684 Prompt\uFF08\u7528\u4E8E\u6392\u67E5\u5B89\u5168\u5BA1\u67E5\uFF09\uFF0C\u4F46 <b>API Key \u5DF2\u81EA\u52A8\u8131\u654F</b>\u3002
                 </div>
             </div>
         </div>
         
-        <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; padding:15px;">
-            <div style="font-weight:bold; color:var(--t-color-text-secondary); margin-bottom:10px;">
-                <i class="fa-solid fa-scroll"></i> \u5B9E\u65F6\u65E5\u5FD7 <span style="font-size:0.8em; color:var(--t-color-text-faint);">(\u5185\u5B58\u7F13\u5B58 50 \u6761)</span>
+        <div class="t-diag-log-section">
+            <div class="t-diag-log-title">
+                <i class="fa-solid fa-scroll"></i> \u5B9E\u65F6\u65E5\u5FD7 <span class="t-diag-log-hint">(\u5185\u5B58\u7F13\u5B58 50 \u6761)</span>
             </div>
-            <div class="t-log-box" id="t-diag-log-viewer" style="flex:1; overflow-y:auto;"></div>
+            <div class="t-log-box" id="t-diag-log-viewer"></div>
         </div>
         
-        <div style="padding:15px; background:var(--t-color-surface-inset); border-top:1px solid var(--t-color-border); display:flex; gap:10px;">
+        <div class="t-diag-actions">
             <button id="t-diag-refresh" class="t-btn">
                 <i class="fa-solid fa-rotate-right"></i> \u5237\u65B0\u65E5\u5FD7
             </button>
-            <button id="t-diag-clear" class="t-btn" style="color:var(--t-color-danger); border-color:var(--t-color-danger);">
+            <button id="t-diag-clear" class="t-btn">
                 <i class="fa-solid fa-trash"></i> \u6E05\u7A7A\u65E5\u5FD7
             </button>
-            <button id="t-diag-export" class="t-btn primary" style="margin-left:auto;">
+            <button id="t-diag-export" class="t-btn primary">
                 <i class="fa-solid fa-download"></i> \u5BFC\u51FA\u5B8C\u6574\u62A5\u544A (.json)
             </button>
         </div>
@@ -23046,7 +23174,7 @@ function showDiagnosticsWindow() {
     const logs = TitaniaLogger.logs;
     const $viewer = $("#t-diag-log-viewer");
     if (!logs || logs.length === 0) {
-      $viewer.html('<div style="text-align:center; margin-top:50px; color:#555;"><i class="fa-solid fa-inbox" style="font-size:2em; margin-bottom:10px;"></i><br>\u6682\u65E0\u65E5\u5FD7</div>');
+      $viewer.html('<div class="t-diag-log-empty"><i class="fa-solid fa-inbox"></i><br>\u6682\u65E0\u65E5\u5FD7</div>');
       return;
     }
     let html2 = "";
