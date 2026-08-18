@@ -19664,6 +19664,109 @@ body.titania-debug-mode #chat titania-memory::before {
 }
 
 
+/* === 04-features/confirm-dialog.css === */
+/* ============================================================
+   04-features/confirm-dialog.css \u2014\u2014 \u4E16\u754C\u4E66\u4E3A\u7A7A\u65F6\u7684\u81EA\u5B9A\u4E49\u786E\u8BA4\u5F39\u7A97
+
+   \u539F\u5148\u6574\u6BB5\u5199\u5728 src/core/api.js \u7684 handleGenerate() \u91CC\uFF089 \u4E2A\u5185\u8054 style\uFF09\u3002
+   Phase 5b-11 \u8FC1\u51FA\u3002
+
+   \u26A0 \u8FD9\u4E2A\u5F39\u7A97 append \u5230 body \u4E14**\u4E0D\u5E26 \`.t-root\`**\uFF0C\u662F\u672C\u9879\u76EE\u5C11\u89C1\u7684\u4F8B\u5916\u3002
+   \u4E24\u4E2A\u540E\u679C\uFF0C\u90FD\u5C5E\u65E2\u6709\u72B6\u6001\uFF0C\u672C\u6279\u4E0D\u6539\uFF1A
+     1. token \u5B9A\u4E49\u5728 \`:root\`\uFF08\u89C1 00-tokens/ \u4E0B\u7684\u5404\u6587\u4EF6\uFF09\uFF0C\u6240\u4EE5 \`var()\` \u7167\u6837\u89E3\u6790 \u2014\u2014
+        \u8FD9\u4E5F\u662F\u5B83\u5F53\u521D\u80FD\u76F4\u63A5\u7528 var(--t-color-*) \u7684\u539F\u56E0\u3002
+     2. \u4F46\u5B83\u62FF\u4E0D\u5230 \`.t-root\` \u7684 \`font-size: var(--t-font-size-root)\`\uFF0C
+        \u4E8E\u662F\u5185\u90E8\u7684 em \u503C\u662F\u76F8\u5BF9 ST \u7684 15px\u3001\u800C**\u4E0D\u8DDF\u968F\u63D2\u4EF6\u7684 UI \u7F29\u653E**\u3002
+        \u8865 \`.t-root\` \u4F1A\u8BA9\u6574\u4E2A\u5F39\u7A97\u5C3A\u5BF8\u4ECE 15px \u57FA\u51C6\u8DF3\u5230 calc(12px * scale)\uFF0C
+        \u662F\u4E00\u6B21\u771F\u5B9E\u89C6\u89C9\u53D8\u5316\uFF0C\u987B\u5355\u72EC\u4E00\u6B65\u5E76\u7531\u4EBA\u5DE5\u6BD4\u5BF9\uFF08\u5BA1\u8BA1 A21 \u4E5F\u5728\u76EF\u6302\u8F7D\u70B9\uFF09\u3002
+
+   \u26A0 \u9009\u62E9\u5668\u5168\u90E8\u5E26 \`t-\` \u524D\u7F00\u4E14\u5168\u5E93\u552F\u4E00\uFF0C\u6545\u4E0D\u4F1A\u6CC4\u6F0F\u5230\u5BBF\u4E3B\uFF08CLAUDE.md \u7B2C 5 \u6761\uFF09\u3002
+   \u26A0 #4a9eff / #555 / rgba(0,0,0,0.5) \u4FDD\u7559\u539F\u503C\u3002#4a9eff \u5C5E \xA75a \u5BB6\u65CF\u8868\u91CC
+     \u300C\u84DD\u300E\u5F3A\u8C03\u300F\u300D\u90A3\u4E00\u65CF\uFF08\u4E0E --t-color-accent \u7684 #90cdf4 \u4E0D\u540C\u8272\uFF09\uFF0C\u5F52 Phase 6\u3002
+   ============================================================ */
+
+#t-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--t-color-dialog-scrim);
+    /* \u26A0 \u539F\u5185\u8054\u503C\uFF0C\u672C\u6279\u53EA\u662F\u642C\u5BB6\u3002\u8FD9\u4E2A z-index \u4ECE JS \u632A\u8FDB CSS \u540E\u5F00\u59CB\u88AB\u5BA1\u8BA1 A19
+       \u7EDF\u8BA1\uFF08A19 \u53EA\u626B css/\uFF09\uFF0Ctoken \u5316\u5F52 Phase 7 \u2014\u2014 \u5168\u5E93 82 \u5904 / 41 \u4E2A\u4E0D\u540C\u53D6\u503C
+       \u4E00\u8D77\u505A\uFF0C\u522B\u5355\u72EC\u7ED9\u8FD9\u4E00\u5904\u9020 token\u3002 */
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.t-confirm-box {
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: 10px;
+    padding: 25px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    margin: auto;
+}
+
+.t-confirm-icon {
+    font-size: 2em;
+    margin-bottom: 15px;
+}
+
+.t-confirm-msg {
+    color: var(--t-color-text-strong);
+    margin-bottom: 20px;
+    font-size: 1.1em;
+}
+
+/* \u7C7B\u540D\u523B\u610F\u53EB --row\uFF1Acheckbox \u81EA\u8EAB\u7684 id \u5C31\u662F #t-confirm-skip\uFF0C\u907F\u514D\u6DF7\u6DC6\u3002 */
+.t-confirm-skip-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--t-color-text-secondary);
+    font-size: 0.9em;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.t-confirm-skip-row input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.t-confirm-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* \u8FD9\u4E24\u4E2A\u6309\u94AE**\u4E0D\u662F** .t-btn\uFF0C\u662F\u88F8 <button>\uFF08\u5168\u5E93\u65E0\u88F8 button \u89C4\u5219\uFF0C
+   \u6240\u4EE5\u53EA\u6709\u4E0B\u9762\u8FD9\u51E0\u6761\u547D\u4E2D\uFF09\u3002 */
+#t-confirm-yes,
+#t-confirm-no {
+    padding: 10px 30px;
+    color: var(--t-color-text-strong);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+#t-confirm-yes {
+    background: #4a9eff;
+}
+
+#t-confirm-no {
+    background: #555;
+}
+
+
 /* === 04-features/st-embedded.css === */
 /* css/04-features/st-embedded.css \u2014\u2014 \u6CE8\u5165 SillyTavern DOM \u7684\u5143\u7D20
    ============================================================
@@ -19777,7 +19880,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "03-layout/utilities.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/wi-selector.css", "04-features/continuation.css", "04-features/queue.css", "04-features/content-editor.css", "04-features/settings-drawer.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "03-layout/utilities.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/wi-selector.css", "04-features/continuation.css", "04-features/queue.css", "04-features/content-editor.css", "04-features/settings-drawer.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/confirm-dialog.css", "04-features/st-embedded.css"];
   }
 });
 
@@ -43413,17 +43516,17 @@ async function handleGenerate(forceScriptId = null, silent = false, generationOv
       const confirmMsg = "\u4E16\u754C\u4E66\u5DF2\u9009\u4E2D\u7684\u6761\u76EE\u4E3A 0\uFF0C\u662F\u5426\u7EE7\u7EED\u751F\u6210\uFF1F";
       const userConfirmed = await new Promise((resolve) => {
         const confirmHtml = `
-                <div id="t-confirm-overlay" style="position:fixed; inset:0; width:100vw; height:100vh; background:var(--t-color-dialog-scrim); z-index:99999; display:flex; align-items:center; justify-content:center;">
-                    <div style="background:var(--t-color-surface); border:1px solid var(--t-color-border-strong); border-radius:10px; padding:25px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); margin:auto;">
-                        <div style="font-size:2em; margin-bottom:15px;">\u{1F4DA}</div>
-                        <div style="color:var(--t-color-text-strong); margin-bottom:20px; font-size:1.1em;">${confirmMsg}</div>
-                        <label style="display:flex; align-items:center; justify-content:center; gap:8px; color:var(--t-color-text-secondary); font-size:0.9em; margin-bottom:20px; cursor:pointer;">
-                            <input type="checkbox" id="t-confirm-skip" style="width:16px; height:16px; cursor:pointer;">
+                <div id="t-confirm-overlay">
+                    <div class="t-confirm-box">
+                        <div class="t-confirm-icon">\u{1F4DA}</div>
+                        <div class="t-confirm-msg">${confirmMsg}</div>
+                        <label class="t-confirm-skip-row">
+                            <input type="checkbox" id="t-confirm-skip">
                             <span>\u672C\u6B21\u4F1A\u8BDD\u5185\u4E0D\u518D\u63D0\u793A</span>
                         </label>
-                        <div style="display:flex; gap:15px; justify-content:center;">
-                            <button id="t-confirm-yes" style="padding:10px 30px; background:#4a9eff; color:var(--t-color-text-strong); border:none; border-radius:6px; cursor:pointer; font-size:1em;">\u662F</button>
-                            <button id="t-confirm-no" style="padding:10px 30px; background:#555; color:var(--t-color-text-strong); border:none; border-radius:6px; cursor:pointer; font-size:1em;">\u5426</button>
+                        <div class="t-confirm-actions">
+                            <button id="t-confirm-yes">\u662F</button>
+                            <button id="t-confirm-no">\u5426</button>
                         </div>
                     </div>
                 </div>`;

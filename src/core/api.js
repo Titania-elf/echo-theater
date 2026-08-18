@@ -1739,17 +1739,17 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
             const userConfirmed = await new Promise((resolve) => {
                 // 使用自定义确认框（完全居中）
                 const confirmHtml = `
-                <div id="t-confirm-overlay" style="position:fixed; inset:0; width:100vw; height:100vh; background:var(--t-color-dialog-scrim); z-index:99999; display:flex; align-items:center; justify-content:center;">
-                    <div style="background:var(--t-color-surface); border:1px solid var(--t-color-border-strong); border-radius:10px; padding:25px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); margin:auto;">
-                        <div style="font-size:2em; margin-bottom:15px;">📚</div>
-                        <div style="color:var(--t-color-text-strong); margin-bottom:20px; font-size:1.1em;">${confirmMsg}</div>
-                        <label style="display:flex; align-items:center; justify-content:center; gap:8px; color:var(--t-color-text-secondary); font-size:0.9em; margin-bottom:20px; cursor:pointer;">
-                            <input type="checkbox" id="t-confirm-skip" style="width:16px; height:16px; cursor:pointer;">
+                <div id="t-confirm-overlay">
+                    <div class="t-confirm-box">
+                        <div class="t-confirm-icon">📚</div>
+                        <div class="t-confirm-msg">${confirmMsg}</div>
+                        <label class="t-confirm-skip-row">
+                            <input type="checkbox" id="t-confirm-skip">
                             <span>本次会话内不再提示</span>
                         </label>
-                        <div style="display:flex; gap:15px; justify-content:center;">
-                            <button id="t-confirm-yes" style="padding:10px 30px; background:#4a9eff; color:var(--t-color-text-strong); border:none; border-radius:6px; cursor:pointer; font-size:1em;">是</button>
-                            <button id="t-confirm-no" style="padding:10px 30px; background:#555; color:var(--t-color-text-strong); border:none; border-radius:6px; cursor:pointer; font-size:1em;">否</button>
+                        <div class="t-confirm-actions">
+                            <button id="t-confirm-yes">是</button>
+                            <button id="t-confirm-no">否</button>
                         </div>
                     </div>
                 </div>`;

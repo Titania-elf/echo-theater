@@ -1,0 +1,100 @@
+/* ============================================================
+   04-features/confirm-dialog.css —— 世界书为空时的自定义确认弹窗
+
+   原先整段写在 src/core/api.js 的 handleGenerate() 里（9 个内联 style）。
+   Phase 5b-11 迁出。
+
+   ⚠ 这个弹窗 append 到 body 且**不带 `.t-root`**，是本项目少见的例外。
+   两个后果，都属既有状态，本批不改：
+     1. token 定义在 `:root`（见 00-tokens/ 下的各文件），所以 `var()` 照样解析 ——
+        这也是它当初能直接用 var(--t-color-*) 的原因。
+     2. 但它拿不到 `.t-root` 的 `font-size: var(--t-font-size-root)`，
+        于是内部的 em 值是相对 ST 的 15px、而**不跟随插件的 UI 缩放**。
+        补 `.t-root` 会让整个弹窗尺寸从 15px 基准跳到 calc(12px * scale)，
+        是一次真实视觉变化，须单独一步并由人工比对（审计 A21 也在盯挂载点）。
+
+   ⚠ 选择器全部带 `t-` 前缀且全库唯一，故不会泄漏到宿主（CLAUDE.md 第 5 条）。
+   ⚠ #4a9eff / #555 / rgba(0,0,0,0.5) 保留原值。#4a9eff 属 §5a 家族表里
+     「蓝『强调』」那一族（与 --t-color-accent 的 #90cdf4 不同色），归 Phase 6。
+   ============================================================ */
+
+#t-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--t-color-dialog-scrim);
+    /* ⚠ 原内联值，本批只是搬家。这个 z-index 从 JS 挪进 CSS 后开始被审计 A19
+       统计（A19 只扫 css/），token 化归 Phase 7 —— 全库 82 处 / 41 个不同取值
+       一起做，别单独给这一处造 token。 */
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.t-confirm-box {
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: 10px;
+    padding: 25px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    margin: auto;
+}
+
+.t-confirm-icon {
+    font-size: 2em;
+    margin-bottom: 15px;
+}
+
+.t-confirm-msg {
+    color: var(--t-color-text-strong);
+    margin-bottom: 20px;
+    font-size: 1.1em;
+}
+
+/* 类名刻意叫 --row：checkbox 自身的 id 就是 #t-confirm-skip，避免混淆。 */
+.t-confirm-skip-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--t-color-text-secondary);
+    font-size: 0.9em;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.t-confirm-skip-row input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.t-confirm-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* 这两个按钮**不是** .t-btn，是裸 <button>（全库无裸 button 规则，
+   所以只有下面这几条命中）。 */
+#t-confirm-yes,
+#t-confirm-no {
+    padding: 10px 30px;
+    color: var(--t-color-text-strong);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+#t-confirm-yes {
+    background: #4a9eff;
+}
+
+#t-confirm-no {
+    background: #555;
+}
