@@ -11078,6 +11078,152 @@ textarea.t-input {
     color: #555;
 }
 
+/* ============================================================
+   Phase 5b-12\uFF1A\u60AC\u6D6E\u7403\u914D\u8272\u7684\u4E24\u4E2A\u8868\u5355\u7EC4\uFF0830 \u4E2A\u5C5E\u6027\uFF09
+
+   \u2500\u2500 12 \u4E2A\u9884\u8BBE\u8272\u5757 \u2500\u2500
+   \u539F\u5148\u6BCF\u4E2A\u8272\u5757\u7684 style \u91CC\u90FD\u91CD\u590D 5 \u6761\u9759\u6001\u58F0\u660E\uFF0812 x 5 = 60 \u6761\uFF09\uFF0C
+   \u800C\u7B2C 6 \u6761 background \u53C8\u4E0E\u5B83\u81EA\u5DF1\u7684 data-color \u5C5E\u6027\u91CD\u590D\u3002
+
+   \u26A0 \u8C03\u8272\u677F\u7528 [data-color] \u5C5E\u6027\u9009\u62E9\u5668\u627F\u8F7D\uFF0C\u4E0E JS \u4FA7\u65E2\u6709\u5199\u6CD5\u4E00\u81F4 \u2014\u2014
+   settingsWindow.js \u672C\u6765\u5C31\u5728\u7528 $(\`.t-color-preset[data-color="..."]\`)
+   \u505A\u9009\u4E2D\u5B9A\u4F4D\uFF0Cdata-color \u4E00\u76F4\u662F\u5355\u4E00\u53D6\u503C\u6765\u6E90\u3002
+
+   \u26A0 \u8FD9 12 \u4E2A\u989C\u8272\u523B\u610F**\u4E0D** token \u5316\uFF1A\u5B83\u4EEC\u662F**\u7528\u6237\u53EF\u9009\u8C03\u8272\u677F**\uFF0C
+   \u4E3B\u9898\u5207\u6362\u65F6\u5FC5\u987B\u4FDD\u6301\u4E0D\u53D8\uFF08"\u5929\u84DD"\u5728\u4EFB\u4F55\u4E3B\u9898\u4E0B\u90FD\u5F97\u662F\u5929\u84DD\uFF09\u3002
+   \u8FD9\u4E0E\u4EA4\u63A5\u6587\u6863 \xA75a\u300C\u4E0D\u518D\u9020 token\u300D\u7684\u7ED3\u8BBA\u65B9\u5411\u4E00\u81F4\u4F46\u7406\u7531\u4E0D\u540C\uFF1A
+   \u90A3\u8FB9\u662F\u300C\u540C\u8BED\u4E49\u7684\u968F\u624B\u53D6\u503C\u300D\uFF0C\u8FD9\u8FB9\u662F\u300C\u5B83\u672C\u6765\u5C31\u4E0D\u8BE5\u8DDF\u4E3B\u9898\u53D8\u300D\u3002
+   ============================================================ */
+
+.t-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+/* \u9009\u4E2D\u6001\u3002\u539F\u5148\u662F JS \u7528 .css("border-color", "#fff" / "transparent") \u76F4\u63A5\u5199\u5185\u8054\uFF0C
+   \u672C\u6279\u6539\u6210\u5207\u7C7B \u2014\u2014 \u90A3\u662F\u7EAF\u70B9\u51FB\u9A71\u52A8\u7684\u72B6\u6001\uFF0C\u6CA1\u6709 hover/\u89E6\u5C4F\u7684\u884C\u4E3A\u5DEE\u5F02\uFF0C
+   \u4E0E showInteractiveFAB \u90A3\u79CD\u5E26 hover \u7684\u91CD\u6784\u4E0D\u540C\uFF08\u89C1\u4EA4\u63A5\u6587\u6863 \xA75b\uFF09\u3002
+   (0,2,0) \u538B\u8FC7 .t-color-swatch \u7684 border \u7B80\u5199\u3002 */
+.t-color-swatch.is-selected {
+    border-color: #fff;
+}
+
+.t-color-swatch[data-color="#90cdf4"] {
+    background: #90cdf4;
+}
+
+.t-color-swatch[data-color="#a29bfe"] {
+    background: #a29bfe;
+}
+
+.t-color-swatch[data-color="#55efc4"] {
+    background: #55efc4;
+}
+
+.t-color-swatch[data-color="#ffd93d"] {
+    background: #ffd93d;
+}
+
+.t-color-swatch[data-color="#ff6b6b"] {
+    background: #ff6b6b;
+}
+
+.t-color-swatch[data-color="#fd79a8"] {
+    background: #fd79a8;
+}
+
+.t-color-swatch[data-color="#2b2b2b"] {
+    background: #2b2b2b;
+}
+
+.t-color-swatch[data-color="#1a1a2e"] {
+    background: #1a1a2e;
+}
+
+.t-color-swatch[data-color="#16213e"] {
+    background: #16213e;
+}
+
+.t-color-swatch[data-color="#1e272e"] {
+    background: #1e272e;
+}
+
+.t-color-swatch[data-color="#2d132c"] {
+    background: #2d132c;
+}
+
+.t-color-swatch[data-color="#0a3d62"] {
+    background: #0a3d62;
+}
+
+/* \u2500\u2500 \u4E24\u4E2A\u8868\u5355\u7EC4\u7684\u5176\u4F59\u91CD\u590D\u5185\u8054 \u2500\u2500
+   \u4E0B\u9762\u6BCF\u4E2A\u7C7B\u539F\u5148\u90FD\u662F\u300C\u540C\u4E00\u4E32 style \u5728\u672C\u6587\u4EF6\u91CC\u51FA\u73B0 2-3 \u6B21\u300D\uFF0C
+   \u4E14\u5168\u5E93\u8303\u56F4\u5185\u53EA\u5728 settingsWindow.js \u51FA\u73B0\uFF0C\u6545\u6574\u6587\u4EF6\u66FF\u6362\u3002 */
+
+.t-color-field-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* \u4E00\u884C\u7D27\u6392\u7684\u5C0F\u5143\u7D20\u30023 \u5904\u5728\u7528\uFF1A\u4E24\u4E2A\u8272\u5757\u884C + CSS \u4EE3\u7801\u7684\u6309\u94AE\u884C\uFF08:500\uFF09\u3002
+   \u26A0 \u9891\u6B21 3 < 10\uFF0C\u6309 03-layout/utilities.css \u5B9A\u7684\u51C6\u5165\u95E8\u69DB\u4E0D\u8FDB\u5E03\u5C40\u5C42\uFF0C
+   \u5728 feature \u91CC\u7ED9\u8BED\u4E49\u540D\u3002 */
+.t-set-inline-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* \u539F\u751F\u53D6\u8272\u5668\u3002\u5168\u5E93\u65E0\u88F8 input \u89C4\u5219\u547D\u4E2D\u5B83\uFF08\u5DF2\u679A\u4E3E\u786E\u8BA4\uFF09\u3002 */
+.t-color-picker {
+    width: 50px;
+    height: 35px;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+}
+
+/* \u5341\u516D\u8FDB\u5236\u6587\u672C\u6846\u3002\u26A0 \u5FC5\u987B\u7528 ID\uFF1A\u8FD9\u4E24\u4E2A\u5143\u7D20\u5E26 .t-input\uFF0C
+   field.css \u7684 \`.t-root.t-box .t-input\` \u662F (0,3,0) \u4E14\u8BBE\u4E86 width:100%\uFF0C
+   (0,1,0) \u7684\u7C7B\u538B\u4E0D\u8FC7\u3002\u540C 5b-7 \u7684 #t-diag-log-viewer\u3002 */
+#p-border-color-text,
+#p-bg-color-text {
+    width: 100px;
+    font-family: monospace;
+}
+
+.t-opacity-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.t-opacity-label {
+    font-size: 0.85em;
+    color: var(--t-color-text-muted);
+    min-width: 60px;
+}
+
+.t-opacity-value {
+    font-size: 0.85em;
+    color: var(--t-color-brand);
+    min-width: 40px;
+}
+
+/* \u8868\u5355\u7EC4\u672B\u5C3E\u7684\u8BF4\u660E\u5C0F\u5B57\u30023 \u5904\u5728\u7528\uFF08:248 :270 :444\uFF09\u3002
+   \u26A0 \u4E0E 5b-10 \u5EFA\u7684 .t-set-field-hint \u4E0D\u662F\u4E00\u5957\uFF1A\u90A3\u4E2A\u662F 0.75em / #555 /
+   margin-top:5px\uFF0C\u8FD9\u4E2A\u662F 0.75em / var(--t-color-text-faint) / margin-top:8px\u3002
+   \u523B\u610F\u4E0D\u5408\u5E76\uFF08\u5408\u5E76\u8981\u6539\u8272\uFF0C\u5C5E Phase 6\uFF09\u3002 */
+.t-set-note {
+    font-size: 0.75em;
+    color: var(--t-color-text-faint);
+    margin-top: 8px;
+}
+
 
 /* === 04-features/manager.css === */
 /* css/04-features/manager.css - \u5267\u672C\u7BA1\u7406 */
@@ -34761,46 +34907,46 @@ function openSettingsWindow() {
                     
                     <div class="t-form-group">
                         <label class="t-form-label">\u{1F3A8} \u7403\u4F53\u8FB9\u6846\u989C\u8272</label>
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <input type="color" id="p-border-color" value="${tempApp.border_color}" style="width:50px; height:35px; border:none; cursor:pointer; background:transparent;">
-                            <input type="text" id="p-border-color-text" class="t-input" value="${tempApp.border_color}" style="width:100px; font-family:monospace;">
-                            <div style="display:flex; gap:8px;">
-                                <span class="t-color-preset" data-color="#90cdf4" style="width:24px; height:24px; border-radius:50%; background:#90cdf4; cursor:pointer; border:2px solid transparent;" title="\u5929\u84DD"></span>
-                                <span class="t-color-preset" data-color="#a29bfe" style="width:24px; height:24px; border-radius:50%; background:#a29bfe; cursor:pointer; border:2px solid transparent;" title="\u7D2B\u7F57\u5170"></span>
-                                <span class="t-color-preset" data-color="#55efc4" style="width:24px; height:24px; border-radius:50%; background:#55efc4; cursor:pointer; border:2px solid transparent;" title="\u8584\u8377\u7EFF"></span>
-                                <span class="t-color-preset" data-color="#ffd93d" style="width:24px; height:24px; border-radius:50%; background:#ffd93d; cursor:pointer; border:2px solid transparent;" title="\u91D1\u9EC4"></span>
-                                <span class="t-color-preset" data-color="#ff6b6b" style="width:24px; height:24px; border-radius:50%; background:#ff6b6b; cursor:pointer; border:2px solid transparent;" title="\u73CA\u745A\u7EA2"></span>
-                                <span class="t-color-preset" data-color="#fd79a8" style="width:24px; height:24px; border-radius:50%; background:#fd79a8; cursor:pointer; border:2px solid transparent;" title="\u7C89\u7EA2"></span>
+                        <div class="t-color-field-row">
+                            <input type="color" id="p-border-color" value="${tempApp.border_color}" class="t-color-picker">
+                            <input type="text" id="p-border-color-text" class="t-input" value="${tempApp.border_color}">
+                            <div class="t-set-inline-group">
+                                <span class="t-color-preset t-color-swatch" data-color="#90cdf4" title="\u5929\u84DD"></span>
+                                <span class="t-color-preset t-color-swatch" data-color="#a29bfe" title="\u7D2B\u7F57\u5170"></span>
+                                <span class="t-color-preset t-color-swatch" data-color="#55efc4" title="\u8584\u8377\u7EFF"></span>
+                                <span class="t-color-preset t-color-swatch" data-color="#ffd93d" title="\u91D1\u9EC4"></span>
+                                <span class="t-color-preset t-color-swatch" data-color="#ff6b6b" title="\u73CA\u745A\u7EA2"></span>
+                                <span class="t-color-preset t-color-swatch" data-color="#fd79a8" title="\u7C89\u7EA2"></span>
                             </div>
                         </div>
-                        <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-                            <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">\u900F\u660E\u5EA6:</span>
+                        <div class="t-opacity-row">
+                            <span class="t-opacity-label">\u900F\u660E\u5EA6:</span>
                             <input class="t-flex-1" type="range" id="p-border-opacity" min="0" max="100" step="5" value="${tempApp.border_opacity}">
-                            <span id="p-border-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.border_opacity}%</span>
+                            <span id="p-border-opacity-val" class="t-opacity-value">${tempApp.border_opacity}%</span>
                         </div>
-                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">\u6B64\u989C\u8272\u5C06\u5E94\u7528\u4E8E\u60AC\u6D6E\u7403\u8FB9\u6846\u53CA\u52A8\u753B\u6548\u679C</p>
+                        <p class="t-set-note">\u6B64\u989C\u8272\u5C06\u5E94\u7528\u4E8E\u60AC\u6D6E\u7403\u8FB9\u6846\u53CA\u52A8\u753B\u6548\u679C</p>
                     </div>
                     
                     <div class="t-form-group">
                         <label class="t-form-label">\u{1F58C}\uFE0F \u7403\u4F53\u80CC\u666F\u989C\u8272</label>
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <input type="color" id="p-bg-color" value="${tempApp.bg_color}" style="width:50px; height:35px; border:none; cursor:pointer; background:transparent;">
-                            <input type="text" id="p-bg-color-text" class="t-input" value="${tempApp.bg_color}" style="width:100px; font-family:monospace;">
-                            <div style="display:flex; gap:8px;">
-                                <span class="t-bg-preset" data-color="#2b2b2b" style="width:24px; height:24px; border-radius:50%; background:#2b2b2b; cursor:pointer; border:2px solid transparent;" title="\u6DF1\u7070 (\u9ED8\u8BA4)"></span>
-                                <span class="t-bg-preset" data-color="#1a1a2e" style="width:24px; height:24px; border-radius:50%; background:#1a1a2e; cursor:pointer; border:2px solid transparent;" title="\u6DF1\u84DD"></span>
-                                <span class="t-bg-preset" data-color="#16213e" style="width:24px; height:24px; border-radius:50%; background:#16213e; cursor:pointer; border:2px solid transparent;" title="\u85CF\u9752"></span>
-                                <span class="t-bg-preset" data-color="#1e272e" style="width:24px; height:24px; border-radius:50%; background:#1e272e; cursor:pointer; border:2px solid transparent;" title="\u70AD\u9ED1"></span>
-                                <span class="t-bg-preset" data-color="#2d132c" style="width:24px; height:24px; border-radius:50%; background:#2d132c; cursor:pointer; border:2px solid transparent;" title="\u6DF1\u7D2B"></span>
-                                <span class="t-bg-preset" data-color="#0a3d62" style="width:24px; height:24px; border-radius:50%; background:#0a3d62; cursor:pointer; border:2px solid transparent;" title="\u6D77\u84DD"></span>
+                        <div class="t-color-field-row">
+                            <input type="color" id="p-bg-color" value="${tempApp.bg_color}" class="t-color-picker">
+                            <input type="text" id="p-bg-color-text" class="t-input" value="${tempApp.bg_color}">
+                            <div class="t-set-inline-group">
+                                <span class="t-bg-preset t-color-swatch" data-color="#2b2b2b" title="\u6DF1\u7070 (\u9ED8\u8BA4)"></span>
+                                <span class="t-bg-preset t-color-swatch" data-color="#1a1a2e" title="\u6DF1\u84DD"></span>
+                                <span class="t-bg-preset t-color-swatch" data-color="#16213e" title="\u85CF\u9752"></span>
+                                <span class="t-bg-preset t-color-swatch" data-color="#1e272e" title="\u70AD\u9ED1"></span>
+                                <span class="t-bg-preset t-color-swatch" data-color="#2d132c" title="\u6DF1\u7D2B"></span>
+                                <span class="t-bg-preset t-color-swatch" data-color="#0a3d62" title="\u6D77\u84DD"></span>
                             </div>
                         </div>
-                        <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-                            <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">\u900F\u660E\u5EA6:</span>
+                        <div class="t-opacity-row">
+                            <span class="t-opacity-label">\u900F\u660E\u5EA6:</span>
                             <input class="t-flex-1" type="range" id="p-bg-opacity" min="0" max="100" step="5" value="${tempApp.bg_opacity}">
-                            <span id="p-bg-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.bg_opacity}%</span>
+                            <span id="p-bg-opacity-val" class="t-opacity-value">${tempApp.bg_opacity}%</span>
                         </div>
-                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">\u7403\u4F53\u7684\u80CC\u666F\u586B\u5145\u989C\u8272\uFF08\u900F\u660E\u5EA6\u4E3A0\u65F6\u5B8C\u5168\u900F\u660E\uFF09</p>
+                        <p class="t-set-note">\u7403\u4F53\u7684\u80CC\u666F\u586B\u5145\u989C\u8272\uFF08\u900F\u660E\u5EA6\u4E3A0\u65F6\u5B8C\u5168\u900F\u660E\uFF09</p>
                     </div>
                     
                     <div class="t-form-group">
@@ -34974,7 +35120,7 @@ function openSettingsWindow() {
                                     <button id="btn-font-upload" class="t-tool-btn" style="padding:8px 15px;"><i class="fa-solid fa-upload"></i> \u9009\u62E9\u6587\u4EF6</button>
                                     <span id="t-font-file-name" style="color:var(--t-color-text-muted); font-size:0.9em;">${fontSettings.font_data ? "\u5DF2\u4E0A\u4F20\u5B57\u4F53\u6587\u4EF6" : "\u672A\u9009\u62E9\u6587\u4EF6"}</span>
                                 </div>
-                                <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">
+                                <p class="t-set-note">
                                     \u652F\u6301 .woff2 (\u63A8\u8350)\u3001.woff\u3001.ttf\u3001.otf \u683C\u5F0F<br>
                                     <span class="t-set-font-warn">\u26A0\uFE0F \u5B57\u4F53\u6587\u4EF6\u5C06\u4EE5 Base64 \u5B58\u50A8\uFF0C\u5EFA\u8BAE\u4E0D\u8D85\u8FC7 2MB</span>
                                 </p>
@@ -35030,7 +35176,7 @@ function openSettingsWindow() {
                     <div class="t-form-group">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                             <label class="t-form-label" style="margin:0;">CSS \u4EE3\u7801</label>
-                            <div style="display:flex; gap:8px;">
+                            <div class="t-set-inline-group">
                                 <button id="btn-css-import" class="t-tool-btn" title="\u5BFC\u5165\u65B9\u6848"><i class="fa-solid fa-file-import"></i> \u5BFC\u5165</button>
                                 <button id="btn-css-export" class="t-tool-btn" title="\u5BFC\u51FA\u65B9\u6848"><i class="fa-solid fa-file-export"></i> \u5BFC\u51FA</button>
                                 <button id="btn-css-reset" class="t-tool-btn" title="\u6E05\u7A7A\u5185\u5BB9" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i> \u6E05\u7A7A</button>
@@ -35478,8 +35624,8 @@ function openSettingsWindow() {
     $("#p-border-color").val(color);
     $("#p-border-color-text").val(color);
     $("#p-ball").css("border-color", color);
-    $(".t-color-preset").css("border-color", "transparent");
-    $(`.t-color-preset[data-color="${color}"]`).css("border-color", "#fff");
+    $(".t-color-preset").removeClass("is-selected");
+    $(`.t-color-preset[data-color="${color}"]`).addClass("is-selected");
   };
   $("#p-border-color").on("input", function() {
     updateBorderColorUI($(this).val());
@@ -35493,14 +35639,14 @@ function openSettingsWindow() {
   $(".t-color-preset").on("click", function() {
     updateBorderColorUI($(this).data("color"));
   });
-  $(`.t-color-preset[data-color="${tempApp.border_color}"]`).css("border-color", "#fff");
+  $(`.t-color-preset[data-color="${tempApp.border_color}"]`).addClass("is-selected");
   const updateBgColorUI = (color) => {
     tempApp.bg_color = color;
     $("#p-bg-color").val(color);
     $("#p-bg-color-text").val(color);
     $("#p-ball").css("background", color);
-    $(".t-bg-preset").css("border-color", "transparent");
-    $(`.t-bg-preset[data-color="${color}"]`).css("border-color", "#fff");
+    $(".t-bg-preset").removeClass("is-selected");
+    $(`.t-bg-preset[data-color="${color}"]`).addClass("is-selected");
   };
   $("#p-bg-color").on("input", function() {
     updateBgColorUI($(this).val());
@@ -35514,7 +35660,7 @@ function openSettingsWindow() {
   $(".t-bg-preset").on("click", function() {
     updateBgColorUI($(this).data("color"));
   });
-  $(`.t-bg-preset[data-color="${tempApp.bg_color}"]`).css("border-color", "#fff");
+  $(`.t-bg-preset[data-color="${tempApp.bg_color}"]`).addClass("is-selected");
   $("#p-border-opacity").on("input", function() {
     tempApp.border_opacity = parseInt($(this).val());
     $("#p-border-opacity-val").text(tempApp.border_opacity + "%");

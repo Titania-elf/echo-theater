@@ -228,46 +228,46 @@ export function openSettingsWindow() {
                     
                     <div class="t-form-group">
                         <label class="t-form-label">🎨 球体边框颜色</label>
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <input type="color" id="p-border-color" value="${tempApp.border_color}" style="width:50px; height:35px; border:none; cursor:pointer; background:transparent;">
-                            <input type="text" id="p-border-color-text" class="t-input" value="${tempApp.border_color}" style="width:100px; font-family:monospace;">
-                            <div style="display:flex; gap:8px;">
-                                <span class="t-color-preset" data-color="#90cdf4" style="width:24px; height:24px; border-radius:50%; background:#90cdf4; cursor:pointer; border:2px solid transparent;" title="天蓝"></span>
-                                <span class="t-color-preset" data-color="#a29bfe" style="width:24px; height:24px; border-radius:50%; background:#a29bfe; cursor:pointer; border:2px solid transparent;" title="紫罗兰"></span>
-                                <span class="t-color-preset" data-color="#55efc4" style="width:24px; height:24px; border-radius:50%; background:#55efc4; cursor:pointer; border:2px solid transparent;" title="薄荷绿"></span>
-                                <span class="t-color-preset" data-color="#ffd93d" style="width:24px; height:24px; border-radius:50%; background:#ffd93d; cursor:pointer; border:2px solid transparent;" title="金黄"></span>
-                                <span class="t-color-preset" data-color="#ff6b6b" style="width:24px; height:24px; border-radius:50%; background:#ff6b6b; cursor:pointer; border:2px solid transparent;" title="珊瑚红"></span>
-                                <span class="t-color-preset" data-color="#fd79a8" style="width:24px; height:24px; border-radius:50%; background:#fd79a8; cursor:pointer; border:2px solid transparent;" title="粉红"></span>
+                        <div class="t-color-field-row">
+                            <input type="color" id="p-border-color" value="${tempApp.border_color}" class="t-color-picker">
+                            <input type="text" id="p-border-color-text" class="t-input" value="${tempApp.border_color}">
+                            <div class="t-set-inline-group">
+                                <span class="t-color-preset t-color-swatch" data-color="#90cdf4" title="天蓝"></span>
+                                <span class="t-color-preset t-color-swatch" data-color="#a29bfe" title="紫罗兰"></span>
+                                <span class="t-color-preset t-color-swatch" data-color="#55efc4" title="薄荷绿"></span>
+                                <span class="t-color-preset t-color-swatch" data-color="#ffd93d" title="金黄"></span>
+                                <span class="t-color-preset t-color-swatch" data-color="#ff6b6b" title="珊瑚红"></span>
+                                <span class="t-color-preset t-color-swatch" data-color="#fd79a8" title="粉红"></span>
                             </div>
                         </div>
-                        <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-                            <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">透明度:</span>
+                        <div class="t-opacity-row">
+                            <span class="t-opacity-label">透明度:</span>
                             <input class="t-flex-1" type="range" id="p-border-opacity" min="0" max="100" step="5" value="${tempApp.border_opacity}">
-                            <span id="p-border-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.border_opacity}%</span>
+                            <span id="p-border-opacity-val" class="t-opacity-value">${tempApp.border_opacity}%</span>
                         </div>
-                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">此颜色将应用于悬浮球边框及动画效果</p>
+                        <p class="t-set-note">此颜色将应用于悬浮球边框及动画效果</p>
                     </div>
                     
                     <div class="t-form-group">
                         <label class="t-form-label">🖌️ 球体背景颜色</label>
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <input type="color" id="p-bg-color" value="${tempApp.bg_color}" style="width:50px; height:35px; border:none; cursor:pointer; background:transparent;">
-                            <input type="text" id="p-bg-color-text" class="t-input" value="${tempApp.bg_color}" style="width:100px; font-family:monospace;">
-                            <div style="display:flex; gap:8px;">
-                                <span class="t-bg-preset" data-color="#2b2b2b" style="width:24px; height:24px; border-radius:50%; background:#2b2b2b; cursor:pointer; border:2px solid transparent;" title="深灰 (默认)"></span>
-                                <span class="t-bg-preset" data-color="#1a1a2e" style="width:24px; height:24px; border-radius:50%; background:#1a1a2e; cursor:pointer; border:2px solid transparent;" title="深蓝"></span>
-                                <span class="t-bg-preset" data-color="#16213e" style="width:24px; height:24px; border-radius:50%; background:#16213e; cursor:pointer; border:2px solid transparent;" title="藏青"></span>
-                                <span class="t-bg-preset" data-color="#1e272e" style="width:24px; height:24px; border-radius:50%; background:#1e272e; cursor:pointer; border:2px solid transparent;" title="炭黑"></span>
-                                <span class="t-bg-preset" data-color="#2d132c" style="width:24px; height:24px; border-radius:50%; background:#2d132c; cursor:pointer; border:2px solid transparent;" title="深紫"></span>
-                                <span class="t-bg-preset" data-color="#0a3d62" style="width:24px; height:24px; border-radius:50%; background:#0a3d62; cursor:pointer; border:2px solid transparent;" title="海蓝"></span>
+                        <div class="t-color-field-row">
+                            <input type="color" id="p-bg-color" value="${tempApp.bg_color}" class="t-color-picker">
+                            <input type="text" id="p-bg-color-text" class="t-input" value="${tempApp.bg_color}">
+                            <div class="t-set-inline-group">
+                                <span class="t-bg-preset t-color-swatch" data-color="#2b2b2b" title="深灰 (默认)"></span>
+                                <span class="t-bg-preset t-color-swatch" data-color="#1a1a2e" title="深蓝"></span>
+                                <span class="t-bg-preset t-color-swatch" data-color="#16213e" title="藏青"></span>
+                                <span class="t-bg-preset t-color-swatch" data-color="#1e272e" title="炭黑"></span>
+                                <span class="t-bg-preset t-color-swatch" data-color="#2d132c" title="深紫"></span>
+                                <span class="t-bg-preset t-color-swatch" data-color="#0a3d62" title="海蓝"></span>
                             </div>
                         </div>
-                        <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-                            <span style="font-size:0.85em; color:var(--t-color-text-muted); min-width:60px;">透明度:</span>
+                        <div class="t-opacity-row">
+                            <span class="t-opacity-label">透明度:</span>
                             <input class="t-flex-1" type="range" id="p-bg-opacity" min="0" max="100" step="5" value="${tempApp.bg_opacity}">
-                            <span id="p-bg-opacity-val" style="font-size:0.85em; color:var(--t-color-brand); min-width:40px;">${tempApp.bg_opacity}%</span>
+                            <span id="p-bg-opacity-val" class="t-opacity-value">${tempApp.bg_opacity}%</span>
                         </div>
-                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">球体的背景填充颜色（透明度为0时完全透明）</p>
+                        <p class="t-set-note">球体的背景填充颜色（透明度为0时完全透明）</p>
                     </div>
                     
                     <div class="t-form-group">
@@ -441,7 +441,7 @@ export function openSettingsWindow() {
                                     <button id="btn-font-upload" class="t-tool-btn" style="padding:8px 15px;"><i class="fa-solid fa-upload"></i> 选择文件</button>
                                     <span id="t-font-file-name" style="color:var(--t-color-text-muted); font-size:0.9em;">${fontSettings.font_data ? '已上传字体文件' : '未选择文件'}</span>
                                 </div>
-                                <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:8px;">
+                                <p class="t-set-note">
                                     支持 .woff2 (推荐)、.woff、.ttf、.otf 格式<br>
                                     <span class="t-set-font-warn">⚠️ 字体文件将以 Base64 存储，建议不超过 2MB</span>
                                 </p>
@@ -497,7 +497,7 @@ export function openSettingsWindow() {
                     <div class="t-form-group">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                             <label class="t-form-label" style="margin:0;">CSS 代码</label>
-                            <div style="display:flex; gap:8px;">
+                            <div class="t-set-inline-group">
                                 <button id="btn-css-import" class="t-tool-btn" title="导入方案"><i class="fa-solid fa-file-import"></i> 导入</button>
                                 <button id="btn-css-export" class="t-tool-btn" title="导出方案"><i class="fa-solid fa-file-export"></i> 导出</button>
                                 <button id="btn-css-reset" class="t-tool-btn" title="清空内容" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i> 清空</button>
@@ -977,8 +977,8 @@ export function openSettingsWindow() {
         $("#p-border-color-text").val(color);
         $("#p-ball").css("border-color", color);
         // 更新预设按钮高亮
-        $(".t-color-preset").css("border-color", "transparent");
-        $(`.t-color-preset[data-color="${color}"]`).css("border-color", "#fff");
+        $(".t-color-preset").removeClass("is-selected");
+        $(`.t-color-preset[data-color="${color}"]`).addClass("is-selected");
     };
 
     $("#p-border-color").on("input", function () {
@@ -997,7 +997,7 @@ export function openSettingsWindow() {
     });
 
     // 初始化边框颜色高亮
-    $(`.t-color-preset[data-color="${tempApp.border_color}"]`).css("border-color", "#fff");
+    $(`.t-color-preset[data-color="${tempApp.border_color}"]`).addClass("is-selected");
 
     // 背景颜色选择事件
     const updateBgColorUI = (color) => {
@@ -1006,8 +1006,8 @@ export function openSettingsWindow() {
         $("#p-bg-color-text").val(color);
         $("#p-ball").css("background", color);
         // 更新预设按钮高亮
-        $(".t-bg-preset").css("border-color", "transparent");
-        $(`.t-bg-preset[data-color="${color}"]`).css("border-color", "#fff");
+        $(".t-bg-preset").removeClass("is-selected");
+        $(`.t-bg-preset[data-color="${color}"]`).addClass("is-selected");
     };
 
     $("#p-bg-color").on("input", function () {
@@ -1026,7 +1026,7 @@ export function openSettingsWindow() {
     });
 
     // 初始化背景颜色高亮
-    $(`.t-bg-preset[data-color="${tempApp.bg_color}"]`).css("border-color", "#fff");
+    $(`.t-bg-preset[data-color="${tempApp.bg_color}"]`).addClass("is-selected");
 
     // 边框透明度滑块事件
     $("#p-border-opacity").on("input", function () {

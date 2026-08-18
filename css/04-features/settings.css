@@ -872,3 +872,149 @@
     margin-top: 100px;
     color: #555;
 }
+
+/* ============================================================
+   Phase 5b-12：悬浮球配色的两个表单组（30 个属性）
+
+   ── 12 个预设色块 ──
+   原先每个色块的 style 里都重复 5 条静态声明（12 x 5 = 60 条），
+   而第 6 条 background 又与它自己的 data-color 属性重复。
+
+   ⚠ 调色板用 [data-color] 属性选择器承载，与 JS 侧既有写法一致 ——
+   settingsWindow.js 本来就在用 $(`.t-color-preset[data-color="..."]`)
+   做选中定位，data-color 一直是单一取值来源。
+
+   ⚠ 这 12 个颜色刻意**不** token 化：它们是**用户可选调色板**，
+   主题切换时必须保持不变（"天蓝"在任何主题下都得是天蓝）。
+   这与交接文档 §5a「不再造 token」的结论方向一致但理由不同：
+   那边是「同语义的随手取值」，这边是「它本来就不该跟主题变」。
+   ============================================================ */
+
+.t-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+/* 选中态。原先是 JS 用 .css("border-color", "#fff" / "transparent") 直接写内联，
+   本批改成切类 —— 那是纯点击驱动的状态，没有 hover/触屏的行为差异，
+   与 showInteractiveFAB 那种带 hover 的重构不同（见交接文档 §5b）。
+   (0,2,0) 压过 .t-color-swatch 的 border 简写。 */
+.t-color-swatch.is-selected {
+    border-color: #fff;
+}
+
+.t-color-swatch[data-color="#90cdf4"] {
+    background: #90cdf4;
+}
+
+.t-color-swatch[data-color="#a29bfe"] {
+    background: #a29bfe;
+}
+
+.t-color-swatch[data-color="#55efc4"] {
+    background: #55efc4;
+}
+
+.t-color-swatch[data-color="#ffd93d"] {
+    background: #ffd93d;
+}
+
+.t-color-swatch[data-color="#ff6b6b"] {
+    background: #ff6b6b;
+}
+
+.t-color-swatch[data-color="#fd79a8"] {
+    background: #fd79a8;
+}
+
+.t-color-swatch[data-color="#2b2b2b"] {
+    background: #2b2b2b;
+}
+
+.t-color-swatch[data-color="#1a1a2e"] {
+    background: #1a1a2e;
+}
+
+.t-color-swatch[data-color="#16213e"] {
+    background: #16213e;
+}
+
+.t-color-swatch[data-color="#1e272e"] {
+    background: #1e272e;
+}
+
+.t-color-swatch[data-color="#2d132c"] {
+    background: #2d132c;
+}
+
+.t-color-swatch[data-color="#0a3d62"] {
+    background: #0a3d62;
+}
+
+/* ── 两个表单组的其余重复内联 ──
+   下面每个类原先都是「同一串 style 在本文件里出现 2-3 次」，
+   且全库范围内只在 settingsWindow.js 出现，故整文件替换。 */
+
+.t-color-field-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* 一行紧排的小元素。3 处在用：两个色块行 + CSS 代码的按钮行（:500）。
+   ⚠ 频次 3 < 10，按 03-layout/utilities.css 定的准入门槛不进布局层，
+   在 feature 里给语义名。 */
+.t-set-inline-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* 原生取色器。全库无裸 input 规则命中它（已枚举确认）。 */
+.t-color-picker {
+    width: 50px;
+    height: 35px;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+}
+
+/* 十六进制文本框。⚠ 必须用 ID：这两个元素带 .t-input，
+   field.css 的 `.t-root.t-box .t-input` 是 (0,3,0) 且设了 width:100%，
+   (0,1,0) 的类压不过。同 5b-7 的 #t-diag-log-viewer。 */
+#p-border-color-text,
+#p-bg-color-text {
+    width: 100px;
+    font-family: monospace;
+}
+
+.t-opacity-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.t-opacity-label {
+    font-size: 0.85em;
+    color: var(--t-color-text-muted);
+    min-width: 60px;
+}
+
+.t-opacity-value {
+    font-size: 0.85em;
+    color: var(--t-color-brand);
+    min-width: 40px;
+}
+
+/* 表单组末尾的说明小字。3 处在用（:248 :270 :444）。
+   ⚠ 与 5b-10 建的 .t-set-field-hint 不是一套：那个是 0.75em / #555 /
+   margin-top:5px，这个是 0.75em / var(--t-color-text-faint) / margin-top:8px。
+   刻意不合并（合并要改色，属 Phase 6）。 */
+.t-set-note {
+    font-size: 0.75em;
+    color: var(--t-color-text-faint);
+    margin-top: 8px;
+}
