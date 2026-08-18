@@ -412,7 +412,7 @@ export function openWorkshopWindow(source = 'manager') {
                         <div class="t-ws-sk-line" style="width:50%;"></div>
                     </div>
                     <div class="t-ws-sk-line" style="width:75%; height:13px;"></div>
-                    <div class="t-ws-sk-line" style="width:100%;"></div>
+                    <div class="t-ws-sk-line t-w-full"></div>
                     <div class="t-ws-sk-line" style="width:60%;"></div>
                 </div>`).join("")
         );

@@ -34,3 +34,26 @@
 .is-hidden {
     display: none;
 }
+
+/* 占满父元素宽度。全库 9 次，其中 8 次是「整个 style 属性只有这一条」。
+   ⚠ 带 `.t-input` 的元素本就从 field.css 拿到 width:100%（0,3,0），
+   本类（0,1,0）在那里会落败，但值相同、无视觉差异。 */
+.t-w-full {
+    width: 100%;
+}
+
+/* 不参与 flex 压缩。全库 10 次，其中 7 次是单声明属性。 */
+.t-shrink-0 {
+    flex-shrink: 0;
+}
+
+/* ⚠ 到此为止：按「单条声明」横切已基本到顶。
+   全库剩余的高频声明（display:flex 93 次、align-items:center 52 次、
+   gap:10px 30 次、text-align:center 17 次、flex-direction:column 14 次、
+   overflow:hidden 13 次、justify-content:space-between 13 次）
+   **单声明出现次数全部为 0** —— 它们永远与其它声明同现。
+   为它们建 utility 就必须把多声明属性拆成
+   `class="t-flex t-items-center t-gap-10"`，那是原子化 CSS，
+   与本项目「语义类 + 组件层」的方向冲突。
+   剩下的 196 个单声明属性是长尾（64 种），且多为颜色/字重（视觉，不属本层）
+   与裸像素间距（Phase 7 要归并的噪声）。**继续应回到按组件迁移。** */

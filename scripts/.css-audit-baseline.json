@@ -121,14 +121,14 @@
       "title": "src/**/*.js 的 inline style 计数",
       "violations": 0,
       "metrics": {
-        "静态": 508,
+        "静态": 493,
         "数据驱动": 26,
-        "合计": 534,
-        "  src/ui/settingsWindow.js": "194（静态 183）",
+        "合计": 519,
+        "  src/ui/settingsWindow.js": "191（静态 180）",
         "  src/ui/loreReviewWindow.js": "55（静态 50）",
         "  src/ui/mainWindow.js": "49（静态 47）",
         "  src/ui/storyOutlineWindow.js": "46（静态 46）",
-        "  src/ui/scriptManager.js": "44（静态 44）"
+        "  src/ui/scriptManager.js": "39（静态 39）"
       }
     },
     "A17": {
@@ -176,8 +176,8 @@
     }
   },
   "scale": {
-    "CSS 总行数": 17152,
-    "规则条数": 2242,
+    "CSS 总行数": 17175,
+    "规则条数": 2244,
     "border-radius 声明 / 不同值": "344 / 43",
     "box-shadow 声明 / 不同值": "116 / 87",
     "font-size (px / em)": "171 / 309",

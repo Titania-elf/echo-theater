@@ -174,7 +174,7 @@ export async function showDebugInfo() {
 
     const html = `
     <div class="t-box t-root" id="t-debug-view" style="max-width:1400px; width:95vw; height:92vh; display:flex; flex-direction:column;">
-        <div class="t-header" style="flex-shrink:0;">
+        <div class="t-header t-shrink-0">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-layer-group" style="color:#74b9ff;"></i>
                 <span class="t-title-main">提示词查看</span>
@@ -438,7 +438,7 @@ export function showDiagnosticsWindow() {
 
     const html = `
     <div class="t-box t-root t-diagnostics-container" id="t-diagnostics-view">
-        <div class="t-header" style="flex-shrink:0;">
+        <div class="t-header t-shrink-0">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-stethoscope" style="color:#ff9f43;"></i>
                 <span class="t-title-main">诊断日志</span>

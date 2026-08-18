@@ -24,7 +24,7 @@ export function renderHtml(viewData) {
     <div id="t-overlay" class="t-overlay t-root">
         <div class="t-box t-root" id="t-main-view">
 
-            <div class="t-header" style="flex-shrink:0;">
+            <div class="t-header t-shrink-0">
                 <div class="t-title-container" style="display:flex; flex-direction:column; overflow:hidden;">
                     <div class="t-title-main" style="white-space:nowrap;">回声小剧场</div>
                     <div class="t-title-sub" id="t-title-sub">

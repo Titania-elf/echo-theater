@@ -4219,6 +4219,29 @@ textarea.t-input {
     display: none;
 }
 
+/* \u5360\u6EE1\u7236\u5143\u7D20\u5BBD\u5EA6\u3002\u5168\u5E93 9 \u6B21\uFF0C\u5176\u4E2D 8 \u6B21\u662F\u300C\u6574\u4E2A style \u5C5E\u6027\u53EA\u6709\u8FD9\u4E00\u6761\u300D\u3002
+   \u26A0 \u5E26 \`.t-input\` \u7684\u5143\u7D20\u672C\u5C31\u4ECE field.css \u62FF\u5230 width:100%\uFF080,3,0\uFF09\uFF0C
+   \u672C\u7C7B\uFF080,1,0\uFF09\u5728\u90A3\u91CC\u4F1A\u843D\u8D25\uFF0C\u4F46\u503C\u76F8\u540C\u3001\u65E0\u89C6\u89C9\u5DEE\u5F02\u3002 */
+.t-w-full {
+    width: 100%;
+}
+
+/* \u4E0D\u53C2\u4E0E flex \u538B\u7F29\u3002\u5168\u5E93 10 \u6B21\uFF0C\u5176\u4E2D 7 \u6B21\u662F\u5355\u58F0\u660E\u5C5E\u6027\u3002 */
+.t-shrink-0 {
+    flex-shrink: 0;
+}
+
+/* \u26A0 \u5230\u6B64\u4E3A\u6B62\uFF1A\u6309\u300C\u5355\u6761\u58F0\u660E\u300D\u6A2A\u5207\u5DF2\u57FA\u672C\u5230\u9876\u3002
+   \u5168\u5E93\u5269\u4F59\u7684\u9AD8\u9891\u58F0\u660E\uFF08display:flex 93 \u6B21\u3001align-items:center 52 \u6B21\u3001
+   gap:10px 30 \u6B21\u3001text-align:center 17 \u6B21\u3001flex-direction:column 14 \u6B21\u3001
+   overflow:hidden 13 \u6B21\u3001justify-content:space-between 13 \u6B21\uFF09
+   **\u5355\u58F0\u660E\u51FA\u73B0\u6B21\u6570\u5168\u90E8\u4E3A 0** \u2014\u2014 \u5B83\u4EEC\u6C38\u8FDC\u4E0E\u5176\u5B83\u58F0\u660E\u540C\u73B0\u3002
+   \u4E3A\u5B83\u4EEC\u5EFA utility \u5C31\u5FC5\u987B\u628A\u591A\u58F0\u660E\u5C5E\u6027\u62C6\u6210
+   \`class="t-flex t-items-center t-gap-10"\`\uFF0C\u90A3\u662F\u539F\u5B50\u5316 CSS\uFF0C
+   \u4E0E\u672C\u9879\u76EE\u300C\u8BED\u4E49\u7C7B + \u7EC4\u4EF6\u5C42\u300D\u7684\u65B9\u5411\u51B2\u7A81\u3002
+   \u5269\u4E0B\u7684 196 \u4E2A\u5355\u58F0\u660E\u5C5E\u6027\u662F\u957F\u5C3E\uFF0864 \u79CD\uFF09\uFF0C\u4E14\u591A\u4E3A\u989C\u8272/\u5B57\u91CD\uFF08\u89C6\u89C9\uFF0C\u4E0D\u5C5E\u672C\u5C42\uFF09
+   \u4E0E\u88F8\u50CF\u7D20\u95F4\u8DDD\uFF08Phase 7 \u8981\u5F52\u5E76\u7684\u566A\u58F0\uFF09\u3002**\u7EE7\u7EED\u5E94\u56DE\u5230\u6309\u7EC4\u4EF6\u8FC1\u79FB\u3002** */
+
 
 /* === 04-features/floating.css === */
 /* css/04-features/floating.css - \u60AC\u6D6E\u7403 */
@@ -20956,7 +20979,7 @@ function openFavsWindow() {
   const charList = ["\u5168\u90E8\u89D2\u8272", ...[...charIndex].sort()];
   const html = `
     <div class="t-box t-root t-fav-container" id="t-favs-view">
-        <div class="t-header" style="flex-shrink:0;">
+        <div class="t-header t-shrink-0">
             <span class="t-title-main">\u{1F4D6} \u6536\u85CF\u753B\u5ECA</span>
             <span class="t-close" id="t-fav-close">&times;</span>
         </div>
@@ -22519,7 +22542,7 @@ async function showDebugInfo() {
   }
   const html = `
     <div class="t-box t-root" id="t-debug-view" style="max-width:1400px; width:95vw; height:92vh; display:flex; flex-direction:column;">
-        <div class="t-header" style="flex-shrink:0;">
+        <div class="t-header t-shrink-0">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-layer-group" style="color:#74b9ff;"></i>
                 <span class="t-title-main">\u63D0\u793A\u8BCD\u67E5\u770B</span>
@@ -22736,7 +22759,7 @@ function showDiagnosticsWindow() {
   }
   const html = `
     <div class="t-box t-root t-diagnostics-container" id="t-diagnostics-view">
-        <div class="t-header" style="flex-shrink:0;">
+        <div class="t-header t-shrink-0">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fa-solid fa-stethoscope" style="color:#ff9f43;"></i>
                 <span class="t-title-main">\u8BCA\u65AD\u65E5\u5FD7</span>
@@ -33298,7 +33321,7 @@ async function openRecallPanel() {
   }
   const html = `
     <div class="t-box t-root t-recall-container" id="t-recall-view">
-        <div class="t-header" style="flex-shrink:0;">
+        <div class="t-header t-shrink-0">
             <span class="t-title-main"><i class="fa-solid fa-lightbulb"></i> \u8BB0\u5FC6\u53EC\u56DE</span>
             <span class="t-recall-status-badge ${status.available ? "available" : "unavailable"}" style="margin-left: auto; margin-right: 15px; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background: ${status.available ? "#2a4a3a" : "#4a2a2a"}; color: ${status.available ? "#4caf50" : "#ff6b6b"};">
                 ${status.message}
@@ -34048,12 +34071,12 @@ function openSettingsWindow() {
                     
                     <div class="t-form-group">
                         <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>\u60AC\u6D6E\u7403\u5C3A\u5BF8</span><span id="p-size-val" style="color:var(--t-color-brand);">${tempApp.size}px</span></div>
-                        <input type="range" id="p-size-input" min="40" max="100" step="2" value="${tempApp.size}" style="width:100%;">
+                        <input class="t-w-full" type="range" id="p-size-input" min="40" max="100" step="2" value="${tempApp.size}">
                     </div>
 
                     <div class="t-form-group">
                         <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>UI \u5B57\u4F53\u5927\u5C0F</span><span id="p-ui-font-scale-val" style="color:var(--t-color-brand);">${tempApp.ui_font_scale}%</span></div>
-                        <input type="range" id="p-ui-font-scale" min="80" max="130" step="5" value="${tempApp.ui_font_scale}" style="width:100%;">
+                        <input class="t-w-full" type="range" id="p-ui-font-scale" min="80" max="130" step="5" value="${tempApp.ui_font_scale}">
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">\u5F71\u54CD\u63D2\u4EF6\u5168\u90E8\u754C\u9762\u5B57\u4F53\uFF08\u4E0D\u5F71\u54CD\u5185\u5BB9\u533A\u6E32\u67D3\u6587\u672C\uFF09\u3002</p>
                     </div>
                     
@@ -34439,7 +34462,7 @@ function openSettingsWindow() {
                     <div id="auto-settings-panel" style="display:${cfg.auto_generate ? "block" : "none"}; padding-left:22px;">
                         <div class="t-form-group">
                             <label class="t-form-label">\u89E6\u53D1\u6982\u7387: <span id="cfg-chance-val">${cfg.auto_chance || 50}%</span></label>
-                            <input type="range" id="cfg-chance" min="10" max="100" step="10" value="${cfg.auto_chance || 50}" style="width:100%;">
+                            <input class="t-w-full" type="range" id="cfg-chance" min="10" max="100" step="10" value="${cfg.auto_chance || 50}">
                         </div>
                         <div class="t-form-group">
                             <label class="t-form-label">\u62BD\u53D6\u7B56\u7565</label>
@@ -36303,7 +36326,7 @@ function openWorkshopWindow(source = "manager") {
                         <div class="t-ws-sk-line" style="width:50%;"></div>
                     </div>
                     <div class="t-ws-sk-line" style="width:75%; height:13px;"></div>
-                    <div class="t-ws-sk-line" style="width:100%;"></div>
+                    <div class="t-ws-sk-line t-w-full"></div>
                     <div class="t-ws-sk-line" style="width:60%;"></div>
                 </div>`).join("")
     );
@@ -36473,7 +36496,7 @@ function openScriptManager() {
                 <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">\u{1F4E5} \u5BFC\u5165\u5267\u672C</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u5B58\u5165\u5206\u7C7B:</span>
-                    <input id="t-imp-cat-m" list="t-cat-dl-m" class="t-input" placeholder="\u8F93\u5165\u6216\u9009\u62E9\u5206\u7C7B (\u53EF\u9009)" style="width:100%;">
+                    <input id="t-imp-cat-m" list="t-cat-dl-m" class="t-input t-w-full" placeholder="\u8F93\u5165\u6216\u9009\u62E9\u5206\u7C7B (\u53EF\u9009)">
                     <datalist id="t-cat-dl-m"></datalist>
                 </div>
                 <div class="t-imp-row">
@@ -36504,7 +36527,7 @@ function openScriptManager() {
                 </div>
                 <div class="t-imp-row" id="exp-cat-row" style="display:none;">
                     <span class="t-imp-label">\u9009\u62E9\u5206\u7C7B:</span>
-                    <select id="t-exp-cat" class="t-input" style="width:100%;"></select>
+                    <select id="t-exp-cat" class="t-input t-w-full"></select>
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u5BFC\u51FA\u683C\u5F0F:</span>
@@ -36525,7 +36548,7 @@ function openScriptManager() {
                 <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">\u{1F4C1} \u79FB\u52A8\u5230\u5206\u7C7B</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u76EE\u6807\u5206\u7C7B:</span>
-                    <input id="t-move-cat" list="t-move-cat-list" class="t-input" placeholder="\u8F93\u5165\u6216\u9009\u62E9\u5206\u7C7B" style="width:100%;">
+                    <input id="t-move-cat" list="t-move-cat-list" class="t-input t-w-full" placeholder="\u8F93\u5165\u6216\u9009\u62E9\u5206\u7C7B">
                     <datalist id="t-move-cat-list"></datalist>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
@@ -36543,7 +36566,7 @@ function openScriptManager() {
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u65B0\u540D\u79F0:</span>
-                    <input id="t-rename-new" class="t-input" placeholder="\u8F93\u5165\u65B0\u7684\u5206\u7C7B\u540D\u79F0" style="width:100%;">
+                    <input id="t-rename-new" class="t-input t-w-full" placeholder="\u8F93\u5165\u65B0\u7684\u5206\u7C7B\u540D\u79F0">
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
                     <button id="t-rename-cancel" class="t-btn t-flex-1">\u53D6\u6D88</button>
@@ -37116,7 +37139,7 @@ function openEditor(id3, source = "main") {
     const largeEditHtml = `
         <div id="t-large-edit-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--t-color-dialog-scrim); z-index:20000; display:flex; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
             <div class="t-box t-root" id="t-large-edit-view" style="width:100%; max-width:800px; height:90vh; max-height:90vh; margin:auto; display:flex; flex-direction:column;">
-                <div class="t-header" style="flex-shrink:0;">
+                <div class="t-header t-shrink-0">
                     <span class="t-title-main">\u5927\u5C4F\u7F16\u8F91\u6A21\u5F0F</span>
                     <span class="t-close" id="ed-large-close">&times;</span>
                 </div>
@@ -37853,7 +37876,7 @@ function renderHtml(viewData) {
     <div id="t-overlay" class="t-overlay t-root">
         <div class="t-box t-root" id="t-main-view">
 
-            <div class="t-header" style="flex-shrink:0;">
+            <div class="t-header t-shrink-0">
                 <div class="t-title-container" style="display:flex; flex-direction:column; overflow:hidden;">
                     <div class="t-title-main" style="white-space:nowrap;">\u56DE\u58F0\u5C0F\u5267\u573A</div>
                     <div class="t-title-sub" id="t-title-sub">
@@ -38260,7 +38283,7 @@ function renderHtml2(viewData) {
     <div id="t-overlay" class="t-overlay t-root">
         <div class="t-box t-root" id="t-main-view">
 
-            <div class="t-header" style="flex-shrink:0;">
+            <div class="t-header t-shrink-0">
                 <div class="t-title-container" style="display:flex; flex-direction:column; overflow:hidden;">
                     <div class="t-title-main" style="white-space:nowrap;">\u56DE\u58F0\u5C0F\u5267\u573A</div>
                     <div class="t-title-sub" id="t-title-sub">

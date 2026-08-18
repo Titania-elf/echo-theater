@@ -118,7 +118,7 @@ export function openScriptManager() {
                 <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">📥 导入剧本</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">存入分类:</span>
-                    <input id="t-imp-cat-m" list="t-cat-dl-m" class="t-input" placeholder="输入或选择分类 (可选)" style="width:100%;">
+                    <input id="t-imp-cat-m" list="t-cat-dl-m" class="t-input t-w-full" placeholder="输入或选择分类 (可选)">
                     <datalist id="t-cat-dl-m"></datalist>
                 </div>
                 <div class="t-imp-row">
@@ -149,7 +149,7 @@ export function openScriptManager() {
                 </div>
                 <div class="t-imp-row" id="exp-cat-row" style="display:none;">
                     <span class="t-imp-label">选择分类:</span>
-                    <select id="t-exp-cat" class="t-input" style="width:100%;"></select>
+                    <select id="t-exp-cat" class="t-input t-w-full"></select>
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">导出格式:</span>
@@ -170,7 +170,7 @@ export function openScriptManager() {
                 <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">📁 移动到分类</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">目标分类:</span>
-                    <input id="t-move-cat" list="t-move-cat-list" class="t-input" placeholder="输入或选择分类" style="width:100%;">
+                    <input id="t-move-cat" list="t-move-cat-list" class="t-input t-w-full" placeholder="输入或选择分类">
                     <datalist id="t-move-cat-list"></datalist>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
@@ -188,7 +188,7 @@ export function openScriptManager() {
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">新名称:</span>
-                    <input id="t-rename-new" class="t-input" placeholder="输入新的分类名称" style="width:100%;">
+                    <input id="t-rename-new" class="t-input t-w-full" placeholder="输入新的分类名称">
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
                     <button id="t-rename-cancel" class="t-btn t-flex-1">取消</button>
@@ -891,7 +891,7 @@ export function openEditor(id, source = 'main') {
         const largeEditHtml = `
         <div id="t-large-edit-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--t-color-dialog-scrim); z-index:20000; display:flex; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
             <div class="t-box t-root" id="t-large-edit-view" style="width:100%; max-width:800px; height:90vh; max-height:90vh; margin:auto; display:flex; flex-direction:column;">
-                <div class="t-header" style="flex-shrink:0;">
+                <div class="t-header t-shrink-0">
                     <span class="t-title-main">大屏编辑模式</span>
                     <span class="t-close" id="ed-large-close">&times;</span>
                 </div>

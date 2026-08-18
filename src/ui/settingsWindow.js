@@ -272,12 +272,12 @@ export function openSettingsWindow() {
                     
                     <div class="t-form-group">
                         <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>悬浮球尺寸</span><span id="p-size-val" style="color:var(--t-color-brand);">${tempApp.size}px</span></div>
-                        <input type="range" id="p-size-input" min="40" max="100" step="2" value="${tempApp.size}" style="width:100%;">
+                        <input class="t-w-full" type="range" id="p-size-input" min="40" max="100" step="2" value="${tempApp.size}">
                     </div>
 
                     <div class="t-form-group">
                         <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>UI 字体大小</span><span id="p-ui-font-scale-val" style="color:var(--t-color-brand);">${tempApp.ui_font_scale}%</span></div>
-                        <input type="range" id="p-ui-font-scale" min="80" max="130" step="5" value="${tempApp.ui_font_scale}" style="width:100%;">
+                        <input class="t-w-full" type="range" id="p-ui-font-scale" min="80" max="130" step="5" value="${tempApp.ui_font_scale}">
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">影响插件全部界面字体（不影响内容区渲染文本）。</p>
                     </div>
                     
@@ -663,7 +663,7 @@ export function openSettingsWindow() {
                     <div id="auto-settings-panel" style="display:${cfg.auto_generate ? 'block' : 'none'}; padding-left:22px;">
                         <div class="t-form-group">
                             <label class="t-form-label">触发概率: <span id="cfg-chance-val">${cfg.auto_chance || 50}%</span></label>
-                            <input type="range" id="cfg-chance" min="10" max="100" step="10" value="${cfg.auto_chance || 50}" style="width:100%;">
+                            <input class="t-w-full" type="range" id="cfg-chance" min="10" max="100" step="10" value="${cfg.auto_chance || 50}">
                         </div>
                         <div class="t-form-group">
                             <label class="t-form-label">抽取策略</label>

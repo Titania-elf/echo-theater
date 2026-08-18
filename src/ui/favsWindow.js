@@ -679,7 +679,7 @@ export function openFavsWindow() {
     // HTML 结构 (样式见 css/favs.css)
     const html = `
     <div class="t-box t-root t-fav-container" id="t-favs-view">
-        <div class="t-header" style="flex-shrink:0;">
+        <div class="t-header t-shrink-0">
             <span class="t-title-main">📖 收藏画廊</span>
             <span class="t-close" id="t-fav-close">&times;</span>
         </div>
