@@ -171,7 +171,7 @@ export function renderApiConnectionEditorHTML(options = {}) {
                 ${flags.showDeleteProfile ? `<button id="${escapeHtml(ids.profileDeleteId || "")}" class="${escapeHtml(classes.button)}" title="删除当前方案" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>` : ""}
             </div>
             ${profileNameBlock}
-            <div id="${escapeHtml(ids.profileTipId || "")}" style="margin-top:8px; font-size:0.8em; color:#8da5b8;"></div>
+            <div id="${escapeHtml(ids.profileTipId || "")}" class="t-conn-hint"></div>
         </div>
         <div style="height:1px; background:var(--t-color-border); margin:20px 0;"></div>
         <div id="${escapeHtml(ids.fieldsWrapId || "")}">
@@ -186,7 +186,7 @@ export function renderApiConnectionEditorHTML(options = {}) {
                 ${flags.showManualModelInput ? `<div style="display:flex; gap:10px; margin-bottom:8px;"><select id="${escapeHtml(ids.modelModeId || "")}" class="${escapeHtml(classes.select)}" style="width:auto; cursor:pointer;"><option value="list">获取列表</option><option value="manual">手动填写</option></select></div>` : ""}
                 <div id="${escapeHtml(ids.modelListWrapId || "")}" style="display:flex; gap:10px;"><select id="${escapeHtml(ids.modelId || "")}" class="${escapeHtml(classes.select)}" style="cursor:pointer;"></select><button id="${escapeHtml(ids.fetchModelsId || "")}" class="${escapeHtml(classes.button)}" title="获取模型列表">🔄 获取列表</button></div>
                 ${flags.showManualModelInput ? `<div id="${escapeHtml(ids.modelManualWrapId || "")}" style="display:none;"><input id="${escapeHtml(ids.modelInputId || "")}" class="${escapeHtml(classes.input)}" placeholder="模型 ID，例如：gpt-4o"></div>` : ""}
-                <div id="${escapeHtml(ids.statusId || "")}" style="margin-top:8px; font-size:0.8em; color:#8da5b8;">${escapeHtml(values.statusText)}</div>
+                <div id="${escapeHtml(ids.statusId || "")}" class="t-conn-hint">${escapeHtml(values.statusText)}</div>
             </div>
         </div>
         ${streamBlock}

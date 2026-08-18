@@ -2408,7 +2408,7 @@ function loadCssFiles() {
 /* ============================================================
    00-tokens/legacy-aliases.css \u2014\u2014 \u8FC7\u6E21\u517C\u5BB9\u5C42 \u26A0 Phase 7 \u5220\u9664
 
-   \u8BA9 12 \u4E2A CSS \u6587\u4EF6\u91CC\u73B0\u5B58\u7684\u65E7\u53D8\u91CF\u540D\u7EE7\u7EED\u5DE5\u4F5C\u3002\u8FD9 5 \u4E2A\u53D8\u91CF\u539F\u5148\u5E26\u7740
+   \u8BA9 12 \u4E2A CSS \u6587\u4EF6\u91CC\u73B0\u5B58\u7684\u65E7\u53D8\u91CF\u540D\u7EE7\u7EED\u5DE5\u4F5C\u3002\u539F\u5148\u6709 5 \u4E2A\u53D8\u91CF\uFF0C\u5E26\u7740
    \u5B57\u9762\u91CF\u58F0\u660E\u5728 base.css:3-14\uFF0C\u73B0\u5DF2\u6539\u4E3A\u6307\u5411\u65B0 token \u2014\u2014 \u56E0\u6B64\u65E7\u5F15\u7528
    \u4E00\u884C\u4E0D\u6539\u4E5F\u80FD\u5DE5\u4F5C\uFF0C\u800C\u4E3B\u9898\u5207\u6362\u4F1A\u540C\u65F6\u5F71\u54CD\u5B83\u4EEC\u3002
 
@@ -2416,22 +2416,15 @@ function loadCssFiles() {
 
    \u2500\u2500 \u503C\u7B49\u4EF7\u6027\u6838\u5BF9\uFF08Phase 1 \u8981\u6C42\u89C6\u89C9\u96F6\u53D8\u5316\uFF0C\u9010\u4E2A\u9A8C\u8BC1\u8FC7\uFF09\u2500\u2500
      --t-theme    #bfa15f \u2192 rgb(191 161 95) \u2705 \u9010\u5B57\u8282\u76F8\u540C
-     --t-notify   #55efc4 \u2192 rgb(85 239 196) \u2705
      --t-bg-dark  #121212 \u2192 rgb(18 18 18)   \u2705
-     --t-bg-panel #1e1e1e \u2192 rgb(30 30 30)   \u2705
-     --t-border   #333    \u2192 rgb(51 51 51)   \u2705
+     \uFF08--t-notify / --t-bg-panel / --t-border \u4E09\u4E2A\u5DF2\u5728 Phase 7-2 \u5220\u9664\uFF1A
+       \u5168\u5E93\u96F6\u5F15\u7528\u3002\u5269\u4E0B\u8FD9 2 \u4E2A\u6321\u8DEF\u7684\u5F15\u7528\u6570\u89C1\u4EA4\u63A5\u6587\u6863 \xA77\u3002\uFF09
    ============================================================ */
 :root {
     --t-theme: var(--t-color-brand);
     /* \u4E3B\u9898\u8272\uFF08\u91D1\u8272\uFF09 */
-    --t-notify: var(--t-color-notify);
-    /* \u901A\u77E5\u8272\uFF08\u9752\u8272\uFF09 */
     --t-bg-dark: var(--t-color-bg);
     /* \u6DF1\u8272\u80CC\u666F */
-    --t-bg-panel: var(--t-color-surface);
-    /* \u9762\u677F\u80CC\u666F */
-    --t-border: var(--t-color-border);
-    /* \u8FB9\u6846\u8272 */
 }
 
 /* ============================================================
@@ -9573,6 +9566,17 @@ textarea.t-input {
 }
 
 /* Profile \u7BA1\u7406 */
+/* API \u8FDE\u63A5\u7F16\u8F91\u5668\uFF08src/ui/shared/apiConnectionEditor.js\uFF09\u7684\u8BF4\u660E\u5C0F\u5B57\u3002
+   2 \u5904\u5728\u7528\uFF1A\u65B9\u6848\u63D0\u793A\uFF08profileTipId\uFF09\u4E0E\u72B6\u6001\u884C\uFF08statusId\uFF09\u3002
+   \u26A0 \u8BE5\u7F16\u8F91\u5668\u662F loreReviewWindow / rewriteEntryButton \u5171\u7528\u7684\u7EC4\u4EF6\uFF0C\u4F46\u5B83\u7684
+   CSS \u4E00\u76F4\u653E\u5728\u672C\u6587\u4EF6\uFF08.t-prof-header \u5C31\u5728\u4E0B\u9762\uFF09\uFF0C\u6545\u8FD9\u6761\u4E5F\u653E\u8FD9\u91CC\uFF0C\u4E0D\u53E6\u7ACB\u6587\u4EF6\u3002
+   \u26A0 #8da5b8 \u4FDD\u7559\u539F\u503C\uFF1A\u672C\u6587\u4EF6 105 \u5904\u989C\u8272\u5B57\u9762\u91CF\u3001\u4EC5 4 \u5904 token\u3002 */
+.t-conn-hint {
+    margin-top: 8px;
+    font-size: 0.8em;
+    color: #8da5b8;
+}
+
 .t-prof-header {
     display: flex;
     gap: 10px;
@@ -22093,7 +22097,7 @@ function renderApiConnectionEditorHTML(options = {}) {
                 ${flags.showDeleteProfile ? `<button id="${escapeHtml3(ids.profileDeleteId || "")}" class="${escapeHtml3(classes.button)}" title="\u5220\u9664\u5F53\u524D\u65B9\u6848" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>` : ""}
             </div>
             ${profileNameBlock}
-            <div id="${escapeHtml3(ids.profileTipId || "")}" style="margin-top:8px; font-size:0.8em; color:#8da5b8;"></div>
+            <div id="${escapeHtml3(ids.profileTipId || "")}" class="t-conn-hint"></div>
         </div>
         <div style="height:1px; background:var(--t-color-border); margin:20px 0;"></div>
         <div id="${escapeHtml3(ids.fieldsWrapId || "")}">
@@ -22108,7 +22112,7 @@ function renderApiConnectionEditorHTML(options = {}) {
                 ${flags.showManualModelInput ? `<div style="display:flex; gap:10px; margin-bottom:8px;"><select id="${escapeHtml3(ids.modelModeId || "")}" class="${escapeHtml3(classes.select)}" style="width:auto; cursor:pointer;"><option value="list">\u83B7\u53D6\u5217\u8868</option><option value="manual">\u624B\u52A8\u586B\u5199</option></select></div>` : ""}
                 <div id="${escapeHtml3(ids.modelListWrapId || "")}" style="display:flex; gap:10px;"><select id="${escapeHtml3(ids.modelId || "")}" class="${escapeHtml3(classes.select)}" style="cursor:pointer;"></select><button id="${escapeHtml3(ids.fetchModelsId || "")}" class="${escapeHtml3(classes.button)}" title="\u83B7\u53D6\u6A21\u578B\u5217\u8868">\u{1F504} \u83B7\u53D6\u5217\u8868</button></div>
                 ${flags.showManualModelInput ? `<div id="${escapeHtml3(ids.modelManualWrapId || "")}" style="display:none;"><input id="${escapeHtml3(ids.modelInputId || "")}" class="${escapeHtml3(classes.input)}" placeholder="\u6A21\u578B ID\uFF0C\u4F8B\u5982\uFF1Agpt-4o"></div>` : ""}
-                <div id="${escapeHtml3(ids.statusId || "")}" style="margin-top:8px; font-size:0.8em; color:#8da5b8;">${escapeHtml3(values.statusText)}</div>
+                <div id="${escapeHtml3(ids.statusId || "")}" class="t-conn-hint">${escapeHtml3(values.statusText)}</div>
             </div>
         </div>
         ${streamBlock}

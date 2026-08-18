@@ -454,17 +454,26 @@ check('A9', 'R8', '!important 紧邻注释说明其对抗的宿主规则', () =>
     const violations = [];
     let total = 0;
     for (const f of styleSources) {
-        const lines = f.raw.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-            if (!lines[i].includes('!important')) continue;
+        const rawLines = f.raw.split('\n');
+        // ⚠ 判定「这一行有没有 !important 声明」必须看**剥掉注释后**的文本：
+        // !important 也会出现在注释散文里（如「带 font-size !important 基准」），
+        // 逐行扫原文会把散文当成声明并报「无注释说明」。
+        // 用同长度空格替换注释内容，以保持行号与列宽。
+        const strippedLines = f.raw
+            .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+            .split('\n');
+        for (let i = 0; i < strippedLines.length; i++) {
+            if (!strippedLines[i].includes('!important')) continue;
             total++;
-            // 同行含注释，或往上找到的第一个非空行是注释 → 视为已说明
-            if (/\/\*/.test(lines[i])) continue;
+            // ⚠ 而「附近有没有注释」只能看**原文** —— 且向上找「第一个非空行」
+            // 也必须用原文：剥注释后注释行变成空白会被当成空行跳过，
+            // 从而找到更上面的非注释行并误报（本项目踩过一次）。
+            if (/\/\*/.test(rawLines[i])) continue;
             let j = i - 1;
-            while (j >= 0 && lines[j].trim() === '') j--;
-            const prev = j >= 0 ? lines[j] : '';
+            while (j >= 0 && rawLines[j].trim() === '') j--;
+            const prev = j >= 0 ? rawLines[j] : '';
             if (/\/\*|\*\//.test(prev)) continue;
-            violations.push({ loc: `${f.rel}:${i + 1}`, msg: `!important 无注释说明：${lines[i].trim().slice(0, 70)}` });
+            violations.push({ loc: `${f.rel}:${i + 1}`, msg: `!important 无注释说明：${strippedLines[i].trim().slice(0, 70)}` });
         }
     }
     return { violations, metrics: { important总数: total } };

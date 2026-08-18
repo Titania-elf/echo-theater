@@ -198,6 +198,17 @@
 }
 
 /* Profile 管理 */
+/* API 连接编辑器（src/ui/shared/apiConnectionEditor.js）的说明小字。
+   2 处在用：方案提示（profileTipId）与状态行（statusId）。
+   ⚠ 该编辑器是 loreReviewWindow / rewriteEntryButton 共用的组件，但它的
+   CSS 一直放在本文件（.t-prof-header 就在下面），故这条也放这里，不另立文件。
+   ⚠ #8da5b8 保留原值：本文件 105 处颜色字面量、仅 4 处 token。 */
+.t-conn-hint {
+    margin-top: 8px;
+    font-size: 0.8em;
+    color: #8da5b8;
+}
+
 .t-prof-header {
     display: flex;
     gap: 10px;
