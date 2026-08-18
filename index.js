@@ -2096,6 +2096,21 @@ function loadCssFiles() {
     /* #333 \u884C\u5185 <code> \u82AF\u7247\u5E95\u3002\u4E0E --t-color-border \u540C\u503C\u4F46\u89D2\u8272\u4E0D\u540C\uFF08\u8868\u9762 vs \u8FB9\u6846\uFF09\uFF0C
        Phase 5a-3 \u4E3A\u628A JS inline style \u91CC\u7684 <code> \u5E95\u8272 token \u5316\u800C\u52A0\u3002
        \u26A0 Phase 6 \u9700\u786E\u8BA4\uFF1A\u6D45\u8272\u4E3B\u9898\u4E0B\u82AF\u7247\u5E95\u4E0E\u8FB9\u6846\u5927\u6982\u7387\u4E0D\u8BE5\u540C\u8272\uFF0C\u5C4A\u65F6\u4E8C\u8005\u4F1A\u5206\u53C9\u3002 */
+
+    /* \u4EE5\u4E0B\u4E09\u4E2A\u7531 Phase 5a-4 \u4ECE JS inline style \u6536\u4E0A\u6765\uFF0C\u5404\u81EA\u89D2\u8272\u660E\u786E\u3001\u503C\u9010\u4F4D\u4E0D\u53D8\u3002
+       \u26A0 \u4E09\u8005\u4E0E\u5DF2\u6709\u8868\u9762 token \u7684\u5DEE\u503C\u90FD\u5728\u611F\u77E5\u9608\u4EE5\u4E0B\uFF08inset \u4E0E sunken \u5DEE 2/255\u3001
+       well \u4E0E bg \u5DEE 1/255\uFF09\uFF0CPhase 6 \u5E94\u9010\u4E2A\u5224\u65AD\u80FD\u5426\u5F52\u5E76 \u2014\u2014 \u4F46\u90A3\u662F\u771F\u5B9E\u89C6\u89C9\u53D8\u5316\uFF0C
+       \u4E0D\u80FD\u5728 Phase 5 \u987A\u624B\u505A\u3002\u523B\u610F\u6CA1\u6709\u4E3A\u5B83\u4EEC\u9020\u539F\u8BED\uFF1A\u539F\u8BED\u9636\u662F\u8BBE\u8BA1\u610F\u56FE\u7684\u8868\u8FBE\uFF0C
+       \u800C\u8FD9\u4E09\u4E2A\u503C\u662F\u5386\u53F2\u968F\u624B\u53D6\u7684\u3002 */
+    --t-color-surface-inset: rgb(24 24 24);
+    /* #181818 \u8BBE\u7F6E\u9875\u5206\u533A\u5185\u5BB9\u5757\u5E95 / \u8C03\u8BD5\u7A97\u5934\u5C3E\u680F\uFF0813 \u5904\uFF09 */
+    --t-color-surface-option: rgb(var(--t-c-neutral-3-rgb));
+    /* #222 \u53EF\u9009\u5361\u7247\u5E95\uFF08\u5B57\u4F53\u6765\u6E90\u5355\u9009\uFF0C3 \u5904\uFF09\u3002\u4E0E --t-color-field-focus \u540C\u503C\uFF0C
+       \u4F46\u90A3\u662F\u300C\u8F93\u5165\u6846\u805A\u7126\u300D\u6001\uFF0C\u89D2\u8272\u4E0D\u540C\uFF0C\u4E0D\u53EF\u4E92\u7528\u3002 */
+    --t-color-surface-well: rgb(17 17 17);
+    /* #111 \u5185\u5D4C\u63A7\u4EF6\u69FD\u5E95\uFF1A\u6587\u4EF6\u9009\u62E9\u5668 / radio \u7EC4\u7684\u5BB9\u5668\uFF083 \u5904\uFF09\u3002
+       \u4E0E --t-color-field-disabled \u540C\u503C\uFF0C\u4F46\u90A3\u662F\u300C\u7981\u7528\u6001\u300D\uFF0C\u89D2\u8272\u4E0D\u540C\u3002 */
+
     --t-color-field-focus: rgb(var(--t-c-neutral-3-rgb));
     /* #222 \u8F93\u5165\u6846\u805A\u7126\u5E95 */
     --t-color-field-disabled: rgb(17 17 17);
@@ -22514,7 +22529,7 @@ function showDiagnosticsWindow() {
             <span class="t-close" id="t-diag-close">&times;</span>
         </div>
         
-        <div style="padding:15px; background:#181818; border-bottom:1px solid var(--t-color-border);">
+        <div style="padding:15px; background:var(--t-color-surface-inset); border-bottom:1px solid var(--t-color-border);">
             <div style="background: rgba(255, 159, 67, 0.1); border:1px solid rgba(255, 159, 67, 0.3); padding:12px; border-radius:6px;">
                 <div style="font-weight:bold; color:#feca57; font-size:0.9em; margin-bottom:5px;">
                     <i class="fa-solid fa-triangle-exclamation"></i> \u62A5\u9519\u6392\u67E5\u6307\u5357
@@ -22533,7 +22548,7 @@ function showDiagnosticsWindow() {
             <div class="t-log-box" id="t-diag-log-viewer" style="flex:1; overflow-y:auto;"></div>
         </div>
         
-        <div style="padding:15px; background:#181818; border-top:1px solid var(--t-color-border); display:flex; gap:10px;">
+        <div style="padding:15px; background:var(--t-color-surface-inset); border-top:1px solid var(--t-color-border); display:flex; gap:10px;">
             <button id="t-diag-refresh" class="t-btn">
                 <i class="fa-solid fa-rotate-right"></i> \u5237\u65B0\u65E5\u5FD7
             </button>
@@ -33869,7 +33884,7 @@ function openSettingsWindow() {
 
                 <!-- Tab 6: \u5FEB\u6377\u5DE5\u5177\u680F -->
                 <div id="page-toolbar" class="t-set-page">
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                    <div style="background:var(--t-color-surface-inset); padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
                         <div style="font-weight:bold; color:var(--t-color-brand); margin-bottom:10px;"><i class="fa-solid fa-wand-magic-sparkles"></i> \u5FEB\u6377\u5DE5\u5177\u680F</div>
                         <div style="font-size:0.85em; color:var(--t-color-text-muted); line-height:1.6;">
                             \u542F\u7528\u540E\uFF0C\u70B9\u51FB\u60AC\u6D6E\u7403\u5C06\u5C55\u5F00\u5FEB\u6377\u83DC\u5355\u800C\u975E\u76F4\u63A5\u6253\u5F00\u4E3B\u7A97\u53E3\u3002<br>
@@ -33878,7 +33893,7 @@ function openSettingsWindow() {
                     </div>
                     
                     <div class="t-form-group">
-                        <label style="cursor:pointer; display:flex; align-items:center; color:#55efc4; font-weight:bold;">
+                        <label style="cursor:pointer; display:flex; align-items:center; color:var(--t-color-notify); font-weight:bold;">
                             <input type="checkbox" id="cfg-toolbar-enabled" ${data.quick_toolbar?.enabled ? "checked" : ""} style="margin-right:10px;">
                             \u542F\u7528\u5FEB\u6377\u5DE5\u5177\u680F
                         </label>
@@ -33927,7 +33942,7 @@ function openSettingsWindow() {
                 <!-- Tab 7: \u4E3B\u9898\u6837\u5F0F -->
                 <div id="page-theme" class="t-set-page">
                     <!-- \u5B57\u4F53\u8BBE\u7F6E\u533A\u57DF -->
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                    <div style="background:var(--t-color-surface-inset); padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
                         <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:15px;"><i class="fa-solid fa-font"></i> \u5168\u5C40\u5B57\u4F53\u8BBE\u7F6E</div>
                         <p style="font-size:0.85em; color:var(--t-color-text-muted); margin-bottom:15px;">
                             \u81EA\u5B9A\u4E49\u63D2\u4EF6 UI \u548C\u6E32\u67D3\u5185\u5BB9\u7684\u5B57\u4F53\u3002<br>
@@ -33937,21 +33952,21 @@ function openSettingsWindow() {
                         <div class="t-form-group" style="margin-bottom:15px;">
                             <label class="t-form-label">\u5B57\u4F53\u6765\u6E90</label>
                             <div style="display:flex; flex-direction:column; gap:10px;">
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "default" || !fontSettings.source ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="default">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-option); border-radius:6px; border:2px solid ${fontSettings.source === "default" || !fontSettings.source ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="default">
                                     <input type="radio" name="t-font-source" value="default" ${fontSettings.source === "default" || !fontSettings.source ? "checked" : ""} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">\u{1F5A5}\uFE0F \u7CFB\u7EDF\u9ED8\u8BA4</div>
                                         <div style="font-size:0.8em; color:var(--t-color-text-muted);">\u4F7F\u7528\u7CFB\u7EDF\u9ED8\u8BA4\u5B57\u4F53\u6808</div>
                                     </div>
                                 </label>
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "online" ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="online">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-option); border-radius:6px; border:2px solid ${fontSettings.source === "online" ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="online">
                                     <input type="radio" name="t-font-source" value="online" ${fontSettings.source === "online" ? "checked" : ""} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">\u{1F310} \u5728\u7EBF\u5B57\u4F53</div>
                                         <div style="font-size:0.8em; color:var(--t-color-text-muted);">\u4F7F\u7528 Google Fonts \u7B49\u5728\u7EBF\u670D\u52A1</div>
                                     </div>
                                 </label>
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "upload" ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="upload">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-option); border-radius:6px; border:2px solid ${fontSettings.source === "upload" ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="upload">
                                     <input type="radio" name="t-font-source" value="upload" ${fontSettings.source === "upload" ? "checked" : ""} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">\u{1F4C1} \u4E0A\u4F20\u5B57\u4F53</div>
@@ -34018,12 +34033,12 @@ function openSettingsWindow() {
                         </div>
                     </div>
                     
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                    <div style="background:var(--t-color-surface-inset); padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
                         <div style="font-weight:bold; color:var(--t-color-brand); margin-bottom:10px;"><i class="fa-solid fa-palette"></i> \u81EA\u5B9A\u4E49 CSS \u6837\u5F0F</div>
                         <div style="font-size:0.85em; color:var(--t-color-text-muted); line-height:1.6;">
                             \u5728\u6B64\u8F93\u5165\u81EA\u5B9A\u4E49 CSS \u4EE3\u7801\uFF0C\u53EF\u4EE5\u8986\u76D6\u63D2\u4EF6\u9ED8\u8BA4\u6837\u5F0F\u3002<br>
                             \u4F5C\u7528\u8303\u56F4\uFF1A\u63D2\u4EF6 UI\uFF08\u7A97\u53E3\u3001\u6309\u94AE\u7B49\uFF09\u548C\u5267\u672C\u6E32\u67D3\u533A\u57DF\u3002<br>
-                            <span style="color:#55efc4;">\u2728 \u652F\u6301\u4FDD\u5B58\u591A\u4E2A\u4E3B\u9898\u65B9\u6848\uFF0C\u968F\u65F6\u5207\u6362\uFF01</span>
+                            <span style="color:var(--t-color-notify);">\u2728 \u652F\u6301\u4FDD\u5B58\u591A\u4E2A\u4E3B\u9898\u65B9\u6848\uFF0C\u968F\u65F6\u5207\u6362\uFF01</span>
                         </div>
                     </div>
                     
@@ -34156,7 +34171,7 @@ function openSettingsWindow() {
       statusText: "\u586B\u5199 API \u540E\u53EF\u5237\u65B0\u6A21\u578B\u5217\u8868",
       maxTokensHintHtml: `<p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             \u63A7\u5236 AI \u5355\u6B21\u8F93\u51FA\u7684\u6700\u5927 Token \u6570\u91CF\u3002<br>
-                            <span style="color:#55efc4;">\u2713 \u4EC5\u5BF9\u81EA\u5B9A\u4E49 API \u65B9\u6848\u751F\u6548</span>\uFF0CST \u4E3B\u8FDE\u63A5\u4F7F\u7528\u5168\u5C40\u8BBE\u7F6E\u3002<br>
+                            <span style="color:var(--t-color-notify);">\u2713 \u4EC5\u5BF9\u81EA\u5B9A\u4E49 API \u65B9\u6848\u751F\u6548</span>\uFF0CST \u4E3B\u8FDE\u63A5\u4F7F\u7528\u5168\u5C40\u8BBE\u7F6E\u3002<br>
                             <span style="color:#feca57;">\u26A0\uFE0F \u8BBE\u7F6E\u8FC7\u9AD8\u53EF\u80FD\u8D85\u51FA\u6A21\u578B\u9650\u5236\u5BFC\u81F4\u62A5\u9519</span>
                         </p>`
     }
@@ -34165,7 +34180,7 @@ function openSettingsWindow() {
 
                 <!-- Tab 8: \u5BFC\u6F14\u6A21\u5F0F -->
                 <div id="page-director" class="t-set-page">
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px; color:var(--t-color-text-muted); font-size:0.9em;">
+                    <div style="background:var(--t-color-surface-inset); padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px; color:var(--t-color-text-muted); font-size:0.9em;">
                         <i class="fa-solid fa-circle-info"></i> \u81EA\u5B9A\u4E49\u5BFC\u6F14\u6307\u4EE4\uFF0C\u7528\u4E8E\u63A7\u5236\u751F\u6210\u5185\u5BB9\u7684\u98CE\u683C\u3001\u7BC7\u5E45\u3001\u89C6\u89D2\u7B49\u3002\u652F\u6301\u53D8\u91CF\uFF1A<code style="background:var(--t-color-surface-code); padding:2px 5px; border-radius:3px;">{{char}}</code> \u89D2\u8272\u540D\u3001<code style="background:var(--t-color-surface-code); padding:2px 5px; border-radius:3px;">{{user}}</code> \u7528\u6237\u540D
                     </div>
                     
@@ -34219,7 +34234,7 @@ function openSettingsWindow() {
                                 <option value="category" ${(cfg.auto_mode || "random") === "category" ? "selected" : ""}>\u{1F3AF} \u6307\u5B9A\u5206\u7C7B\u767D\u540D\u5355 (\u81EA\u5B9A\u4E49)</option>
                             </select>
                         </div>
-                        <div id="auto-cat-container" style="display:none; background:#181818; padding:10px; border:1px solid var(--t-color-border); border-radius:6px; margin-top:10px;">
+                        <div id="auto-cat-container" style="display:none; background:var(--t-color-surface-inset); padding:10px; border:1px solid var(--t-color-border); border-radius:6px; margin-top:10px;">
                             <div style="font-size:0.8em; color:var(--t-color-text-muted); margin-bottom:8px;">\u8BF7\u52FE\u9009\u5141\u8BB8\u968F\u673A\u62BD\u53D6\u7684\u5206\u7C7B (\u591A\u9009):</div>
                             <div id="auto-cat-list" style="max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;"></div>
                         </div>
@@ -34236,7 +34251,7 @@ function openSettingsWindow() {
                                 \u5F53\u68C0\u6D4B\u5230\u751F\u6210\u5185\u5BB9\u88AB\u622A\u65AD\u65F6\uFF0C\u81EA\u52A8\u53D1\u9001\u7EED\u5199\u8BF7\u6C42\u62FC\u63A5\u5B8C\u6574\u5185\u5BB9\u3002
                             </p>
                         </div>
-                        <div id="auto-continue-panel" style="display:${data.auto_continue?.enabled ? "block" : "none"}; padding-left:22px; background:#181818; border:1px solid var(--t-color-border); border-radius:6px; padding:15px; margin-top:10px;">
+                        <div id="auto-continue-panel" style="display:${data.auto_continue?.enabled ? "block" : "none"}; padding-left:22px; background:var(--t-color-surface-inset); border:1px solid var(--t-color-border); border-radius:6px; padding:15px; margin-top:10px;">
                             <div class="t-form-group">
                                 <label class="t-form-label">\u6700\u5927\u7EED\u5199\u6B21\u6570</label>
                                 <select id="cfg-continue-retries" class="t-input" style="width:120px;">
@@ -34280,7 +34295,7 @@ function openSettingsWindow() {
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             \u7528\u9017\u53F7\u5206\u9694\u591A\u4E2A\u6807\u7B7E\u540D\u3002\u53EA\u63D0\u53D6\u8FD9\u4E9B\u6807\u7B7E\u5185\u7684\u6587\u672C\u4F5C\u4E3A\u5386\u53F2\u4E0A\u4E0B\u6587\u3002<br>
                             <span style="color:var(--t-color-text-muted);">\u7559\u7A7A\u5219\u5168\u6587\u63D0\u53D6\uFF08\u79FB\u9664\u6240\u6709 HTML \u6807\u7B7E\u540E\u7684\u7EAF\u6587\u672C\uFF09</span><br>
-                            <span style="color:#55efc4;">\u793A\u4F8B\uFF1A\u586B\u5199 <code style="background:var(--t-color-surface-code); padding:1px 4px; border-radius:2px;">content</code> \u5219\u53EA\u63D0\u53D6 <code style="background:var(--t-color-surface-code); padding:1px 4px; border-radius:2px;">&lt;content&gt;...&lt;/content&gt;</code> \u4E2D\u7684\u5185\u5BB9</span>
+                            <span style="color:var(--t-color-notify);">\u793A\u4F8B\uFF1A\u586B\u5199 <code style="background:var(--t-color-surface-code); padding:1px 4px; border-radius:2px;">content</code> \u5219\u53EA\u63D0\u53D6 <code style="background:var(--t-color-surface-code); padding:1px 4px; border-radius:2px;">&lt;content&gt;...&lt;/content&gt;</code> \u4E2D\u7684\u5185\u5BB9</span>
                         </p>
                     </div>
 
@@ -34296,11 +34311,11 @@ function openSettingsWindow() {
 
                 <!-- Tab 1: \u63D0\u793A\u8BCD\u7BA1\u7406 -->
                 <div id="page-prompts" class="t-set-page active">
-                    <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
+                    <div style="background:var(--t-color-surface-inset); padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px;">
                         <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:8px;"><i class="fa-solid fa-list-check"></i> \u63D0\u793A\u8BCD\u7BA1\u7406</div>
                         <div style="font-size:0.85em; color:var(--t-color-text-muted); line-height:1.6;">\u7BA1\u7406\u5185\u7F6E\u63D0\u793A\u8BCD\u65B9\u6848\u548C\u5BFC\u5165\u7684 SillyTavern Chat Completion \u9884\u8BBE\u3002\u4E3B\u754C\u9762\u7684\u201C\u9009\u7528\u9884\u8BBE\u201D\u4F7F\u7528\u5F53\u524D\u6D3B\u52A8\u9884\u8BBE\u3002</div>
                     </div>
-                    <div class="t-form-group" style="background:#181818; padding:15px; border:1px solid var(--t-color-border); border-radius:6px;">
+                    <div class="t-form-group" style="background:var(--t-color-surface-inset); padding:15px; border:1px solid var(--t-color-border); border-radius:6px;">
                         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                             <label class="t-form-label" style="margin:0;">\u67E5\u770B\u65B9\u6848</label>
                             <select id="t-prompt-view" class="t-input" style="width:auto; min-width:150px;">
@@ -34322,7 +34337,7 @@ function openSettingsWindow() {
                 <div id="page-data" class="t-set-page">
                     <div class="t-form-group">
                         <div class="t-form-label">\u81EA\u5B9A\u4E49\u5267\u672C\u5E93</div>
-                        <div style="background:#181818; border:1px solid var(--t-color-border); padding:20px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
+                        <div style="background:var(--t-color-surface-inset); border:1px solid var(--t-color-border); padding:20px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
                             <div>
                                 <div style="font-size:1.1em; color:var(--t-color-text); font-weight:bold;"><i class="fa-solid fa-scroll" style="color:var(--t-color-brand); margin-right:8px;"></i>\u5267\u672C\u7BA1\u7406\u5668</div>
                                 <div style="font-size:0.85em; color:#777; margin-top:5px;">\u5F53\u524D\u62E5\u6709\u81EA\u5B9A\u4E49\u5267\u672C: ${(data.user_scripts || []).length} \u4E2A</div>
@@ -34332,7 +34347,7 @@ function openSettingsWindow() {
                     </div>
                     <div class="t-form-group">
                         <div class="t-form-label">\u5DF2\u9690\u85CF\u7684\u5B98\u65B9\u9884\u8BBE\u5267\u672C</div>
-                        <div style="background:#181818; border:1px solid var(--t-color-border); padding:15px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
+                        <div style="background:var(--t-color-surface-inset); border:1px solid var(--t-color-border); padding:15px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
                             <div><div style="font-size:1.1em; color:var(--t-color-text);">\u5171 ${(data.disabled_presets || []).length} \u4E2A</div><div style="font-size:0.8em; color:var(--t-color-text-faint);">\u8FD9\u4E9B\u9884\u8BBE\u5728\u5217\u8868\u4E2D\u5DF2\u88AB\u9690\u85CF</div></div>
                             <button id="btn-restore-presets" class="t-btn" style="border:1px solid #555;" ${(data.disabled_presets || []).length === 0 ? "disabled" : ""}>\u267B\uFE0F \u6062\u590D\u6240\u6709</button>
                         </div>
@@ -34341,7 +34356,7 @@ function openSettingsWindow() {
                 
             </div>
         </div>
-        <div style="padding:15px; background:#181818; border-top:1px solid var(--t-color-border); display:flex; justify-content:flex-end;">
+        <div style="padding:15px; background:var(--t-color-surface-inset); border-top:1px solid var(--t-color-border); display:flex; justify-content:flex-end;">
             <button id="t-set-save" class="t-btn primary" style="padding:0 30px;">\u{1F4BE} \u4FDD\u5B58\u6240\u6709\u914D\u7F6E</button>
         </div>
     </div>`;
@@ -36249,7 +36264,7 @@ function openScriptManager() {
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u9009\u62E9\u6587\u4EF6 (.txt):</span>
-                    <div style="display:flex; gap:10px; align-items:center; background:#111; padding:5px; border-radius:4px; border:1px solid var(--t-color-border);">
+                    <div style="display:flex; gap:10px; align-items:center; background:var(--t-color-surface-well); padding:5px; border-radius:4px; border:1px solid var(--t-color-border);">
                         <input type="file" id="t-file-input-m" accept=".txt" style="display:none;">
                         <button id="t-btn-choose-file" class="t-btn" style="font-size:0.9em; padding:4px 10px;">\u{1F4C2} \u6D4F\u89C8\u6587\u4EF6...</button>
                         <span id="t-file-name-label" style="font-size:0.85em; color:var(--t-color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">\u672A\u9009\u62E9\u6587\u4EF6</span>
@@ -36267,7 +36282,7 @@ function openScriptManager() {
                 <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">\u{1F4E4} \u5BFC\u51FA\u5267\u672C</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u5BFC\u51FA\u8303\u56F4:</span>
-                    <div style="background:#111; padding:10px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; flex-direction:column; gap:8px;">
+                    <div style="background:var(--t-color-surface-well); padding:10px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; flex-direction:column; gap:8px;">
                         <label><input type="radio" name="exp-scope" value="all" checked> \u5BFC\u51FA\u5168\u90E8\u7528\u6237\u5267\u672C</label>
                         <label><input type="radio" name="exp-scope" value="category"> \u5BFC\u51FA\u6307\u5B9A\u5206\u7C7B</label>
                         <label><input type="radio" name="exp-scope" value="current"> \u5BFC\u51FA\u5F53\u524D\u5217\u8868 (<span id="exp-current-count">0</span> \u4E2A)</label>
@@ -36279,7 +36294,7 @@ function openScriptManager() {
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">\u5BFC\u51FA\u683C\u5F0F:</span>
-                    <div style="background:#111; padding:5px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; gap:15px;">
+                    <div style="background:var(--t-color-surface-well); padding:5px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; gap:15px;">
                         <label><input type="radio" name="exp-format" value="txt" checked> TXT (\u7EAF\u6587\u672C)</label>
                         <label><input type="radio" name="exp-format" value="json"> JSON (\u7ED3\u6784\u5316)</label>
                     </div>
@@ -36885,7 +36900,7 @@ function openEditor(id3, source = "main") {
     const originalContent = $("#ed-prompt").val();
     $("#t-editor-view").hide();
     const largeEditHtml = `
-        <div id="t-large-edit-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:20000; display:flex; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
+        <div id="t-large-edit-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--t-color-dialog-scrim); z-index:20000; display:flex; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
             <div class="t-box t-root" id="t-large-edit-view" style="width:100%; max-width:800px; height:90vh; max-height:90vh; margin:auto; display:flex; flex-direction:column;">
                 <div class="t-header" style="flex-shrink:0;">
                     <span class="t-title-main">\u5927\u5C4F\u7F16\u8F91\u6A21\u5F0F</span>
@@ -39231,7 +39246,7 @@ async function openMainWindow() {
           throw new Error("\u590D\u5236\u547D\u4EE4\u6267\u884C\u5931\u8D25");
         }
       }
-      btn.html('<i class="fa-solid fa-check" style="color:#55efc4;"></i>');
+      btn.html('<i class="fa-solid fa-check" style="color:var(--t-color-notify);"></i>');
       setTimeout(() => btn.html(originalHtml), 1e3);
     } catch (err) {
       console.error("Titania: \u590D\u5236\u5931\u8D25", err);
@@ -39938,7 +39953,7 @@ async function openWorldInfoSelector() {
     visibleEntries.forEach((entry) => {
       const checked = selectedSet.has(Number(entry.uid));
       const constantBadge = entry.isConstant ? '<span style="background:#4a9eff33; color:#4a9eff; padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">\u84DD\u706F</span>' : "";
-      const disabledBadge = entry.isDisabled ? '<span style="background:#ff9f4333; color:#ffb968; padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">\u9152\u9986\u4E2D\u5DF2\u7981\u7528</span>' : "";
+      const disabledBadge = entry.isDisabled ? '<span style="background:#ff9f4333; color:var(--t-color-warning-muted); padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">\u9152\u9986\u4E2D\u5DF2\u7981\u7528</span>' : "";
       const $entry = $(`
                 <div class="t-wi-entry ${checked ? "selected" : ""}" data-uid="${entry.uid}">
                     <div class="t-wi-entry-check">
@@ -40577,7 +40592,7 @@ function openQueueSettingsWindow() {
         
         <div class="t-panel-footer t-queue-footer">
             <div class="t-queue-status" id="t-queue-status">
-                ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:#55efc4;"></i> \u961F\u5217\u5DF2\u6FC0\u6D3B' : '<i class="fa-solid fa-circle" style="color:var(--t-color-text-faint);"></i> \u961F\u5217\u672A\u6FC0\u6D3B'}
+                ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:var(--t-color-notify);"></i> \u961F\u5217\u5DF2\u6FC0\u6D3B' : '<i class="fa-solid fa-circle" style="color:var(--t-color-text-faint);"></i> \u961F\u5217\u672A\u6FC0\u6D3B'}
             </div>
             <div class="t-queue-actions">
                 <button class="t-btn" id="t-queue-cancel">\u53D6\u6D88</button>
@@ -42553,7 +42568,7 @@ async function handleGenerate(forceScriptId = null, silent = false, generationOv
       const confirmMsg = "\u4E16\u754C\u4E66\u5DF2\u9009\u4E2D\u7684\u6761\u76EE\u4E3A 0\uFF0C\u662F\u5426\u7EE7\u7EED\u751F\u6210\uFF1F";
       const userConfirmed = await new Promise((resolve) => {
         const confirmHtml = `
-                <div id="t-confirm-overlay" style="position:fixed; inset:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:99999; display:flex; align-items:center; justify-content:center;">
+                <div id="t-confirm-overlay" style="position:fixed; inset:0; width:100vw; height:100vh; background:var(--t-color-dialog-scrim); z-index:99999; display:flex; align-items:center; justify-content:center;">
                     <div style="background:var(--t-color-surface); border:1px solid var(--t-color-border-strong); border-radius:10px; padding:25px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); margin:auto;">
                         <div style="font-size:2em; margin-bottom:15px;">\u{1F4DA}</div>
                         <div style="color:var(--t-color-text-strong); margin-bottom:20px; font-size:1.1em;">${confirmMsg}</div>

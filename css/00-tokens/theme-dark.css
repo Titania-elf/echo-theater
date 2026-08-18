@@ -24,6 +24,21 @@
     /* #333 行内 <code> 芯片底。与 --t-color-border 同值但角色不同（表面 vs 边框），
        Phase 5a-3 为把 JS inline style 里的 <code> 底色 token 化而加。
        ⚠ Phase 6 需确认：浅色主题下芯片底与边框大概率不该同色，届时二者会分叉。 */
+
+    /* 以下三个由 Phase 5a-4 从 JS inline style 收上来，各自角色明确、值逐位不变。
+       ⚠ 三者与已有表面 token 的差值都在感知阈以下（inset 与 sunken 差 2/255、
+       well 与 bg 差 1/255），Phase 6 应逐个判断能否归并 —— 但那是真实视觉变化，
+       不能在 Phase 5 顺手做。刻意没有为它们造原语：原语阶是设计意图的表达，
+       而这三个值是历史随手取的。 */
+    --t-color-surface-inset: rgb(24 24 24);
+    /* #181818 设置页分区内容块底 / 调试窗头尾栏（13 处） */
+    --t-color-surface-option: rgb(var(--t-c-neutral-3-rgb));
+    /* #222 可选卡片底（字体来源单选，3 处）。与 --t-color-field-focus 同值，
+       但那是「输入框聚焦」态，角色不同，不可互用。 */
+    --t-color-surface-well: rgb(17 17 17);
+    /* #111 内嵌控件槽底：文件选择器 / radio 组的容器（3 处）。
+       与 --t-color-field-disabled 同值，但那是「禁用态」，角色不同。 */
+
     --t-color-field-focus: rgb(var(--t-c-neutral-3-rgb));
     /* #222 输入框聚焦底 */
     --t-color-field-disabled: rgb(17 17 17);

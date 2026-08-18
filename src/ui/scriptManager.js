@@ -123,7 +123,7 @@ export function openScriptManager() {
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">选择文件 (.txt):</span>
-                    <div style="display:flex; gap:10px; align-items:center; background:#111; padding:5px; border-radius:4px; border:1px solid var(--t-color-border);">
+                    <div style="display:flex; gap:10px; align-items:center; background:var(--t-color-surface-well); padding:5px; border-radius:4px; border:1px solid var(--t-color-border);">
                         <input type="file" id="t-file-input-m" accept=".txt" style="display:none;">
                         <button id="t-btn-choose-file" class="t-btn" style="font-size:0.9em; padding:4px 10px;">📂 浏览文件...</button>
                         <span id="t-file-name-label" style="font-size:0.85em; color:var(--t-color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">未选择文件</span>
@@ -141,7 +141,7 @@ export function openScriptManager() {
                 <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">📤 导出剧本</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">导出范围:</span>
-                    <div style="background:#111; padding:10px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; flex-direction:column; gap:8px;">
+                    <div style="background:var(--t-color-surface-well); padding:10px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; flex-direction:column; gap:8px;">
                         <label><input type="radio" name="exp-scope" value="all" checked> 导出全部用户剧本</label>
                         <label><input type="radio" name="exp-scope" value="category"> 导出指定分类</label>
                         <label><input type="radio" name="exp-scope" value="current"> 导出当前列表 (<span id="exp-current-count">0</span> 个)</label>
@@ -153,7 +153,7 @@ export function openScriptManager() {
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">导出格式:</span>
-                    <div style="background:#111; padding:5px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; gap:15px;">
+                    <div style="background:var(--t-color-surface-well); padding:5px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; gap:15px;">
                         <label><input type="radio" name="exp-format" value="txt" checked> TXT (纯文本)</label>
                         <label><input type="radio" name="exp-format" value="json"> JSON (结构化)</label>
                     </div>
@@ -889,7 +889,7 @@ export function openEditor(id, source = 'main') {
         // 创建大屏编辑视图，添加遮罩层防止点击穿透
         // 使用 padding 确保在手机端也能正确居中显示
         const largeEditHtml = `
-        <div id="t-large-edit-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:20000; display:flex; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
+        <div id="t-large-edit-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--t-color-dialog-scrim); z-index:20000; display:flex; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
             <div class="t-box t-root" id="t-large-edit-view" style="width:100%; max-width:800px; height:90vh; max-height:90vh; margin:auto; display:flex; flex-direction:column;">
                 <div class="t-header" style="flex-shrink:0;">
                     <span class="t-title-main">大屏编辑模式</span>

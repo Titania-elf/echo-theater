@@ -1267,7 +1267,7 @@ export async function openMainWindow() {
             }
 
             // 图标变绿色表示成功
-            btn.html('<i class="fa-solid fa-check" style="color:#55efc4;"></i>');
+            btn.html('<i class="fa-solid fa-check" style="color:var(--t-color-notify);"></i>');
             setTimeout(() => btn.html(originalHtml), 1000);
         } catch (err) {
             console.error("Titania: 复制失败", err);
@@ -2238,7 +2238,7 @@ async function openWorldInfoSelector() {
                 ? '<span style="background:#4a9eff33; color:#4a9eff; padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">蓝灯</span>'
                 : "";
             const disabledBadge = entry.isDisabled
-                ? '<span style="background:#ff9f4333; color:#ffb968; padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">酒馆中已禁用</span>'
+                ? '<span style="background:#ff9f4333; color:var(--t-color-warning-muted); padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">酒馆中已禁用</span>'
                 : "";
 
             const $entry = $(`
@@ -3064,7 +3064,7 @@ function openQueueSettingsWindow() {
         
         <div class="t-panel-footer t-queue-footer">
             <div class="t-queue-status" id="t-queue-status">
-                ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:#55efc4;"></i> 队列已激活' : '<i class="fa-solid fa-circle" style="color:var(--t-color-text-faint);"></i> 队列未激活'}
+                ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:var(--t-color-notify);"></i> 队列已激活' : '<i class="fa-solid fa-circle" style="color:var(--t-color-text-faint);"></i> 队列未激活'}
             </div>
             <div class="t-queue-actions">
                 <button class="t-btn" id="t-queue-cancel">取消</button>

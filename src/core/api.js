@@ -1739,7 +1739,7 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
             const userConfirmed = await new Promise((resolve) => {
                 // 使用自定义确认框（完全居中）
                 const confirmHtml = `
-                <div id="t-confirm-overlay" style="position:fixed; inset:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:99999; display:flex; align-items:center; justify-content:center;">
+                <div id="t-confirm-overlay" style="position:fixed; inset:0; width:100vw; height:100vh; background:var(--t-color-dialog-scrim); z-index:99999; display:flex; align-items:center; justify-content:center;">
                     <div style="background:var(--t-color-surface); border:1px solid var(--t-color-border-strong); border-radius:10px; padding:25px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); margin:auto;">
                         <div style="font-size:2em; margin-bottom:15px;">📚</div>
                         <div style="color:var(--t-color-text-strong); margin-bottom:20px; font-size:1.1em;">${confirmMsg}</div>

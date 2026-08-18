@@ -446,7 +446,7 @@ export function showDiagnosticsWindow() {
             <span class="t-close" id="t-diag-close">&times;</span>
         </div>
         
-        <div style="padding:15px; background:#181818; border-bottom:1px solid var(--t-color-border);">
+        <div style="padding:15px; background:var(--t-color-surface-inset); border-bottom:1px solid var(--t-color-border);">
             <div style="background: rgba(255, 159, 67, 0.1); border:1px solid rgba(255, 159, 67, 0.3); padding:12px; border-radius:6px;">
                 <div style="font-weight:bold; color:#feca57; font-size:0.9em; margin-bottom:5px;">
                     <i class="fa-solid fa-triangle-exclamation"></i> 报错排查指南
@@ -465,7 +465,7 @@ export function showDiagnosticsWindow() {
             <div class="t-log-box" id="t-diag-log-viewer" style="flex:1; overflow-y:auto;"></div>
         </div>
         
-        <div style="padding:15px; background:#181818; border-top:1px solid var(--t-color-border); display:flex; gap:10px;">
+        <div style="padding:15px; background:var(--t-color-surface-inset); border-top:1px solid var(--t-color-border); display:flex; gap:10px;">
             <button id="t-diag-refresh" class="t-btn">
                 <i class="fa-solid fa-rotate-right"></i> 刷新日志
             </button>

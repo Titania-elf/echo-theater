@@ -24,7 +24,7 @@
       "title": "消费但未声明的 --t-* 变量",
       "violations": 0,
       "metrics": {
-        "CSS 已声明 --t-*": 266,
+        "CSS 已声明 --t-*": 269,
         "被消费种类": 211,
         "仅 JS 声明（B5）": 4
       }
@@ -69,9 +69,9 @@
       "violations": 0,
       "metrics": {
         "hex字面量": 1127,
-        "rgb/rgba字面量": 958,
-        "合计": 2085,
-        "  00-tokens": "hex 10 / rgb 136",
+        "rgb/rgba字面量": 961,
+        "合计": 2088,
+        "  00-tokens": "hex 10 / rgb 139",
         "  01-base": "hex 18 / rgb 17",
         "  02-components": "hex 0 / rgb 0",
         "  03-layout": "hex 0 / rgb 0",
@@ -133,9 +133,9 @@
     },
     "A17": {
       "title": "inline style 中的硬编码颜色",
-      "violations": 103,
+      "violations": 76,
       "metrics": {
-        "命中数": 103
+        "命中数": 76
       }
     },
     "A18": {
@@ -176,7 +176,7 @@
     }
   },
   "scale": {
-    "CSS 总行数": 16924,
+    "CSS 总行数": 16939,
     "规则条数": 2217,
     "border-radius 声明 / 不同值": "342 / 43",
     "box-shadow 声明 / 不同值": "116 / 87",
