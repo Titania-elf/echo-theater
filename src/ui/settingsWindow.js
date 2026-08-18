@@ -299,13 +299,13 @@ export function openSettingsWindow() {
                     <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                         <label style="cursor:pointer; display:flex; align-items:center;">
                             <input type="checkbox" id="p-show-timer" ${tempApp.show_timer !== false ? 'checked' : ''} style="margin-right:10px;">
-                            <span style="color:#ccc;">⏱️ 显示生成计时统计</span>
+                            <span style="color:var(--t-color-text-label);">⏱️ 显示生成计时统计</span>
                         </label>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">生成时在悬浮球上方显示耗时</p>
                     </div>
 
                     <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
-                        <label style="color:#ccc; display:block; margin-bottom:8px;">🎭 小剧场主界面</label>
+                        <label style="color:var(--t-color-text-label); display:block; margin-bottom:8px;">🎭 小剧场主界面</label>
                         <select id="p-main-window-mode" class="t-input">
                             <option value="modern" ${mainWindowMode !== 'legacy' ? 'selected' : ''}>新版（工具箱 + 常驻续写栏）</option>
                             <option value="legacy" ${mainWindowMode === 'legacy' ? 'selected' : ''}>经典版（双演绎按钮 + 工具网格）</option>
@@ -314,7 +314,7 @@ export function openSettingsWindow() {
                     </div>
 
                     <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
-                        <label style="color:#ccc; display:block; margin-bottom:8px;">🎨 标题栏图标 <span id="p-header-actions-count" class="t-header-action-count"></span></label>
+                        <label style="color:var(--t-color-text-label); display:block; margin-bottom:8px;">🎨 标题栏图标 <span id="p-header-actions-count" class="t-header-action-count"></span></label>
                         <div id="p-header-actions" class="t-header-action-list"></div>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">勾选要常驻标题栏的功能（最多 ${HEADER_ACTION_MAX} 个），拖动可调整顺序。没选中的会收进标题栏的「更多」菜单。改动立即生效。</p>
                     </div>
@@ -390,21 +390,21 @@ export function openSettingsWindow() {
                         <div class="t-form-group" style="margin-bottom:15px;">
                             <label class="t-form-label">字体来源</label>
                             <div style="display:flex; flex-direction:column; gap:10px;">
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === 'default' || !fontSettings.source ? '#bfa15f' : '#333'};" data-font-source="default">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === 'default' || !fontSettings.source ? 'var(--t-color-brand)' : 'var(--t-color-border)'};" data-font-source="default">
                                     <input type="radio" name="t-font-source" value="default" ${fontSettings.source === 'default' || !fontSettings.source ? 'checked' : ''} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">🖥️ 系统默认</div>
                                         <div style="font-size:0.8em; color:var(--t-color-text-muted);">使用系统默认字体栈</div>
                                     </div>
                                 </label>
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === 'online' ? '#bfa15f' : '#333'};" data-font-source="online">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === 'online' ? 'var(--t-color-brand)' : 'var(--t-color-border)'};" data-font-source="online">
                                     <input type="radio" name="t-font-source" value="online" ${fontSettings.source === 'online' ? 'checked' : ''} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">🌐 在线字体</div>
                                         <div style="font-size:0.8em; color:var(--t-color-text-muted);">使用 Google Fonts 等在线服务</div>
                                     </div>
                                 </label>
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === 'upload' ? '#bfa15f' : '#333'};" data-font-source="upload">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === 'upload' ? 'var(--t-color-brand)' : 'var(--t-color-border)'};" data-font-source="upload">
                                     <input type="radio" name="t-font-source" value="upload" ${fontSettings.source === 'upload' ? 'checked' : ''} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">📁 上传字体</div>
@@ -619,7 +619,7 @@ export function openSettingsWindow() {
                 <!-- Tab 8: 导演模式 -->
                 <div id="page-director" class="t-set-page">
                     <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px; color:var(--t-color-text-muted); font-size:0.9em;">
-                        <i class="fa-solid fa-circle-info"></i> 自定义导演指令，用于控制生成内容的风格、篇幅、视角等。支持变量：<code style="background:#333; padding:2px 5px; border-radius:3px;">{{char}}</code> 角色名、<code style="background:#333; padding:2px 5px; border-radius:3px;">{{user}}</code> 用户名
+                        <i class="fa-solid fa-circle-info"></i> 自定义导演指令，用于控制生成内容的风格、篇幅、视角等。支持变量：<code style="background:var(--t-color-surface-code); padding:2px 5px; border-radius:3px;">{{char}}</code> 角色名、<code style="background:var(--t-color-surface-code); padding:2px 5px; border-radius:3px;">{{user}}</code> 用户名
                     </div>
                     
                     <div class="t-form-group">
@@ -715,7 +715,7 @@ export function openSettingsWindow() {
                             <div class="t-form-group" style="margin-bottom:0;">
                                 <label style="cursor:pointer; display:flex; align-items:center;">
                                     <input type="checkbox" id="cfg-continue-indicator" ${(data.auto_continue?.show_indicator !== false) ? 'checked' : ''} style="margin-right:10px;">
-                                    <span style="color:#ccc;">在内容中显示续写连接标记</span>
+                                    <span style="color:var(--t-color-text-label);">在内容中显示续写连接标记</span>
                                 </label>
                             </div>
                         </div>
@@ -733,7 +733,7 @@ export function openSettingsWindow() {
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             用逗号分隔多个标签名。只提取这些标签内的文本作为历史上下文。<br>
                             <span style="color:var(--t-color-text-muted);">留空则全文提取（移除所有 HTML 标签后的纯文本）</span><br>
-                            <span style="color:#55efc4;">示例：填写 <code style="background:#333; padding:1px 4px; border-radius:2px;">content</code> 则只提取 <code style="background:#333; padding:1px 4px; border-radius:2px;">&lt;content&gt;...&lt;/content&gt;</code> 中的内容</span>
+                            <span style="color:#55efc4;">示例：填写 <code style="background:var(--t-color-surface-code); padding:1px 4px; border-radius:2px;">content</code> 则只提取 <code style="background:var(--t-color-surface-code); padding:1px 4px; border-radius:2px;">&lt;content&gt;...&lt;/content&gt;</code> 中的内容</span>
                         </p>
                     </div>
 
@@ -742,7 +742,7 @@ export function openSettingsWindow() {
                         <label class="t-form-label">🚫 聊天历史排除标签 (黑名单)</label>
                         <textarea id="cfg-history-blacklist" class="t-input" rows="4" placeholder="每行一条规则，格式：开始标记 结束标记;&#10;例如：&#10;&lt;thinking&gt; &lt;/thinking&gt;;&#10;image### ###image;&#10;必须填写完整的成对标记，中间保留空格，行末使用英文分号。">${data.history_extraction?.blacklist || ""}</textarea>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
-                            读取聊天历史前删除这些成对标记及其中的内容。每行一条规则，标记之间必须有空格，规则末尾必须使用英文分号 <code style="background:#333; padding:1px 4px; border-radius:2px;">;</code>。
+                            读取聊天历史前删除这些成对标记及其中的内容。每行一条规则，标记之间必须有空格，规则末尾必须使用英文分号 <code style="background:var(--t-color-surface-code); padding:1px 4px; border-radius:2px;">;</code>。
                         </p>
                     </div>
                 </div>
@@ -1540,7 +1540,7 @@ export function openSettingsWindow() {
         if (sortedCats.length === 0) { $list.html('<div style="color:var(--t-color-text-faint);">暂无剧本</div>'); return; }
         sortedCats.forEach(cat => {
             const isChecked = savedCats.includes(cat) ? 'checked' : '';
-            $list.append(`<label style="display:flex; align-items:center; cursor:pointer; padding:2px 0;"><input type="checkbox" class="auto-cat-chk" value="${cat}" ${isChecked} style="margin-right:8px;"><span style="color:#ccc; font-size:0.9em;">${cat}</span></label>`);
+            $list.append(`<label style="display:flex; align-items:center; cursor:pointer; padding:2px 0;"><input type="checkbox" class="auto-cat-chk" value="${cat}" ${isChecked} style="margin-right:8px;"><span style="color:var(--t-color-text-label); font-size:0.9em;">${cat}</span></label>`);
         });
     };
     const updateAutoModeUI = () => {

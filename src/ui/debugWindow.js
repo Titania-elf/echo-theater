@@ -451,7 +451,7 @@ export function showDiagnosticsWindow() {
                 <div style="font-weight:bold; color:#feca57; font-size:0.9em; margin-bottom:5px;">
                     <i class="fa-solid fa-triangle-exclamation"></i> 报错排查指南
                 </div>
-                <div style="font-size:0.85em; color:#ccc; line-height:1.5;">
+                <div style="font-size:0.85em; color:var(--t-color-text-label); line-height:1.5;">
                     如果您遇到生成失败或内容被截断的情况，请点击下方"导出完整报告"按钮，将生成的 JSON 文件发送给开发者。
                     报告中包含您的 Prompt（用于排查安全审查），但 <b>API Key 已自动脱敏</b>。
                 </div>
@@ -469,7 +469,7 @@ export function showDiagnosticsWindow() {
             <button id="t-diag-refresh" class="t-btn">
                 <i class="fa-solid fa-rotate-right"></i> 刷新日志
             </button>
-            <button id="t-diag-clear" class="t-btn" style="color:var(--t-color-danger); border-color:#ff6b6b;">
+            <button id="t-diag-clear" class="t-btn" style="color:var(--t-color-danger); border-color:var(--t-color-danger);">
                 <i class="fa-solid fa-trash"></i> 清空日志
             </button>
             <button id="t-diag-export" class="t-btn primary" style="margin-left:auto;">

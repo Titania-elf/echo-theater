@@ -735,7 +735,7 @@ export function openFavsWindow() {
                 <div style="display:flex; align-items:center; gap:15px; overflow:hidden; flex-grow:1;">
                     <i class="fa-solid fa-chevron-left" id="t-read-back" style="cursor:pointer; font-size:1.2em; padding:5px; color:var(--t-color-text-secondary);"></i>
                     <div style="display:flex; flex-direction:column; justify-content:center; overflow:hidden;">
-                        <div id="t-read-meta" class="t-read-meta-text" style="font-weight:bold; color:#ccc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+                        <div id="t-read-meta" class="t-read-meta-text" style="font-weight:bold; color:var(--t-color-text-label); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
                         <div id="t-read-index" style="font-size:0.75em; color:var(--t-color-text-faint);">0 / 0</div>
                     </div>
                 </div>

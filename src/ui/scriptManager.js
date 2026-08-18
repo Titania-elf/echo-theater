@@ -98,7 +98,7 @@ export function openScriptManager() {
                     </button>
                 </div>
                 <div class="t-mgr-overview" id="t-mgr-overview"></div>
-                <div class="t-mgr-header-row t-batch-elem" style="padding: 8px 15px; background: var(--t-color-surface-raised); border-bottom: 1px solid var(--t-color-border); color: #ccc; font-size: 0.9em; flex-shrink:0;">
+                <div class="t-mgr-header-row t-batch-elem" style="padding: 8px 15px; background: var(--t-color-surface-raised); border-bottom: 1px solid var(--t-color-border); color: var(--t-color-text-label); font-size: 0.9em; flex-shrink:0;">
                     <label style="display:flex; align-items:center; cursor:pointer;">
                         <input type="checkbox" id="t-mgr-select-all" style="margin-right:10px;"> 全选当前列表
                     </label>
@@ -106,9 +106,9 @@ export function openScriptManager() {
                 <div class="t-mgr-list" id="t-mgr-list-container"></div>
                 <div class="t-mgr-footer-bar t-batch-elem">
                     <span id="t-batch-count-label">已选: 0</span>
-                    <button id="t-mgr-move-to" class="t-tool-btn" style="color:var(--t-color-brand); border-color:#bfa15f;">📁 移动到</button>
-                    <button id="t-mgr-export-selected" class="t-tool-btn" style="color:var(--t-color-accent); border-color:#90cdf4;">📤 导出</button>
-                    <button id="t-mgr-del-confirm" class="t-tool-btn" style="color:var(--t-color-danger); border-color:#ff6b6b;">🗑️ 删除</button>
+                    <button id="t-mgr-move-to" class="t-tool-btn" style="color:var(--t-color-brand); border-color:var(--t-color-brand);">📁 移动到</button>
+                    <button id="t-mgr-export-selected" class="t-tool-btn" style="color:var(--t-color-accent); border-color:var(--t-color-accent);">📤 导出</button>
+                    <button id="t-mgr-del-confirm" class="t-tool-btn" style="color:var(--t-color-danger); border-color:var(--t-color-danger);">🗑️ 删除</button>
                 </div>
             </div>
         </div>

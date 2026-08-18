@@ -2092,6 +2092,10 @@ function loadCssFiles() {
     /* #2a2a2a \u5361\u7247 / \u63A7\u4EF6\u5E95 */
     --t-color-surface-sunken: rgb(var(--t-c-neutral-1-rgb));
     /* #1a1a1a \u8F93\u5165\u6846\u5E95 / \u4EE3\u7801\u5757 */
+    --t-color-surface-code: rgb(var(--t-c-neutral-5-rgb));
+    /* #333 \u884C\u5185 <code> \u82AF\u7247\u5E95\u3002\u4E0E --t-color-border \u540C\u503C\u4F46\u89D2\u8272\u4E0D\u540C\uFF08\u8868\u9762 vs \u8FB9\u6846\uFF09\uFF0C
+       Phase 5a-3 \u4E3A\u628A JS inline style \u91CC\u7684 <code> \u5E95\u8272 token \u5316\u800C\u52A0\u3002
+       \u26A0 Phase 6 \u9700\u786E\u8BA4\uFF1A\u6D45\u8272\u4E3B\u9898\u4E0B\u82AF\u7247\u5E95\u4E0E\u8FB9\u6846\u5927\u6982\u7387\u4E0D\u8BE5\u540C\u8272\uFF0C\u5C4A\u65F6\u4E8C\u8005\u4F1A\u5206\u53C9\u3002 */
     --t-color-field-focus: rgb(var(--t-c-neutral-3-rgb));
     /* #222 \u8F93\u5165\u6846\u805A\u7126\u5E95 */
     --t-color-field-disabled: rgb(17 17 17);
@@ -2205,6 +2209,13 @@ function loadCssFiles() {
     --t-color-text: rgb(var(--t-c-neutral-12-rgb));
     /* #eee\uFF0C= \u73B0 .t-box \u7684 color */
     --t-color-text-strong: rgb(var(--t-c-neutral-13-rgb));
+    --t-color-text-label: rgb(var(--t-c-neutral-11-rgb));
+    /* #ccc \u8868\u5355\u6807\u7B7E / \u5206\u533A\u5C0F\u6807\u9898 / \u5143\u4FE1\u606F\u3002\u4E2D\u6027\u9636\u91CC neutral-11 \u672C\u5C31\u5B58\u5728\uFF0C
+       \u53EA\u662F\u6B64\u524D\u6CA1\u6709\u8BED\u4E49\u540D\uFF1B\u4EAE\u5EA6\u4ECB\u4E8E --t-color-text(#eee) \u4E0E
+       --t-color-text-secondary(#aaa) \u4E4B\u95F4\u3002
+       \u26A0 Phase 6 \u9700\u5224\u65AD\uFF1A\u6587\u5B57\u9636\u73B0\u5728\u6709 strong/text/label/secondary/muted/faint \u516D\u6863\uFF0C
+       label \u4E0E secondary \u53EA\u5DEE\u4E00\u6863\uFF0C\u5F88\u53EF\u80FD\u8BE5\u5408\u5E76 \u2014\u2014 \u4F46\u90A3\u662F\u771F\u5B9E\u89C6\u89C9\u53D8\u5316\uFF0C
+       \u4E0D\u80FD\u5728 Phase 5 \u987A\u624B\u505A\u3002 */
     --t-color-text-secondary: rgb(var(--t-c-neutral-10-rgb));
     /* #aaa */
     --t-color-text-muted: rgb(var(--t-c-neutral-9-rgb));
@@ -20771,7 +20782,7 @@ function openFavsWindow() {
                 <div style="display:flex; align-items:center; gap:15px; overflow:hidden; flex-grow:1;">
                     <i class="fa-solid fa-chevron-left" id="t-read-back" style="cursor:pointer; font-size:1.2em; padding:5px; color:var(--t-color-text-secondary);"></i>
                     <div style="display:flex; flex-direction:column; justify-content:center; overflow:hidden;">
-                        <div id="t-read-meta" class="t-read-meta-text" style="font-weight:bold; color:#ccc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+                        <div id="t-read-meta" class="t-read-meta-text" style="font-weight:bold; color:var(--t-color-text-label); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
                         <div id="t-read-index" style="font-size:0.75em; color:var(--t-color-text-faint);">0 / 0</div>
                     </div>
                 </div>
@@ -22508,7 +22519,7 @@ function showDiagnosticsWindow() {
                 <div style="font-weight:bold; color:#feca57; font-size:0.9em; margin-bottom:5px;">
                     <i class="fa-solid fa-triangle-exclamation"></i> \u62A5\u9519\u6392\u67E5\u6307\u5357
                 </div>
-                <div style="font-size:0.85em; color:#ccc; line-height:1.5;">
+                <div style="font-size:0.85em; color:var(--t-color-text-label); line-height:1.5;">
                     \u5982\u679C\u60A8\u9047\u5230\u751F\u6210\u5931\u8D25\u6216\u5185\u5BB9\u88AB\u622A\u65AD\u7684\u60C5\u51B5\uFF0C\u8BF7\u70B9\u51FB\u4E0B\u65B9"\u5BFC\u51FA\u5B8C\u6574\u62A5\u544A"\u6309\u94AE\uFF0C\u5C06\u751F\u6210\u7684 JSON \u6587\u4EF6\u53D1\u9001\u7ED9\u5F00\u53D1\u8005\u3002
                     \u62A5\u544A\u4E2D\u5305\u542B\u60A8\u7684 Prompt\uFF08\u7528\u4E8E\u6392\u67E5\u5B89\u5168\u5BA1\u67E5\uFF09\uFF0C\u4F46 <b>API Key \u5DF2\u81EA\u52A8\u8131\u654F</b>\u3002
                 </div>
@@ -22526,7 +22537,7 @@ function showDiagnosticsWindow() {
             <button id="t-diag-refresh" class="t-btn">
                 <i class="fa-solid fa-rotate-right"></i> \u5237\u65B0\u65E5\u5FD7
             </button>
-            <button id="t-diag-clear" class="t-btn" style="color:var(--t-color-danger); border-color:#ff6b6b;">
+            <button id="t-diag-clear" class="t-btn" style="color:var(--t-color-danger); border-color:var(--t-color-danger);">
                 <i class="fa-solid fa-trash"></i> \u6E05\u7A7A\u65E5\u5FD7
             </button>
             <button id="t-diag-export" class="t-btn primary" style="margin-left:auto;">
@@ -22790,7 +22801,7 @@ function renderApiConnectionEditorHTML(options = {}) {
             ${profileNameBlock}
             <div id="${escapeHtml3(ids.profileTipId || "")}" style="margin-top:8px; font-size:0.8em; color:#8da5b8;"></div>
         </div>
-        <div style="height:1px; background:#333; margin:20px 0;"></div>
+        <div style="height:1px; background:var(--t-color-border); margin:20px 0;"></div>
         <div id="${escapeHtml3(ids.fieldsWrapId || "")}">
             <div class="t-form-group">
                 <label class="t-form-label">${escapeHtml3(labels.apiUrl)}</label>
@@ -33211,7 +33222,7 @@ function renderResults() {
     const isSelected = selectedIndices.has(index);
     const scoreColor = scorePercent >= 70 ? "#4caf50" : scorePercent >= 50 ? "#ff9800" : "#888";
     const displayText = escapeHtml7(result.text).substring(0, 300) + (result.text.length > 300 ? "..." : "");
-    return '<div class="t-recall-result-item" data-index="' + index + '" style="display: flex; gap: 10px; padding: 12px; margin-bottom: 8px; background: ' + (isSelected ? "#2a3a4a" : "#1e1e1e") + "; border: 1px solid " + (isSelected ? "#4a9eff" : "#333") + '; border-radius: 8px; cursor: pointer; transition: all 0.2s;"><div style="flex-shrink: 0; padding-top: 2px;"><input type="checkbox" ' + (isSelected ? "checked" : "") + ' style="cursor: pointer;"></div><div style="flex: 1; min-width: 0;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><span style="color: var(--t-color-text-muted); font-size: 0.85em;">#' + result.messageIndex + '</span><span style="color: ' + scoreColor + '; font-weight: bold; font-size: 0.9em;">' + scorePercent + '%</span></div><div style="color: #ccc; font-size: 0.9em; line-height: 1.5; word-break: break-word;">' + displayText + "</div></div></div>";
+    return '<div class="t-recall-result-item" data-index="' + index + '" style="display: flex; gap: 10px; padding: 12px; margin-bottom: 8px; background: ' + (isSelected ? "#2a3a4a" : "#1e1e1e") + "; border: 1px solid " + (isSelected ? "#4a9eff" : "#333") + '; border-radius: 8px; cursor: pointer; transition: all 0.2s;"><div style="flex-shrink: 0; padding-top: 2px;"><input type="checkbox" ' + (isSelected ? "checked" : "") + ' style="cursor: pointer;"></div><div style="flex: 1; min-width: 0;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><span style="color: var(--t-color-text-muted); font-size: 0.85em;">#' + result.messageIndex + '</span><span style="color: ' + scoreColor + '; font-weight: bold; font-size: 0.9em;">' + scorePercent + '%</span></div><div style="color: var(--t-color-text-label); font-size: 0.9em; line-height: 1.5; word-break: break-word;">' + displayText + "</div></div></div>";
   }).join("");
   $resultsList.html(html);
   $resultsList.find(".t-recall-result-item").each(function() {
@@ -33835,13 +33846,13 @@ function openSettingsWindow() {
                     <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                         <label style="cursor:pointer; display:flex; align-items:center;">
                             <input type="checkbox" id="p-show-timer" ${tempApp.show_timer !== false ? "checked" : ""} style="margin-right:10px;">
-                            <span style="color:#ccc;">\u23F1\uFE0F \u663E\u793A\u751F\u6210\u8BA1\u65F6\u7EDF\u8BA1</span>
+                            <span style="color:var(--t-color-text-label);">\u23F1\uFE0F \u663E\u793A\u751F\u6210\u8BA1\u65F6\u7EDF\u8BA1</span>
                         </label>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">\u751F\u6210\u65F6\u5728\u60AC\u6D6E\u7403\u4E0A\u65B9\u663E\u793A\u8017\u65F6</p>
                     </div>
 
                     <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
-                        <label style="color:#ccc; display:block; margin-bottom:8px;">\u{1F3AD} \u5C0F\u5267\u573A\u4E3B\u754C\u9762</label>
+                        <label style="color:var(--t-color-text-label); display:block; margin-bottom:8px;">\u{1F3AD} \u5C0F\u5267\u573A\u4E3B\u754C\u9762</label>
                         <select id="p-main-window-mode" class="t-input">
                             <option value="modern" ${mainWindowMode !== "legacy" ? "selected" : ""}>\u65B0\u7248\uFF08\u5DE5\u5177\u7BB1 + \u5E38\u9A7B\u7EED\u5199\u680F\uFF09</option>
                             <option value="legacy" ${mainWindowMode === "legacy" ? "selected" : ""}>\u7ECF\u5178\u7248\uFF08\u53CC\u6F14\u7ECE\u6309\u94AE + \u5DE5\u5177\u7F51\u683C\uFF09</option>
@@ -33850,7 +33861,7 @@ function openSettingsWindow() {
                     </div>
 
                     <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
-                        <label style="color:#ccc; display:block; margin-bottom:8px;">\u{1F3A8} \u6807\u9898\u680F\u56FE\u6807 <span id="p-header-actions-count" class="t-header-action-count"></span></label>
+                        <label style="color:var(--t-color-text-label); display:block; margin-bottom:8px;">\u{1F3A8} \u6807\u9898\u680F\u56FE\u6807 <span id="p-header-actions-count" class="t-header-action-count"></span></label>
                         <div id="p-header-actions" class="t-header-action-list"></div>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">\u52FE\u9009\u8981\u5E38\u9A7B\u6807\u9898\u680F\u7684\u529F\u80FD\uFF08\u6700\u591A ${HEADER_ACTION_MAX} \u4E2A\uFF09\uFF0C\u62D6\u52A8\u53EF\u8C03\u6574\u987A\u5E8F\u3002\u6CA1\u9009\u4E2D\u7684\u4F1A\u6536\u8FDB\u6807\u9898\u680F\u7684\u300C\u66F4\u591A\u300D\u83DC\u5355\u3002\u6539\u52A8\u7ACB\u5373\u751F\u6548\u3002</p>
                     </div>
@@ -33926,21 +33937,21 @@ function openSettingsWindow() {
                         <div class="t-form-group" style="margin-bottom:15px;">
                             <label class="t-form-label">\u5B57\u4F53\u6765\u6E90</label>
                             <div style="display:flex; flex-direction:column; gap:10px;">
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "default" || !fontSettings.source ? "#bfa15f" : "#333"};" data-font-source="default">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "default" || !fontSettings.source ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="default">
                                     <input type="radio" name="t-font-source" value="default" ${fontSettings.source === "default" || !fontSettings.source ? "checked" : ""} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">\u{1F5A5}\uFE0F \u7CFB\u7EDF\u9ED8\u8BA4</div>
                                         <div style="font-size:0.8em; color:var(--t-color-text-muted);">\u4F7F\u7528\u7CFB\u7EDF\u9ED8\u8BA4\u5B57\u4F53\u6808</div>
                                     </div>
                                 </label>
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "online" ? "#bfa15f" : "#333"};" data-font-source="online">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "online" ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="online">
                                     <input type="radio" name="t-font-source" value="online" ${fontSettings.source === "online" ? "checked" : ""} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">\u{1F310} \u5728\u7EBF\u5B57\u4F53</div>
                                         <div style="font-size:0.8em; color:var(--t-color-text-muted);">\u4F7F\u7528 Google Fonts \u7B49\u5728\u7EBF\u670D\u52A1</div>
                                     </div>
                                 </label>
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "upload" ? "#bfa15f" : "#333"};" data-font-source="upload">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:#222; border-radius:6px; border:2px solid ${fontSettings.source === "upload" ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="upload">
                                     <input type="radio" name="t-font-source" value="upload" ${fontSettings.source === "upload" ? "checked" : ""} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">\u{1F4C1} \u4E0A\u4F20\u5B57\u4F53</div>
@@ -34155,7 +34166,7 @@ function openSettingsWindow() {
                 <!-- Tab 8: \u5BFC\u6F14\u6A21\u5F0F -->
                 <div id="page-director" class="t-set-page">
                     <div style="background:#181818; padding:15px; border-radius:6px; border:1px solid var(--t-color-border); margin-bottom:20px; color:var(--t-color-text-muted); font-size:0.9em;">
-                        <i class="fa-solid fa-circle-info"></i> \u81EA\u5B9A\u4E49\u5BFC\u6F14\u6307\u4EE4\uFF0C\u7528\u4E8E\u63A7\u5236\u751F\u6210\u5185\u5BB9\u7684\u98CE\u683C\u3001\u7BC7\u5E45\u3001\u89C6\u89D2\u7B49\u3002\u652F\u6301\u53D8\u91CF\uFF1A<code style="background:#333; padding:2px 5px; border-radius:3px;">{{char}}</code> \u89D2\u8272\u540D\u3001<code style="background:#333; padding:2px 5px; border-radius:3px;">{{user}}</code> \u7528\u6237\u540D
+                        <i class="fa-solid fa-circle-info"></i> \u81EA\u5B9A\u4E49\u5BFC\u6F14\u6307\u4EE4\uFF0C\u7528\u4E8E\u63A7\u5236\u751F\u6210\u5185\u5BB9\u7684\u98CE\u683C\u3001\u7BC7\u5E45\u3001\u89C6\u89D2\u7B49\u3002\u652F\u6301\u53D8\u91CF\uFF1A<code style="background:var(--t-color-surface-code); padding:2px 5px; border-radius:3px;">{{char}}</code> \u89D2\u8272\u540D\u3001<code style="background:var(--t-color-surface-code); padding:2px 5px; border-radius:3px;">{{user}}</code> \u7528\u6237\u540D
                     </div>
                     
                     <div class="t-form-group">
@@ -34251,7 +34262,7 @@ function openSettingsWindow() {
                             <div class="t-form-group" style="margin-bottom:0;">
                                 <label style="cursor:pointer; display:flex; align-items:center;">
                                     <input type="checkbox" id="cfg-continue-indicator" ${data.auto_continue?.show_indicator !== false ? "checked" : ""} style="margin-right:10px;">
-                                    <span style="color:#ccc;">\u5728\u5185\u5BB9\u4E2D\u663E\u793A\u7EED\u5199\u8FDE\u63A5\u6807\u8BB0</span>
+                                    <span style="color:var(--t-color-text-label);">\u5728\u5185\u5BB9\u4E2D\u663E\u793A\u7EED\u5199\u8FDE\u63A5\u6807\u8BB0</span>
                                 </label>
                             </div>
                         </div>
@@ -34269,7 +34280,7 @@ function openSettingsWindow() {
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
                             \u7528\u9017\u53F7\u5206\u9694\u591A\u4E2A\u6807\u7B7E\u540D\u3002\u53EA\u63D0\u53D6\u8FD9\u4E9B\u6807\u7B7E\u5185\u7684\u6587\u672C\u4F5C\u4E3A\u5386\u53F2\u4E0A\u4E0B\u6587\u3002<br>
                             <span style="color:var(--t-color-text-muted);">\u7559\u7A7A\u5219\u5168\u6587\u63D0\u53D6\uFF08\u79FB\u9664\u6240\u6709 HTML \u6807\u7B7E\u540E\u7684\u7EAF\u6587\u672C\uFF09</span><br>
-                            <span style="color:#55efc4;">\u793A\u4F8B\uFF1A\u586B\u5199 <code style="background:#333; padding:1px 4px; border-radius:2px;">content</code> \u5219\u53EA\u63D0\u53D6 <code style="background:#333; padding:1px 4px; border-radius:2px;">&lt;content&gt;...&lt;/content&gt;</code> \u4E2D\u7684\u5185\u5BB9</span>
+                            <span style="color:#55efc4;">\u793A\u4F8B\uFF1A\u586B\u5199 <code style="background:var(--t-color-surface-code); padding:1px 4px; border-radius:2px;">content</code> \u5219\u53EA\u63D0\u53D6 <code style="background:var(--t-color-surface-code); padding:1px 4px; border-radius:2px;">&lt;content&gt;...&lt;/content&gt;</code> \u4E2D\u7684\u5185\u5BB9</span>
                         </p>
                     </div>
 
@@ -34278,7 +34289,7 @@ function openSettingsWindow() {
                         <label class="t-form-label">\u{1F6AB} \u804A\u5929\u5386\u53F2\u6392\u9664\u6807\u7B7E (\u9ED1\u540D\u5355)</label>
                         <textarea id="cfg-history-blacklist" class="t-input" rows="4" placeholder="\u6BCF\u884C\u4E00\u6761\u89C4\u5219\uFF0C\u683C\u5F0F\uFF1A\u5F00\u59CB\u6807\u8BB0 \u7ED3\u675F\u6807\u8BB0;&#10;\u4F8B\u5982\uFF1A&#10;&lt;thinking&gt; &lt;/thinking&gt;;&#10;image### ###image;&#10;\u5FC5\u987B\u586B\u5199\u5B8C\u6574\u7684\u6210\u5BF9\u6807\u8BB0\uFF0C\u4E2D\u95F4\u4FDD\u7559\u7A7A\u683C\uFF0C\u884C\u672B\u4F7F\u7528\u82F1\u6587\u5206\u53F7\u3002">${data.history_extraction?.blacklist || ""}</textarea>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; line-height:1.5;">
-                            \u8BFB\u53D6\u804A\u5929\u5386\u53F2\u524D\u5220\u9664\u8FD9\u4E9B\u6210\u5BF9\u6807\u8BB0\u53CA\u5176\u4E2D\u7684\u5185\u5BB9\u3002\u6BCF\u884C\u4E00\u6761\u89C4\u5219\uFF0C\u6807\u8BB0\u4E4B\u95F4\u5FC5\u987B\u6709\u7A7A\u683C\uFF0C\u89C4\u5219\u672B\u5C3E\u5FC5\u987B\u4F7F\u7528\u82F1\u6587\u5206\u53F7 <code style="background:#333; padding:1px 4px; border-radius:2px;">;</code>\u3002
+                            \u8BFB\u53D6\u804A\u5929\u5386\u53F2\u524D\u5220\u9664\u8FD9\u4E9B\u6210\u5BF9\u6807\u8BB0\u53CA\u5176\u4E2D\u7684\u5185\u5BB9\u3002\u6BCF\u884C\u4E00\u6761\u89C4\u5219\uFF0C\u6807\u8BB0\u4E4B\u95F4\u5FC5\u987B\u6709\u7A7A\u683C\uFF0C\u89C4\u5219\u672B\u5C3E\u5FC5\u987B\u4F7F\u7528\u82F1\u6587\u5206\u53F7 <code style="background:var(--t-color-surface-code); padding:1px 4px; border-radius:2px;">;</code>\u3002
                         </p>
                     </div>
                 </div>
@@ -34894,7 +34905,7 @@ function openSettingsWindow() {
     }
     sortedCats.forEach((cat) => {
       const isChecked = savedCats.includes(cat) ? "checked" : "";
-      $list.append(`<label style="display:flex; align-items:center; cursor:pointer; padding:2px 0;"><input type="checkbox" class="auto-cat-chk" value="${cat}" ${isChecked} style="margin-right:8px;"><span style="color:#ccc; font-size:0.9em;">${cat}</span></label>`);
+      $list.append(`<label style="display:flex; align-items:center; cursor:pointer; padding:2px 0;"><input type="checkbox" class="auto-cat-chk" value="${cat}" ${isChecked} style="margin-right:8px;"><span style="color:var(--t-color-text-label); font-size:0.9em;">${cat}</span></label>`);
     });
   };
   const updateAutoModeUI = () => {
@@ -36213,7 +36224,7 @@ function openScriptManager() {
                     </button>
                 </div>
                 <div class="t-mgr-overview" id="t-mgr-overview"></div>
-                <div class="t-mgr-header-row t-batch-elem" style="padding: 8px 15px; background: var(--t-color-surface-raised); border-bottom: 1px solid var(--t-color-border); color: #ccc; font-size: 0.9em; flex-shrink:0;">
+                <div class="t-mgr-header-row t-batch-elem" style="padding: 8px 15px; background: var(--t-color-surface-raised); border-bottom: 1px solid var(--t-color-border); color: var(--t-color-text-label); font-size: 0.9em; flex-shrink:0;">
                     <label style="display:flex; align-items:center; cursor:pointer;">
                         <input type="checkbox" id="t-mgr-select-all" style="margin-right:10px;"> \u5168\u9009\u5F53\u524D\u5217\u8868
                     </label>
@@ -36221,9 +36232,9 @@ function openScriptManager() {
                 <div class="t-mgr-list" id="t-mgr-list-container"></div>
                 <div class="t-mgr-footer-bar t-batch-elem">
                     <span id="t-batch-count-label">\u5DF2\u9009: 0</span>
-                    <button id="t-mgr-move-to" class="t-tool-btn" style="color:var(--t-color-brand); border-color:#bfa15f;">\u{1F4C1} \u79FB\u52A8\u5230</button>
-                    <button id="t-mgr-export-selected" class="t-tool-btn" style="color:var(--t-color-accent); border-color:#90cdf4;">\u{1F4E4} \u5BFC\u51FA</button>
-                    <button id="t-mgr-del-confirm" class="t-tool-btn" style="color:var(--t-color-danger); border-color:#ff6b6b;">\u{1F5D1}\uFE0F \u5220\u9664</button>
+                    <button id="t-mgr-move-to" class="t-tool-btn" style="color:var(--t-color-brand); border-color:var(--t-color-brand);">\u{1F4C1} \u79FB\u52A8\u5230</button>
+                    <button id="t-mgr-export-selected" class="t-tool-btn" style="color:var(--t-color-accent); border-color:var(--t-color-accent);">\u{1F4E4} \u5BFC\u51FA</button>
+                    <button id="t-mgr-del-confirm" class="t-tool-btn" style="color:var(--t-color-danger); border-color:var(--t-color-danger);">\u{1F5D1}\uFE0F \u5220\u9664</button>
                 </div>
             </div>
         </div>
@@ -40149,7 +40160,7 @@ function renderFilterMenu(currentFilter, $targetBtn, onSelect) {
             <span>\u{1F504} \u5168\u90E8</span>
             <i class="fa-solid fa-check t-filter-check"></i>
         </div>
-        <div style="height:1px; background:#333; margin:2px 0;"></div>
+        <div style="height:1px; background:var(--t-color-border); margin:2px 0;"></div>
         ${cats.map((c) => `
             <div class="t-filter-item ${currentFilter === c ? "active" : ""}" data-val="${c}">
                 <span>${c}</span>
@@ -40189,7 +40200,7 @@ function showScriptSelector(initialFilter = "ALL") {
   const html = `
     <div id="t-selector-panel" class="t-selector-panel">
         <div class="t-sel-header">
-            <div style="font-weight:bold; color:#ccc;">\u{1F4DA} \u9009\u62E9\u5267\u672C <span style="font-size:0.8em; color:var(--t-color-text-faint); font-weight:normal; margin-left:10px;">(\u5171 ${list.length} \u4E2A)</span></div>
+            <div style="font-weight:bold; color:var(--t-color-text-label);">\u{1F4DA} \u9009\u62E9\u5267\u672C <span style="font-size:0.8em; color:var(--t-color-text-faint); font-weight:normal; margin-left:10px;">(\u5171 ${list.length} \u4E2A)</span></div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <select id="t-sel-sort" class="t-sel-sort-select" title="\u6392\u5E8F\u65B9\u5F0F">
                     <option value="smart">\u667A\u80FD\u6392\u5E8F</option>
@@ -42171,7 +42182,7 @@ function showInteractiveFAB(scriptName, html, reasons) {
                 background: var(--t-color-surface-raised);
                 border: 1px solid var(--t-color-border-strong);
                 border-radius: 20px;
-                color: #ccc;
+                color: var(--t-color-text-label);
                 font-size: 0.9em;
                 cursor: pointer;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);

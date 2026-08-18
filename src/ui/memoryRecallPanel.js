@@ -283,7 +283,7 @@ function renderResults() {
             '<span style="color: var(--t-color-text-muted); font-size: 0.85em;">#' + result.messageIndex + '</span>' +
             '<span style="color: ' + scoreColor + '; font-weight: bold; font-size: 0.9em;">' + scorePercent + '%</span>' +
             '</div>' +
-            '<div style="color: #ccc; font-size: 0.9em; line-height: 1.5; word-break: break-word;">' + displayText + '</div>' +
+            '<div style="color: var(--t-color-text-label); font-size: 0.9em; line-height: 1.5; word-break: break-word;">' + displayText + '</div>' +
             '</div>' +
             '</div>';
     }).join('');

@@ -173,7 +173,7 @@ export function renderApiConnectionEditorHTML(options = {}) {
             ${profileNameBlock}
             <div id="${escapeHtml(ids.profileTipId || "")}" style="margin-top:8px; font-size:0.8em; color:#8da5b8;"></div>
         </div>
-        <div style="height:1px; background:#333; margin:20px 0;"></div>
+        <div style="height:1px; background:var(--t-color-border); margin:20px 0;"></div>
         <div id="${escapeHtml(ids.fieldsWrapId || "")}">
             <div class="t-form-group">
                 <label class="t-form-label">${escapeHtml(labels.apiUrl)}</label>

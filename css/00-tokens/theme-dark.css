@@ -20,6 +20,10 @@
     /* #2a2a2a 卡片 / 控件底 */
     --t-color-surface-sunken: rgb(var(--t-c-neutral-1-rgb));
     /* #1a1a1a 输入框底 / 代码块 */
+    --t-color-surface-code: rgb(var(--t-c-neutral-5-rgb));
+    /* #333 行内 <code> 芯片底。与 --t-color-border 同值但角色不同（表面 vs 边框），
+       Phase 5a-3 为把 JS inline style 里的 <code> 底色 token 化而加。
+       ⚠ Phase 6 需确认：浅色主题下芯片底与边框大概率不该同色，届时二者会分叉。 */
     --t-color-field-focus: rgb(var(--t-c-neutral-3-rgb));
     /* #222 输入框聚焦底 */
     --t-color-field-disabled: rgb(17 17 17);
@@ -133,6 +137,13 @@
     --t-color-text: rgb(var(--t-c-neutral-12-rgb));
     /* #eee，= 现 .t-box 的 color */
     --t-color-text-strong: rgb(var(--t-c-neutral-13-rgb));
+    --t-color-text-label: rgb(var(--t-c-neutral-11-rgb));
+    /* #ccc 表单标签 / 分区小标题 / 元信息。中性阶里 neutral-11 本就存在，
+       只是此前没有语义名；亮度介于 --t-color-text(#eee) 与
+       --t-color-text-secondary(#aaa) 之间。
+       ⚠ Phase 6 需判断：文字阶现在有 strong/text/label/secondary/muted/faint 六档，
+       label 与 secondary 只差一档，很可能该合并 —— 但那是真实视觉变化，
+       不能在 Phase 5 顺手做。 */
     --t-color-text-secondary: rgb(var(--t-c-neutral-10-rgb));
     /* #aaa */
     --t-color-text-muted: rgb(var(--t-c-neutral-9-rgb));

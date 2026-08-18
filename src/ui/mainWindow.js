@@ -2517,7 +2517,7 @@ function renderFilterMenu(currentFilter, $targetBtn, onSelect) {
             <span>🔄 全部</span>
             <i class="fa-solid fa-check t-filter-check"></i>
         </div>
-        <div style="height:1px; background:#333; margin:2px 0;"></div>
+        <div style="height:1px; background:var(--t-color-border); margin:2px 0;"></div>
         ${cats.map(c => `
             <div class="t-filter-item ${currentFilter === c ? 'active' : ''}" data-val="${c}">
                 <span>${c}</span>
@@ -2573,7 +2573,7 @@ function showScriptSelector(initialFilter = "ALL") {
     const html = `
     <div id="t-selector-panel" class="t-selector-panel">
         <div class="t-sel-header">
-            <div style="font-weight:bold; color:#ccc;">📚 选择剧本 <span style="font-size:0.8em; color:var(--t-color-text-faint); font-weight:normal; margin-left:10px;">(共 ${list.length} 个)</span></div>
+            <div style="font-weight:bold; color:var(--t-color-text-label);">📚 选择剧本 <span style="font-size:0.8em; color:var(--t-color-text-faint); font-weight:normal; margin-left:10px;">(共 ${list.length} 个)</span></div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <select id="t-sel-sort" class="t-sel-sort-select" title="排序方式">
                     <option value="smart">智能排序</option>

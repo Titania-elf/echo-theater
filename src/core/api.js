@@ -1311,7 +1311,7 @@ function showInteractiveFAB(scriptName, html, reasons) {
                 background: var(--t-color-surface-raised);
                 border: 1px solid var(--t-color-border-strong);
                 border-radius: 20px;
-                color: #ccc;
+                color: var(--t-color-text-label);
                 font-size: 0.9em;
                 cursor: pointer;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
