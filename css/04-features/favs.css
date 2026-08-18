@@ -1189,3 +1189,22 @@
         transform: none;
     }
 }
+
+/* 编辑页的分页统计（"第 1/1 页"）。原为 favsWindow.js:716 的内联 style。
+   用 ID 是因为该元素本就带 #t-edit-page-stat，且无同类兄弟需要复用。 */
+#t-edit-page-stat {
+    color: #8f949b;
+    font-size: 0.85em;
+    min-width: 180px;
+    text-align: center;
+}
+
+/* 角色列表空态。原为 favsWindow.js:2212 的内联 style。
+   ⚠ 与本文件的 .t-fav-empty 不同：那条是网格空态（color:#8d866f 暖灰 +
+   grid-column:1/-1 + margin-top），这条是列表空态（#555 + padding:30px）。
+   刻意不合并 —— 合并要改颜色，属 Phase 6。 */
+.t-fav-char-empty {
+    text-align: center;
+    padding: 30px;
+    color: #555;
+}

@@ -71,7 +71,7 @@ export async function openRecallPanel() {
     <div class="t-box t-root t-recall-container" id="t-recall-view">
         <div class="t-header t-shrink-0">
             <span class="t-title-main"><i class="fa-solid fa-lightbulb"></i> 记忆召回</span>
-            <span class="t-recall-status-badge ${status.available ? 'available' : 'unavailable'}" style="margin-left: auto; margin-right: 15px; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background: ${status.available ? '#2a4a3a' : '#4a2a2a'}; color: ${status.available ? '#4caf50' : '#ff6b6b'};">
+            <span class="t-recall-status-badge ${status.available ? 'available' : 'unavailable'}">
                 ${status.message}
             </span>
             <span class="t-close" id="t-recall-close">&times;</span>

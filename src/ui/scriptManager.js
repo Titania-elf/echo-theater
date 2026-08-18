@@ -399,7 +399,7 @@ export function openScriptManager() {
         });
 
         if (filtered.length === 0) {
-            $list.append(`<div style="text-align:center; color:#555; margin-top:50px;">无数据</div>`);
+            $list.append(`<div class="t-mgr-list-empty">无数据</div>`);
             return;
         }
 
@@ -407,7 +407,7 @@ export function openScriptManager() {
         filtered.forEach(s => {
             const isUser = s._type === 'user';
             const catLabel = s.category ? `<span class="t-mgr-tag">${s.category}</span>` : '';
-            const presetLabel = !isUser ? `<span class="t-mgr-tag" style="background:#444;">预设</span>` : '';
+            const presetLabel = !isUser ? `<span class="t-mgr-tag t-mgr-tag--preset">预设</span>` : '';
             const stats = readStats(s.id);
             const statsLine = `使用 ${stats.generated_count || 0} 次 · 选择 ${stats.selected_count || 0} 次 · 最近 ${formatRelativeTime(stats.last_generated_at || stats.last_selected_at)}`;
 

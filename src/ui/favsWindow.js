@@ -713,7 +713,7 @@ export function openFavsWindow() {
                 <span id="t-edit-count" style="color:var(--t-color-text-muted); font-size:0.9em;">已选择 0 项</span>
                 <div id="t-edit-pager" style="display:none; align-items:center; gap:8px; margin-left:8px;">
                     <button id="t-edit-page-prev" class="t-tool-btn" title="上一页"><i class="fa-solid fa-chevron-left"></i></button>
-                    <span id="t-edit-page-stat" style="color:#8f949b; font-size:0.85em; min-width:180px; text-align:center;">第 1/1 页</span>
+                    <span id="t-edit-page-stat">第 1/1 页</span>
                     <button id="t-edit-page-next" class="t-tool-btn" title="下一页"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
             </div>
@@ -2209,7 +2209,7 @@ export function openCharImageManager(onCloseCallback) {
         $list.empty();
 
         if (sortedChars.length === 0) {
-            $list.append('<div style="text-align:center; padding:30px; color:#555;">暂无角色数据，请先去收藏一些剧本吧~</div>');
+            $list.append('<div class="t-fav-char-empty">暂无角色数据，请先去收藏一些剧本吧~</div>');
             return;
         }
 

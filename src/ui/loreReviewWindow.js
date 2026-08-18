@@ -282,7 +282,7 @@ async function showProfileConfigDialog(onSave) {
 
                             <div style="margin-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                 <button id="t-lore-embed-test" class="t-btn t-btn-xs" type="button"><i class="fa-solid fa-vial"></i> 测试连接</button>
-                                <span id="t-lore-embed-test-result" style="font-size:0.82em; color:#8da5b8;"></span>
+                                <span id="t-lore-embed-test-result"></span>
                             </div>
                         </div>
 

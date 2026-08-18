@@ -1946,3 +1946,9 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 .t-stat-item i.t-stat-none {
     color: #888;
 }
+
+/* Embedding 连接测试的结果文字。原为 loreReviewWindow.js:285 的内联 style。 */
+#t-lore-embed-test-result {
+    font-size: 0.82em;
+    color: #8da5b8;
+}

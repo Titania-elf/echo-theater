@@ -59,6 +59,36 @@
     background: rgba(255, 107, 107, 0.3);
 }
 
+/* 记忆检索面板的状态徽标。原为 memoryRecallPanel.js:74 的内联 style。
+
+   ⚠ 与上面的 .t-recall-status 三条规则**不是**一套，刻意不合并：
+   全库唯一的 t-recall-status* 用法是 memoryRecallPanel.js:74 的
+   `.t-recall-status-badge`，也就是上面那三条规则**零消费者**（含 :483 的
+   媒体查询共 4 条）。看取值差异（11px / 3px 8px / 10px /
+   rgba(255,255,255,.2) 对下面的 0.85em / 4px 10px / 12px / #2a4a3a）
+   像是类名改过而 CSS 未跟着改，于是当时改用了内联硬撑。
+   这里按内联原值落地；删除 .t-recall-status 归 Phase 7。
+
+   ⚠ available / unavailable 是裸类名，但只出现在复合选择器里，
+   本选择器 (0,2,0) 压得过宿主可能存在的 (0,1,0) 同名类。 */
+.t-recall-status-badge {
+    margin-left: auto;
+    margin-right: 15px;
+    font-size: 0.85em;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.t-recall-status-badge.available {
+    background: #2a4a3a;
+    color: #4caf50;
+}
+
+.t-recall-status-badge.unavailable {
+    background: #4a2a2a;
+    color: #ff6b6b;
+}
+
 .t-recall-close {
     margin-left: auto;
     background: none;

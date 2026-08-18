@@ -220,6 +220,13 @@
     color: #aaa;
 }
 
+/* 「预设」标签的底色。原为 scriptManager.js:410 的内联 style。
+   ⚠ 与 .t-mgr-tag 同为 (0,1,0) 且都改 background，靠紧随其后取胜，
+   位置不可上移。 */
+.t-mgr-tag--preset {
+    background: #444;
+}
+
 /* 批量管理 */
 .t-batch-elem {
     display: none;
@@ -456,4 +463,13 @@
         height: 80vh;
         max-height: 85vh;
     }
+}
+
+/* 列表空态（"无数据"）。原为 scriptManager.js:402 的内联 style。
+   ⚠ 与本文件的 .t-mgr-ov-empty 不是一回事（那条只有 color:#666，
+   用在使用统计里），刻意不合并。 */
+.t-mgr-list-empty {
+    text-align: center;
+    color: #555;
+    margin-top: 50px;
 }

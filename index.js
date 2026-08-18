@@ -11208,6 +11208,13 @@ textarea.t-input {
     color: #aaa;
 }
 
+/* \u300C\u9884\u8BBE\u300D\u6807\u7B7E\u7684\u5E95\u8272\u3002\u539F\u4E3A scriptManager.js:410 \u7684\u5185\u8054 style\u3002
+   \u26A0 \u4E0E .t-mgr-tag \u540C\u4E3A (0,1,0) \u4E14\u90FD\u6539 background\uFF0C\u9760\u7D27\u968F\u5176\u540E\u53D6\u80DC\uFF0C
+   \u4F4D\u7F6E\u4E0D\u53EF\u4E0A\u79FB\u3002 */
+.t-mgr-tag--preset {
+    background: #444;
+}
+
 /* \u6279\u91CF\u7BA1\u7406 */
 .t-batch-elem {
     display: none;
@@ -11444,6 +11451,15 @@ textarea.t-input {
         height: 80vh;
         max-height: 85vh;
     }
+}
+
+/* \u5217\u8868\u7A7A\u6001\uFF08"\u65E0\u6570\u636E"\uFF09\u3002\u539F\u4E3A scriptManager.js:402 \u7684\u5185\u8054 style\u3002
+   \u26A0 \u4E0E\u672C\u6587\u4EF6\u7684 .t-mgr-ov-empty \u4E0D\u662F\u4E00\u56DE\u4E8B\uFF08\u90A3\u6761\u53EA\u6709 color:#666\uFF0C
+   \u7528\u5728\u4F7F\u7528\u7EDF\u8BA1\u91CC\uFF09\uFF0C\u523B\u610F\u4E0D\u5408\u5E76\u3002 */
+.t-mgr-list-empty {
+    text-align: center;
+    color: #555;
+    margin-top: 50px;
 }
 
 
@@ -13320,6 +13336,25 @@ textarea.t-input {
     .t-fav-grid.edit-mode .t-fav-card:active {
         transform: none;
     }
+}
+
+/* \u7F16\u8F91\u9875\u7684\u5206\u9875\u7EDF\u8BA1\uFF08"\u7B2C 1/1 \u9875"\uFF09\u3002\u539F\u4E3A favsWindow.js:716 \u7684\u5185\u8054 style\u3002
+   \u7528 ID \u662F\u56E0\u4E3A\u8BE5\u5143\u7D20\u672C\u5C31\u5E26 #t-edit-page-stat\uFF0C\u4E14\u65E0\u540C\u7C7B\u5144\u5F1F\u9700\u8981\u590D\u7528\u3002 */
+#t-edit-page-stat {
+    color: #8f949b;
+    font-size: 0.85em;
+    min-width: 180px;
+    text-align: center;
+}
+
+/* \u89D2\u8272\u5217\u8868\u7A7A\u6001\u3002\u539F\u4E3A favsWindow.js:2212 \u7684\u5185\u8054 style\u3002
+   \u26A0 \u4E0E\u672C\u6587\u4EF6\u7684 .t-fav-empty \u4E0D\u540C\uFF1A\u90A3\u6761\u662F\u7F51\u683C\u7A7A\u6001\uFF08color:#8d866f \u6696\u7070 +
+   grid-column:1/-1 + margin-top\uFF09\uFF0C\u8FD9\u6761\u662F\u5217\u8868\u7A7A\u6001\uFF08#555 + padding:30px\uFF09\u3002
+   \u523B\u610F\u4E0D\u5408\u5E76 \u2014\u2014 \u5408\u5E76\u8981\u6539\u989C\u8272\uFF0C\u5C5E Phase 6\u3002 */
+.t-fav-char-empty {
+    text-align: center;
+    padding: 30px;
+    color: #555;
 }
 
 
@@ -16218,6 +16253,12 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     color: #888;
 }
 
+/* Embedding \u8FDE\u63A5\u6D4B\u8BD5\u7684\u7ED3\u679C\u6587\u5B57\u3002\u539F\u4E3A loreReviewWindow.js:285 \u7684\u5185\u8054 style\u3002 */
+#t-lore-embed-test-result {
+    font-size: 0.82em;
+    color: #8da5b8;
+}
+
 
 /* === 04-features/memory-recall.css === */
 /* css/04-features/memory-recall.css */
@@ -16279,6 +16320,36 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-recall-status.unavailable {
     background: rgba(255, 107, 107, 0.3);
+}
+
+/* \u8BB0\u5FC6\u68C0\u7D22\u9762\u677F\u7684\u72B6\u6001\u5FBD\u6807\u3002\u539F\u4E3A memoryRecallPanel.js:74 \u7684\u5185\u8054 style\u3002
+
+   \u26A0 \u4E0E\u4E0A\u9762\u7684 .t-recall-status \u4E09\u6761\u89C4\u5219**\u4E0D\u662F**\u4E00\u5957\uFF0C\u523B\u610F\u4E0D\u5408\u5E76\uFF1A
+   \u5168\u5E93\u552F\u4E00\u7684 t-recall-status* \u7528\u6CD5\u662F memoryRecallPanel.js:74 \u7684
+   \`.t-recall-status-badge\`\uFF0C\u4E5F\u5C31\u662F\u4E0A\u9762\u90A3\u4E09\u6761\u89C4\u5219**\u96F6\u6D88\u8D39\u8005**\uFF08\u542B :483 \u7684
+   \u5A92\u4F53\u67E5\u8BE2\u5171 4 \u6761\uFF09\u3002\u770B\u53D6\u503C\u5DEE\u5F02\uFF0811px / 3px 8px / 10px /
+   rgba(255,255,255,.2) \u5BF9\u4E0B\u9762\u7684 0.85em / 4px 10px / 12px / #2a4a3a\uFF09
+   \u50CF\u662F\u7C7B\u540D\u6539\u8FC7\u800C CSS \u672A\u8DDF\u7740\u6539\uFF0C\u4E8E\u662F\u5F53\u65F6\u6539\u7528\u4E86\u5185\u8054\u786C\u6491\u3002
+   \u8FD9\u91CC\u6309\u5185\u8054\u539F\u503C\u843D\u5730\uFF1B\u5220\u9664 .t-recall-status \u5F52 Phase 7\u3002
+
+   \u26A0 available / unavailable \u662F\u88F8\u7C7B\u540D\uFF0C\u4F46\u53EA\u51FA\u73B0\u5728\u590D\u5408\u9009\u62E9\u5668\u91CC\uFF0C
+   \u672C\u9009\u62E9\u5668 (0,2,0) \u538B\u5F97\u8FC7\u5BBF\u4E3B\u53EF\u80FD\u5B58\u5728\u7684 (0,1,0) \u540C\u540D\u7C7B\u3002 */
+.t-recall-status-badge {
+    margin-left: auto;
+    margin-right: 15px;
+    font-size: 0.85em;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.t-recall-status-badge.available {
+    background: #2a4a3a;
+    color: #4caf50;
+}
+
+.t-recall-status-badge.unavailable {
+    background: #4a2a2a;
+    color: #ff6b6b;
 }
 
 .t-recall-close {
@@ -21481,7 +21552,7 @@ function openFavsWindow() {
                 <span id="t-edit-count" style="color:var(--t-color-text-muted); font-size:0.9em;">\u5DF2\u9009\u62E9 0 \u9879</span>
                 <div id="t-edit-pager" style="display:none; align-items:center; gap:8px; margin-left:8px;">
                     <button id="t-edit-page-prev" class="t-tool-btn" title="\u4E0A\u4E00\u9875"><i class="fa-solid fa-chevron-left"></i></button>
-                    <span id="t-edit-page-stat" style="color:#8f949b; font-size:0.85em; min-width:180px; text-align:center;">\u7B2C 1/1 \u9875</span>
+                    <span id="t-edit-page-stat">\u7B2C 1/1 \u9875</span>
                     <button id="t-edit-page-next" class="t-tool-btn" title="\u4E0B\u4E00\u9875"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
             </div>
@@ -22714,7 +22785,7 @@ function openCharImageManager(onCloseCallback) {
     const $list = $("#t-img-list-container");
     $list.empty();
     if (sortedChars.length === 0) {
-      $list.append('<div style="text-align:center; padding:30px; color:#555;">\u6682\u65E0\u89D2\u8272\u6570\u636E\uFF0C\u8BF7\u5148\u53BB\u6536\u85CF\u4E00\u4E9B\u5267\u672C\u5427~</div>');
+      $list.append('<div class="t-fav-char-empty">\u6682\u65E0\u89D2\u8272\u6570\u636E\uFF0C\u8BF7\u5148\u53BB\u6536\u85CF\u4E00\u4E9B\u5267\u672C\u5427~</div>');
       return;
     }
     sortedChars.forEach((char) => {
@@ -31673,7 +31744,7 @@ async function showProfileConfigDialog(onSave) {
 
                             <div style="margin-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                 <button id="t-lore-embed-test" class="t-btn t-btn-xs" type="button"><i class="fa-solid fa-vial"></i> \u6D4B\u8BD5\u8FDE\u63A5</button>
-                                <span id="t-lore-embed-test-result" style="font-size:0.82em; color:#8da5b8;"></span>
+                                <span id="t-lore-embed-test-result"></span>
                             </div>
                         </div>
 
@@ -33778,7 +33849,7 @@ async function openRecallPanel() {
     <div class="t-box t-root t-recall-container" id="t-recall-view">
         <div class="t-header t-shrink-0">
             <span class="t-title-main"><i class="fa-solid fa-lightbulb"></i> \u8BB0\u5FC6\u53EC\u56DE</span>
-            <span class="t-recall-status-badge ${status.available ? "available" : "unavailable"}" style="margin-left: auto; margin-right: 15px; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background: ${status.available ? "#2a4a3a" : "#4a2a2a"}; color: ${status.available ? "#4caf50" : "#ff6b6b"};">
+            <span class="t-recall-status-badge ${status.available ? "available" : "unavailable"}">
                 ${status.message}
             </span>
             <span class="t-close" id="t-recall-close">&times;</span>
@@ -37178,14 +37249,14 @@ function openScriptManager() {
       return true;
     });
     if (filtered.length === 0) {
-      $list.append(`<div style="text-align:center; color:#555; margin-top:50px;">\u65E0\u6570\u636E</div>`);
+      $list.append(`<div class="t-mgr-list-empty">\u65E0\u6570\u636E</div>`);
       return;
     }
     const readStats = createScriptStatsReader();
     filtered.forEach((s) => {
       const isUser = s._type === "user";
       const catLabel = s.category ? `<span class="t-mgr-tag">${s.category}</span>` : "";
-      const presetLabel = !isUser ? `<span class="t-mgr-tag" style="background:#444;">\u9884\u8BBE</span>` : "";
+      const presetLabel = !isUser ? `<span class="t-mgr-tag t-mgr-tag--preset">\u9884\u8BBE</span>` : "";
       const stats = readStats(s.id);
       const statsLine = `\u4F7F\u7528 ${stats.generated_count || 0} \u6B21 \xB7 \u9009\u62E9 ${stats.selected_count || 0} \u6B21 \xB7 \u6700\u8FD1 ${formatRelativeTime2(stats.last_generated_at || stats.last_selected_at)}`;
       const $row = $(`
