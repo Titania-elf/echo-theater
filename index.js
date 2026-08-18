@@ -16901,6 +16901,14 @@ body.titania-debug-mode #chat titania-memory::before {
     overflow-x: hidden;
 }
 
+/* \u672C\u6587\u4EF6\u901A\u7528\u7684\u300C\u5220\u9664\u6309\u94AE\u6587\u5B57\u8272\u300D\uFF0C6 \u5904\u5728\u7528\uFF08\u5220\u9664\u65B9\u6848 / \u5220\u9664\u672C\u884C / \u5220\u9664\u7EC6\u7EB2\u9875 /
+   \u5220\u9664\u7EC6\u7EB2\u6761\u76EE / \u79FB\u52A8\u7AEF\u5220\u9664\u573A\u666F / \u79FB\u52A8\u7AEF\u62BD\u5C49\u5220\u9664\u672C\u6761\uFF09\u3002
+   \u26A0 \`plan-\` \u524D\u7F00\u662F\u5386\u53F2\u9057\u7559 \u2014\u2014 \u6700\u521D\u53EA\u6709\u300C\u5220\u9664\u65B9\u6848\u300D\u7528\u5B83\uFF0CPhase 5b-6 \u628A\u53E6\u5916
+   5 \u5904\u5185\u8054 color:#ff9d9d \u6536\u8FDB\u6765\u540E\u5DF2\u4E0D\u518D\u9650\u4E8E\u65B9\u6848\u3002\u6539\u540D\u5F52 Phase 7\uFF0C\u522B\u987A\u624B\u6539
+   \uFF08\u8981\u540C\u65F6\u52A8 6 \u4E2A JS \u7AD9\u70B9\u4E0E\u672C\u6587\u4EF6\u4E24\u6761\u89C4\u5219\uFF09\u3002
+   \u26A0 \u4FDD\u7559 #ff9d9d \u539F\u503C\u3001\u4E0D\u6362 --t-color-danger\uFF1A\u672C\u6587\u4EF6 199 \u5904\u989C\u8272\u5B57\u9762\u91CF\u30010 \u4E2A
+   token\uFF0C\u4E14 #ff9d9d \u672C\u6765\u5C31\u5728\u672C\u6587\u4EF6\u53E6\u4E00\u5904\uFF08.t-outline-row-btn.danger\uFF09\u51FA\u73B0\u3002
+   \u6574\u4F53 token \u5316\u5F52 Phase 6\uFF0C\u5224\u636E\u89C1\u4EA4\u63A5\u6587\u6863 \xA75b\u300C5b-4 \u7684\u4E09\u6761\u7ECF\u9A8C\u300D\u7B2C 2 \u6761\u3002 */
 .t-plan-delete-btn {
     color: #ff9d9d;
 }
@@ -18292,6 +18300,46 @@ body.titania-debug-mode #chat titania-memory::before {
 .t-outline-entry-form {
     display: grid;
     gap: 8px;
+}
+
+/* ============================================================
+   \u539F\u59CB\u5185\u5BB9\u5F39\u7A97\uFF08#t-outline-raw-dialog\uFF09\u7684\u5DE5\u5177\u6761
+   Phase 5b-6 \u4ECE storyOutlineWindow.js \u7684\u5185\u8054 style \u8FC1\u51FA\uFF0C7 \u4E2A\u5C5E\u6027\u3002
+   #9eb4c8 / #8ea0b3 \u4FDD\u7559\u539F\u503C\uFF1A\u4E24\u8005\u5728\u672C\u6587\u4EF6\u5DF2\u5404\u6709 2 / 3 \u5904\u5728\u7528\u3002
+   ============================================================ */
+
+.t-outline-raw-history-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.t-outline-raw-history-label {
+    color: #9eb4c8;
+    white-space: nowrap;
+}
+
+.t-outline-raw-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.t-outline-raw-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.t-outline-raw-stat {
+    color: #8ea0b3;
+}
+
+.t-outline-raw-actions {
+    display: flex;
+    gap: 6px;
 }
 
 
@@ -25703,16 +25751,16 @@ function showRawResponseDialog(rawContent, options = {}) {
                 <div class="t-dialog-close" id="t-outline-raw-close"><i class="fa-solid fa-times"></i></div>
             </div>
             <div class="t-dialog-body t-dialog-body--tight">
-                ${historyOptions ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="color:#9eb4c8;white-space:nowrap;">\u5386\u53F2\u8BB0\u5F55</span><select id="t-outline-raw-history" class="t-outline-select t-flex-1">${historyOptions}</select></div>` : ""}
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <span id="t-outline-raw-length" style="color:#8ea0b3;">\u957F\u5EA6: ${defaultContent.length} \u5B57\u7B26</span>
-                        <span id="t-outline-raw-elapsed" style="color:#8ea0b3;">\u8017\u65F6: ${formatElapsedDuration(getCurrentElapsedMs())}</span>
+                ${historyOptions ? `<div class="t-outline-raw-history-row"><span class="t-outline-raw-history-label">\u5386\u53F2\u8BB0\u5F55</span><select id="t-outline-raw-history" class="t-outline-select t-flex-1">${historyOptions}</select></div>` : ""}
+                <div class="t-outline-raw-bar">
+                    <div class="t-outline-raw-meta">
+                        <span id="t-outline-raw-length" class="t-outline-raw-stat">\u957F\u5EA6: ${defaultContent.length} \u5B57\u7B26</span>
+                        <span id="t-outline-raw-elapsed" class="t-outline-raw-stat">\u8017\u65F6: ${formatElapsedDuration(getCurrentElapsedMs())}</span>
                         <span id="t-outline-raw-mood" class="t-raw-wait-anim" aria-live="polite" aria-label="\u6A21\u578B\u751F\u6210\u4E2D\u52A8\u753B">
                             <span></span><span></span><span></span>
                         </span>
                     </div>
-                    <div style="display:flex;gap:6px;">
+                    <div class="t-outline-raw-actions">
                         <button id="t-outline-export-raw-history" class="t-btn t-btn-xs"><i class="fa-solid fa-file-export"></i> \u5BFC\u51FA\u5386\u53F2</button>
                     </div>
                 </div>
@@ -25920,7 +25968,7 @@ function renderRows() {
                         <button class="t-btn t-btn-xs" data-action="toggle-scenes" title="\u5C55\u5F00/\u6536\u8D77\u8BE5\u884C\u60C5\u8282\u7EC6\u7EB2">
                             <i class="fa-solid fa-layer-group"></i> \u5C55\u5F00\u7EC6\u7EB2
                         </button>
-                        <button class="t-btn t-btn-xs" data-action="delete" title="\u5220\u9664\u672C\u884C" style="color:#ff9d9d;">
+                        <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="delete" title="\u5220\u9664\u672C\u884C">
                             <i class="fa-solid fa-trash"></i> \u5220\u9664
                         </button>
                     </div>
@@ -25994,7 +26042,7 @@ function renderSceneEditorPage() {
             <textarea class="t-outline-textarea" rows="3" data-scene-page-field="sendable_prompt">${escapeHtml4(scene.sendable_prompt)}</textarea>
             <label>\u5907\u6CE8</label>
             <textarea class="t-outline-textarea" rows="2" data-scene-page-field="notes">${escapeHtml4(scene.notes)}</textarea>
-            <button class="t-btn t-btn-xs" data-action="scene-page-delete" data-scene-index="${sceneIdx}" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> \u5220\u9664\u573A\u666F</button>
+            <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="scene-page-delete" data-scene-index="${sceneIdx}"><i class="fa-solid fa-trash"></i> \u5220\u9664\u573A\u666F</button>
         </div>
     `).join("") || '<div class="t-outline-empty">\u6682\u65E0\u7EC6\u7EB2\u573A\u666F\uFF0C\u70B9\u51FB\u65B0\u589E\u573A\u666F</div>';
   $container.html(`
@@ -26007,7 +26055,7 @@ function renderSceneEditorPage() {
         </div>
         <div class="t-scene-page-actions">
             <button class="t-btn t-btn-xs" data-action="scene-page-add"><i class="fa-solid fa-plus"></i> \u65B0\u589E\u573A\u666F</button>
-            <button class="t-btn t-btn-xs" data-action="scene-page-delete-item" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> \u5220\u9664\u7EC6\u7EB2\u6761\u76EE</button>
+            <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="scene-page-delete-item"><i class="fa-solid fa-trash"></i> \u5220\u9664\u7EC6\u7EB2\u6761\u76EE</button>
         </div>
         <div class="t-scene-page-list">${sceneBlocks}</div>
     `);
@@ -26184,7 +26232,7 @@ function renderMobileDrawerScenes(index) {
             <label>\u5907\u6CE8</label>
             <textarea class="t-outline-textarea" rows="2" data-mobile-scene-field="notes">${escapeHtml4(scene.notes)}</textarea>
             <div class="t-mobile-scene-actions">
-                <button class="t-btn t-btn-xs" data-action="mobile-delete-scene" data-scene-index="${sceneIndex}" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> \u5220\u9664\u573A\u666F</button>
+                <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="mobile-delete-scene" data-scene-index="${sceneIndex}"><i class="fa-solid fa-trash"></i> \u5220\u9664\u573A\u666F</button>
             </div>
         </div>
     `).join("");
@@ -26799,7 +26847,7 @@ function openStoryOutlineWindow() {
                         </div>
                         <div class="t-outline-mobile-drawer-actions">
                             <button id="t-mobile-drawer-save" class="t-btn t-btn-primary"><i class="fa-solid fa-check"></i> \u4FDD\u5B58</button>
-                            <button id="t-mobile-drawer-delete" class="t-btn" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> \u5220\u9664\u672C\u6761</button>
+                            <button id="t-mobile-drawer-delete" class="t-btn t-plan-delete-btn"><i class="fa-solid fa-trash"></i> \u5220\u9664\u672C\u6761</button>
                         </div>
                     </div>
                     <div id="t-outline-add-sheet-backdrop" class="t-outline-add-sheet-backdrop"></div>

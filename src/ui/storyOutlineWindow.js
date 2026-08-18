@@ -2435,16 +2435,16 @@ function showRawResponseDialog(rawContent, options = {}) {
                 <div class="t-dialog-close" id="t-outline-raw-close"><i class="fa-solid fa-times"></i></div>
             </div>
             <div class="t-dialog-body t-dialog-body--tight">
-                ${historyOptions ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="color:#9eb4c8;white-space:nowrap;">历史记录</span><select id="t-outline-raw-history" class="t-outline-select t-flex-1">${historyOptions}</select></div>` : ""}
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <span id="t-outline-raw-length" style="color:#8ea0b3;">长度: ${defaultContent.length} 字符</span>
-                        <span id="t-outline-raw-elapsed" style="color:#8ea0b3;">耗时: ${formatElapsedDuration(getCurrentElapsedMs())}</span>
+                ${historyOptions ? `<div class="t-outline-raw-history-row"><span class="t-outline-raw-history-label">历史记录</span><select id="t-outline-raw-history" class="t-outline-select t-flex-1">${historyOptions}</select></div>` : ""}
+                <div class="t-outline-raw-bar">
+                    <div class="t-outline-raw-meta">
+                        <span id="t-outline-raw-length" class="t-outline-raw-stat">长度: ${defaultContent.length} 字符</span>
+                        <span id="t-outline-raw-elapsed" class="t-outline-raw-stat">耗时: ${formatElapsedDuration(getCurrentElapsedMs())}</span>
                         <span id="t-outline-raw-mood" class="t-raw-wait-anim" aria-live="polite" aria-label="模型生成中动画">
                             <span></span><span></span><span></span>
                         </span>
                     </div>
-                    <div style="display:flex;gap:6px;">
+                    <div class="t-outline-raw-actions">
                         <button id="t-outline-export-raw-history" class="t-btn t-btn-xs"><i class="fa-solid fa-file-export"></i> 导出历史</button>
                     </div>
                 </div>
@@ -2679,7 +2679,7 @@ function renderRows() {
                         <button class="t-btn t-btn-xs" data-action="toggle-scenes" title="展开/收起该行情节细纲">
                             <i class="fa-solid fa-layer-group"></i> 展开细纲
                         </button>
-                        <button class="t-btn t-btn-xs" data-action="delete" title="删除本行" style="color:#ff9d9d;">
+                        <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="delete" title="删除本行">
                             <i class="fa-solid fa-trash"></i> 删除
                         </button>
                     </div>
@@ -2760,7 +2760,7 @@ function renderSceneEditorPage() {
             <textarea class="t-outline-textarea" rows="3" data-scene-page-field="sendable_prompt">${escapeHtml(scene.sendable_prompt)}</textarea>
             <label>备注</label>
             <textarea class="t-outline-textarea" rows="2" data-scene-page-field="notes">${escapeHtml(scene.notes)}</textarea>
-            <button class="t-btn t-btn-xs" data-action="scene-page-delete" data-scene-index="${sceneIdx}" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> 删除场景</button>
+            <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="scene-page-delete" data-scene-index="${sceneIdx}"><i class="fa-solid fa-trash"></i> 删除场景</button>
         </div>
     `).join("") || '<div class="t-outline-empty">暂无细纲场景，点击新增场景</div>';
 
@@ -2774,7 +2774,7 @@ function renderSceneEditorPage() {
         </div>
         <div class="t-scene-page-actions">
             <button class="t-btn t-btn-xs" data-action="scene-page-add"><i class="fa-solid fa-plus"></i> 新增场景</button>
-            <button class="t-btn t-btn-xs" data-action="scene-page-delete-item" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> 删除细纲条目</button>
+            <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="scene-page-delete-item"><i class="fa-solid fa-trash"></i> 删除细纲条目</button>
         </div>
         <div class="t-scene-page-list">${sceneBlocks}</div>
     `);
@@ -2976,7 +2976,7 @@ function renderMobileDrawerScenes(index) {
             <label>备注</label>
             <textarea class="t-outline-textarea" rows="2" data-mobile-scene-field="notes">${escapeHtml(scene.notes)}</textarea>
             <div class="t-mobile-scene-actions">
-                <button class="t-btn t-btn-xs" data-action="mobile-delete-scene" data-scene-index="${sceneIndex}" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> 删除场景</button>
+                <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="mobile-delete-scene" data-scene-index="${sceneIndex}"><i class="fa-solid fa-trash"></i> 删除场景</button>
             </div>
         </div>
     `).join("");
@@ -3670,7 +3670,7 @@ export function openStoryOutlineWindow() {
                         </div>
                         <div class="t-outline-mobile-drawer-actions">
                             <button id="t-mobile-drawer-save" class="t-btn t-btn-primary"><i class="fa-solid fa-check"></i> 保存</button>
-                            <button id="t-mobile-drawer-delete" class="t-btn" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> 删除本条</button>
+                            <button id="t-mobile-drawer-delete" class="t-btn t-plan-delete-btn"><i class="fa-solid fa-trash"></i> 删除本条</button>
                         </div>
                     </div>
                     <div id="t-outline-add-sheet-backdrop" class="t-outline-add-sheet-backdrop"></div>

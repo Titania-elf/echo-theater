@@ -394,6 +394,14 @@
     overflow-x: hidden;
 }
 
+/* 本文件通用的「删除按钮文字色」，6 处在用（删除方案 / 删除本行 / 删除细纲页 /
+   删除细纲条目 / 移动端删除场景 / 移动端抽屉删除本条）。
+   ⚠ `plan-` 前缀是历史遗留 —— 最初只有「删除方案」用它，Phase 5b-6 把另外
+   5 处内联 color:#ff9d9d 收进来后已不再限于方案。改名归 Phase 7，别顺手改
+   （要同时动 6 个 JS 站点与本文件两条规则）。
+   ⚠ 保留 #ff9d9d 原值、不换 --t-color-danger：本文件 199 处颜色字面量、0 个
+   token，且 #ff9d9d 本来就在本文件另一处（.t-outline-row-btn.danger）出现。
+   整体 token 化归 Phase 6，判据见交接文档 §5b「5b-4 的三条经验」第 2 条。 */
 .t-plan-delete-btn {
     color: #ff9d9d;
 }
@@ -1785,4 +1793,44 @@
 .t-outline-entry-form {
     display: grid;
     gap: 8px;
+}
+
+/* ============================================================
+   原始内容弹窗（#t-outline-raw-dialog）的工具条
+   Phase 5b-6 从 storyOutlineWindow.js 的内联 style 迁出，7 个属性。
+   #9eb4c8 / #8ea0b3 保留原值：两者在本文件已各有 2 / 3 处在用。
+   ============================================================ */
+
+.t-outline-raw-history-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.t-outline-raw-history-label {
+    color: #9eb4c8;
+    white-space: nowrap;
+}
+
+.t-outline-raw-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.t-outline-raw-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.t-outline-raw-stat {
+    color: #8ea0b3;
+}
+
+.t-outline-raw-actions {
+    display: flex;
+    gap: 6px;
 }
