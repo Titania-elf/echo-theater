@@ -247,3 +247,13 @@
         padding: 10px;
     }
 }
+
+/* 网格空态（"未找到…" / "此分类下暂无剧本"）。
+   Phase 5b-8 从 mainWindow.js:2617 的内联 style 迁出。
+   grid-column: 1 / -1 让它横跨 .t-sel-grid 的所有列。 */
+.t-sel-grid-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #555;
+    margin-top: 50px;
+}

@@ -941,7 +941,7 @@ export async function openMainWindow() {
         : "narrative";
 
     // 2. 准备初始展示内容（占位符，实际内容在 DOM 创建后用 Shadow DOM 渲染）
-    const placeholderContent = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#555;"><i class="fa-solid fa-clapperboard" style="font-size:3em; margin-bottom:15px; opacity:0.5;"></i><div style="font-size:1.1em;">请选择剧本，开始演绎...</div></div>';
+    const placeholderContent = '<div class="t-output-placeholder"><i class="fa-solid fa-clapperboard"></i><div class="t-output-placeholder-text">请选择剧本，开始演绎...</div></div>';
 
     // 依据用户偏好选择布局，产出 DOM 骨架
     const layout = data.ui_prefs?.main_window_mode === "legacy" ? legacyLayout : modernLayout;
@@ -1937,11 +1937,11 @@ async function openWorldInfoSelector() {
         console.error("Titania: 加载世界书数据失败", e);
         if (loadingCancelled || !$loadingPanel[0]?.isConnected) return;
         $loadingPanel.find(".t-wi-body").html(`
-            <div style="text-align:center; color:#e74c3c; padding:20px;">
-                <i class="fa-solid fa-exclamation-triangle" style="font-size:2em; margin-bottom:10px;"></i>
-                <div style="margin-bottom:10px;">加载世界书数据失败</div>
-                <div style="font-size:0.9em; color:var(--t-color-text-muted);">${e.message}</div>
-                <button class="t-btn t-wi-load-error-close" style="margin-top:15px;">关闭</button>
+            <div class="t-wi-load-error">
+                <i class="fa-solid fa-exclamation-triangle"></i>
+                <div class="t-wi-load-error-title">加载世界书数据失败</div>
+                <div class="t-wi-load-error-detail">${e.message}</div>
+                <button class="t-btn t-wi-load-error-close">关闭</button>
             </div>
         `);
         $loadingPanel.find(".t-wi-load-error-close").on("click", () => $loadingPanel.remove());
@@ -2223,10 +2223,10 @@ async function openWorldInfoSelector() {
         visibleEntries.forEach(entry => {
             const checked = selectedSet.has(Number(entry.uid));
             const constantBadge = entry.isConstant
-                ? '<span style="background:#4a9eff33; color:#4a9eff; padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">蓝灯</span>'
+                ? '<span class="t-wi-entry-badge t-wi-entry-badge--constant">蓝灯</span>'
                 : "";
             const disabledBadge = entry.isDisabled
-                ? '<span style="background:#ff9f4333; color:var(--t-color-warning-muted); padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">酒馆中已禁用</span>'
+                ? '<span class="t-wi-entry-badge t-wi-entry-badge--disabled">酒馆中已禁用</span>'
                 : "";
 
             const $entry = $(`
@@ -2614,7 +2614,7 @@ function showScriptSelector(initialFilter = "ALL") {
             const msg = currentSearch.trim()
                 ? `未找到包含 "${currentSearch}" 的剧本`
                 : "此分类下暂无剧本";
-            $grid.append(`<div style="grid-column:1/-1; text-align:center; color:#555; margin-top:50px;">${msg}</div>`);
+            $grid.append(`<div class="t-sel-grid-empty">${msg}</div>`);
             return;
         }
 

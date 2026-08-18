@@ -2169,3 +2169,37 @@
     max-width: 340px;
     margin: 0 auto;
 }
+
+/* ============================================================
+   剧本预览区的占位符（"请选择剧本，开始演绎..."）
+   Phase 5b-8 从 mainWindow.js:944 的内联 style 迁出。
+
+   ⚠ 这段是直接 innerHTML 写进 #t-output-content 的**光 DOM**
+   （见 mainWindow.js:964 的注释「无内容时显示占位符，不需要 Shadow DOM」），
+   所以插件 CSS 能命中。真正的生成内容才走 Shadow DOM（helpers.js 的
+   .t-shadow-host），那里的样式**不能**这样迁 —— document.head 的 CSS
+   穿不进 shadow root。迁移前务必确认目标节点在光 DOM。
+
+   ⚠ 上方 #t-output-content>div 那条规则也命中占位符外层，但它只管
+   margin / width / border / box-sizing / overflow-x（一串 !important，
+   用于中和生成 HTML 根节点的内联样式），与这里的属性不重叠。
+   ============================================================ */
+
+.t-output-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #555;
+}
+
+.t-output-placeholder i {
+    font-size: 3em;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.t-output-placeholder-text {
+    font-size: 1.1em;
+}

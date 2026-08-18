@@ -6876,6 +6876,40 @@ textarea.t-input {
     margin: 0 auto;
 }
 
+/* ============================================================
+   \u5267\u672C\u9884\u89C8\u533A\u7684\u5360\u4F4D\u7B26\uFF08"\u8BF7\u9009\u62E9\u5267\u672C\uFF0C\u5F00\u59CB\u6F14\u7ECE..."\uFF09
+   Phase 5b-8 \u4ECE mainWindow.js:944 \u7684\u5185\u8054 style \u8FC1\u51FA\u3002
+
+   \u26A0 \u8FD9\u6BB5\u662F\u76F4\u63A5 innerHTML \u5199\u8FDB #t-output-content \u7684**\u5149 DOM**
+   \uFF08\u89C1 mainWindow.js:964 \u7684\u6CE8\u91CA\u300C\u65E0\u5185\u5BB9\u65F6\u663E\u793A\u5360\u4F4D\u7B26\uFF0C\u4E0D\u9700\u8981 Shadow DOM\u300D\uFF09\uFF0C
+   \u6240\u4EE5\u63D2\u4EF6 CSS \u80FD\u547D\u4E2D\u3002\u771F\u6B63\u7684\u751F\u6210\u5185\u5BB9\u624D\u8D70 Shadow DOM\uFF08helpers.js \u7684
+   .t-shadow-host\uFF09\uFF0C\u90A3\u91CC\u7684\u6837\u5F0F**\u4E0D\u80FD**\u8FD9\u6837\u8FC1 \u2014\u2014 document.head \u7684 CSS
+   \u7A7F\u4E0D\u8FDB shadow root\u3002\u8FC1\u79FB\u524D\u52A1\u5FC5\u786E\u8BA4\u76EE\u6807\u8282\u70B9\u5728\u5149 DOM\u3002
+
+   \u26A0 \u4E0A\u65B9 #t-output-content>div \u90A3\u6761\u89C4\u5219\u4E5F\u547D\u4E2D\u5360\u4F4D\u7B26\u5916\u5C42\uFF0C\u4F46\u5B83\u53EA\u7BA1
+   margin / width / border / box-sizing / overflow-x\uFF08\u4E00\u4E32 !important\uFF0C
+   \u7528\u4E8E\u4E2D\u548C\u751F\u6210 HTML \u6839\u8282\u70B9\u7684\u5185\u8054\u6837\u5F0F\uFF09\uFF0C\u4E0E\u8FD9\u91CC\u7684\u5C5E\u6027\u4E0D\u91CD\u53E0\u3002
+   ============================================================ */
+
+.t-output-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #555;
+}
+
+.t-output-placeholder i {
+    font-size: 3em;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.t-output-placeholder-text {
+    font-size: 1.1em;
+}
+
 
 /* === 04-features/main-window-legacy.css === */
 /* css/04-features/main-window-legacy.css - \u7ECF\u5178\u7248\uFF085.1.2\uFF09\u4E3B\u754C\u9762\u5E03\u5C40
@@ -7492,6 +7526,16 @@ textarea.t-input {
         grid-template-columns: 1fr;
         padding: 10px;
     }
+}
+
+/* \u7F51\u683C\u7A7A\u6001\uFF08"\u672A\u627E\u5230\u2026" / "\u6B64\u5206\u7C7B\u4E0B\u6682\u65E0\u5267\u672C"\uFF09\u3002
+   Phase 5b-8 \u4ECE mainWindow.js:2617 \u7684\u5185\u8054 style \u8FC1\u51FA\u3002
+   grid-column: 1 / -1 \u8BA9\u5B83\u6A2A\u8DE8 .t-sel-grid \u7684\u6240\u6709\u5217\u3002 */
+.t-sel-grid-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #555;
+    margin-top: 50px;
 }
 
 
@@ -8234,6 +8278,59 @@ textarea.t-input {
     }
 }
 
+
+/* ============================================================
+   Phase 5b-8 \u4ECE mainWindow.js \u7684\u5185\u8054 style \u8FC1\u51FA\u3002
+   \u989C\u8272\u4FDD\u7559\u539F\u503C\uFF08#e74c3c / #4a9eff / #ff9f43\u2026\uFF09\uFF1A\u672C\u6587\u4EF6 89 \u5904\u989C\u8272\u5B57\u9762\u91CF\u3001
+   \u4EC5 1 \u5904 token\uFF0C\u5355\u72EC\u6362\u4F1A\u4E0E\u5168\u6587\u4E0D\u4E00\u81F4\u3002\u6574\u4F53 token \u5316\u5F52 Phase 6\u3002
+   ============================================================ */
+
+/* \u4E16\u754C\u4E66\u6570\u636E\u52A0\u8F7D\u5931\u8D25\u7684\u9519\u8BEF\u6001\uFF08mainWindow.js:1940 \u4E00\u5E26\uFF09 */
+.t-wi-load-error {
+    text-align: center;
+    color: #e74c3c;
+    padding: 20px;
+}
+
+.t-wi-load-error i {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.t-wi-load-error-title {
+    margin-bottom: 10px;
+}
+
+.t-wi-load-error-detail {
+    font-size: 0.9em;
+    color: var(--t-color-text-muted);
+}
+
+/* \u8BE5\u7C7B\u539F\u672C\u53EA\u662F JS \u4E8B\u4EF6\u94A9\u5B50\uFF08$loadingPanel.find(".t-wi-load-error-close")\uFF09\uFF0C
+   \u73B0\u5728\u540C\u65F6\u627F\u62C5 margin\u3002 */
+.t-wi-load-error-close {
+    margin-top: 15px;
+}
+
+/* \u6761\u76EE\u6807\u9898\u540E\u7684\u884C\u5185\u5C0F\u5FBD\u6807\uFF08\u84DD\u706F / \u9152\u9986\u4E2D\u5DF2\u7981\u7528\uFF09\u3002
+   \u26A0 \u523B\u610F**\u4E0D\u590D\u7528** .t-wi-entry-pane-badge \u2014\u2014 \u90A3\u662F\u836F\u4E38\u5F62\uFF08border-radius:99px\uFF09\u3001
+   \u5E26 1px \u8FB9\u6846\u3001padding 2px 7px \u7684\u53E6\u4E00\u5957\u89C6\u89C9\uFF0C\u5C3A\u5BF8\u4E0E\u5F62\u72B6\u90FD\u4E0D\u540C\u3002 */
+.t-wi-entry-badge {
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.7em;
+    margin-left: 5px;
+}
+
+.t-wi-entry-badge--constant {
+    background: #4a9eff33;
+    color: #4a9eff;
+}
+
+.t-wi-entry-badge--disabled {
+    background: #ff9f4333;
+    color: var(--t-color-warning-muted);
+}
 
 
 /* === 04-features/continuation.css === */
@@ -39587,7 +39684,7 @@ async function openMainWindow() {
   GlobalState.useHistoryAnalysis = data.use_history_analysis === true;
   GlobalState.historyAiOnly = data.history_extraction?.ai_only === true;
   GlobalState.generationMode = ["narrative", "visual", "preset"].includes(data.config?.generation_mode) ? data.config.generation_mode : "narrative";
-  const placeholderContent = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#555;"><i class="fa-solid fa-clapperboard" style="font-size:3em; margin-bottom:15px; opacity:0.5;"></i><div style="font-size:1.1em;">\u8BF7\u9009\u62E9\u5267\u672C\uFF0C\u5F00\u59CB\u6F14\u7ECE...</div></div>';
+  const placeholderContent = '<div class="t-output-placeholder"><i class="fa-solid fa-clapperboard"></i><div class="t-output-placeholder-text">\u8BF7\u9009\u62E9\u5267\u672C\uFF0C\u5F00\u59CB\u6F14\u7ECE...</div></div>';
   const layout = data.ui_prefs?.main_window_mode === "legacy" ? legacy_exports : modern_exports;
   activeLayout = layout;
   $("body").append(layout.renderHtml({ defaultCtx }));
@@ -40298,11 +40395,11 @@ async function openWorldInfoSelector() {
     console.error("Titania: \u52A0\u8F7D\u4E16\u754C\u4E66\u6570\u636E\u5931\u8D25", e);
     if (loadingCancelled || !$loadingPanel[0]?.isConnected) return;
     $loadingPanel.find(".t-wi-body").html(`
-            <div style="text-align:center; color:#e74c3c; padding:20px;">
-                <i class="fa-solid fa-exclamation-triangle" style="font-size:2em; margin-bottom:10px;"></i>
-                <div style="margin-bottom:10px;">\u52A0\u8F7D\u4E16\u754C\u4E66\u6570\u636E\u5931\u8D25</div>
-                <div style="font-size:0.9em; color:var(--t-color-text-muted);">${e.message}</div>
-                <button class="t-btn t-wi-load-error-close" style="margin-top:15px;">\u5173\u95ED</button>
+            <div class="t-wi-load-error">
+                <i class="fa-solid fa-exclamation-triangle"></i>
+                <div class="t-wi-load-error-title">\u52A0\u8F7D\u4E16\u754C\u4E66\u6570\u636E\u5931\u8D25</div>
+                <div class="t-wi-load-error-detail">${e.message}</div>
+                <button class="t-btn t-wi-load-error-close">\u5173\u95ED</button>
             </div>
         `);
     $loadingPanel.find(".t-wi-load-error-close").on("click", () => $loadingPanel.remove());
@@ -40535,8 +40632,8 @@ async function openWorldInfoSelector() {
     const selectedSet = getBookSelectedSet(currentBookName);
     visibleEntries.forEach((entry) => {
       const checked = selectedSet.has(Number(entry.uid));
-      const constantBadge = entry.isConstant ? '<span style="background:#4a9eff33; color:#4a9eff; padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">\u84DD\u706F</span>' : "";
-      const disabledBadge = entry.isDisabled ? '<span style="background:#ff9f4333; color:var(--t-color-warning-muted); padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">\u9152\u9986\u4E2D\u5DF2\u7981\u7528</span>' : "";
+      const constantBadge = entry.isConstant ? '<span class="t-wi-entry-badge t-wi-entry-badge--constant">\u84DD\u706F</span>' : "";
+      const disabledBadge = entry.isDisabled ? '<span class="t-wi-entry-badge t-wi-entry-badge--disabled">\u9152\u9986\u4E2D\u5DF2\u7981\u7528</span>' : "";
       const $entry = $(`
                 <div class="t-wi-entry ${checked ? "selected" : ""}" data-uid="${entry.uid}">
                     <div class="t-wi-entry-check">
@@ -40837,7 +40934,7 @@ function showScriptSelector(initialFilter = "ALL") {
     }
     if (filtered.length === 0) {
       const msg = currentSearch.trim() ? `\u672A\u627E\u5230\u5305\u542B "${currentSearch}" \u7684\u5267\u672C` : "\u6B64\u5206\u7C7B\u4E0B\u6682\u65E0\u5267\u672C";
-      $grid.append(`<div style="grid-column:1/-1; text-align:center; color:#555; margin-top:50px;">${msg}</div>`);
+      $grid.append(`<div class="t-sel-grid-empty">${msg}</div>`);
       return;
     }
     const readStats = createScriptStatsReader();

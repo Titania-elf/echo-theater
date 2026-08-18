@@ -736,3 +736,56 @@
     }
 }
 
+
+/* ============================================================
+   Phase 5b-8 从 mainWindow.js 的内联 style 迁出。
+   颜色保留原值（#e74c3c / #4a9eff / #ff9f43…）：本文件 89 处颜色字面量、
+   仅 1 处 token，单独换会与全文不一致。整体 token 化归 Phase 6。
+   ============================================================ */
+
+/* 世界书数据加载失败的错误态（mainWindow.js:1940 一带） */
+.t-wi-load-error {
+    text-align: center;
+    color: #e74c3c;
+    padding: 20px;
+}
+
+.t-wi-load-error i {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.t-wi-load-error-title {
+    margin-bottom: 10px;
+}
+
+.t-wi-load-error-detail {
+    font-size: 0.9em;
+    color: var(--t-color-text-muted);
+}
+
+/* 该类原本只是 JS 事件钩子（$loadingPanel.find(".t-wi-load-error-close")），
+   现在同时承担 margin。 */
+.t-wi-load-error-close {
+    margin-top: 15px;
+}
+
+/* 条目标题后的行内小徽标（蓝灯 / 酒馆中已禁用）。
+   ⚠ 刻意**不复用** .t-wi-entry-pane-badge —— 那是药丸形（border-radius:99px）、
+   带 1px 边框、padding 2px 7px 的另一套视觉，尺寸与形状都不同。 */
+.t-wi-entry-badge {
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.7em;
+    margin-left: 5px;
+}
+
+.t-wi-entry-badge--constant {
+    background: #4a9eff33;
+    color: #4a9eff;
+}
+
+.t-wi-entry-badge--disabled {
+    background: #ff9f4333;
+    color: var(--t-color-warning-muted);
+}
