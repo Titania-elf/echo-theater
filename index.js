@@ -3404,6 +3404,29 @@ function loadCssFiles() {
     flex: 1;
 }
 
+/* .t-dialog-body \u7684\u4E09\u4E2A**\u6B63\u4EA4**\u4FEE\u9970\u7C7B\u3002\u523B\u610F\u4E0D\u5408\u5E76\u6210\u4E00\u4E2A\u300C\u9884\u89C8\u5F39\u7A97\u300D\u590D\u5408\u7C7B\uFF1A
+   \u4E09\u8005\u6309\u9700\u7EC4\u5408\uFF08--flush --clip --stack\uFF09\uFF0C\u4EFB\u610F\u7EC4\u5408\u90FD\u4E0D\u4F1A\u91CD\u590D\u58F0\u660E\u540C\u4E00\u5C5E\u6027\u3002
+
+   \u4E3A\u4EC0\u4E48\u653E\u5728\u7EC4\u4EF6\u5C42\u800C\u4E0D\u662F\u5404 feature \u91CC\uFF1A\u5168\u5E93\u6709 11 \u5904\u5F39\u7A97 body \u5728 JS \u5185\u8054 style \u91CC
+   \u6539 padding\uFF08\u672C\u6587\u4EF6 3 \u5904 padding:0\uFF0CstoryOutlineWindow.js 8 \u5904 padding:12px\uFF09\u3002
+   \u82E5\u5404 feature \u81EA\u884C\u8986\u76D6 .t-dialog-body\uFF0C\u5F52\u5C5E\u542F\u53D1\u5F0F\uFF08\u5BA1\u8BA1 A6\uFF09\u4F1A\u628A\u8FD9\u4E2A\u7EC4\u4EF6\u7C7B
+   \u8BEF\u5224\u6210\u67D0\u4E2A feature \u7684\u79C1\u6709\u7C7B\u5E76\u9010\u4E2A\u62A5\u51B2\u7A81\u3002
+
+   \u26A0 \u4E09\u8005\u90FD\u4E0E .t-dialog-body \u540C\u4E3A (0,1,0)\uFF0C\u9760\u7D27\u968F\u5176\u540E\u53D6\u80DC\uFF0C\u4F4D\u7F6E\u4E0D\u53EF\u4E0A\u79FB\u3002
+   --clip \u7528 overflow \u7B80\u5199\u538B\u6389\u57FA\u7C7B\u7684 overflow-y: auto\uFF1B\u57FA\u7C7B\u7684 flex: 1 \u4E0D\u53D7\u5F71\u54CD\u3002 */
+.t-dialog-body--flush {
+    padding: 0;
+}
+
+.t-dialog-body--clip {
+    overflow: hidden;
+}
+
+.t-dialog-body--stack {
+    display: flex;
+    flex-direction: column;
+}
+
 .t-dialog-body :is(.t-form-group) {
     margin-bottom: 20px;
 }
@@ -15881,6 +15904,89 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 }
 
+/* ========== \u539F\u59CB\u54CD\u5E94\u5F39\u7A97\uFF08showRawResponseDialog\uFF09==========
+   \u4EE5\u4E0B\u89C4\u5219\u539F\u4E3A loreReviewWindow.js \u91CC\u7684\u5185\u8054 style\uFF08Phase 5b-4 \u8FC1\u51FA\uFF09\u3002
+   \u5F39\u7A97\u5916\u58F3\u5C3A\u5BF8\u7528 ID \u5B9A\u4F4D\uFF0C\u6CBF\u7528\u672C\u6587\u4EF6\u672B\u5C3E #t-prompt-view-dialog \u7684\u65E2\u6709\u505A\u6CD5\uFF1A
+   dialog.css \u523B\u610F\u4E0D\u63D0\u4F9B .t-dialog-box \u7684\u5C3A\u5BF8\u4FEE\u9970\u7C7B\uFF08\u7406\u7531\u89C1\u8BE5\u6587\u4EF6\u6CE8\u91CA\uFF09\u3002 */
+#t-raw-response-dialog .t-dialog-box {
+    max-width: 800px;
+    max-height: 80vh;
+}
+
+.t-raw-error-banner {
+    padding: 15px;
+    background: rgba(231, 76, 60, 0.1);
+    border-bottom: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.t-raw-error-banner i,
+.t-raw-error-banner span {
+    color: #e74c3c;
+}
+
+.t-raw-section {
+    padding: 15px;
+}
+
+.t-raw-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.t-raw-meta-label {
+    color: var(--t-color-text-muted);
+    font-size: 0.9em;
+}
+
+/* \u26A0 \u4E0E .t-prompt-pre \u9AD8\u5EA6\u76F8\u4F3C\u4F46**\u4E0D\u53EF\u5408\u5E76**\uFF1A\u8FB9\u6846\u8272\uFF08var(--t-color-border) vs #333\uFF09\u3001
+   \u5B57\u53F7\uFF080.9em vs 0.85em\uFF09\u3001\u884C\u9AD8\uFF081.5 vs 1.6\uFF09\u3001max-height\uFF0850vh vs 45vh\uFF09\u90FD\u4E0D\u540C\uFF0C
+   \u4E14\u672C\u7C7B\u523B\u610F**\u4E0D\u8BBE** margin \u2014\u2014 \u539F\u5185\u8054 style \u6CA1\u6709 margin:0\uFF0C<pre> \u4FDD\u7559 UA \u9ED8\u8BA4\u5916\u8FB9\u8DDD\u3002 */
+.t-raw-pre {
+    background: #1a1a2e;
+    border: 1px solid var(--t-color-border);
+    border-radius: 6px;
+    padding: 15px;
+    max-height: 50vh;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #ddd;
+    line-height: 1.5;
+}
+
+/* ========== \u63D0\u793A\u8BCD\u9884\u89C8\u5F39\u7A97\uFF08showPromptPreviewDialog\uFF09==========
+   \u540C\u4E3A Phase 5b-4 \u4ECE\u5185\u8054 style \u8FC1\u51FA\u3002 */
+#t-prompt-view-dialog .t-dialog-box {
+    max-width: 900px;
+    max-height: 85vh;
+}
+
+.t-prompt-copy-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* \u7EDF\u8BA1\u9879\u56FE\u6807\u7684\u72B6\u6001\u8272\u3002\u539F\u5148\u662F JS \u4E09\u5143\u8868\u8FBE\u5F0F\u76F4\u63A5\u5199\u8FDB style\uFF0C\u73B0\u6539\u4E3A\u5207\u7C7B\u3002
+   \u26A0 \u523B\u610F\u4FDD\u7559 #2ecc71 / #e74c3c / #888 \u539F\u503C\u3002\u672C\u6587\u4EF6\u6574\u4F53\u5C1A\u672A token \u5316
+   \uFF08\u901A\u7BC7 #90cdf4 / #a0aec0 / #e2e8f0 / #1a1a2e\uFF09\uFF0C\u6B64\u5904\u5355\u72EC\u6362\u6210
+   --t-color-success / --t-color-danger \u4F1A\u53EA\u6539\u8FD9\u4E09\u4E2A\u56FE\u6807\u7684\u989C\u8272\u800C\u4E0E\u5168\u6587\u4E0D\u4E00\u81F4\u3002
+   \u5F52\u5E76\u7559\u7ED9 Phase 6\uFF0C\u8FDE\u540C\u672C\u6587\u4EF6\u5176\u4F59\u5B57\u9762\u91CF\u4E00\u8D77\u51B3\u5B9A\u3002\u4EA4\u63A5\u6587\u6863 \xA75a \u6709\u540C\u6837\u7ED3\u8BBA\u3002 */
+.t-stat-item i.t-stat-ok {
+    color: #2ecc71;
+}
+
+.t-stat-item i.t-stat-bad {
+    color: #e74c3c;
+}
+
+.t-stat-item i.t-stat-none {
+    color: #888;
+}
+
 
 /* === 04-features/memory-recall.css === */
 /* css/04-features/memory-recall.css */
@@ -18209,9 +18315,14 @@ body.titania-debug-mode #chat titania-memory::before {
    \u5DF2\u6536\u655B\u5230\u63D2\u4EF6\u7EDF\u4E00\u7684\u53CD\u9988\u8272\u65CF \u2014\u2014 \u8FD9\u662F\u672C\u6B65\u4F1A\u770B\u5230\u7684\u4E3B\u8981\u5916\u89C2\u53D8\u5316\u3002
    ============================================================ */
 
+/* \u26A0 max-width / max-height \u539F\u4E3A JS \u5185\u8054 style\uFF08Phase 5b-4 \u8FC1\u51FA\uFF09\u3002
+   \u4E0E dialog.css \u7684 .t-dialog-box \u540C\u4E3A (0,1,0)\uFF0C\u9760 04-features \u665A\u4E8E
+   02-components \u7684\u6E05\u5355\u987A\u5E8F\u53D6\u80DC\uFF08500px / 85vh \u2192 1000px / 85vh\uFF09\u3002 */
 .t-cleaning-preview-box {
     display: flex;
     flex-direction: column;
+    max-width: 1000px;
+    max-height: 85vh;
 }
 
 .t-cleaning-stats-bar {
@@ -18233,6 +18344,23 @@ body.titania-debug-mode #chat titania-memory::before {
 
 .t-cleaning-stat i {
     color: var(--t-color-text-faint);
+}
+
+/* \u300C\u6709\u6548\u6D88\u606F\u300D\u56FE\u6807\u7684\u72B6\u6001\u8272\u3002\u539F\u4E3A JS \u4E09\u5143\u8868\u8FBE\u5F0F\u5199\u8FDB style\uFF08#2ecc71 / #f39c12\uFF09\u3002
+   \u26A0 \u8FD9\u91CC\u7528 token \u800C\u975E\u539F\u503C\uFF0C\u4E0E lore-review.css \u7684\u540C\u7C7B\u6539\u52A8**\u523B\u610F\u4E0D\u540C**\uFF1A
+   \u672C\u6587\u4EF6\u5934\u90E8\u5DF2\u58F0\u660E\u6574\u5957 flat-ui \u914D\u8272\uFF08\u542B #2ecc71 / #f39c12\uFF09\u5728\u6CE8\u5165\u6837\u5F0F\u89E3\u8026\u65F6
+   \u6536\u655B\u5230\u4E86\u63D2\u4EF6\u53CD\u9988\u8272\u65CF\uFF0C\u518D\u628A\u8FD9\u4E24\u4E2A\u5B57\u9762\u91CF\u5199\u56DE\u6765\u4F1A\u81EA\u76F8\u77DB\u76FE\u3002
+   \u4EE3\u4EF7\u662F\u8FD9\u4E00\u4E2A\u56FE\u6807\u7684\u7EFF/\u9EC4\u5404\u504F\u79FB\u4E00\u6863\uFF08#2ecc71 \u2192 #48bb78\uFF0C#f39c12 \u2192 #f59e0b\uFF09\uFF0C
+   \u5C5E\u672C\u6279\u552F\u4E00\u7684\u5DF2\u77E5\u89C6\u89C9\u53D8\u5316\u3002
+   \u7C7B\u540D\u523B\u610F\u4E0E lore-review.css \u7684 .t-stat-ok \u533A\u5206\uFF0C\u907F\u514D\u540C\u540D\u7C7B\u8DE8\u6587\u4EF6\u53D6\u503C\u51B2\u7A81\uFF08\u5BA1\u8BA1 A12\uFF09\u3002
+   \u672C\u9009\u62E9\u5668 (0,2,1) \u538B\u8FC7 .t-cleaning-stat i \u7684 (0,1,1)\uFF0C\u9760\u7279\u5F02\u6027\u53D6\u80DC\u800C\u975E\u987A\u5E8F\uFF1B
+   \u5DF2\u6838\u8FC7\u5168\u5E93 38 \u6761\u300C\u80FD\u7ED9 <i> \u4E0A color\u300D\u7684\u89C4\u5219\uFF0C\u7956\u5148\u94FE\u6210\u7ACB\u7684\u53EA\u6709\u8FD9\u4E24\u6761\u3002 */
+.t-cleaning-stat i.t-cstat-ok {
+    color: var(--t-color-success);
+}
+
+.t-cleaning-stat i.t-cstat-warn {
+    color: var(--t-color-warning);
 }
 
 .t-cleaning-stat strong {
@@ -31474,41 +31602,28 @@ function showRawResponseDialog2(rawContent, isError = false) {
   const headerClass = isError ? "t-dialog-header-error" : "";
   const html = `
     <div id="t-raw-response-dialog" class="t-dialog-overlay t-root">
-        <div class="t-dialog-box" style="max-width: 800px; max-height: 80vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header ${headerClass}">
                 <span><i class="fa-solid fa-code"></i> ${title}</span>
                 <div class="t-dialog-close" id="t-raw-response-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 0;">
+            <div class="t-dialog-body t-dialog-body--flush">
                 ${isError ? `
-                <div style="padding: 15px; background: rgba(231, 76, 60, 0.1); border-bottom: 1px solid rgba(231, 76, 60, 0.3);">
-                    <i class="fa-solid fa-exclamation-triangle" style="color: #e74c3c;"></i>
-                    <span style="color: #e74c3c;">JSON \u89E3\u6790\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u4E0B\u65B9\u539F\u59CB\u5185\u5BB9\u662F\u5426\u7B26\u5408\u9884\u671F\u683C\u5F0F</span>
+                <div class="t-raw-error-banner">
+                    <i class="fa-solid fa-exclamation-triangle"></i>
+                    <span>JSON \u89E3\u6790\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u4E0B\u65B9\u539F\u59CB\u5185\u5BB9\u662F\u5426\u7B26\u5408\u9884\u671F\u683C\u5F0F</span>
                 </div>
                 ` : ""}
-                <div style="padding: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="color: var(--t-color-text-muted); font-size: 0.9em;">
+                <div class="t-raw-section">
+                    <div class="t-raw-meta">
+                        <span class="t-raw-meta-label">
                             <i class="fa-solid fa-file-lines"></i> \u54CD\u5E94\u957F\u5EA6: ${rawContent?.length || 0} \u5B57\u7B26
                         </span>
                         <button id="t-btn-copy-raw" class="t-btn t-btn-xs">
                             <i class="fa-solid fa-copy"></i> \u590D\u5236\u5185\u5BB9
                         </button>
                     </div>
-                    <pre id="t-raw-response-content" style="
-                        background: #1a1a2e;
-                        border: 1px solid var(--t-color-border);
-                        border-radius: 6px;
-                        padding: 15px;
-                        max-height: 50vh;
-                        overflow: auto;
-                        white-space: pre-wrap;
-                        word-break: break-word;
-                        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-                        font-size: 0.9em;
-                        color: #ddd;
-                        line-height: 1.5;
-                    ">${escapeHtml6(rawContent || "(\u7A7A)")}</pre>
+                    <pre id="t-raw-response-content" class="t-raw-pre">${escapeHtml6(rawContent || "(\u7A7A)")}</pre>
                 </div>
             </div>
             <div class="t-dialog-footer">
@@ -32886,11 +33001,11 @@ function showPromptPreviewDialog(messages, stats = {}) {
                 <span>\u8BF7\u6C42\u6761\u6570: <strong>${stats.requestedLimit || "?"}</strong></span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-check-circle" style="color: ${stats.historyCount > 0 ? "#2ecc71" : "#e74c3c"};"></i>
+                <i class="fa-solid fa-check-circle ${stats.historyCount > 0 ? "t-stat-ok" : "t-stat-bad"}"></i>
                 <span>\u5B9E\u9645\u8BFB\u53D6: <strong>${stats.historyCount || 0}</strong> \u6761</span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-book" style="color: ${stats.existingEntriesCount > 0 ? "#2ecc71" : "#888"};"></i>
+                <i class="fa-solid fa-book ${stats.existingEntriesCount > 0 ? "t-stat-ok" : "t-stat-none"}"></i>
                 <span>\u73B0\u6709\u6761\u76EE: <strong>${stats.existingEntriesCount || 0}</strong> \u6761</span>
             </div>
             <div class="t-stat-item">
@@ -32905,11 +33020,11 @@ function showPromptPreviewDialog(messages, stats = {}) {
                 <span>\u8BF7\u6C42\u6761\u6570: <strong>${stats.requestedLimit || "?"}</strong></span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-check-circle" style="color: ${stats.historyCount > 0 ? "#2ecc71" : "#e74c3c"};"></i>
+                <i class="fa-solid fa-check-circle ${stats.historyCount > 0 ? "t-stat-ok" : "t-stat-bad"}"></i>
                 <span>\u5B9E\u9645\u8BFB\u53D6: <strong>${stats.historyCount || 0}</strong> \u6761</span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-database" style="color: ${stats.relevantHistoryFound ? "#2ecc71" : "#888"};"></i>
+                <i class="fa-solid fa-database ${stats.relevantHistoryFound ? "t-stat-ok" : "t-stat-none"}"></i>
                 <span>\u76F8\u5173\u5386\u53F2: <strong>${stats.relevantHistoryFound ? "\u5DF2\u53EC\u56DE" : "\u65E0"}</strong></span>
             </div>
             <div class="t-stat-item">
@@ -32920,12 +33035,12 @@ function showPromptPreviewDialog(messages, stats = {}) {
   }
   const html = `
     <div id="t-prompt-view-dialog" class="t-dialog-overlay t-root">
-        <div class="t-dialog-box" style="max-width: 900px; max-height: 85vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-eye"></i> \u63D0\u793A\u8BCD\u9884\u89C8${stats.isExtractMode ? " (\u8BBE\u5B9A\u63D0\u53D6)" : " (\u667A\u80FD\u603B\u7ED3)"}</span>
                 <div class="t-dialog-close" id="t-prompt-view-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 0; overflow: hidden;">
+            <div class="t-dialog-body t-dialog-body--flush t-dialog-body--clip">
                 <!-- \u7EDF\u8BA1\u4FE1\u606F\u680F -->
                 <div class="t-prompt-stats">
                     ${statsHtml}
@@ -32944,12 +33059,12 @@ function showPromptPreviewDialog(messages, stats = {}) {
                 </div>
                 <div class="t-prompt-content-container">
                     <div id="t-prompt-content-system" class="t-prompt-content active"></div>
-                    <div id="t-prompt-content-user" class="t-prompt-content" style="display: none;"></div>
-                    <div id="t-prompt-content-raw" class="t-prompt-content" style="display: none;"></div>
+                    <div id="t-prompt-content-user" class="t-prompt-content is-hidden"></div>
+                    <div id="t-prompt-content-raw" class="t-prompt-content is-hidden"></div>
                 </div>
             </div>
             <div class="t-dialog-footer">
-                <div style="display: flex; gap: 8px;">
+                <div class="t-prompt-copy-group">
                     <button id="t-btn-copy-system-prompt" class="t-btn t-btn-xs">
                         <i class="fa-solid fa-copy"></i> \u590D\u5236 System
                     </button>
@@ -33065,12 +33180,12 @@ function showCleaningPreviewDialog(samples) {
     `).join("");
   const html = `
     <div id="t-cleaning-preview-dialog" class="t-dialog-overlay t-root">
-        <div class="t-dialog-box t-cleaning-preview-box" style="max-width: 1000px; max-height: 85vh;">
+        <div class="t-dialog-box t-cleaning-preview-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-broom"></i> \u6587\u672C\u6E05\u6D17\u9884\u89C8</span>
                 <div class="t-dialog-close" id="t-cleaning-preview-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="t-dialog-body t-dialog-body--flush t-dialog-body--clip t-dialog-body--stack">
                 <!-- \u7EDF\u8BA1\u4FE1\u606F\u680F -->
                 <div class="t-cleaning-stats-bar">
                     <div class="t-cleaning-stat">
@@ -33082,7 +33197,7 @@ function showCleaningPreviewDialog(samples) {
                         <span>\u603B\u538B\u7F29\u7387: <strong>${totalReduction}%</strong></span>
                     </div>
                     <div class="t-cleaning-stat">
-                        <i class="fa-solid fa-check-circle" style="color: ${validCount === cleanedSamples.length ? "#2ecc71" : "#f39c12"};"></i>
+                        <i class="fa-solid fa-check-circle ${validCount === cleanedSamples.length ? "t-cstat-ok" : "t-cstat-warn"}"></i>
                         <span>\u6709\u6548\u6D88\u606F: <strong>${validCount}/${cleanedSamples.length}</strong></span>
                     </div>
                     <div class="t-cleaning-stat">

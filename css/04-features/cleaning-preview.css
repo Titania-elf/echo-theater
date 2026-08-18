@@ -15,9 +15,14 @@
    已收敛到插件统一的反馈色族 —— 这是本步会看到的主要外观变化。
    ============================================================ */
 
+/* ⚠ max-width / max-height 原为 JS 内联 style（Phase 5b-4 迁出）。
+   与 dialog.css 的 .t-dialog-box 同为 (0,1,0)，靠 04-features 晚于
+   02-components 的清单顺序取胜（500px / 85vh → 1000px / 85vh）。 */
 .t-cleaning-preview-box {
     display: flex;
     flex-direction: column;
+    max-width: 1000px;
+    max-height: 85vh;
 }
 
 .t-cleaning-stats-bar {
@@ -39,6 +44,23 @@
 
 .t-cleaning-stat i {
     color: var(--t-color-text-faint);
+}
+
+/* 「有效消息」图标的状态色。原为 JS 三元表达式写进 style（#2ecc71 / #f39c12）。
+   ⚠ 这里用 token 而非原值，与 lore-review.css 的同类改动**刻意不同**：
+   本文件头部已声明整套 flat-ui 配色（含 #2ecc71 / #f39c12）在注入样式解耦时
+   收敛到了插件反馈色族，再把这两个字面量写回来会自相矛盾。
+   代价是这一个图标的绿/黄各偏移一档（#2ecc71 → #48bb78，#f39c12 → #f59e0b），
+   属本批唯一的已知视觉变化。
+   类名刻意与 lore-review.css 的 .t-stat-ok 区分，避免同名类跨文件取值冲突（审计 A12）。
+   本选择器 (0,2,1) 压过 .t-cleaning-stat i 的 (0,1,1)，靠特异性取胜而非顺序；
+   已核过全库 38 条「能给 <i> 上 color」的规则，祖先链成立的只有这两条。 */
+.t-cleaning-stat i.t-cstat-ok {
+    color: var(--t-color-success);
+}
+
+.t-cleaning-stat i.t-cstat-warn {
+    color: var(--t-color-warning);
 }
 
 .t-cleaning-stat strong {

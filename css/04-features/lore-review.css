@@ -1863,3 +1863,86 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     }
 
 }
+
+/* ========== 原始响应弹窗（showRawResponseDialog）==========
+   以下规则原为 loreReviewWindow.js 里的内联 style（Phase 5b-4 迁出）。
+   弹窗外壳尺寸用 ID 定位，沿用本文件末尾 #t-prompt-view-dialog 的既有做法：
+   dialog.css 刻意不提供 .t-dialog-box 的尺寸修饰类（理由见该文件注释）。 */
+#t-raw-response-dialog .t-dialog-box {
+    max-width: 800px;
+    max-height: 80vh;
+}
+
+.t-raw-error-banner {
+    padding: 15px;
+    background: rgba(231, 76, 60, 0.1);
+    border-bottom: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.t-raw-error-banner i,
+.t-raw-error-banner span {
+    color: #e74c3c;
+}
+
+.t-raw-section {
+    padding: 15px;
+}
+
+.t-raw-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.t-raw-meta-label {
+    color: var(--t-color-text-muted);
+    font-size: 0.9em;
+}
+
+/* ⚠ 与 .t-prompt-pre 高度相似但**不可合并**：边框色（var(--t-color-border) vs #333）、
+   字号（0.9em vs 0.85em）、行高（1.5 vs 1.6）、max-height（50vh vs 45vh）都不同，
+   且本类刻意**不设** margin —— 原内联 style 没有 margin:0，<pre> 保留 UA 默认外边距。 */
+.t-raw-pre {
+    background: #1a1a2e;
+    border: 1px solid var(--t-color-border);
+    border-radius: 6px;
+    padding: 15px;
+    max-height: 50vh;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #ddd;
+    line-height: 1.5;
+}
+
+/* ========== 提示词预览弹窗（showPromptPreviewDialog）==========
+   同为 Phase 5b-4 从内联 style 迁出。 */
+#t-prompt-view-dialog .t-dialog-box {
+    max-width: 900px;
+    max-height: 85vh;
+}
+
+.t-prompt-copy-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* 统计项图标的状态色。原先是 JS 三元表达式直接写进 style，现改为切类。
+   ⚠ 刻意保留 #2ecc71 / #e74c3c / #888 原值。本文件整体尚未 token 化
+   （通篇 #90cdf4 / #a0aec0 / #e2e8f0 / #1a1a2e），此处单独换成
+   --t-color-success / --t-color-danger 会只改这三个图标的颜色而与全文不一致。
+   归并留给 Phase 6，连同本文件其余字面量一起决定。交接文档 §5a 有同样结论。 */
+.t-stat-item i.t-stat-ok {
+    color: #2ecc71;
+}
+
+.t-stat-item i.t-stat-bad {
+    color: #e74c3c;
+}
+
+.t-stat-item i.t-stat-none {
+    color: #888;
+}

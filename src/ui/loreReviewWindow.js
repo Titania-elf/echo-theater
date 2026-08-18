@@ -587,41 +587,28 @@ function showRawResponseDialog(rawContent, isError = false) {
 
     const html = `
     <div id="t-raw-response-dialog" class="t-dialog-overlay t-root">
-        <div class="t-dialog-box" style="max-width: 800px; max-height: 80vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header ${headerClass}">
                 <span><i class="fa-solid fa-code"></i> ${title}</span>
                 <div class="t-dialog-close" id="t-raw-response-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 0;">
+            <div class="t-dialog-body t-dialog-body--flush">
                 ${isError ? `
-                <div style="padding: 15px; background: rgba(231, 76, 60, 0.1); border-bottom: 1px solid rgba(231, 76, 60, 0.3);">
-                    <i class="fa-solid fa-exclamation-triangle" style="color: #e74c3c;"></i>
-                    <span style="color: #e74c3c;">JSON 解析失败，请检查下方原始内容是否符合预期格式</span>
+                <div class="t-raw-error-banner">
+                    <i class="fa-solid fa-exclamation-triangle"></i>
+                    <span>JSON 解析失败，请检查下方原始内容是否符合预期格式</span>
                 </div>
                 ` : ''}
-                <div style="padding: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="color: var(--t-color-text-muted); font-size: 0.9em;">
+                <div class="t-raw-section">
+                    <div class="t-raw-meta">
+                        <span class="t-raw-meta-label">
                             <i class="fa-solid fa-file-lines"></i> 响应长度: ${rawContent?.length || 0} 字符
                         </span>
                         <button id="t-btn-copy-raw" class="t-btn t-btn-xs">
                             <i class="fa-solid fa-copy"></i> 复制内容
                         </button>
                     </div>
-                    <pre id="t-raw-response-content" style="
-                        background: #1a1a2e;
-                        border: 1px solid var(--t-color-border);
-                        border-radius: 6px;
-                        padding: 15px;
-                        max-height: 50vh;
-                        overflow: auto;
-                        white-space: pre-wrap;
-                        word-break: break-word;
-                        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-                        font-size: 0.9em;
-                        color: #ddd;
-                        line-height: 1.5;
-                    ">${escapeHtml(rawContent || "(空)")}</pre>
+                    <pre id="t-raw-response-content" class="t-raw-pre">${escapeHtml(rawContent || "(空)")}</pre>
                 </div>
             </div>
             <div class="t-dialog-footer">
@@ -2411,11 +2398,11 @@ function showPromptPreviewDialog(messages, stats = {}) {
                 <span>请求条数: <strong>${stats.requestedLimit || '?'}</strong></span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-check-circle" style="color: ${stats.historyCount > 0 ? '#2ecc71' : '#e74c3c'};"></i>
+                <i class="fa-solid fa-check-circle ${stats.historyCount > 0 ? 't-stat-ok' : 't-stat-bad'}"></i>
                 <span>实际读取: <strong>${stats.historyCount || 0}</strong> 条</span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-book" style="color: ${stats.existingEntriesCount > 0 ? '#2ecc71' : '#888'};"></i>
+                <i class="fa-solid fa-book ${stats.existingEntriesCount > 0 ? 't-stat-ok' : 't-stat-none'}"></i>
                 <span>现有条目: <strong>${stats.existingEntriesCount || 0}</strong> 条</span>
             </div>
             <div class="t-stat-item">
@@ -2431,11 +2418,11 @@ function showPromptPreviewDialog(messages, stats = {}) {
                 <span>请求条数: <strong>${stats.requestedLimit || '?'}</strong></span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-check-circle" style="color: ${stats.historyCount > 0 ? '#2ecc71' : '#e74c3c'};"></i>
+                <i class="fa-solid fa-check-circle ${stats.historyCount > 0 ? 't-stat-ok' : 't-stat-bad'}"></i>
                 <span>实际读取: <strong>${stats.historyCount || 0}</strong> 条</span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-database" style="color: ${stats.relevantHistoryFound ? '#2ecc71' : '#888'};"></i>
+                <i class="fa-solid fa-database ${stats.relevantHistoryFound ? 't-stat-ok' : 't-stat-none'}"></i>
                 <span>相关历史: <strong>${stats.relevantHistoryFound ? '已召回' : '无'}</strong></span>
             </div>
             <div class="t-stat-item">
@@ -2447,12 +2434,12 @@ function showPromptPreviewDialog(messages, stats = {}) {
 
     const html = `
     <div id="t-prompt-view-dialog" class="t-dialog-overlay t-root">
-        <div class="t-dialog-box" style="max-width: 900px; max-height: 85vh;">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-eye"></i> 提示词预览${stats.isExtractMode ? ' (设定提取)' : ' (智能总结)'}</span>
                 <div class="t-dialog-close" id="t-prompt-view-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 0; overflow: hidden;">
+            <div class="t-dialog-body t-dialog-body--flush t-dialog-body--clip">
                 <!-- 统计信息栏 -->
                 <div class="t-prompt-stats">
                     ${statsHtml}
@@ -2471,12 +2458,12 @@ function showPromptPreviewDialog(messages, stats = {}) {
                 </div>
                 <div class="t-prompt-content-container">
                     <div id="t-prompt-content-system" class="t-prompt-content active"></div>
-                    <div id="t-prompt-content-user" class="t-prompt-content" style="display: none;"></div>
-                    <div id="t-prompt-content-raw" class="t-prompt-content" style="display: none;"></div>
+                    <div id="t-prompt-content-user" class="t-prompt-content is-hidden"></div>
+                    <div id="t-prompt-content-raw" class="t-prompt-content is-hidden"></div>
                 </div>
             </div>
             <div class="t-dialog-footer">
-                <div style="display: flex; gap: 8px;">
+                <div class="t-prompt-copy-group">
                     <button id="t-btn-copy-system-prompt" class="t-btn t-btn-xs">
                         <i class="fa-solid fa-copy"></i> 复制 System
                     </button>
@@ -2623,12 +2610,12 @@ function showCleaningPreviewDialog(samples) {
 
     const html = `
     <div id="t-cleaning-preview-dialog" class="t-dialog-overlay t-root">
-        <div class="t-dialog-box t-cleaning-preview-box" style="max-width: 1000px; max-height: 85vh;">
+        <div class="t-dialog-box t-cleaning-preview-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-broom"></i> 文本清洗预览</span>
                 <div class="t-dialog-close" id="t-cleaning-preview-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="t-dialog-body t-dialog-body--flush t-dialog-body--clip t-dialog-body--stack">
                 <!-- 统计信息栏 -->
                 <div class="t-cleaning-stats-bar">
                     <div class="t-cleaning-stat">
@@ -2640,7 +2627,7 @@ function showCleaningPreviewDialog(samples) {
                         <span>总压缩率: <strong>${totalReduction}%</strong></span>
                     </div>
                     <div class="t-cleaning-stat">
-                        <i class="fa-solid fa-check-circle" style="color: ${validCount === cleanedSamples.length ? '#2ecc71' : '#f39c12'};"></i>
+                        <i class="fa-solid fa-check-circle ${validCount === cleanedSamples.length ? 't-cstat-ok' : 't-cstat-warn'}"></i>
                         <span>有效消息: <strong>${validCount}/${cleanedSamples.length}</strong></span>
                     </div>
                     <div class="t-cleaning-stat">

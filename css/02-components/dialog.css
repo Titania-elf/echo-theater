@@ -113,6 +113,29 @@
     flex: 1;
 }
 
+/* .t-dialog-body 的三个**正交**修饰类。刻意不合并成一个「预览弹窗」复合类：
+   三者按需组合（--flush --clip --stack），任意组合都不会重复声明同一属性。
+
+   为什么放在组件层而不是各 feature 里：全库有 11 处弹窗 body 在 JS 内联 style 里
+   改 padding（本文件 3 处 padding:0，storyOutlineWindow.js 8 处 padding:12px）。
+   若各 feature 自行覆盖 .t-dialog-body，归属启发式（审计 A6）会把这个组件类
+   误判成某个 feature 的私有类并逐个报冲突。
+
+   ⚠ 三者都与 .t-dialog-body 同为 (0,1,0)，靠紧随其后取胜，位置不可上移。
+   --clip 用 overflow 简写压掉基类的 overflow-y: auto；基类的 flex: 1 不受影响。 */
+.t-dialog-body--flush {
+    padding: 0;
+}
+
+.t-dialog-body--clip {
+    overflow: hidden;
+}
+
+.t-dialog-body--stack {
+    display: flex;
+    flex-direction: column;
+}
+
 .t-dialog-body :is(.t-form-group) {
     margin-bottom: 20px;
 }
