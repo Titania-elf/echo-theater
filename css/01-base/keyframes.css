@@ -39,19 +39,6 @@
     }
 }
 
-/* main-window.css  ·  旧名 t-slideUp(驼峰);带淡入,与 t-slide-up 不同 */
-@keyframes t-slide-up-fade {
-    from {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
 /* main-window.css  ·  旧名 t-stats-fadeIn(驼峰) */
 @keyframes t-stats-fade-in {
     from {
@@ -101,19 +88,6 @@
 
     100% {
         transform: scale(2.2);
-        opacity: 0;
-    }
-}
-
-/* floating.css  ·  仅真球使用(预览球无第三层波纹) */
-@keyframes t-ripple-3 {
-    0% {
-        transform: scale(1);
-        opacity: 0.4;
-    }
-
-    100% {
-        transform: scale(1.9);
         opacity: 0;
     }
 }

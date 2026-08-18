@@ -40,15 +40,6 @@
     font-size: 0.9em;
 }
 
-.t-form-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #222;
-    padding-bottom: 15px;
-}
-
 /* 预览区容器 */
 .t-preview-container {
     background: #1a1a1a;

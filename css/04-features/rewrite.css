@@ -46,15 +46,9 @@
 
 #t-rewrite-overlay .t-rewrite-section-title { font-size: 0.9em; font-weight: 700; color: #b8d8ee; margin-bottom: 10px; }
 
-#t-rewrite-overlay .t-rewrite-label { display: block; font-size: 0.8em; color: #8da3b6; margin-bottom: 6px; }
-
 #t-rewrite-overlay #t-rewrite-api-url, #t-rewrite-overlay #t-rewrite-api-key, #t-rewrite-overlay #t-rewrite-model { width: 100%; box-sizing: border-box; background: rgba(10, 15, 22, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #dde9f4; border-radius: 8px; padding: 9px 11px; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease; }
 
 #t-rewrite-overlay #t-rewrite-api-url:focus, #t-rewrite-overlay #t-rewrite-api-key:focus, #t-rewrite-overlay #t-rewrite-model:focus { border-color: rgba(144, 205, 244, 0.55); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
-
-#t-rewrite-overlay .t-rewrite-model-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
-
-#t-rewrite-overlay .t-rewrite-model-col { min-width: 0; }
 
 #t-rewrite-overlay #t-rewrite-trigger { height: 36px; min-height: 36px; line-height: 1; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.14); color: #dbe8f4; font-weight: 600; transition: all 0.18s ease; white-space: nowrap; letter-spacing: 0.1px; min-width: 164px; padding: 0 16px; background: linear-gradient(135deg, rgba(144, 205, 244, 0.18), rgba(191, 161, 95, 0.16)); border-color: rgba(144, 205, 244, 0.42); justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
 
@@ -84,16 +78,6 @@
 
 #t-rewrite-overlay .t-rewrite-split-options label { display: inline-flex; align-items: center; gap: 6px; }
 
-#t-rewrite-overlay .t-rewrite-rule-row { display: grid; grid-template-columns: auto minmax(120px, 0.45fr) auto minmax(180px, 1fr) minmax(110px, 0.35fr) auto; gap: 8px; align-items: center; }
-
-#t-rewrite-settings-overlay .t-rewrite-rule-row { display: grid; grid-template-columns: auto minmax(130px, 0.44fr) minmax(220px, 1fr) minmax(110px, 0.32fr) auto; gap: 8px; align-items: center; }
-
-#t-rewrite-overlay .t-rewrite-rule-and, #t-rewrite-settings-overlay .t-rewrite-rule-and { font-size: 0.8em; color: #9cb2c4; font-weight: 700; letter-spacing: 0.2px; text-align: center; min-width: 18px; }
-
-#t-rewrite-overlay .t-rewrite-rule-no, #t-rewrite-settings-overlay .t-rewrite-rule-no { min-width: 30px; font-size: 0.78em; color: #89a3b8; }
-
-#t-rewrite-overlay .t-rewrite-rule-del, #t-rewrite-settings-overlay .t-rewrite-rule-del { width: 34px; min-width: 34px; padding: 0; justify-content: center; }
-
 #t-rewrite-overlay .t-rewrite-status { font-size: 0.8em; margin-top: 4px; }
 
 #t-rewrite-overlay .t-rewrite-status.muted { color: #7f95a8; }
@@ -105,8 +89,6 @@
 #t-rewrite-overlay .t-rewrite-status.err { color: #f08f8f; }
 
 #t-rewrite-overlay .t-rewrite-diff-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-
-#t-rewrite-overlay .t-rewrite-diff-tools { display: flex; gap: 6px; flex-wrap: nowrap; }
 
 #t-rewrite-overlay .t-rewrite-diff-body { flex: 1; min-height: 0; overflow: auto; display: grid; gap: 8px; padding-right: 2px; }
 
@@ -188,81 +170,22 @@
 
 #t-rewrite-live-overlay .t-rewrite-live-history-empty { border: 1px dashed rgba(255, 255, 255, 0.18); border-radius: 9px; padding: 10px; text-align: center; color: #7f95a8; font-size: 0.78em; background: rgba(255, 255, 255, 0.02); }
 
-#t-rewrite-live-overlay .t-rewrite-live-prompt-card { border: 1px solid rgba(255, 255, 255, 0.13); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84); }
-
-#t-rewrite-live-overlay .t-rewrite-live-prompt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-
-#t-rewrite-live-overlay .t-rewrite-live-prompt-title { font-size: 0.86em; font-weight: 700; color: #c5ddee; }
-
-#t-rewrite-live-overlay .t-rewrite-live-prompt-tip { font-size: 0.74em; color: #90a7ba; margin: 4px 0 8px; }
-
-#t-rewrite-live-overlay .t-rewrite-live-prompt-tip.warn { color: #f2c27d; }
-
-#t-rewrite-live-overlay .t-rewrite-live-textarea { width: 100%; min-height: 78px; resize: vertical; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(7, 11, 18, 0.9); color: #dce9f4; padding: 8px 10px; font-size: 0.8em; line-height: 1.45; box-sizing: border-box; }
-
 #t-rewrite-live-overlay #t-rewrite-live-prompt-json { min-height: 92px; }
-
-#t-rewrite-live-overlay .t-rewrite-live-textarea:focus { outline: none; border-color: rgba(144, 205, 244, 0.55); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
 
 #t-rewrite-live-overlay #t-rewrite-raw-response { max-height: min(34vh, 320px); min-height: 170px; }
 
-/* t-rewrite-badge-flow / t-rewrite-badge-icon / t-rewrite-mark-fade-in 三个 @keyframes
-   已移至 css/01-base/keyframes.css 集中声明（规则 R6）。keyframes 是 document 级的，
-   本处注入的样式仍可正常引用。原名 titania-rewrite-* 已统一为 t-* 前缀。 */
-
-#t-rewrite-settings-overlay .t-rewrite-settings-body { flex: 1; overflow: auto; display: block; padding: 16px; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
-
-#t-rewrite-settings-overlay .t-rewrite-settings-grid { display: grid; gap: 14px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
-
-#t-rewrite-settings-overlay .t-rewrite-settings-card { min-height: 0; border-radius: 0; border: 1px solid rgba(255, 255, 255, 0.14); background: linear-gradient(170deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.86); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); }
-
-#t-rewrite-settings-overlay .t-rewrite-settings-card { position: relative; overflow: hidden; }
-
-#t-rewrite-settings-overlay .t-rewrite-settings-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, var(--t-rewrite-accent, rgba(144, 205, 244, 0.7)) 0%, rgba(255, 255, 255, 0.05) 100%); }
-
-#t-rewrite-settings-overlay .t-rewrite-section-title { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px; padding: 4px 10px; border-radius: 999px; font-size: 0.82em; letter-spacing: 0.2px; border: 1px solid var(--t-rewrite-accent-border, rgba(144, 205, 244, 0.45)); color: var(--t-rewrite-accent-text, #d9ecfb); background: linear-gradient(135deg, var(--t-rewrite-accent-bg, rgba(144, 205, 244, 0.22)) 0%, rgba(255, 255, 255, 0.03) 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
-
-#t-rewrite-settings-overlay .t-rewrite-label { display: block; font-size: 0.8em; color: #8da3b6; margin: 2px 0 6px; }
-
-#t-rewrite-settings-overlay .t-rewrite-card-api { --t-rewrite-accent: rgba(95, 183, 233, 0.9); }
-
-#t-rewrite-settings-overlay .t-rewrite-card-stream { --t-rewrite-accent: rgba(125, 204, 161, 0.88); }
-
-#t-rewrite-settings-overlay .t-rewrite-card-split { --t-rewrite-accent: rgba(215, 179, 95, 0.92); }
-
-#t-rewrite-settings-overlay .t-rewrite-card-whitelist { --t-rewrite-accent: rgba(177, 149, 238, 0.88); }
-
-#t-rewrite-settings-overlay .t-rewrite-card-rules { --t-rewrite-accent: rgba(233, 136, 136, 0.9); }
-
-#t-rewrite-settings-overlay .t-rewrite-card-api { --t-rewrite-accent-bg: rgba(95, 183, 233, 0.18); --t-rewrite-accent-border: rgba(95, 183, 233, 0.5); --t-rewrite-accent-text: #cfe9fb; }
-
-#t-rewrite-settings-overlay .t-rewrite-card-stream { --t-rewrite-accent-bg: rgba(125, 204, 161, 0.18); --t-rewrite-accent-border: rgba(125, 204, 161, 0.5); --t-rewrite-accent-text: #d3f3e1; }
-
-#t-rewrite-settings-overlay .t-rewrite-card-split { --t-rewrite-accent-bg: rgba(215, 179, 95, 0.2); --t-rewrite-accent-border: rgba(215, 179, 95, 0.5); --t-rewrite-accent-text: #f4e7c8; }
-
-#t-rewrite-settings-overlay .t-rewrite-card-whitelist { --t-rewrite-accent-bg: rgba(177, 149, 238, 0.2); --t-rewrite-accent-border: rgba(177, 149, 238, 0.52); --t-rewrite-accent-text: #e7dcff; }
-
-#t-rewrite-settings-overlay .t-rewrite-card-rules { --t-rewrite-accent-bg: rgba(233, 136, 136, 0.2); --t-rewrite-accent-border: rgba(233, 136, 136, 0.52); --t-rewrite-accent-text: #ffdcdc; }
-
-#t-rewrite-settings-overlay .t-rewrite-model-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
-
-#t-rewrite-settings-overlay .t-rewrite-profile-row { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) auto; align-items: center; gap: 8px; }
+/* ⚠ 这里原来消费 var(--t-rewrite-accent-border / -text / -bg, 兜底值)。
+   声明这三个变量的只有 .t-rewrite-card-api / -stream / -split / -whitelist / -rules，
+   而那 5 个类在 src/ 中零引用、从未命中过任何元素 —— 也就是说兜底值一直在生效。
+   Phase 7-1 删掉那些死规则后，A11（消费但未声明）阻断，故把兜底值内联。
+   这是等值改写，不是视觉变化。 */
+#t-rewrite-settings-overlay .t-rewrite-section-title { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px; padding: 4px 10px; border-radius: 999px; font-size: 0.82em; letter-spacing: 0.2px; border: 1px solid rgba(144, 205, 244, 0.45); color: #d9ecfb; background: linear-gradient(135deg, rgba(144, 205, 244, 0.22) 0%, rgba(255, 255, 255, 0.03) 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
 
 #t-rewrite-settings-overlay #t-rewrite-settings-model { width: 100%; }
 
 #t-rewrite-settings-overlay #t-rewrite-settings-fetch-models { align-self: center; }
 
 #t-rewrite-settings-overlay #t-rewrite-settings-new-profile { height: 28px; min-height: 28px; padding: 0 9px; font-size: 0.78em; }
-
-#t-rewrite-settings-overlay .t-rewrite-profile-tip { margin-top: 6px; font-size: 0.74em; color: #8da5b8; }
-
-#t-rewrite-settings-overlay .t-rewrite-card-api { grid-column: span 8; }
-
-#t-rewrite-settings-overlay .t-rewrite-card-split, #t-rewrite-settings-overlay .t-rewrite-card-stream { grid-column: span 4; }
-
-#t-rewrite-settings-overlay .t-rewrite-card-whitelist { grid-column: span 4; }
-
-#t-rewrite-settings-overlay .t-rewrite-card-rules { grid-column: span 8; }
 
 #t-rewrite-settings-overlay .t-rewrite-split-options-vertical { flex-direction: column; align-items: flex-start; gap: 8px; }
 
@@ -281,12 +204,11 @@
 #t-rewrite-overlay .t-rewrite-diff-after { border-color: rgba(122, 203, 159, 0.35); background: linear-gradient(180deg, rgba(24, 68, 51, 0.38) 0%, rgba(14, 22, 18, 0.74) 100%); }
 
 #t-rewrite-overlay .t-rewrite-test-section,
-#t-rewrite-overlay .t-rewrite-raw-section,
+
+
 #t-rewrite-overlay .t-rewrite-right > .t-rewrite-section { min-height: 0; display: flex; flex-direction: column; }
 
 #t-rewrite-overlay .t-rewrite-test-section { flex: 1.1; }
-
-#t-rewrite-overlay .t-rewrite-raw-section { flex: 0.95; }
 
 #t-rewrite-overlay .t-rewrite-right > .t-rewrite-section:last-child { flex: 1.15; }
 
@@ -396,10 +318,6 @@
 @media (max-width: 980px) {
     #t-rewrite-settings-overlay .t-rewrite-settings-window { width: 97vw; max-height: 94vh; height: auto; }
     #t-rewrite-settings-overlay .t-set-nav { width: 156px; }
-    #t-rewrite-settings-overlay .t-rewrite-settings-body { padding: 12px; }
-    #t-rewrite-settings-overlay .t-rewrite-settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    #t-rewrite-settings-overlay .t-rewrite-card-api, #t-rewrite-settings-overlay .t-rewrite-card-rules { grid-column: span 2; }
-    #t-rewrite-settings-overlay .t-rewrite-card-split, #t-rewrite-settings-overlay .t-rewrite-card-stream, #t-rewrite-settings-overlay .t-rewrite-card-whitelist { grid-column: span 1; }
     #t-rewrite-overlay .t-rewrite-window { width: 97vw; height: auto; max-height: 94vh; }
     #t-rewrite-overlay .t-rewrite-body { padding: 12px; gap: 12px; }
 }
@@ -410,30 +328,19 @@
     #t-rewrite-overlay .t-rewrite-window { width: min(96vw, 780px); max-width: min(96vw, 780px); }
     #t-rewrite-overlay .t-rewrite-head, #t-rewrite-settings-overlay .t-rewrite-head, #t-rewrite-live-overlay .t-rewrite-head { padding: 12px 14px; }
     #t-rewrite-overlay .t-rewrite-title, #t-rewrite-settings-overlay .t-rewrite-title, #t-rewrite-live-overlay .t-rewrite-title { font-size: 1em; }
-    #t-rewrite-overlay .t-rewrite-body, #t-rewrite-settings-overlay .t-rewrite-settings-body { padding: 10px; gap: 10px; }
+    #t-rewrite-overlay .t-rewrite-body { padding: 10px; gap: 10px; }
     #t-rewrite-settings-overlay .t-set-body { flex-direction: column; }
     #t-rewrite-settings-overlay .t-set-nav { width: 100%; height: 50px; flex-direction: row; flex-wrap: nowrap; padding: 0; gap: 0; border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.1); overflow-x: auto; overflow-y: hidden; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; }
     /* 下一条末尾原有 `background: transparent`，已删除 —— 理由与 lore-review.css       @768 段落里的同名规则相同：迁移前是空操作（静息态本无人给 tab 设底色），       迁移后会因带 ID 的 (1,1,0) 压过组件层 `.t-set-glass-tab:hover` 的 (0,2,0)，       吃掉窄屏 hover 白膜。`.active` 那条的 background: transparent 必要，保留。 */    #t-rewrite-settings-overlay .t-set-tab-btn { border-left: none; border-bottom: 3px solid transparent; border-radius: 0; border-top: none; border-right: none; border-bottom-color: transparent; padding: 0 14px; height: 50px; min-height: 50px; white-space: nowrap; flex: 0 0 auto; min-width: max-content; justify-content: center; }
     #t-rewrite-settings-overlay .t-set-tab-btn.active { border-bottom-color: rgba(144, 205, 244, 0.8); border-left-color: transparent; background: transparent; }
     #t-rewrite-settings-overlay .t-set-content { padding: 10px; }
     #t-rewrite-live-overlay .t-rewrite-live-body { padding: 10px; gap: 10px; }
-    #t-rewrite-settings-overlay .t-rewrite-settings-grid { grid-template-columns: 1fr; gap: 10px; }
-    #t-rewrite-settings-overlay .t-rewrite-card-api, #t-rewrite-settings-overlay .t-rewrite-card-split, #t-rewrite-settings-overlay .t-rewrite-card-stream, #t-rewrite-settings-overlay .t-rewrite-card-whitelist, #t-rewrite-settings-overlay .t-rewrite-card-rules { grid-column: span 1; }
-    #t-rewrite-settings-overlay .t-rewrite-model-row { grid-template-columns: minmax(0, 1fr) auto; }
-    #t-rewrite-settings-overlay .t-rewrite-profile-row { grid-template-columns: 1fr; }
     #t-rewrite-overlay .t-rewrite-actions { flex-direction: column; align-items: stretch; }
     #t-rewrite-overlay .t-rewrite-action-hint { width: 100%; }
     #t-rewrite-overlay #t-rewrite-trigger { width: 100%; min-width: 0; }
     #t-rewrite-overlay .t-rewrite-head-text-btn { height: 30px; min-height: 30px; padding: 0 10px; font-size: 0.75em; }
     #t-rewrite-overlay .t-rewrite-diff-head { gap: 8px; }
     #t-rewrite-overlay .t-rewrite-diff-row { grid-template-columns: 1fr; }
-    #t-rewrite-overlay .t-rewrite-rule-row { grid-template-columns: minmax(78px, 0.52fr) auto minmax(118px, 1fr) minmax(88px, 0.45fr) auto; gap: 6px; }
-    #t-rewrite-settings-overlay .t-rewrite-rule-row { grid-template-columns: minmax(84px, 0.58fr) minmax(118px, 1fr) minmax(88px, 0.42fr) auto; gap: 6px; }
-    #t-rewrite-overlay .t-rewrite-rule-and, #t-rewrite-settings-overlay .t-rewrite-rule-and { display: block; min-width: 14px; font-size: 0.74em; }
-    #t-rewrite-overlay .t-rewrite-rule-no, #t-rewrite-settings-overlay .t-rewrite-rule-no { display: none; }
-    #t-rewrite-overlay .t-rewrite-rule-del, #t-rewrite-settings-overlay .t-rewrite-rule-del { width: 30px; min-width: 30px; height: 32px; min-height: 32px; }
-    #t-rewrite-overlay .t-rewrite-rule-anchor, #t-rewrite-settings-overlay .t-rewrite-rule-anchor, #t-rewrite-overlay .t-rewrite-rule-extras, #t-rewrite-settings-overlay .t-rewrite-rule-extras { padding: 7px 8px; font-size: 0.84em; }
-    #t-rewrite-overlay .t-rewrite-rule-action, #t-rewrite-settings-overlay .t-rewrite-rule-action { padding: 7px 8px; font-size: 0.84em; }
 }
 
 @media (max-width: 420px) {

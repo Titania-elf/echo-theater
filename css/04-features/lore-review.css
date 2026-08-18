@@ -439,51 +439,6 @@
     color: #fff;
 }
 
-.t-model-dropdown {
-    position: absolute;
-    top: 55px;
-    /* 稍微低于标题栏底部 */
-    right: 20px;
-    width: 300px;
-    background: rgba(30, 30, 35, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 8px;
-    padding: 12px;
-    z-index: 10000;
-    /* 提高 z-index 确保在最上层 */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-.t-dropdown-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 0.9em;
-    color: #cbd5e0;
-}
-
-.t-dropdown-header button {
-    padding: 4px 8px;
-    font-size: 0.8em;
-}
-
-.t-model-dropdown select {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
-    padding: 8px;
-    border-radius: 6px;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.t-model-dropdown select:focus {
-    border-color: #90cdf4;
-}
-
 /* Default state; the mobile layout below reveals this toolbar. */
 .t-mobile-editor-header {
     display: none;
@@ -682,12 +637,6 @@
         padding: 10px 15px;
     }
 
-    .t-model-dropdown {
-        width: calc(100% - 40px);
-        right: 20px;
-        left: 20px;
-    }
-
 }
 
 /* 配置信息栏 */
@@ -783,29 +732,6 @@
     gap: 8px;
 }
 
-#t-lore-settings-dialog .t-lore-settings-tip-card {
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 12px;
-    padding: 12px;
-    background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84);
-    color: #c8d9e8;
-    display: grid;
-    gap: 8px;
-    font-size: 0.84em;
-    line-height: 1.55;
-}
-
-#t-lore-settings-dialog .t-lore-settings-tip-card i {
-    color: #90cdf4;
-    width: 14px;
-}
-
-#t-lore-settings-dialog .t-profile-info-box {
-    background: rgba(8, 13, 20, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 8px;
-}
-
 #t-lore-settings-dialog .t-info-label {
     color: #8da5b8;
 }
@@ -817,15 +743,6 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-}
-
-/* 方案信息框 */
-.t-profile-info-box {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 12px;
-    margin-top: 10px;
 }
 
 .t-info-row {

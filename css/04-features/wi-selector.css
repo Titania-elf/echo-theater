@@ -23,31 +23,6 @@
     flex-direction: column;
     animation: t-fade-in 0.2s;
 }
-/* `.t-wi-header` 的基础视觉已迁至 02-components/panel.css 的 `.t-panel-header`
-   （与 .t-queue-header / .t-ce-header 逐字节相同，A13 重复组）。
-   本文件只剩下方移动端的 padding 收紧。 */
-.t-wi-mode-bar {
-    padding: 10px 15px;
-    background: #1e1e1e;
-    border-bottom: 1px solid #333;
-    display: flex;
-    gap: 20px;
-    flex-shrink: 0;
-}
-
-.t-wi-mode-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    color: #aaa;
-    font-size: 0.9em;
-}
-
-.t-wi-mode-label input:checked+span {
-    color: #90cdf4;
-    font-weight: bold;
-}
 
 .t-wi-body {
     flex-grow: 1;
@@ -391,88 +366,6 @@
     margin-bottom: 10px;
 }
 
-.t-wi-book-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    background: #252525;
-    border-radius: 6px;
-    font-weight: bold;
-    color: #ddd;
-}
-
-/* 可折叠的世界书标题 */
-.t-wi-book-header.t-wi-collapsible {
-    cursor: pointer;
-    transition: all 0.2s;
-    user-select: none;
-}
-
-.t-wi-book-header.t-wi-collapsible:hover {
-    background: #2a2a2a;
-}
-
-/* 折叠箭头图标 */
-.t-wi-collapse-icon {
-    color: #666;
-    font-size: 0.9em;
-    transition: transform 0.2s;
-    width: 12px;
-}
-
-.t-wi-collapse-icon.t-wi-expanded {
-    transform: rotate(90deg);
-}
-
-.t-wi-book-name {
-    flex-grow: 1;
-}
-
-.t-wi-book-stat {
-    color: #888;
-    font-size: 0.8em;
-    font-weight: normal;
-}
-
-/* 世界书分组全选按钮 */
-.t-wi-book-toggle {
-    margin-left: auto;
-    padding: 2px 8px;
-    font-size: 0.75em;
-    font-weight: normal;
-    color: #90cdf4;
-    background: rgba(144, 205, 244, 0.1);
-    border: 1px solid rgba(144, 205, 244, 0.3);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.t-wi-book-toggle:hover {
-    background: rgba(144, 205, 244, 0.2);
-    color: #fff;
-}
-
-.t-wi-entries {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 0 0 20px;
-    /* 展开时不限制高度，让父容器 .t-wi-body 负责滚动 */
-    max-height: none;
-    overflow: visible;
-    transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
-}
-
-/* 折叠状态 */
-.t-wi-entries.t-wi-collapsed {
-    max-height: 0;
-    padding-top: 0;
-    opacity: 0;
-    overflow: hidden;
-}
-
 .t-wi-entry {
     display: flex;
     align-items: flex-start;
@@ -629,11 +522,6 @@
         max-height: calc(100% - 16px);
     }
 
-.t-wi-mode-bar {
-        flex-direction: column;
-        gap: 10px;
-    }
-
 /* 标题栏和标签栏各自压薄。两者是兄弟节点而非父子，
        没法靠 CSS 合并成一行，真要合并得改 DOM 并牺牲桌面端的分隔线，不划算 */
 .t-wi-header {
@@ -655,10 +543,6 @@
         font-size: 0.82em;
         gap: 5px;
         touch-action: manipulation;
-    }
-
-.t-wi-action-bar {
-        padding: 6px 12px;
     }
 
 .t-wi-body {

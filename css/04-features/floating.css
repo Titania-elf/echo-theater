@@ -63,17 +63,6 @@
     animation: t-ripple-2 1.5s ease-out 0.5s infinite;
 }
 
-/* 第三层波纹通过额外元素实现 */
-#titania-float-btn.t-loading.t-anim-ripple .t-ripple-extra {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 2px solid var(--t-border-color, #90cdf4);
-    animation: t-ripple-3 1.5s ease-out 1s infinite;
-    pointer-events: none;
-}
-
 /* ===== 动画 2: 电磁闪烁 (Arc Flash) ===== */
 
 #titania-float-btn.t-loading.t-anim-arc {
@@ -338,27 +327,6 @@
         inset 0 0 12px rgba(255, 107, 107, 0.15);
 }
 
-/* ===== 旧版菜单项样式（保留兼容性）===== */
-.t-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    opacity: 0;
-    transform: scale(0.8) translateY(10px);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    cursor: pointer;
-}
-
-.t-menu-item.show {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-}
-
-.t-menu-item:hover .t-menu-icon {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
 .t-menu-icon {
     width: 36px;
     height: 36px;
@@ -386,16 +354,6 @@
     background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
     border: 2px solid #ff4757;
     animation: t-cancel-pulse 1.5s ease-in-out infinite;
-}
-
-.t-menu-label {
-    background: rgba(0, 0, 0, 0.75);
-    color: #fff;
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-    backdrop-filter: blur(4px);
 }
 
 /* ===== 点击外部区域关闭菜单的遮罩 ===== */

@@ -321,27 +321,6 @@
     min-width: 0;
 }
 
-.t-plan-name-btn {
-    border: 0;
-    background: transparent;
-    color: #d8e8f6;
-    font-weight: 600;
-    padding: 0;
-    cursor: pointer;
-    text-align: left;
-}
-
-.t-plan-name-btn:hover {
-    text-decoration: underline;
-}
-
-.t-plan-accordion-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
 .t-plan-name {
     color: #d8e8f6;
     font-weight: 600;
@@ -385,13 +364,6 @@
 
 .t-plan-card-actions .t-plan-delete-btn {
     margin-left: auto;
-}
-
-.t-plan-accordion-body {
-    padding: 10px;
-    max-height: min(62vh, 560px);
-    overflow-y: auto;
-    overflow-x: hidden;
 }
 
 /* 本文件通用的「删除按钮文字色」，6 处在用（删除方案 / 删除本行 / 删除细纲页 /
@@ -782,12 +754,6 @@
     font-size: 13px;
 }
 
-.t-outline-mode-hint {
-    color: #8ea7bc;
-    font-size: 11px;
-    line-height: 1.35;
-}
-
 .t-outline-mode-source {
     margin-left: 0;
     align-items: center;
@@ -903,27 +869,6 @@
     resize: vertical;
 }
 
-.t-outline-plot-wrap {
-    display: flex;
-    gap: 8px;
-    align-items: flex-start;
-}
-
-.t-outline-mini-btn,
-.t-outline-row-btn {
-    border: 1px solid rgba(130, 170, 200, 0.45);
-    background: rgba(28, 40, 52, 0.78);
-    color: #d7e5f3;
-    border-radius: 6px;
-    cursor: pointer;
-    min-width: 34px;
-    height: 34px;
-}
-
-.t-outline-row-btn {
-    margin-right: 4px;
-}
-
 .t-outline-scene-row {
     display: none;
 }
@@ -976,12 +921,6 @@
     text-align: center;
     color: #9cc3ea;
     font-weight: 700;
-}
-
-.t-outline-row-btn.danger {
-    border-color: rgba(255, 107, 107, 0.5);
-    color: #ff9d9d;
-    background: rgba(62, 24, 24, 0.7);
 }
 
 .t-outline-empty {
@@ -1116,35 +1055,6 @@
 .t-desk-editor-body label {
     color: #a9bfd3;
     font-size: 12px;
-}
-
-.t-desk-scene-head {
-    margin-top: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: #c3daee;
-}
-
-.t-desk-scene-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.t-desk-scene-block {
-    border: 1px solid rgba(129, 236, 236, 0.25);
-    border-radius: 8px;
-    padding: 8px;
-    background: rgba(14, 20, 27, 0.82);
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.t-desk-scene-title {
-    color: #d3e9f9;
-    font-weight: 700;
 }
 
 @media (max-width: 768px) {
@@ -1658,24 +1568,6 @@
 
     .t-outline-textarea {
         min-height: 82px;
-    }
-
-    .t-outline-plot-wrap {
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .t-outline-mini-btn,
-    .t-outline-row-btn {
-        width: 100%;
-        min-width: 100%;
-        height: 38px;
-        border-radius: 8px;
-    }
-
-    .t-outline-row-btn {
-        margin-right: 0;
-        margin-bottom: 6px;
     }
 
     .t-outline-scene-row.show {
