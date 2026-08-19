@@ -15,6 +15,7 @@ import { GlobalState } from "./core/state.js";
 import { loadScripts } from "./core/scriptData.js";
 import { handleGenerate } from "./core/api.js";
 import { restoreContinuationForCurrentChat } from "./core/continuationStore.js";
+import { dryRunFavsMigration } from "./core/favsStore.js";
 import { initExtensionUpdate } from "./core/extensionUpdate.js";
 import { initSyncListener } from "./core/worldInfoManager.js";
 import { createFloatingButton, destroyFloatingButton, refreshFloatingTuck } from "./ui/floatingBtn.js";
@@ -464,6 +465,90 @@ function bindDrawerBackupControls() {
             if (window.toastr) toastr.error("导入失败：" + (err?.message || String(err)), "Titania Echo");
         } finally {
             $(this).val("");
+        }
+    });
+
+    bindFavsMigrationDryRun();
+}
+
+/** 把字节数说成人话 */
+function formatBytes(bytes) {
+    const n = Number(bytes) || 0;
+    if (Math.abs(n) >= 1048576) return `${(n / 1048576).toFixed(2)} MB`;
+    if (Math.abs(n) >= 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${n} B`;
+}
+
+/**
+ * 「试运行搬家」按钮。
+ * 只写文件 + 校验，不动 settings.json 里的任何数据（见 src/core/favsStore.js 的说明）。
+ */
+function bindFavsMigrationDryRun() {
+    const $btn = $("#titania-favs-migrate-dryrun");
+    if ($btn.length === 0) return;
+
+    const reportId = "titania-favs-migrate-report";
+    const showReport = (html, tone) => {
+        let $report = $(`#${reportId}`);
+        if ($report.length === 0) {
+            $report = $(`<div class="titania-backup-desc" id="${reportId}"></div>`);
+            $btn.closest(".titania-panel-card").append($report);
+        }
+        $report.html(`<span style="color:${tone};">${html}</span>`);
+    };
+
+    $btn.off("click").on("click", async function () {
+        const $self = $(this);
+        const oldHtml = $self.html();
+        $self.prop("disabled", true);
+
+        try {
+            const report = await dryRunFavsMigration({
+                onProgress: (done, total) => {
+                    $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> 写入中 ${done}/${total}`);
+                }
+            });
+
+            const lines = [
+                `收藏 ${report.settings.count} 条（分组 ${report.settings.chainCount} / 普通 ${report.settings.plainCount}），`
+                + `当前在 settings.json 里占 ${formatBytes(report.settings.bytes)}`,
+                `已写出 ${report.written.count} 个正文文件，共 ${formatBytes(report.written.bytesTotal)}，`
+                + `最大单个 ${formatBytes(report.written.bytesMax)}`,
+                `索引大小 ${formatBytes(report.indexBytes)} —— 正式搬家后 settings.json 可减少约 `
+                + `<b>${formatBytes(report.projectedSavingBytes)}</b>`,
+                `落盘校验：${report.verify.checked} 个已确认`
+                + (report.verify.missing.length ? `，<b>缺失 ${report.verify.missing.length} 个</b>` : "，无缺失")
+                + (report.verify.error ? `，校验请求出错：${report.verify.error}` : ""),
+                `抽样回读比对：${report.readback.sampled} 条`
+                + (report.readback.mismatched.length ? `，<b>不一致 ${report.readback.mismatched.length} 条</b>` : "，全部一致"),
+                `耗时 ${(report.durationMs / 1000).toFixed(1)} 秒`
+            ];
+            if (report.failures.length) {
+                lines.push(`<b>写入失败 ${report.failures.length} 条</b>：`
+                    + report.failures.slice(0, 3).map(f => `${f.id}（${f.error}）`).join("；")
+                    + (report.failures.length > 3 ? " …" : ""));
+            }
+
+            const tone = report.ok ? "#55efc4" : "#ff7675";
+            const head = report.ok
+                ? "✅ 试运行通过，未改动任何现有数据"
+                : "⚠️ 试运行发现问题，未改动任何现有数据";
+            showReport(`${head}<br>· ${lines.join("<br>· ")}`, tone);
+
+            console.log("[Titania] 收藏搬家试运行报告", report);
+            if (window.toastr) {
+                if (report.ok) {
+                    toastr.success(`已写出 ${report.written.count} 个文件并全部校验通过，可减少约 ${formatBytes(report.projectedSavingBytes)}`, "Titania Echo");
+                } else {
+                    toastr.warning("试运行发现问题，详情见设置页与控制台", "Titania Echo");
+                }
+            }
+        } catch (e) {
+            console.error("Titania: 收藏搬家试运行失败", e);
+            showReport(`❌ 试运行失败：${e?.message || String(e)}（未改动任何现有数据）`, "#ff7675");
+            if (window.toastr) toastr.error(e?.message || "试运行失败", "Titania Echo");
+        } finally {
+            $self.prop("disabled", false).html(oldHtml);
         }
     });
 }

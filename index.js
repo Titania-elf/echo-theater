@@ -2219,6 +2219,12 @@ function loadCssFiles() {
     /* \u7A97\u53E3\u6839 / \u9875\u5934\u9875\u811A\uFF0C\u66FF\u6362 rgba(19,22,30,.94~.96) \u4E0E rgba(16,22,31,.85~.9) */
     --t-glass-body: rgb(var(--t-c-cool-2-rgb));
     /* \u4E0D\u900F\u660E\u6B63\u6587\u5E95\uFF08\u6E10\u53D8\u6D17\u8272\u7684\u57FA\u5E95\uFF09\uFF0C\u66FF\u6362 #12161d */
+    --t-glass-panel: rgb(12 17 22 / .74);
+    /* \u9762\u677F / \u5206\u533A\u9875\u5E95\uFF0C\u586B -row-head(.70) \u4E0E -card(.85) \u4E4B\u95F4\u7684\u7A7A\u6863\uFF08Phase 6b-9 \u65B0\u589E\uFF09\u3002
+       \u26A0 \u5B9E\u6D4B\u6709 13 \u5904\u5B57\u9762\u91CF\u843D\u5728 alpha .65~.78\uFF0C\u5230\u4E24\u8FB9\u6700\u8FD1\u6863\u90FD\u5DEE \u0394E 8~9\uFF08\u660E\u663E\u504F\u8272\uFF09\u3002
+       \u26A0 \u503C\u662F\u6309**\u4EBA\u53E3\u91CD\u5FC3**\u6311\u7684\uFF0C\u4E0D\u662F\u968F\u624B\u6302\u5728 cool-1 \u4E0A\uFF1A\u65B0 token \u7684\u503C\u53EF\u4EE5\u81EA\u7531\u9009\uFF0C
+       \u5C31\u8BE5\u8BA9\u5B9E\u6D4B\u5206\u5E03\u51B3\u5B9A\u3002\u6302 cool-1(10,15,22)/.75 \u65F6\u300C\u660E\u663E\u300D\u6863\u6709 14 \u5904\uFF0C
+       \u53D6\u91CD\u5FC3 (12,17,22)/.74 \u540E\u964D\u5230 9 \u5904\u3002\u6545\u8FD9\u4E00\u6863\u4E0D\u5728 --t-c-cool-* \u9636\u4E0A\u3002 */
     --t-glass-card: rgb(var(--t-c-cool-1-rgb) / .85);
     /* \u5361\u7247 / \u5206\u533A / \u6570\u636E\u884C\uFF0C\u66FF\u6362 rgba(10,15,22,.84~.9) \u4E0E rgba(13,19,28,.78) */
     --t-glass-field: rgb(var(--t-c-cool-0-rgb) / .9);
@@ -5965,7 +5971,7 @@ textarea.t-input {
     align-items: center;
     gap: 10px;
     padding: 10px 16px;
-    background: rgba(25, 25, 35, 0.95);
+    background: var(--t-glass-window);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--t-color-accent-border-subtle);
@@ -9200,7 +9206,7 @@ textarea.t-input {
     box-sizing: border-box;
     overflow-y: auto;
     overscroll-behavior: contain;
-    background: rgba(5, 8, 12, 0.78);
+    background: var(--t-glass-card);
     backdrop-filter: blur(5px);
 }
 
@@ -9214,7 +9220,7 @@ textarea.t-input {
     flex-direction: column;
     overflow: hidden;
     color: var(--t-color-text-soft);
-    background: #14191f;
+    background: var(--t-glass-body);
     border: 1px solid rgba(100, 220, 190, 0.35);
     border-radius: 14px;
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
@@ -9948,7 +9954,7 @@ textarea.t-input {
     padding: 3px 10px;
     border: 1px solid #55697a;
     border-radius: 999px;
-    background: #1a2027;
+    background: var(--t-color-dialog-surface);
     color: var(--t-color-accent);
     font-size: 0.72em;
     line-height: 1.4;
@@ -10001,12 +10007,12 @@ textarea.t-input {
 .t-prompt-entry-card.is-locked {
     cursor: default;
     border-color: #343d43;
-    background: #181c1f;
+    background: var(--t-color-dialog-surface);
 }
 
 .t-prompt-entry-card.is-locked:hover {
     border-color: #3e4a51;
-    background: #1a1f22;
+    background: var(--t-color-dialog-surface);
 }
 
 .t-prompt-entry-card.is-locked .t-prompt-entry-drag-hint {
@@ -13966,7 +13972,7 @@ textarea.t-input {
         top: 0;
         left: 0;
         z-index: 1;
-        background: rgba(30, 30, 35, 1);
+        background: var(--t-color-dialog-surface);
         transition: transform 0.3s ease, opacity 0.3s ease;
     }
 
@@ -13980,7 +13986,7 @@ textarea.t-input {
         top: 0;
         left: 0;
         z-index: 0;
-        background: rgba(30, 30, 35, 1);
+        background: var(--t-color-dialog-surface);
         transform: translateX(100%);
         transition: transform 0.3s ease;
     }
@@ -14174,7 +14180,7 @@ textarea.t-input {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: rgba(19, 22, 30, 0.96);
+    background: var(--t-glass-window);
     border: 1px solid var(--t-color-field-glass-border);
     box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56);
     border-radius: 14px;
@@ -14182,7 +14188,7 @@ textarea.t-input {
 
 #t-lore-settings-dialog .t-lore-settings-header {
     padding: 12px 16px;
-    background: linear-gradient(180deg, rgba(18, 30, 44, 0.9) 0%, rgba(16, 22, 31, 0.85) 100%);
+    background: linear-gradient(180deg, var(--t-glass-nav) 0%, var(--t-glass-nav) 100%);
     border-bottom: 1px solid var(--t-color-border-faint);
 }
 
@@ -14204,7 +14210,7 @@ textarea.t-input {
     padding: 12px;
     border-radius: 10px;
     border: 1px solid var(--t-color-border-subtle);
-    background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), rgba(10, 15, 22, 0.86);
+    background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card);
 }
 
 #t-lore-settings-dialog .t-form-label {
@@ -15552,7 +15558,7 @@ textarea.t-input {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: linear-gradient(180deg, rgba(12, 18, 24, 0.96), rgba(9, 14, 20, 0.96));
+    background: linear-gradient(180deg, var(--t-glass-body), var(--t-glass-body));
 }
 
 #t-outline-prompt-manager .t-outline-settings-dialog {
@@ -15620,13 +15626,13 @@ textarea.t-input {
     padding: 4px 6px;
     border-radius: 10px;
     border: 1px solid rgba(131, 170, 196, 0.32);
-    background: linear-gradient(180deg, rgba(14, 22, 30, 0.92), rgba(10, 16, 22, 0.92));
+    background: linear-gradient(180deg, var(--t-glass-nav), var(--t-glass-field));
 }
 
 .t-outline-plan-name {
     border-radius: 8px;
     border: 1px solid rgba(168, 201, 224, 0.32);
-    background: rgba(8, 14, 20, 0.82);
+    background: var(--t-glass-card);
     color: var(--t-color-text);
     padding: 7px 12px;
     min-width: 210px;
@@ -15635,7 +15641,7 @@ textarea.t-input {
 
 .t-outline-plan-name.is-readonly {
     border-color: transparent;
-    background: rgba(13, 20, 28, 0.75);
+    background: var(--t-glass-panel);
     color: var(--t-glass-text-bright);
 }
 
@@ -15722,7 +15728,7 @@ textarea.t-input {
     padding: 8px;
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 18, 24, 0.96);
+    background: var(--t-glass-body);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.44);
     opacity: 0;
     transform: translateY(8px);
@@ -15745,7 +15751,7 @@ textarea.t-input {
 .t-outline-scene-editor-page {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 16, 20, 0.7);
+    background: var(--t-glass-panel);
     padding: 10px;
     max-height: min(68vh, 700px);
     overflow: auto;
@@ -15782,7 +15788,7 @@ textarea.t-input {
 .t-scene-page-card {
     border: 1px solid rgba(129, 236, 236, 0.24);
     border-radius: 8px;
-    background: rgba(12, 18, 24, 0.86);
+    background: var(--t-glass-card);
     padding: 8px;
     display: flex;
     flex-direction: column;
@@ -15797,7 +15803,7 @@ textarea.t-input {
 .t-outline-plan-list {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 16, 20, 0.7);
+    background: var(--t-glass-panel);
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -15812,7 +15818,7 @@ textarea.t-input {
 .t-hub-toolbar {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 16, 20, 0.7);
+    background: var(--t-glass-panel);
     padding: 8px;
     display: flex;
     gap: 8px;
@@ -15841,7 +15847,7 @@ textarea.t-input {
 .t-plan-accordion-item {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 16, 20, 0.84);
+    background: var(--t-glass-card);
     overflow: hidden;
     flex-shrink: 0;
 }
@@ -15857,7 +15863,7 @@ textarea.t-input {
     align-items: center;
     gap: 10px;
     padding: 10px;
-    background: rgba(16, 24, 32, 0.92);
+    background: var(--t-glass-nav);
     border-bottom: 1px solid var(--t-color-border-faint);
     cursor: pointer;
 }
@@ -15899,7 +15905,7 @@ textarea.t-input {
     gap: 8px 12px;
     padding: 8px 10px 10px;
     border-top: 1px solid var(--t-color-surface-hover-subtle);
-    background: rgba(10, 16, 22, 0.55);
+    background: var(--t-glass-row);
 }
 
 .t-plan-source-note {
@@ -15986,7 +15992,7 @@ textarea.t-input {
 .t-scene-hub-list {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 16, 20, 0.7);
+    background: var(--t-glass-panel);
     padding: 8px;
     display: grid;
     gap: 8px;
@@ -15997,7 +16003,7 @@ textarea.t-input {
 .t-scene-hub-item {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 8px;
-    background: rgba(12, 18, 24, 0.8);
+    background: var(--t-glass-panel);
     padding: 8px;
     cursor: pointer;
 }
@@ -16074,7 +16080,7 @@ textarea.t-input {
 .t-opening-picker-list {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 18, 24, 0.75);
+    background: var(--t-glass-panel);
     max-height: min(62vh, 560px);
     overflow: auto;
     display: grid;
@@ -16085,7 +16091,7 @@ textarea.t-input {
 .t-opening-picker-item {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 8px;
-    background: rgba(14, 21, 28, 0.86);
+    background: var(--t-glass-card);
     padding: 8px;
     cursor: pointer;
 }
@@ -16117,7 +16123,7 @@ textarea.t-input {
 .t-opening-card {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(14, 21, 28, 0.9);
+    background: var(--t-glass-nav);
     padding: 10px;
     cursor: pointer;
     min-height: 140px;
@@ -16168,7 +16174,7 @@ textarea.t-input {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 8px;
     padding: 10px;
-    background: rgba(12, 18, 24, 0.7);
+    background: var(--t-glass-panel);
 }
 
 .t-plan-item-head {
@@ -16196,7 +16202,7 @@ textarea.t-input {
     border: 1px dashed rgba(129, 236, 236, 0.35);
     border-radius: 8px;
     padding: 8px;
-    background: rgba(10, 16, 22, 0.65);
+    background: var(--t-glass-row-head);
 }
 
 .t-plan-scene.used {
@@ -16221,7 +16227,7 @@ textarea.t-input {
 }
 
 .t-outline-top {
-    background: rgba(20, 24, 28, 0.75);
+    background: var(--t-glass-panel);
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     padding: 12px;
@@ -16239,7 +16245,7 @@ textarea.t-input {
     resize: vertical;
     border-radius: 8px;
     border: 1px solid rgba(116, 185, 255, 0.35);
-    background: rgba(8, 12, 16, 0.75);
+    background: var(--t-glass-panel);
     color: var(--t-color-text);
     padding: 10px;
     box-sizing: border-box;
@@ -16274,7 +16280,7 @@ textarea.t-input {
     min-height: 40px;
     border-radius: 12px;
     border: 1px solid rgba(154, 192, 216, 0.42);
-    background: linear-gradient(180deg, rgba(30, 45, 58, 0.92), rgba(23, 36, 49, 0.92));
+    background: linear-gradient(180deg, rgba(30, 45, 58, 0.92), var(--t-glass-nav));
     color: var(--t-glass-text-bright);
 }
 
@@ -16316,7 +16322,7 @@ textarea.t-input {
 .t-outline-select {
     border-radius: 6px;
     border: 1px solid var(--t-color-border-glass);
-    background: rgba(10, 14, 18, 0.75);
+    background: var(--t-glass-panel);
     color: var(--t-color-text);
     padding: 6px 8px;
 }
@@ -16325,7 +16331,7 @@ textarea.t-input {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     overflow: auto;
-    background: rgba(12, 16, 20, 0.7);
+    background: var(--t-glass-panel);
     max-height: min(55vh, 560px);
 }
 
@@ -16365,7 +16371,7 @@ textarea.t-input {
 }
 
 .t-outline-table th {
-    background: rgba(31, 44, 58, 0.75);
+    background: var(--t-glass-row-hover);
     color: var(--t-glass-text-bright);
     font-weight: 600;
     text-align: left;
@@ -16404,7 +16410,7 @@ textarea.t-input {
     width: 100%;
     border-radius: 6px;
     border: 1px solid var(--t-color-border-glass);
-    background: rgba(10, 14, 18, 0.72);
+    background: var(--t-glass-panel);
     color: var(--t-color-text);
     box-sizing: border-box;
     padding: 8px;
@@ -16426,7 +16432,7 @@ textarea.t-input {
     border: 1px dashed rgba(129, 236, 236, 0.32);
     border-radius: 8px;
     padding: 10px;
-    background: rgba(10, 16, 22, 0.66);
+    background: var(--t-glass-panel);
 }
 
 .t-outline-scene-header {
@@ -16458,7 +16464,7 @@ textarea.t-input {
     text-align: left;
     font-weight: 600;
     color: var(--t-glass-text-bright);
-    background: rgba(20, 34, 47, 0.68);
+    background: var(--t-glass-row-head);
 }
 
 .t-scene-col-index {
@@ -16478,7 +16484,7 @@ textarea.t-input {
     margin: 0;
     max-height: 56vh;
     overflow: auto;
-    background: #0d141d;
+    background: var(--t-glass-body);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     color: var(--t-glass-text-bright);
@@ -16494,7 +16500,7 @@ textarea.t-input {
     min-height: 320px;
     max-height: 56vh;
     resize: vertical;
-    background: #0d141d;
+    background: var(--t-glass-body);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     color: var(--t-glass-text-bright);
@@ -16558,7 +16564,7 @@ textarea.t-input {
     max-height: 84vh;
     border: 1px solid var(--t-color-border-cool);
     border-radius: 12px;
-    background: rgba(12, 18, 24, 0.96);
+    background: var(--t-glass-body);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
     z-index: 20030;
     display: none;
@@ -16884,7 +16890,7 @@ textarea.t-input {
     .t-outline-mobile-card {
         border: 1px solid var(--t-color-border-cool);
         border-radius: 10px;
-        background: rgba(12, 16, 20, 0.82);
+        background: var(--t-glass-card);
         padding: 10px;
     }
 
@@ -16927,7 +16933,7 @@ textarea.t-input {
         right: 0;
         bottom: 0;
         z-index: 20020;
-        background: rgba(15, 20, 26, 0.98);
+        background: var(--t-glass-body);
         border-top: 1px solid var(--t-color-border-cool);
         box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.45);
         transition: transform 0.22s ease, visibility 0.22s ease;
@@ -16961,7 +16967,7 @@ textarea.t-input {
         gap: 6px;
         padding: 8px 12px;
         border-bottom: 1px solid var(--t-color-border-faint);
-        background: rgba(11, 15, 20, 0.88);
+        background: var(--t-glass-card);
     }
 
     .t-mobile-editor-tabs .t-btn {
@@ -16989,7 +16995,7 @@ textarea.t-input {
         gap: 6px;
         padding: 10px 12px 12px;
         border-top: 1px solid var(--t-color-border-subtle);
-        background: rgba(11, 15, 20, 0.94);
+        background: var(--t-glass-field);
     }
 
     .t-outline-mobile-drawer-actions .t-btn {
@@ -17025,7 +17031,7 @@ textarea.t-input {
     .t-mobile-scene-card {
         border: 1px solid rgba(129, 236, 236, 0.24);
         border-radius: 8px;
-        background: rgba(12, 18, 24, 0.86);
+        background: var(--t-glass-card);
         padding: 8px;
         display: flex;
         flex-direction: column;
@@ -17073,7 +17079,7 @@ textarea.t-input {
         margin-bottom: 10px;
         border: 1px solid var(--t-color-border-cool);
         border-radius: 10px;
-        background: rgba(12, 16, 20, 0.82);
+        background: var(--t-glass-card);
         padding: 8px;
     }
 
@@ -17161,7 +17167,7 @@ textarea.t-input {
         border-radius: 8px;
         padding: 8px;
         margin-bottom: 8px;
-        background: rgba(14, 20, 27, 0.82);
+        background: var(--t-glass-card);
     }
 
     .t-scene-col-index {
@@ -17610,9 +17616,9 @@ textarea.t-input {
 
 #t-rewrite-overlay { z-index: 30060; }
 
-#t-rewrite-overlay .t-rewrite-window { width: min(1180px, 96vw); max-width: 96vw; max-height: 90vh; height: min(88vh, 920px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--t-color-border-subtle); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-overlay .t-rewrite-window { width: min(1180px, 96vw); max-width: 96vw; max-height: 90vh; height: min(88vh, 920px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--t-color-border-subtle); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
 
-#t-rewrite-overlay .t-rewrite-head { padding: 14px 18px; background: linear-gradient(180deg, rgba(18, 30, 44, 0.9) 0%, rgba(16, 22, 31, 0.85) 100%); border-bottom: 1px solid var(--t-color-border-faint); }
+#t-rewrite-overlay .t-rewrite-head { padding: 14px 18px; background: linear-gradient(180deg, var(--t-glass-nav) 0%, var(--t-glass-nav) 100%); border-bottom: 1px solid var(--t-color-border-faint); }
 
 #t-rewrite-overlay .t-rewrite-settings-btn i { color: var(--t-glass-tab-text-active); }
 
@@ -17636,11 +17642,11 @@ textarea.t-input {
 
 #t-rewrite-overlay .t-rewrite-left, #t-rewrite-overlay .t-rewrite-right { min-height: 0; display: flex; flex-direction: column; gap: 12px; }
 
-#t-rewrite-overlay .t-rewrite-section { border: 1px solid var(--t-color-border-subtle); border-radius: 12px; background: rgba(13, 19, 28, 0.78); padding: 12px; }
+#t-rewrite-overlay .t-rewrite-section { border: 1px solid var(--t-color-border-subtle); border-radius: 12px; background: var(--t-glass-panel); padding: 12px; }
 
 #t-rewrite-overlay .t-rewrite-section-title { font-size: 0.9em; font-weight: 700; color: #b8d8ee; margin-bottom: 10px; }
 
-#t-rewrite-overlay #t-rewrite-api-url, #t-rewrite-overlay #t-rewrite-api-key, #t-rewrite-overlay #t-rewrite-model { width: 100%; box-sizing: border-box; background: rgba(10, 15, 22, 0.9); border: 1px solid var(--t-color-border-subtle); color: var(--t-glass-text-bright); border-radius: 8px; padding: 9px 11px; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease; }
+#t-rewrite-overlay #t-rewrite-api-url, #t-rewrite-overlay #t-rewrite-api-key, #t-rewrite-overlay #t-rewrite-model { width: 100%; box-sizing: border-box; background: var(--t-glass-field); border: 1px solid var(--t-color-border-subtle); color: var(--t-glass-text-bright); border-radius: 8px; padding: 9px 11px; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease; }
 
 #t-rewrite-overlay #t-rewrite-api-url:focus, #t-rewrite-overlay #t-rewrite-api-key:focus, #t-rewrite-overlay #t-rewrite-model:focus { border-color: var(--t-color-field-glass-focus-border); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
 
@@ -17656,7 +17662,7 @@ textarea.t-input {
 
 #t-rewrite-overlay .t-rewrite-action-hint { font-size: 0.8em; color: var(--t-glass-text-faint); line-height: 1.45; }
 
-#t-rewrite-overlay .t-rewrite-footer-actions { padding: 10px 16px 14px; border-top: 1px solid var(--t-color-border-subtle); background: rgba(16, 22, 31, 0.9); }
+#t-rewrite-overlay .t-rewrite-footer-actions { padding: 10px 16px 14px; border-top: 1px solid var(--t-color-border-subtle); background: var(--t-glass-nav); }
 
 #t-rewrite-overlay .t-rewrite-runtime-meta { display: grid; gap: 6px; font-size: 0.82em; color: var(--t-glass-text-secondary); }
 
@@ -17690,7 +17696,7 @@ textarea.t-input {
 
 #t-rewrite-overlay .t-rewrite-diff-body { flex: 1; min-height: 0; overflow: auto; display: grid; gap: 8px; padding-right: 2px; }
 
-#t-rewrite-overlay .t-rewrite-match-row { border: 1px solid var(--t-color-border-subtle); border-radius: 8px; background: rgba(8, 13, 20, 0.8); padding: 10px; }
+#t-rewrite-overlay .t-rewrite-match-row { border: 1px solid var(--t-color-border-subtle); border-radius: 8px; background: var(--t-glass-card); padding: 10px; }
 
 #t-rewrite-overlay .t-rewrite-match-row.hit { border-color: rgba(122, 203, 159, 0.4); background: linear-gradient(180deg, rgba(24, 68, 51, 0.28) 0%, rgba(14, 22, 18, 0.74) 100%); }
 
@@ -17718,7 +17724,7 @@ textarea.t-input {
 
 #t-rewrite-live-overlay { z-index: 30075; }
 
-#t-rewrite-settings-overlay .t-rewrite-settings-window { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; height: min(90vh, 940px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.96); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-settings-overlay .t-rewrite-settings-window { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; height: min(90vh, 940px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
 
 /* \u672C\u6D6E\u5C42\u7684\u8BBE\u7F6E\u5916\u58F3\uFF08body / nav / tab / content\uFF09\u5DF2\u8FC1\u81F3
    02-components/settings-shell.css \u7684 \`.t-set-glass-*\` \u2014\u2014 \u4E0E lore-review.css \u7684
@@ -17730,13 +17736,13 @@ textarea.t-input {
    \uFF08\u88F8\u7C7B\u65E0\u4F5C\u7528\u57DF\uFF0C\u5BF9\u672C overlay \u4E00\u6837\u751F\u6548\uFF09\uFF0C\u4E14\u65E0\u4EFB\u4F55 @media \u89C4\u5219\u52A8\u5B83\u4EEC \u2014\u2014
    \u7EAF\u5197\u4F59\uFF0C\u5DF2\u5220\u9664\uFF08A13 \u91CD\u590D\u7EC4\uFF09\u3002 */
 
-#t-rewrite-settings-overlay .t-form-group { margin-bottom: 14px; padding: 12px; border-radius: 10px; border: 1px solid var(--t-color-border-subtle); background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), rgba(10, 15, 22, 0.86); }
+#t-rewrite-settings-overlay .t-form-group { margin-bottom: 14px; padding: 12px; border-radius: 10px; border: 1px solid var(--t-color-border-subtle); background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); }
 
 #t-rewrite-settings-overlay .t-form-label { display: block; color: var(--t-glass-text-secondary); margin-bottom: 6px; font-size: 0.82em; }
 
-#t-rewrite-settings-overlay .t-rewrite-settings-footer { padding: 10px 14px; border-top: 1px solid var(--t-color-border-subtle); display: flex; justify-content: flex-end; gap: 8px; background: rgba(16, 22, 31, 0.9); }
+#t-rewrite-settings-overlay .t-rewrite-settings-footer { padding: 10px 14px; border-top: 1px solid var(--t-color-border-subtle); display: flex; justify-content: flex-end; gap: 8px; background: var(--t-glass-nav); }
 
-#t-rewrite-live-overlay .t-rewrite-live-window { width: min(980px, 96vw); max-width: 96vw; max-height: 92vh; height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.96); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-live-overlay .t-rewrite-live-window { width: min(980px, 96vw); max-width: 96vw; max-height: 92vh; height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
 
 #t-rewrite-live-overlay .t-rewrite-live-body { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, var(--t-color-brand-veil) 0%, rgba(191, 161, 95, 0) 32%), var(--t-glass-body); }
 
@@ -17744,11 +17750,11 @@ textarea.t-input {
 
 #t-rewrite-live-overlay .t-rewrite-live-meta { font-size: 0.8em; color: var(--t-glass-text-faint); }
 
-#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
+#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
 
 #t-rewrite-live-overlay .t-rewrite-live-stream-title { font-size: 0.84em; font-weight: 700; color: var(--t-glass-text-bright); margin-bottom: 6px; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
+#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
 
 #t-rewrite-live-overlay .t-rewrite-live-history-title { font-size: 0.84em; font-weight: 700; color: var(--t-glass-text-bright); margin-bottom: 6px; }
 
@@ -17756,9 +17762,9 @@ textarea.t-input {
 
 #t-rewrite-live-overlay .t-rewrite-live-history-list { max-height: min(28vh, 260px); overflow: auto; display: grid; gap: 8px; padding-right: 2px; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-item { border: 1px solid var(--t-color-border-subtle); border-radius: 9px; background: rgba(8, 13, 20, 0.82); padding: 8px; cursor: pointer; transition: border-color 0.16s ease, background 0.16s ease; }
+#t-rewrite-live-overlay .t-rewrite-live-history-item { border: 1px solid var(--t-color-border-subtle); border-radius: 9px; background: var(--t-glass-card); padding: 8px; cursor: pointer; transition: border-color 0.16s ease, background 0.16s ease; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-item:hover { border-color: var(--t-color-accent-border-strong); background: rgba(18, 29, 43, 0.72); }
+#t-rewrite-live-overlay .t-rewrite-live-history-item:hover { border-color: var(--t-color-accent-border-strong); background: var(--t-glass-row-head); }
 
 #t-rewrite-live-overlay .t-rewrite-live-history-item.active { border-color: rgba(122, 203, 159, 0.48); background: linear-gradient(180deg, rgba(24, 68, 51, 0.3) 0%, rgba(14, 22, 18, 0.72) 100%); }
 
@@ -17795,7 +17801,7 @@ textarea.t-input {
 
 #t-rewrite-overlay .t-rewrite-diff-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-#t-rewrite-overlay .t-rewrite-diff-cell { border: 1px solid var(--t-color-border-subtle); border-radius: 8px; padding: 10px; background: rgba(8, 13, 20, 0.8); }
+#t-rewrite-overlay .t-rewrite-diff-cell { border: 1px solid var(--t-color-border-subtle); border-radius: 8px; padding: 10px; background: var(--t-glass-card); }
 
 #t-rewrite-overlay .t-rewrite-diff-before { border-color: rgba(224, 136, 136, 0.35); background: linear-gradient(180deg, rgba(78, 26, 31, 0.4) 0%, rgba(26, 16, 18, 0.74) 100%); }
 
@@ -17892,7 +17898,7 @@ textarea.t-input {
 
 #t-rewrite-settings-overlay .t-rewrite-cat-field label { font-size: 0.8em; color: var(--t-glass-text-tertiary); font-weight: 600; }
 
-#t-rewrite-settings-overlay .t-rewrite-cat-field textarea { resize: vertical; min-height: 38px; font-size: 0.84em; background: rgba(15, 18, 25, 0.6); }
+#t-rewrite-settings-overlay .t-rewrite-cat-field textarea { resize: vertical; min-height: 38px; font-size: 0.84em; background: var(--t-glass-row); }
 
 #t-rewrite-settings-overlay .t-rewrite-cat-field-hint { font-size: 0.76em; color: #6a8090; font-weight: 400; }
 
@@ -43428,9 +43434,250 @@ init_continuationStore();
 import { extension_settings as extension_settings2 } from "../../../extensions.js";
 import { saveSettingsDebounced as saveSettingsDebounced2, eventSource as eventSource5, event_types as event_types5 } from "../../../../script.js";
 
+// src/core/favsStore.js
+init_helpers();
+init_storage();
+init_logger();
+import { getRequestHeaders } from "../../../../script.js";
+var FAV_FILE_PREFIX = "titania_fav_";
+var FAV_BODY_VERSION = 1;
+var BASE64_CHUNK = 32768;
+function utf8ToBase64(text) {
+  const bytes = new TextEncoder().encode(String(text ?? ""));
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += BASE64_CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + BASE64_CHUNK));
+  }
+  return btoa(binary);
+}
+function utf8ByteLength(text) {
+  return new TextEncoder().encode(String(text ?? "")).length;
+}
+function favFileName(id3) {
+  const safeId = String(id3 ?? "").replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!safeId) throw new Error(`\u6536\u85CF ID \u975E\u6CD5\uFF0C\u65E0\u6CD5\u751F\u6210\u6587\u4EF6\u540D\uFF1A${JSON.stringify(id3)}`);
+  return `${FAV_FILE_PREFIX}${safeId}.json`;
+}
+async function uploadTextFile(fileName, text) {
+  const response = await fetch("/api/files/upload", {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name: fileName, data: utf8ToBase64(text) })
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`\u4E0A\u4F20 ${fileName} \u5931\u8D25\uFF08${response.status}\uFF09${detail ? `\uFF1A${detail}` : ""}`);
+  }
+  const payload = await response.json();
+  const filePath = String(payload?.path || "").trim();
+  if (!filePath) throw new Error(`\u4E0A\u4F20 ${fileName} \u540E\u670D\u52A1\u7AEF\u672A\u8FD4\u56DE\u8DEF\u5F84`);
+  return filePath;
+}
+async function fetchTextFile(filePath, rev = 0) {
+  const url = rev > 0 ? `${filePath}?rev=${encodeURIComponent(rev)}` : filePath;
+  const response = await fetch(url, {
+    method: "GET",
+    cache: "no-cache",
+    headers: getRequestHeaders()
+  });
+  if (!response.ok) {
+    throw new Error(`\u8BFB\u53D6 ${filePath} \u5931\u8D25\uFF08${response.status}\uFF09`);
+  }
+  return response.text();
+}
+async function verifyFavFiles(filePaths) {
+  const urls = (Array.isArray(filePaths) ? filePaths : []).map((p) => String(p || "")).filter(Boolean);
+  if (urls.length === 0) return {};
+  const response = await fetch("/api/files/verify", {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ urls })
+  });
+  if (!response.ok) {
+    throw new Error(`\u6821\u9A8C\u6536\u85CF\u6587\u4EF6\u5931\u8D25\uFF08${response.status}\uFF09`);
+  }
+  return await response.json();
+}
+function buildFavBody(fav) {
+  const type = fav?.type === "chain" ? "chain" : "plain";
+  const body = { v: FAV_BODY_VERSION, id: fav?.id, type };
+  if (type === "chain") {
+    const items = Array.isArray(fav?.items) ? fav.items : [];
+    const rebuildable = items.length > 0 && items.every((seg) => String(seg?.html || "").trim());
+    body.items = items;
+    if (!rebuildable) body.html = String(fav?.html || "");
+  } else {
+    body.html = String(fav?.html || "");
+  }
+  return body;
+}
+function resolveFavMeta(fav) {
+  if (fav?.charName) {
+    const title = String(fav?.title || "");
+    return {
+      char: String(fav.charName),
+      script: String(fav.scriptName || title.split(" - ")[0] || title)
+    };
+  }
+  return parseMeta(String(fav?.title || ""));
+}
+var VOID_RESOURCE_TAG_RE = /<(?:img|link|input|source|track|embed|base)\b(?:"[^"]*"|'[^']*'|[^>])*>/gi;
+function stripVoidResourceTags(html) {
+  return String(html || "").replace(VOID_RESOURCE_TAG_RE, "");
+}
+function computeSnippetText(fav) {
+  const isChain = fav?.type === "chain";
+  const items = Array.isArray(fav?.items) ? fav.items : [];
+  const chainSource = isChain ? items.map((seg) => String(seg?.html || "").trim()).filter(Boolean).join("\n") : "";
+  const source = isChain ? chainSource || String(fav?.html || "") : String(fav?.html || "");
+  return getSnippet(stripVoidResourceTags(source));
+}
+function computeInstructionText(fav) {
+  if (fav?.type !== "chain" || !Array.isArray(fav?.items)) return "";
+  return fav.items.map((seg) => String(seg?.instruction || "").trim()).filter(Boolean).join(" ");
+}
+function buildFavIndexEntry(fav, pointer = {}) {
+  const meta = resolveFavMeta(fav);
+  return {
+    id: fav?.id,
+    type: fav?.type === "chain" ? "chain" : "plain",
+    title: String(fav?.title || ""),
+    charName: meta.char,
+    scriptName: meta.script,
+    scriptId: String(fav?.scriptId || ""),
+    date: String(fav?.date || ""),
+    avatar: String(fav?.avatar || ""),
+    branchKey: String(fav?.branchKey || ""),
+    chainSignature: String(fav?.chainSignature || ""),
+    itemCount: Array.isArray(fav?.items) ? fav.items.length : 0,
+    snippetText: computeSnippetText(fav),
+    instructionText: computeInstructionText(fav),
+    file: String(pointer.file || ""),
+    rev: Number(pointer.rev) || 1,
+    bytes: Number(pointer.bytes) || 0
+  };
+}
+async function writeFavBody(fav, rev = 1) {
+  const body = buildFavBody(fav);
+  const text = JSON.stringify(body);
+  const file = await uploadTextFile(favFileName(fav?.id), text);
+  return { file, bytes: utf8ByteLength(text), rev: Number(rev) || 1, text };
+}
+async function readFavBody(indexEntry) {
+  const filePath = String(indexEntry?.file || "").trim();
+  if (!filePath) throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u7D22\u5F15\u91CC\u6CA1\u6709\u6587\u4EF6\u8DEF\u5F84`);
+  const raw = await fetchTextFile(filePath, Number(indexEntry?.rev) || 0);
+  let body;
+  try {
+    body = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u6B63\u6587\u6587\u4EF6\u4E0D\u662F\u5408\u6CD5 JSON\uFF1A${filePath}`);
+  }
+  if (Number(body?.v) !== FAV_BODY_VERSION) {
+    throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u6B63\u6587\u7248\u672C\u4E0D\u53D7\u652F\u6301\uFF1A${body?.v}`);
+  }
+  if (String(body?.id) !== String(indexEntry?.id)) {
+    throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u6B63\u6587\u6587\u4EF6 id \u4E0D\u5339\u914D\uFF08\u6587\u4EF6\u91CC\u662F ${body?.id}\uFF09`);
+  }
+  return body;
+}
+function describeCurrentFavsFootprint() {
+  const data = getExtData();
+  const favs = Array.isArray(data.favs) ? data.favs : [];
+  const bytes = utf8ByteLength(JSON.stringify(favs));
+  const chainCount = favs.filter((f) => f?.type === "chain").length;
+  return {
+    count: favs.length,
+    chainCount,
+    plainCount: favs.length - chainCount,
+    bytes
+  };
+}
+function pickReadbackSample(records) {
+  if (records.length === 0) return [];
+  const byBytes = [...records].sort((a, b) => a.written.bytes - b.written.bytes);
+  const chains = records.filter((r) => r.fav?.type === "chain").slice(0, 3);
+  const picked = /* @__PURE__ */ new Map();
+  const take = (record) => {
+    if (record) picked.set(String(record.fav?.id), record);
+  };
+  take(byBytes[byBytes.length - 1]);
+  take(byBytes[0]);
+  take(records[0]);
+  take(records[records.length - 1]);
+  chains.forEach(take);
+  return [...picked.values()];
+}
+async function dryRunFavsMigration(options = {}) {
+  const startedAt = Date.now();
+  const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+  const data = getExtData();
+  const favs = Array.isArray(data.favs) ? data.favs : [];
+  const footprint = describeCurrentFavsFootprint();
+  const records = [];
+  const failures = [];
+  for (let i = 0; i < favs.length; i++) {
+    const fav = favs[i];
+    try {
+      const written = await writeFavBody(fav, 1);
+      records.push({ fav, written });
+    } catch (e) {
+      failures.push({ id: fav?.id, title: String(fav?.title || ""), error: e?.message || String(e) });
+      TitaniaLogger.error(`\u8BD5\u8FD0\u884C\uFF1A\u6536\u85CF ${fav?.id} \u5199\u5165\u5931\u8D25`, e);
+    }
+    if (onProgress) onProgress(i + 1, favs.length);
+  }
+  const index = records.map(({ fav, written }) => buildFavIndexEntry(fav, {
+    file: written.file,
+    rev: written.rev,
+    bytes: written.bytes
+  }));
+  let verifyResult = {};
+  let verifyError = null;
+  try {
+    verifyResult = await verifyFavFiles(index.map((entry) => entry.file));
+  } catch (e) {
+    verifyError = e?.message || String(e);
+    TitaniaLogger.error("\u8BD5\u8FD0\u884C\uFF1A\u6587\u4EF6\u6821\u9A8C\u8BF7\u6C42\u5931\u8D25", e);
+  }
+  const missing = Object.entries(verifyResult).filter(([, exists]) => !exists).map(([path]) => path);
+  const sample = pickReadbackSample(records);
+  const mismatched = [];
+  for (const record of sample) {
+    const entry = index.find((item) => String(item.id) === String(record.fav?.id));
+    try {
+      const body = await readFavBody(entry);
+      if (JSON.stringify(body) !== record.written.text) {
+        mismatched.push({ id: record.fav?.id, reason: "\u8BFB\u56DE\u7684\u5185\u5BB9\u4E0E\u5199\u51FA\u7684\u4E0D\u4E00\u81F4" });
+      }
+    } catch (e) {
+      mismatched.push({ id: record.fav?.id, reason: e?.message || String(e) });
+    }
+  }
+  const bytesList = records.map((r) => r.written.bytes);
+  const report = {
+    ok: failures.length === 0 && missing.length === 0 && mismatched.length === 0 && !verifyError,
+    durationMs: Date.now() - startedAt,
+    settings: footprint,
+    written: {
+      count: records.length,
+      bytesTotal: bytesList.reduce((sum, n) => sum + n, 0),
+      bytesMax: bytesList.length ? Math.max(...bytesList) : 0
+    },
+    indexBytes: utf8ByteLength(JSON.stringify(index)),
+    failures,
+    verify: { checked: Object.keys(verifyResult).length, missing, error: verifyError },
+    readback: { sampled: sample.length, mismatched },
+    // 迁移后 settings.json 里收藏一段的净变化：索引留下，正文搬走
+    projectedSavingBytes: footprint.bytes - utf8ByteLength(JSON.stringify(index))
+  };
+  TitaniaLogger.info("\u6536\u85CF\u642C\u5BB6\u8BD5\u8FD0\u884C\u5B8C\u6210", report);
+  return report;
+}
+
 // src/core/extensionUpdate.js
 init_defaults();
-import { getRequestHeaders } from "../../../../script.js";
+import { getRequestHeaders as getRequestHeaders2 } from "../../../../script.js";
 import { extensionTypes } from "../../../extensions.js";
 var EXTENSION_ID = "third-party/titania-theater";
 var EXTENSION_NAME = "titania-theater";
@@ -43489,7 +43736,7 @@ function getExtensionType() {
 async function updateExtension() {
   const response = await fetch("/api/extensions/update", {
     method: "POST",
-    headers: getRequestHeaders(),
+    headers: getRequestHeaders2(),
     body: JSON.stringify({
       extensionName: EXTENSION_NAME,
       global: getExtensionType() === "global"
@@ -44316,6 +44563,66 @@ function bindDrawerBackupControls() {
       if (window.toastr) toastr.error("\u5BFC\u5165\u5931\u8D25\uFF1A" + (err?.message || String(err)), "Titania Echo");
     } finally {
       $(this).val("");
+    }
+  });
+  bindFavsMigrationDryRun();
+}
+function formatBytes(bytes) {
+  const n = Number(bytes) || 0;
+  if (Math.abs(n) >= 1048576) return `${(n / 1048576).toFixed(2)} MB`;
+  if (Math.abs(n) >= 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${n} B`;
+}
+function bindFavsMigrationDryRun() {
+  const $btn = $("#titania-favs-migrate-dryrun");
+  if ($btn.length === 0) return;
+  const reportId = "titania-favs-migrate-report";
+  const showReport = (html, tone) => {
+    let $report = $(`#${reportId}`);
+    if ($report.length === 0) {
+      $report = $(`<div class="titania-backup-desc" id="${reportId}"></div>`);
+      $btn.closest(".titania-panel-card").append($report);
+    }
+    $report.html(`<span style="color:${tone};">${html}</span>`);
+  };
+  $btn.off("click").on("click", async function() {
+    const $self = $(this);
+    const oldHtml = $self.html();
+    $self.prop("disabled", true);
+    try {
+      const report = await dryRunFavsMigration({
+        onProgress: (done, total) => {
+          $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> \u5199\u5165\u4E2D ${done}/${total}`);
+        }
+      });
+      const lines = [
+        `\u6536\u85CF ${report.settings.count} \u6761\uFF08\u5206\u7EC4 ${report.settings.chainCount} / \u666E\u901A ${report.settings.plainCount}\uFF09\uFF0C\u5F53\u524D\u5728 settings.json \u91CC\u5360 ${formatBytes(report.settings.bytes)}`,
+        `\u5DF2\u5199\u51FA ${report.written.count} \u4E2A\u6B63\u6587\u6587\u4EF6\uFF0C\u5171 ${formatBytes(report.written.bytesTotal)}\uFF0C\u6700\u5927\u5355\u4E2A ${formatBytes(report.written.bytesMax)}`,
+        `\u7D22\u5F15\u5927\u5C0F ${formatBytes(report.indexBytes)} \u2014\u2014 \u6B63\u5F0F\u642C\u5BB6\u540E settings.json \u53EF\u51CF\u5C11\u7EA6 <b>${formatBytes(report.projectedSavingBytes)}</b>`,
+        `\u843D\u76D8\u6821\u9A8C\uFF1A${report.verify.checked} \u4E2A\u5DF2\u786E\u8BA4` + (report.verify.missing.length ? `\uFF0C<b>\u7F3A\u5931 ${report.verify.missing.length} \u4E2A</b>` : "\uFF0C\u65E0\u7F3A\u5931") + (report.verify.error ? `\uFF0C\u6821\u9A8C\u8BF7\u6C42\u51FA\u9519\uFF1A${report.verify.error}` : ""),
+        `\u62BD\u6837\u56DE\u8BFB\u6BD4\u5BF9\uFF1A${report.readback.sampled} \u6761` + (report.readback.mismatched.length ? `\uFF0C<b>\u4E0D\u4E00\u81F4 ${report.readback.mismatched.length} \u6761</b>` : "\uFF0C\u5168\u90E8\u4E00\u81F4"),
+        `\u8017\u65F6 ${(report.durationMs / 1e3).toFixed(1)} \u79D2`
+      ];
+      if (report.failures.length) {
+        lines.push(`<b>\u5199\u5165\u5931\u8D25 ${report.failures.length} \u6761</b>\uFF1A` + report.failures.slice(0, 3).map((f) => `${f.id}\uFF08${f.error}\uFF09`).join("\uFF1B") + (report.failures.length > 3 ? " \u2026" : ""));
+      }
+      const tone = report.ok ? "#55efc4" : "#ff7675";
+      const head = report.ok ? "\u2705 \u8BD5\u8FD0\u884C\u901A\u8FC7\uFF0C\u672A\u6539\u52A8\u4EFB\u4F55\u73B0\u6709\u6570\u636E" : "\u26A0\uFE0F \u8BD5\u8FD0\u884C\u53D1\u73B0\u95EE\u9898\uFF0C\u672A\u6539\u52A8\u4EFB\u4F55\u73B0\u6709\u6570\u636E";
+      showReport(`${head}<br>\xB7 ${lines.join("<br>\xB7 ")}`, tone);
+      console.log("[Titania] \u6536\u85CF\u642C\u5BB6\u8BD5\u8FD0\u884C\u62A5\u544A", report);
+      if (window.toastr) {
+        if (report.ok) {
+          toastr.success(`\u5DF2\u5199\u51FA ${report.written.count} \u4E2A\u6587\u4EF6\u5E76\u5168\u90E8\u6821\u9A8C\u901A\u8FC7\uFF0C\u53EF\u51CF\u5C11\u7EA6 ${formatBytes(report.projectedSavingBytes)}`, "Titania Echo");
+        } else {
+          toastr.warning("\u8BD5\u8FD0\u884C\u53D1\u73B0\u95EE\u9898\uFF0C\u8BE6\u60C5\u89C1\u8BBE\u7F6E\u9875\u4E0E\u63A7\u5236\u53F0", "Titania Echo");
+        }
+      }
+    } catch (e) {
+      console.error("Titania: \u6536\u85CF\u642C\u5BB6\u8BD5\u8FD0\u884C\u5931\u8D25", e);
+      showReport(`\u274C \u8BD5\u8FD0\u884C\u5931\u8D25\uFF1A${e?.message || String(e)}\uFF08\u672A\u6539\u52A8\u4EFB\u4F55\u73B0\u6709\u6570\u636E\uFF09`, "#ff7675");
+      if (window.toastr) toastr.error(e?.message || "\u8BD5\u8FD0\u884C\u5931\u8D25", "Titania Echo");
+    } finally {
+      $self.prop("disabled", false).html(oldHtml);
     }
   });
 }

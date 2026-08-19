@@ -1,0 +1,474 @@
+// src/core/favsStore.js
+//
+// 收藏存储：正文一条一个文件，settings.json 里只留索引。
+//
+// 为什么要有这个模块
+// ------------------
+// ST 的 saveSettings() 每次都把「整个」设置对象序列化后整文件覆写
+// （public/script.js:7505 → src/endpoints/settings.js:205 是同步的 writeFileAtomicSync）。
+// 收藏正文塞在 extension_settings 里，就意味着改任何一个开关都要连带重抄一遍全部收藏：
+// 实测 176 条收藏时 settings.json 达 11.2 MB，其中 7.36 MB 是收藏正文，
+// 客户端每次保存同步阻塞 15.8 ms，服务端同步写盘阻塞 35–60 ms。
+// 把正文移到独立文件后，新增一条收藏的写入量与「已有多少条收藏」无关。
+//
+// 文件落点：<user>/user/files/titania_fav_<id>.json
+//   - 该目录是 ST 的 USER_DIRECTORY_TEMPLATE 成员（src/constants.js:43），
+//     每次启动由 ensurePublicDirectoriesExist() 保证存在（src/users.js:109）。
+//   - 写盘由 ST 服务端进程完成，浏览器不直接碰文件系统，
+//     因此与移动端的存储授权无关（详见 CONTRIBUTING 之外的方案讨论记录）。
+//   - 读取路径 /user/files/* 由 src/users.js:1081 映射到该目录。
+//
+// 本文件当前只被「试运行搬家」按钮调用，尚未接入收藏夹的读写路径。
+
+import { getRequestHeaders } from "../../../../script.js";
+import { getSnippet, parseMeta } from "../utils/helpers.js";
+import { getExtData } from "../utils/storage.js";
+import { TitaniaLogger } from "./logger.js";
+
+/** 正文文件名前缀。与 8 月遗留的同名文件保持一致，便于对照校验 */
+const FAV_FILE_PREFIX = "titania_fav_";
+
+/** 正文文件的结构版本。读取时不匹配要显式报错，而不是静默当空内容 */
+const FAV_BODY_VERSION = 1;
+
+/** 索引在 extension_settings 里的键名。
+ *  刻意不复用 8 月遗留的 favs_meta —— 那份索引停留在迁移当天的快照
+ *  （171 条，缺后来新增的 6 条、含 1 条已删除的残留），
+ *  复用它会让过期数据被误判为有效索引。favs_meta 的清理留到后续提交，
+ *  在那之前它还是定位残留文件的唯一线索。*/
+export const FAVS_INDEX_KEY = "favs_index";
+
+/** base64 分块大小。String.fromCharCode.apply 对十万级参数会爆栈，
+ *  而实测单条收藏正文最大已达 127 KB */
+const BASE64_CHUNK = 0x8000;
+
+/* ------------------------------------------------------------------ *
+ * 编解码
+ * ------------------------------------------------------------------ */
+
+function utf8ToBase64(text) {
+    const bytes = new TextEncoder().encode(String(text ?? ""));
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += BASE64_CHUNK) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + BASE64_CHUNK));
+    }
+    return btoa(binary);
+}
+
+function utf8ByteLength(text) {
+    return new TextEncoder().encode(String(text ?? "")).length;
+}
+
+/**
+ * 生成正文文件名。
+ * ST 的 validateAssetFileName 只放行 /^[a-zA-Z0-9_\-.]+$/，
+ * 所以 id 里任何其它字符都要先剔掉；剔空则视为非法 id。
+ * @param {string|number} id
+ * @returns {string}
+ */
+export function favFileName(id) {
+    const safeId = String(id ?? "").replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!safeId) throw new Error(`收藏 ID 非法，无法生成文件名：${JSON.stringify(id)}`);
+    return `${FAV_FILE_PREFIX}${safeId}.json`;
+}
+
+/* ------------------------------------------------------------------ *
+ * 服务端文件读写
+ * ------------------------------------------------------------------ */
+
+/**
+ * 上传一个文本文件到 <user>/user/files/。
+ * @param {string} fileName
+ * @param {string} text
+ * @returns {Promise<string>} 服务端返回的相对路径，形如 /user/files/xxx.json
+ */
+async function uploadTextFile(fileName, text) {
+    const response = await fetch("/api/files/upload", {
+        method: "POST",
+        headers: getRequestHeaders(),
+        body: JSON.stringify({ name: fileName, data: utf8ToBase64(text) })
+    });
+
+    if (!response.ok) {
+        const detail = await response.text().catch(() => "");
+        throw new Error(`上传 ${fileName} 失败（${response.status}）${detail ? `：${detail}` : ""}`);
+    }
+
+    const payload = await response.json();
+    const filePath = String(payload?.path || "").trim();
+    if (!filePath) throw new Error(`上传 ${fileName} 后服务端未返回路径`);
+    return filePath;
+}
+
+/**
+ * 读取一个正文文件。
+ *
+ * 缓存处理：/user/files/* 走 res.sendFile，带 ETag/Last-Modified 但没有显式
+ * Cache-Control，浏览器会按启发式规则判定新鲜度。ST 自带的 getFileAttachment()
+ * 用的是 cache:"force-cache"，那会在启发式新鲜期内直接吃旧内容 ——
+ * 收藏被编辑过就会读到改之前的正文。这里改用 no-cache（仍能走 304）
+ * 并额外挂 rev 查询串，双重保证拿到的是当前版本。
+ *
+ * @param {string} filePath /user/files/xxx.json
+ * @param {number} [rev]
+ * @returns {Promise<string>}
+ */
+async function fetchTextFile(filePath, rev = 0) {
+    const url = rev > 0 ? `${filePath}?rev=${encodeURIComponent(rev)}` : filePath;
+    const response = await fetch(url, {
+        method: "GET",
+        cache: "no-cache",
+        headers: getRequestHeaders()
+    });
+
+    if (!response.ok) {
+        throw new Error(`读取 ${filePath} 失败（${response.status}）`);
+    }
+    return response.text();
+}
+
+/**
+ * 删除一个正文文件。
+ * @param {string} filePath
+ * @returns {Promise<boolean>} 文件已不存在也算成功
+ */
+export async function deleteFavFile(filePath) {
+    const target = String(filePath || "").trim();
+    if (!target) return false;
+
+    const response = await fetch("/api/files/delete", {
+        method: "POST",
+        headers: getRequestHeaders(),
+        body: JSON.stringify({ path: target })
+    });
+
+    if (response.status === 404) return true;
+    if (!response.ok) {
+        TitaniaLogger.warn(`删除收藏文件失败（${response.status}）：${target}`);
+        return false;
+    }
+    return true;
+}
+
+/**
+ * 批量确认文件是否真的存在于磁盘上。
+ * 这是「写完回头检查」的唯一手段：上传接口返回 200 只说明请求被接受了。
+ * @param {string[]} filePaths
+ * @returns {Promise<Record<string, boolean>>}
+ */
+export async function verifyFavFiles(filePaths) {
+    const urls = (Array.isArray(filePaths) ? filePaths : []).map(p => String(p || "")).filter(Boolean);
+    if (urls.length === 0) return {};
+
+    const response = await fetch("/api/files/verify", {
+        method: "POST",
+        headers: getRequestHeaders(),
+        body: JSON.stringify({ urls })
+    });
+
+    if (!response.ok) {
+        throw new Error(`校验收藏文件失败（${response.status}）`);
+    }
+    return await response.json();
+}
+
+/* ------------------------------------------------------------------ *
+ * 正文与索引的结构
+ * ------------------------------------------------------------------ */
+
+/**
+ * 组装正文文件的内容。
+ *
+ * 分组（chain）收藏：只存 items，不存合并后的 html。
+ * 依据是 favsWindow.js 的 getChainDisplayHtml() 一律优先按 items 重建，
+ * 已存的 html 只在 items 缺失时才会被读到 —— 实测 22 条 chain 收藏
+ * 的 items 全部完整，那 1.298 MB 的 html 当前没有任何代码路径会读。
+ * 但 items 不完整时必须把 html 一起留下，否则正文就真没了。
+ *
+ * @param {object} fav
+ * @returns {object}
+ */
+export function buildFavBody(fav) {
+    const type = fav?.type === "chain" ? "chain" : "plain";
+    const body = { v: FAV_BODY_VERSION, id: fav?.id, type };
+
+    if (type === "chain") {
+        const items = Array.isArray(fav?.items) ? fav.items : [];
+        const rebuildable = items.length > 0 && items.every(seg => String(seg?.html || "").trim());
+        body.items = items;
+        if (!rebuildable) body.html = String(fav?.html || "");
+    } else {
+        body.html = String(fav?.html || "");
+    }
+
+    return body;
+}
+
+/** 与 favsWindow.js 建 charIndex 时的口径保持一致：优先独立字段，退回从标题解析 */
+function resolveFavMeta(fav) {
+    if (fav?.charName) {
+        const title = String(fav?.title || "");
+        return {
+            char: String(fav.charName),
+            script: String(fav.scriptName || title.split(" - ")[0] || title)
+        };
+    }
+    return parseMeta(String(fav?.title || ""));
+}
+
+/**
+ * 剥掉会触发资源加载的**空元素**，再交给 getSnippet。
+ *
+ * 为什么必须剥：getSnippet 内部是 `div.innerHTML = html`，浏览器即使对游离节点
+ * 也会真的去拉 <img src>。实测收藏正文里有 126 个外链 <img>，
+ * 一次全量迁移会凭空向第三方发出 126 个请求。
+ *
+ * 为什么摘要文本不会因此改变：这里只剥 HTML 规范定义的空元素 —— 解析器不给它们
+ * 任何子节点，所以它们对 textContent 的贡献恒为空，剥掉前后 textContent 完全相同
+ * （替换成空串而非空格，否则 `a<img>b` 会从 "ab" 变成 "a b"）。
+ *
+ * 为什么刻意不剥 <script>：script 的内容**算进** textContent，剥掉会真的改变摘要，
+ * 进而改变搜索命中结果。innerHTML 本身不执行 script，所以留着没有安全问题。
+ *
+ * 属性值里可能出现 `>`，所以正则要跳过引号包裹的片段。
+ */
+const VOID_RESOURCE_TAG_RE = /<(?:img|link|input|source|track|embed|base)\b(?:"[^"]*"|'[^']*'|[^>])*>/gi;
+
+function stripVoidResourceTags(html) {
+    return String(html || "").replace(VOID_RESOURCE_TAG_RE, "");
+}
+
+/** 卡片摘要只取正文，不混入生成指令 —— 与 favsWindow.js 的 getCachedSnippet 同口径 */
+function computeSnippetText(fav) {
+    const isChain = fav?.type === "chain";
+    const items = Array.isArray(fav?.items) ? fav.items : [];
+    const chainSource = isChain
+        ? items.map(seg => String(seg?.html || "").trim()).filter(Boolean).join("\n")
+        : "";
+    const source = isChain ? (chainSource || String(fav?.html || "")) : String(fav?.html || "");
+    return getSnippet(stripVoidResourceTags(source));
+}
+
+/** 指令文本不进摘要，但要能被搜索命中 —— 与 favsWindow.js 的 getChainInstructionText 同口径 */
+function computeInstructionText(fav) {
+    if (fav?.type !== "chain" || !Array.isArray(fav?.items)) return "";
+    return fav.items
+        .map(seg => String(seg?.instruction || "").trim())
+        .filter(Boolean)
+        .join(" ");
+}
+
+/**
+ * 组装索引条目。
+ * 必须自带收藏夹「列表 / 搜索 / 筛选 / 去重 / 删除」所需的全部字段，
+ * 否则那些操作就得回头去读正文文件，等于白搬。
+ * 对应 favsWindow.js 的 getCachedSearchText（title / script / char / snippet / instruction）
+ * 与 charIndex、chainSignature 去重。
+ *
+ * @param {object} fav
+ * @param {{file?: string, rev?: number, bytes?: number}} [pointer]
+ * @returns {object}
+ */
+export function buildFavIndexEntry(fav, pointer = {}) {
+    const meta = resolveFavMeta(fav);
+    return {
+        id: fav?.id,
+        type: fav?.type === "chain" ? "chain" : "plain",
+        title: String(fav?.title || ""),
+        charName: meta.char,
+        scriptName: meta.script,
+        scriptId: String(fav?.scriptId || ""),
+        date: String(fav?.date || ""),
+        avatar: String(fav?.avatar || ""),
+        branchKey: String(fav?.branchKey || ""),
+        chainSignature: String(fav?.chainSignature || ""),
+        itemCount: Array.isArray(fav?.items) ? fav.items.length : 0,
+        snippetText: computeSnippetText(fav),
+        instructionText: computeInstructionText(fav),
+        file: String(pointer.file || ""),
+        rev: Number(pointer.rev) || 1,
+        bytes: Number(pointer.bytes) || 0
+    };
+}
+
+/**
+ * 把一条收藏的正文写成文件。
+ * @param {object} fav
+ * @param {number} [rev] 版本号，用于读取时破缓存
+ * @returns {Promise<{file: string, bytes: number, rev: number, text: string}>}
+ */
+export async function writeFavBody(fav, rev = 1) {
+    const body = buildFavBody(fav);
+    const text = JSON.stringify(body);
+    const file = await uploadTextFile(favFileName(fav?.id), text);
+    return { file, bytes: utf8ByteLength(text), rev: Number(rev) || 1, text };
+}
+
+/**
+ * 按索引条目读回正文。
+ * 会核对文件里的 id / 版本，读到张冠李戴的内容要立刻报错而不是照样渲染。
+ * @param {object} indexEntry
+ * @returns {Promise<object>}
+ */
+export async function readFavBody(indexEntry) {
+    const filePath = String(indexEntry?.file || "").trim();
+    if (!filePath) throw new Error(`收藏 ${indexEntry?.id} 的索引里没有文件路径`);
+
+    const raw = await fetchTextFile(filePath, Number(indexEntry?.rev) || 0);
+
+    let body;
+    try {
+        body = JSON.parse(raw);
+    } catch (e) {
+        throw new Error(`收藏 ${indexEntry?.id} 的正文文件不是合法 JSON：${filePath}`);
+    }
+
+    if (Number(body?.v) !== FAV_BODY_VERSION) {
+        throw new Error(`收藏 ${indexEntry?.id} 的正文版本不受支持：${body?.v}`);
+    }
+    if (String(body?.id) !== String(indexEntry?.id)) {
+        throw new Error(`收藏 ${indexEntry?.id} 的正文文件 id 不匹配（文件里是 ${body?.id}）`);
+    }
+
+    return body;
+}
+
+/* ------------------------------------------------------------------ *
+ * 试运行搬家
+ * ------------------------------------------------------------------ */
+
+/** 报告当前收藏在 settings.json 里的占用，用于试运行前后对比 */
+export function describeCurrentFavsFootprint() {
+    const data = getExtData();
+    const favs = Array.isArray(data.favs) ? data.favs : [];
+    const bytes = utf8ByteLength(JSON.stringify(favs));
+    const chainCount = favs.filter(f => f?.type === "chain").length;
+    return {
+        count: favs.length,
+        chainCount,
+        plainCount: favs.length - chainCount,
+        bytes
+    };
+}
+
+/**
+ * 挑一批有代表性的收藏做「读回来逐字对比」。
+ * 全量回读要 N 次请求，对手机不友好；而只验证存在性证明不了内容写对了。
+ * 所以：最大的、最小的、首尾各一条、外加最多 3 条分组收藏。
+ * @param {Array<{fav: object, written: object}>} records
+ * @returns {Array<{fav: object, written: object}>}
+ */
+function pickReadbackSample(records) {
+    if (records.length === 0) return [];
+
+    const byBytes = [...records].sort((a, b) => a.written.bytes - b.written.bytes);
+    const chains = records.filter(r => r.fav?.type === "chain").slice(0, 3);
+
+    const picked = new Map();
+    const take = record => {
+        if (record) picked.set(String(record.fav?.id), record);
+    };
+
+    take(byBytes[byBytes.length - 1]);   // 最大的一条最容易暴露分块 / 截断问题
+    take(byBytes[0]);
+    take(records[0]);
+    take(records[records.length - 1]);
+    chains.forEach(take);
+
+    return [...picked.values()];
+}
+
+/**
+ * 试运行搬家：把正文写成文件并逐个校验，但**不改动 settings.json**。
+ *
+ * 做了什么：
+ *   1. 读当前 extData.favs，逐条写出正文文件
+ *   2. 在内存里组装索引（不写回设置）
+ *   3. 用 /api/files/verify 确认每个文件真的在磁盘上
+ *   4. 抽样把正文读回来逐字对比
+ *
+ * 没做什么：
+ *   - 不写 extData[FAVS_INDEX_KEY]
+ *   - 不删 extData.favs
+ *   - 不调用任何保存设置的函数
+ * 也就是说插件的行为完全不变，随时可以退回上个版本，磁盘上只多出一批文件。
+ *
+ * @param {{onProgress?: (done: number, total: number) => void}} [options]
+ * @returns {Promise<object>} 试运行报告
+ */
+export async function dryRunFavsMigration(options = {}) {
+    const startedAt = Date.now();
+    const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+
+    const data = getExtData();
+    const favs = Array.isArray(data.favs) ? data.favs : [];
+    const footprint = describeCurrentFavsFootprint();
+
+    const records = [];
+    const failures = [];
+
+    for (let i = 0; i < favs.length; i++) {
+        const fav = favs[i];
+        try {
+            const written = await writeFavBody(fav, 1);
+            records.push({ fav, written });
+        } catch (e) {
+            failures.push({ id: fav?.id, title: String(fav?.title || ""), error: e?.message || String(e) });
+            TitaniaLogger.error(`试运行：收藏 ${fav?.id} 写入失败`, e);
+        }
+        if (onProgress) onProgress(i + 1, favs.length);
+    }
+
+    const index = records.map(({ fav, written }) => buildFavIndexEntry(fav, {
+        file: written.file,
+        rev: written.rev,
+        bytes: written.bytes
+    }));
+
+    // 逐个确认落盘
+    let verifyResult = {};
+    let verifyError = null;
+    try {
+        verifyResult = await verifyFavFiles(index.map(entry => entry.file));
+    } catch (e) {
+        verifyError = e?.message || String(e);
+        TitaniaLogger.error("试运行：文件校验请求失败", e);
+    }
+    const missing = Object.entries(verifyResult).filter(([, exists]) => !exists).map(([path]) => path);
+
+    // 抽样回读并逐字对比
+    const sample = pickReadbackSample(records);
+    const mismatched = [];
+    for (const record of sample) {
+        const entry = index.find(item => String(item.id) === String(record.fav?.id));
+        try {
+            const body = await readFavBody(entry);
+            if (JSON.stringify(body) !== record.written.text) {
+                mismatched.push({ id: record.fav?.id, reason: "读回的内容与写出的不一致" });
+            }
+        } catch (e) {
+            mismatched.push({ id: record.fav?.id, reason: e?.message || String(e) });
+        }
+    }
+
+    const bytesList = records.map(r => r.written.bytes);
+    const report = {
+        ok: failures.length === 0 && missing.length === 0 && mismatched.length === 0 && !verifyError,
+        durationMs: Date.now() - startedAt,
+        settings: footprint,
+        written: {
+            count: records.length,
+            bytesTotal: bytesList.reduce((sum, n) => sum + n, 0),
+            bytesMax: bytesList.length ? Math.max(...bytesList) : 0
+        },
+        indexBytes: utf8ByteLength(JSON.stringify(index)),
+        failures,
+        verify: { checked: Object.keys(verifyResult).length, missing, error: verifyError },
+        readback: { sampled: sample.length, mismatched },
+        // 迁移后 settings.json 里收藏一段的净变化：索引留下，正文搬走
+        projectedSavingBytes: footprint.bytes - utf8ByteLength(JSON.stringify(index))
+    };
+
+    TitaniaLogger.info("收藏搬家试运行完成", report);
+    return report;
+}
