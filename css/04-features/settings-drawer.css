@@ -132,7 +132,7 @@
     box-sizing: border-box;
     overflow-y: auto;
     overscroll-behavior: contain;
-    background: rgba(5, 8, 12, 0.78);
+    background: var(--t-glass-card);
     backdrop-filter: blur(5px);
 }
 
@@ -146,7 +146,7 @@
     flex-direction: column;
     overflow: hidden;
     color: var(--t-color-text-soft);
-    background: #14191f;
+    background: var(--t-glass-body);
     border: 1px solid rgba(100, 220, 190, 0.35);
     border-radius: 14px;
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);

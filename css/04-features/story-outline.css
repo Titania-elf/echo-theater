@@ -7,7 +7,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: linear-gradient(180deg, rgba(12, 18, 24, 0.96), rgba(9, 14, 20, 0.96));
+    background: linear-gradient(180deg, var(--t-glass-body), var(--t-glass-body));
 }
 
 #t-outline-prompt-manager .t-outline-settings-dialog {
@@ -75,13 +75,13 @@
     padding: 4px 6px;
     border-radius: 10px;
     border: 1px solid rgba(131, 170, 196, 0.32);
-    background: linear-gradient(180deg, rgba(14, 22, 30, 0.92), rgba(10, 16, 22, 0.92));
+    background: linear-gradient(180deg, var(--t-glass-nav), var(--t-glass-field));
 }
 
 .t-outline-plan-name {
     border-radius: 8px;
     border: 1px solid rgba(168, 201, 224, 0.32);
-    background: rgba(8, 14, 20, 0.82);
+    background: var(--t-glass-card);
     color: var(--t-color-text);
     padding: 7px 12px;
     min-width: 210px;
@@ -90,7 +90,7 @@
 
 .t-outline-plan-name.is-readonly {
     border-color: transparent;
-    background: rgba(13, 20, 28, 0.75);
+    background: var(--t-glass-panel);
     color: var(--t-glass-text-bright);
 }
 
@@ -177,7 +177,7 @@
     padding: 8px;
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 18, 24, 0.96);
+    background: var(--t-glass-body);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.44);
     opacity: 0;
     transform: translateY(8px);
@@ -200,7 +200,7 @@
 .t-outline-scene-editor-page {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 16, 20, 0.7);
+    background: var(--t-glass-panel);
     padding: 10px;
     max-height: min(68vh, 700px);
     overflow: auto;
@@ -237,7 +237,7 @@
 .t-scene-page-card {
     border: 1px solid rgba(129, 236, 236, 0.24);
     border-radius: 8px;
-    background: rgba(12, 18, 24, 0.86);
+    background: var(--t-glass-card);
     padding: 8px;
     display: flex;
     flex-direction: column;
@@ -252,7 +252,7 @@
 .t-outline-plan-list {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 16, 20, 0.7);
+    background: var(--t-glass-panel);
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -267,7 +267,7 @@
 .t-hub-toolbar {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 16, 20, 0.7);
+    background: var(--t-glass-panel);
     padding: 8px;
     display: flex;
     gap: 8px;
@@ -296,7 +296,7 @@
 .t-plan-accordion-item {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 16, 20, 0.84);
+    background: var(--t-glass-card);
     overflow: hidden;
     flex-shrink: 0;
 }
@@ -312,7 +312,7 @@
     align-items: center;
     gap: 10px;
     padding: 10px;
-    background: rgba(16, 24, 32, 0.92);
+    background: var(--t-glass-nav);
     border-bottom: 1px solid var(--t-color-border-faint);
     cursor: pointer;
 }
@@ -354,7 +354,7 @@
     gap: 8px 12px;
     padding: 8px 10px 10px;
     border-top: 1px solid var(--t-color-surface-hover-subtle);
-    background: rgba(10, 16, 22, 0.55);
+    background: var(--t-glass-row);
 }
 
 .t-plan-source-note {
@@ -441,7 +441,7 @@
 .t-scene-hub-list {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 16, 20, 0.7);
+    background: var(--t-glass-panel);
     padding: 8px;
     display: grid;
     gap: 8px;
@@ -452,7 +452,7 @@
 .t-scene-hub-item {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 8px;
-    background: rgba(12, 18, 24, 0.8);
+    background: var(--t-glass-panel);
     padding: 8px;
     cursor: pointer;
 }
@@ -529,7 +529,7 @@
 .t-opening-picker-list {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(12, 18, 24, 0.75);
+    background: var(--t-glass-panel);
     max-height: min(62vh, 560px);
     overflow: auto;
     display: grid;
@@ -540,7 +540,7 @@
 .t-opening-picker-item {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 8px;
-    background: rgba(14, 21, 28, 0.86);
+    background: var(--t-glass-card);
     padding: 8px;
     cursor: pointer;
 }
@@ -572,7 +572,7 @@
 .t-opening-card {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
-    background: rgba(14, 21, 28, 0.9);
+    background: var(--t-glass-nav);
     padding: 10px;
     cursor: pointer;
     min-height: 140px;
@@ -623,7 +623,7 @@
     border: 1px solid var(--t-color-border-cool);
     border-radius: 8px;
     padding: 10px;
-    background: rgba(12, 18, 24, 0.7);
+    background: var(--t-glass-panel);
 }
 
 .t-plan-item-head {
@@ -651,7 +651,7 @@
     border: 1px dashed rgba(129, 236, 236, 0.35);
     border-radius: 8px;
     padding: 8px;
-    background: rgba(10, 16, 22, 0.65);
+    background: var(--t-glass-row-head);
 }
 
 .t-plan-scene.used {
@@ -676,7 +676,7 @@
 }
 
 .t-outline-top {
-    background: rgba(20, 24, 28, 0.75);
+    background: var(--t-glass-panel);
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     padding: 12px;
@@ -694,7 +694,7 @@
     resize: vertical;
     border-radius: 8px;
     border: 1px solid rgba(116, 185, 255, 0.35);
-    background: rgba(8, 12, 16, 0.75);
+    background: var(--t-glass-panel);
     color: var(--t-color-text);
     padding: 10px;
     box-sizing: border-box;
@@ -729,7 +729,7 @@
     min-height: 40px;
     border-radius: 12px;
     border: 1px solid rgba(154, 192, 216, 0.42);
-    background: linear-gradient(180deg, rgba(30, 45, 58, 0.92), rgba(23, 36, 49, 0.92));
+    background: linear-gradient(180deg, rgba(30, 45, 58, 0.92), var(--t-glass-nav));
     color: var(--t-glass-text-bright);
 }
 
@@ -771,7 +771,7 @@
 .t-outline-select {
     border-radius: 6px;
     border: 1px solid var(--t-color-border-glass);
-    background: rgba(10, 14, 18, 0.75);
+    background: var(--t-glass-panel);
     color: var(--t-color-text);
     padding: 6px 8px;
 }
@@ -780,7 +780,7 @@
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     overflow: auto;
-    background: rgba(12, 16, 20, 0.7);
+    background: var(--t-glass-panel);
     max-height: min(55vh, 560px);
 }
 
@@ -820,7 +820,7 @@
 }
 
 .t-outline-table th {
-    background: rgba(31, 44, 58, 0.75);
+    background: var(--t-glass-row-hover);
     color: var(--t-glass-text-bright);
     font-weight: 600;
     text-align: left;
@@ -859,7 +859,7 @@
     width: 100%;
     border-radius: 6px;
     border: 1px solid var(--t-color-border-glass);
-    background: rgba(10, 14, 18, 0.72);
+    background: var(--t-glass-panel);
     color: var(--t-color-text);
     box-sizing: border-box;
     padding: 8px;
@@ -881,7 +881,7 @@
     border: 1px dashed rgba(129, 236, 236, 0.32);
     border-radius: 8px;
     padding: 10px;
-    background: rgba(10, 16, 22, 0.66);
+    background: var(--t-glass-panel);
 }
 
 .t-outline-scene-header {
@@ -913,7 +913,7 @@
     text-align: left;
     font-weight: 600;
     color: var(--t-glass-text-bright);
-    background: rgba(20, 34, 47, 0.68);
+    background: var(--t-glass-row-head);
 }
 
 .t-scene-col-index {
@@ -933,7 +933,7 @@
     margin: 0;
     max-height: 56vh;
     overflow: auto;
-    background: #0d141d;
+    background: var(--t-glass-body);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     color: var(--t-glass-text-bright);
@@ -949,7 +949,7 @@
     min-height: 320px;
     max-height: 56vh;
     resize: vertical;
-    background: #0d141d;
+    background: var(--t-glass-body);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     color: var(--t-glass-text-bright);
@@ -1013,7 +1013,7 @@
     max-height: 84vh;
     border: 1px solid var(--t-color-border-cool);
     border-radius: 12px;
-    background: rgba(12, 18, 24, 0.96);
+    background: var(--t-glass-body);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
     z-index: 20030;
     display: none;
@@ -1339,7 +1339,7 @@
     .t-outline-mobile-card {
         border: 1px solid var(--t-color-border-cool);
         border-radius: 10px;
-        background: rgba(12, 16, 20, 0.82);
+        background: var(--t-glass-card);
         padding: 10px;
     }
 
@@ -1382,7 +1382,7 @@
         right: 0;
         bottom: 0;
         z-index: 20020;
-        background: rgba(15, 20, 26, 0.98);
+        background: var(--t-glass-body);
         border-top: 1px solid var(--t-color-border-cool);
         box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.45);
         transition: transform 0.22s ease, visibility 0.22s ease;
@@ -1416,7 +1416,7 @@
         gap: 6px;
         padding: 8px 12px;
         border-bottom: 1px solid var(--t-color-border-faint);
-        background: rgba(11, 15, 20, 0.88);
+        background: var(--t-glass-card);
     }
 
     .t-mobile-editor-tabs .t-btn {
@@ -1444,7 +1444,7 @@
         gap: 6px;
         padding: 10px 12px 12px;
         border-top: 1px solid var(--t-color-border-subtle);
-        background: rgba(11, 15, 20, 0.94);
+        background: var(--t-glass-field);
     }
 
     .t-outline-mobile-drawer-actions .t-btn {
@@ -1480,7 +1480,7 @@
     .t-mobile-scene-card {
         border: 1px solid rgba(129, 236, 236, 0.24);
         border-radius: 8px;
-        background: rgba(12, 18, 24, 0.86);
+        background: var(--t-glass-card);
         padding: 8px;
         display: flex;
         flex-direction: column;
@@ -1528,7 +1528,7 @@
         margin-bottom: 10px;
         border: 1px solid var(--t-color-border-cool);
         border-radius: 10px;
-        background: rgba(12, 16, 20, 0.82);
+        background: var(--t-glass-card);
         padding: 8px;
     }
 
@@ -1616,7 +1616,7 @@
         border-radius: 8px;
         padding: 8px;
         margin-bottom: 8px;
-        background: rgba(14, 20, 27, 0.82);
+        background: var(--t-glass-card);
     }
 
     .t-scene-col-index {

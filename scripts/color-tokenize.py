@@ -404,6 +404,45 @@ def snap_text_cool(path, apply_it):
                  is_cool_text)
 
 
+# ── 冷玻璃暗底：候选是成对的 (rgb, alpha) ──────────────────────────────
+# ⚠ 与前几批的关键差异：这一段是**二维**的（冷色阶 × alpha）。前面几批要么只吸
+# alpha（色族固定）、要么只吸颜色（不透明），这里两者都要动，所以候选必须写成
+# 成对的值，判据用合成 ΔE 一次性判两个维度。
+#
+# ⚠ 只有 --t-glass-panel 是本批新增：实测 6 处字面量卡在 .70(row-head) 与
+# .85(card) 之间的 .72~.75，到两边最近档都差 ΔE 8~9。补这一档后降到 ΔE<=3。
+GLASS_DARK_SCALE = [
+    ('--t-glass-row', (22, 27, 36, 0.60)),            # 已存在
+    ('--t-glass-row-head', (28, 34, 44, 0.70)),       # 已存在
+    ('--t-glass-row-hover', (34, 42, 54, 0.70)),      # 已存在
+    ('--t-glass-panel', (12, 17, 22, 0.74)),          # 6b-9 新增，填 .70/.85 之间
+    # ⚠ 这一档的值是**按人口重心挑的**，不是随手挂在 cool-1 上：新 token 的值可以
+    # 自由选，就该让实测分布决定。挂 cool-1(10,15,22)/.75 时「明显」档 14 处；
+    # 取重心 (12,17,22)/.74 后降到 9 处。
+    ('--t-glass-card', (10, 15, 22, 0.85)),           # 已存在
+    ('--t-glass-field', (7, 11, 18, 0.90)),           # 已存在
+    ('--t-glass-nav', (18, 24, 33, 0.90)),            # 已存在
+    ('--t-glass-window', (18, 22, 29, 0.95)),         # 已存在
+    ('--t-color-dialog-surface', (30, 30, 35, 0.98)),  # 已存在
+    ('--t-glass-body', (18, 22, 29, 1.00)),           # 已存在
+    ('--t-color-window-header', (36, 37, 48, 1.00)),  # 已存在
+]
+
+
+def is_cool_dark(k):
+    r, g, b = k[:3]
+    # ⚠ 必须要求**蓝通道最高**（b >= g）。只判 b - r >= 4 会把绿调暗底
+    # rgba(14,22,18,*)（rewrite.css 的命中/改后底色，g=22 > b=18）也收进来，
+    # 它到冷调候选最近差 ΔE 8.8~9.8，是误收 —— 绿调该归它自己的族。
+    return max(k[:3]) <= 60 and b - r >= 4 and b >= g and k[3] >= 0.005
+
+
+def snap_glass_dark(path, apply_it):
+    """把冷调暗底吸附到 GLASS_DARK_SCALE（同时吸颜色与 alpha）。"""
+    return _snap(path, apply_it, GLASS_DARK_SCALE,
+                 lambda p: role_of(p) == 'surface', is_cool_dark, paired=True)
+
+
 # ── 表面色刻度（不透明中性灰，9 档，由深到浅）──────────────────────────
 # ⚠ 与文字刻度有两点本质不同，见交接文档 §6b：
 #   1) 表面是**嵌套**的：父子元素差一档就是视觉层级本身。两个不同取值吸到同一档，
@@ -436,7 +475,10 @@ def snap_surface(path, apply_it):
                  lambda p: role_of(p) == 'surface', lambda k: is_neutral(k, PURE_GRAY_TOL))
 
 
-def _snap(path, apply_it, scale, want_prop, want_color):
+def _snap(path, apply_it, scale, want_prop, want_color, paired=False):
+    """paired=False：scale 是 [(token, (r,g,b))]，只吸颜色、alpha 必须为 1。
+       paired=True ：scale 是 [(token, (r,g,b,a))]，同时吸颜色与 alpha，
+                     判据用合成 ΔE（半透明色的观感取决于盖在什么底上）。"""
     raw = open(path, encoding='utf-8', newline='').read()
     crlf, lf = eol_of(raw)
     if crlf and lf:
@@ -467,11 +509,13 @@ def _snap(path, apply_it, scale, want_prop, want_color):
         seg, pieces, pos = raw[vs:ve], [], 0
         for cm in COLOR_RE.finditer(seg):
             k = canon(cm.group(0))
-            if not k or k[3] < 0.99 or not want_color(k) or in_palette(vs + cm.start()):
+            if not k or not want_color(k) or in_palette(vs + cm.start()):
+                continue
+            if not paired and k[3] < 0.99:
                 continue
             best, bd = None, 1e9
-            for name, rgb in scale:
-                d = delta_e(k, rgb + (1.0,))
+            for name, ref in scale:
+                d = (alpha_delta_e(k, ref) if paired else delta_e(k, ref + (1.0,)))
                 if d < bd:
                     best, bd = name, d
             if bd > SNAP_MAX_DE:
@@ -864,6 +908,8 @@ def main():
                     help='把 background 上的纯灰吸附到表面刻度（会改色；之后必跑 --check-state）')
     ap.add_argument('--snap-text-cool', action='store_true',
                     help='把 color: 上的冷调文字色吸附到冷调刻度（会改色，逐处报 ΔE）')
+    ap.add_argument('--snap-glass-dark', action='store_true',
+                    help='把冷调暗底吸附到冷玻璃刻度（同时吸颜色与 alpha）')
     ap.add_argument('--snap-alpha', action='store_true',
                     help='把色族半透明色的 alpha 吸附到该族阶梯（会改色；之后必跑 --check-state）')
     ap.add_argument('--check-state', action='store_true',
@@ -894,10 +940,12 @@ def main():
                     p, crlf, lf, 'CRLF' if nl == '\r\n' else 'LF'))
         return
 
-    if a.snap_text or a.snap_surface or a.snap_alpha or a.snap_text_cool:
+    if (a.snap_text or a.snap_surface or a.snap_alpha or a.snap_text_cool
+            or a.snap_glass_dark):
         from collections import Counter
         fn = (snap_text if a.snap_text else
               snap_text_cool if a.snap_text_cool else
+              snap_glass_dark if a.snap_glass_dark else
               snap_surface if a.snap_surface else snap_alpha)
         allc, allo = [], []
         for p in files:
@@ -916,7 +964,7 @@ def main():
         print('色差分布：%s%s' % (dict(band),
                               '（半透明色差已合成到 #111/#333/#ccc 三种底上取上界；'
                               '含亮底是为了不低估「黑蒙层盖在图片上」的变化）'
-                              if a.snap_alpha else ''))
+                              if (a.snap_alpha or a.snap_glass_dark) else ''))
         agg = Counter()
         for rec in allc:
             agg[(rec[1].lower(), rec[2], round(rec[3], 1))] += 1

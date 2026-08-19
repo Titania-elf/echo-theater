@@ -464,7 +464,7 @@
     padding: 3px 10px;
     border: 1px solid #55697a;
     border-radius: 999px;
-    background: #1a2027;
+    background: var(--t-color-dialog-surface);
     color: var(--t-color-accent);
     font-size: 0.72em;
     line-height: 1.4;
@@ -517,12 +517,12 @@
 .t-prompt-entry-card.is-locked {
     cursor: default;
     border-color: #343d43;
-    background: #181c1f;
+    background: var(--t-color-dialog-surface);
 }
 
 .t-prompt-entry-card.is-locked:hover {
     border-color: #3e4a51;
-    background: #1a1f22;
+    background: var(--t-color-dialog-surface);
 }
 
 .t-prompt-entry-card.is-locked .t-prompt-entry-drag-hint {

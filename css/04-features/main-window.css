@@ -1222,7 +1222,7 @@
     align-items: center;
     gap: 10px;
     padding: 10px 16px;
-    background: rgba(25, 25, 35, 0.95);
+    background: var(--t-glass-window);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--t-color-accent-border-subtle);
