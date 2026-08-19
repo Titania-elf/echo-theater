@@ -92,7 +92,7 @@
 
 .t-sel-sidebar {
     width: 160px;
-    background: #181818;
+    background: var(--t-color-surface-inset);
     border-right: 1px solid var(--t-color-border);
     padding: 10px;
     overflow-y: auto;

@@ -21,7 +21,7 @@
 /* 侧边 */
 .t-mgr-sidebar {
     width: 180px;
-    background: #181818;
+    background: var(--t-color-surface-inset);
     border-right: 1px solid var(--t-color-border);
     display: flex;
     flex-direction: column;

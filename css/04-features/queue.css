@@ -13,8 +13,8 @@
     width: 90%;
     max-width: 450px;
     max-height: 75vh;
-    background: #1a1a1a;
-    border: 1px solid #444;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 10px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     z-index: 3000;
@@ -42,7 +42,7 @@
 
 .t-queue-label {
     font-size: 0.9em;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-weight: bold;
 }
 
@@ -67,24 +67,24 @@
     gap: 8px;
     padding: 12px;
     background: #252525;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 8px;
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .t-queue-mode-btn:hover {
-    background: #2a2a2a;
-    color: #ccc;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-label);
     border-color: #555;
 }
 
 .t-queue-mode-btn.active {
     background: rgba(144, 205, 244, 0.15);
-    border-color: rgba(144, 205, 244, 0.4);
-    color: #90cdf4;
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
 }
 
 .t-queue-mode-btn i {
@@ -102,9 +102,9 @@
     width: 28px;
     height: 28px;
     border-radius: 6px;
-    border: 1px solid #444;
-    background: #2a2a2a;
-    color: #ccc;
+    border: 1px solid var(--t-color-border-strong);
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-label);
     font-size: 1em;
     font-weight: bold;
     cursor: pointer;
@@ -116,8 +116,8 @@
 
 .t-queue-num-btn:hover {
     background: #383838;
-    color: #fff;
-    border-color: #666;
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-text-faint);
 }
 
 .t-queue-num-btn:active {
@@ -129,7 +129,7 @@
     text-align: center;
     font-size: 1.1em;
     font-weight: bold;
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 /* 下拉选择框 */
@@ -137,16 +137,16 @@
     flex: 1;
     padding: 8px 12px;
     background: #252525;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     cursor: pointer;
     outline: none;
 }
 
 .t-queue-select:focus {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
 }
 
 /* 剧本列表 */
@@ -157,8 +157,8 @@
     flex-direction: column;
     gap: 6px;
     padding: 5px;
-    background: #1e1e1e;
-    border: 1px solid #333;
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
 }
 
@@ -167,11 +167,11 @@
 }
 
 .t-queue-script-list::-webkit-scrollbar-track {
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
 }
 
 .t-queue-script-list::-webkit-scrollbar-thumb {
-    background: #444;
+    background: var(--t-color-border-strong);
     border-radius: 3px;
 }
 
@@ -188,12 +188,12 @@
 }
 
 .t-queue-script-item:hover {
-    background: #2a2a2a;
+    background: var(--t-color-surface-raised);
 }
 
 .t-queue-script-item.selected {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-accent-border-subtle);
 }
 
 .t-queue-script-info {
@@ -203,7 +203,7 @@
 
 .t-queue-script-name {
     font-size: 0.9em;
-    color: #eee;
+    color: var(--t-color-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -211,7 +211,7 @@
 
 .t-queue-script-cat {
     font-size: 0.75em;
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-queue-script-actions {
@@ -233,7 +233,7 @@
     align-items: center;
     gap: 8px;
     font-size: 0.85em;
-    color: #888;
+    color: var(--t-color-text-muted);
 }
 
 .t-queue-actions {
@@ -272,7 +272,7 @@
 
 .t-queue-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #90cdf4, #4a9eff);
+    background: linear-gradient(90deg, var(--t-color-accent), #4a9eff);
     width: 0%;
     transition: width 0.3s ease;
 }
@@ -291,10 +291,10 @@
     gap: 8px;
     padding: 6px 12px;
     background: rgba(144, 205, 244, 0.15);
-    border: 1px solid rgba(144, 205, 244, 0.3);
+    border: 1px solid var(--t-color-accent-border-subtle);
     border-radius: 20px;
     font-size: 0.8em;
-    color: #90cdf4;
+    color: var(--t-color-accent);
     z-index: 150;
     animation: t-fade-in 0.3s;
 }

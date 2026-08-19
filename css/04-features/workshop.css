@@ -86,7 +86,7 @@
     gap: 8px;
     padding: 10px 15px;
     border-bottom: 1px solid var(--t-color-surface-raised);
-    background: #181818;
+    background: var(--t-color-surface-inset);
     flex-shrink: 0;
 }
 

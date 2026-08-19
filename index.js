@@ -4616,11 +4616,11 @@ textarea.t-input {
 
 /* ===== \u5207\u6362\u6A21\u578B\u6309\u94AE ===== */
 .t-menu-icon-btn.model {
-    color: #00cec9;
+    color: var(--t-color-field-dialog-notify);
 }
 
 .t-menu-icon-btn.model:hover {
-    background: radial-gradient(circle at center, rgba(0, 206, 201, 0.25) 0%, rgba(0, 206, 201, 0.1) 70%);
+    background: radial-gradient(circle at center, rgba(0, 206, 201, 0.25) 0%, var(--t-color-field-dialog-notify-ring) 70%);
     border-color: rgba(0, 206, 201, 0.5);
     box-shadow:
         0 0 15px rgba(0, 206, 201, 0.4),
@@ -4689,7 +4689,7 @@ textarea.t-input {
     position: relative;
     overflow: hidden;
     background-color: #0b0b0b;
-    background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px);
+    background-image: linear-gradient(var(--t-color-surface-well) 1px, transparent 1px), linear-gradient(90deg, var(--t-color-surface-well) 1px, transparent 1px);
     background-size: 20px 20px;
     transform: translateZ(0);
     min-height: 0;
@@ -5077,7 +5077,7 @@ textarea.t-input {
 .t-bottom-bar {
     min-height: 70px;
     padding: 10px 14px;
-    background: #181818;
+    background: var(--t-color-surface-inset);
     border-top: 1px solid var(--t-color-border);
     display: flex;
     align-items: center;
@@ -5733,7 +5733,7 @@ textarea.t-input {
     width: 28px;
     height: 50px;
     border: none;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     color: rgba(255, 255, 255, 0.5);
     font-size: 16px;
     font-weight: bold;
@@ -6651,7 +6651,7 @@ textarea.t-input {
 
 .t-sel-sidebar {
     width: 160px;
-    background: #181818;
+    background: var(--t-color-surface-inset);
     border-right: 1px solid var(--t-color-border);
     padding: 10px;
     overflow-y: auto;
@@ -7530,7 +7530,7 @@ textarea.t-input {
     padding: 0 6px;
     border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
-    background: #242424;
+    background: var(--t-color-panel-header);
     color: var(--t-color-text-label);
     font-size: 11px;
 }
@@ -7563,7 +7563,7 @@ textarea.t-input {
     gap: 10px;
     padding: 10px 14px;
     border-top: 1px solid var(--t-color-border);
-    background: #181818;
+    background: var(--t-color-surface-inset);
     flex-shrink: 0;
 }
 
@@ -8553,8 +8553,8 @@ textarea.t-input {
     width: 90%;
     max-width: 450px;
     max-height: 75vh;
-    background: #1a1a1a;
-    border: 1px solid #444;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 10px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     z-index: 3000;
@@ -8582,7 +8582,7 @@ textarea.t-input {
 
 .t-queue-label {
     font-size: 0.9em;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-weight: bold;
 }
 
@@ -8607,24 +8607,24 @@ textarea.t-input {
     gap: 8px;
     padding: 12px;
     background: #252525;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 8px;
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .t-queue-mode-btn:hover {
-    background: #2a2a2a;
-    color: #ccc;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-label);
     border-color: #555;
 }
 
 .t-queue-mode-btn.active {
     background: rgba(144, 205, 244, 0.15);
-    border-color: rgba(144, 205, 244, 0.4);
-    color: #90cdf4;
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
 }
 
 .t-queue-mode-btn i {
@@ -8642,9 +8642,9 @@ textarea.t-input {
     width: 28px;
     height: 28px;
     border-radius: 6px;
-    border: 1px solid #444;
-    background: #2a2a2a;
-    color: #ccc;
+    border: 1px solid var(--t-color-border-strong);
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-label);
     font-size: 1em;
     font-weight: bold;
     cursor: pointer;
@@ -8656,8 +8656,8 @@ textarea.t-input {
 
 .t-queue-num-btn:hover {
     background: #383838;
-    color: #fff;
-    border-color: #666;
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-text-faint);
 }
 
 .t-queue-num-btn:active {
@@ -8669,7 +8669,7 @@ textarea.t-input {
     text-align: center;
     font-size: 1.1em;
     font-weight: bold;
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 /* \u4E0B\u62C9\u9009\u62E9\u6846 */
@@ -8677,16 +8677,16 @@ textarea.t-input {
     flex: 1;
     padding: 8px 12px;
     background: #252525;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     cursor: pointer;
     outline: none;
 }
 
 .t-queue-select:focus {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
 }
 
 /* \u5267\u672C\u5217\u8868 */
@@ -8697,8 +8697,8 @@ textarea.t-input {
     flex-direction: column;
     gap: 6px;
     padding: 5px;
-    background: #1e1e1e;
-    border: 1px solid #333;
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
 }
 
@@ -8707,11 +8707,11 @@ textarea.t-input {
 }
 
 .t-queue-script-list::-webkit-scrollbar-track {
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
 }
 
 .t-queue-script-list::-webkit-scrollbar-thumb {
-    background: #444;
+    background: var(--t-color-border-strong);
     border-radius: 3px;
 }
 
@@ -8728,12 +8728,12 @@ textarea.t-input {
 }
 
 .t-queue-script-item:hover {
-    background: #2a2a2a;
+    background: var(--t-color-surface-raised);
 }
 
 .t-queue-script-item.selected {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-accent-border-subtle);
 }
 
 .t-queue-script-info {
@@ -8743,7 +8743,7 @@ textarea.t-input {
 
 .t-queue-script-name {
     font-size: 0.9em;
-    color: #eee;
+    color: var(--t-color-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -8751,7 +8751,7 @@ textarea.t-input {
 
 .t-queue-script-cat {
     font-size: 0.75em;
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-queue-script-actions {
@@ -8773,7 +8773,7 @@ textarea.t-input {
     align-items: center;
     gap: 8px;
     font-size: 0.85em;
-    color: #888;
+    color: var(--t-color-text-muted);
 }
 
 .t-queue-actions {
@@ -8812,7 +8812,7 @@ textarea.t-input {
 
 .t-queue-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #90cdf4, #4a9eff);
+    background: linear-gradient(90deg, var(--t-color-accent), #4a9eff);
     width: 0%;
     transition: width 0.3s ease;
 }
@@ -8831,10 +8831,10 @@ textarea.t-input {
     gap: 8px;
     padding: 6px 12px;
     background: rgba(144, 205, 244, 0.15);
-    border: 1px solid rgba(144, 205, 244, 0.3);
+    border: 1px solid var(--t-color-accent-border-subtle);
     border-radius: 20px;
     font-size: 0.8em;
-    color: #90cdf4;
+    color: var(--t-color-accent);
     z-index: 150;
     animation: t-fade-in 0.3s;
 }
@@ -9648,7 +9648,7 @@ textarea.t-input {
 
 /* CSS \u9009\u62E9\u5668\u63D0\u793A\u5217\u8868 */
 .t-css-hints {
-    background: #181818;
+    background: var(--t-color-surface-inset);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 15px;
@@ -9689,7 +9689,7 @@ textarea.t-input {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    background: #181818;
+    background: var(--t-color-surface-inset);
     border: 1px solid var(--t-color-border);
     border-radius: 8px;
     padding: 15px;
@@ -9979,7 +9979,7 @@ textarea.t-input {
     padding: 0;
     border: 1px solid var(--t-color-border-strong);
     border-radius: 3px;
-    background: #242424;
+    background: var(--t-color-panel-header);
     color: var(--t-color-text-secondary);
     cursor: pointer;
 }
@@ -10414,7 +10414,7 @@ textarea.t-input {
 /* \u4FA7\u8FB9 */
 .t-mgr-sidebar {
     width: 180px;
-    background: #181818;
+    background: var(--t-color-surface-inset);
     border-right: 1px solid var(--t-color-border);
     display: flex;
     flex-direction: column;
@@ -10957,7 +10957,7 @@ textarea.t-input {
     gap: 8px;
     padding: 10px 15px;
     border-bottom: 1px solid var(--t-color-surface-raised);
-    background: #181818;
+    background: var(--t-color-surface-inset);
     flex-shrink: 0;
 }
 
@@ -12042,7 +12042,7 @@ textarea.t-input {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #181818;
+    background: var(--t-color-surface-inset);
 }
 
 /* \u9876\u680F\u64CD\u4F5C\u533A */
@@ -12227,7 +12227,7 @@ textarea.t-input {
     width: 60px;
     height: 60px;
     border-radius: 4px;
-    background-color: #111;
+    background-color: var(--t-color-surface-well);
     background-size: cover;
     background-position: center;
     border: 1px solid var(--t-color-border-strong);
@@ -12365,7 +12365,7 @@ textarea.t-input {
 
 /* \u590D\u9009\u6846\u60AC\u505C\u6548\u679C */
 .t-fav-card:hover .t-fav-card-checkbox {
-    background: rgba(0, 0, 0, 0.85);
+    background: var(--t-color-dialog-scrim-strongest);
     border-color: rgba(255, 255, 255, 0.5);
 }
 
@@ -13401,7 +13401,7 @@ textarea.t-input {
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-bottom: 1px solid var(--t-color-border-faint);
 }
 
@@ -13447,7 +13447,7 @@ textarea.t-input {
     align-items: center;
     justify-content: space-between;
     padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-bottom: 1px solid var(--t-color-border-faint);
 }
 
@@ -13465,7 +13465,7 @@ textarea.t-input {
 .t-control-group select,
 .t-control-group input[type="number"],
 .t-control-group input[type="text"] {
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: var(--t-color-text-strong);
     padding: 6px 12px;
@@ -13636,7 +13636,7 @@ textarea.t-input {
 .t-entry-tag {
     font-size: 0.7em;
     padding: 2px 6px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border-radius: 4px;
     color: var(--t-color-dialog-close);
     text-transform: uppercase;
@@ -13692,7 +13692,7 @@ textarea.t-input {
 .t-lore-editor textarea {
     width: 100%;
     padding: 12px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     color: var(--t-color-text-strong);
@@ -13705,7 +13705,7 @@ textarea.t-input {
 .t-lore-editor select:focus,
 .t-lore-editor textarea:focus {
     border-color: var(--t-color-accent);
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     box-shadow: 0 0 0 3px var(--t-color-field-dialog-ring);
     outline: none;
 }
@@ -13739,7 +13739,7 @@ textarea.t-input {
 /* \u5E95\u90E8\u64CD\u4F5C\u680F */
 .t-window-footer {
     padding: 15px 25px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-top: 1px solid var(--t-color-border-faint);
     display: flex;
     justify-content: space-between;
@@ -13753,7 +13753,7 @@ textarea.t-input {
 }
 
 .t-target-select select {
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: var(--t-color-text-strong);
     padding: 8px 12px;
@@ -13886,7 +13886,7 @@ textarea.t-input {
         align-items: center;
         gap: 12px;
         padding: 15px;
-        background: rgba(0, 0, 0, 0.3);
+        background: var(--t-color-surface-recess-strong);
         border-bottom: 1px solid var(--t-color-border-subtle);
         position: sticky;
         top: 0;
@@ -14311,7 +14311,7 @@ textarea.t-input {
 }
 
 .t-mode-panel::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
 }
 
 .t-mode-panel::-webkit-scrollbar-thumb {
@@ -14354,7 +14354,7 @@ textarea.t-input {
 
 .t-summary-result {
     flex: 1;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     padding: 20px;
@@ -14371,7 +14371,7 @@ textarea.t-input {
 }
 
 .t-summary-result::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-radius: 4px;
 }
 
@@ -14440,7 +14440,7 @@ textarea.t-input {
 }
 
 .t-vector-info {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-radius: 8px;
     padding: 15px;
 }
@@ -14513,7 +14513,7 @@ textarea.t-input {
 /* \u8FDB\u5EA6\u6761 */
 .t-progress-bar {
     height: 8px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -14593,7 +14593,7 @@ textarea.t-input {
 .t-custom-prompt-body textarea {
     width: 100%;
     padding: 12px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 6px;
     color: var(--t-color-text-cool);
@@ -14744,7 +14744,7 @@ textarea.t-input {
 }
 
 .t-prompt-pre::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-radius: 4px;
 }
 
@@ -14909,7 +14909,7 @@ textarea.t-input {
 
 .t-hide-range-inputs input[type="number"] {
     padding: 8px 10px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 6px;
     color: var(--t-color-text-cool);
@@ -15029,7 +15029,7 @@ textarea.t-input {
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     padding: 12px;
     border-radius: 6px;
     border: 1px dashed var(--t-color-border-subtle);
@@ -17491,7 +17491,7 @@ textarea.t-input {
 
 #t-rewrite-overlay .t-rewrite-head { padding: 14px 18px; background: linear-gradient(180deg, rgba(18, 30, 44, 0.9) 0%, rgba(16, 22, 31, 0.85) 100%); border-bottom: 1px solid rgba(255, 255, 255, 0.09); }
 
-#t-rewrite-overlay .t-rewrite-settings-btn i { color: #b9d8ee; }
+#t-rewrite-overlay .t-rewrite-settings-btn i { color: var(--t-glass-tab-text-active); }
 
 #t-rewrite-overlay .t-rewrite-settings-btn:hover i { color: #d2e6f7; }
 
@@ -17579,7 +17579,7 @@ textarea.t-input {
 
 #t-rewrite-overlay .t-rewrite-match-text, #t-rewrite-overlay .t-rewrite-diff-text { font-size: 0.88em; line-height: 1.5; color: #e2edf7; white-space: pre-wrap; word-break: break-word; }
 
-#t-rewrite-overlay .t-rewrite-hit-summary { font-size: 0.82em; color: #b9d8ee; margin-bottom: 6px; }
+#t-rewrite-overlay .t-rewrite-hit-summary { font-size: 0.82em; color: var(--t-glass-tab-text-active); margin-bottom: 6px; }
 
 #t-rewrite-overlay .t-rewrite-hit-source { font-size: 0.78em; color: #8da5b8; margin-bottom: 8px; }
 
@@ -17932,7 +17932,7 @@ textarea.t-input {
     border-radius: 10px;
     border: 1px solid var(--t-color-field-glass-border);
     background: var(--t-glass-field);
-    color: #dce9f4;
+    color: var(--t-color-field-glass-text);
     padding: 8px 10px;
     font-size: 0.82em;
     line-height: 1.45;

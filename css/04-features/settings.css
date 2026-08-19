@@ -280,7 +280,7 @@
 
 /* CSS 选择器提示列表 */
 .t-css-hints {
-    background: #181818;
+    background: var(--t-color-surface-inset);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 15px;
@@ -321,7 +321,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    background: #181818;
+    background: var(--t-color-surface-inset);
     border: 1px solid var(--t-color-border);
     border-radius: 8px;
     padding: 15px;
@@ -611,7 +611,7 @@
     padding: 0;
     border: 1px solid var(--t-color-border-strong);
     border-radius: 3px;
-    background: #242424;
+    background: var(--t-color-panel-header);
     color: var(--t-color-text-secondary);
     cursor: pointer;
 }

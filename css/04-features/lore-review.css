@@ -35,7 +35,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-bottom: 1px solid var(--t-color-border-faint);
 }
 
@@ -81,7 +81,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-bottom: 1px solid var(--t-color-border-faint);
 }
 
@@ -99,7 +99,7 @@
 .t-control-group select,
 .t-control-group input[type="number"],
 .t-control-group input[type="text"] {
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: var(--t-color-text-strong);
     padding: 6px 12px;
@@ -270,7 +270,7 @@
 .t-entry-tag {
     font-size: 0.7em;
     padding: 2px 6px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border-radius: 4px;
     color: var(--t-color-dialog-close);
     text-transform: uppercase;
@@ -326,7 +326,7 @@
 .t-lore-editor textarea {
     width: 100%;
     padding: 12px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     color: var(--t-color-text-strong);
@@ -339,7 +339,7 @@
 .t-lore-editor select:focus,
 .t-lore-editor textarea:focus {
     border-color: var(--t-color-accent);
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     box-shadow: 0 0 0 3px var(--t-color-field-dialog-ring);
     outline: none;
 }
@@ -373,7 +373,7 @@
 /* 底部操作栏 */
 .t-window-footer {
     padding: 15px 25px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-top: 1px solid var(--t-color-border-faint);
     display: flex;
     justify-content: space-between;
@@ -387,7 +387,7 @@
 }
 
 .t-target-select select {
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: var(--t-color-text-strong);
     padding: 8px 12px;
@@ -520,7 +520,7 @@
         align-items: center;
         gap: 12px;
         padding: 15px;
-        background: rgba(0, 0, 0, 0.3);
+        background: var(--t-color-surface-recess-strong);
         border-bottom: 1px solid var(--t-color-border-subtle);
         position: sticky;
         top: 0;
@@ -945,7 +945,7 @@
 }
 
 .t-mode-panel::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
 }
 
 .t-mode-panel::-webkit-scrollbar-thumb {
@@ -988,7 +988,7 @@
 
 .t-summary-result {
     flex: 1;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     padding: 20px;
@@ -1005,7 +1005,7 @@
 }
 
 .t-summary-result::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-radius: 4px;
 }
 
@@ -1074,7 +1074,7 @@
 }
 
 .t-vector-info {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-radius: 8px;
     padding: 15px;
 }
@@ -1147,7 +1147,7 @@
 /* 进度条 */
 .t-progress-bar {
     height: 8px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -1227,7 +1227,7 @@
 .t-custom-prompt-body textarea {
     width: 100%;
     padding: 12px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 6px;
     color: var(--t-color-text-cool);
@@ -1378,7 +1378,7 @@
 }
 
 .t-prompt-pre::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-radius: 4px;
 }
 
@@ -1543,7 +1543,7 @@
 
 .t-hide-range-inputs input[type="number"] {
     padding: 8px 10px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 6px;
     color: var(--t-color-text-cool);
@@ -1663,7 +1663,7 @@
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     padding: 12px;
     border-radius: 6px;
     border: 1px dashed var(--t-color-border-subtle);

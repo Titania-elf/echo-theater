@@ -489,7 +489,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #181818;
+    background: var(--t-color-surface-inset);
 }
 
 /* 顶栏操作区 */
@@ -674,7 +674,7 @@
     width: 60px;
     height: 60px;
     border-radius: 4px;
-    background-color: #111;
+    background-color: var(--t-color-surface-well);
     background-size: cover;
     background-position: center;
     border: 1px solid var(--t-color-border-strong);
@@ -812,7 +812,7 @@
 
 /* 复选框悬停效果 */
 .t-fav-card:hover .t-fav-card-checkbox {
-    background: rgba(0, 0, 0, 0.85);
+    background: var(--t-color-dialog-scrim-strongest);
     border-color: rgba(255, 255, 255, 0.5);
 }
 

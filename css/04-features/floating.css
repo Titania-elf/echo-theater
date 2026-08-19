@@ -374,11 +374,11 @@
 
 /* ===== 切换模型按钮 ===== */
 .t-menu-icon-btn.model {
-    color: #00cec9;
+    color: var(--t-color-field-dialog-notify);
 }
 
 .t-menu-icon-btn.model:hover {
-    background: radial-gradient(circle at center, rgba(0, 206, 201, 0.25) 0%, rgba(0, 206, 201, 0.1) 70%);
+    background: radial-gradient(circle at center, rgba(0, 206, 201, 0.25) 0%, var(--t-color-field-dialog-notify-ring) 70%);
     border-color: rgba(0, 206, 201, 0.5);
     box-shadow:
         0 0 15px rgba(0, 206, 201, 0.4),
