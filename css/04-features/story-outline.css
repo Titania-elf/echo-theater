@@ -29,7 +29,7 @@
 
 #t-outline-prompt-manager .t-form-label {
     display: block;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     margin-bottom: 8px;
     font-size: 0.9em;
 }
@@ -313,7 +313,7 @@
     gap: 10px;
     padding: 10px;
     background: rgba(16, 24, 32, 0.92);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
     cursor: pointer;
 }
 
@@ -353,7 +353,7 @@
     align-items: center;
     gap: 8px 12px;
     padding: 8px 10px 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--t-color-surface-hover-subtle);
     background: rgba(10, 16, 22, 0.55);
 }
 
@@ -570,7 +570,7 @@
 }
 
 .t-opening-card {
-    border: 1px solid rgba(120, 150, 170, 0.3);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: rgba(14, 21, 28, 0.9);
     padding: 10px;
@@ -801,7 +801,7 @@
 
 .t-outline-table th,
 .t-outline-table td {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
     padding: 8px;
     vertical-align: top;
 }
@@ -858,7 +858,7 @@
 .t-outline-textarea {
     width: 100%;
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--t-color-border-glass);
     background: rgba(10, 14, 18, 0.72);
     color: #f0f2f4;
     box-sizing: border-box;
@@ -904,7 +904,7 @@
 
 .t-outline-scene-table th,
 .t-outline-scene-table td {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
     padding: 6px;
     vertical-align: top;
 }
@@ -1028,14 +1028,14 @@
 .t-desk-editor-head,
 .t-desk-editor-actions {
     padding: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
 .t-desk-editor-actions {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--t-color-border-faint);
     border-bottom: none;
 }
 
@@ -1061,7 +1061,7 @@
     #t-outline-prompt-manager .t-set-nav {
         width: 100%;
         border-right: none;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--t-color-border);
         padding: 8px;
         gap: 6px;
         flex-direction: row;
@@ -1077,7 +1077,7 @@
 
     #t-outline-prompt-manager .t-set-tab-btn {
         padding: 8px 12px;
-        border: 1px solid #333;
+        border: 1px solid var(--t-color-border);
         border-radius: 8px;
         flex: 1;
         min-width: 120px;
@@ -1085,7 +1085,7 @@
     }
 
     #t-outline-prompt-manager .t-set-tab-btn.active {
-        border-left: 1px solid #bfa15f;
+        border-left: 1px solid var(--t-color-brand);
         /* 窄屏 tab 是「圆角 chip」形态（上面那条给了 border + border-radius），
            激活态要有填充色才看得出来。
            这条 background 原先不用写：删掉的那条非 media 的
@@ -1093,7 +1093,7 @@
            压过了 settings.css @600px 里 `.t-set-tab-btn.active`（0,2,0）的
            `background: transparent`。ID 规则一删，transparent 就会赢，
            chip 的填充会消失 —— 故在此显式钉住原值。 */
-        background: #2a2a2a;
+        background: var(--t-color-surface-raised);
     }
 
     #t-outline-prompt-manager .t-set-content {
@@ -1406,7 +1406,7 @@
         align-items: center;
         justify-content: space-between;
         padding: 10px 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid var(--t-color-border-subtle);
         color: #e8f0f8;
         font-weight: 600;
     }
@@ -1415,7 +1415,7 @@
         display: flex;
         gap: 6px;
         padding: 8px 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: 1px solid var(--t-color-border-faint);
         background: rgba(11, 15, 20, 0.88);
     }
 
@@ -1443,7 +1443,7 @@
         grid-template-columns: 1fr 1fr;
         gap: 6px;
         padding: 10px 12px 12px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid var(--t-color-border-subtle);
         background: rgba(11, 15, 20, 0.94);
     }
 

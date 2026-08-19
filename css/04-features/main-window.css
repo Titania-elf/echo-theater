@@ -6,7 +6,7 @@
     height: 85vh;
     display: flex;
     flex-direction: column;
-    background: #121212;
+    background: var(--t-color-bg);
     position: relative;
     /* 确保主窗口在遮罩层之上 */
     z-index: 20001;
@@ -117,8 +117,8 @@
 /* 顶部操作区 */
 .t-top-bar {
     padding: 12px 20px;
-    background: #1e1e1e;
-    border-bottom: 1px solid #333;
+    background: var(--t-color-surface);
+    border-bottom: 1px solid var(--t-color-border);
     display: flex;
     gap: 15px;
     align-items: stretch;
@@ -155,10 +155,10 @@
     align-items: center;
     justify-content: center;
     min-width: 160px;
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
     border-radius: 6px;
     padding: 0 12px;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     flex-shrink: 0;
     transition: all 0.3s;
     cursor: pointer;
@@ -166,12 +166,12 @@
 
 .t-history-toggle:hover {
     background: #222;
-    border-color: #444;
+    border-color: var(--t-color-border-strong);
 }
 
 .t-history-toggle.active {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-accent-border-subtle);
 }
 
 .t-toggle-label {
@@ -185,13 +185,13 @@
 .t-toggle-text {
     font-size: 0.9em;
     font-weight: bold;
-    color: #888;
+    color: var(--t-color-text-muted);
     transition: color 0.2s;
     white-space: nowrap;
 }
 
 .t-history-toggle.active .t-toggle-text {
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-history-toggle:hover .t-toggle-text {
@@ -218,21 +218,21 @@
 }
 
 .t-subtoggle.disabled:hover {
-    background: #1a1a1a;
-    border-color: #333;
+    background: var(--t-color-surface-sunken);
+    border-color: var(--t-color-border);
 }
 
 .t-subtoggle.disabled:hover .t-toggle-text {
-    color: #888;
+    color: var(--t-color-text-muted);
 }
 
 /* 生成模式切换 */
 .t-mode-toggle {
     display: flex;
     align-items: center;
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
     border-radius: 6px;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     overflow: hidden;
     flex-shrink: 0;
 }
@@ -244,12 +244,12 @@
     padding: 0 14px;
     height: 100%;
     cursor: pointer;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.85em;
     font-weight: bold;
     transition: all 0.2s;
     white-space: nowrap;
-    border-right: 1px solid #333;
+    border-right: 1px solid var(--t-color-border);
 }
 
 .t-mode-btn:last-child {
@@ -258,12 +258,12 @@
 
 .t-mode-btn:hover {
     background: #222;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
 }
 
 .t-mode-btn.active {
     background: rgba(191, 161, 95, 0.15);
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-mode-btn.active:hover {
@@ -274,7 +274,7 @@
 .t-trigger-card {
     flex-grow: 1;
     background: #222;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 0 15px;
     cursor: pointer;
@@ -287,14 +287,14 @@
 }
 
 .t-trigger-card:hover {
-    background: #2a2a2a;
+    background: var(--t-color-surface-raised);
     border-color: #555;
 }
 
 .t-trigger-main {
     font-size: 1.1em;
     font-weight: bold;
-    color: #eee;
+    color: var(--t-color-text);
     margin-bottom: 3px;
     display: flex;
     align-items: center;
@@ -306,7 +306,7 @@
 
 .t-trigger-sub {
     font-size: 0.8em;
-    color: #888;
+    color: var(--t-color-text-muted);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -319,7 +319,7 @@
     background: #333;
     padding: 1px 6px;
     border-radius: 3px;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 0.9em;
     flex-shrink: 0;
     border: 1px solid transparent;
@@ -358,7 +358,7 @@
     justify-content: center;
     cursor: pointer;
     background: #222;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     transition: 0.2s;
 }
@@ -366,16 +366,16 @@
 .t-filter-btn {
     width: 40px;
     font-size: 1.1em;
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-filter-btn:hover {
-    background: #2a2a2a;
-    color: #aaa;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-secondary);
 }
 
 .t-filter-btn.active-filter {
-    color: #bfa15f;
+    color: var(--t-color-brand);
     border-color: rgba(191, 161, 95, 0.3);
     background: rgba(191, 161, 95, 0.1);
 }
@@ -383,12 +383,12 @@
 .t-dice-btn {
     width: 50px;
     font-size: 1.5em;
-    color: #888;
+    color: var(--t-color-text-muted);
 }
 
 .t-dice-btn:hover {
-    background: #2a2a2a;
-    color: #fff;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-strong);
 }
 
 /* 内容区右上角垂直图标栏 */
@@ -409,8 +409,8 @@
     border-radius: 50%;
     background: rgba(30, 30, 30, 0.4);
     backdrop-filter: blur(4px);
-    color: #666;
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    color: var(--t-color-text-faint);
+    border: 1px solid var(--t-color-surface-veil);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -423,19 +423,19 @@
 .t-tools-icon:hover {
     opacity: 1;
     background: rgba(51, 51, 51, 0.8);
-    color: #fff;
+    color: var(--t-color-text-strong);
     transform: scale(1.08);
 }
 
 .t-tools-icon.active {
     opacity: 1;
-    background: #bfa15f;
+    background: var(--t-color-brand);
     color: #000;
 }
 
 .t-tools-icon.is-faved {
     opacity: 0.95;
-    border-color: rgba(255, 107, 107, 0.4);
+    border-color: var(--t-color-danger-border);
 }
 
 #t-main-view.t-zen-mode .t-tools-icon {
@@ -447,7 +447,7 @@
     min-height: 70px;
     padding: 10px 14px;
     background: #181818;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--t-color-border);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -461,7 +461,7 @@
 .t-shortcut-btn {
     padding: 4px 11px;
     flex: 0 0 auto;
-    border: 1px solid #3a3a3a;
+    border: 1px solid var(--t-color-border-control);
     border-radius: 999px;
     background: #232323;
     color: #999;
@@ -480,7 +480,7 @@
 
 .t-shortcut-btn.t-shortcut-compose {
     margin-left: auto;
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-shortcut-btn.t-shortcut-compose i {
@@ -510,7 +510,7 @@
     display: flex;
     flex-direction: column;
     background: #191919;
-    border-left: 1px solid #444;
+    border-left: 1px solid var(--t-color-border-strong);
     box-shadow: -14px 0 34px rgba(0, 0, 0, .5);
     transform: translateX(102%);
     transition: transform .24s ease;
@@ -531,7 +531,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     box-sizing: border-box;
 }
 
@@ -543,7 +543,7 @@
 }
 
 .t-toolbox-header strong {
-    color: #eee;
+    color: var(--t-color-text);
     font-size: 15px;
 }
 
@@ -559,7 +559,7 @@
     border: 0;
     border-radius: 6px;
     background: #292929;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     cursor: pointer;
 }
 
@@ -605,20 +605,20 @@
 .t-toolbox-action i {
     width: 19px;
     flex: 0 0 19px;
-    color: #888;
+    color: var(--t-color-text-muted);
     text-align: center;
 }
 
 .t-toolbox-action:hover {
     background: #2d2d2d;
     border-color: #555;
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-toolbox-action.active,
 #t-btn-queue-settings.active {
     border-color: rgba(144, 205, 244, .45);
-    background: rgba(144, 205, 244, .12);
+    background: var(--t-color-accent-soft);
     color: #b8e0fa;
 }
 
@@ -653,8 +653,8 @@
 .t-filter-popover {
     position: absolute;
     z-index: 20001;
-    background: #1e1e1e;
-    border: 1px solid #444;
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
     padding: 5px;
@@ -674,12 +674,12 @@
 }
 
 .t-filter-popover::-webkit-scrollbar-track {
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
     border-radius: 3px;
 }
 
 .t-filter-popover::-webkit-scrollbar-thumb {
-    background: #444;
+    background: var(--t-color-border-strong);
     border-radius: 3px;
 }
 
@@ -690,7 +690,7 @@
 .t-filter-item {
     padding: 8px 12px;
     cursor: pointer;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     border-radius: 4px;
     font-size: 0.9em;
     display: flex;
@@ -699,12 +699,12 @@
 }
 
 .t-filter-item:hover {
-    background: #2a2a2a;
-    color: #fff;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-strong);
 }
 
 .t-filter-item.active {
-    background: #bfa15f;
+    background: var(--t-color-brand);
     color: #000;
     font-weight: bold;
 }
@@ -738,7 +738,7 @@
 
 .t-more-pin:hover:not(:disabled) {
     background: rgba(191, 161, 95, 0.16);
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-more-pin:disabled {
@@ -993,7 +993,7 @@
     -webkit-backdrop-filter: blur(6px);
 
     /* 边框和圆角 */
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--t-color-surface-hover-subtle);
     border-radius: 4px;
 
     /* 内边距 - 更紧凑 */
@@ -1036,14 +1036,14 @@
 }
 
 .t-stats-value {
-    color: #55efc4;
+    color: var(--t-color-notify);
     font-weight: bold;
     font-size: 10px;
 }
 
 /* 模型名称使用不同颜色 */
 #t-stat-model {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1114,7 +1114,7 @@
 .t-page-nav:hover:not(:disabled) {
     opacity: 1;
     background: rgba(191, 161, 95, 0.3);
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-page-nav:active:not(:disabled) {
@@ -1187,8 +1187,8 @@
     max-width: 800px;
     height: calc(100% - 80px);
     max-height: 600px;
-    background: #1a1a1a;
-    border: 1px solid #444;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 10px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     z-index: 3000;
@@ -1225,19 +1225,19 @@
     background: rgba(25, 25, 35, 0.95);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(144, 205, 244, 0.3);
+    border: 1px solid var(--t-color-accent-border-subtle);
     border-radius: 25px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     animation: t-indicator-slide-up 0.3s ease;
 }
 
 .t-new-content-indicator i {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-size: 1em;
 }
 
 .t-new-content-indicator span {
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     white-space: nowrap;
 }
@@ -1247,7 +1247,7 @@
     background: linear-gradient(90deg, #4a9eff, #6ab0ff);
     border: none;
     border-radius: 15px;
-    color: #fff;
+    color: var(--t-color-text-strong);
     font-size: 0.85em;
     font-weight: bold;
     cursor: pointer;
@@ -1291,19 +1291,19 @@
 }
 
 .t-gcn-content i {
-    color: #55efc4;
+    color: var(--t-color-notify);
     font-size: 1.1em;
 }
 
 .t-gcn-content span {
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     white-space: nowrap;
 }
 
 .t-gcn-view-btn {
     padding: 6px 14px;
-    background: linear-gradient(90deg, #55efc4, #00b894);
+    background: linear-gradient(90deg, var(--t-color-notify), #00b894);
     border: none;
     border-radius: 15px;
     color: #000;
@@ -1331,7 +1331,7 @@
     background: transparent;
     border: none;
     border-radius: 50%;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s;
@@ -1339,7 +1339,7 @@
 
 .t-gcn-close-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 /* 移动端适配 */
@@ -1371,11 +1371,11 @@
 
 /* 挂在 ST 的 .extraMesButtons 里，继承 .mes_button 的尺寸与交互，只改配色 */
 #chat .titania-inject-btn {
-    color: var(--t-theme, #bfa15f);
+    color: var(--t-theme, var(--t-color-brand));
 }
 
 #chat .titania-inject-btn:hover {
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-chat-inject-window {
@@ -1387,11 +1387,11 @@
     background: rgba(30, 30, 35, 0.96);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 12px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     overflow: hidden;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
 }
 
 .t-chat-inject-body {
@@ -1407,13 +1407,13 @@
     padding: 8px 12px;
     border-radius: 6px;
     background: rgba(144, 205, 244, 0.08);
-    border-left: 3px solid #90cdf4;
-    color: #cbd5e0;
+    border-left: 3px solid var(--t-color-accent);
+    color: var(--t-color-dialog-label);
     flex-shrink: 0;
 }
 
 .t-chat-inject-target b {
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-chat-inject-visible {
@@ -1422,7 +1422,7 @@
     gap: 10px;
     padding: 10px 12px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-color-surface-veil);
     border: 1px solid rgba(255, 255, 255, 0.07);
     cursor: pointer;
     flex-shrink: 0;
@@ -1436,7 +1436,7 @@
 
 .t-chat-inject-visible-main {
     display: block;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-weight: 600;
 }
 
@@ -1467,7 +1467,7 @@
 
 .t-chat-inject-item:hover {
     background: rgba(191, 161, 95, 0.12);
-    border-color: var(--t-theme, #bfa15f);
+    border-color: var(--t-theme, var(--t-color-brand));
     transform: translateX(2px);
 }
 
@@ -1480,7 +1480,7 @@
 }
 
 .t-chat-inject-item-name {
-    color: var(--t-theme, #bfa15f);
+    color: var(--t-theme, var(--t-color-brand));
     font-weight: 600;
 }
 
@@ -1513,7 +1513,7 @@
 }
 
 .t-chat-inject-empty-title {
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     font-weight: 600;
     margin-bottom: 6px;
 }

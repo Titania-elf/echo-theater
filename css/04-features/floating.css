@@ -13,7 +13,7 @@
     border-radius: 50%;
     /* 使用 CSS 变量控制背景颜色（支持透明度） */
     background: var(--t-bg-color, #2b2b2b);
-    color: #fff;
+    color: var(--t-color-text-strong);
 
     display: flex;
     align-items: center;
@@ -21,7 +21,7 @@
     cursor: pointer;
     z-index: 9999;
     /* 使用 CSS 变量控制边框颜色（支持透明度） */
-    border: 2px solid var(--t-border-color-rgba, var(--t-border-color, #444));
+    border: 2px solid var(--t-border-color-rgba, var(--t-border-color, var(--t-color-border-strong)));
     transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     user-select: none;
     overflow: visible;
@@ -44,7 +44,7 @@
 /* ===== 动画 1: 脉冲波纹 (Pulse Ripple) ===== */
 
 #titania-float-btn.t-loading.t-anim-ripple {
-    border-color: var(--t-border-color-rgba, var(--t-border-color, #90cdf4));
+    border-color: var(--t-border-color-rgba, var(--t-border-color, var(--t-color-accent)));
 }
 
 #titania-float-btn.t-loading.t-anim-ripple::before,
@@ -55,7 +55,7 @@
     height: 100%;
     border-radius: 50%;
     /* 动画波纹使用不透明的边框颜色以保持可见性 */
-    border: 2px solid var(--t-border-color, #90cdf4);
+    border: 2px solid var(--t-border-color, var(--t-color-accent));
     animation: t-ripple-1 1.5s ease-out infinite;
 }
 
@@ -66,7 +66,7 @@
 /* ===== 动画 2: 电磁闪烁 (Arc Flash) ===== */
 
 #titania-float-btn.t-loading.t-anim-arc {
-    border-color: var(--t-border-color-rgba, var(--t-border-color, #a29bfe));
+    border-color: var(--t-border-color-rgba, var(--t-border-color, var(--t-color-decor)));
 }
 
 #titania-float-btn.t-loading.t-anim-arc::before {
@@ -76,8 +76,8 @@
     height: 120%;
     border-radius: 50%;
     background:
-        radial-gradient(circle at 20% 0%, var(--t-border-color, #a29bfe) 0%, transparent 30%),
-        radial-gradient(circle at 80% 100%, var(--t-border-color, #a29bfe) 0%, transparent 30%);
+        radial-gradient(circle at 20% 0%, var(--t-border-color, var(--t-color-decor)) 0%, transparent 30%),
+        radial-gradient(circle at 80% 100%, var(--t-border-color, var(--t-color-decor)) 0%, transparent 30%);
     animation: t-arc-rotate 1s linear infinite, t-arc-flash-1 0.3s ease infinite;
     opacity: 0.8;
 }
@@ -99,7 +99,7 @@
 
 #titania-float-btn.t-notify {
     animation: t-notify-glow 2s infinite ease-in-out;
-    border-color: var(--t-border-color-rgba, var(--t-border-color, #55efc4));
+    border-color: var(--t-border-color-rgba, var(--t-border-color, var(--t-color-notify)));
 }
 
 /* ===== 计时器 ===== */
@@ -112,7 +112,7 @@
     background: rgba(30, 30, 30, 0.5);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
     color: #00d9ff;
@@ -138,7 +138,7 @@
 }
 
 #titania-timer.done {
-    color: #55efc4;
+    color: var(--t-color-notify);
 }
 
 /* ===== 横向图标菜单容器 ===== */
@@ -152,9 +152,9 @@
 
     /* 透明毛玻璃效果 */
     background: linear-gradient(135deg,
-            rgba(255, 255, 255, 0.08) 0%,
-            rgba(255, 255, 255, 0.03) 50%,
-            rgba(255, 255, 255, 0.06) 100%);
+            var(--t-color-surface-hover) 0%,
+            var(--t-color-surface-veil) 50%,
+            var(--t-color-surface-hover-subtle) 100%);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
 
@@ -202,8 +202,8 @@
     transform: scale(0.5) rotate(-10deg);
 
     /* 微妙的玻璃质感 */
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-veil);
+    border: 1px solid var(--t-color-border-faint);
     backdrop-filter: blur(4px);
 }
 
@@ -214,7 +214,7 @@
 
 .t-menu-icon-btn:hover {
     transform: scale(1.12);
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-menu-icon-btn:active {
@@ -236,7 +236,7 @@
 
 /* 设定提取按钮 */
 .t-menu-icon-btn.lore {
-    color: #a29bfe;
+    color: var(--t-color-decor);
 }
 
 .t-menu-icon-btn.lore:hover {
@@ -271,7 +271,7 @@
     box-shadow:
         0 0 15px rgba(176, 190, 197, 0.3),
         inset 0 0 10px rgba(176, 190, 197, 0.1);
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 /* 收藏夹按钮 */
@@ -315,7 +315,7 @@
 
 /* 中止按钮 */
 .t-menu-icon-btn.cancel {
-    color: #ff6b6b;
+    color: var(--t-color-danger);
     animation: t-cancel-pulse-icon 1.5s ease-in-out infinite;
 }
 
@@ -335,7 +335,7 @@
     align-items: center;
     justify-content: center;
     font-size: 16px;
-    color: #fff;
+    color: var(--t-color-text-strong);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s;
 }
@@ -346,12 +346,12 @@
 }
 
 .t-menu-icon.lore {
-    background: linear-gradient(135deg, #a29bfe, #6c5ce7);
-    border: 2px solid #a29bfe;
+    background: linear-gradient(135deg, var(--t-color-decor), #6c5ce7);
+    border: 2px solid var(--t-color-decor);
 }
 
 .t-menu-icon.cancel {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+    background: linear-gradient(135deg, var(--t-color-danger), #ee5a5a);
     border: 2px solid #ff4757;
     animation: t-cancel-pulse 1.5s ease-in-out infinite;
 }

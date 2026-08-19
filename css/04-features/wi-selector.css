@@ -14,8 +14,8 @@
     width: 90%;
     max-width: 860px;
     max-height: 80vh;
-    background: #1a1a1a;
-    border: 1px solid #444;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 10px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     z-index: 3000;
@@ -38,8 +38,8 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     flex-shrink: 0;
-    border-bottom: 1px solid #333;
-    background: #1e1e1e;
+    border-bottom: 1px solid var(--t-color-border);
+    background: var(--t-color-surface);
     position: relative;
     z-index: 2;
 }
@@ -81,13 +81,13 @@
 }
 
 .t-wi-tab-btn.active {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-weight: 600;
     background: rgba(144, 205, 244, 0.055);
 }
 
 .t-wi-tab-btn.active::after {
-    background: #90cdf4;
+    background: var(--t-color-accent);
 }
 
 .t-wi-tab-btn:focus-visible {
@@ -102,7 +102,7 @@
 }
 
 .t-wi-tab-btn.active .t-wi-tab-count {
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-wi-layout {
@@ -115,7 +115,7 @@
 }
 
 .t-wi-books-pane {
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 8px;
     background: #1d1d1d;
     display: flex;
@@ -125,7 +125,7 @@
 
 .t-wi-books-header {
     padding: 10px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     color: #999;
     font-size: 0.8em;
 }
@@ -162,8 +162,8 @@
 
 .t-wi-book-item.selected {
     color: #dff1ff;
-    background: rgba(144, 205, 244, 0.12);
-    border-color: rgba(144, 205, 244, 0.35);
+    background: var(--t-color-accent-soft);
+    border-color: var(--t-color-accent-border);
 }
 
 .t-wi-book-item-dot {
@@ -175,7 +175,7 @@
 }
 
 .t-wi-book-item-dot.active {
-    background: #55efc4;
+    background: var(--t-color-notify);
     box-shadow: 0 0 6px rgba(85, 239, 196, 0.6);
 }
 
@@ -187,14 +187,14 @@
 }
 
 .t-wi-booklist-empty {
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.84em;
     text-align: center;
     padding: 20px 10px;
 }
 
 .t-wi-entry-pane {
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 8px;
     background: #191919;
     display: flex;
@@ -210,7 +210,7 @@
     flex-direction: column;
     gap: 8px;
     padding: 10px 12px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     flex-shrink: 0;
 }
 
@@ -241,13 +241,13 @@
     font-size: 0.72em;
     padding: 2px 7px;
     border-radius: 99px;
-    border: 1px solid #444;
-    color: #888;
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text-muted);
     background: #232323;
 }
 
 .t-wi-entry-pane-badge.active {
-    color: #55efc4;
+    color: var(--t-color-notify);
     border-color: rgba(85, 239, 196, 0.45);
     background: rgba(85, 239, 196, 0.08);
 }
@@ -269,7 +269,7 @@
 .t-wi-entry-search .t-wi-search-icon {
     position: absolute;
     left: 10px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 12px;
     pointer-events: none;
 }
@@ -278,7 +278,7 @@
     width: 100%;
     height: 30px;
     padding: 0 28px 0 30px;
-    border: 1px solid #3a3a3a;
+    border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
     background: #222;
     color: #ddd;
@@ -293,14 +293,14 @@
 }
 
 .t-wi-entry-search input::placeholder {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-wi-search-clear {
     position: absolute;
     right: 8px;
     display: none;
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 13px;
     cursor: pointer;
     padding: 2px 4px;
@@ -317,7 +317,7 @@
     gap: 5px;
     flex-shrink: 0;
     padding: 0 6px;
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.8em;
     white-space: nowrap;
     cursor: pointer;
@@ -357,7 +357,7 @@
 
 .t-wi-empty {
     text-align: center;
-    color: #666;
+    color: var(--t-color-text-faint);
     padding: 40px;
     font-size: 0.9em;
 }
@@ -372,20 +372,20 @@
     gap: 10px;
     padding: 10px;
     background: #222;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .t-wi-entry:hover {
-    background: #2a2a2a;
-    border-color: #444;
+    background: var(--t-color-surface-raised);
+    border-color: var(--t-color-border-strong);
 }
 
 .t-wi-entry.selected {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-accent-border-subtle);
 }
 
 .t-wi-entry-check {
@@ -400,7 +400,7 @@
 
 .t-wi-entry-title {
     font-weight: bold;
-    color: #eee;
+    color: var(--t-color-text);
     margin-bottom: 4px;
     display: flex;
     align-items: center;
@@ -410,13 +410,13 @@
 
 .t-wi-uid {
     font-size: 0.75em;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-weight: normal;
 }
 
 .t-wi-entry-preview {
     font-size: 0.8em;
-    color: #888;
+    color: var(--t-color-text-muted);
     line-height: 1.4;
     overflow: hidden;
     display: -webkit-box;
@@ -435,7 +435,7 @@
 
 /* 眼睛预览按钮 */
 .t-wi-preview-btn {
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 1em;
     cursor: pointer;
     padding: 4px 6px;
@@ -444,8 +444,8 @@
 }
 
 .t-wi-preview-btn:hover {
-    color: #90cdf4;
-    background: rgba(144, 205, 244, 0.1);
+    color: var(--t-color-accent);
+    background: var(--t-color-accent-veil);
 }
 
 /* 预览弹窗 —— 遮罩与表面基础见 02-components/dialog.css
@@ -470,13 +470,13 @@
     align-items: center;
     padding: 12px 15px;
     background: #252525;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     border-radius: 8px 8px 0 0;
 }
 
 .t-wi-preview-title {
     font-weight: bold;
-    color: #eee;
+    color: var(--t-color-text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -484,20 +484,20 @@
 
 .t-wi-preview-close {
     font-size: 1.5em;
-    color: #888;
+    color: var(--t-color-text-muted);
     cursor: pointer;
     padding: 0 5px;
     line-height: 1;
 }
 
 .t-wi-preview-close:hover {
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-wi-preview-content {
     padding: 15px;
     overflow-y: auto;
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     line-height: 1.6;
     white-space: pre-wrap;
@@ -508,7 +508,7 @@
    （与 .t-queue-footer / .t-ce-footer 逐字节相同，A13 重复组）。
    本文件只剩下方移动端的 padding 收紧。 */
 #t-wi-stat {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.9em;
 }
 
@@ -576,7 +576,7 @@
         width: 100%;
         height: 36px;
         padding: 0 10px;
-        border: 1px solid #3a3a3a;
+        border: 1px solid var(--t-color-border-control);
         border-radius: 8px;
         background: #222;
         color: #ddd;

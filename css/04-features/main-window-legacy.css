@@ -31,28 +31,28 @@
 #t-main-view.t-layout-legacy .t-tools-btn:hover {
     opacity: 1;
     background: #333;
-    color: #fff;
+    color: var(--t-color-text-strong);
     transform: scale(1.05);
 }
 
 #t-main-view.t-layout-legacy .t-tools-btn.active {
     opacity: 1;
-    background: #bfa15f;
+    background: var(--t-color-brand);
     color: #000;
 }
 
 #t-main-view.t-layout-legacy .t-tools-btn.zen-active {
     opacity: 1;
     background: transparent;
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 #t-main-view.t-layout-legacy .t-tools-panel {
     position: absolute;
     top: 65px;
     right: 25px;
-    background: #1e1e1e;
-    border: 1px solid #444;
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 8px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
     z-index: 101;
@@ -68,24 +68,24 @@
     padding: 10px 12px;
     border-radius: 6px;
     cursor: pointer;
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     transition: all 0.2s;
 }
 
 #t-main-view.t-layout-legacy .t-tools-item:hover {
-    background: #2a2a2a;
-    color: #fff;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-strong);
 }
 
 #t-main-view.t-layout-legacy .t-tools-item i {
     width: 18px;
     text-align: center;
-    color: #888;
+    color: var(--t-color-text-muted);
 }
 
 #t-main-view.t-layout-legacy .t-tools-item:hover i {
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 #t-main-view.t-layout-legacy .t-bot-left {
@@ -108,9 +108,9 @@
     box-sizing: border-box;
     line-height: 1;
     background: #2b2b2b;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 1em;
     cursor: pointer;
     transition: all 0.2s;
@@ -118,8 +118,8 @@
 
 #t-main-view.t-layout-legacy .t-btn-grid:hover {
     background: #383838;
-    color: #fff;
-    border-color: #666;
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-text-faint);
 }
 
 #t-main-view.t-layout-legacy .t-btn-grid:active {
@@ -177,8 +177,8 @@
 }
 
 #t-main-view.t-layout-legacy .t-run-single {
-    background: linear-gradient(135deg, #bfa15f, #d4c08b);
-    color: #1a1a1a;
+    background: linear-gradient(135deg, var(--t-color-brand), #d4c08b);
+    color: var(--t-color-surface-sunken);
     border-radius: 30px 0 0 30px;
 }
 
@@ -189,7 +189,7 @@
 
 #t-main-view.t-layout-legacy .t-run-queue {
     background: linear-gradient(135deg, #4a9eff, #6ab0ff);
-    color: #fff;
+    color: var(--t-color-text-strong);
     border-radius: 0 30px 30px 0;
 }
 
@@ -203,8 +203,8 @@
 }
 
 #t-main-view.t-layout-legacy .t-run-queue.inactive {
-    background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
-    color: #888;
+    background: linear-gradient(135deg, var(--t-color-border-control), #4a4a4a);
+    color: var(--t-color-text-muted);
 }
 
 #t-main-view.t-layout-legacy .t-run-queue.inactive:hover:not(:disabled) {
@@ -232,9 +232,9 @@
     box-sizing: border-box;
     line-height: 1;
     background: #2b2b2b;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 1em;
     cursor: pointer;
     transition: all 0.2s;
@@ -242,8 +242,8 @@
 
 #t-main-view.t-layout-legacy .t-btn-aux:hover {
     background: #383838;
-    color: #fff;
-    border-color: #666;
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-text-faint);
 }
 
 #t-main-view.t-layout-legacy .t-btn-aux:active {
@@ -251,7 +251,7 @@
 }
 
 #t-main-view.t-layout-legacy .t-btn-diag {
-    color: #f59e0b;
+    color: var(--t-color-warning);
 }
 
 #t-main-view.t-layout-legacy .t-btn-diag:hover {
@@ -261,7 +261,7 @@
 }
 
 #t-main-view.t-layout-legacy #t-btn-edit {
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 #t-main-view.t-layout-legacy #t-btn-edit:hover {
@@ -270,12 +270,12 @@
 }
 
 #t-main-view.t-layout-legacy .t-btn-stop {
-    color: #ff6b6b;
+    color: var(--t-color-danger);
 }
 
 #t-main-view.t-layout-legacy .t-btn-stop:hover {
     background: rgba(255, 107, 107, 0.15);
-    border-color: rgba(255, 107, 107, 0.4);
+    border-color: var(--t-color-danger-border);
     color: #ff8a8a;
 }
 
@@ -285,8 +285,8 @@
 
 #t-main-view.t-layout-legacy .t-bottom-bar {
     padding: 12px 15px;
-    background: #1e1e1e;
-    border-top: 1px solid #333;
+    background: var(--t-color-surface);
+    border-top: 1px solid var(--t-color-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -302,8 +302,8 @@
 
 #t-main-view.t-layout-legacy #t-btn-queue-settings.active {
     background: rgba(144, 205, 244, 0.15);
-    border-color: rgba(144, 205, 244, 0.4);
-    color: #90cdf4;
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
 }
 
 @media screen and (max-width: 600px) {

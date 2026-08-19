@@ -4255,7 +4255,7 @@ textarea.t-input {
     border-radius: 50%;
     /* \u4F7F\u7528 CSS \u53D8\u91CF\u63A7\u5236\u80CC\u666F\u989C\u8272\uFF08\u652F\u6301\u900F\u660E\u5EA6\uFF09 */
     background: var(--t-bg-color, #2b2b2b);
-    color: #fff;
+    color: var(--t-color-text-strong);
 
     display: flex;
     align-items: center;
@@ -4263,7 +4263,7 @@ textarea.t-input {
     cursor: pointer;
     z-index: 9999;
     /* \u4F7F\u7528 CSS \u53D8\u91CF\u63A7\u5236\u8FB9\u6846\u989C\u8272\uFF08\u652F\u6301\u900F\u660E\u5EA6\uFF09 */
-    border: 2px solid var(--t-border-color-rgba, var(--t-border-color, #444));
+    border: 2px solid var(--t-border-color-rgba, var(--t-border-color, var(--t-color-border-strong)));
     transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     user-select: none;
     overflow: visible;
@@ -4286,7 +4286,7 @@ textarea.t-input {
 /* ===== \u52A8\u753B 1: \u8109\u51B2\u6CE2\u7EB9 (Pulse Ripple) ===== */
 
 #titania-float-btn.t-loading.t-anim-ripple {
-    border-color: var(--t-border-color-rgba, var(--t-border-color, #90cdf4));
+    border-color: var(--t-border-color-rgba, var(--t-border-color, var(--t-color-accent)));
 }
 
 #titania-float-btn.t-loading.t-anim-ripple::before,
@@ -4297,7 +4297,7 @@ textarea.t-input {
     height: 100%;
     border-radius: 50%;
     /* \u52A8\u753B\u6CE2\u7EB9\u4F7F\u7528\u4E0D\u900F\u660E\u7684\u8FB9\u6846\u989C\u8272\u4EE5\u4FDD\u6301\u53EF\u89C1\u6027 */
-    border: 2px solid var(--t-border-color, #90cdf4);
+    border: 2px solid var(--t-border-color, var(--t-color-accent));
     animation: t-ripple-1 1.5s ease-out infinite;
 }
 
@@ -4308,7 +4308,7 @@ textarea.t-input {
 /* ===== \u52A8\u753B 2: \u7535\u78C1\u95EA\u70C1 (Arc Flash) ===== */
 
 #titania-float-btn.t-loading.t-anim-arc {
-    border-color: var(--t-border-color-rgba, var(--t-border-color, #a29bfe));
+    border-color: var(--t-border-color-rgba, var(--t-border-color, var(--t-color-decor)));
 }
 
 #titania-float-btn.t-loading.t-anim-arc::before {
@@ -4318,8 +4318,8 @@ textarea.t-input {
     height: 120%;
     border-radius: 50%;
     background:
-        radial-gradient(circle at 20% 0%, var(--t-border-color, #a29bfe) 0%, transparent 30%),
-        radial-gradient(circle at 80% 100%, var(--t-border-color, #a29bfe) 0%, transparent 30%);
+        radial-gradient(circle at 20% 0%, var(--t-border-color, var(--t-color-decor)) 0%, transparent 30%),
+        radial-gradient(circle at 80% 100%, var(--t-border-color, var(--t-color-decor)) 0%, transparent 30%);
     animation: t-arc-rotate 1s linear infinite, t-arc-flash-1 0.3s ease infinite;
     opacity: 0.8;
 }
@@ -4341,7 +4341,7 @@ textarea.t-input {
 
 #titania-float-btn.t-notify {
     animation: t-notify-glow 2s infinite ease-in-out;
-    border-color: var(--t-border-color-rgba, var(--t-border-color, #55efc4));
+    border-color: var(--t-border-color-rgba, var(--t-border-color, var(--t-color-notify)));
 }
 
 /* ===== \u8BA1\u65F6\u5668 ===== */
@@ -4354,7 +4354,7 @@ textarea.t-input {
     background: rgba(30, 30, 30, 0.5);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
     color: #00d9ff;
@@ -4380,7 +4380,7 @@ textarea.t-input {
 }
 
 #titania-timer.done {
-    color: #55efc4;
+    color: var(--t-color-notify);
 }
 
 /* ===== \u6A2A\u5411\u56FE\u6807\u83DC\u5355\u5BB9\u5668 ===== */
@@ -4394,9 +4394,9 @@ textarea.t-input {
 
     /* \u900F\u660E\u6BDB\u73BB\u7483\u6548\u679C */
     background: linear-gradient(135deg,
-            rgba(255, 255, 255, 0.08) 0%,
-            rgba(255, 255, 255, 0.03) 50%,
-            rgba(255, 255, 255, 0.06) 100%);
+            var(--t-color-surface-hover) 0%,
+            var(--t-color-surface-veil) 50%,
+            var(--t-color-surface-hover-subtle) 100%);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
 
@@ -4444,8 +4444,8 @@ textarea.t-input {
     transform: scale(0.5) rotate(-10deg);
 
     /* \u5FAE\u5999\u7684\u73BB\u7483\u8D28\u611F */
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-veil);
+    border: 1px solid var(--t-color-border-faint);
     backdrop-filter: blur(4px);
 }
 
@@ -4456,7 +4456,7 @@ textarea.t-input {
 
 .t-menu-icon-btn:hover {
     transform: scale(1.12);
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-menu-icon-btn:active {
@@ -4478,7 +4478,7 @@ textarea.t-input {
 
 /* \u8BBE\u5B9A\u63D0\u53D6\u6309\u94AE */
 .t-menu-icon-btn.lore {
-    color: #a29bfe;
+    color: var(--t-color-decor);
 }
 
 .t-menu-icon-btn.lore:hover {
@@ -4513,7 +4513,7 @@ textarea.t-input {
     box-shadow:
         0 0 15px rgba(176, 190, 197, 0.3),
         inset 0 0 10px rgba(176, 190, 197, 0.1);
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 /* \u6536\u85CF\u5939\u6309\u94AE */
@@ -4557,7 +4557,7 @@ textarea.t-input {
 
 /* \u4E2D\u6B62\u6309\u94AE */
 .t-menu-icon-btn.cancel {
-    color: #ff6b6b;
+    color: var(--t-color-danger);
     animation: t-cancel-pulse-icon 1.5s ease-in-out infinite;
 }
 
@@ -4577,7 +4577,7 @@ textarea.t-input {
     align-items: center;
     justify-content: center;
     font-size: 16px;
-    color: #fff;
+    color: var(--t-color-text-strong);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s;
 }
@@ -4588,12 +4588,12 @@ textarea.t-input {
 }
 
 .t-menu-icon.lore {
-    background: linear-gradient(135deg, #a29bfe, #6c5ce7);
-    border: 2px solid #a29bfe;
+    background: linear-gradient(135deg, var(--t-color-decor), #6c5ce7);
+    border: 2px solid var(--t-color-decor);
 }
 
 .t-menu-icon.cancel {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+    background: linear-gradient(135deg, var(--t-color-danger), #ee5a5a);
     border: 2px solid #ff4757;
     animation: t-cancel-pulse 1.5s ease-in-out infinite;
 }
@@ -4637,7 +4637,7 @@ textarea.t-input {
     height: 85vh;
     display: flex;
     flex-direction: column;
-    background: #121212;
+    background: var(--t-color-bg);
     position: relative;
     /* \u786E\u4FDD\u4E3B\u7A97\u53E3\u5728\u906E\u7F69\u5C42\u4E4B\u4E0A */
     z-index: 20001;
@@ -4748,8 +4748,8 @@ textarea.t-input {
 /* \u9876\u90E8\u64CD\u4F5C\u533A */
 .t-top-bar {
     padding: 12px 20px;
-    background: #1e1e1e;
-    border-bottom: 1px solid #333;
+    background: var(--t-color-surface);
+    border-bottom: 1px solid var(--t-color-border);
     display: flex;
     gap: 15px;
     align-items: stretch;
@@ -4786,10 +4786,10 @@ textarea.t-input {
     align-items: center;
     justify-content: center;
     min-width: 160px;
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
     border-radius: 6px;
     padding: 0 12px;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     flex-shrink: 0;
     transition: all 0.3s;
     cursor: pointer;
@@ -4797,12 +4797,12 @@ textarea.t-input {
 
 .t-history-toggle:hover {
     background: #222;
-    border-color: #444;
+    border-color: var(--t-color-border-strong);
 }
 
 .t-history-toggle.active {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-accent-border-subtle);
 }
 
 .t-toggle-label {
@@ -4816,13 +4816,13 @@ textarea.t-input {
 .t-toggle-text {
     font-size: 0.9em;
     font-weight: bold;
-    color: #888;
+    color: var(--t-color-text-muted);
     transition: color 0.2s;
     white-space: nowrap;
 }
 
 .t-history-toggle.active .t-toggle-text {
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-history-toggle:hover .t-toggle-text {
@@ -4849,21 +4849,21 @@ textarea.t-input {
 }
 
 .t-subtoggle.disabled:hover {
-    background: #1a1a1a;
-    border-color: #333;
+    background: var(--t-color-surface-sunken);
+    border-color: var(--t-color-border);
 }
 
 .t-subtoggle.disabled:hover .t-toggle-text {
-    color: #888;
+    color: var(--t-color-text-muted);
 }
 
 /* \u751F\u6210\u6A21\u5F0F\u5207\u6362 */
 .t-mode-toggle {
     display: flex;
     align-items: center;
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
     border-radius: 6px;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     overflow: hidden;
     flex-shrink: 0;
 }
@@ -4875,12 +4875,12 @@ textarea.t-input {
     padding: 0 14px;
     height: 100%;
     cursor: pointer;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.85em;
     font-weight: bold;
     transition: all 0.2s;
     white-space: nowrap;
-    border-right: 1px solid #333;
+    border-right: 1px solid var(--t-color-border);
 }
 
 .t-mode-btn:last-child {
@@ -4889,12 +4889,12 @@ textarea.t-input {
 
 .t-mode-btn:hover {
     background: #222;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
 }
 
 .t-mode-btn.active {
     background: rgba(191, 161, 95, 0.15);
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-mode-btn.active:hover {
@@ -4905,7 +4905,7 @@ textarea.t-input {
 .t-trigger-card {
     flex-grow: 1;
     background: #222;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 0 15px;
     cursor: pointer;
@@ -4918,14 +4918,14 @@ textarea.t-input {
 }
 
 .t-trigger-card:hover {
-    background: #2a2a2a;
+    background: var(--t-color-surface-raised);
     border-color: #555;
 }
 
 .t-trigger-main {
     font-size: 1.1em;
     font-weight: bold;
-    color: #eee;
+    color: var(--t-color-text);
     margin-bottom: 3px;
     display: flex;
     align-items: center;
@@ -4937,7 +4937,7 @@ textarea.t-input {
 
 .t-trigger-sub {
     font-size: 0.8em;
-    color: #888;
+    color: var(--t-color-text-muted);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -4950,7 +4950,7 @@ textarea.t-input {
     background: #333;
     padding: 1px 6px;
     border-radius: 3px;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 0.9em;
     flex-shrink: 0;
     border: 1px solid transparent;
@@ -4989,7 +4989,7 @@ textarea.t-input {
     justify-content: center;
     cursor: pointer;
     background: #222;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     transition: 0.2s;
 }
@@ -4997,16 +4997,16 @@ textarea.t-input {
 .t-filter-btn {
     width: 40px;
     font-size: 1.1em;
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-filter-btn:hover {
-    background: #2a2a2a;
-    color: #aaa;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-secondary);
 }
 
 .t-filter-btn.active-filter {
-    color: #bfa15f;
+    color: var(--t-color-brand);
     border-color: rgba(191, 161, 95, 0.3);
     background: rgba(191, 161, 95, 0.1);
 }
@@ -5014,12 +5014,12 @@ textarea.t-input {
 .t-dice-btn {
     width: 50px;
     font-size: 1.5em;
-    color: #888;
+    color: var(--t-color-text-muted);
 }
 
 .t-dice-btn:hover {
-    background: #2a2a2a;
-    color: #fff;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-strong);
 }
 
 /* \u5185\u5BB9\u533A\u53F3\u4E0A\u89D2\u5782\u76F4\u56FE\u6807\u680F */
@@ -5040,8 +5040,8 @@ textarea.t-input {
     border-radius: 50%;
     background: rgba(30, 30, 30, 0.4);
     backdrop-filter: blur(4px);
-    color: #666;
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    color: var(--t-color-text-faint);
+    border: 1px solid var(--t-color-surface-veil);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5054,19 +5054,19 @@ textarea.t-input {
 .t-tools-icon:hover {
     opacity: 1;
     background: rgba(51, 51, 51, 0.8);
-    color: #fff;
+    color: var(--t-color-text-strong);
     transform: scale(1.08);
 }
 
 .t-tools-icon.active {
     opacity: 1;
-    background: #bfa15f;
+    background: var(--t-color-brand);
     color: #000;
 }
 
 .t-tools-icon.is-faved {
     opacity: 0.95;
-    border-color: rgba(255, 107, 107, 0.4);
+    border-color: var(--t-color-danger-border);
 }
 
 #t-main-view.t-zen-mode .t-tools-icon {
@@ -5078,7 +5078,7 @@ textarea.t-input {
     min-height: 70px;
     padding: 10px 14px;
     background: #181818;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--t-color-border);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -5092,7 +5092,7 @@ textarea.t-input {
 .t-shortcut-btn {
     padding: 4px 11px;
     flex: 0 0 auto;
-    border: 1px solid #3a3a3a;
+    border: 1px solid var(--t-color-border-control);
     border-radius: 999px;
     background: #232323;
     color: #999;
@@ -5111,7 +5111,7 @@ textarea.t-input {
 
 .t-shortcut-btn.t-shortcut-compose {
     margin-left: auto;
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-shortcut-btn.t-shortcut-compose i {
@@ -5141,7 +5141,7 @@ textarea.t-input {
     display: flex;
     flex-direction: column;
     background: #191919;
-    border-left: 1px solid #444;
+    border-left: 1px solid var(--t-color-border-strong);
     box-shadow: -14px 0 34px rgba(0, 0, 0, .5);
     transform: translateX(102%);
     transition: transform .24s ease;
@@ -5162,7 +5162,7 @@ textarea.t-input {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     box-sizing: border-box;
 }
 
@@ -5174,7 +5174,7 @@ textarea.t-input {
 }
 
 .t-toolbox-header strong {
-    color: #eee;
+    color: var(--t-color-text);
     font-size: 15px;
 }
 
@@ -5190,7 +5190,7 @@ textarea.t-input {
     border: 0;
     border-radius: 6px;
     background: #292929;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     cursor: pointer;
 }
 
@@ -5236,20 +5236,20 @@ textarea.t-input {
 .t-toolbox-action i {
     width: 19px;
     flex: 0 0 19px;
-    color: #888;
+    color: var(--t-color-text-muted);
     text-align: center;
 }
 
 .t-toolbox-action:hover {
     background: #2d2d2d;
     border-color: #555;
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-toolbox-action.active,
 #t-btn-queue-settings.active {
     border-color: rgba(144, 205, 244, .45);
-    background: rgba(144, 205, 244, .12);
+    background: var(--t-color-accent-soft);
     color: #b8e0fa;
 }
 
@@ -5284,8 +5284,8 @@ textarea.t-input {
 .t-filter-popover {
     position: absolute;
     z-index: 20001;
-    background: #1e1e1e;
-    border: 1px solid #444;
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
     padding: 5px;
@@ -5305,12 +5305,12 @@ textarea.t-input {
 }
 
 .t-filter-popover::-webkit-scrollbar-track {
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
     border-radius: 3px;
 }
 
 .t-filter-popover::-webkit-scrollbar-thumb {
-    background: #444;
+    background: var(--t-color-border-strong);
     border-radius: 3px;
 }
 
@@ -5321,7 +5321,7 @@ textarea.t-input {
 .t-filter-item {
     padding: 8px 12px;
     cursor: pointer;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     border-radius: 4px;
     font-size: 0.9em;
     display: flex;
@@ -5330,12 +5330,12 @@ textarea.t-input {
 }
 
 .t-filter-item:hover {
-    background: #2a2a2a;
-    color: #fff;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-strong);
 }
 
 .t-filter-item.active {
-    background: #bfa15f;
+    background: var(--t-color-brand);
     color: #000;
     font-weight: bold;
 }
@@ -5369,7 +5369,7 @@ textarea.t-input {
 
 .t-more-pin:hover:not(:disabled) {
     background: rgba(191, 161, 95, 0.16);
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-more-pin:disabled {
@@ -5624,7 +5624,7 @@ textarea.t-input {
     -webkit-backdrop-filter: blur(6px);
 
     /* \u8FB9\u6846\u548C\u5706\u89D2 */
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--t-color-surface-hover-subtle);
     border-radius: 4px;
 
     /* \u5185\u8FB9\u8DDD - \u66F4\u7D27\u51D1 */
@@ -5667,14 +5667,14 @@ textarea.t-input {
 }
 
 .t-stats-value {
-    color: #55efc4;
+    color: var(--t-color-notify);
     font-weight: bold;
     font-size: 10px;
 }
 
 /* \u6A21\u578B\u540D\u79F0\u4F7F\u7528\u4E0D\u540C\u989C\u8272 */
 #t-stat-model {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -5745,7 +5745,7 @@ textarea.t-input {
 .t-page-nav:hover:not(:disabled) {
     opacity: 1;
     background: rgba(191, 161, 95, 0.3);
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-page-nav:active:not(:disabled) {
@@ -5818,8 +5818,8 @@ textarea.t-input {
     max-width: 800px;
     height: calc(100% - 80px);
     max-height: 600px;
-    background: #1a1a1a;
-    border: 1px solid #444;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 10px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     z-index: 3000;
@@ -5856,19 +5856,19 @@ textarea.t-input {
     background: rgba(25, 25, 35, 0.95);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(144, 205, 244, 0.3);
+    border: 1px solid var(--t-color-accent-border-subtle);
     border-radius: 25px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     animation: t-indicator-slide-up 0.3s ease;
 }
 
 .t-new-content-indicator i {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-size: 1em;
 }
 
 .t-new-content-indicator span {
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     white-space: nowrap;
 }
@@ -5878,7 +5878,7 @@ textarea.t-input {
     background: linear-gradient(90deg, #4a9eff, #6ab0ff);
     border: none;
     border-radius: 15px;
-    color: #fff;
+    color: var(--t-color-text-strong);
     font-size: 0.85em;
     font-weight: bold;
     cursor: pointer;
@@ -5922,19 +5922,19 @@ textarea.t-input {
 }
 
 .t-gcn-content i {
-    color: #55efc4;
+    color: var(--t-color-notify);
     font-size: 1.1em;
 }
 
 .t-gcn-content span {
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     white-space: nowrap;
 }
 
 .t-gcn-view-btn {
     padding: 6px 14px;
-    background: linear-gradient(90deg, #55efc4, #00b894);
+    background: linear-gradient(90deg, var(--t-color-notify), #00b894);
     border: none;
     border-radius: 15px;
     color: #000;
@@ -5962,7 +5962,7 @@ textarea.t-input {
     background: transparent;
     border: none;
     border-radius: 50%;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s;
@@ -5970,7 +5970,7 @@ textarea.t-input {
 
 .t-gcn-close-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 /* \u79FB\u52A8\u7AEF\u9002\u914D */
@@ -6002,11 +6002,11 @@ textarea.t-input {
 
 /* \u6302\u5728 ST \u7684 .extraMesButtons \u91CC\uFF0C\u7EE7\u627F .mes_button \u7684\u5C3A\u5BF8\u4E0E\u4EA4\u4E92\uFF0C\u53EA\u6539\u914D\u8272 */
 #chat .titania-inject-btn {
-    color: var(--t-theme, #bfa15f);
+    color: var(--t-theme, var(--t-color-brand));
 }
 
 #chat .titania-inject-btn:hover {
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-chat-inject-window {
@@ -6018,11 +6018,11 @@ textarea.t-input {
     background: rgba(30, 30, 35, 0.96);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 12px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     overflow: hidden;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
 }
 
 .t-chat-inject-body {
@@ -6038,13 +6038,13 @@ textarea.t-input {
     padding: 8px 12px;
     border-radius: 6px;
     background: rgba(144, 205, 244, 0.08);
-    border-left: 3px solid #90cdf4;
-    color: #cbd5e0;
+    border-left: 3px solid var(--t-color-accent);
+    color: var(--t-color-dialog-label);
     flex-shrink: 0;
 }
 
 .t-chat-inject-target b {
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-chat-inject-visible {
@@ -6053,7 +6053,7 @@ textarea.t-input {
     gap: 10px;
     padding: 10px 12px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-color-surface-veil);
     border: 1px solid rgba(255, 255, 255, 0.07);
     cursor: pointer;
     flex-shrink: 0;
@@ -6067,7 +6067,7 @@ textarea.t-input {
 
 .t-chat-inject-visible-main {
     display: block;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-weight: 600;
 }
 
@@ -6098,7 +6098,7 @@ textarea.t-input {
 
 .t-chat-inject-item:hover {
     background: rgba(191, 161, 95, 0.12);
-    border-color: var(--t-theme, #bfa15f);
+    border-color: var(--t-theme, var(--t-color-brand));
     transform: translateX(2px);
 }
 
@@ -6111,7 +6111,7 @@ textarea.t-input {
 }
 
 .t-chat-inject-item-name {
-    color: var(--t-theme, #bfa15f);
+    color: var(--t-theme, var(--t-color-brand));
     font-weight: 600;
 }
 
@@ -6144,7 +6144,7 @@ textarea.t-input {
 }
 
 .t-chat-inject-empty-title {
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     font-weight: 600;
     margin-bottom: 6px;
 }
@@ -6224,28 +6224,28 @@ textarea.t-input {
 #t-main-view.t-layout-legacy .t-tools-btn:hover {
     opacity: 1;
     background: #333;
-    color: #fff;
+    color: var(--t-color-text-strong);
     transform: scale(1.05);
 }
 
 #t-main-view.t-layout-legacy .t-tools-btn.active {
     opacity: 1;
-    background: #bfa15f;
+    background: var(--t-color-brand);
     color: #000;
 }
 
 #t-main-view.t-layout-legacy .t-tools-btn.zen-active {
     opacity: 1;
     background: transparent;
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 #t-main-view.t-layout-legacy .t-tools-panel {
     position: absolute;
     top: 65px;
     right: 25px;
-    background: #1e1e1e;
-    border: 1px solid #444;
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 8px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
     z-index: 101;
@@ -6261,24 +6261,24 @@ textarea.t-input {
     padding: 10px 12px;
     border-radius: 6px;
     cursor: pointer;
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     transition: all 0.2s;
 }
 
 #t-main-view.t-layout-legacy .t-tools-item:hover {
-    background: #2a2a2a;
-    color: #fff;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-strong);
 }
 
 #t-main-view.t-layout-legacy .t-tools-item i {
     width: 18px;
     text-align: center;
-    color: #888;
+    color: var(--t-color-text-muted);
 }
 
 #t-main-view.t-layout-legacy .t-tools-item:hover i {
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 #t-main-view.t-layout-legacy .t-bot-left {
@@ -6301,9 +6301,9 @@ textarea.t-input {
     box-sizing: border-box;
     line-height: 1;
     background: #2b2b2b;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 1em;
     cursor: pointer;
     transition: all 0.2s;
@@ -6311,8 +6311,8 @@ textarea.t-input {
 
 #t-main-view.t-layout-legacy .t-btn-grid:hover {
     background: #383838;
-    color: #fff;
-    border-color: #666;
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-text-faint);
 }
 
 #t-main-view.t-layout-legacy .t-btn-grid:active {
@@ -6370,8 +6370,8 @@ textarea.t-input {
 }
 
 #t-main-view.t-layout-legacy .t-run-single {
-    background: linear-gradient(135deg, #bfa15f, #d4c08b);
-    color: #1a1a1a;
+    background: linear-gradient(135deg, var(--t-color-brand), #d4c08b);
+    color: var(--t-color-surface-sunken);
     border-radius: 30px 0 0 30px;
 }
 
@@ -6382,7 +6382,7 @@ textarea.t-input {
 
 #t-main-view.t-layout-legacy .t-run-queue {
     background: linear-gradient(135deg, #4a9eff, #6ab0ff);
-    color: #fff;
+    color: var(--t-color-text-strong);
     border-radius: 0 30px 30px 0;
 }
 
@@ -6396,8 +6396,8 @@ textarea.t-input {
 }
 
 #t-main-view.t-layout-legacy .t-run-queue.inactive {
-    background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
-    color: #888;
+    background: linear-gradient(135deg, var(--t-color-border-control), #4a4a4a);
+    color: var(--t-color-text-muted);
 }
 
 #t-main-view.t-layout-legacy .t-run-queue.inactive:hover:not(:disabled) {
@@ -6425,9 +6425,9 @@ textarea.t-input {
     box-sizing: border-box;
     line-height: 1;
     background: #2b2b2b;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 1em;
     cursor: pointer;
     transition: all 0.2s;
@@ -6435,8 +6435,8 @@ textarea.t-input {
 
 #t-main-view.t-layout-legacy .t-btn-aux:hover {
     background: #383838;
-    color: #fff;
-    border-color: #666;
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-text-faint);
 }
 
 #t-main-view.t-layout-legacy .t-btn-aux:active {
@@ -6444,7 +6444,7 @@ textarea.t-input {
 }
 
 #t-main-view.t-layout-legacy .t-btn-diag {
-    color: #f59e0b;
+    color: var(--t-color-warning);
 }
 
 #t-main-view.t-layout-legacy .t-btn-diag:hover {
@@ -6454,7 +6454,7 @@ textarea.t-input {
 }
 
 #t-main-view.t-layout-legacy #t-btn-edit {
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 #t-main-view.t-layout-legacy #t-btn-edit:hover {
@@ -6463,12 +6463,12 @@ textarea.t-input {
 }
 
 #t-main-view.t-layout-legacy .t-btn-stop {
-    color: #ff6b6b;
+    color: var(--t-color-danger);
 }
 
 #t-main-view.t-layout-legacy .t-btn-stop:hover {
     background: rgba(255, 107, 107, 0.15);
-    border-color: rgba(255, 107, 107, 0.4);
+    border-color: var(--t-color-danger-border);
     color: #ff8a8a;
 }
 
@@ -6478,8 +6478,8 @@ textarea.t-input {
 
 #t-main-view.t-layout-legacy .t-bottom-bar {
     padding: 12px 15px;
-    background: #1e1e1e;
-    border-top: 1px solid #333;
+    background: var(--t-color-surface);
+    border-top: 1px solid var(--t-color-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -6495,8 +6495,8 @@ textarea.t-input {
 
 #t-main-view.t-layout-legacy #t-btn-queue-settings.active {
     background: rgba(144, 205, 244, 0.15);
-    border-color: rgba(144, 205, 244, 0.4);
-    color: #90cdf4;
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
 }
 
 @media screen and (max-width: 600px) {
@@ -6593,7 +6593,7 @@ textarea.t-input {
     backdrop-filter: blur(10px);
     z-index: 2001;
     border-radius: 8px;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
@@ -6602,11 +6602,11 @@ textarea.t-input {
 
 .t-sel-header {
     padding: 10px 15px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #1e1e1e;
+    background: var(--t-color-surface);
     border-radius: 8px 8px 0 0;
     flex-wrap: wrap;
     gap: 10px;
@@ -6614,9 +6614,9 @@ textarea.t-input {
 
 /* \u5267\u672C\u9009\u62E9\u5668\u641C\u7D22\u6846 */
 .t-sel-search-input {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
+    background: var(--t-color-surface-raised);
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text);
     padding: 5px 10px;
     border-radius: 4px;
     font-size: 0.85em;
@@ -6625,9 +6625,9 @@ textarea.t-input {
 }
 
 .t-sel-sort-select {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
+    background: var(--t-color-surface-raised);
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text);
     padding: 5px 8px;
     border-radius: 4px;
     font-size: 0.85em;
@@ -6635,12 +6635,12 @@ textarea.t-input {
 
 .t-sel-search-input:focus {
     outline: none;
-    border-color: #bfa15f;
+    border-color: var(--t-color-brand);
     width: 180px;
 }
 
 .t-sel-search-input::placeholder {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-sel-body {
@@ -6652,7 +6652,7 @@ textarea.t-input {
 .t-sel-sidebar {
     width: 160px;
     background: #181818;
-    border-right: 1px solid #333;
+    border-right: 1px solid var(--t-color-border);
     padding: 10px;
     overflow-y: auto;
     display: flex;
@@ -6674,7 +6674,7 @@ textarea.t-input {
 .t-sel-cat-btn {
     padding: 8px 12px;
     cursor: pointer;
-    color: #888;
+    color: var(--t-color-text-muted);
     border-radius: 4px;
     font-size: 0.9em;
     transition: 0.2s;
@@ -6688,14 +6688,14 @@ textarea.t-input {
 
 .t-sel-cat-btn.active {
     background: #333;
-    color: #fff;
+    color: var(--t-color-text-strong);
     font-weight: bold;
-    border-left: 3px solid #bfa15f;
+    border-left: 3px solid var(--t-color-brand);
 }
 
 .t-script-card {
     background: #252525;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 12px;
     cursor: pointer;
@@ -6708,12 +6708,12 @@ textarea.t-input {
 .t-script-card:hover {
     transform: translateY(-2px);
     border-color: #555;
-    background: #2a2a2a;
+    background: var(--t-color-surface-raised);
 }
 
 .t-card-title {
     font-weight: bold;
-    color: #eee;
+    color: var(--t-color-text);
     font-size: 1em;
 }
 
@@ -6737,8 +6737,8 @@ textarea.t-input {
     padding: 7px 12px;
     font-size: 0.78em;
     color: #7f7f7f;
-    border-top: 1px solid #333;
-    background: #1a1a1a;
+    border-top: 1px solid var(--t-color-border);
+    background: var(--t-color-surface-sunken);
     border-radius: 0 0 8px 8px;
 }
 
@@ -6762,7 +6762,7 @@ textarea.t-input {
         overflow-x: auto;
         overflow-y: hidden;
         border-right: none;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--t-color-border);
         padding: 5px;
         gap: 8px;
         white-space: nowrap;
@@ -6791,14 +6791,14 @@ textarea.t-input {
         display: flex;
         align-items: center;
         background: #222;
-        border: 1px solid #333;
+        border: 1px solid var(--t-color-border);
     }
 
     .t-sel-cat-btn.active {
-        background: #bfa15f;
+        background: var(--t-color-brand);
         color: #000;
-        border: 1px solid #bfa15f;
-        border-left: 1px solid #bfa15f;
+        border: 1px solid var(--t-color-brand);
+        border-left: 1px solid var(--t-color-brand);
     }
 
     .t-sel-grid {
@@ -6835,8 +6835,8 @@ textarea.t-input {
     width: 90%;
     max-width: 860px;
     max-height: 80vh;
-    background: #1a1a1a;
-    border: 1px solid #444;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 10px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     z-index: 3000;
@@ -6859,8 +6859,8 @@ textarea.t-input {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     flex-shrink: 0;
-    border-bottom: 1px solid #333;
-    background: #1e1e1e;
+    border-bottom: 1px solid var(--t-color-border);
+    background: var(--t-color-surface);
     position: relative;
     z-index: 2;
 }
@@ -6902,13 +6902,13 @@ textarea.t-input {
 }
 
 .t-wi-tab-btn.active {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-weight: 600;
     background: rgba(144, 205, 244, 0.055);
 }
 
 .t-wi-tab-btn.active::after {
-    background: #90cdf4;
+    background: var(--t-color-accent);
 }
 
 .t-wi-tab-btn:focus-visible {
@@ -6923,7 +6923,7 @@ textarea.t-input {
 }
 
 .t-wi-tab-btn.active .t-wi-tab-count {
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-wi-layout {
@@ -6936,7 +6936,7 @@ textarea.t-input {
 }
 
 .t-wi-books-pane {
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 8px;
     background: #1d1d1d;
     display: flex;
@@ -6946,7 +6946,7 @@ textarea.t-input {
 
 .t-wi-books-header {
     padding: 10px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     color: #999;
     font-size: 0.8em;
 }
@@ -6983,8 +6983,8 @@ textarea.t-input {
 
 .t-wi-book-item.selected {
     color: #dff1ff;
-    background: rgba(144, 205, 244, 0.12);
-    border-color: rgba(144, 205, 244, 0.35);
+    background: var(--t-color-accent-soft);
+    border-color: var(--t-color-accent-border);
 }
 
 .t-wi-book-item-dot {
@@ -6996,7 +6996,7 @@ textarea.t-input {
 }
 
 .t-wi-book-item-dot.active {
-    background: #55efc4;
+    background: var(--t-color-notify);
     box-shadow: 0 0 6px rgba(85, 239, 196, 0.6);
 }
 
@@ -7008,14 +7008,14 @@ textarea.t-input {
 }
 
 .t-wi-booklist-empty {
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.84em;
     text-align: center;
     padding: 20px 10px;
 }
 
 .t-wi-entry-pane {
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 8px;
     background: #191919;
     display: flex;
@@ -7031,7 +7031,7 @@ textarea.t-input {
     flex-direction: column;
     gap: 8px;
     padding: 10px 12px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     flex-shrink: 0;
 }
 
@@ -7062,13 +7062,13 @@ textarea.t-input {
     font-size: 0.72em;
     padding: 2px 7px;
     border-radius: 99px;
-    border: 1px solid #444;
-    color: #888;
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text-muted);
     background: #232323;
 }
 
 .t-wi-entry-pane-badge.active {
-    color: #55efc4;
+    color: var(--t-color-notify);
     border-color: rgba(85, 239, 196, 0.45);
     background: rgba(85, 239, 196, 0.08);
 }
@@ -7090,7 +7090,7 @@ textarea.t-input {
 .t-wi-entry-search .t-wi-search-icon {
     position: absolute;
     left: 10px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 12px;
     pointer-events: none;
 }
@@ -7099,7 +7099,7 @@ textarea.t-input {
     width: 100%;
     height: 30px;
     padding: 0 28px 0 30px;
-    border: 1px solid #3a3a3a;
+    border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
     background: #222;
     color: #ddd;
@@ -7114,14 +7114,14 @@ textarea.t-input {
 }
 
 .t-wi-entry-search input::placeholder {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-wi-search-clear {
     position: absolute;
     right: 8px;
     display: none;
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 13px;
     cursor: pointer;
     padding: 2px 4px;
@@ -7138,7 +7138,7 @@ textarea.t-input {
     gap: 5px;
     flex-shrink: 0;
     padding: 0 6px;
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.8em;
     white-space: nowrap;
     cursor: pointer;
@@ -7178,7 +7178,7 @@ textarea.t-input {
 
 .t-wi-empty {
     text-align: center;
-    color: #666;
+    color: var(--t-color-text-faint);
     padding: 40px;
     font-size: 0.9em;
 }
@@ -7193,20 +7193,20 @@ textarea.t-input {
     gap: 10px;
     padding: 10px;
     background: #222;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .t-wi-entry:hover {
-    background: #2a2a2a;
-    border-color: #444;
+    background: var(--t-color-surface-raised);
+    border-color: var(--t-color-border-strong);
 }
 
 .t-wi-entry.selected {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-accent-border-subtle);
 }
 
 .t-wi-entry-check {
@@ -7221,7 +7221,7 @@ textarea.t-input {
 
 .t-wi-entry-title {
     font-weight: bold;
-    color: #eee;
+    color: var(--t-color-text);
     margin-bottom: 4px;
     display: flex;
     align-items: center;
@@ -7231,13 +7231,13 @@ textarea.t-input {
 
 .t-wi-uid {
     font-size: 0.75em;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-weight: normal;
 }
 
 .t-wi-entry-preview {
     font-size: 0.8em;
-    color: #888;
+    color: var(--t-color-text-muted);
     line-height: 1.4;
     overflow: hidden;
     display: -webkit-box;
@@ -7256,7 +7256,7 @@ textarea.t-input {
 
 /* \u773C\u775B\u9884\u89C8\u6309\u94AE */
 .t-wi-preview-btn {
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 1em;
     cursor: pointer;
     padding: 4px 6px;
@@ -7265,8 +7265,8 @@ textarea.t-input {
 }
 
 .t-wi-preview-btn:hover {
-    color: #90cdf4;
-    background: rgba(144, 205, 244, 0.1);
+    color: var(--t-color-accent);
+    background: var(--t-color-accent-veil);
 }
 
 /* \u9884\u89C8\u5F39\u7A97 \u2014\u2014 \u906E\u7F69\u4E0E\u8868\u9762\u57FA\u7840\u89C1 02-components/dialog.css
@@ -7291,13 +7291,13 @@ textarea.t-input {
     align-items: center;
     padding: 12px 15px;
     background: #252525;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     border-radius: 8px 8px 0 0;
 }
 
 .t-wi-preview-title {
     font-weight: bold;
-    color: #eee;
+    color: var(--t-color-text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -7305,20 +7305,20 @@ textarea.t-input {
 
 .t-wi-preview-close {
     font-size: 1.5em;
-    color: #888;
+    color: var(--t-color-text-muted);
     cursor: pointer;
     padding: 0 5px;
     line-height: 1;
 }
 
 .t-wi-preview-close:hover {
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-wi-preview-content {
     padding: 15px;
     overflow-y: auto;
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     line-height: 1.6;
     white-space: pre-wrap;
@@ -7329,7 +7329,7 @@ textarea.t-input {
    \uFF08\u4E0E .t-queue-footer / .t-ce-footer \u9010\u5B57\u8282\u76F8\u540C\uFF0CA13 \u91CD\u590D\u7EC4\uFF09\u3002
    \u672C\u6587\u4EF6\u53EA\u5269\u4E0B\u65B9\u79FB\u52A8\u7AEF\u7684 padding \u6536\u7D27\u3002 */
 #t-wi-stat {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.9em;
 }
 
@@ -7397,7 +7397,7 @@ textarea.t-input {
         width: 100%;
         height: 36px;
         padding: 0 10px;
-        border: 1px solid #3a3a3a;
+        border: 1px solid var(--t-color-border-control);
         border-radius: 8px;
         background: #222;
         color: #ddd;
@@ -7520,7 +7520,7 @@ textarea.t-input {
 }
 
 .t-cont-history-heading span {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 12px;
 }
 
@@ -7528,10 +7528,10 @@ textarea.t-input {
     max-width: 92px;
     height: 30px;
     padding: 0 6px;
-    border: 1px solid #3a3a3a;
+    border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
     background: #242424;
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 11px;
 }
 
@@ -7562,13 +7562,13 @@ textarea.t-input {
     justify-content: space-between;
     gap: 10px;
     padding: 10px 14px;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--t-color-border);
     background: #181818;
     flex-shrink: 0;
 }
 
 .t-cont-history-bulk-bar span {
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 12px;
 }
 
@@ -7632,7 +7632,7 @@ textarea.t-input {
     display: flex;
     align-items: center;
     position: relative;
-    border: 1px solid #3a3a3a;
+    border: 1px solid var(--t-color-border-control);
     border-radius: 7px;
     background: #222;
 }
@@ -7651,7 +7651,7 @@ textarea.t-input {
     border: 0;
     border-radius: 5px;
     background: transparent;
-    color: #888;
+    color: var(--t-color-text-muted);
     font: inherit;
     font-size: 11px;
     cursor: pointer;
@@ -7684,7 +7684,7 @@ textarea.t-input {
     border: 0;
     outline: 0;
     background: transparent;
-    color: #eee;
+    color: var(--t-color-text);
     font: inherit;
     font-size: 13px;
     line-height: 18px;
@@ -7706,7 +7706,7 @@ textarea.t-input {
 .t-continuation-send {
     width: 38px;
     margin-left: 0;
-    background: #bfa15f;
+    background: var(--t-color-brand);
     color: #171717;
 }
 
@@ -7717,7 +7717,7 @@ textarea.t-input {
 .t-continuation-send.is-stop {
     border-color: rgba(255, 107, 107, .55);
     background: #d95757;
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-continuation-send.is-stop:hover {
@@ -7746,7 +7746,7 @@ textarea.t-input {
 }
 
 .t-continuation-replay:hover:not(:disabled) {
-    border-color: rgba(191, 161, 95, .55);
+    border-color: var(--t-color-brand-border);
     background: #2b2b2b;
     color: #d0b575;
 }
@@ -7768,7 +7768,7 @@ textarea.t-input {
     position: absolute;
     z-index: 120;
     bottom: calc(100% + 9px);
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 7px;
     background: #1d1d1d;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, .48);
@@ -7791,13 +7791,13 @@ textarea.t-input {
 }
 
 .t-continuation-context-head strong {
-    color: #eee;
+    color: var(--t-color-text);
     font-size: 13px;
 }
 
 .t-continuation-context-head span,
 .t-continuation-context-stats {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 11px;
     line-height: 1.55;
 }
@@ -7813,10 +7813,10 @@ textarea.t-input {
 .t-continuation-stepper button {
     width: 34px;
     height: 32px;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 5px;
     background: #292929;
-    color: #ccc;
+    color: var(--t-color-text-label);
     cursor: pointer;
 }
 
@@ -7832,7 +7832,7 @@ textarea.t-input {
 }
 
 .t-continuation-stepper strong {
-    color: #bfa15f;
+    color: var(--t-color-brand);
     font-size: 17px;
 }
 
@@ -7922,7 +7922,7 @@ textarea.t-input {
     border: 0;
     border-radius: 50%;
     background: transparent;
-    color: #bfa15f;
+    color: var(--t-color-brand);
     cursor: pointer;
 }
 
@@ -8032,7 +8032,7 @@ textarea.t-input {
     justify-content: space-between;
     min-height: 52px;
     padding: 0 16px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     background: #1d1d1d;
 }
 
@@ -8062,7 +8062,7 @@ textarea.t-input {
 
 .t-cont-history-header i,
 .t-cont-history-branch-title i {
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-cont-history-header span {
@@ -8120,7 +8120,7 @@ textarea.t-input {
 }
 
 .t-cont-history-session-toggle > i {
-    color: #bfa15f;
+    color: var(--t-color-brand);
     font-size: 10px;
     transition: transform 0.18s;
 }
@@ -8219,8 +8219,8 @@ textarea.t-input {
     margin-left: 7px;
     padding: 1px 6px;
     border-radius: 999px;
-    background: rgba(191, 161, 95, 0.14);
-    color: #bfa15f;
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-brand);
     font-size: 10px;
     font-style: normal;
     font-weight: 600;
@@ -8258,7 +8258,7 @@ textarea.t-input {
 }
 
 .t-cont-history-round-title span {
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 10px;
 }
 
@@ -8269,12 +8269,12 @@ textarea.t-input {
     border: 0;
     border-radius: 6px;
     background: transparent;
-    color: #888;
+    color: var(--t-color-text-muted);
     cursor: pointer;
 }
 
 .t-cont-history-toggle:hover {
-    color: #bfa15f;
+    color: var(--t-color-brand);
     background: rgba(191, 161, 95, 0.1);
 }
 
@@ -8299,7 +8299,7 @@ textarea.t-input {
     overflow: hidden;
     border: 1px solid #303030;
     border-radius: 8px;
-    background: #fff;
+    background: var(--t-color-text-strong);
 }
 
 .t-cont-history-full iframe {
@@ -8312,7 +8312,7 @@ textarea.t-input {
 .t-cont-history-cross-hint {
     margin-top: 9px;
     padding: 5px 8px;
-    border-left: 2px solid rgba(191, 161, 95, 0.55);
+    border-left: 2px solid var(--t-color-brand-border);
     border-radius: 0 4px 4px 0;
     background: rgba(191, 161, 95, 0.08);
     color: #9a8a63;
@@ -8876,7 +8876,7 @@ textarea.t-input {
     width: 100%;
     height: 100%;
     background: #0d0d0d;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     color: #e0e0e0;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
@@ -8889,7 +8889,7 @@ textarea.t-input {
 }
 
 .t-ce-textarea:focus {
-    border-color: #bfa15f;
+    border-color: var(--t-color-brand);
 }
 
 /* \u7EED\u5199\u64CD\u4F5C\u53F0\u7528\u7684\u53D8\u4F53\uFF1A\u4E0D\u5403\u6EE1\u9AD8\u5EA6\uFF0C\u6539\u4E3A\u6309\u5185\u5BB9\u4F38\u7F29\u5E76\u53C2\u4E0E flex \u5206\u914D\u3002
@@ -8907,12 +8907,12 @@ textarea.t-input {
 }
 
 .t-ce-textarea::-webkit-scrollbar-track {
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
     border-radius: 4px;
 }
 
 .t-ce-textarea::-webkit-scrollbar-thumb {
-    background: #444;
+    background: var(--t-color-border-strong);
     border-radius: 4px;
 }
 
@@ -8923,7 +8923,7 @@ textarea.t-input {
 /* \`.t-ce-footer\` \u7684\u89C6\u89C9\u5168\u90E8\u7531 02-components/panel.css \u7684 \`.t-panel-footer\` \u63D0\u4F9B\uFF0C
    \u672C\u6587\u4EF6\u4E0D\u518D\u9700\u8981\u4EFB\u4F55\u58F0\u660E\u3002 */
 .t-ce-stats {
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.85em;
 }
 
@@ -9110,7 +9110,7 @@ textarea.t-input {
     justify-content: space-between;
     gap: 16px;
     padding: 20px 22px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .titania-update-kicker {
@@ -9140,8 +9140,8 @@ textarea.t-input {
 }
 
 .titania-update-close:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.08);
+    color: var(--t-color-text-strong);
+    background: var(--t-color-surface-hover);
 }
 
 .titania-update-body {
@@ -9192,7 +9192,7 @@ textarea.t-input {
     justify-content: flex-end;
     gap: 10px;
     padding: 14px 22px 18px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--t-color-border-faint);
 }
 
 #titania-update-now {
@@ -9311,7 +9311,7 @@ textarea.t-input {
 
 .titania-version-badge {
     background: rgba(100, 100, 100, 0.3);
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 10px;
     padding: 2px 6px;
     border-radius: 4px;
@@ -9332,7 +9332,7 @@ textarea.t-input {
 
 .titania-mini-btn {
     border: 1px solid rgba(255, 255, 255, 0.24);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-color-surface-veil);
     color: #d5e2ef;
     border-radius: 8px;
     min-height: 30px;
@@ -9375,7 +9375,7 @@ textarea.t-input {
     max-width: 95vw;
     display: flex;
     flex-direction: column;
-    background: #121212;
+    background: var(--t-color-bg);
     overflow: hidden;
 }
 
@@ -9403,32 +9403,32 @@ textarea.t-input {
 
 .t-form-label {
     display: block;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     margin-bottom: 8px;
     font-size: 0.9em;
 }
 
 /* \u9884\u89C8\u533A\u5BB9\u5668 */
 .t-preview-container {
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
     border-radius: 8px;
     padding: 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
     margin-bottom: 20px;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
 }
 
 /* \u9884\u89C8\u7403\u57FA\u7840\u6837\u5F0F */
 .t-preview-ball {
     border-radius: 50%;
     background: #2b2b2b;
-    color: #fff;
+    color: var(--t-color-text-strong);
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid #444;
+    border: 2px solid var(--t-color-border-strong);
     transition: all 0.2s;
     position: relative;
     overflow: visible;
@@ -9447,7 +9447,7 @@ textarea.t-input {
 /* \u52A8\u753B 1: \u8109\u51B2\u6CE2\u7EB9 */
 
 .t-preview-ball.p-anim-ripple {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
 }
 
 .t-preview-ball.p-anim-ripple::before,
@@ -9457,7 +9457,7 @@ textarea.t-input {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    border: 2px solid #90cdf4;
+    border: 2px solid var(--t-color-accent);
     animation: t-ripple-1 1.5s ease-out infinite;
 }
 
@@ -9468,7 +9468,7 @@ textarea.t-input {
 /* \u52A8\u753B 2: \u7535\u78C1\u95EA\u70C1 */
 
 .t-preview-ball.p-anim-arc {
-    border-color: #a29bfe;
+    border-color: var(--t-color-decor);
 }
 
 .t-preview-ball.p-anim-arc::before {
@@ -9478,8 +9478,8 @@ textarea.t-input {
     height: 120%;
     border-radius: 50%;
     background:
-        radial-gradient(circle at 20% 0%, #a29bfe 0%, transparent 30%),
-        radial-gradient(circle at 80% 100%, #a29bfe 0%, transparent 30%);
+        radial-gradient(circle at 20% 0%, var(--t-color-decor) 0%, transparent 30%),
+        radial-gradient(circle at 80% 100%, var(--t-color-decor) 0%, transparent 30%);
     animation: t-arc-rotate 1s linear infinite, t-arc-flash-1 0.3s ease infinite;
     opacity: 0.8;
 }
@@ -9500,7 +9500,7 @@ textarea.t-input {
 /* \u901A\u77E5\u547C\u5438\u706F\u9884\u89C8 */
 
 .t-preview-ball.p-notify {
-    border-color: #55efc4 !important; /* override color picker inline border during notify preview */
+    border-color: var(--t-color-notify) !important; /* override color picker inline border during notify preview */
     animation: t-notify-glow 1.5s infinite ease-in-out;
 }
 
@@ -9514,7 +9514,7 @@ textarea.t-input {
 
 .t-anim-option {
     background: #222;
-    border: 2px solid #333;
+    border: 2px solid var(--t-color-border);
     border-radius: 8px;
     padding: 15px 10px;
     cursor: pointer;
@@ -9523,18 +9523,18 @@ textarea.t-input {
 }
 
 .t-anim-option:hover {
-    background: #2a2a2a;
+    background: var(--t-color-surface-raised);
     border-color: #555;
 }
 
 .t-anim-option.active {
-    border-color: #bfa15f;
+    border-color: var(--t-color-brand);
     background: rgba(191, 161, 95, 0.1);
 }
 
 .t-anim-option .t-anim-name {
     font-size: 0.9em;
-    color: #ccc;
+    color: var(--t-color-text-label);
     margin-top: 8px;
 }
 
@@ -9546,22 +9546,22 @@ textarea.t-input {
 .t-upload-card {
     width: 100px;
     height: 100px;
-    border: 2px dashed #444;
+    border: 2px dashed var(--t-color-border-strong);
     border-radius: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: #666;
+    color: var(--t-color-text-faint);
     transition: 0.2s;
     background-size: cover;
     background-position: center;
 }
 
 .t-upload-card:hover {
-    border-color: #bfa15f;
-    color: #bfa15f;
+    border-color: var(--t-color-brand);
+    color: var(--t-color-brand);
     background-color: rgba(191, 161, 95, 0.05);
 }
 
@@ -9587,8 +9587,8 @@ textarea.t-input {
 .t-prof-select {
     flex-grow: 1;
     background: #222;
-    color: #eee;
-    border: 1px solid #444;
+    color: var(--t-color-text);
+    border: 1px solid var(--t-color-border-strong);
     padding: 8px;
     border-radius: 4px;
 }
@@ -9596,9 +9596,9 @@ textarea.t-input {
 /* \u8BCA\u65AD\u65E5\u5FD7 */
 .t-log-box {
     background: #0f0f0f;
-    color: #ccc;
+    color: var(--t-color-text-label);
     padding: 10px;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 4px;
     height: 250px;
     overflow-y: auto;
@@ -9610,20 +9610,20 @@ textarea.t-input {
 }
 
 .t-log-entry-error {
-    color: #ff6b6b;
-    border-bottom: 1px solid #333;
+    color: var(--t-color-danger);
+    border-bottom: 1px solid var(--t-color-border);
     padding: 2px 0;
 }
 
 .t-log-entry-info {
-    color: #90cdf4;
-    border-bottom: 1px solid #333;
+    color: var(--t-color-accent);
+    border-bottom: 1px solid var(--t-color-border);
     padding: 2px 0;
 }
 
 .t-log-entry-warn {
     color: #f1c40f;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     padding: 2px 0;
 }
 
@@ -9638,8 +9638,8 @@ textarea.t-input {
     resize: vertical;
     min-height: 200px;
     background: #0f0f0f;
-    border-color: #333;
-    color: #ccc;
+    border-color: var(--t-color-border);
+    color: var(--t-color-text-label);
 }
 
 .t-code-editor::placeholder {
@@ -9649,7 +9649,7 @@ textarea.t-input {
 /* CSS \u9009\u62E9\u5668\u63D0\u793A\u5217\u8868 */
 .t-css-hints {
     background: #181818;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 15px;
     max-height: 200px;
@@ -9670,8 +9670,8 @@ textarea.t-input {
 }
 
 .t-css-hint-item code {
-    background: #2a2a2a;
-    color: #90cdf4;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-accent);
     padding: 3px 8px;
     border-radius: 4px;
     font-family: var(--t-font-mono);
@@ -9681,7 +9681,7 @@ textarea.t-input {
 }
 
 .t-css-hint-item span {
-    color: #888;
+    color: var(--t-color-text-muted);
 }
 
 /* ===== \u5FEB\u6377\u5DE5\u5177\u680F\u914D\u7F6E ===== */
@@ -9690,7 +9690,7 @@ textarea.t-input {
     flex-direction: column;
     gap: 8px;
     background: #181818;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 8px;
     padding: 15px;
 }
@@ -9708,7 +9708,7 @@ textarea.t-input {
 }
 
 .t-toolbar-item:hover {
-    background: #2a2a2a;
+    background: var(--t-color-surface-raised);
 }
 
 .t-toolbar-item i {
@@ -9718,12 +9718,12 @@ textarea.t-input {
 }
 
 .t-toolbar-item span {
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.95em;
 }
 
 .t-toolbar-item .t-toolbar-hint {
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.8em;
     margin-left: auto;
 }
@@ -9749,7 +9749,7 @@ textarea.t-input {
         flex-direction: row;
         overflow-x: auto;
         border-right: none;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--t-color-border);
     }
 
     .t-set-tab-btn {
@@ -9761,7 +9761,7 @@ textarea.t-input {
 
     .t-set-tab-btn.active {
         border-left: none;
-        border-bottom-color: #bfa15f;
+        border-bottom-color: var(--t-color-brand);
         background: transparent;
     }
 
@@ -9833,7 +9833,7 @@ textarea.t-input {
     border: 1px solid #55697a;
     border-radius: 999px;
     background: #1a2027;
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-size: 0.72em;
     line-height: 1.4;
     white-space: nowrap;
@@ -9842,7 +9842,7 @@ textarea.t-input {
 
 .t-prompt-insert-slot:hover .t-prompt-insert-label,
 .t-prompt-insert-slot:focus-visible .t-prompt-insert-label {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
     background: #223040;
 }
 
@@ -9860,8 +9860,8 @@ textarea.t-input {
 }
 
 .t-prompt-entry-card {
-    background: #1a1a1a;
-    border: 1px solid #3a3a3a;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
     padding: 7px 9px;
     box-sizing: border-box;
@@ -9913,7 +9913,7 @@ textarea.t-input {
 }
 
 .t-prompt-entry-card.is-drag-over {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
     box-shadow: 0 -3px 0 rgba(144, 205, 244, 0.75);
 }
 
@@ -9927,7 +9927,7 @@ textarea.t-input {
 }
 
 .t-prompt-entry-index {
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.78em;
     width: 26px;
     flex-shrink: 0;
@@ -9937,7 +9937,7 @@ textarea.t-input {
 .t-prompt-entry-name {
     flex: 1;
     min-width: 0;
-    color: #eee;
+    color: var(--t-color-text);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -9945,8 +9945,8 @@ textarea.t-input {
 }
 
 .t-prompt-entry-badge {
-    color: #90cdf4;
-    background: rgba(144, 205, 244, 0.1);
+    color: var(--t-color-accent);
+    background: var(--t-color-accent-veil);
     border: 1px solid rgba(144, 205, 244, 0.25);
     border-radius: 3px;
     padding: 2px 6px;
@@ -9964,7 +9964,7 @@ textarea.t-input {
 }
 
 .t-prompt-entry-drag-hint {
-    color: #666;
+    color: var(--t-color-text-faint);
     width: 12px;
     font-size: 0.78em;
     text-align: center;
@@ -9977,10 +9977,10 @@ textarea.t-input {
     width: 28px;
     height: 26px;
     padding: 0;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     border-radius: 3px;
     background: #242424;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     cursor: pointer;
 }
 
@@ -9996,7 +9996,7 @@ textarea.t-input {
 }
 
 .t-prompt-entry-toggle.is-enabled {
-    color: #55efc4;
+    color: var(--t-color-notify);
     border-color: rgba(85, 239, 196, 0.55);
     background: rgba(85, 239, 196, 0.1);
 }
@@ -10006,14 +10006,14 @@ textarea.t-input {
 }
 
 .t-prompt-entry-toggle.is-required:disabled {
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     opacity: 1;
 }
 
 .t-prompt-entry-actions button:hover:not(:disabled),
 .t-prompt-entry-toggle:hover:not(:disabled) {
-    color: #fff;
-    border-color: #90cdf4;
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-accent);
 }
 
 .t-prompt-entry-actions button:disabled {
@@ -10025,7 +10025,7 @@ textarea.t-input {
 
 .t-header-action-count {
     margin-left: 6px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.8em;
     font-weight: normal;
 }
@@ -10042,9 +10042,9 @@ textarea.t-input {
     gap: 9px;
     padding: 8px 10px;
     box-sizing: border-box;
-    border: 1px solid #3a3a3a;
+    border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
     cursor: grab;
     transition: border-color 0.2s, background 0.2s;
 }
@@ -10064,7 +10064,7 @@ textarea.t-input {
 }
 
 .t-header-action-card.is-drag-over {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
     box-shadow: 0 -3px 0 rgba(144, 205, 244, 0.75);
 }
 
@@ -10082,7 +10082,7 @@ textarea.t-input {
 .t-header-action-icon {
     width: 1.2em;
     flex-shrink: 0;
-    color: #bfa15f;
+    color: var(--t-color-brand);
     text-align: center;
 }
 
@@ -10090,7 +10090,7 @@ textarea.t-input {
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    color: #ccc;
+    color: var(--t-color-text-label);
     font-size: 0.9em;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -10273,19 +10273,19 @@ textarea.t-input {
    \u4E0E showInteractiveFAB \u90A3\u79CD\u5E26 hover \u7684\u91CD\u6784\u4E0D\u540C\uFF08\u89C1\u4EA4\u63A5\u6587\u6863 \xA75b\uFF09\u3002
    (0,2,0) \u538B\u8FC7 .t-color-swatch \u7684 border \u7B80\u5199\u3002 */
 .t-color-swatch.is-selected {
-    border-color: #fff;
+    border-color: var(--t-color-text-strong);
 }
 
 .t-color-swatch[data-color="#90cdf4"] {
-    background: #90cdf4;
+    background: var(--t-color-accent);
 }
 
 .t-color-swatch[data-color="#a29bfe"] {
-    background: #a29bfe;
+    background: var(--t-color-decor);
 }
 
 .t-color-swatch[data-color="#55efc4"] {
-    background: #55efc4;
+    background: var(--t-color-notify);
 }
 
 .t-color-swatch[data-color="#ffd93d"] {
@@ -10293,7 +10293,7 @@ textarea.t-input {
 }
 
 .t-color-swatch[data-color="#ff6b6b"] {
-    background: #ff6b6b;
+    background: var(--t-color-danger);
 }
 
 .t-color-swatch[data-color="#fd79a8"] {
@@ -10400,7 +10400,7 @@ textarea.t-input {
     max-width: 95vw;
     display: flex;
     flex-direction: column;
-    background: #121212;
+    background: var(--t-color-bg);
     position: relative;
 }
 
@@ -10415,7 +10415,7 @@ textarea.t-input {
 .t-mgr-sidebar {
     width: 180px;
     background: #181818;
-    border-right: 1px solid #333;
+    border-right: 1px solid var(--t-color-border);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -10438,7 +10438,7 @@ textarea.t-input {
 
 .t-mgr-sb-title {
     font-size: 0.8em;
-    color: #666;
+    color: var(--t-color-text-faint);
     padding: 0 15px 5px;
     font-weight: bold;
     text-transform: uppercase;
@@ -10447,7 +10447,7 @@ textarea.t-input {
 .t-mgr-sb-item {
     padding: 8px 15px;
     cursor: pointer;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 0.9em;
     transition: 0.2s;
     display: flex;
@@ -10457,13 +10457,13 @@ textarea.t-input {
 
 .t-mgr-sb-item:hover {
     background: #222;
-    color: #eee;
+    color: var(--t-color-text);
 }
 
 .t-mgr-sb-item.active {
-    background: #2a2a2a;
-    color: #bfa15f;
-    border-left: 3px solid #bfa15f;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-brand);
+    border-left: 3px solid var(--t-color-brand);
     font-weight: bold;
 }
 
@@ -10472,7 +10472,7 @@ textarea.t-input {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    background: #121212;
+    background: var(--t-color-bg);
     min-width: 0;
     position: relative;
     overflow: hidden;
@@ -10480,8 +10480,8 @@ textarea.t-input {
 
 .t-mgr-toolbar {
     padding: 10px 15px;
-    background: #1e1e1e;
-    border-bottom: 1px solid #333;
+    background: var(--t-color-surface);
+    border-bottom: 1px solid var(--t-color-border);
     display: flex;
     gap: 10px;
     align-items: center;
@@ -10490,9 +10490,9 @@ textarea.t-input {
 
 .t-mgr-search {
     flex-grow: 1;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
+    background: var(--t-color-surface-raised);
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text);
     padding: 6px 10px;
     border-radius: 4px;
     font-size: 0.9em;
@@ -10500,9 +10500,9 @@ textarea.t-input {
 }
 
 .t-mgr-sort {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
+    background: var(--t-color-surface-raised);
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text);
     padding: 6px 10px;
     border-radius: 4px;
     font-size: 0.9em;
@@ -10512,7 +10512,7 @@ textarea.t-input {
 .t-mgr-overview {
     padding: 8px 15px;
     background: #171717;
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid var(--t-color-surface-raised);
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -10549,7 +10549,7 @@ textarea.t-input {
 }
 
 .t-mgr-ov-empty {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 /* \u5217\u8868 */
@@ -10569,7 +10569,7 @@ textarea.t-input {
 }
 
 .t-mgr-item:hover {
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
 }
 
 .t-mgr-item-meta {
@@ -10580,7 +10580,7 @@ textarea.t-input {
 
 .t-mgr-item-title {
     font-size: 0.95em;
-    color: #eee;
+    color: var(--t-color-text);
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -10589,7 +10589,7 @@ textarea.t-input {
 
 .t-mgr-item-desc {
     font-size: 0.8em;
-    color: #666;
+    color: var(--t-color-text-faint);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -10610,14 +10610,14 @@ textarea.t-input {
     padding: 1px 5px;
     border-radius: 3px;
     background: #333;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
 }
 
 /* \u300C\u9884\u8BBE\u300D\u6807\u7B7E\u7684\u5E95\u8272\u3002\u539F\u4E3A scriptManager.js:410 \u7684\u5185\u8054 style\u3002
    \u26A0 \u4E0E .t-mgr-tag \u540C\u4E3A (0,1,0) \u4E14\u90FD\u6539 background\uFF0C\u9760\u7D27\u968F\u5176\u540E\u53D6\u80DC\uFF0C
    \u4F4D\u7F6E\u4E0D\u53EF\u4E0A\u79FB\u3002 */
 .t-mgr-tag--preset {
-    background: #444;
+    background: var(--t-color-border-strong);
 }
 
 /* \u6279\u91CF\u7BA1\u7406 */
@@ -10646,7 +10646,7 @@ textarea.t-input {
     align-items: center;
     justify-content: space-between;
     padding: 0 15px;
-    color: #ff6b6b;
+    color: var(--t-color-danger);
     flex-shrink: 0;
     z-index: 10;
 }
@@ -10679,7 +10679,7 @@ textarea.t-input {
 
 .t-imp-label {
     display: block;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     margin-bottom: 5px;
     font-size: 0.9em;
 }
@@ -10691,7 +10691,7 @@ textarea.t-input {
     max-height: 85vh;
     display: flex;
     flex-direction: column;
-    background: #121212;
+    background: var(--t-color-bg);
 }
 
 #t-editor-view .t-body {
@@ -10705,7 +10705,7 @@ textarea.t-input {
 
 #t-editor-view .t-body label {
     display: block;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 0.9em;
     margin-bottom: 3px;
 }
@@ -10718,7 +10718,7 @@ textarea.t-input {
 
 #t-editor-view .t-btn-row {
     padding-top: 15px;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--t-color-border);
 }
 
 /* \u5927\u5C4F\u7F16\u8F91\u5668 */
@@ -10749,7 +10749,7 @@ textarea.t-input {
     transform: translateY(-50%);
     background: transparent;
     border: none;
-    color: #888;
+    color: var(--t-color-text-muted);
     padding: 8px 12px;
     cursor: pointer;
     font-size: 0.9em;
@@ -10758,20 +10758,20 @@ textarea.t-input {
 }
 
 .t-mgr-cat-edit-btn:hover {
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-mgr-cat-edit-btn:active {
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-mgr-cat-dropdown {
     width: 100%;
     padding: 10px 15px;
-    background: #1e1e1e;
+    background: var(--t-color-surface);
     border: none;
-    border-bottom: 1px solid #333;
-    color: #eee;
+    border-bottom: 1px solid var(--t-color-border);
+    color: var(--t-color-text);
     font-size: 1em;
     cursor: pointer;
     appearance: none;
@@ -10787,8 +10787,8 @@ textarea.t-input {
 }
 
 .t-mgr-cat-dropdown option {
-    background: #1e1e1e;
-    color: #eee;
+    background: var(--t-color-surface);
+    color: var(--t-color-text);
     padding: 10px;
 }
 
@@ -10877,7 +10877,7 @@ textarea.t-input {
     max-width: 95vw;
     display: flex;
     flex-direction: column;
-    background: #121212;
+    background: var(--t-color-bg);
 }
 
 /* \u6807\u9898\u680F\u53F3\u4FA7\u56FE\u6807\u7EC4\uFF08\u6253\u5F00\u7AD9\u70B9 / \u5237\u65B0 / \u5173\u95ED\uFF09
@@ -10897,15 +10897,15 @@ textarea.t-input {
     gap: 5px;
     min-height: 36px;
     padding: 0 10px;
-    border: 1px solid #3a3a3a;
+    border: 1px solid var(--t-color-border-control);
     border-radius: 8px;
-    background: #1a1a1a;
-    color: #ccc;
+    background: var(--t-color-surface-sunken);
+    color: var(--t-color-text-label);
     cursor: pointer;
     white-space: nowrap;
     font-size: 0.8em;
 }
-#t-ws-rating-toggle:hover { border-color: var(--t-theme); color: #fff; }
+#t-ws-rating-toggle:hover { border-color: var(--t-theme); color: var(--t-color-text-strong); }
 #t-ws-rating-toggle.is-mature { border-color: #7e3847; background: #4a2530; color: #ffa8b0; }
 
 /* \u5DE5\u574A\u5934\u90E8\u7684\u56FE\u6807\u94AE\u6BD4\u4E3B\u7A97\u53E3\u5927\u4E00\u53F7\uFF0836 vs 32\uFF09\uFF1A\u53EA\u8986\u76D6\u5C3A\u5BF8\u53D8\u91CF\u3002
@@ -10936,7 +10936,7 @@ textarea.t-input {
 
 #t-ws-view .t-header .t-header-actions .t-close:hover,
 .t-ws-preview-box .t-header .t-header-actions .t-close:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-hover);
 }
 
 /* \u5173\u95ED\u952E\u65CB\u8F6C\u4F1A\u5E26\u7740\u70ED\u533A\u4E00\u8D77\u8F6C\uFF0C\u5706\u89D2\u65B9\u5757\u770B\u7740\u6CA1\u95EE\u9898\uFF0C\u4FDD\u7559\u539F\u52A8\u6548 */
@@ -10956,7 +10956,7 @@ textarea.t-input {
     display: flex;
     gap: 8px;
     padding: 10px 15px;
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid var(--t-color-surface-raised);
     background: #181818;
     flex-shrink: 0;
 }
@@ -10978,9 +10978,9 @@ textarea.t-input {
 }
 
 .t-ws-select {
-    background: #1a1a1a;
-    color: #ccc;
-    border: 1px solid #3a3a3a;
+    background: var(--t-color-surface-sunken);
+    color: var(--t-color-text-label);
+    border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
     padding: 7px 8px;
     cursor: pointer;
@@ -11000,7 +11000,7 @@ textarea.t-input {
     flex-wrap: wrap;
     padding: 8px 15px;
     background: #151515;
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid var(--t-color-surface-raised);
     color: #777;
     font-size: 0.8em;
     flex-shrink: 0;
@@ -11016,7 +11016,7 @@ textarea.t-input {
 }
 
 .t-ws-stats-filter b {
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 /* \u2500\u2500 \u5361\u7247\u7F51\u683C \u2500\u2500 */
@@ -11078,7 +11078,7 @@ textarea.t-input {
 
 .t-ws-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(191, 161, 95, 0.55);
+    border-color: var(--t-color-brand-border);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
@@ -11098,7 +11098,7 @@ textarea.t-input {
     width: 30px;
     height: 30px;
     background: linear-gradient(225deg, var(--t-theme) 50%, transparent 50%);
-    color: #1a1a1a;
+    color: var(--t-color-surface-sunken);
     font-size: 0.66em;
     text-align: right;
     padding: 2px 4px 0 0;
@@ -11172,7 +11172,7 @@ textarea.t-input {
 .t-ws-tag {
     display: inline-block;
     background: #282828;
-    color: #888;
+    color: var(--t-color-text-muted);
     padding: 1px 7px;
     border-radius: 3px;
     font-size: 0.72em;
@@ -11246,7 +11246,7 @@ textarea.t-input {
 }
 
 .t-ws-author-name {
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 0.78em;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -11255,7 +11255,7 @@ textarea.t-input {
 }
 
 .t-ws-author-time {
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.72em;
 }
 
@@ -11276,13 +11276,13 @@ textarea.t-input {
 }
 
 .t-ws-ph-title {
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 1.05em;
     margin-bottom: 6px;
 }
 
 .t-ws-ph-desc {
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.85em;
     margin-bottom: 14px;
 }
@@ -11298,7 +11298,7 @@ textarea.t-input {
 }
 
 .t-ws-skeleton::before {
-    background: #2a2a2a;
+    background: var(--t-color-surface-raised);
 }
 
 .t-ws-sk-line {
@@ -11357,7 +11357,7 @@ textarea.t-input {
     justify-content: space-between;
     gap: 10px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid var(--t-color-surface-raised);
 }
 
 .t-ws-pv-desc {
@@ -11365,13 +11365,13 @@ textarea.t-input {
     font-size: 0.88em;
     line-height: 1.55;
     padding: 8px 12px;
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
     border-radius: 4px;
     border-left: 2px solid var(--t-theme);
 }
 
 .t-ws-pv-label {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 0.8em;
 }
 
@@ -11385,7 +11385,7 @@ textarea.t-input {
 }
 
 .t-ws-pv-comments {
-    border-top: 1px solid #2a2a2a;
+    border-top: 1px solid var(--t-color-surface-raised);
     padding-top: 12px;
 }
 
@@ -11415,7 +11415,7 @@ textarea.t-input {
 
 .t-ws-pv-comment {
     padding: 10px 12px;
-    border: 1px solid #2a2a2a;
+    border: 1px solid var(--t-color-surface-raised);
     border-radius: 5px;
     background: rgba(255, 255, 255, 0.025);
 }
@@ -11432,12 +11432,12 @@ textarea.t-input {
 }
 
 .t-ws-pv-comment-author strong { font-size: 0.86em; color: #e5e5e5; }
-.t-ws-pv-comment-author small { color: #888; font-size: 0.72em; }
+.t-ws-pv-comment-author small { color: var(--t-color-text-muted); font-size: 0.72em; }
 .t-ws-pv-comment-body { margin-top: 8px; white-space: pre-wrap; line-height: 1.5; color: #d0d0d0; font-size: 0.86em; }
 .t-ws-pv-comment-reply { margin-top: 8px; padding: 7px 9px; border-left: 2px solid var(--t-theme); background: rgba(255, 255, 255, 0.04); display: grid; gap: 3px; font-size: 0.82em; }
 .t-ws-pv-comment-reply strong { color: #d9c18a; }
 .t-ws-pv-comment-reply span { white-space: pre-wrap; color: #bbb; }
-.t-ws-pv-comments-empty { color: #888; font-size: 0.84em; padding: 12px 0; }
+.t-ws-pv-comments-empty { color: var(--t-color-text-muted); font-size: 0.84em; padding: 12px 0; }
 
 /* \u2500\u2500 \u79FB\u52A8\u7AEF \u2500\u2500 */
 @media screen and (max-width: 600px) {
@@ -11559,7 +11559,7 @@ textarea.t-input {
     max-width: 95vw;
     display: flex;
     flex-direction: column;
-    background: radial-gradient(120% 120% at 0% 0%, #2b1f12 0%, #121212 42%, #090909 100%);
+    background: radial-gradient(120% 120% at 0% 0%, #2b1f12 0%, var(--t-color-bg) 42%, #090909 100%);
     overflow: hidden;
     position: relative;
     isolation: isolate;
@@ -12038,7 +12038,7 @@ textarea.t-input {
 .t-read-header {
     height: 60px;
     padding: 0 20px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -12099,8 +12099,8 @@ textarea.t-input {
 }
 
 .t-read-more-menu button:hover {
-    background: rgba(191, 161, 95, 0.14);
-    color: #fff;
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-text-strong);
 }
 
 .t-read-more-menu button.danger {
@@ -12152,7 +12152,7 @@ textarea.t-input {
     flex-grow: 1;
     padding: 0;
     overflow-y: auto;
-    color: #ccc;
+    color: var(--t-color-text-label);
     position: relative;
     background: #0b0b0b;
 }
@@ -12219,7 +12219,7 @@ textarea.t-input {
     padding: 10px;
     margin-bottom: 10px;
     border-radius: 6px;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     gap: 15px;
 }
 
@@ -12230,7 +12230,7 @@ textarea.t-input {
     background-color: #111;
     background-size: cover;
     background-position: center;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     flex-shrink: 0;
     position: relative;
 }
@@ -12256,7 +12256,7 @@ textarea.t-input {
 
 .t-img-name {
     font-weight: bold;
-    color: #eee;
+    color: var(--t-color-text);
     font-size: 1.1em;
     margin-bottom: 5px;
 }
@@ -12277,9 +12277,9 @@ textarea.t-input {
 
 .t-act-btn {
     padding: 6px 10px;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     background: #333;
-    color: #ccc;
+    color: var(--t-color-text-label);
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.85em;
@@ -12287,13 +12287,13 @@ textarea.t-input {
 }
 
 .t-act-btn:hover {
-    background: #444;
-    color: #fff;
-    border-color: #666;
+    background: var(--t-color-border-strong);
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-text-faint);
 }
 
 .t-act-btn.auto {
-    color: #bfa15f;
+    color: var(--t-color-brand);
     border-color: rgba(191, 161, 95, 0.3);
 }
 
@@ -12318,13 +12318,13 @@ textarea.t-input {
 
 /* \u7F16\u8F91\u6A21\u5F0F\u5DE5\u5177\u680F */
 .t-fav-toolbar-edit {
-    background: linear-gradient(135deg, #1a2a1a 0%, #1e1e1e 100%);
+    background: linear-gradient(135deg, #1a2a1a 0%, var(--t-color-surface) 100%);
     border-bottom: 1px solid #3a5a3a;
 }
 
 /* \u5371\u9669\u6309\u94AE\uFF08\u5220\u9664\uFF09 */
 .t-tool-btn.t-btn-danger {
-    color: #ff6b6b;
+    color: var(--t-color-danger);
     border-color: rgba(255, 107, 107, 0.3);
 }
 
@@ -12352,7 +12352,7 @@ textarea.t-input {
     align-items: center;
     justify-content: center;
     z-index: 6;
-    color: #fff;
+    color: var(--t-color-text-strong);
     font-size: 1.1em;
     transition: all 0.2s ease;
     backdrop-filter: blur(4px);
@@ -12857,7 +12857,7 @@ textarea.t-input {
     border: 1px solid #383838;
     border-radius: 8px;
     background: #202020;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     box-shadow: 0 12px 30px rgba(0, 0, 0, .55);
     font-size: 11px;
     line-height: 1.55;
@@ -12888,12 +12888,12 @@ textarea.t-input {
 }
 
 #t-debug-view .t-prompt-info-popover dt {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 #t-debug-view .t-prompt-info-popover dd {
     overflow: hidden;
-    color: #ccc;
+    color: var(--t-color-text-label);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -12942,7 +12942,7 @@ textarea.t-input {
 }
 
 #t-debug-view .t-prompt-count {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 12px;
     margin-right: 4px;
     white-space: nowrap;
@@ -12965,7 +12965,7 @@ textarea.t-input {
     font-size: 11px;
     color: #999;
     background: #1b1b1b;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     cursor: pointer;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
@@ -12975,8 +12975,8 @@ textarea.t-input {
 
 #t-debug-view .t-prompt-tool-btn:hover {
     background: #262626;
-    color: #ccc;
-    border-color: #444;
+    color: var(--t-color-text-label);
+    border-color: var(--t-color-border-strong);
 }
 
 #t-debug-view .t-prompt-tool-btn.active {
@@ -13013,7 +13013,7 @@ textarea.t-input {
 }
 
 #t-debug-view .t-prompt-role-user {
-    border-left-color: #55efc4;
+    border-left-color: var(--t-color-notify);
 }
 
 #t-debug-view .t-prompt-role-assistant {
@@ -13032,7 +13032,7 @@ textarea.t-input {
 }
 
 #t-debug-view .t-prompt-section-head:hover {
-    background: #1e1e1e;
+    background: var(--t-color-surface);
 }
 
 #t-debug-view .t-prompt-section-title {
@@ -13047,7 +13047,7 @@ textarea.t-input {
 
 #t-debug-view .t-prompt-order {
     width: 22px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-family: var(--t-font-mono);
     font-size: 11px;
     text-align: right;
@@ -13056,7 +13056,7 @@ textarea.t-input {
 
 #t-debug-view .t-prompt-role-label {
     width: 58px;
-    color: #888;
+    color: var(--t-color-text-muted);
     font-family: var(--t-font-mono);
     font-size: 10px;
     font-weight: 500;
@@ -13065,7 +13065,7 @@ textarea.t-input {
 }
 
 #t-debug-view .t-prompt-role-system .t-prompt-role-label { color: #74b9ff; }
-#t-debug-view .t-prompt-role-user .t-prompt-role-label { color: #55efc4; }
+#t-debug-view .t-prompt-role-user .t-prompt-role-label { color: var(--t-color-notify); }
 #t-debug-view .t-prompt-role-assistant .t-prompt-role-label { color: #c792ea; }
 
 #t-debug-view .t-prompt-name {
@@ -13089,7 +13089,7 @@ textarea.t-input {
 
 #t-debug-view .t-prompt-section-preview {
     padding: 0 12px 10px 62px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 11px;
     font-family: var(--t-font-mono);
     white-space: nowrap;
@@ -13377,11 +13377,11 @@ textarea.t-input {
     background: rgba(30, 30, 35, 0.95);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 12px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     overflow: hidden;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     position: relative;
     /* \u4E3A\u4E0B\u62C9\u83DC\u5355\u63D0\u4F9B\u5B9A\u4F4D\u4E0A\u4E0B\u6587 */
@@ -13402,24 +13402,24 @@ textarea.t-input {
     align-items: center;
     padding: 15px 20px;
     background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-window-title {
     font-size: 1.2em;
     font-weight: 700;
-    background: linear-gradient(90deg, #90cdf4, #bfa15f);
+    background: linear-gradient(90deg, var(--t-color-accent), var(--t-color-brand));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     display: flex;
     align-items: center;
     gap: 10px;
-    text-shadow: 0 0 20px rgba(144, 205, 244, 0.3);
+    text-shadow: 0 0 20px var(--t-color-accent-border-subtle);
 }
 
 .t-window-title i {
     -webkit-text-fill-color: initial;
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-window-controls {
@@ -13433,12 +13433,12 @@ textarea.t-input {
     padding: 5px 10px;
     border-radius: 4px;
     transition: all 0.2s;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
 }
 
 .t-window-close:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 /* \u9876\u90E8\u63A7\u5236\u680F */
@@ -13448,7 +13448,7 @@ textarea.t-input {
     justify-content: space-between;
     padding: 15px 20px;
     background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-control-group {
@@ -13458,7 +13458,7 @@ textarea.t-input {
 }
 
 .t-control-group label {
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     font-size: 0.9em;
 }
 
@@ -13467,7 +13467,7 @@ textarea.t-input {
 .t-control-group input[type="text"] {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
+    color: var(--t-color-text-strong);
     padding: 6px 12px;
     border-radius: 6px;
     outline: none;
@@ -13478,7 +13478,7 @@ textarea.t-input {
 .t-control-group select:focus,
 .t-control-group input[type="number"]:focus,
 .t-control-group input[type="text"]:focus {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
 }
 
 /* \u9488\u5BF9 datalist \u7684\u8F93\u5165\u6846\u6837\u5F0F\u5FAE\u8C03\u3002
@@ -13513,7 +13513,7 @@ textarea.t-input {
 /* \u5DE6\u4FA7\u5217\u8868\u5BB9\u5668 */
 .t-lore-list-container {
     width: 380px;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: 1px solid var(--t-color-border-faint);
     display: flex;
     flex-direction: column;
     background: rgba(0, 0, 0, 0.1);
@@ -13521,14 +13521,14 @@ textarea.t-input {
 
 .t-list-header {
     padding: 12px 15px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-color-surface-veil);
     font-weight: 600;
     font-size: 0.9em;
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-lore-list {
@@ -13539,7 +13539,7 @@ textarea.t-input {
 
 /* \u5217\u8868\u9879\u5361\u7247 */
 .t-lore-entry-item {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-color-surface-veil);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     padding: 12px;
@@ -13551,14 +13551,14 @@ textarea.t-input {
 }
 
 .t-lore-entry-item:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-hover);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .t-lore-entry-item.active {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.4);
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-focus-ring);
 }
 
 /* \u5DE6\u4FA7\u6307\u793A\u6761 */
@@ -13569,7 +13569,7 @@ textarea.t-input {
     top: 0;
     bottom: 0;
     width: 4px;
-    background: #718096;
+    background: var(--t-color-text-cool-muted);
     /* \u9ED8\u8BA4\u989C\u8272 */
     opacity: 0.5;
     transition: opacity 0.2s;
@@ -13577,12 +13577,12 @@ textarea.t-input {
 
 .t-lore-entry-item.active::before {
     opacity: 1;
-    background: #90cdf4;
+    background: var(--t-color-accent);
 }
 
 /* \u5206\u7C7B\u989C\u8272\u6307\u793A */
 .t-lore-entry-item[data-cat="Location"]::before {
-    background: #48bb78;
+    background: var(--t-color-success);
 }
 
 .t-lore-entry-item[data-cat="Character"]::before {
@@ -13625,7 +13625,7 @@ textarea.t-input {
 
 .t-entry-keys {
     font-weight: 600;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -13638,14 +13638,14 @@ textarea.t-input {
     padding: 2px 6px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 4px;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .t-entry-preview {
     font-size: 0.85em;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -13668,8 +13668,8 @@ textarea.t-input {
     font-weight: 600;
     margin-bottom: 25px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    color: #90cdf4;
+    border-bottom: 1px solid var(--t-color-border-subtle);
+    color: var(--t-color-accent);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -13682,7 +13682,7 @@ textarea.t-input {
 .t-lore-editor label {
     display: block;
     margin-bottom: 8px;
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     font-weight: 500;
     font-size: 0.9em;
 }
@@ -13693,9 +13693,9 @@ textarea.t-input {
     width: 100%;
     padding: 12px;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
-    color: #fff;
+    color: var(--t-color-text-strong);
     font-family: inherit;
     font-size: 0.95em;
     transition: all 0.2s;
@@ -13704,9 +13704,9 @@ textarea.t-input {
 .t-lore-editor input[type="text"]:focus,
 .t-lore-editor select:focus,
 .t-lore-editor textarea:focus {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
     background: rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 0 3px rgba(144, 205, 244, 0.1);
+    box-shadow: 0 0 0 3px var(--t-color-field-dialog-ring);
     outline: none;
 }
 
@@ -13717,11 +13717,11 @@ textarea.t-input {
 
 .t-static-text {
     padding: 12px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-color-surface-veil);
     border-radius: 8px;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     font-size: 0.9em;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border: 1px dashed var(--t-color-border-subtle);
 }
 
 .t-update-info-box {
@@ -13740,7 +13740,7 @@ textarea.t-input {
 .t-window-footer {
     padding: 15px 25px;
     background: rgba(0, 0, 0, 0.2);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--t-color-border-faint);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -13755,7 +13755,7 @@ textarea.t-input {
 .t-target-select select {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
+    color: var(--t-color-text-strong);
     padding: 8px 12px;
     border-radius: 6px;
     min-width: 220px;
@@ -13770,7 +13770,7 @@ textarea.t-input {
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     text-align: center;
     padding: 40px;
 }
@@ -13793,7 +13793,7 @@ textarea.t-input {
     padding: 5px 10px;
     border-radius: 4px;
     transition: all 0.2s;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     margin-right: 8px;
     display: flex;
     align-items: center;
@@ -13802,7 +13802,7 @@ textarea.t-input {
 
 .t-window-icon:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 /* Default state; the mobile layout below reveals this toolbar. */
@@ -13887,7 +13887,7 @@ textarea.t-input {
         gap: 12px;
         padding: 15px;
         background: rgba(0, 0, 0, 0.3);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid var(--t-color-border-subtle);
         position: sticky;
         top: 0;
         z-index: 10;
@@ -13901,7 +13901,7 @@ textarea.t-input {
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 6px;
-        color: #90cdf4;
+        color: var(--t-color-accent);
         font-size: 0.9em;
         cursor: pointer;
         transition: all 0.2s;
@@ -13914,7 +13914,7 @@ textarea.t-input {
     .t-mobile-editor-title {
         flex: 1;
         font-weight: 600;
-        color: #e2e8f0;
+        color: var(--t-color-text-cool);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -13922,17 +13922,17 @@ textarea.t-input {
 
     .t-mobile-nav-btn {
         padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--t-color-surface-hover);
+        border: 1px solid var(--t-color-border-subtle);
         border-radius: 6px;
-        color: #a0aec0;
+        color: var(--t-color-dialog-close);
         cursor: pointer;
         transition: all 0.2s;
     }
 
     .t-mobile-nav-btn:hover:not(:disabled) {
         background: rgba(255, 255, 255, 0.15);
-        color: #fff;
+        color: var(--t-color-text-strong);
     }
 
     .t-mobile-nav-btn:disabled {
@@ -14018,7 +14018,7 @@ textarea.t-input {
 }
 
 .t-config-label {
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     display: flex;
     align-items: center;
     gap: 5px;
@@ -14029,7 +14029,7 @@ textarea.t-input {
 }
 
 .t-config-value {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-weight: 500;
 }
 
@@ -14052,7 +14052,7 @@ textarea.t-input {
     flex-direction: column;
     overflow: hidden;
     background: rgba(19, 22, 30, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid var(--t-color-field-glass-border);
     box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56);
     border-radius: 14px;
 }
@@ -14086,7 +14086,7 @@ textarea.t-input {
 
 #t-lore-settings-dialog .t-form-label {
     display: block;
-    color: #a9bfd1;
+    color: var(--t-glass-text-secondary);
     margin-bottom: 6px;
     font-size: 0.82em;
 }
@@ -14124,28 +14124,28 @@ textarea.t-input {
 }
 
 .t-info-label {
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     min-width: 70px;
 }
 
 .t-info-row span:last-child {
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     word-break: break-all;
 }
 
 /* \u697C\u5C42\u4FE1\u606F\u663E\u793A */
 .t-floor-info {
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     font-size: 0.85em;
     white-space: nowrap;
 }
 
 .t-quick-btn {
     padding: 4px 10px;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-hover);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 4px;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     font-size: 0.8em;
     cursor: pointer;
     transition: all 0.2s;
@@ -14154,24 +14154,24 @@ textarea.t-input {
 
 .t-quick-btn:hover {
     background: rgba(144, 205, 244, 0.15);
-    border-color: rgba(144, 205, 244, 0.4);
-    color: #90cdf4;
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
 }
 
 .t-quick-btn.active {
     background: rgba(144, 205, 244, 0.2);
     border-color: rgba(144, 205, 244, 0.5);
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-quick-btn-all {
-    background: rgba(72, 187, 120, 0.1);
-    border-color: rgba(72, 187, 120, 0.3);
-    color: #48bb78;
+    background: var(--t-color-success-veil-subtle);
+    border-color: var(--t-color-success-border-subtle);
+    color: var(--t-color-success);
 }
 
 .t-quick-btn-all:hover {
-    background: rgba(72, 187, 120, 0.2);
+    background: var(--t-color-success-soft);
     border-color: rgba(72, 187, 120, 0.5);
     color: #68d391;
 }
@@ -14217,7 +14217,7 @@ textarea.t-input {
         flex-wrap: nowrap;
         padding: 0;
         border-right: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid var(--t-color-border-subtle);
         overflow-x: auto;
         overflow-y: hidden;
         scrollbar-gutter: stable;
@@ -14262,15 +14262,15 @@ textarea.t-input {
     gap: 5px;
     padding: 10px 20px;
     background: rgba(0, 0, 0, 0.15);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-mode-tab {
     padding: 10px 20px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px 8px 0 0;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     cursor: pointer;
     font-size: 0.9em;
     font-weight: 500;
@@ -14282,13 +14282,13 @@ textarea.t-input {
 
 .t-mode-tab:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
 }
 
 .t-mode-tab.active {
     background: rgba(144, 205, 244, 0.15);
-    border-color: rgba(144, 205, 244, 0.4);
-    color: #90cdf4;
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
     border-bottom-color: transparent;
 }
 
@@ -14315,7 +14315,7 @@ textarea.t-input {
 }
 
 .t-mode-panel::-webkit-scrollbar-thumb {
-    background: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-border-subtle);
     border-radius: 4px;
 }
 
@@ -14342,8 +14342,8 @@ textarea.t-input {
     align-items: center;
     margin-bottom: 15px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    color: #90cdf4;
+    border-bottom: 1px solid var(--t-color-border-subtle);
+    color: var(--t-color-accent);
     font-weight: 600;
 }
 
@@ -14355,7 +14355,7 @@ textarea.t-input {
 .t-summary-result {
     flex: 1;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     padding: 20px;
     overflow-y: auto;
@@ -14376,20 +14376,20 @@ textarea.t-input {
 }
 
 .t-summary-result::-webkit-scrollbar-thumb {
-    background: rgba(144, 205, 244, 0.4);
+    background: var(--t-color-focus-ring);
     border-radius: 4px;
 }
 
 .t-summary-result::-webkit-scrollbar-thumb:hover {
-    background: rgba(144, 205, 244, 0.6);
+    background: var(--t-color-accent-border-hover);
 }
 
 .t-summary-text {
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
 }
 
 .t-summary-text h3.t-summary-h3 {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-size: 1.1em;
     margin: 20px 0 12px 0;
     padding-bottom: 8px;
@@ -14401,7 +14401,7 @@ textarea.t-input {
 }
 
 .t-summary-text h4.t-summary-h4 {
-    color: #bfa15f;
+    color: var(--t-color-brand);
     font-size: 1em;
     margin: 15px 0 8px 0;
 }
@@ -14423,7 +14423,7 @@ textarea.t-input {
 .t-vector-status-card,
 .t-vector-actions-card {
     background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--t-color-border-faint);
     border-radius: 10px;
     padding: 20px;
     margin: 15px 20px;
@@ -14431,7 +14431,7 @@ textarea.t-input {
 
 .t-vector-status-card h3,
 .t-vector-actions-card h3 {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-size: 1em;
     margin-bottom: 15px;
     display: flex;
@@ -14457,11 +14457,11 @@ textarea.t-input {
 }
 
 .t-vector-info .t-info-label {
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
 }
 
 .t-vector-info .t-info-value {
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-weight: 500;
 }
 
@@ -14480,7 +14480,7 @@ textarea.t-input {
 }
 
 .t-action-group h4 {
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     font-size: 0.9em;
     margin-bottom: 10px;
     display: flex;
@@ -14495,7 +14495,7 @@ textarea.t-input {
 .t-action-item small {
     display: block;
     margin-top: 8px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.8em;
 }
 
@@ -14520,7 +14520,7 @@ textarea.t-input {
 
 .t-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #4299e1, #90cdf4);
+    background: linear-gradient(90deg, #4299e1, var(--t-color-accent));
     border-radius: 4px;
     transition: width 0.3s ease;
 }
@@ -14528,7 +14528,7 @@ textarea.t-input {
 .t-progress-text {
     margin-top: 8px;
     font-size: 0.85em;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     text-align: center;
 }
 
@@ -14541,8 +14541,8 @@ textarea.t-input {
 }
 
 .t-index-status.t-index-ready {
-    background: rgba(72, 187, 120, 0.2);
-    color: #48bb78;
+    background: var(--t-color-success-soft);
+    color: var(--t-color-success);
 }
 
 .t-index-status.t-index-empty {
@@ -14553,7 +14553,7 @@ textarea.t-input {
 /* ========== \u81EA\u5B9A\u4E49\u63D0\u793A\u8BCD\u533A\u57DF\u6837\u5F0F ========== */
 .t-custom-prompt-section {
     background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--t-color-border-faint);
     border-radius: 8px;
     margin: 0 20px 15px 20px;
     overflow: hidden;
@@ -14564,21 +14564,21 @@ textarea.t-input {
     align-items: center;
     gap: 10px;
     padding: 12px 15px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-color-surface-veil);
     cursor: pointer;
     transition: background 0.2s;
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     font-weight: 500;
     font-size: 0.9em;
 }
 
 .t-custom-prompt-header:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--t-color-surface-hover-subtle);
 }
 
 .t-custom-prompt-header i:first-child {
     transition: transform 0.2s;
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-custom-prompt-header .t-btn {
@@ -14594,9 +14594,9 @@ textarea.t-input {
     width: 100%;
     padding: 12px;
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 6px;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 0.9em;
     line-height: 1.6;
@@ -14606,13 +14606,13 @@ textarea.t-input {
 }
 
 .t-custom-prompt-body textarea:focus {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(144, 205, 244, 0.1);
+    box-shadow: 0 0 0 3px var(--t-color-field-dialog-ring);
 }
 
 .t-custom-prompt-body textarea::placeholder {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-prompt-hint {
@@ -14621,14 +14621,14 @@ textarea.t-input {
     background: rgba(144, 205, 244, 0.08);
     border-radius: 6px;
     font-size: 0.85em;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     display: flex;
     align-items: flex-start;
     gap: 8px;
 }
 
 .t-prompt-hint i {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     margin-top: 2px;
 }
 
@@ -14647,7 +14647,7 @@ textarea.t-input {
     align-items: center;
     gap: 8px;
     font-size: 0.9em;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
 }
 
 .t-stat-item i {
@@ -14655,7 +14655,7 @@ textarea.t-input {
 }
 
 .t-stat-item strong {
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-weight: 600;
 }
 
@@ -14679,15 +14679,15 @@ textarea.t-input {
     gap: 5px;
     padding: 15px 20px;
     background: rgba(0, 0, 0, 0.15);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-prompt-tab {
     padding: 8px 16px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 6px;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     cursor: pointer;
     font-size: 0.85em;
     transition: all 0.2s;
@@ -14698,13 +14698,13 @@ textarea.t-input {
 
 .t-prompt-tab:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
 }
 
 .t-prompt-tab.active {
     background: rgba(144, 205, 244, 0.15);
-    border-color: rgba(144, 205, 244, 0.4);
-    color: #90cdf4;
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
 }
 
 .t-prompt-content-container {
@@ -14723,7 +14723,7 @@ textarea.t-input {
 
 .t-prompt-pre {
     background: #1a1a2e;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 15px;
     margin: 0;
@@ -14749,7 +14749,7 @@ textarea.t-input {
 }
 
 .t-prompt-pre::-webkit-scrollbar-thumb {
-    background: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-border-subtle);
     border-radius: 4px;
 }
 
@@ -14854,7 +14854,7 @@ textarea.t-input {
 /* ========== \u9690\u85CF\u697C\u5C42\u529F\u80FD\u533A\u6837\u5F0F ========== */
 .t-hide-floors-section {
     background: rgba(245, 158, 11, 0.08);
-    border: 1px solid rgba(245, 158, 11, 0.2);
+    border: 1px solid var(--t-color-warning-soft);
     border-radius: 10px;
     margin: 15px 20px;
     overflow: hidden;
@@ -14865,9 +14865,9 @@ textarea.t-input {
     align-items: center;
     gap: 10px;
     padding: 12px 15px;
-    background: rgba(245, 158, 11, 0.1);
+    background: var(--t-color-warning-veil-subtle);
     border-bottom: 1px solid rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
+    color: var(--t-color-warning);
     font-weight: 600;
     font-size: 0.95em;
 }
@@ -14883,11 +14883,11 @@ textarea.t-input {
 }
 
 .t-hidden-status .t-status-warn {
-    color: #f59e0b;
+    color: var(--t-color-warning);
 }
 
 .t-hidden-status .t-status-ok {
-    color: #48bb78;
+    color: var(--t-color-success);
 }
 
 .t-hide-floors-body {
@@ -14903,7 +14903,7 @@ textarea.t-input {
 }
 
 .t-hide-range-inputs label {
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     font-size: 0.9em;
 }
 
@@ -14912,19 +14912,19 @@ textarea.t-input {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 6px;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-size: 0.9em;
     text-align: center;
 }
 
 .t-hide-range-inputs input[type="number"]:focus {
-    border-color: #f59e0b;
+    border-color: var(--t-color-warning);
     outline: none;
     box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
 }
 
 .t-hide-count {
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     font-size: 0.85em;
     margin-left: 5px;
 }
@@ -15004,9 +15004,9 @@ textarea.t-input {
     justify-content: space-between;
     align-items: center;
     padding: 10px 12px;
-    background: rgba(144, 205, 244, 0.1);
+    background: var(--t-color-accent-veil);
     border-bottom: 1px solid rgba(144, 205, 244, 0.15);
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-size: 0.9em;
     font-weight: 500;
 }
@@ -15025,14 +15025,14 @@ textarea.t-input {
 
 .t-original-content-text {
     font-size: 0.9em;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
     background: rgba(0, 0, 0, 0.2);
     padding: 12px;
     border-radius: 6px;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border: 1px dashed var(--t-color-border-subtle);
 }
 
 /* \u539F\u6709\u5185\u5BB9\u533A\u6EDA\u52A8\u6761 */
@@ -15046,7 +15046,7 @@ textarea.t-input {
 }
 
 .t-original-content-box::-webkit-scrollbar-thumb {
-    background: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-border-subtle);
     border-radius: 3px;
 }
 
@@ -15059,13 +15059,13 @@ textarea.t-input {
     margin-top: 15px;
     padding: 15px;
     background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--t-color-border-faint);
     border-radius: 8px;
 }
 
 .t-save-mode-section>label {
     display: block;
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     font-weight: 500;
     font-size: 0.9em;
     margin-bottom: 12px;
@@ -15104,13 +15104,13 @@ textarea.t-input {
 }
 
 .t-incremental-status.t-status-new {
-    background: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: var(--t-color-warning-veil-subtle);
+    border: 1px solid var(--t-color-warning-border-subtle);
 }
 
 .t-incremental-status.t-status-ok {
-    background: rgba(72, 187, 120, 0.1);
-    border: 1px solid rgba(72, 187, 120, 0.3);
+    background: var(--t-color-success-veil-subtle);
+    border: 1px solid var(--t-color-success-border-subtle);
 }
 
 .t-incremental-info {
@@ -15121,19 +15121,19 @@ textarea.t-input {
 }
 
 .t-incremental-status.t-status-new .t-incremental-info {
-    color: #f59e0b;
+    color: var(--t-color-warning);
 }
 
 .t-incremental-status.t-status-new .t-incremental-info i {
-    color: #f59e0b;
+    color: var(--t-color-warning);
 }
 
 .t-incremental-status.t-status-ok .t-incremental-info {
-    color: #48bb78;
+    color: var(--t-color-success);
 }
 
 .t-incremental-status.t-status-ok .t-incremental-info i {
-    color: #48bb78;
+    color: var(--t-color-success);
 }
 
 .t-incremental-info strong {
@@ -15141,7 +15141,7 @@ textarea.t-input {
 }
 
 .t-incremental-info small {
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     font-size: 0.85em;
 }
 
@@ -15238,7 +15238,7 @@ textarea.t-input {
 }
 
 .t-stat-item i.t-stat-none {
-    color: #888;
+    color: var(--t-color-text-muted);
 }
 
 /* Embedding \u8FDE\u63A5\u6D4B\u8BD5\u7684\u7ED3\u679C\u6587\u5B57\u3002\u539F\u4E3A loreReviewWindow.js:285 \u7684\u5185\u8054 style\u3002 */
@@ -15304,7 +15304,7 @@ textarea.t-input {
 
 .t-recall-status-badge.unavailable {
     background: #4a2a2a;
-    color: #ff6b6b;
+    color: var(--t-color-danger);
 }
 
 .t-recall-close {
@@ -15319,13 +15319,13 @@ textarea.t-input {
 }
 
 .t-recall-close:hover {
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-recall-search-btn {
     padding: 10px 16px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
+    color: var(--t-color-text-strong);
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -15378,7 +15378,7 @@ textarea.t-input {
 }
 
 .t-recall-result-item:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-hover);
 }
 
 .t-recall-result-item.selected {
@@ -15451,7 +15451,7 @@ textarea.t-input {
 
 #t-outline-prompt-manager .t-form-label {
     display: block;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     margin-bottom: 8px;
     font-size: 0.9em;
 }
@@ -15735,7 +15735,7 @@ textarea.t-input {
     gap: 10px;
     padding: 10px;
     background: rgba(16, 24, 32, 0.92);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
     cursor: pointer;
 }
 
@@ -15775,7 +15775,7 @@ textarea.t-input {
     align-items: center;
     gap: 8px 12px;
     padding: 8px 10px 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--t-color-surface-hover-subtle);
     background: rgba(10, 16, 22, 0.55);
 }
 
@@ -15992,7 +15992,7 @@ textarea.t-input {
 }
 
 .t-opening-card {
-    border: 1px solid rgba(120, 150, 170, 0.3);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: rgba(14, 21, 28, 0.9);
     padding: 10px;
@@ -16223,7 +16223,7 @@ textarea.t-input {
 
 .t-outline-table th,
 .t-outline-table td {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
     padding: 8px;
     vertical-align: top;
 }
@@ -16280,7 +16280,7 @@ textarea.t-input {
 .t-outline-textarea {
     width: 100%;
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--t-color-border-glass);
     background: rgba(10, 14, 18, 0.72);
     color: #f0f2f4;
     box-sizing: border-box;
@@ -16326,7 +16326,7 @@ textarea.t-input {
 
 .t-outline-scene-table th,
 .t-outline-scene-table td {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
     padding: 6px;
     vertical-align: top;
 }
@@ -16450,14 +16450,14 @@ textarea.t-input {
 .t-desk-editor-head,
 .t-desk-editor-actions {
     padding: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-color-border-faint);
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
 .t-desk-editor-actions {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--t-color-border-faint);
     border-bottom: none;
 }
 
@@ -16483,7 +16483,7 @@ textarea.t-input {
     #t-outline-prompt-manager .t-set-nav {
         width: 100%;
         border-right: none;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--t-color-border);
         padding: 8px;
         gap: 6px;
         flex-direction: row;
@@ -16499,7 +16499,7 @@ textarea.t-input {
 
     #t-outline-prompt-manager .t-set-tab-btn {
         padding: 8px 12px;
-        border: 1px solid #333;
+        border: 1px solid var(--t-color-border);
         border-radius: 8px;
         flex: 1;
         min-width: 120px;
@@ -16507,7 +16507,7 @@ textarea.t-input {
     }
 
     #t-outline-prompt-manager .t-set-tab-btn.active {
-        border-left: 1px solid #bfa15f;
+        border-left: 1px solid var(--t-color-brand);
         /* \u7A84\u5C4F tab \u662F\u300C\u5706\u89D2 chip\u300D\u5F62\u6001\uFF08\u4E0A\u9762\u90A3\u6761\u7ED9\u4E86 border + border-radius\uFF09\uFF0C
            \u6FC0\u6D3B\u6001\u8981\u6709\u586B\u5145\u8272\u624D\u770B\u5F97\u51FA\u6765\u3002
            \u8FD9\u6761 background \u539F\u5148\u4E0D\u7528\u5199\uFF1A\u5220\u6389\u7684\u90A3\u6761\u975E media \u7684
@@ -16515,7 +16515,7 @@ textarea.t-input {
            \u538B\u8FC7\u4E86 settings.css @600px \u91CC \`.t-set-tab-btn.active\`\uFF080,2,0\uFF09\u7684
            \`background: transparent\`\u3002ID \u89C4\u5219\u4E00\u5220\uFF0Ctransparent \u5C31\u4F1A\u8D62\uFF0C
            chip \u7684\u586B\u5145\u4F1A\u6D88\u5931 \u2014\u2014 \u6545\u5728\u6B64\u663E\u5F0F\u9489\u4F4F\u539F\u503C\u3002 */
-        background: #2a2a2a;
+        background: var(--t-color-surface-raised);
     }
 
     #t-outline-prompt-manager .t-set-content {
@@ -16828,7 +16828,7 @@ textarea.t-input {
         align-items: center;
         justify-content: space-between;
         padding: 10px 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid var(--t-color-border-subtle);
         color: #e8f0f8;
         font-weight: 600;
     }
@@ -16837,7 +16837,7 @@ textarea.t-input {
         display: flex;
         gap: 6px;
         padding: 8px 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: 1px solid var(--t-color-border-faint);
         background: rgba(11, 15, 20, 0.88);
     }
 
@@ -16865,7 +16865,7 @@ textarea.t-input {
         grid-template-columns: 1fr 1fr;
         gap: 6px;
         padding: 10px 12px 12px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid var(--t-color-border-subtle);
         background: rgba(11, 15, 20, 0.94);
     }
 
@@ -17495,33 +17495,33 @@ textarea.t-input {
 
 #t-rewrite-overlay .t-rewrite-settings-btn:hover i { color: #d2e6f7; }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn { height: 32px; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.14); color: #dbe8f4; font-size: 0.78em; font-weight: 600; letter-spacing: 0.15px; background: linear-gradient(140deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.18); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
+#t-rewrite-overlay .t-rewrite-head-text-btn { height: 32px; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: #dbe8f4; font-size: 0.78em; font-weight: 600; letter-spacing: 0.15px; background: linear-gradient(140deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--t-color-border-glass); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn:hover { transform: translateY(-1px); border-color: rgba(144, 205, 244, 0.5); background: linear-gradient(140deg, rgba(144, 205, 244, 0.22), rgba(255, 255, 255, 0.06)); box-shadow: 0 10px 20px rgba(17, 34, 54, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
+#t-rewrite-overlay .t-rewrite-head-text-btn:hover { transform: translateY(-1px); border-color: rgba(144, 205, 244, 0.5); background: linear-gradient(140deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover-subtle)); box-shadow: 0 10px 20px rgba(17, 34, 54, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+#t-rewrite-overlay .t-rewrite-head-text-btn:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--t-color-field-glass-border); }
 
 #t-rewrite-overlay .t-rewrite-title { font-size: 1.08em; font-weight: 700; letter-spacing: 0.2px; display: flex; align-items: center; gap: 8px; }
 
-#t-rewrite-overlay .t-rewrite-title i { color: #90cdf4; }
+#t-rewrite-overlay .t-rewrite-title i { color: var(--t-color-accent); }
 
-#t-rewrite-overlay .t-window-close { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); transition: all 0.18s ease; }
+#t-rewrite-overlay .t-window-close { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--t-color-border-faint); transition: all 0.18s ease; }
 
 #t-rewrite-overlay .t-window-close:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(144, 205, 244, 0.45); }
 
-#t-rewrite-overlay .t-rewrite-body { flex: 1; overflow: hidden; display: grid; grid-template-columns: minmax(340px, 0.92fr) minmax(440px, 1.08fr); gap: 16px; padding: 16px; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
+#t-rewrite-overlay .t-rewrite-body { flex: 1; overflow: hidden; display: grid; grid-template-columns: minmax(340px, 0.92fr) minmax(440px, 1.08fr); gap: 16px; padding: 16px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), var(--t-glass-body); }
 
 #t-rewrite-overlay .t-rewrite-left, #t-rewrite-overlay .t-rewrite-right { min-height: 0; display: flex; flex-direction: column; gap: 12px; }
 
-#t-rewrite-overlay .t-rewrite-section { border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; background: rgba(13, 19, 28, 0.78); padding: 12px; }
+#t-rewrite-overlay .t-rewrite-section { border: 1px solid var(--t-color-border-subtle); border-radius: 12px; background: rgba(13, 19, 28, 0.78); padding: 12px; }
 
 #t-rewrite-overlay .t-rewrite-section-title { font-size: 0.9em; font-weight: 700; color: #b8d8ee; margin-bottom: 10px; }
 
 #t-rewrite-overlay #t-rewrite-api-url, #t-rewrite-overlay #t-rewrite-api-key, #t-rewrite-overlay #t-rewrite-model { width: 100%; box-sizing: border-box; background: rgba(10, 15, 22, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #dde9f4; border-radius: 8px; padding: 9px 11px; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease; }
 
-#t-rewrite-overlay #t-rewrite-api-url:focus, #t-rewrite-overlay #t-rewrite-api-key:focus, #t-rewrite-overlay #t-rewrite-model:focus { border-color: rgba(144, 205, 244, 0.55); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
+#t-rewrite-overlay #t-rewrite-api-url:focus, #t-rewrite-overlay #t-rewrite-api-key:focus, #t-rewrite-overlay #t-rewrite-model:focus { border-color: var(--t-color-field-glass-focus-border); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
 
-#t-rewrite-overlay #t-rewrite-trigger { height: 36px; min-height: 36px; line-height: 1; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.14); color: #dbe8f4; font-weight: 600; transition: all 0.18s ease; white-space: nowrap; letter-spacing: 0.1px; min-width: 164px; padding: 0 16px; background: linear-gradient(135deg, rgba(144, 205, 244, 0.18), rgba(191, 161, 95, 0.16)); border-color: rgba(144, 205, 244, 0.42); justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
+#t-rewrite-overlay #t-rewrite-trigger { height: 36px; min-height: 36px; line-height: 1; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: #dbe8f4; font-weight: 600; transition: all 0.18s ease; white-space: nowrap; letter-spacing: 0.1px; min-width: 164px; padding: 0 16px; background: linear-gradient(135deg, rgba(144, 205, 244, 0.18), rgba(191, 161, 95, 0.16)); border-color: rgba(144, 205, 244, 0.42); justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
 
 #t-rewrite-overlay #t-rewrite-trigger:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(144, 205, 244, 0.44); }
 
@@ -17529,15 +17529,15 @@ textarea.t-input {
 
 #t-rewrite-overlay .t-rewrite-action-hint { font-size: 0.8em; color: #90a9bc; line-height: 1.45; }
 
-#t-rewrite-overlay .t-rewrite-footer-actions { padding: 10px 16px 14px; border-top: 1px solid rgba(255, 255, 255, 0.1); background: rgba(16, 22, 31, 0.9); }
+#t-rewrite-overlay .t-rewrite-footer-actions { padding: 10px 16px 14px; border-top: 1px solid var(--t-color-border-subtle); background: rgba(16, 22, 31, 0.9); }
 
-#t-rewrite-overlay .t-rewrite-runtime-meta { display: grid; gap: 6px; font-size: 0.82em; color: #a9bfd1; }
+#t-rewrite-overlay .t-rewrite-runtime-meta { display: grid; gap: 6px; font-size: 0.82em; color: var(--t-glass-text-secondary); }
 
 #t-rewrite-overlay .t-rewrite-runtime-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 
-#t-rewrite-overlay #t-rewrite-runtime-toggle { height: 28px; min-height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.05); color: #d4e4f2; font-size: 0.76em; font-weight: 600; letter-spacing: 0.12px; }
+#t-rewrite-overlay #t-rewrite-runtime-toggle { height: 28px; min-height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); background: rgba(255, 255, 255, 0.05); color: #d4e4f2; font-size: 0.76em; font-weight: 600; letter-spacing: 0.12px; }
 
-#t-rewrite-overlay #t-rewrite-runtime-toggle:hover { border-color: rgba(144, 205, 244, 0.45); background: rgba(144, 205, 244, 0.12); }
+#t-rewrite-overlay #t-rewrite-runtime-toggle:hover { border-color: rgba(144, 205, 244, 0.45); background: var(--t-color-accent-soft); }
 
 #t-rewrite-overlay #t-rewrite-runtime-body.is-collapsed { display: none; }
 
@@ -17583,7 +17583,7 @@ textarea.t-input {
 
 #t-rewrite-overlay .t-rewrite-hit-source { font-size: 0.78em; color: #8da5b8; margin-bottom: 8px; }
 
-#t-rewrite-overlay .t-rewrite-json-box { margin: 0; padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(7, 11, 18, 0.9); color: #b8d8ee; max-height: 180px; overflow: auto; font-size: 0.76em; line-height: 1.45; }
+#t-rewrite-overlay .t-rewrite-json-box { margin: 0; padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); background: var(--t-glass-field); color: #b8d8ee; max-height: 180px; overflow: auto; font-size: 0.76em; line-height: 1.45; }
 
 #t-rewrite-overlay #t-rewrite-raw-response { max-height: 240px; min-height: 120px; white-space: pre-wrap; word-break: break-word; }
 
@@ -17591,7 +17591,7 @@ textarea.t-input {
 
 #t-rewrite-live-overlay { z-index: 30075; }
 
-#t-rewrite-settings-overlay .t-rewrite-settings-window { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; height: min(90vh, 940px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.96); border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-settings-overlay .t-rewrite-settings-window { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; height: min(90vh, 940px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.96); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
 
 /* \u672C\u6D6E\u5C42\u7684\u8BBE\u7F6E\u5916\u58F3\uFF08body / nav / tab / content\uFF09\u5DF2\u8FC1\u81F3
    02-components/settings-shell.css \u7684 \`.t-set-glass-*\` \u2014\u2014 \u4E0E lore-review.css \u7684
@@ -17605,23 +17605,23 @@ textarea.t-input {
 
 #t-rewrite-settings-overlay .t-form-group { margin-bottom: 14px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.86); }
 
-#t-rewrite-settings-overlay .t-form-label { display: block; color: #a9bfd1; margin-bottom: 6px; font-size: 0.82em; }
+#t-rewrite-settings-overlay .t-form-label { display: block; color: var(--t-glass-text-secondary); margin-bottom: 6px; font-size: 0.82em; }
 
-#t-rewrite-settings-overlay .t-rewrite-settings-footer { padding: 10px 14px; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: flex-end; gap: 8px; background: rgba(16, 22, 31, 0.9); }
+#t-rewrite-settings-overlay .t-rewrite-settings-footer { padding: 10px 14px; border-top: 1px solid var(--t-color-border-subtle); display: flex; justify-content: flex-end; gap: 8px; background: rgba(16, 22, 31, 0.9); }
 
-#t-rewrite-live-overlay .t-rewrite-live-window { width: min(980px, 96vw); max-width: 96vw; max-height: 92vh; height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.96); border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-live-overlay .t-rewrite-live-window { width: min(980px, 96vw); max-width: 96vw; max-height: 92vh; height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.96); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
 
-#t-rewrite-live-overlay .t-rewrite-live-body { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
+#t-rewrite-live-overlay .t-rewrite-live-body { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), var(--t-glass-body); }
 
 #t-rewrite-live-overlay .t-rewrite-live-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 
 #t-rewrite-live-overlay .t-rewrite-live-meta { font-size: 0.8em; color: #8ea8bc; }
 
-#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
+#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
 
 #t-rewrite-live-overlay .t-rewrite-live-stream-title { font-size: 0.84em; font-weight: 700; color: #c5ddee; margin-bottom: 6px; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
+#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
 
 #t-rewrite-live-overlay .t-rewrite-live-history-title { font-size: 0.84em; font-weight: 700; color: #c5ddee; margin-bottom: 6px; }
 
@@ -17639,7 +17639,7 @@ textarea.t-input {
 
 #t-rewrite-live-overlay .t-rewrite-live-history-preview { font-size: 0.78em; line-height: 1.45; color: #d8e7f4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-empty { border: 1px dashed rgba(255, 255, 255, 0.18); border-radius: 9px; padding: 10px; text-align: center; color: #7f95a8; font-size: 0.78em; background: rgba(255, 255, 255, 0.02); }
+#t-rewrite-live-overlay .t-rewrite-live-history-empty { border: 1px dashed var(--t-color-border-glass); border-radius: 9px; padding: 10px; text-align: center; color: #7f95a8; font-size: 0.78em; background: rgba(255, 255, 255, 0.02); }
 
 #t-rewrite-live-overlay #t-rewrite-live-prompt-json { min-height: 92px; }
 
@@ -17650,7 +17650,7 @@ textarea.t-input {
    \u800C\u90A3 5 \u4E2A\u7C7B\u5728 src/ \u4E2D\u96F6\u5F15\u7528\u3001\u4ECE\u672A\u547D\u4E2D\u8FC7\u4EFB\u4F55\u5143\u7D20 \u2014\u2014 \u4E5F\u5C31\u662F\u8BF4\u515C\u5E95\u503C\u4E00\u76F4\u5728\u751F\u6548\u3002
    Phase 7-1 \u5220\u6389\u90A3\u4E9B\u6B7B\u89C4\u5219\u540E\uFF0CA11\uFF08\u6D88\u8D39\u4F46\u672A\u58F0\u660E\uFF09\u963B\u65AD\uFF0C\u6545\u628A\u515C\u5E95\u503C\u5185\u8054\u3002
    \u8FD9\u662F\u7B49\u503C\u6539\u5199\uFF0C\u4E0D\u662F\u89C6\u89C9\u53D8\u5316\u3002 */
-#t-rewrite-settings-overlay .t-rewrite-section-title { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px; padding: 4px 10px; border-radius: 999px; font-size: 0.82em; letter-spacing: 0.2px; border: 1px solid rgba(144, 205, 244, 0.45); color: #d9ecfb; background: linear-gradient(135deg, rgba(144, 205, 244, 0.22) 0%, rgba(255, 255, 255, 0.03) 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+#t-rewrite-settings-overlay .t-rewrite-section-title { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px; padding: 4px 10px; border-radius: 999px; font-size: 0.82em; letter-spacing: 0.2px; border: 1px solid rgba(144, 205, 244, 0.45); color: #d9ecfb; background: linear-gradient(135deg, var(--t-color-accent-soft-strong) 0%, var(--t-color-surface-veil) 100%); box-shadow: inset 0 1px 0 var(--t-color-field-glass-border); }
 
 #t-rewrite-settings-overlay #t-rewrite-settings-model { width: 100%; }
 
@@ -17694,9 +17694,9 @@ textarea.t-input {
 
 /* === \u5206\u7C7B\u5361\u7247 === */
     #t-rewrite-settings-overlay .t-rewrite-category-card {
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--t-color-border-faint);
         border-radius: 10px;
-        background: rgba(22, 27, 36, 0.6);
+        background: var(--t-glass-row);
         margin-bottom: 8px;
         overflow: hidden;
         transition: border-color 0.15s;
@@ -17709,12 +17709,12 @@ textarea.t-input {
         align-items: center;
         gap: 8px;
         padding: 8px 12px;
-        background: rgba(28, 34, 44, 0.7);
+        background: var(--t-glass-row-head);
         cursor: pointer;
         user-select: none;
     }
 
-#t-rewrite-settings-overlay .t-rewrite-cat-head:hover { background: rgba(34, 42, 54, 0.7); }
+#t-rewrite-settings-overlay .t-rewrite-cat-head:hover { background: var(--t-glass-row-hover); }
 
 #t-rewrite-settings-overlay .t-rewrite-cat-caret {
         font-size: 0.7em;
@@ -17833,7 +17833,7 @@ textarea.t-input {
  padding: 0;
  gap: 0;
  border-right: none;
- border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+ border-bottom: 1px solid var(--t-color-border-subtle);
  overflow-x: auto;
  overflow-y: hidden;
  scrollbar-gutter: stable;
@@ -17930,8 +17930,8 @@ textarea.t-input {
     min-height: 92px;
     resize: vertical;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(7, 11, 18, 0.9);
+    border: 1px solid var(--t-color-field-glass-border);
+    background: var(--t-glass-field);
     color: #dce9f4;
     padding: 8px 10px;
     font-size: 0.82em;
@@ -17960,7 +17960,7 @@ textarea.t-input {
     width: 30px;
     height: 30px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--t-color-border-glass);
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -17968,7 +17968,7 @@ textarea.t-input {
 }
 
 #t-rewrite-settings-overlay .t-window-close:hover {
-    border-color: rgba(144, 205, 244, 0.6);
+    border-color: var(--t-color-accent-border-hover);
     background: linear-gradient(145deg, rgba(144, 205, 244, 0.24), rgba(255, 255, 255, 0.07));
 }
 

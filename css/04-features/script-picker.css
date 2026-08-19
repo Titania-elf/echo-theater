@@ -34,7 +34,7 @@
     backdrop-filter: blur(10px);
     z-index: 2001;
     border-radius: 8px;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
@@ -43,11 +43,11 @@
 
 .t-sel-header {
     padding: 10px 15px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #1e1e1e;
+    background: var(--t-color-surface);
     border-radius: 8px 8px 0 0;
     flex-wrap: wrap;
     gap: 10px;
@@ -55,9 +55,9 @@
 
 /* 剧本选择器搜索框 */
 .t-sel-search-input {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
+    background: var(--t-color-surface-raised);
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text);
     padding: 5px 10px;
     border-radius: 4px;
     font-size: 0.85em;
@@ -66,9 +66,9 @@
 }
 
 .t-sel-sort-select {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
+    background: var(--t-color-surface-raised);
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text);
     padding: 5px 8px;
     border-radius: 4px;
     font-size: 0.85em;
@@ -76,12 +76,12 @@
 
 .t-sel-search-input:focus {
     outline: none;
-    border-color: #bfa15f;
+    border-color: var(--t-color-brand);
     width: 180px;
 }
 
 .t-sel-search-input::placeholder {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-sel-body {
@@ -93,7 +93,7 @@
 .t-sel-sidebar {
     width: 160px;
     background: #181818;
-    border-right: 1px solid #333;
+    border-right: 1px solid var(--t-color-border);
     padding: 10px;
     overflow-y: auto;
     display: flex;
@@ -115,7 +115,7 @@
 .t-sel-cat-btn {
     padding: 8px 12px;
     cursor: pointer;
-    color: #888;
+    color: var(--t-color-text-muted);
     border-radius: 4px;
     font-size: 0.9em;
     transition: 0.2s;
@@ -129,14 +129,14 @@
 
 .t-sel-cat-btn.active {
     background: #333;
-    color: #fff;
+    color: var(--t-color-text-strong);
     font-weight: bold;
-    border-left: 3px solid #bfa15f;
+    border-left: 3px solid var(--t-color-brand);
 }
 
 .t-script-card {
     background: #252525;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 12px;
     cursor: pointer;
@@ -149,12 +149,12 @@
 .t-script-card:hover {
     transform: translateY(-2px);
     border-color: #555;
-    background: #2a2a2a;
+    background: var(--t-color-surface-raised);
 }
 
 .t-card-title {
     font-weight: bold;
-    color: #eee;
+    color: var(--t-color-text);
     font-size: 1em;
 }
 
@@ -178,8 +178,8 @@
     padding: 7px 12px;
     font-size: 0.78em;
     color: #7f7f7f;
-    border-top: 1px solid #333;
-    background: #1a1a1a;
+    border-top: 1px solid var(--t-color-border);
+    background: var(--t-color-surface-sunken);
     border-radius: 0 0 8px 8px;
 }
 
@@ -203,7 +203,7 @@
         overflow-x: auto;
         overflow-y: hidden;
         border-right: none;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--t-color-border);
         padding: 5px;
         gap: 8px;
         white-space: nowrap;
@@ -232,14 +232,14 @@
         display: flex;
         align-items: center;
         background: #222;
-        border: 1px solid #333;
+        border: 1px solid var(--t-color-border);
     }
 
     .t-sel-cat-btn.active {
-        background: #bfa15f;
+        background: var(--t-color-brand);
         color: #000;
-        border: 1px solid #bfa15f;
-        border-left: 1px solid #bfa15f;
+        border: 1px solid var(--t-color-brand);
+        border-left: 1px solid var(--t-color-brand);
     }
 
     .t-sel-grid {

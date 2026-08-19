@@ -6,7 +6,7 @@
     max-width: 95vw;
     display: flex;
     flex-direction: column;
-    background: radial-gradient(120% 120% at 0% 0%, #2b1f12 0%, #121212 42%, #090909 100%);
+    background: radial-gradient(120% 120% at 0% 0%, #2b1f12 0%, var(--t-color-bg) 42%, #090909 100%);
     overflow: hidden;
     position: relative;
     isolation: isolate;
@@ -485,7 +485,7 @@
 .t-read-header {
     height: 60px;
     padding: 0 20px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--t-color-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -546,8 +546,8 @@
 }
 
 .t-read-more-menu button:hover {
-    background: rgba(191, 161, 95, 0.14);
-    color: #fff;
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-text-strong);
 }
 
 .t-read-more-menu button.danger {
@@ -599,7 +599,7 @@
     flex-grow: 1;
     padding: 0;
     overflow-y: auto;
-    color: #ccc;
+    color: var(--t-color-text-label);
     position: relative;
     background: #0b0b0b;
 }
@@ -666,7 +666,7 @@
     padding: 10px;
     margin-bottom: 10px;
     border-radius: 6px;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     gap: 15px;
 }
 
@@ -677,7 +677,7 @@
     background-color: #111;
     background-size: cover;
     background-position: center;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     flex-shrink: 0;
     position: relative;
 }
@@ -703,7 +703,7 @@
 
 .t-img-name {
     font-weight: bold;
-    color: #eee;
+    color: var(--t-color-text);
     font-size: 1.1em;
     margin-bottom: 5px;
 }
@@ -724,9 +724,9 @@
 
 .t-act-btn {
     padding: 6px 10px;
-    border: 1px solid #444;
+    border: 1px solid var(--t-color-border-strong);
     background: #333;
-    color: #ccc;
+    color: var(--t-color-text-label);
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.85em;
@@ -734,13 +734,13 @@
 }
 
 .t-act-btn:hover {
-    background: #444;
-    color: #fff;
-    border-color: #666;
+    background: var(--t-color-border-strong);
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-text-faint);
 }
 
 .t-act-btn.auto {
-    color: #bfa15f;
+    color: var(--t-color-brand);
     border-color: rgba(191, 161, 95, 0.3);
 }
 
@@ -765,13 +765,13 @@
 
 /* 编辑模式工具栏 */
 .t-fav-toolbar-edit {
-    background: linear-gradient(135deg, #1a2a1a 0%, #1e1e1e 100%);
+    background: linear-gradient(135deg, #1a2a1a 0%, var(--t-color-surface) 100%);
     border-bottom: 1px solid #3a5a3a;
 }
 
 /* 危险按钮（删除） */
 .t-tool-btn.t-btn-danger {
-    color: #ff6b6b;
+    color: var(--t-color-danger);
     border-color: rgba(255, 107, 107, 0.3);
 }
 
@@ -799,7 +799,7 @@
     align-items: center;
     justify-content: center;
     z-index: 6;
-    color: #fff;
+    color: var(--t-color-text-strong);
     font-size: 1.1em;
     transition: all 0.2s ease;
     backdrop-filter: blur(4px);

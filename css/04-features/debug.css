@@ -91,7 +91,7 @@
     border: 1px solid #383838;
     border-radius: 8px;
     background: #202020;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     box-shadow: 0 12px 30px rgba(0, 0, 0, .55);
     font-size: 11px;
     line-height: 1.55;
@@ -122,12 +122,12 @@
 }
 
 #t-debug-view .t-prompt-info-popover dt {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 #t-debug-view .t-prompt-info-popover dd {
     overflow: hidden;
-    color: #ccc;
+    color: var(--t-color-text-label);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -176,7 +176,7 @@
 }
 
 #t-debug-view .t-prompt-count {
-    color: #888;
+    color: var(--t-color-text-muted);
     font-size: 12px;
     margin-right: 4px;
     white-space: nowrap;
@@ -199,7 +199,7 @@
     font-size: 11px;
     color: #999;
     background: #1b1b1b;
-    border: 1px solid #333;
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     cursor: pointer;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
@@ -209,8 +209,8 @@
 
 #t-debug-view .t-prompt-tool-btn:hover {
     background: #262626;
-    color: #ccc;
-    border-color: #444;
+    color: var(--t-color-text-label);
+    border-color: var(--t-color-border-strong);
 }
 
 #t-debug-view .t-prompt-tool-btn.active {
@@ -247,7 +247,7 @@
 }
 
 #t-debug-view .t-prompt-role-user {
-    border-left-color: #55efc4;
+    border-left-color: var(--t-color-notify);
 }
 
 #t-debug-view .t-prompt-role-assistant {
@@ -266,7 +266,7 @@
 }
 
 #t-debug-view .t-prompt-section-head:hover {
-    background: #1e1e1e;
+    background: var(--t-color-surface);
 }
 
 #t-debug-view .t-prompt-section-title {
@@ -281,7 +281,7 @@
 
 #t-debug-view .t-prompt-order {
     width: 22px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-family: var(--t-font-mono);
     font-size: 11px;
     text-align: right;
@@ -290,7 +290,7 @@
 
 #t-debug-view .t-prompt-role-label {
     width: 58px;
-    color: #888;
+    color: var(--t-color-text-muted);
     font-family: var(--t-font-mono);
     font-size: 10px;
     font-weight: 500;
@@ -299,7 +299,7 @@
 }
 
 #t-debug-view .t-prompt-role-system .t-prompt-role-label { color: #74b9ff; }
-#t-debug-view .t-prompt-role-user .t-prompt-role-label { color: #55efc4; }
+#t-debug-view .t-prompt-role-user .t-prompt-role-label { color: var(--t-color-notify); }
 #t-debug-view .t-prompt-role-assistant .t-prompt-role-label { color: #c792ea; }
 
 #t-debug-view .t-prompt-name {
@@ -323,7 +323,7 @@
 
 #t-debug-view .t-prompt-section-preview {
     padding: 0 12px 10px 62px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 11px;
     font-family: var(--t-font-mono);
     white-space: nowrap;
