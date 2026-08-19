@@ -118,7 +118,7 @@
 }
 
 .t-ws-select:hover {
-    border-color: #555;
+    border-color: var(--t-color-border-bright);
 }
 
 /* ── 统计条 ── */
@@ -165,7 +165,7 @@
     /* 双层渐变打底，避免大片纯色显得板。手法同收藏画廊的 .t-fav-grid-area：
        竖向渐变压出纵深，右上角一团暖光呼应金色主题 */
     background:
-        linear-gradient(180deg, rgba(10, 10, 10, 0.2), rgba(10, 10, 10, 0.65)),
+        linear-gradient(180deg, var(--t-color-surface-recess), var(--t-color-scrim)),
         radial-gradient(90% 140% at 100% 0%, rgba(54, 40, 24, 0.28), transparent 70%);
 }
 
@@ -185,7 +185,7 @@
     min-height: 200px;
     padding: 12px 12px 12px 16px;
     background: linear-gradient(160deg, var(--t-color-surface) 0%, var(--t-color-bg) 100%);
-    border: 1px solid #2e2e2e;
+    border: 1px solid var(--t-color-border);
     border-radius: 10px;
     overflow: hidden;
     transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
@@ -320,7 +320,7 @@
     display: flex;
     gap: 6px;
     padding-top: 8px;
-    border-top: 1px solid #262626;
+    border-top: 1px solid var(--t-color-border-dim);
     margin-top: auto;
 }
 
@@ -341,7 +341,7 @@
     flex-shrink: 0;
     display: block;
     overflow: hidden;
-    border: 1px solid #383838;
+    border: 1px solid var(--t-color-border-control);
 }
 
 .t-ws-avatar-initial {

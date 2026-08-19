@@ -245,8 +245,22 @@
     --t-color-text-on-accent: rgb(var(--t-c-neutral-0-rgb));
 
     /* ---- 边框 ---- */
+    --t-color-border-dim: rgb(var(--t-c-neutral-3-rgb));
+    /* #222 分隔线 / 弱描边，填 --t-color-border(#333) 以下的空档（Phase 6b-10 新增）。
+       ⚠ 实测 04-features 里有 31 处不透明中性描边散在 34~85 灰上，原先只有
+       51/58/68 三档，其中 15 处落在「明显」(ΔE 4-8)、3 处超阈值。补这一档后
+       超阈值归零、「明显」降到 10 处。
+       ⚠ 与 --t-color-surface-elevated(#222) 同值但角色不同（表面 vs 边框），
+       浅色主题下会分叉 —— 与 --t-color-border / --t-color-surface-code 的关系同理。 */
     --t-color-border: rgb(var(--t-c-neutral-5-rgb));
     /* #333 —— 74 次 */
+    --t-color-border-bright: rgb(85 85 85);
+    /* #555 更亮的描边（hover 态用得多），实测 10 处（Phase 6b-10 新增）。
+       原先最近档是 -strong(#444)，差 ΔE 7.3（明显偏色）。
+       ⚠ 与 --t-color-surface-highest / --t-color-text-disabled 同值但角色不同
+       （描边 / 表面 / 禁用文字），浅色主题下三者会分叉。
+       ⚠ 刻意不造原语：原语阶按亮度单调排（…7=68, 8=102…），插入 85 要给全部
+       下游消费者重编号 —— 与 6b-1 三档文字色、6b-2 的 surface-highest 同一理由。 */
     --t-color-border-strong: rgb(var(--t-c-neutral-7-rgb));
     /* #444 */
     --t-color-border-control: rgb(var(--t-c-neutral-6-rgb));

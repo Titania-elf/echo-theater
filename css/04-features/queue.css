@@ -78,7 +78,7 @@
 .t-queue-mode-btn:hover {
     background: var(--t-color-surface-raised);
     color: var(--t-color-text-label);
-    border-color: #555;
+    border-color: var(--t-color-border-bright);
 }
 
 .t-queue-mode-btn.active {

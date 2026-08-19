@@ -157,7 +157,7 @@
 
 .t-wi-book-item:hover {
     background: var(--t-color-surface-elevated);
-    border-color: #3b3b3b;
+    border-color: var(--t-color-border-control);
 }
 
 .t-wi-book-item.selected {

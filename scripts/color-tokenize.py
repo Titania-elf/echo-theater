@@ -443,6 +443,63 @@ def snap_glass_dark(path, apply_it):
                  lambda p: role_of(p) == 'surface', is_cool_dark, paired=True)
 
 
+# ── 中性暗色：描边与底色必须分开，用各自的 token 族 ─────────────────────
+# ⚠ 这一段暴露了一个此前没抓到的错配：31 处**不透明中性描边**（34~85 灰）
+# 若拿「暗色表面」候选去比，会被匹配到 surface-code / surface-raised / panel-header
+# 上 —— 那是表面 token。描边该比 --t-color-border* 族。
+# 教训与 6b-2/6b-6 同源：**角色不同就必须换候选族，否则会得到"能过阈值但语义错"的映射。**
+BORDER_NEUTRAL_SCALE = [
+    ('--t-color-border-dim', (34, 34, 34)),      # 6b-10 新增，填 51 以下的空档
+    ('--t-color-border', (51, 51, 51)),          # 已存在
+    ('--t-color-border-control', (58, 58, 58)),  # 已存在
+    ('--t-color-border-strong', (68, 68, 68)),   # 已存在
+    ('--t-color-border-bright', (85, 85, 85)),   # 6b-10 新增，10 处 #555 描边
+]
+
+# 中性暗底（含半透明），候选成对。跨度 <= 6 才算中性 —— 用 8 会把绿调的
+# rgba(14,22,18,*)（跨度 8）收进来，那是 rewrite 的命中底色，属绿调族。
+SURFACE_DARK_SCALE = [
+    ('--t-color-surface-recess', (0, 0, 0, 0.20)),
+    ('--t-color-surface-recess-strong', (0, 0, 0, 0.30)),
+    ('--t-color-scrim', (0, 0, 0, 0.60)),
+    ('--t-color-dialog-scrim-outline', (0, 0, 0, 0.65)),
+    ('--t-color-dialog-scrim', (0, 0, 0, 0.70)),
+    ('--t-color-dialog-scrim-strong', (0, 0, 0, 0.80)),
+    ('--t-color-dialog-scrim-strongest', (0, 0, 0, 0.85)),
+    ('--t-color-surface-well', (17, 17, 17, 1.0)),
+    ('--t-color-bg', (18, 18, 18, 1.0)),
+    ('--t-color-surface-inset', (24, 24, 24, 1.0)),
+    ('--t-color-surface-sunken', (26, 26, 26, 1.0)),
+    ('--t-color-surface', (30, 30, 30, 1.0)),
+    ('--t-color-surface-elevated', (34, 34, 34, 1.0)),
+    ('--t-color-surface-raised', (42, 42, 42, 1.0)),
+]
+
+
+def is_neutral_dark_border(k):
+    return (k[3] >= 0.99 and max(k[:3]) <= 90
+            and max(k[:3]) - min(k[:3]) <= 6)
+
+
+def is_neutral_dark_surface(k):
+    return (k[3] >= 0.005 and max(k[:3]) <= 60
+            and max(k[:3]) - min(k[:3]) <= 6)
+
+
+def snap_neutral_dark(path, apply_it):
+    """描边与底色各用自己的族，结果合并。"""
+    c1, o1, e1 = _snap(path, apply_it, BORDER_NEUTRAL_SCALE,
+                       lambda p: role_of(p) == 'border', is_neutral_dark_border)
+    if e1:
+        return None, None, e1
+    c2, o2, e2 = _snap(path, apply_it, SURFACE_DARK_SCALE,
+                       lambda p: role_of(p) == 'surface', is_neutral_dark_surface,
+                       paired=True)
+    if e2:
+        return None, None, e2
+    return c1 + c2, o1 + o2, None
+
+
 # ── 表面色刻度（不透明中性灰，9 档，由深到浅）──────────────────────────
 # ⚠ 与文字刻度有两点本质不同，见交接文档 §6b：
 #   1) 表面是**嵌套**的：父子元素差一档就是视觉层级本身。两个不同取值吸到同一档，
@@ -910,6 +967,8 @@ def main():
                     help='把 color: 上的冷调文字色吸附到冷调刻度（会改色，逐处报 ΔE）')
     ap.add_argument('--snap-glass-dark', action='store_true',
                     help='把冷调暗底吸附到冷玻璃刻度（同时吸颜色与 alpha）')
+    ap.add_argument('--snap-neutral-dark', action='store_true',
+                    help='中性暗色：描边与底色各用自己的 token 族')
     ap.add_argument('--snap-alpha', action='store_true',
                     help='把色族半透明色的 alpha 吸附到该族阶梯（会改色；之后必跑 --check-state）')
     ap.add_argument('--check-state', action='store_true',
@@ -941,11 +1000,12 @@ def main():
         return
 
     if (a.snap_text or a.snap_surface or a.snap_alpha or a.snap_text_cool
-            or a.snap_glass_dark):
+            or a.snap_glass_dark or a.snap_neutral_dark):
         from collections import Counter
         fn = (snap_text if a.snap_text else
               snap_text_cool if a.snap_text_cool else
               snap_glass_dark if a.snap_glass_dark else
+              snap_neutral_dark if a.snap_neutral_dark else
               snap_surface if a.snap_surface else snap_alpha)
         allc, allo = [], []
         for p in files:

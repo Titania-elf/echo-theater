@@ -30,7 +30,7 @@
     left: 20px;
     right: 20px;
     bottom: 20px;
-    background: rgba(18, 18, 18, 0.98);
+    background: var(--t-color-bg);
     backdrop-filter: blur(10px);
     z-index: 2001;
     border-radius: 8px;
@@ -152,7 +152,7 @@
 
 .t-script-card:hover {
     transform: translateY(-2px);
-    border-color: #555;
+    border-color: var(--t-color-border-bright);
     background: var(--t-color-surface-raised);
 }
 

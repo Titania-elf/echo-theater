@@ -156,7 +156,7 @@
 
 .t-anim-option:hover {
     background: var(--t-color-surface-raised);
-    border-color: #555;
+    border-color: var(--t-color-border-bright);
 }
 
 .t-anim-option.active {
@@ -293,7 +293,7 @@
     align-items: center;
     gap: 15px;
     padding: 8px 0;
-    border-bottom: 1px solid #222;
+    border-bottom: 1px solid var(--t-color-border-dim);
     font-size: 0.85em;
 }
 
@@ -507,7 +507,7 @@
 
 .t-prompt-entry-card:hover {
     background: var(--t-color-surface);
-    border-color: #555;
+    border-color: var(--t-color-border-bright);
 }
 
 .t-prompt-entry-card.is-disabled {
@@ -687,7 +687,7 @@
 
 .t-header-action-card:hover {
     background: var(--t-color-surface);
-    border-color: #555;
+    border-color: var(--t-color-border-bright);
 }
 
 .t-header-action-card.is-dragging {
@@ -862,7 +862,7 @@
    border-color，任何 (0,1,0) 的类都会在悬停时被它夺走边框色。
    原先靠内联压过它，现在靠 (1,0,0)。同 5b-7 的 #t-diag-clear。 */
 #btn-restore-presets {
-    border: 1px solid #555;
+    border: 1px solid var(--t-color-border-bright);
 }
 
 /* 日志查看器空态。
