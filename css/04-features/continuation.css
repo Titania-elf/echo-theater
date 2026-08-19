@@ -135,7 +135,7 @@
     position: relative;
     border: 1px solid var(--t-color-border-control);
     border-radius: 7px;
-    background: #222;
+    background: var(--t-color-surface-elevated);
 }
 
 .t-continuation-history-btn,
@@ -161,7 +161,7 @@
 .t-continuation-history-btn:hover,
 .t-continuation-context-btn:hover,
 .t-continuation-context-btn.active {
-    background: #303030;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-soft);
 }
 
@@ -248,7 +248,7 @@
 
 .t-continuation-replay:hover:not(:disabled) {
     border-color: var(--t-color-brand-border);
-    background: #2b2b2b;
+    background: var(--t-color-surface-raised);
     color: #d0b575;
 }
 
@@ -271,7 +271,7 @@
     bottom: calc(100% + 9px);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 7px;
-    background: #1d1d1d;
+    background: var(--t-color-surface);
     box-shadow: 0 -10px 30px rgba(0, 0, 0, .48);
 }
 
@@ -316,7 +316,7 @@
     height: 32px;
     border: 1px solid var(--t-color-border-strong);
     border-radius: 5px;
-    background: #292929;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-label);
     cursor: pointer;
 }
@@ -523,7 +523,7 @@
     overflow: hidden;
     border: 1px solid #464138;
     border-radius: 12px;
-    background: #151515;
+    background: var(--t-color-bg);
     box-shadow: 0 16px 50px rgba(0, 0, 0, 0.72);
 }
 
@@ -534,7 +534,7 @@
     min-height: 52px;
     padding: 0 16px;
     border-bottom: 1px solid var(--t-color-border);
-    background: #1d1d1d;
+    background: var(--t-color-surface);
 }
 
 .t-cont-history-header>div,
@@ -589,7 +589,7 @@
     margin-bottom: 12px;
     border: 1px solid #343434;
     border-radius: 12px;
-    background: #171717;
+    background: var(--t-color-surface-inset);
 }
 
 .t-cont-history-session:last-child {
@@ -609,7 +609,7 @@
     padding: 8px 12px;
     border: 0;
     border-radius: 11px;
-    background: #202020;
+    background: var(--t-color-surface-elevated);
     color: #ddd4c2;
     cursor: pointer;
     text-align: left;
@@ -659,7 +659,7 @@
     overflow: hidden;
     border: 1px solid #303030;
     border-radius: 10px;
-    background: #191919;
+    background: var(--t-color-surface-sunken);
 }
 
 .t-cont-history-branch.is-active {
@@ -675,7 +675,7 @@
     border: 0;
     border-bottom: 1px solid #303030;
     color: #d6d0c3;
-    background: #202020;
+    background: var(--t-color-surface-elevated);
     cursor: pointer;
     text-align: left;
     font: inherit;
@@ -953,7 +953,7 @@
 
 .t-cont-recent-item {
     border: 1px solid #3d3d3d;
-    background: #262626;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-soft);
     border-radius: 999px;
     padding: 6px 12px;

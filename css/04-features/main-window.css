@@ -48,7 +48,7 @@
     width: 100%;
     height: 100%;
     z-index: 10;
-    background-color: #0b0b0b;
+    background-color: var(--t-color-surface-well);
     background-image: none;
 }
 
@@ -57,7 +57,7 @@
     flex-grow: 1;
     position: relative;
     overflow: hidden;
-    background-color: #0b0b0b;
+    background-color: var(--t-color-surface-well);
     background-image: linear-gradient(var(--t-color-surface-well) 1px, transparent 1px), linear-gradient(90deg, var(--t-color-surface-well) 1px, transparent 1px);
     background-size: 20px 20px;
     transform: translateZ(0);
@@ -165,7 +165,7 @@
 }
 
 .t-history-toggle:hover {
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border-color: var(--t-color-border-strong);
 }
 
@@ -257,7 +257,7 @@
 }
 
 .t-mode-btn:hover {
-    background: #222;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text-secondary);
 }
 
@@ -273,7 +273,7 @@
 /* Trigger Card */
 .t-trigger-card {
     flex-grow: 1;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 0 15px;
@@ -316,7 +316,7 @@
 }
 
 .t-cat-tag {
-    background: #333;
+    background: var(--t-color-surface-high);
     padding: 1px 6px;
     border-radius: 3px;
     color: var(--t-color-text-secondary);
@@ -357,7 +357,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     transition: 0.2s;
@@ -463,7 +463,7 @@
     flex: 0 0 auto;
     border: 1px solid var(--t-color-border-control);
     border-radius: 999px;
-    background: #232323;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text-secondary);
     font: inherit;
     font-size: 11px;
@@ -474,7 +474,7 @@
 
 .t-shortcut-btn:hover {
     border-color: rgba(191, 161, 95, .5);
-    background: #2b2b2b;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-soft);
 }
 
@@ -509,7 +509,7 @@
     width: 300px;
     display: flex;
     flex-direction: column;
-    background: #191919;
+    background: var(--t-color-surface-sunken);
     border-left: 1px solid var(--t-color-border-strong);
     box-shadow: -14px 0 34px rgba(0, 0, 0, .5);
     transform: translateX(102%);
@@ -558,7 +558,7 @@
     height: 34px;
     border: 0;
     border-radius: 6px;
-    background: #292929;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-secondary);
     cursor: pointer;
 }
@@ -593,7 +593,7 @@
     gap: 8px;
     border: 1px solid #393939;
     border-radius: 6px;
-    background: #232323;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text-label);
     font: inherit;
     font-size: 12px;
@@ -610,7 +610,7 @@
 }
 
 .t-toolbox-action:hover {
-    background: #2d2d2d;
+    background: var(--t-color-surface-raised);
     border-color: #555;
     color: var(--t-color-text-strong);
 }
@@ -684,7 +684,7 @@
 }
 
 .t-filter-popover::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--t-color-surface-highest);
 }
 
 .t-filter-item {

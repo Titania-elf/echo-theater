@@ -117,7 +117,7 @@
 .t-wi-books-pane {
     border: 1px solid var(--t-color-border);
     border-radius: 8px;
-    background: #1d1d1d;
+    background: var(--t-color-surface);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -156,7 +156,7 @@
 }
 
 .t-wi-book-item:hover {
-    background: #252525;
+    background: var(--t-color-surface-elevated);
     border-color: #3b3b3b;
 }
 
@@ -170,7 +170,7 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #4d4d4d;
+    background: var(--t-color-surface-highest);
     flex-shrink: 0;
 }
 
@@ -196,7 +196,7 @@
 .t-wi-entry-pane {
     border: 1px solid var(--t-color-border);
     border-radius: 8px;
-    background: #191919;
+    background: var(--t-color-surface-sunken);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -243,7 +243,7 @@
     border-radius: 99px;
     border: 1px solid var(--t-color-border-strong);
     color: var(--t-color-text-muted);
-    background: #232323;
+    background: var(--t-color-surface-elevated);
 }
 
 .t-wi-entry-pane-badge.active {
@@ -280,7 +280,7 @@
     padding: 0 28px 0 30px;
     border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text-soft);
     font-size: 12px;
     box-sizing: border-box;
@@ -371,7 +371,7 @@
     align-items: flex-start;
     gap: 10px;
     padding: 10px;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     cursor: pointer;
@@ -469,7 +469,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 15px;
-    background: #252525;
+    background: var(--t-color-surface-elevated);
     border-bottom: 1px solid var(--t-color-border);
     border-radius: 8px 8px 0 0;
 }
@@ -578,7 +578,7 @@
         padding: 0 10px;
         border: 1px solid var(--t-color-border-control);
         border-radius: 8px;
-        background: #222;
+        background: var(--t-color-surface-elevated);
         color: var(--t-color-text-soft);
         font-size: 13px;
         box-sizing: border-box;

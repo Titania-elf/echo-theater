@@ -128,7 +128,7 @@
     gap: 16px;
     flex-wrap: wrap;
     padding: 8px 15px;
-    background: #151515;
+    background: var(--t-color-bg);
     border-bottom: 1px solid var(--t-color-surface-raised);
     color: var(--t-color-text-dim);
     font-size: 0.8em;
@@ -184,7 +184,7 @@
        字号被用户放大时也不会裁掉内容 */
     min-height: 200px;
     padding: 12px 12px 12px 16px;
-    background: linear-gradient(160deg, #1d1d1d 0%, #151515 100%);
+    background: linear-gradient(160deg, var(--t-color-surface) 0%, var(--t-color-bg) 100%);
     border: 1px solid #2e2e2e;
     border-radius: 10px;
     overflow: hidden;
@@ -266,7 +266,7 @@
     flex-shrink: 0;
     padding: 1px 7px;
     border-radius: 10px;
-    background: #262626;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-dim);
     font-size: 0.72em;
     white-space: nowrap;
@@ -300,7 +300,7 @@
 
 .t-ws-tag {
     display: inline-block;
-    background: #282828;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-muted);
     padding: 1px 7px;
     border-radius: 3px;
@@ -433,7 +433,7 @@
 .t-ws-sk-line {
     height: 10px;
     border-radius: 4px;
-    background: linear-gradient(90deg, #232323 25%, #2d2d2d 50%, #232323 75%);
+    background: linear-gradient(90deg, var(--t-color-surface-elevated) 25%, var(--t-color-surface-raised) 50%, var(--t-color-surface-elevated) 75%);
     background-size: 200% 100%;
     animation: t-ws-shimmer 1.4s infinite;
 }
@@ -443,7 +443,7 @@
     height: 26px;
     border-radius: 50%;
     flex-shrink: 0;
-    background: linear-gradient(90deg, #232323 25%, #2d2d2d 50%, #232323 75%);
+    background: linear-gradient(90deg, var(--t-color-surface-elevated) 25%, var(--t-color-surface-raised) 50%, var(--t-color-surface-elevated) 75%);
     background-size: 200% 100%;
     animation: t-ws-shimmer 1.4s infinite;
 }

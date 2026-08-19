@@ -47,7 +47,7 @@ const EXTERNAL_ANIMATIONS = new Set(['fa-spin', 'fa-beat', 'fa-fade', 'fa-flip',
 // 与 B2（滚动条泄漏）同类，是本项目最严重的一类缺陷。提升时 A8 为 0 违规，
 // 故零成本；此前正因为它只是报告级，input[list]::-webkit-calendar-picker-indicator
 // 无作用域地重写整个 ST 的 datalist 指示器一直没被拦下。
-const PHASE0_BLOCKING = new Set(['A8', 'A10', 'A11', 'A14', 'A15', 'A22', 'A23']);
+const PHASE0_BLOCKING = new Set(['A8', 'A10', 'A11', 'A14', 'A15', 'A22', 'A23', 'A24']);
 
 // ─────────────────────────────────────────────────────────────
 // 输入收集
@@ -386,6 +386,38 @@ check('A23', '—', 'CSS 语法完整性（注释嵌套 / 花括号平衡）', (
         }
     }
     return { violations };
+});
+
+// ── A24：调色板预览色必须是字面量，不许 token 化 ──────────────────
+// 形如 `.t-color-swatch[data-color="#90cdf4"] { background: … }` 的规则，职责是把
+// data-color 里那个 hex **原样画出来**给用户看 —— 它是用户挑的值本身，会被写进设置
+// （settingsWindow.js 的 border_color / bg_color），不是一个语义角色。
+// 换成 var(--t-color-accent) 之类后，深色主题下值恰好相同、看不出问题，
+// 但一旦有了浅色主题，预览球就会显示浅色下的 token 值，而 title 与写入设置的仍是原
+// hex —— 预览说谎，且本项目没有视觉基线，人工几乎发现不了。
+// Phase 6b-2 实测：12 条里有 5 条已被前几批的颜色 token 化误伤，故列为阻断项。
+check('A24', '—', '调色板预览色保持字面量（不被 token 化）', () => {
+    const violations = [];
+    let total = 0;
+    for (const f of styleSources) {
+        const css = stripComments(f.raw);
+        const lineAt = makeLineLookup(css);
+        // 选择器里带字面量颜色的规则（[data-color="#xxx"] / [data-*="#xxx"]）
+        const re = /\[[a-zA-Z-]+\s*[~^$*|]?=\s*"(#[0-9a-fA-F]{3,8})"\]([^{}]*)\{([^{}]*)\}/g;
+        for (const m of css.matchAll(re)) {
+            total++;
+            const want = m[1].toLowerCase();
+            for (const d of m[3].matchAll(/(background(?:-color)?|border-color|color)\s*:\s*([^;]+)/g)) {
+                const val = d[2].trim().toLowerCase();
+                if (!val.includes('var(--')) continue;
+                violations.push({
+                    loc: `${f.rel}:${lineAt(m.index)}`,
+                    msg: `选择器声明的是字面量 ${want}，但 ${d[1]} 用了 ${val} —— 浅色主题下预览会与 data-color 不一致`,
+                });
+            }
+        }
+    }
+    return { violations, stats: { '带字面量颜色的选择器规则': total } };
 });
 
 // ── A7：@keyframes 只能在 01-base/keyframes.css 且带 t- 前缀（R6）──

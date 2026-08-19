@@ -2083,7 +2083,29 @@ function loadCssFiles() {
 :root,
 :root[data-t-theme="dark"] {
 
-    /* ---- \u8868\u9762\u5C42\uFF08elevation\uFF09---- */
+    /* ---- \u8868\u9762\u5C42\uFF08elevation\uFF09----
+       Phase 6b-2 \u628A 04-features \u91CC 95 \u5904\u5199\u6B7B\u7684\u7EAF\u7070\u5E95\u8272\u5438\u9644\u5230\u4E0B\u9762\u8FD9\u6761 9 \u6863\u523B\u5EA6\u4E0A\u3002
+       \u7531\u6DF1\u5230\u6D45\uFF08\u6570\u5B57\u662F\u7070\u9636\u503C\uFF09\uFF1A
+
+         17  surface-well      \u5185\u5D4C\u63A7\u4EF6\u69FD\u5E95 \u2014\u2014 \u6700\u6DF1
+         18  bg                \u7A97\u53E3\u5E95
+         24  surface-inset     \u5206\u533A\u5185\u5BB9\u5757\u5E95
+         26  surface-sunken    \u8F93\u5165\u6846 / \u4EE3\u7801\u5757\u5E95
+         30  surface           \u57FA\u51C6\u9762\u677F
+         34  surface-elevated  \u63A7\u4EF6 / \u5361\u7247 / \u5FBD\u7AE0\u5E95\uFF08\u62AC\u8D77\u4E00\u6863\uFF09
+         42  surface-raised    \u63A7\u4EF6 hover / \u5361\u7247\u62AC\u8D77\uFF08\u62AC\u8D77\u4E24\u6863\uFF09
+         51  surface-high      \u63A7\u4EF6 hover \u5F3A\u6001 / \u8FDB\u5EA6\u6761\uFF08\u62AC\u8D77\u4E09\u6863\uFF09
+         85  surface-highest   \u6EDA\u52A8\u6761\u62C7\u6307 hover / \u4E2D\u6027\u7070\u6309\u94AE\u5E95 \u2014\u2014 \u6700\u6D45
+
+       \u26A0 \u76F8\u90BB\u6863\u5DEE\u503C\u90FD\u5728\u611F\u77E5\u9608\u9644\u8FD1\uFF0817/18 \u5DEE \u0394E 0.4\u300124/26 \u5DEE 0.7\u300134/36 \u5DEE 0.5\uFF09\uFF0C
+       \u4E5D\u6863\u504F\u5BC6\u3002\u5408\u5E76\u662F\u53EF\u505A\u7684\uFF08\u65E0\u611F\u77E5\u53D8\u5316\uFF09\uFF0C\u4F46\u90A3\u8981\u6539 122 \u5904 var() \u5F15\u7528\uFF0C
+       \u5C5E\u72EC\u7ACB\u4E00\u6B65\uFF0C\u4E0D\u4E0E\u5438\u9644\u6DF7\u505A \u2014\u2014 \u672C\u9879\u76EE\u6CA1\u6709\u89C6\u89C9\u57FA\u7EBF\uFF0C\u4E24\u79CD\u53D8\u5316\u6DF7\u5728\u4E00\u6279\u91CC
+       \u5C31\u65E0\u6CD5\u5F52\u56E0\uFF08\u89C1 CLAUDE.md\uFF09\u3002
+
+       \u26A0 \u523B\u5EA6\u91CC\u523B\u610F**\u4E0D\u542B**\u89D2\u8272\u540D token\uFF08panel-header / surface-code /
+       set-nav-surface / set-tab-hover-surface / field-focus / dialog-surface\uFF09\u3002
+       \u5B83\u4EEC\u4E0E\u523B\u5EA6\u4E0A\u67D0\u6863\u5F53\u524D\u540C\u503C\uFF0C\u4F46\u6D45\u8272\u4E3B\u9898\u4E0B\u4F1A\u5206\u53C9\uFF0C\u4E0D\u80FD\u88AB\u6CDB\u7528\u5E95\u8272\u62A2\u7528\uFF1B
+       \u5426\u5219\u5C06\u6765\u5355\u72EC\u8C03 <code> \u82AF\u7247\u5E95\uFF0C\u4F1A\u8FDE\u5E26\u6539\u6389\u4E00\u5806\u65E0\u5173\u9762\u677F\u3002 */
     --t-color-bg: rgb(var(--t-c-neutral-0-rgb));
     /* #121212 \u7A97\u53E3\u5E95 */
     --t-color-surface: rgb(var(--t-c-neutral-2-rgb));
@@ -2095,7 +2117,9 @@ function loadCssFiles() {
     --t-color-surface-code: rgb(var(--t-c-neutral-5-rgb));
     /* #333 \u884C\u5185 <code> \u82AF\u7247\u5E95\u3002\u4E0E --t-color-border \u540C\u503C\u4F46\u89D2\u8272\u4E0D\u540C\uFF08\u8868\u9762 vs \u8FB9\u6846\uFF09\uFF0C
        Phase 5a-3 \u4E3A\u628A JS inline style \u91CC\u7684 <code> \u5E95\u8272 token \u5316\u800C\u52A0\u3002
-       \u26A0 Phase 6 \u9700\u786E\u8BA4\uFF1A\u6D45\u8272\u4E3B\u9898\u4E0B\u82AF\u7247\u5E95\u4E0E\u8FB9\u6846\u5927\u6982\u7387\u4E0D\u8BE5\u540C\u8272\uFF0C\u5C4A\u65F6\u4E8C\u8005\u4F1A\u5206\u53C9\u3002 */
+       \u26A0 Phase 6 \u9700\u786E\u8BA4\uFF1A\u6D45\u8272\u4E3B\u9898\u4E0B\u82AF\u7247\u5E95\u4E0E\u8FB9\u6846\u5927\u6982\u7387\u4E0D\u8BE5\u540C\u8272\uFF0C\u5C4A\u65F6\u4E8C\u8005\u4F1A\u5206\u53C9\u3002
+       \u26A0 \u4E0E --t-color-surface-high \u4EA6\u540C\u503C\uFF1A\u90A3\u662F\u63A7\u4EF6\u62AC\u8D77\u4E09\u6863\uFF08hover \u5F3A\u6001\uFF09\uFF0C
+       \u6D45\u8272\u4E3B\u9898\u4E0B <code> \u82AF\u7247\u4F1A\u53D8\u6D45\u7070\u5E95\u6DF1\u5B57\u3001\u800C\u63A7\u4EF6 hover \u4F1A\u5411\u6DF1\u8D70\uFF0C\u4E8C\u8005\u53CD\u5411\u3002 */
 
     /* \u4EE5\u4E0B\u4E09\u4E2A\u7531 Phase 5a-4 \u4ECE JS inline style \u6536\u4E0A\u6765\uFF0C\u5404\u81EA\u89D2\u8272\u660E\u786E\u3001\u503C\u9010\u4F4D\u4E0D\u53D8\u3002
        \u26A0 \u4E09\u8005\u4E0E\u5DF2\u6709\u8868\u9762 token \u7684\u5DEE\u503C\u90FD\u5728\u611F\u77E5\u9608\u4EE5\u4E0B\uFF08inset \u4E0E sunken \u5DEE 2/255\u3001
@@ -2104,9 +2128,20 @@ function loadCssFiles() {
        \u800C\u8FD9\u4E09\u4E2A\u503C\u662F\u5386\u53F2\u968F\u624B\u53D6\u7684\u3002 */
     --t-color-surface-inset: rgb(24 24 24);
     /* #181818 \u8BBE\u7F6E\u9875\u5206\u533A\u5185\u5BB9\u5757\u5E95 / \u8C03\u8BD5\u7A97\u5934\u5C3E\u680F\uFF0813 \u5904\uFF09 */
-    --t-color-surface-option: rgb(var(--t-c-neutral-3-rgb));
-    /* #222 \u53EF\u9009\u5361\u7247\u5E95\uFF08\u5B57\u4F53\u6765\u6E90\u5355\u9009\uFF0C3 \u5904\uFF09\u3002\u4E0E --t-color-field-focus \u540C\u503C\uFF0C
-       \u4F46\u90A3\u662F\u300C\u8F93\u5165\u6846\u805A\u7126\u300D\u6001\uFF0C\u89D2\u8272\u4E0D\u540C\uFF0C\u4E0D\u53EF\u4E92\u7528\u3002 */
+    --t-color-surface-elevated: rgb(var(--t-c-neutral-3-rgb));
+    /* #222 \u63A7\u4EF6 / \u5361\u7247 / \u5FBD\u7AE0\u5E95\uFF0C\u62AC\u8D77\u4E00\u6863\uFF0838 \u5904\uFF09\u3002
+       Phase 6b-2 \u7531 --t-color-surface-option \u91CD\u547D\u540D\u800C\u6765\uFF1A\u539F\u540D\u6307\u300C\u5B57\u4F53\u6765\u6E90\u5355\u9009\u5361\u7247\u5E95\u300D
+       \uFF08\u4EC5 3 \u5904\uFF09\uFF0C\u800C 04-features \u91CC 36 \u5904\u6CDB\u7528\u7684\u63A7\u4EF6\u5E95\u90FD\u662F\u8FD9\u4E2A\u503C\uFF1B\u6CDB\u7528\u4E49\u5E94\u5F53\u5360\u540D\u5B57\u3002
+       \u26A0 \u4E0E --t-color-field-focus \u540C\u503C\uFF0C\u4F46\u90A3\u662F\u300C\u8F93\u5165\u6846\u805A\u7126\u300D\u6001 \u2014\u2014 \u6D45\u8272\u4E3B\u9898\u4E0B\u805A\u7126\u5E95
+       \u901A\u5E38\u53D8\u4EAE\u53D8\u767D\u3001\u800C\u63A7\u4EF6\u5E95\u5411\u6DF1\u8D70\uFF0C\u4E8C\u8005\u53CD\u5411\uFF0C\u4E0D\u53EF\u4E92\u7528\u3002
+       \u26A0 \u4E0E --t-color-panel-header(#242424) \u53EA\u5DEE \u0394E 0.5\uFF0C\u4F46\u90A3\u662F\u5206\u533A\u9762\u677F\u7684\u5934\u5E95\uFF0C
+       \u89D2\u8272\u4E0D\u540C\u3001\u6D45\u8272\u4E0B\u4F1A\u5206\u53C9\uFF0C\u6545\u672A\u5408\u5E76\u3002 */
+    --t-color-surface-high: rgb(var(--t-c-neutral-5-rgb));
+    /* #333 \u63A7\u4EF6 hover \u5F3A\u6001 / \u8FDB\u5EA6\u6761\u5E95\uFF0C\u62AC\u8D77\u4E09\u6863\uFF0810 \u5904\uFF09\u3002\u89C1\u4E0A\u9762 surface-code \u7684\u8BF4\u660E\u3002 */
+    --t-color-surface-highest: rgb(85 85 85);
+    /* #555 \u6EDA\u52A8\u6761\u62C7\u6307 hover / \u4E2D\u6027\u7070\u6309\u94AE\u5E95 / inactive \u6E10\u53D8\u6B62\u70B9\uFF087 \u5904\uFF09\u3002
+       \u523B\u610F\u4E0D\u9020\u539F\u8BED\uFF1A\u539F\u8BED\u9636\u6309\u4EAE\u5EA6\u5355\u8C03\u6392\uFF08\u20267=68, 8=102\u2026\uFF09\uFF0C\u63D2\u5165 85 \u8981\u7ED9\u5168\u90E8
+       \u4E0B\u6E38\u6D88\u8D39\u8005\u91CD\u7F16\u53F7\uFF0C\u4E0E Phase 6b-1 \u4E09\u6863\u6587\u5B57\u8272\u540C\u4E00\u4E2A\u7406\u7531\u3002 */
     --t-color-surface-well: rgb(17 17 17);
     /* #111 \u5185\u5D4C\u63A7\u4EF6\u69FD\u5E95\uFF1A\u6587\u4EF6\u9009\u62E9\u5668 / radio \u7EC4\u7684\u5BB9\u5668\uFF083 \u5904\uFF09\u3002
        \u4E0E --t-color-field-disabled \u540C\u503C\uFF0C\u4F46\u90A3\u662F\u300C\u7981\u7528\u6001\u300D\uFF0C\u89D2\u8272\u4E0D\u540C\u3002 */
@@ -4270,7 +4305,12 @@ textarea.t-input {
 
     padding: 3px;
     border-radius: 50%;
-    /* \u4F7F\u7528 CSS \u53D8\u91CF\u63A7\u5236\u80CC\u666F\u989C\u8272\uFF08\u652F\u6301\u900F\u660E\u5EA6\uFF09 */
+    /* \u4F7F\u7528 CSS \u53D8\u91CF\u63A7\u5236\u80CC\u666F\u989C\u8272\uFF08\u652F\u6301\u900F\u660E\u5EA6\uFF09\u3002
+       \u26A0 \u56DE\u9000\u503C #2b2b2b \u523B\u610F\u4FDD\u7559\u5B57\u9762\u91CF\uFF1A--t-bg-color \u662F B5 \u7684\u8FD0\u884C\u65F6\u53D8\u91CF\uFF08\u7528\u6237\u5728\u8BBE\u7F6E\u91CC
+       \u6311\u7684\u5E95\u8272\uFF09\uFF0C\u8FD9\u4E2A\u56DE\u9000\u503C\u5C31\u662F\u300C\u7528\u6237\u6CA1\u6311\u65F6\u7684\u9ED8\u8BA4\u300D\uFF0C\u4E0E\u8C03\u8272\u677F\u91CC title \u4E3A\u300C\u6DF1\u7070 (\u9ED8\u8BA4)\u300D
+       \u7684\u90A3\u9897\u9884\u89C8\u7403\u5BF9\u5E94\u3002Phase 6b-2 \u7684\u5438\u9644\u4E00\u5EA6\u628A\u5B83\u6362\u6210 var(--t-color-surface-raised)\uFF0C
+       \u5DF2\u64A4\u56DE\uFF1ACLAUDE.md \u660E\u786E\u628A B5 \u7684\u9ED8\u8BA4\u503C\u5904\u7406\u63A8\u8FDF\u4E3A\u72EC\u7ACB\u4E00\u6B65\uFF0C\u4E14 --verify \u7684\u7ED3\u6784\u5316
+       \u6BD4\u5BF9\u53EA\u89E3\u6790 var() \u7684**\u5916\u5C42** token\u3001\u770B\u4E0D\u89C1\u56DE\u9000\u503C\uFF0C\u6539\u5728\u8FD9\u91CC\u7B49\u4E8E\u6CA1\u6709\u81EA\u8BC1\u3002 */
     background: var(--t-bg-color, #2b2b2b);
     color: var(--t-color-text-strong);
 
@@ -4696,7 +4736,7 @@ textarea.t-input {
     width: 100%;
     height: 100%;
     z-index: 10;
-    background-color: #0b0b0b;
+    background-color: var(--t-color-surface-well);
     background-image: none;
 }
 
@@ -4705,7 +4745,7 @@ textarea.t-input {
     flex-grow: 1;
     position: relative;
     overflow: hidden;
-    background-color: #0b0b0b;
+    background-color: var(--t-color-surface-well);
     background-image: linear-gradient(var(--t-color-surface-well) 1px, transparent 1px), linear-gradient(90deg, var(--t-color-surface-well) 1px, transparent 1px);
     background-size: 20px 20px;
     transform: translateZ(0);
@@ -4813,7 +4853,7 @@ textarea.t-input {
 }
 
 .t-history-toggle:hover {
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border-color: var(--t-color-border-strong);
 }
 
@@ -4905,7 +4945,7 @@ textarea.t-input {
 }
 
 .t-mode-btn:hover {
-    background: #222;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text-secondary);
 }
 
@@ -4921,7 +4961,7 @@ textarea.t-input {
 /* Trigger Card */
 .t-trigger-card {
     flex-grow: 1;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 0 15px;
@@ -4964,7 +5004,7 @@ textarea.t-input {
 }
 
 .t-cat-tag {
-    background: #333;
+    background: var(--t-color-surface-high);
     padding: 1px 6px;
     border-radius: 3px;
     color: var(--t-color-text-secondary);
@@ -5005,7 +5045,7 @@ textarea.t-input {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     transition: 0.2s;
@@ -5111,7 +5151,7 @@ textarea.t-input {
     flex: 0 0 auto;
     border: 1px solid var(--t-color-border-control);
     border-radius: 999px;
-    background: #232323;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text-secondary);
     font: inherit;
     font-size: 11px;
@@ -5122,7 +5162,7 @@ textarea.t-input {
 
 .t-shortcut-btn:hover {
     border-color: rgba(191, 161, 95, .5);
-    background: #2b2b2b;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-soft);
 }
 
@@ -5157,7 +5197,7 @@ textarea.t-input {
     width: 300px;
     display: flex;
     flex-direction: column;
-    background: #191919;
+    background: var(--t-color-surface-sunken);
     border-left: 1px solid var(--t-color-border-strong);
     box-shadow: -14px 0 34px rgba(0, 0, 0, .5);
     transform: translateX(102%);
@@ -5206,7 +5246,7 @@ textarea.t-input {
     height: 34px;
     border: 0;
     border-radius: 6px;
-    background: #292929;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-secondary);
     cursor: pointer;
 }
@@ -5241,7 +5281,7 @@ textarea.t-input {
     gap: 8px;
     border: 1px solid #393939;
     border-radius: 6px;
-    background: #232323;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text-label);
     font: inherit;
     font-size: 12px;
@@ -5258,7 +5298,7 @@ textarea.t-input {
 }
 
 .t-toolbox-action:hover {
-    background: #2d2d2d;
+    background: var(--t-color-surface-raised);
     border-color: #555;
     color: var(--t-color-text-strong);
 }
@@ -5332,7 +5372,7 @@ textarea.t-input {
 }
 
 .t-filter-popover::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--t-color-surface-highest);
 }
 
 .t-filter-item {
@@ -6240,7 +6280,7 @@ textarea.t-input {
 
 #t-main-view.t-layout-legacy .t-tools-btn:hover {
     opacity: 1;
-    background: #333;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-strong);
     transform: scale(1.05);
 }
@@ -6317,7 +6357,7 @@ textarea.t-input {
     padding: 0;
     box-sizing: border-box;
     line-height: 1;
-    background: #2b2b2b;
+    background: var(--t-color-surface-raised);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
     color: var(--t-color-text-secondary);
@@ -6327,7 +6367,7 @@ textarea.t-input {
 }
 
 #t-main-view.t-layout-legacy .t-btn-grid:hover {
-    background: #383838;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-strong);
     border-color: var(--t-color-text-faint);
 }
@@ -6413,12 +6453,12 @@ textarea.t-input {
 }
 
 #t-main-view.t-layout-legacy .t-run-queue.inactive {
-    background: linear-gradient(135deg, var(--t-color-border-control), #4a4a4a);
+    background: linear-gradient(135deg, var(--t-color-border-control), var(--t-color-surface-highest));
     color: var(--t-color-text-muted);
 }
 
 #t-main-view.t-layout-legacy .t-run-queue.inactive:hover:not(:disabled) {
-    background: linear-gradient(135deg, #4a4a4a, #5a5a5a);
+    background: linear-gradient(135deg, var(--t-color-surface-highest), var(--t-color-surface-highest));
     box-shadow: none;
 }
 
@@ -6441,7 +6481,7 @@ textarea.t-input {
     padding: 0;
     box-sizing: border-box;
     line-height: 1;
-    background: #2b2b2b;
+    background: var(--t-color-surface-raised);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
     color: var(--t-color-text-secondary);
@@ -6451,7 +6491,7 @@ textarea.t-input {
 }
 
 #t-main-view.t-layout-legacy .t-btn-aux:hover {
-    background: #383838;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-strong);
     border-color: var(--t-color-text-faint);
 }
@@ -6698,20 +6738,24 @@ textarea.t-input {
     text-align: left;
 }
 
+/* hover \u5E95\u523B\u610F\u7528 -raised(#2a2a2a) \u800C\u975E\u6700\u8FD1\u6863 -elevated(#222)\uFF1A\u672C\u884C\u539F\u503C #252525
+   \u4E0E\u4E0B\u9762 @media \u2264600px \u91CC \`.t-sel-cat-btn\` \u7684 #222 \u53EA\u5DEE \u0394E 1.5\uFF0C\u4E24\u8005\u5438\u5230\u540C\u4E00\u6863\u540E
+   \u79FB\u52A8\u7AEF hover \u53CD\u9988\u4F1A\u5B8C\u5168\u6D88\u5931\uFF08--check-state \u62A5\u51FA\uFF09\u3002\u62AC\u4E00\u6863\u540C\u65F6\u4E0E\u9879\u76EE\u91CC\u5176\u5B83
+   \u6309\u94AE\u7684 hover \u9636\uFF08elevated\u2192raised\uFF09\u4E00\u81F4\u3002 */
 .t-sel-cat-btn:hover {
-    background: #252525;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-soft);
 }
 
 .t-sel-cat-btn.active {
-    background: #333;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-strong);
     font-weight: bold;
     border-left: 3px solid var(--t-color-brand);
 }
 
 .t-script-card {
-    background: #252525;
+    background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 12px;
@@ -6807,7 +6851,7 @@ textarea.t-input {
         height: 32px;
         display: flex;
         align-items: center;
-        background: #222;
+        background: var(--t-color-surface-elevated);
         border: 1px solid var(--t-color-border);
     }
 
@@ -6955,7 +6999,7 @@ textarea.t-input {
 .t-wi-books-pane {
     border: 1px solid var(--t-color-border);
     border-radius: 8px;
-    background: #1d1d1d;
+    background: var(--t-color-surface);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -6994,7 +7038,7 @@ textarea.t-input {
 }
 
 .t-wi-book-item:hover {
-    background: #252525;
+    background: var(--t-color-surface-elevated);
     border-color: #3b3b3b;
 }
 
@@ -7008,7 +7052,7 @@ textarea.t-input {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #4d4d4d;
+    background: var(--t-color-surface-highest);
     flex-shrink: 0;
 }
 
@@ -7034,7 +7078,7 @@ textarea.t-input {
 .t-wi-entry-pane {
     border: 1px solid var(--t-color-border);
     border-radius: 8px;
-    background: #191919;
+    background: var(--t-color-surface-sunken);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -7081,7 +7125,7 @@ textarea.t-input {
     border-radius: 99px;
     border: 1px solid var(--t-color-border-strong);
     color: var(--t-color-text-muted);
-    background: #232323;
+    background: var(--t-color-surface-elevated);
 }
 
 .t-wi-entry-pane-badge.active {
@@ -7118,7 +7162,7 @@ textarea.t-input {
     padding: 0 28px 0 30px;
     border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text-soft);
     font-size: 12px;
     box-sizing: border-box;
@@ -7209,7 +7253,7 @@ textarea.t-input {
     align-items: flex-start;
     gap: 10px;
     padding: 10px;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     cursor: pointer;
@@ -7307,7 +7351,7 @@ textarea.t-input {
     justify-content: space-between;
     align-items: center;
     padding: 12px 15px;
-    background: #252525;
+    background: var(--t-color-surface-elevated);
     border-bottom: 1px solid var(--t-color-border);
     border-radius: 8px 8px 0 0;
 }
@@ -7416,7 +7460,7 @@ textarea.t-input {
         padding: 0 10px;
         border: 1px solid var(--t-color-border-control);
         border-radius: 8px;
-        background: #222;
+        background: var(--t-color-surface-elevated);
         color: var(--t-color-text-soft);
         font-size: 13px;
         box-sizing: border-box;
@@ -7651,7 +7695,7 @@ textarea.t-input {
     position: relative;
     border: 1px solid var(--t-color-border-control);
     border-radius: 7px;
-    background: #222;
+    background: var(--t-color-surface-elevated);
 }
 
 .t-continuation-history-btn,
@@ -7677,7 +7721,7 @@ textarea.t-input {
 .t-continuation-history-btn:hover,
 .t-continuation-context-btn:hover,
 .t-continuation-context-btn.active {
-    background: #303030;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-soft);
 }
 
@@ -7764,7 +7808,7 @@ textarea.t-input {
 
 .t-continuation-replay:hover:not(:disabled) {
     border-color: var(--t-color-brand-border);
-    background: #2b2b2b;
+    background: var(--t-color-surface-raised);
     color: #d0b575;
 }
 
@@ -7787,7 +7831,7 @@ textarea.t-input {
     bottom: calc(100% + 9px);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 7px;
-    background: #1d1d1d;
+    background: var(--t-color-surface);
     box-shadow: 0 -10px 30px rgba(0, 0, 0, .48);
 }
 
@@ -7832,7 +7876,7 @@ textarea.t-input {
     height: 32px;
     border: 1px solid var(--t-color-border-strong);
     border-radius: 5px;
-    background: #292929;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-label);
     cursor: pointer;
 }
@@ -8039,7 +8083,7 @@ textarea.t-input {
     overflow: hidden;
     border: 1px solid #464138;
     border-radius: 12px;
-    background: #151515;
+    background: var(--t-color-bg);
     box-shadow: 0 16px 50px rgba(0, 0, 0, 0.72);
 }
 
@@ -8050,7 +8094,7 @@ textarea.t-input {
     min-height: 52px;
     padding: 0 16px;
     border-bottom: 1px solid var(--t-color-border);
-    background: #1d1d1d;
+    background: var(--t-color-surface);
 }
 
 .t-cont-history-header>div,
@@ -8105,7 +8149,7 @@ textarea.t-input {
     margin-bottom: 12px;
     border: 1px solid #343434;
     border-radius: 12px;
-    background: #171717;
+    background: var(--t-color-surface-inset);
 }
 
 .t-cont-history-session:last-child {
@@ -8125,7 +8169,7 @@ textarea.t-input {
     padding: 8px 12px;
     border: 0;
     border-radius: 11px;
-    background: #202020;
+    background: var(--t-color-surface-elevated);
     color: #ddd4c2;
     cursor: pointer;
     text-align: left;
@@ -8175,7 +8219,7 @@ textarea.t-input {
     overflow: hidden;
     border: 1px solid #303030;
     border-radius: 10px;
-    background: #191919;
+    background: var(--t-color-surface-sunken);
 }
 
 .t-cont-history-branch.is-active {
@@ -8191,7 +8235,7 @@ textarea.t-input {
     border: 0;
     border-bottom: 1px solid #303030;
     color: #d6d0c3;
-    background: #202020;
+    background: var(--t-color-surface-elevated);
     cursor: pointer;
     text-align: left;
     font: inherit;
@@ -8469,7 +8513,7 @@ textarea.t-input {
 
 .t-cont-recent-item {
     border: 1px solid #3d3d3d;
-    background: #262626;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-soft);
     border-radius: 999px;
     padding: 6px 12px;
@@ -8623,7 +8667,7 @@ textarea.t-input {
     justify-content: center;
     gap: 8px;
     padding: 12px;
-    background: #252525;
+    background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 8px;
     color: var(--t-color-text-muted);
@@ -8672,7 +8716,7 @@ textarea.t-input {
 }
 
 .t-queue-num-btn:hover {
-    background: #383838;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-strong);
     border-color: var(--t-color-text-faint);
 }
@@ -8693,7 +8737,7 @@ textarea.t-input {
 .t-queue-select {
     flex: 1;
     padding: 8px 12px;
-    background: #252525;
+    background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
     color: var(--t-color-text-label);
@@ -8737,7 +8781,7 @@ textarea.t-input {
     align-items: center;
     gap: 10px;
     padding: 8px 10px;
-    background: #252525;
+    background: var(--t-color-surface-elevated);
     border: 1px solid transparent;
     border-radius: 6px;
     cursor: pointer;
@@ -8822,7 +8866,7 @@ textarea.t-input {
     left: 0;
     right: 0;
     height: 3px;
-    background: #333;
+    background: var(--t-color-surface-high);
     z-index: 200;
     overflow: hidden;
 }
@@ -8892,7 +8936,7 @@ textarea.t-input {
 .t-ce-textarea {
     width: 100%;
     height: 100%;
-    background: #0d0d0d;
+    background: var(--t-color-surface-well);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     color: var(--t-color-text-soft);
@@ -8934,7 +8978,7 @@ textarea.t-input {
 }
 
 .t-ce-textarea::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--t-color-surface-highest);
 }
 
 /* \`.t-ce-footer\` \u7684\u89C6\u89C9\u5168\u90E8\u7531 02-components/panel.css \u7684 \`.t-panel-footer\` \u63D0\u4F9B\uFF0C
@@ -9440,7 +9484,7 @@ textarea.t-input {
 /* \u9884\u89C8\u7403\u57FA\u7840\u6837\u5F0F */
 .t-preview-ball {
     border-radius: 50%;
-    background: #2b2b2b;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-strong);
     display: flex;
     align-items: center;
@@ -9530,7 +9574,7 @@ textarea.t-input {
 }
 
 .t-anim-option {
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border: 2px solid var(--t-color-border);
     border-radius: 8px;
     padding: 15px 10px;
@@ -9603,7 +9647,7 @@ textarea.t-input {
 
 .t-prof-select {
     flex-grow: 1;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text);
     border: 1px solid var(--t-color-border-strong);
     padding: 8px;
@@ -9612,7 +9656,7 @@ textarea.t-input {
 
 /* \u8BCA\u65AD\u65E5\u5FD7 */
 .t-log-box {
-    background: #0f0f0f;
+    background: var(--t-color-surface-well);
     color: var(--t-color-text-label);
     padding: 10px;
     border: 1px solid var(--t-color-border);
@@ -9654,7 +9698,7 @@ textarea.t-input {
     tab-size: 4;
     resize: vertical;
     min-height: 200px;
-    background: #0f0f0f;
+    background: var(--t-color-surface-well);
     border-color: var(--t-color-border);
     color: var(--t-color-text-label);
 }
@@ -9717,7 +9761,7 @@ textarea.t-input {
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
@@ -9751,7 +9795,7 @@ textarea.t-input {
 }
 
 .t-toolbar-item:has(input:disabled):hover {
-    background: #222;
+    background: var(--t-color-surface-elevated);
     cursor: default;
 }
 
@@ -9891,7 +9935,7 @@ textarea.t-input {
 }
 
 .t-prompt-entry-card:hover {
-    background: #1d1d1d;
+    background: var(--t-color-surface);
     border-color: #555;
 }
 
@@ -10071,7 +10115,7 @@ textarea.t-input {
 }
 
 .t-header-action-card:hover {
-    background: #1d1d1d;
+    background: var(--t-color-surface);
     border-color: #555;
 }
 
@@ -10293,16 +10337,23 @@ textarea.t-input {
     border-color: var(--t-color-text-strong);
 }
 
+/* \u26A0 \u4E0B\u9762 12 \u6761\u9884\u89C8\u7403\u7684 background **\u5FC5\u987B\u4FDD\u6301\u5B57\u9762\u91CF\uFF0C\u4E0D\u8BB8 token \u5316**\u3002
+   data-color \u662F\u7528\u6237\u6311\u7684\u90A3\u4E2A hex \u672C\u8EAB\uFF08settingsWindow.js:235-262 \u5199\u8FDB
+   border_color / bg_color \u8BBE\u7F6E\uFF09\uFF0C\u9884\u89C8\u7403\u7684\u804C\u8D23\u5C31\u662F\u628A\u90A3\u4E2A hex \u753B\u51FA\u6765\u3002
+   \u6362\u6210 token \u540E\uFF0C\u6D45\u8272\u4E3B\u9898\u4E0B\u9884\u89C8\u7403\u4F1A\u663E\u793A token \u5728\u6D45\u8272\u4E0B\u7684\u503C\uFF0C\u800C title
+   \u4E0E\u5B9E\u9645\u5199\u5165\u8BBE\u7F6E\u7684\u4ECD\u662F\u539F hex \u2014\u2014 \u9884\u89C8\u8BF4\u8C0E\uFF0C\u4E14\u6CA1\u6709\u89C6\u89C9\u57FA\u7EBF\u65F6\u6781\u96BE\u53D1\u73B0\u3002
+   \uFF08Phase 6b-2 \u4FEE\uFF1A\u5176\u4E2D 5 \u6761\u5DF2\u88AB\u524D\u51E0\u6279\u5F53\u6210\u666E\u901A\u5E95\u8272 token \u5316\uFF0C\u5DF2\u590D\u539F\uFF1B
+   \u5BA1\u8BA1 A24 \u73B0\u5728\u4F1A\u5B88\u4F4F\u8FD9\u6761\u3002\uFF09 */
 .t-color-swatch[data-color="#90cdf4"] {
-    background: var(--t-color-accent);
+    background: #90cdf4;
 }
 
 .t-color-swatch[data-color="#a29bfe"] {
-    background: var(--t-color-decor);
+    background: #a29bfe;
 }
 
 .t-color-swatch[data-color="#55efc4"] {
-    background: var(--t-color-notify);
+    background: #55efc4;
 }
 
 .t-color-swatch[data-color="#ffd93d"] {
@@ -10310,7 +10361,7 @@ textarea.t-input {
 }
 
 .t-color-swatch[data-color="#ff6b6b"] {
-    background: var(--t-color-danger);
+    background: #ff6b6b;
 }
 
 .t-color-swatch[data-color="#fd79a8"] {
@@ -10473,7 +10524,7 @@ textarea.t-input {
 }
 
 .t-mgr-sb-item:hover {
-    background: #222;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text);
 }
 
@@ -10528,7 +10579,7 @@ textarea.t-input {
 
 .t-mgr-overview {
     padding: 8px 15px;
-    background: #171717;
+    background: var(--t-color-surface-inset);
     border-bottom: 1px solid var(--t-color-surface-raised);
     display: flex;
     flex-direction: column;
@@ -10626,7 +10677,7 @@ textarea.t-input {
     font-size: 0.75em;
     padding: 1px 5px;
     border-radius: 3px;
-    background: #333;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-secondary);
 }
 
@@ -10800,7 +10851,7 @@ textarea.t-input {
 
 .t-mgr-cat-dropdown:focus {
     outline: none;
-    background-color: #252525;
+    background-color: var(--t-color-surface-elevated);
 }
 
 .t-mgr-cat-dropdown option {
@@ -11016,7 +11067,7 @@ textarea.t-input {
     gap: 16px;
     flex-wrap: wrap;
     padding: 8px 15px;
-    background: #151515;
+    background: var(--t-color-bg);
     border-bottom: 1px solid var(--t-color-surface-raised);
     color: var(--t-color-text-dim);
     font-size: 0.8em;
@@ -11072,7 +11123,7 @@ textarea.t-input {
        \u5B57\u53F7\u88AB\u7528\u6237\u653E\u5927\u65F6\u4E5F\u4E0D\u4F1A\u88C1\u6389\u5185\u5BB9 */
     min-height: 200px;
     padding: 12px 12px 12px 16px;
-    background: linear-gradient(160deg, #1d1d1d 0%, #151515 100%);
+    background: linear-gradient(160deg, var(--t-color-surface) 0%, var(--t-color-bg) 100%);
     border: 1px solid #2e2e2e;
     border-radius: 10px;
     overflow: hidden;
@@ -11154,7 +11205,7 @@ textarea.t-input {
     flex-shrink: 0;
     padding: 1px 7px;
     border-radius: 10px;
-    background: #262626;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-dim);
     font-size: 0.72em;
     white-space: nowrap;
@@ -11188,7 +11239,7 @@ textarea.t-input {
 
 .t-ws-tag {
     display: inline-block;
-    background: #282828;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-muted);
     padding: 1px 7px;
     border-radius: 3px;
@@ -11321,7 +11372,7 @@ textarea.t-input {
 .t-ws-sk-line {
     height: 10px;
     border-radius: 4px;
-    background: linear-gradient(90deg, #232323 25%, #2d2d2d 50%, #232323 75%);
+    background: linear-gradient(90deg, var(--t-color-surface-elevated) 25%, var(--t-color-surface-raised) 50%, var(--t-color-surface-elevated) 75%);
     background-size: 200% 100%;
     animation: t-ws-shimmer 1.4s infinite;
 }
@@ -11331,7 +11382,7 @@ textarea.t-input {
     height: 26px;
     border-radius: 50%;
     flex-shrink: 0;
-    background: linear-gradient(90deg, #232323 25%, #2d2d2d 50%, #232323 75%);
+    background: linear-gradient(90deg, var(--t-color-surface-elevated) 25%, var(--t-color-surface-raised) 50%, var(--t-color-surface-elevated) 75%);
     background-size: 200% 100%;
     animation: t-ws-shimmer 1.4s infinite;
 }
@@ -11576,7 +11627,7 @@ textarea.t-input {
     max-width: 95vw;
     display: flex;
     flex-direction: column;
-    background: radial-gradient(120% 120% at 0% 0%, #2b1f12 0%, var(--t-color-bg) 42%, #090909 100%);
+    background: radial-gradient(120% 120% at 0% 0%, #2b1f12 0%, var(--t-color-bg) 42%, var(--t-color-surface-well) 100%);
     overflow: hidden;
     position: relative;
     isolation: isolate;
@@ -12040,7 +12091,7 @@ textarea.t-input {
     left: 0;
     width: 100%;
     height: 100%;
-    background: #0b0b0b;
+    background: var(--t-color-surface-well);
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -12171,11 +12222,11 @@ textarea.t-input {
     overflow-y: auto;
     color: var(--t-color-text-label);
     position: relative;
-    background: #0b0b0b;
+    background: var(--t-color-surface-well);
 }
 
 #t-read-capture-zone {
-    background: #0b0b0b;
+    background: var(--t-color-surface-well);
     padding: 0;
     width: 100%;
     min-height: 100%;
@@ -12232,7 +12283,7 @@ textarea.t-input {
 .t-img-item {
     display: flex;
     align-items: center;
-    background: #252525;
+    background: var(--t-color-surface-elevated);
     padding: 10px;
     margin-bottom: 10px;
     border-radius: 6px;
@@ -12295,7 +12346,7 @@ textarea.t-input {
 .t-act-btn {
     padding: 6px 10px;
     border: 1px solid var(--t-color-border-strong);
-    background: #333;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-label);
     border-radius: 4px;
     cursor: pointer;
@@ -12790,7 +12841,7 @@ textarea.t-input {
 /* === Prompt Compose Viewer === */
 
 #t-debug-view {
-    background: #141414;
+    background: var(--t-color-bg);
     /* \u4EE5\u4E0B\u56DB\u6761\u539F\u4E3A JS \u5185\u8054 style\uFF08Phase 5b-7 \u8FC1\u51FA\uFF09\u3002(1,0,0) \u538B\u8FC7 base.css \u7684
        .t-box (0,1,0)\uFF1A\u540E\u8005\u7ED9\u7684\u662F width:95% / max-width:650px / height:auto\u3002
        \u26A0 \u539F\u5185\u8054\u8FD8\u91CD\u590D\u58F0\u660E\u4E86 display:flex \u4E0E flex-direction:column\uFF0C\u8FD9\u4E24\u6761\u4E0E
@@ -12808,7 +12859,7 @@ textarea.t-input {
     min-height: 42px;
     padding: 6px 16px 0;
     border-bottom: 1px solid #242424;
-    background: #161616;
+    background: var(--t-color-surface-inset);
 }
 
 #t-debug-view .t-prompt-source-tabs {
@@ -12840,7 +12891,7 @@ textarea.t-input {
 #t-debug-view .t-prompt-source-tab:hover,
 #t-debug-view .t-prompt-info-btn:hover {
     color: var(--t-color-text-label);
-    background: #1d1d1d;
+    background: var(--t-color-surface);
 }
 
 #t-debug-view .t-prompt-source-tab.active {
@@ -12873,7 +12924,7 @@ textarea.t-input {
     padding: 13px 14px;
     border: 1px solid #383838;
     border-radius: 8px;
-    background: #202020;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text-secondary);
     box-shadow: 0 12px 30px rgba(0, 0, 0, .55);
     font-size: 11px;
@@ -12922,7 +12973,7 @@ textarea.t-input {
     gap: 16px;
     padding: 11px 16px;
     border-bottom: 1px solid #292929;
-    background: #171717;
+    background: var(--t-color-surface-inset);
 }
 
 #t-debug-view .t-prompt-request {
@@ -12981,7 +13032,7 @@ textarea.t-input {
     padding: 6px 10px;
     font-size: 11px;
     color: var(--t-color-text-secondary);
-    background: #1b1b1b;
+    background: var(--t-color-surface-sunken);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     cursor: pointer;
@@ -12991,7 +13042,7 @@ textarea.t-input {
 }
 
 #t-debug-view .t-prompt-tool-btn:hover {
-    background: #262626;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-label);
     border-color: var(--t-color-border-strong);
 }
@@ -13022,7 +13073,7 @@ textarea.t-input {
 #t-debug-view .t-prompt-section-card {
     border-bottom: 1px solid #292929;
     border-left: 2px solid #2f2f2f;
-    background: #171717;
+    background: var(--t-color-surface-inset);
 }
 
 #t-debug-view .t-prompt-role-system {
@@ -18089,7 +18140,7 @@ textarea.t-input {
 }
 
 #t-confirm-no {
-    background: #555;
+    background: var(--t-color-surface-highest);
 }
 
 
@@ -33238,21 +33289,21 @@ function openSettingsWindow() {
                         <div class="t-form-group" style="margin-bottom:15px;">
                             <label class="t-form-label">\u5B57\u4F53\u6765\u6E90</label>
                             <div style="display:flex; flex-direction:column; gap:10px;">
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-option); border-radius:6px; border:2px solid ${fontSettings.source === "default" || !fontSettings.source ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="default">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-elevated); border-radius:6px; border:2px solid ${fontSettings.source === "default" || !fontSettings.source ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="default">
                                     <input type="radio" name="t-font-source" value="default" ${fontSettings.source === "default" || !fontSettings.source ? "checked" : ""} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">\u{1F5A5}\uFE0F \u7CFB\u7EDF\u9ED8\u8BA4</div>
                                         <div style="font-size:0.8em; color:var(--t-color-text-muted);">\u4F7F\u7528\u7CFB\u7EDF\u9ED8\u8BA4\u5B57\u4F53\u6808</div>
                                     </div>
                                 </label>
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-option); border-radius:6px; border:2px solid ${fontSettings.source === "online" ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="online">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-elevated); border-radius:6px; border:2px solid ${fontSettings.source === "online" ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="online">
                                     <input type="radio" name="t-font-source" value="online" ${fontSettings.source === "online" ? "checked" : ""} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">\u{1F310} \u5728\u7EBF\u5B57\u4F53</div>
                                         <div style="font-size:0.8em; color:var(--t-color-text-muted);">\u4F7F\u7528 Google Fonts \u7B49\u5728\u7EBF\u670D\u52A1</div>
                                     </div>
                                 </label>
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-option); border-radius:6px; border:2px solid ${fontSettings.source === "upload" ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="upload">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-elevated); border-radius:6px; border:2px solid ${fontSettings.source === "upload" ? "var(--t-color-brand)" : "var(--t-color-border)"};" data-font-source="upload">
                                     <input type="radio" name="t-font-source" value="upload" ${fontSettings.source === "upload" ? "checked" : ""} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">\u{1F4C1} \u4E0A\u4F20\u5B57\u4F53</div>

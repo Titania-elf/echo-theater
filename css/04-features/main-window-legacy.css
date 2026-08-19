@@ -30,7 +30,7 @@
 
 #t-main-view.t-layout-legacy .t-tools-btn:hover {
     opacity: 1;
-    background: #333;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-strong);
     transform: scale(1.05);
 }
@@ -107,7 +107,7 @@
     padding: 0;
     box-sizing: border-box;
     line-height: 1;
-    background: #2b2b2b;
+    background: var(--t-color-surface-raised);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
     color: var(--t-color-text-secondary);
@@ -117,7 +117,7 @@
 }
 
 #t-main-view.t-layout-legacy .t-btn-grid:hover {
-    background: #383838;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-strong);
     border-color: var(--t-color-text-faint);
 }
@@ -203,12 +203,12 @@
 }
 
 #t-main-view.t-layout-legacy .t-run-queue.inactive {
-    background: linear-gradient(135deg, var(--t-color-border-control), #4a4a4a);
+    background: linear-gradient(135deg, var(--t-color-border-control), var(--t-color-surface-highest));
     color: var(--t-color-text-muted);
 }
 
 #t-main-view.t-layout-legacy .t-run-queue.inactive:hover:not(:disabled) {
-    background: linear-gradient(135deg, #4a4a4a, #5a5a5a);
+    background: linear-gradient(135deg, var(--t-color-surface-highest), var(--t-color-surface-highest));
     box-shadow: none;
 }
 
@@ -231,7 +231,7 @@
     padding: 0;
     box-sizing: border-box;
     line-height: 1;
-    background: #2b2b2b;
+    background: var(--t-color-surface-raised);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
     color: var(--t-color-text-secondary);
@@ -241,7 +241,7 @@
 }
 
 #t-main-view.t-layout-legacy .t-btn-aux:hover {
-    background: #383838;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-strong);
     border-color: var(--t-color-text-faint);
 }

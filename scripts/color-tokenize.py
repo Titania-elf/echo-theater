@@ -206,6 +206,11 @@ def resolve(defs, expr, depth=0):
 COLOR_RE = re.compile(r'#[0-9a-fA-F]{3,8}\b|rgba?\([^()]*\)')
 DECL_RE = re.compile(r'(^|[;{\s])([-a-zA-Z]+)\s*:\s*([^;{}]*)')
 COMMENT_RE = re.compile(r'/\*.*?\*/', re.S)
+# 选择器里带字面量颜色的规则（调色板预览球）——整块跳过，见 _snap 里的说明与审计 A24
+PALETTE_RULE = re.compile(
+    r'\[[a-zA-Z-]+\s*[~^$*|]?=\s*"#[0-9a-fA-F]{3,8}"\][^{}]*\{[^{}]*\}')
+# var(--x, <回退值>) 里的回退值区间 —— 属 B5，整段跳过，见 _snap 里的说明
+VAR_FALLBACK = re.compile(r'var\(\s*--[\w-]+\s*,([^()]*(?:\([^()]*\)[^()]*)*)\)')
 
 
 def eol_of(raw):
@@ -353,27 +358,77 @@ def is_neutral(rgb, tol=18):
 
 def snap_text(path, apply_it):
     """把 color: 上的不透明中性灰吸附到 TEXT_NEUTRAL_SCALE。返回 (变更列表, 超阈值列表)"""
+    return _snap(path, apply_it, TEXT_NEUTRAL_SCALE, lambda p: p.lower() == 'color',
+                 lambda k: is_neutral(k))
+
+
+# ── 表面色刻度（不透明中性灰，9 档，由深到浅）──────────────────────────
+# ⚠ 与文字刻度有两点本质不同，见交接文档 §6b：
+#   1) 表面是**嵌套**的：父子元素差一档就是视觉层级本身。两个不同取值吸到同一档，
+#      会让边界或 hover 反馈直接消失。故 --snap-surface 之后必须跑 --check-state。
+#   2) 带色偏的暗底（favs 的暖金 #201912、glass 的冷蓝 #1a2027）是刻意设计，
+#      吸到中性灰会抹掉设计意图。故本刻度**只接受纯灰**（R=G=B，容差 4），
+#      色偏的暗底留给「暖色族 / 冷玻璃族」两段单独处理。
+# 下面刻意**不含**角色名 token：panel-header(36) / surface-code(51) /
+# set-nav-surface(24) / set-tab-hover-surface(34) / field-focus(34) /
+# dialog-surface(30,30,35) 各有明确角色，浅色主题下会与泛用底色分叉，
+# 不能被泛用底色抢用（否则将来调 <code> 芯片会连带改掉一堆无关面板）。
+SURFACE_NEUTRAL_SCALE = [
+    ('--t-color-surface-well', (17, 17, 17)),
+    ('--t-color-bg', (18, 18, 18)),
+    ('--t-color-surface-inset', (24, 24, 24)),
+    ('--t-color-surface-sunken', (26, 26, 26)),
+    ('--t-color-surface', (30, 30, 30)),
+    ('--t-color-surface-elevated', (34, 34, 34)),
+    ('--t-color-surface-raised', (42, 42, 42)),
+    ('--t-color-surface-high', (51, 51, 51)),
+    ('--t-color-surface-highest', (85, 85, 85)),
+]
+
+PURE_GRAY_TOL = 4
+
+
+def snap_surface(path, apply_it):
+    """把 background* 上的不透明纯灰吸附到 SURFACE_NEUTRAL_SCALE。"""
+    return _snap(path, apply_it, SURFACE_NEUTRAL_SCALE,
+                 lambda p: role_of(p) == 'surface', lambda k: is_neutral(k, PURE_GRAY_TOL))
+
+
+def _snap(path, apply_it, scale, want_prop, want_color):
     raw = open(path, encoding='utf-8', newline='').read()
     crlf, lf = eol_of(raw)
     if crlf and lf:
         return None, None, '行尾混用，跳过'
     spans = [(m.start(), m.end()) for m in COMMENT_RE.finditer(raw)]
+    # 调色板预览规则的整块区间：选择器里带字面量颜色（[data-color="#xxx"]）的，
+    # 其 background 就是要把那个 hex 画出来给用户看，token 化会让浅色主题下预览说谎。
+    # 审计 A24 是同一条规则的常驻护栏；这里是源头拦截。
+    skip = [(m.start(), m.end()) for m in PALETTE_RULE.finditer(raw)]
+    # var() 的回退值区间：`var(--t-bg-color, #2b2b2b)` 里的 #2b2b2b 不是「这个元素的
+    # 底色」，而是「运行时变量没设时的默认」—— 那是 B5，CLAUDE.md 把它列为刻意推迟、
+    # 需独立一步的项（四个变量各有不同 fallback，补单一默认值会改色）。
+    # 更要紧的是 --verify / color_sequence 只解析 var() 的**外层** token，
+    # 改动回退值它一律看不见，等于没有自证。故整段跳过。
+    skip += [(m.start(1), m.end(1)) for m in VAR_FALLBACK.finditer(raw)]
 
     def in_comment(i):
         return any(a <= i < b for a, b in spans)
 
+    def in_palette(i):
+        return any(a <= i < b for a, b in skip)
+
     out, last, changes, over = [], 0, [], []
     for dm in DECL_RE.finditer(raw):
-        if dm.group(2).lower() != 'color' or in_comment(dm.start(2)):
+        if not want_prop(dm.group(2)) or in_comment(dm.start(2)):
             continue
         vs, ve = dm.start(3), dm.end(3)
         seg, pieces, pos = raw[vs:ve], [], 0
         for cm in COLOR_RE.finditer(seg):
             k = canon(cm.group(0))
-            if not k or k[3] < 0.99 or not is_neutral(k):
+            if not k or k[3] < 0.99 or not want_color(k) or in_palette(vs + cm.start()):
                 continue
             best, bd = None, 1e9
-            for name, rgb in TEXT_NEUTRAL_SCALE:
+            for name, rgb in scale:
                 d = delta_e(k, rgb + (1.0,))
                 if d < bd:
                     best, bd = name, d
@@ -395,6 +450,111 @@ def snap_text(path, apply_it):
         open(path, 'w', encoding='utf-8', newline='').write(new)
     return changes, over, None
 
+
+# ══════════════════════════════════════════════════════════════════════
+# --check-state：状态对塌陷检测
+#
+# 吸附刻度的唯一真实危险是**把 base 与它的 :hover / .active 吸到同一档**——
+# 交互反馈会静默消失，而审计与「计算值不变」自证都发现不了（值确实变了，
+# 但变得"合理"）。这里把每个选择器的最终 background 序列算出来，找出
+# 「S 与 S+状态后缀」这类对，报告二者颜色序列相同的情况。
+#
+# 与 HEAD 比对，只报**新增**的塌陷 —— 项目里本来就有同色的状态对（例如
+# 只靠 border 变化做反馈），那些不是本次引入的。
+# ══════════════════════════════════════════════════════════════════════
+STATE_TAIL = re.compile(
+    r'(?::hover|:focus(?:-visible|-within)?|:active|:disabled|:checked'
+    r'|:not\([^()]*\)|\.active|\.inactive|\.selected|\.is-[\w-]+|\.expanded|\.open'
+    r'|\[aria-[^\]]*\])+$')
+
+
+def bg_map(text, defs):
+    """{单个选择器: [(at-rule 上下文, 最终 background 颜色序列), ...]}，按出现顺序。
+
+    ⚠ 上下文必须一起返回：@media 块里的 base 与全局的 :hover 是**同时生效**的
+    （media 规则叠加在全局之上），所以配对是对的 —— 但塌陷只在那个视口下发生。
+    不带上下文的报告会让人误判成全局回归（踩过一次）。
+    """
+    text = COMMENT_RE.sub(lambda m: ' ' * len(m.group(0)), text)
+    out = {}
+    # 先记录每个 at-rule 块的字符区间，供反查上下文
+    blocks = []
+    for am in re.finditer(r'@[\w-]+[^{}]*\{', text):
+        i, depth = am.end(), 1
+        while i < len(text) and depth:
+            if text[i] == '{':
+                depth += 1
+            elif text[i] == '}':
+                depth -= 1
+            i += 1
+        blocks.append((am.start(), i, re.sub(r'\s+', ' ', am.group(0)[:-1].strip())))
+
+    def ctx_at(i):
+        return ' / '.join(c for a, b, c in blocks if a <= i < b)
+
+    for rm in re.finditer(r'([^{}]+)\{([^{}]*)\}', text):
+        sels, body = rm.group(1), rm.group(2)
+        if '@' in sels:
+            continue
+        colors = None
+        for dm in DECL_RE.finditer(body):
+            if role_of(dm.group(2)) != 'surface':
+                continue
+            seq = []
+            for cm in re.finditer(r'var\((--t-[\w-]+)(?:,[^()]*)?\)'
+                                  r'|#[0-9a-fA-F]{3,8}\b|rgba?\([^()]*\)', dm.group(3)):
+                seq.append(resolve(defs, defs.get(cm.group(1), '')) if cm.group(1)
+                           else canon(cm.group(0)))
+            if seq:
+                colors = tuple(seq)
+        if colors is None:
+            continue
+        ctx = ctx_at(rm.start(1))
+        for s in sels.split(','):
+            s = re.sub(r'\s+', ' ', s.strip())
+            if s:
+                out.setdefault(s, []).append((ctx, colors))
+    return out
+
+
+def last_color(entries):
+    return entries[-1][1]
+
+
+def state_pairs(m):
+    """[(base选择器, 状态选择器)]，只保留 base 也有 background 的对。"""
+    pairs = []
+    for s in m:
+        b = STATE_TAIL.sub('', s).strip()
+        if b and b != s and b in m:
+            pairs.append((b, s))
+    return pairs
+
+
+def cmd_check_state(files):
+    defs = token_defs()
+    total = new = 0
+    for p in files:
+        r = subprocess.run(['git', 'show', 'HEAD:' + p], capture_output=True)
+        old = bg_map(r.stdout.decode('utf-8'), defs) if not r.returncode else {}
+        cur = bg_map(open(p, encoding='utf-8').read(), defs)
+        for b, s in state_pairs(cur):
+            if last_color(cur[b]) != last_color(cur[s]):
+                continue
+            total += 1
+            was_same = (b in old and s in old
+                        and last_color(old[b]) == last_color(old[s]))
+            if not was_same:
+                new += 1
+            print('  %s' % os.path.basename(p))
+            print('      base  %-46s %s' % (b, cur[b][-1][0] or '（全局）'))
+            print('      state %-46s %s' % (s, cur[s][-1][0] or '（全局）'))
+            print('      %s' % ('HEAD 里本来就同色，非本次引入'
+                                if was_same else '★ 本次新增塌陷'))
+    print('\n状态对同色共 %d 处，其中本次新增 %d 处' % (total, new))
+    return new
+
+
 def main():
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument('files', nargs='*')
@@ -404,6 +564,10 @@ def main():
     ap.add_argument('--normalize-eol', action='store_true')
     ap.add_argument('--snap-text', action='store_true',
                     help='把 color: 上的中性灰吸附到文字刻度（会改色，逐处报 ΔE）')
+    ap.add_argument('--snap-surface', action='store_true',
+                    help='把 background 上的纯灰吸附到表面刻度（会改色；之后必跑 --check-state）')
+    ap.add_argument('--check-state', action='store_true',
+                    help='检测 base 与其 :hover/.active 是否被吸到同一档（交互反馈消失）')
     ap.add_argument('-h', '--help', action='store_true')
     a = ap.parse_args()
     if a.help:
@@ -414,6 +578,9 @@ def main():
         return
     files = a.files or [os.path.join(FEATURE_DIR, f).replace(os.sep, '/')
                         for f in sorted(os.listdir(FEATURE_DIR)) if f.endswith('.css')]
+
+    if a.check_state:
+        sys.exit(1 if cmd_check_state(files) else 0)
 
     if a.normalize_eol:
         for p in files:
@@ -427,11 +594,12 @@ def main():
                     p, crlf, lf, 'CRLF' if nl == '\r\n' else 'LF'))
         return
 
-    if a.snap_text:
+    if a.snap_text or a.snap_surface:
         from collections import Counter
+        fn = snap_text if a.snap_text else snap_surface
         allc, allo = [], []
         for p in files:
-            c, o, err = snap_text(p, a.apply)
+            c, o, err = fn(p, a.apply)
             if err:
                 print('%-42s %s' % (p, err))
                 continue

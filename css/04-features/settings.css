@@ -55,7 +55,7 @@
 /* 预览球基础样式 */
 .t-preview-ball {
     border-radius: 50%;
-    background: #2b2b2b;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-strong);
     display: flex;
     align-items: center;
@@ -145,7 +145,7 @@
 }
 
 .t-anim-option {
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border: 2px solid var(--t-color-border);
     border-radius: 8px;
     padding: 15px 10px;
@@ -218,7 +218,7 @@
 
 .t-prof-select {
     flex-grow: 1;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text);
     border: 1px solid var(--t-color-border-strong);
     padding: 8px;
@@ -227,7 +227,7 @@
 
 /* 诊断日志 */
 .t-log-box {
-    background: #0f0f0f;
+    background: var(--t-color-surface-well);
     color: var(--t-color-text-label);
     padding: 10px;
     border: 1px solid var(--t-color-border);
@@ -269,7 +269,7 @@
     tab-size: 4;
     resize: vertical;
     min-height: 200px;
-    background: #0f0f0f;
+    background: var(--t-color-surface-well);
     border-color: var(--t-color-border);
     color: var(--t-color-text-label);
 }
@@ -332,7 +332,7 @@
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    background: #222;
+    background: var(--t-color-surface-elevated);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
@@ -366,7 +366,7 @@
 }
 
 .t-toolbar-item:has(input:disabled):hover {
-    background: #222;
+    background: var(--t-color-surface-elevated);
     cursor: default;
 }
 
@@ -506,7 +506,7 @@
 }
 
 .t-prompt-entry-card:hover {
-    background: #1d1d1d;
+    background: var(--t-color-surface);
     border-color: #555;
 }
 
@@ -686,7 +686,7 @@
 }
 
 .t-header-action-card:hover {
-    background: #1d1d1d;
+    background: var(--t-color-surface);
     border-color: #555;
 }
 
@@ -908,16 +908,23 @@
     border-color: var(--t-color-text-strong);
 }
 
+/* ⚠ 下面 12 条预览球的 background **必须保持字面量，不许 token 化**。
+   data-color 是用户挑的那个 hex 本身（settingsWindow.js:235-262 写进
+   border_color / bg_color 设置），预览球的职责就是把那个 hex 画出来。
+   换成 token 后，浅色主题下预览球会显示 token 在浅色下的值，而 title
+   与实际写入设置的仍是原 hex —— 预览说谎，且没有视觉基线时极难发现。
+   （Phase 6b-2 修：其中 5 条已被前几批当成普通底色 token 化，已复原；
+   审计 A24 现在会守住这条。） */
 .t-color-swatch[data-color="#90cdf4"] {
-    background: var(--t-color-accent);
+    background: #90cdf4;
 }
 
 .t-color-swatch[data-color="#a29bfe"] {
-    background: var(--t-color-decor);
+    background: #a29bfe;
 }
 
 .t-color-swatch[data-color="#55efc4"] {
-    background: var(--t-color-notify);
+    background: #55efc4;
 }
 
 .t-color-swatch[data-color="#ffd93d"] {
@@ -925,7 +932,7 @@
 }
 
 .t-color-swatch[data-color="#ff6b6b"] {
-    background: var(--t-color-danger);
+    background: #ff6b6b;
 }
 
 .t-color-swatch[data-color="#fd79a8"] {

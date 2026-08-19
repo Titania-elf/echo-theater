@@ -96,5 +96,5 @@
 }
 
 #t-confirm-no {
-    background: #555;
+    background: var(--t-color-surface-highest);
 }

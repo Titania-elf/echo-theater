@@ -11,7 +11,12 @@
 
     padding: 3px;
     border-radius: 50%;
-    /* 使用 CSS 变量控制背景颜色（支持透明度） */
+    /* 使用 CSS 变量控制背景颜色（支持透明度）。
+       ⚠ 回退值 #2b2b2b 刻意保留字面量：--t-bg-color 是 B5 的运行时变量（用户在设置里
+       挑的底色），这个回退值就是「用户没挑时的默认」，与调色板里 title 为「深灰 (默认)」
+       的那颗预览球对应。Phase 6b-2 的吸附一度把它换成 var(--t-color-surface-raised)，
+       已撤回：CLAUDE.md 明确把 B5 的默认值处理推迟为独立一步，且 --verify 的结构化
+       比对只解析 var() 的**外层** token、看不见回退值，改在这里等于没有自证。 */
     background: var(--t-bg-color, #2b2b2b);
     color: var(--t-color-text-strong);
 

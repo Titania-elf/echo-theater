@@ -63,7 +63,7 @@
 }
 
 .t-mgr-sb-item:hover {
-    background: #222;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text);
 }
 
@@ -118,7 +118,7 @@
 
 .t-mgr-overview {
     padding: 8px 15px;
-    background: #171717;
+    background: var(--t-color-surface-inset);
     border-bottom: 1px solid var(--t-color-surface-raised);
     display: flex;
     flex-direction: column;
@@ -216,7 +216,7 @@
     font-size: 0.75em;
     padding: 1px 5px;
     border-radius: 3px;
-    background: #333;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-secondary);
 }
 
@@ -390,7 +390,7 @@
 
 .t-mgr-cat-dropdown:focus {
     outline: none;
-    background-color: #252525;
+    background-color: var(--t-color-surface-elevated);
 }
 
 .t-mgr-cat-dropdown option {

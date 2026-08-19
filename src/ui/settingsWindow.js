@@ -390,21 +390,21 @@ export function openSettingsWindow() {
                         <div class="t-form-group" style="margin-bottom:15px;">
                             <label class="t-form-label">字体来源</label>
                             <div style="display:flex; flex-direction:column; gap:10px;">
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-option); border-radius:6px; border:2px solid ${fontSettings.source === 'default' || !fontSettings.source ? 'var(--t-color-brand)' : 'var(--t-color-border)'};" data-font-source="default">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-elevated); border-radius:6px; border:2px solid ${fontSettings.source === 'default' || !fontSettings.source ? 'var(--t-color-brand)' : 'var(--t-color-border)'};" data-font-source="default">
                                     <input type="radio" name="t-font-source" value="default" ${fontSettings.source === 'default' || !fontSettings.source ? 'checked' : ''} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">🖥️ 系统默认</div>
                                         <div style="font-size:0.8em; color:var(--t-color-text-muted);">使用系统默认字体栈</div>
                                     </div>
                                 </label>
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-option); border-radius:6px; border:2px solid ${fontSettings.source === 'online' ? 'var(--t-color-brand)' : 'var(--t-color-border)'};" data-font-source="online">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-elevated); border-radius:6px; border:2px solid ${fontSettings.source === 'online' ? 'var(--t-color-brand)' : 'var(--t-color-border)'};" data-font-source="online">
                                     <input type="radio" name="t-font-source" value="online" ${fontSettings.source === 'online' ? 'checked' : ''} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">🌐 在线字体</div>
                                         <div style="font-size:0.8em; color:var(--t-color-text-muted);">使用 Google Fonts 等在线服务</div>
                                     </div>
                                 </label>
-                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-option); border-radius:6px; border:2px solid ${fontSettings.source === 'upload' ? 'var(--t-color-brand)' : 'var(--t-color-border)'};" data-font-source="upload">
+                                <label style="cursor:pointer; display:flex; align-items:center; padding:10px; background:var(--t-color-surface-elevated); border-radius:6px; border:2px solid ${fontSettings.source === 'upload' ? 'var(--t-color-brand)' : 'var(--t-color-border)'};" data-font-source="upload">
                                     <input type="radio" name="t-font-source" value="upload" ${fontSettings.source === 'upload' ? 'checked' : ''} style="margin-right:12px;">
                                     <div>
                                         <div style="color:var(--t-color-text); font-weight:bold;">📁 上传字体</div>

@@ -11,7 +11,29 @@
 :root,
 :root[data-t-theme="dark"] {
 
-    /* ---- 表面层（elevation）---- */
+    /* ---- 表面层（elevation）----
+       Phase 6b-2 把 04-features 里 95 处写死的纯灰底色吸附到下面这条 9 档刻度上。
+       由深到浅（数字是灰阶值）：
+
+         17  surface-well      内嵌控件槽底 —— 最深
+         18  bg                窗口底
+         24  surface-inset     分区内容块底
+         26  surface-sunken    输入框 / 代码块底
+         30  surface           基准面板
+         34  surface-elevated  控件 / 卡片 / 徽章底（抬起一档）
+         42  surface-raised    控件 hover / 卡片抬起（抬起两档）
+         51  surface-high      控件 hover 强态 / 进度条（抬起三档）
+         85  surface-highest   滚动条拇指 hover / 中性灰按钮底 —— 最浅
+
+       ⚠ 相邻档差值都在感知阈附近（17/18 差 ΔE 0.4、24/26 差 0.7、34/36 差 0.5），
+       九档偏密。合并是可做的（无感知变化），但那要改 122 处 var() 引用，
+       属独立一步，不与吸附混做 —— 本项目没有视觉基线，两种变化混在一批里
+       就无法归因（见 CLAUDE.md）。
+
+       ⚠ 刻度里刻意**不含**角色名 token（panel-header / surface-code /
+       set-nav-surface / set-tab-hover-surface / field-focus / dialog-surface）。
+       它们与刻度上某档当前同值，但浅色主题下会分叉，不能被泛用底色抢用；
+       否则将来单独调 <code> 芯片底，会连带改掉一堆无关面板。 */
     --t-color-bg: rgb(var(--t-c-neutral-0-rgb));
     /* #121212 窗口底 */
     --t-color-surface: rgb(var(--t-c-neutral-2-rgb));
@@ -23,7 +45,9 @@
     --t-color-surface-code: rgb(var(--t-c-neutral-5-rgb));
     /* #333 行内 <code> 芯片底。与 --t-color-border 同值但角色不同（表面 vs 边框），
        Phase 5a-3 为把 JS inline style 里的 <code> 底色 token 化而加。
-       ⚠ Phase 6 需确认：浅色主题下芯片底与边框大概率不该同色，届时二者会分叉。 */
+       ⚠ Phase 6 需确认：浅色主题下芯片底与边框大概率不该同色，届时二者会分叉。
+       ⚠ 与 --t-color-surface-high 亦同值：那是控件抬起三档（hover 强态），
+       浅色主题下 <code> 芯片会变浅灰底深字、而控件 hover 会向深走，二者反向。 */
 
     /* 以下三个由 Phase 5a-4 从 JS inline style 收上来，各自角色明确、值逐位不变。
        ⚠ 三者与已有表面 token 的差值都在感知阈以下（inset 与 sunken 差 2/255、
@@ -32,9 +56,20 @@
        而这三个值是历史随手取的。 */
     --t-color-surface-inset: rgb(24 24 24);
     /* #181818 设置页分区内容块底 / 调试窗头尾栏（13 处） */
-    --t-color-surface-option: rgb(var(--t-c-neutral-3-rgb));
-    /* #222 可选卡片底（字体来源单选，3 处）。与 --t-color-field-focus 同值，
-       但那是「输入框聚焦」态，角色不同，不可互用。 */
+    --t-color-surface-elevated: rgb(var(--t-c-neutral-3-rgb));
+    /* #222 控件 / 卡片 / 徽章底，抬起一档（38 处）。
+       Phase 6b-2 由 --t-color-surface-option 重命名而来：原名指「字体来源单选卡片底」
+       （仅 3 处），而 04-features 里 36 处泛用的控件底都是这个值；泛用义应当占名字。
+       ⚠ 与 --t-color-field-focus 同值，但那是「输入框聚焦」态 —— 浅色主题下聚焦底
+       通常变亮变白、而控件底向深走，二者反向，不可互用。
+       ⚠ 与 --t-color-panel-header(#242424) 只差 ΔE 0.5，但那是分区面板的头底，
+       角色不同、浅色下会分叉，故未合并。 */
+    --t-color-surface-high: rgb(var(--t-c-neutral-5-rgb));
+    /* #333 控件 hover 强态 / 进度条底，抬起三档（10 处）。见上面 surface-code 的说明。 */
+    --t-color-surface-highest: rgb(85 85 85);
+    /* #555 滚动条拇指 hover / 中性灰按钮底 / inactive 渐变止点（7 处）。
+       刻意不造原语：原语阶按亮度单调排（…7=68, 8=102…），插入 85 要给全部
+       下游消费者重编号，与 Phase 6b-1 三档文字色同一个理由。 */
     --t-color-surface-well: rgb(17 17 17);
     /* #111 内嵌控件槽底：文件选择器 / radio 组的容器（3 处）。
        与 --t-color-field-disabled 同值，但那是「禁用态」，角色不同。 */

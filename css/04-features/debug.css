@@ -7,7 +7,7 @@
 /* === Prompt Compose Viewer === */
 
 #t-debug-view {
-    background: #141414;
+    background: var(--t-color-bg);
     /* 以下四条原为 JS 内联 style（Phase 5b-7 迁出）。(1,0,0) 压过 base.css 的
        .t-box (0,1,0)：后者给的是 width:95% / max-width:650px / height:auto。
        ⚠ 原内联还重复声明了 display:flex 与 flex-direction:column，这两条与
@@ -25,7 +25,7 @@
     min-height: 42px;
     padding: 6px 16px 0;
     border-bottom: 1px solid #242424;
-    background: #161616;
+    background: var(--t-color-surface-inset);
 }
 
 #t-debug-view .t-prompt-source-tabs {
@@ -57,7 +57,7 @@
 #t-debug-view .t-prompt-source-tab:hover,
 #t-debug-view .t-prompt-info-btn:hover {
     color: var(--t-color-text-label);
-    background: #1d1d1d;
+    background: var(--t-color-surface);
 }
 
 #t-debug-view .t-prompt-source-tab.active {
@@ -90,7 +90,7 @@
     padding: 13px 14px;
     border: 1px solid #383838;
     border-radius: 8px;
-    background: #202020;
+    background: var(--t-color-surface-elevated);
     color: var(--t-color-text-secondary);
     box-shadow: 0 12px 30px rgba(0, 0, 0, .55);
     font-size: 11px;
@@ -139,7 +139,7 @@
     gap: 16px;
     padding: 11px 16px;
     border-bottom: 1px solid #292929;
-    background: #171717;
+    background: var(--t-color-surface-inset);
 }
 
 #t-debug-view .t-prompt-request {
@@ -198,7 +198,7 @@
     padding: 6px 10px;
     font-size: 11px;
     color: var(--t-color-text-secondary);
-    background: #1b1b1b;
+    background: var(--t-color-surface-sunken);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     cursor: pointer;
@@ -208,7 +208,7 @@
 }
 
 #t-debug-view .t-prompt-tool-btn:hover {
-    background: #262626;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-label);
     border-color: var(--t-color-border-strong);
 }
@@ -239,7 +239,7 @@
 #t-debug-view .t-prompt-section-card {
     border-bottom: 1px solid #292929;
     border-left: 2px solid #2f2f2f;
-    background: #171717;
+    background: var(--t-color-surface-inset);
 }
 
 #t-debug-view .t-prompt-role-system {

@@ -122,20 +122,24 @@
     text-align: left;
 }
 
+/* hover 底刻意用 -raised(#2a2a2a) 而非最近档 -elevated(#222)：本行原值 #252525
+   与下面 @media ≤600px 里 `.t-sel-cat-btn` 的 #222 只差 ΔE 1.5，两者吸到同一档后
+   移动端 hover 反馈会完全消失（--check-state 报出）。抬一档同时与项目里其它
+   按钮的 hover 阶（elevated→raised）一致。 */
 .t-sel-cat-btn:hover {
-    background: #252525;
+    background: var(--t-color-surface-raised);
     color: var(--t-color-text-soft);
 }
 
 .t-sel-cat-btn.active {
-    background: #333;
+    background: var(--t-color-surface-high);
     color: var(--t-color-text-strong);
     font-weight: bold;
     border-left: 3px solid var(--t-color-brand);
 }
 
 .t-script-card {
-    background: #252525;
+    background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 12px;
@@ -231,7 +235,7 @@
         height: 32px;
         display: flex;
         align-items: center;
-        background: #222;
+        background: var(--t-color-surface-elevated);
         border: 1px solid var(--t-color-border);
     }
 
