@@ -250,7 +250,18 @@
     /* 选中态 / 激活 tab 的底色，替换 .22/.24/.32 三档 */
     --t-color-accent-border: rgb(var(--t-c-blue-rgb) / .35);
     --t-color-accent-border-subtle: rgb(var(--t-c-blue-rgb) / .3);
-    /* 替换 13+7 次；同时吃掉 .38/.42/.44/.45/.5 五档 */
+    /* ⚠ 本行原注释写着「同时吃掉 .38/.42/.44/.45/.5 五档」—— 那是早前阶段的**预测，
+       从未发生**：Phase 6b-4 实测时那几档仍是字面量。而且并到 .30 的合成色差是
+       ΔE 8~13（明显偏色），不该那么并。它们的正确归宿是下面新加的 .45 一档。
+       教训：注释里不要写未实测的预测（本项目第二次）。 */
+    --t-color-accent-border-strong: rgb(var(--t-c-blue-rgb) / .45);
+    /* Phase 6b-4 新增，填 .35 与 .60 之间的空档：实测 13 处字面量落在 .42~.50，
+       原先最近档要么 .35（ΔE 5.6~8.1）要么 .60（ΔE 7.7），都在「明显」以上。
+       ⚠ 与 --t-color-focus-ring(.40) / -field-glass-focus-border(.55) 邻近但角色不同
+       （那两个是聚焦态），浅色主题下会分叉，故未合并。
+       ⚠ 命名与金族的 --t-color-brand-border-soft(.45) 不对称：金族的 .45 夹在
+       .30 与 .55 之间故称 soft，蓝族的 .45 在 .35 之上故称 strong。二者各自相对
+       本族已有锚点是对的；不对称是继承来的（不在吸附批次里改已有 token 的值）。 */
     --t-color-accent-border-hover: rgb(var(--t-c-blue-rgb) / .6);
     /* hover 时的描边，替换 .55/.6/.65 三档 */
     --t-color-focus-ring: rgb(var(--t-c-blue-rgb) / .4);

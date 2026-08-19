@@ -26,7 +26,7 @@
 
 #t-rewrite-overlay .t-rewrite-head-text-btn { height: 32px; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: #dbe8f4; font-size: 0.78em; font-weight: 600; letter-spacing: 0.15px; background: linear-gradient(140deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--t-color-border-glass); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn:hover { transform: translateY(-1px); border-color: rgba(144, 205, 244, 0.5); background: linear-gradient(140deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover-subtle)); box-shadow: 0 10px 20px rgba(17, 34, 54, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
+#t-rewrite-overlay .t-rewrite-head-text-btn:hover { transform: translateY(-1px); border-color: var(--t-color-accent-border-strong); background: linear-gradient(140deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover-subtle)); box-shadow: 0 10px 20px rgba(17, 34, 54, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
 
 #t-rewrite-overlay .t-rewrite-head-text-btn:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--t-color-field-glass-border); }
 
@@ -36,7 +36,7 @@
 
 #t-rewrite-overlay .t-window-close { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--t-color-border-faint); transition: all 0.18s ease; }
 
-#t-rewrite-overlay .t-window-close:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(144, 205, 244, 0.45); }
+#t-rewrite-overlay .t-window-close:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--t-color-accent-border-strong); }
 
 #t-rewrite-overlay .t-rewrite-body { flex: 1; overflow: hidden; display: grid; grid-template-columns: minmax(340px, 0.92fr) minmax(440px, 1.08fr); gap: 16px; padding: 16px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, var(--t-color-brand-veil) 0%, rgba(191, 161, 95, 0) 32%), var(--t-glass-body); }
 
@@ -50,9 +50,13 @@
 
 #t-rewrite-overlay #t-rewrite-api-url:focus, #t-rewrite-overlay #t-rewrite-api-key:focus, #t-rewrite-overlay #t-rewrite-model:focus { border-color: var(--t-color-field-glass-focus-border); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
 
-#t-rewrite-overlay #t-rewrite-trigger { height: 36px; min-height: 36px; line-height: 1; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: #dbe8f4; font-weight: 600; transition: all 0.18s ease; white-space: nowrap; letter-spacing: 0.1px; min-width: 164px; padding: 0 16px; background: linear-gradient(135deg, rgba(144, 205, 244, 0.18), var(--t-color-brand-soft)); border-color: rgba(144, 205, 244, 0.42); justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
+#t-rewrite-overlay #t-rewrite-trigger { height: 36px; min-height: 36px; line-height: 1; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: #dbe8f4; font-weight: 600; transition: all 0.18s ease; white-space: nowrap; letter-spacing: 0.1px; min-width: 164px; padding: 0 16px; background: linear-gradient(135deg, var(--t-color-accent-soft-strong), var(--t-color-brand-soft)); border-color: var(--t-color-accent-border-strong); justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
 
-#t-rewrite-overlay #t-rewrite-trigger:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(144, 205, 244, 0.44); }
+/* hover 的 border-color 与 base 现在同值（都是 .45），刻意保留这条声明：HEAD 里
+   base 是 .42、hover 是 .44，Δalpha 0.02 —— 合成后差 ΔE 1.7，本来就看不出来，
+   真正的 hover 反馈来自上面那条 background（渐变 → 白色半透明）。
+   --check-state 会把这一对报成「◦ 本次合档但本就不可辨」，不是回归。 */
+#t-rewrite-overlay #t-rewrite-trigger:hover { background: rgba(255, 255, 255, 0.09); border-color: var(--t-color-accent-border-strong); }
 
 #t-rewrite-overlay .t-rewrite-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
@@ -66,7 +70,7 @@
 
 #t-rewrite-overlay #t-rewrite-runtime-toggle { height: 28px; min-height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); background: rgba(255, 255, 255, 0.05); color: #d4e4f2; font-size: 0.76em; font-weight: 600; letter-spacing: 0.12px; }
 
-#t-rewrite-overlay #t-rewrite-runtime-toggle:hover { border-color: rgba(144, 205, 244, 0.45); background: var(--t-color-accent-soft); }
+#t-rewrite-overlay #t-rewrite-runtime-toggle:hover { border-color: var(--t-color-accent-border-strong); background: var(--t-color-accent-soft); }
 
 #t-rewrite-overlay #t-rewrite-runtime-body.is-collapsed { display: none; }
 
@@ -160,7 +164,7 @@
 
 #t-rewrite-live-overlay .t-rewrite-live-history-item { border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px; background: rgba(8, 13, 20, 0.82); padding: 8px; cursor: pointer; transition: border-color 0.16s ease, background 0.16s ease; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-item:hover { border-color: rgba(144, 205, 244, 0.45); background: rgba(18, 29, 43, 0.72); }
+#t-rewrite-live-overlay .t-rewrite-live-history-item:hover { border-color: var(--t-color-accent-border-strong); background: rgba(18, 29, 43, 0.72); }
 
 #t-rewrite-live-overlay .t-rewrite-live-history-item.active { border-color: rgba(122, 203, 159, 0.48); background: linear-gradient(180deg, rgba(24, 68, 51, 0.3) 0%, rgba(14, 22, 18, 0.72) 100%); }
 
@@ -179,7 +183,7 @@
    而那 5 个类在 src/ 中零引用、从未命中过任何元素 —— 也就是说兜底值一直在生效。
    Phase 7-1 删掉那些死规则后，A11（消费但未声明）阻断，故把兜底值内联。
    这是等值改写，不是视觉变化。 */
-#t-rewrite-settings-overlay .t-rewrite-section-title { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px; padding: 4px 10px; border-radius: 999px; font-size: 0.82em; letter-spacing: 0.2px; border: 1px solid rgba(144, 205, 244, 0.45); color: #d9ecfb; background: linear-gradient(135deg, var(--t-color-accent-soft-strong) 0%, var(--t-color-surface-veil) 100%); box-shadow: inset 0 1px 0 var(--t-color-field-glass-border); }
+#t-rewrite-settings-overlay .t-rewrite-section-title { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px; padding: 4px 10px; border-radius: 999px; font-size: 0.82em; letter-spacing: 0.2px; border: 1px solid var(--t-color-accent-border-strong); color: #d9ecfb; background: linear-gradient(135deg, var(--t-color-accent-soft-strong) 0%, var(--t-color-surface-veil) 100%); box-shadow: inset 0 1px 0 var(--t-color-field-glass-border); }
 
 #t-rewrite-settings-overlay #t-rewrite-settings-model { width: 100%; }
 
@@ -332,7 +336,7 @@
     #t-rewrite-settings-overlay .t-set-body { flex-direction: column; }
     #t-rewrite-settings-overlay .t-set-nav { width: 100%; height: 50px; flex-direction: row; flex-wrap: nowrap; padding: 0; gap: 0; border-right: none; border-bottom: 1px solid var(--t-color-border-subtle); overflow-x: auto; overflow-y: hidden; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; }
     /* 下一条末尾原有 `background: transparent`，已删除 —— 理由与 lore-review.css       @768 段落里的同名规则相同：迁移前是空操作（静息态本无人给 tab 设底色），       迁移后会因带 ID 的 (1,1,0) 压过组件层 `.t-set-glass-tab:hover` 的 (0,2,0)，       吃掉窄屏 hover 白膜。`.active` 那条的 background: transparent 必要，保留。 */    #t-rewrite-settings-overlay .t-set-tab-btn { border-left: none; border-bottom: 3px solid transparent; border-radius: 0; border-top: none; border-right: none; border-bottom-color: transparent; padding: 0 14px; height: 50px; min-height: 50px; white-space: nowrap; flex: 0 0 auto; min-width: max-content; justify-content: center; }
-    #t-rewrite-settings-overlay .t-set-tab-btn.active { border-bottom-color: rgba(144, 205, 244, 0.8); border-left-color: transparent; background: transparent; }
+    #t-rewrite-settings-overlay .t-set-tab-btn.active { border-bottom-color: var(--t-color-accent-hover); border-left-color: transparent; background: transparent; }
     #t-rewrite-settings-overlay .t-set-content { padding: 10px; }
     #t-rewrite-live-overlay .t-rewrite-live-body { padding: 10px; gap: 10px; }
     #t-rewrite-overlay .t-rewrite-actions { flex-direction: column; align-items: stretch; }
@@ -424,5 +428,5 @@
 
 #t-rewrite-settings-overlay .t-window-close:hover {
     border-color: var(--t-color-accent-border-hover);
-    background: linear-gradient(145deg, rgba(144, 205, 244, 0.24), rgba(255, 255, 255, 0.07));
+    background: linear-gradient(145deg, var(--t-color-accent-soft-strong), rgba(255, 255, 255, 0.07));
 }

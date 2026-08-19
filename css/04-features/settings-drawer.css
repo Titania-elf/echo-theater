@@ -399,7 +399,7 @@
 }
 
 .titania-mini-btn.is-import {
-    border-color: rgba(144, 205, 244, 0.65);
+    border-color: var(--t-color-accent-active);
     color: #9acff5;
 }
 

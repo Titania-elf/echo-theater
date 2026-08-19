@@ -301,7 +301,7 @@
 }
 
 #t-main-view.t-layout-legacy #t-btn-queue-settings.active {
-    background: rgba(144, 205, 244, 0.15);
+    background: var(--t-color-accent-soft);
     border-color: var(--t-color-focus-ring);
     color: var(--t-color-accent);
 }

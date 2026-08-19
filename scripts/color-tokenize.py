@@ -502,6 +502,39 @@ ALPHA_FAMILIES = [
             (0.75, '--t-color-brand-strong'),
         ],
     },
+    {
+        # ⚠ 阶梯里刻意**不含角色名 token**，与 6b-2 的表面刻度同一条理由：
+        # --t-color-field-dialog-ring(.10) / -field-glass-focus-ring(.16) /
+        # --t-glass-tab-active-surface(.16) / --t-color-focus-ring(.40) /
+        # -field-glass-focus-border(.55) / --t-glass-tab-active-border(.86)
+        # 各有明确角色，浅色主题下会与泛用蓝分叉，不能被泛用底色/描边抢用。
+        'name': 'accent 交互蓝',
+        'anchor': (144, 205, 244),
+        'max_de': 1.0,
+        'ladder': [
+            (0.10, '--t-color-accent-veil'),           # 已存在
+            (0.12, '--t-color-accent-soft'),           # 已存在
+            (0.22, '--t-color-accent-soft-strong'),    # 已存在
+            (0.30, '--t-color-accent-border-subtle'),  # 已存在
+            (0.35, '--t-color-accent-border'),         # 已存在
+            (0.45, '--t-color-accent-border-strong'),  # 6b-4 新增，填 .35→.60 的空档
+            (0.60, '--t-color-accent-border-hover'),   # 已存在
+            (0.70, '--t-color-accent-active'),         # 已存在
+            (0.85, '--t-color-accent-hover'),          # 已存在
+        ],
+    },
+    {
+        # 冷灰蓝：#7896aa 就是 --t-color-border-cool 的色，且全部 17 处都用在
+        # border/border-top 上，token 名正好对，一档就够（人口全在 .25-.35）。
+        # 零新增 token。散落的近似冷灰（#b0bec5/#bdc7d2/#a8c9e0… 9 个值各 1 处）
+        # 刻意不并：那是个别选择不是漂移，合成 ΔE 最大 8.6，需逐个判断，留长尾批。
+        'name': 'cool 冷灰蓝',
+        'anchor': (120, 150, 170),
+        'max_de': 1.0,
+        'ladder': [
+            (0.30, '--t-color-border-cool'),           # 已存在
+        ],
+    },
 ]
 
 
@@ -641,9 +674,25 @@ def state_pairs(m):
     return pairs
 
 
+def seq_delta_e(a, b):
+    """两条颜色序列的感知差（逐位取最大）。无法比较时返回 -1。
+
+    用 alpha_delta_e 而非 delta_e：它对不透明色会退化成 delta_e
+    （不透明色合成到任何底上都是它自己），所以是严格的推广，两种情况都能用。
+    """
+    if a is None or b is None or len(a) != len(b):
+        return -1.0
+    worst = 0.0
+    for x, y in zip(a, b):
+        if x is None or y is None:
+            return -1.0
+        worst = max(worst, alpha_delta_e(x, y))
+    return worst
+
+
 def cmd_check_state(files):
     defs = token_defs()
-    total = new = 0
+    total = new = real = 0
     # ⚠ 必须同时查底色与描边：6b-3 改的一半是描边，而「base 与 hover 的描边被吸到
     # 同一档」跟底色塌陷是同一类 bug（交互反馈静默消失）。只查 background 会漏掉一半。
     for role, label in (('surface', '底色'), ('border', '描边')):
@@ -656,17 +705,35 @@ def cmd_check_state(files):
                 if last_color(cur[b]) != last_color(cur[st]):
                     continue
                 total += 1
-                was_same = (b in old and st in old
-                            and last_color(old[b]) == last_color(old[st]))
-                if not was_same:
+                had_both = b in old and st in old
+                was_same = had_both and last_color(old[b]) == last_color(old[st])
+                if was_same:
+                    verdict = 'HEAD 里本来就同色，非本次引入'
+                else:
                     new += 1
+                    # ⚠ 关键区分：HEAD 里这一对本来差多少？若本就不可辨（ΔE<2），
+                    # 说明「反馈」是别的属性给的（多半是 background），合档没有
+                    # 真的破坏交互 —— 必须与「毁掉了可见反馈」分开报，
+                    # 否则护栏只会响、不可行动。
+                    d = (seq_delta_e(last_color(old[b]), last_color(old[st]))
+                         if had_both else -1.0)
+                    if d < 0:
+                        verdict = '★ 本次新增塌陷（HEAD 侧无法比较，需人工看）'
+                        real += 1
+                    elif d < 2.0:
+                        verdict = ('◦ 本次合档，但 HEAD 里两者仅差 ΔE %.1f（本就不可辨）'
+                                   ' —— 反馈来自其它属性，非真回归' % d)
+                    else:
+                        verdict = ('★★ 本次新增塌陷，且 HEAD 里两者差 ΔE %.1f'
+                                   '（毁掉了可见反馈）' % d)
+                        real += 1
                 print('  %s  [%s]' % (os.path.basename(p), label))
                 print('      base  %-46s %s' % (b, cur[b][-1][0] or '（全局）'))
                 print('      state %-46s %s' % (st, cur[st][-1][0] or '（全局）'))
-                print('      %s' % ('HEAD 里本来就同色，非本次引入'
-                                    if was_same else '★ 本次新增塌陷'))
-    print('\n状态对同色共 %d 处（底色+描边），其中本次新增 %d 处' % (total, new))
-    return new
+                print('      %s' % verdict)
+    print('\n状态对同色共 %d 处（底色+描边）：本次新增 %d 处，其中真回归 %d 处'
+          % (total, new, real))
+    return real
 
 
 def main():

@@ -645,8 +645,8 @@
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: rgba(144, 205, 244, 0.08);
-    border-bottom: 1px solid rgba(144, 205, 244, 0.15);
+    background: var(--t-color-accent-veil);
+    border-bottom: 1px solid var(--t-color-accent-soft);
     font-size: 0.85em;
     flex-wrap: wrap;
 }
@@ -787,14 +787,14 @@
 }
 
 .t-quick-btn:hover {
-    background: rgba(144, 205, 244, 0.15);
+    background: var(--t-color-accent-soft);
     border-color: var(--t-color-focus-ring);
     color: var(--t-color-accent);
 }
 
 .t-quick-btn.active {
-    background: rgba(144, 205, 244, 0.2);
-    border-color: rgba(144, 205, 244, 0.5);
+    background: var(--t-color-accent-soft-strong);
+    border-color: var(--t-color-accent-border-strong);
     color: var(--t-color-accent);
 }
 
@@ -880,7 +880,7 @@
     }
 
     #t-lore-settings-dialog .t-set-tab-btn.active {
-        border-bottom-color: rgba(144, 205, 244, 0.8);
+        border-bottom-color: var(--t-color-accent-hover);
         border-left-color: transparent;
         background: transparent;
     }
@@ -920,7 +920,7 @@
 }
 
 .t-mode-tab.active {
-    background: rgba(144, 205, 244, 0.15);
+    background: var(--t-color-accent-soft);
     border-color: var(--t-color-focus-ring);
     color: var(--t-color-accent);
     border-bottom-color: transparent;
@@ -954,7 +954,7 @@
 }
 
 .t-mode-panel::-webkit-scrollbar-thumb:hover {
-    background: rgba(144, 205, 244, 0.5);
+    background: var(--t-color-accent-border-strong);
 }
 
 .t-mode-panel:not(.active) {
@@ -1027,7 +1027,7 @@
     font-size: 1.1em;
     margin: 20px 0 12px 0;
     padding-bottom: 8px;
-    border-bottom: 1px solid rgba(144, 205, 244, 0.2);
+    border-bottom: 1px solid var(--t-color-accent-soft-strong);
 }
 
 .t-summary-text h3.t-summary-h3:first-child {
@@ -1252,7 +1252,7 @@
 .t-prompt-hint {
     margin-top: 10px;
     padding: 10px;
-    background: rgba(144, 205, 244, 0.08);
+    background: var(--t-color-accent-veil);
     border-radius: 6px;
     font-size: 0.85em;
     color: var(--t-color-dialog-close);
@@ -1272,8 +1272,8 @@
     flex-wrap: wrap;
     gap: 15px;
     padding: 15px 20px;
-    background: rgba(144, 205, 244, 0.08);
-    border-bottom: 1px solid rgba(144, 205, 244, 0.15);
+    background: var(--t-color-accent-veil);
+    border-bottom: 1px solid var(--t-color-accent-soft);
 }
 
 .t-stat-item {
@@ -1336,7 +1336,7 @@
 }
 
 .t-prompt-tab.active {
-    background: rgba(144, 205, 244, 0.15);
+    background: var(--t-color-accent-soft);
     border-color: var(--t-color-focus-ring);
     color: var(--t-color-accent);
 }
@@ -1388,7 +1388,7 @@
 }
 
 .t-prompt-pre::-webkit-scrollbar-thumb:hover {
-    background: rgba(144, 205, 244, 0.5);
+    background: var(--t-color-accent-border-strong);
 }
 
 /* 弹窗 footer 调整 */
@@ -1627,10 +1627,10 @@
 /* ========== 原有内容对比区域样式 ========== */
 .t-original-content-section {
     margin-top: 15px;
-    border: 1px solid rgba(144, 205, 244, 0.2);
+    border: 1px solid var(--t-color-accent-soft-strong);
     border-radius: 8px;
     overflow: hidden;
-    background: rgba(144, 205, 244, 0.05);
+    background: var(--t-color-accent-veil);
 }
 
 .t-original-header {
@@ -1639,7 +1639,7 @@
     align-items: center;
     padding: 10px 12px;
     background: var(--t-color-accent-veil);
-    border-bottom: 1px solid rgba(144, 205, 244, 0.15);
+    border-bottom: 1px solid var(--t-color-accent-soft);
     color: var(--t-color-accent);
     font-size: 0.9em;
     font-weight: 500;
@@ -1685,7 +1685,7 @@
 }
 
 .t-original-content-box::-webkit-scrollbar-thumb:hover {
-    background: rgba(144, 205, 244, 0.5);
+    background: var(--t-color-accent-border-strong);
 }
 
 /* ========== 保存模式选择样式 ========== */

@@ -175,7 +175,7 @@
     display: grid;
     gap: 6px;
     padding: 8px;
-    border: 1px solid rgba(120, 150, 170, 0.34);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: rgba(12, 18, 24, 0.96);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.44);
@@ -198,7 +198,7 @@
 }
 
 .t-outline-scene-editor-page {
-    border: 1px solid rgba(120, 150, 170, 0.25);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: rgba(12, 16, 20, 0.7);
     padding: 10px;
@@ -250,7 +250,7 @@
 }
 
 .t-outline-plan-list {
-    border: 1px solid rgba(120, 150, 170, 0.25);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: rgba(12, 16, 20, 0.7);
     flex: 1;
@@ -265,7 +265,7 @@
 }
 
 .t-hub-toolbar {
-    border: 1px solid rgba(120, 150, 170, 0.25);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: rgba(12, 16, 20, 0.7);
     padding: 8px;
@@ -294,7 +294,7 @@
 }
 
 .t-plan-accordion-item {
-    border: 1px solid rgba(120, 150, 170, 0.28);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: rgba(12, 16, 20, 0.84);
     overflow: hidden;
@@ -439,7 +439,7 @@
 }
 
 .t-scene-hub-list {
-    border: 1px solid rgba(120, 150, 170, 0.25);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: rgba(12, 16, 20, 0.7);
     padding: 8px;
@@ -450,7 +450,7 @@
 }
 
 .t-scene-hub-item {
-    border: 1px solid rgba(120, 150, 170, 0.28);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 8px;
     background: rgba(12, 18, 24, 0.8);
     padding: 8px;
@@ -527,7 +527,7 @@
 }
 
 .t-opening-picker-list {
-    border: 1px solid rgba(120, 150, 170, 0.28);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: rgba(12, 18, 24, 0.75);
     max-height: min(62vh, 560px);
@@ -538,7 +538,7 @@
 }
 
 .t-opening-picker-item {
-    border: 1px solid rgba(120, 150, 170, 0.28);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 8px;
     background: rgba(14, 21, 28, 0.86);
     padding: 8px;
@@ -620,7 +620,7 @@
 }
 
 .t-plan-item-block {
-    border: 1px solid rgba(120, 150, 170, 0.25);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 8px;
     padding: 10px;
     background: rgba(12, 18, 24, 0.7);
@@ -677,7 +677,7 @@
 
 .t-outline-top {
     background: rgba(20, 24, 28, 0.75);
-    border: 1px solid rgba(120, 150, 170, 0.25);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     padding: 12px;
 }
@@ -777,7 +777,7 @@
 }
 
 .t-outline-table-wrap {
-    border: 1px solid rgba(120, 150, 170, 0.25);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     overflow: auto;
     background: rgba(12, 16, 20, 0.7);
@@ -1011,7 +1011,7 @@
     right: 2vw;
     width: min(440px, 42vw);
     max-height: 84vh;
-    border: 1px solid rgba(120, 150, 170, 0.35);
+    border: 1px solid var(--t-color-border-cool);
     border-radius: 12px;
     background: rgba(12, 18, 24, 0.96);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
@@ -1332,12 +1332,12 @@
         text-align: center;
         color: #8ea0b3;
         padding: 16px 12px;
-        border: 1px dashed rgba(120, 150, 170, 0.35);
+        border: 1px dashed var(--t-color-border-cool);
         border-radius: 8px;
     }
 
     .t-outline-mobile-card {
-        border: 1px solid rgba(120, 150, 170, 0.28);
+        border: 1px solid var(--t-color-border-cool);
         border-radius: 10px;
         background: rgba(12, 16, 20, 0.82);
         padding: 10px;
@@ -1383,7 +1383,7 @@
         bottom: 0;
         z-index: 20020;
         background: rgba(15, 20, 26, 0.98);
-        border-top: 1px solid rgba(120, 150, 170, 0.35);
+        border-top: 1px solid var(--t-color-border-cool);
         box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.45);
         transition: transform 0.22s ease, visibility 0.22s ease;
         max-height: 88vh;
@@ -1526,7 +1526,7 @@
     .t-outline-table tr {
         display: block;
         margin-bottom: 10px;
-        border: 1px solid rgba(120, 150, 170, 0.28);
+        border: 1px solid var(--t-color-border-cool);
         border-radius: 10px;
         background: rgba(12, 16, 20, 0.82);
         padding: 8px;
