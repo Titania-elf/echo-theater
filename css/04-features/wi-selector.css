@@ -67,7 +67,7 @@
 
 .t-wi-tab-btn:hover {
     color: var(--t-color-text-label);
-    background: rgba(255, 255, 255, 0.035);
+    background: var(--t-color-surface-veil);
 }
 
 .t-wi-tab-btn::after {

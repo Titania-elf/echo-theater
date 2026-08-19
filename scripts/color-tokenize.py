@@ -467,8 +467,10 @@ def _snap(path, apply_it, scale, want_prop, want_color):
 # ══════════════════════════════════════════════════════════════════════
 # 合成用的两种代表背景：插件表面刻度的两端
 COMPOSITE_BACKDROPS = ((17, 17, 17), (51, 51, 51))
-# alpha 低于此值视为「透明」：那是渐变淡出止点，RGB 无意义，吸附会让淡出失效
-MIN_MEANINGFUL_ALPHA = 0.03
+# alpha 低于此值视为「透明」：那是渐变淡出止点，RGB 无意义，吸附会让淡出失效。
+# ⚠ 只挡真正的 0。早期设成 0.03，把 rgba(255,255,255,.015) 这类**极淡的白色洗色**
+# 也挡掉了 9 处 —— 那是真实的设计选择（合成后与 .03 只差 ΔE 1.4），不是淡出止点。
+MIN_MEANINGFUL_ALPHA = 0.005
 
 
 def over(fg, backdrop):
@@ -535,11 +537,43 @@ ALPHA_FAMILIES = [
             (0.30, '--t-color-border-cool'),           # 已存在
         ],
     },
+    # ── 白叠加：必须按角色分族 ──────────────────────────────────────────
+    # 白色半透明在本项目里是两套独立词汇：surface-*（叠在底色上做 hover/active）
+    # 与 border-*（描边）。同一个 alpha 在两个角色下该用不同 token，
+    # 所以这里拆成两族、各自一条阶梯。两族**都零新增 token** —— 现有档位够用。
+    {
+        'name': '白叠加（底色）',
+        'anchor': (255, 255, 255),
+        'max_de': 1.0,
+        'roles': ('surface',),
+        'ladder': [
+            (0.03, '--t-color-surface-veil'),          # 已存在
+            (0.06, '--t-color-surface-hover-subtle'),  # 已存在
+            (0.08, '--t-color-surface-hover'),         # 已存在
+            (0.15, '--t-color-surface-active'),        # 已存在
+        ],
+    },
+    {
+        'name': '白叠加（描边）',
+        'anchor': (255, 255, 255),
+        'max_de': 1.0,
+        'roles': ('border',),
+        'ladder': [
+            (0.08, '--t-color-border-faint'),          # 已存在
+            (0.10, '--t-color-border-subtle'),         # 已存在
+            (0.15, '--t-color-border-hover-subtle'),   # 已存在
+            (0.18, '--t-color-border-glass'),          # 已存在
+        ],
+    },
 ]
 
 
 def snap_alpha(path, apply_it, families=None):
-    """把色族半透明色的 alpha 吸附到该族阶梯。shadow 角色刻意不处理（见 §6a）。"""
+    """把色族半透明色的 alpha 吸附到该族阶梯。shadow 角色刻意不处理（见 §6a）。
+
+    族可带 'roles' 限定只在某些角色上生效 —— 白色半透明在本项目里是
+    surface-* 与 border-* 两套独立词汇，同一 alpha 在两个角色下该用不同 token。
+    """
     families = families or ALPHA_FAMILIES
     raw = open(path, encoding='utf-8', newline='').read()
     crlf, lf = eol_of(raw)
@@ -552,7 +586,8 @@ def snap_alpha(path, apply_it, families=None):
     out, last, changes, over_list = [], 0, [], []
     for dm in DECL_RE.finditer(raw):
         # 只做 surface / border：shadow 的彩色光晕应转整条 --t-shadow-*（另一步）
-        if role_of(dm.group(2)) not in ('surface', 'border'):
+        role = role_of(dm.group(2))
+        if role not in ('surface', 'border'):
             continue
         if any(a <= dm.start(2) < b for a, b in spans):
             continue
@@ -566,6 +601,8 @@ def snap_alpha(path, apply_it, families=None):
                 continue
             fam = None
             for f in families:
+                if 'roles' in f and role not in f['roles']:
+                    continue
                 if delta_e(k[:3] + (1.0,), f['anchor'] + (1.0,)) <= f['max_de']:
                     fam = f
                     break

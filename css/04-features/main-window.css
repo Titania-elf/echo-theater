@@ -1338,7 +1338,7 @@
 }
 
 .t-gcn-close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--t-color-surface-hover);
     color: var(--t-color-text-strong);
 }
 
@@ -1423,7 +1423,7 @@
     padding: 10px 12px;
     border-radius: 6px;
     background: var(--t-color-surface-veil);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--t-color-border-faint);
     cursor: pointer;
     flex-shrink: 0;
 }
@@ -1459,8 +1459,8 @@
 .t-chat-inject-item {
     padding: 10px 12px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: var(--t-color-surface-veil);
+    border: 1px solid var(--t-color-border-faint);
     cursor: pointer;
     transition: all 0.15s;
 }

@@ -21,7 +21,7 @@
 
 .titania-update-card {
     border-color: rgba(98, 217, 188, 0.28);
-    background: linear-gradient(135deg, rgba(98, 217, 188, 0.08), rgba(255, 255, 255, 0.015));
+    background: linear-gradient(135deg, rgba(98, 217, 188, 0.08), var(--t-color-surface-veil));
 }
 
 .titania-update-card[data-state="available"] {
@@ -202,7 +202,7 @@
 .titania-update-entry {
     padding: 16px 0;
     color: #bdc8d2;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid var(--t-color-border-faint);
     font-size: 13px;
     line-height: 1.8;
 }
@@ -311,9 +311,9 @@
 
 .titania-panel-card {
     padding: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 10px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+    background: linear-gradient(180deg, var(--t-color-surface-veil), var(--t-color-surface-veil));
 }
 
 .titania-card-title {
@@ -379,7 +379,7 @@
 }
 
 .titania-mini-btn {
-    border: 1px solid rgba(255, 255, 255, 0.24);
+    border: 1px solid var(--t-color-border-glass);
     background: var(--t-color-surface-veil);
     color: #d5e2ef;
     border-radius: 8px;

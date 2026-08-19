@@ -18,7 +18,7 @@
     background: rgba(30, 30, 30, 0.6);
     backdrop-filter: blur(4px);
     color: var(--t-color-text-dim);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--t-color-border-faint);
     display: flex;
     align-items: center;
     justify-content: center;

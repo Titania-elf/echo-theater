@@ -546,7 +546,7 @@
     padding: 10px 12px;
     border: 1px solid var(--t-color-surface-raised);
     border-radius: 5px;
-    background: rgba(255, 255, 255, 0.025);
+    background: var(--t-color-surface-veil);
 }
 
 .t-ws-pv-comment-head {
@@ -563,7 +563,7 @@
 .t-ws-pv-comment-author strong { font-size: 0.86em; color: var(--t-color-text-soft); }
 .t-ws-pv-comment-author small { color: var(--t-color-text-muted); font-size: 0.72em; }
 .t-ws-pv-comment-body { margin-top: 8px; white-space: pre-wrap; line-height: 1.5; color: var(--t-color-text-label); font-size: 0.86em; }
-.t-ws-pv-comment-reply { margin-top: 8px; padding: 7px 9px; border-left: 2px solid var(--t-theme); background: rgba(255, 255, 255, 0.04); display: grid; gap: 3px; font-size: 0.82em; }
+.t-ws-pv-comment-reply { margin-top: 8px; padding: 7px 9px; border-left: 2px solid var(--t-theme); background: var(--t-color-surface-veil); display: grid; gap: 3px; font-size: 0.82em; }
 .t-ws-pv-comment-reply strong { color: #d9c18a; }
 .t-ws-pv-comment-reply span { white-space: pre-wrap; color: var(--t-color-text-label); }
 .t-ws-pv-comments-empty { color: var(--t-color-text-muted); font-size: 0.84em; padding: 12px 0; }

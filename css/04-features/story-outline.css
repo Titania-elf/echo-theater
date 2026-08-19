@@ -655,7 +655,7 @@
 }
 
 .t-plan-scene.used {
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--t-color-border-glass);
     border-style: solid;
     background: rgba(58, 62, 68, 0.35);
     opacity: 0.72;
@@ -670,7 +670,7 @@
     margin-left: 8px;
     padding: 1px 6px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--t-color-border-glass);
     color: #c6d0db;
     font-size: 11px;
 }
@@ -770,7 +770,7 @@
 
 .t-outline-select {
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--t-color-border-glass);
     background: rgba(10, 14, 18, 0.75);
     color: var(--t-color-text);
     padding: 6px 8px;
@@ -934,7 +934,7 @@
     max-height: 56vh;
     overflow: auto;
     background: #0d141d;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     color: #d6e2ef;
     padding: 10px;
@@ -950,7 +950,7 @@
     max-height: 56vh;
     resize: vertical;
     background: #0d141d;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     color: #d6e2ef;
     padding: 10px;

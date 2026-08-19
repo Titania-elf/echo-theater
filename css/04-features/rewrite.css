@@ -16,15 +16,15 @@
 
 #t-rewrite-overlay { z-index: 30060; }
 
-#t-rewrite-overlay .t-rewrite-window { width: min(1180px, 96vw); max-width: 96vw; max-height: 90vh; height: min(88vh, 920px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-overlay .t-rewrite-window { width: min(1180px, 96vw); max-width: 96vw; max-height: 90vh; height: min(88vh, 920px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--t-color-border-subtle); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
 
-#t-rewrite-overlay .t-rewrite-head { padding: 14px 18px; background: linear-gradient(180deg, rgba(18, 30, 44, 0.9) 0%, rgba(16, 22, 31, 0.85) 100%); border-bottom: 1px solid rgba(255, 255, 255, 0.09); }
+#t-rewrite-overlay .t-rewrite-head { padding: 14px 18px; background: linear-gradient(180deg, rgba(18, 30, 44, 0.9) 0%, rgba(16, 22, 31, 0.85) 100%); border-bottom: 1px solid var(--t-color-border-faint); }
 
 #t-rewrite-overlay .t-rewrite-settings-btn i { color: var(--t-glass-tab-text-active); }
 
 #t-rewrite-overlay .t-rewrite-settings-btn:hover i { color: #d2e6f7; }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn { height: 32px; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: #dbe8f4; font-size: 0.78em; font-weight: 600; letter-spacing: 0.15px; background: linear-gradient(140deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--t-color-border-glass); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
+#t-rewrite-overlay .t-rewrite-head-text-btn { height: 32px; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: #dbe8f4; font-size: 0.78em; font-weight: 600; letter-spacing: 0.15px; background: linear-gradient(140deg, var(--t-color-surface-hover), var(--t-color-surface-veil)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--t-color-border-glass); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
 
 #t-rewrite-overlay .t-rewrite-head-text-btn:hover { transform: translateY(-1px); border-color: var(--t-color-accent-border-strong); background: linear-gradient(140deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover-subtle)); box-shadow: 0 10px 20px rgba(17, 34, 54, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
 
@@ -34,9 +34,9 @@
 
 #t-rewrite-overlay .t-rewrite-title i { color: var(--t-color-accent); }
 
-#t-rewrite-overlay .t-window-close { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--t-color-border-faint); transition: all 0.18s ease; }
+#t-rewrite-overlay .t-window-close { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--t-color-surface-veil); border: 1px solid var(--t-color-border-faint); transition: all 0.18s ease; }
 
-#t-rewrite-overlay .t-window-close:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--t-color-accent-border-strong); }
+#t-rewrite-overlay .t-window-close:hover { background: var(--t-color-surface-hover); border-color: var(--t-color-accent-border-strong); }
 
 #t-rewrite-overlay .t-rewrite-body { flex: 1; overflow: hidden; display: grid; grid-template-columns: minmax(340px, 0.92fr) minmax(440px, 1.08fr); gap: 16px; padding: 16px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, var(--t-color-brand-veil) 0%, rgba(191, 161, 95, 0) 32%), var(--t-glass-body); }
 
@@ -46,7 +46,7 @@
 
 #t-rewrite-overlay .t-rewrite-section-title { font-size: 0.9em; font-weight: 700; color: #b8d8ee; margin-bottom: 10px; }
 
-#t-rewrite-overlay #t-rewrite-api-url, #t-rewrite-overlay #t-rewrite-api-key, #t-rewrite-overlay #t-rewrite-model { width: 100%; box-sizing: border-box; background: rgba(10, 15, 22, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #dde9f4; border-radius: 8px; padding: 9px 11px; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease; }
+#t-rewrite-overlay #t-rewrite-api-url, #t-rewrite-overlay #t-rewrite-api-key, #t-rewrite-overlay #t-rewrite-model { width: 100%; box-sizing: border-box; background: rgba(10, 15, 22, 0.9); border: 1px solid var(--t-color-border-subtle); color: #dde9f4; border-radius: 8px; padding: 9px 11px; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease; }
 
 #t-rewrite-overlay #t-rewrite-api-url:focus, #t-rewrite-overlay #t-rewrite-api-key:focus, #t-rewrite-overlay #t-rewrite-model:focus { border-color: var(--t-color-field-glass-focus-border); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
 
@@ -56,7 +56,7 @@
    base 是 .42、hover 是 .44，Δalpha 0.02 —— 合成后差 ΔE 1.7，本来就看不出来，
    真正的 hover 反馈来自上面那条 background（渐变 → 白色半透明）。
    --check-state 会把这一对报成「◦ 本次合档但本就不可辨」，不是回归。 */
-#t-rewrite-overlay #t-rewrite-trigger:hover { background: rgba(255, 255, 255, 0.09); border-color: var(--t-color-accent-border-strong); }
+#t-rewrite-overlay #t-rewrite-trigger:hover { background: var(--t-color-surface-hover); border-color: var(--t-color-accent-border-strong); }
 
 #t-rewrite-overlay .t-rewrite-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
@@ -68,7 +68,7 @@
 
 #t-rewrite-overlay .t-rewrite-runtime-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 
-#t-rewrite-overlay #t-rewrite-runtime-toggle { height: 28px; min-height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); background: rgba(255, 255, 255, 0.05); color: #d4e4f2; font-size: 0.76em; font-weight: 600; letter-spacing: 0.12px; }
+#t-rewrite-overlay #t-rewrite-runtime-toggle { height: 28px; min-height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); background: var(--t-color-surface-hover-subtle); color: #d4e4f2; font-size: 0.76em; font-weight: 600; letter-spacing: 0.12px; }
 
 #t-rewrite-overlay #t-rewrite-runtime-toggle:hover { border-color: var(--t-color-accent-border-strong); background: var(--t-color-accent-soft); }
 
@@ -96,7 +96,7 @@
 
 #t-rewrite-overlay .t-rewrite-diff-body { flex: 1; min-height: 0; overflow: auto; display: grid; gap: 8px; padding-right: 2px; }
 
-#t-rewrite-overlay .t-rewrite-match-row { border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; background: rgba(8, 13, 20, 0.8); padding: 10px; }
+#t-rewrite-overlay .t-rewrite-match-row { border: 1px solid var(--t-color-border-subtle); border-radius: 8px; background: rgba(8, 13, 20, 0.8); padding: 10px; }
 
 #t-rewrite-overlay .t-rewrite-match-row.hit { border-color: rgba(122, 203, 159, 0.4); background: linear-gradient(180deg, rgba(24, 68, 51, 0.28) 0%, rgba(14, 22, 18, 0.74) 100%); }
 
@@ -116,7 +116,7 @@
 
 #t-rewrite-overlay .t-rewrite-hit-source { font-size: 0.78em; color: #8da5b8; margin-bottom: 8px; }
 
-#t-rewrite-overlay .t-rewrite-json-box { margin: 0; padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); background: var(--t-glass-field); color: #b8d8ee; max-height: 180px; overflow: auto; font-size: 0.76em; line-height: 1.45; }
+#t-rewrite-overlay .t-rewrite-json-box { margin: 0; padding: 10px; border-radius: 8px; border: 1px solid var(--t-color-border-subtle); background: var(--t-glass-field); color: #b8d8ee; max-height: 180px; overflow: auto; font-size: 0.76em; line-height: 1.45; }
 
 #t-rewrite-overlay #t-rewrite-raw-response { max-height: 240px; min-height: 120px; white-space: pre-wrap; word-break: break-word; }
 
@@ -136,7 +136,7 @@
    （裸类无作用域，对本 overlay 一样生效），且无任何 @media 规则动它们 ——
    纯冗余，已删除（A13 重复组）。 */
 
-#t-rewrite-settings-overlay .t-form-group { margin-bottom: 14px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.86); }
+#t-rewrite-settings-overlay .t-form-group { margin-bottom: 14px; padding: 12px; border-radius: 10px; border: 1px solid var(--t-color-border-subtle); background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), rgba(10, 15, 22, 0.86); }
 
 #t-rewrite-settings-overlay .t-form-label { display: block; color: var(--t-glass-text-secondary); margin-bottom: 6px; font-size: 0.82em; }
 
@@ -150,11 +150,11 @@
 
 #t-rewrite-live-overlay .t-rewrite-live-meta { font-size: 0.8em; color: #8ea8bc; }
 
-#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
+#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
 
 #t-rewrite-live-overlay .t-rewrite-live-stream-title { font-size: 0.84em; font-weight: 700; color: #c5ddee; margin-bottom: 6px; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
+#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
 
 #t-rewrite-live-overlay .t-rewrite-live-history-title { font-size: 0.84em; font-weight: 700; color: #c5ddee; margin-bottom: 6px; }
 
@@ -162,7 +162,7 @@
 
 #t-rewrite-live-overlay .t-rewrite-live-history-list { max-height: min(28vh, 260px); overflow: auto; display: grid; gap: 8px; padding-right: 2px; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-item { border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px; background: rgba(8, 13, 20, 0.82); padding: 8px; cursor: pointer; transition: border-color 0.16s ease, background 0.16s ease; }
+#t-rewrite-live-overlay .t-rewrite-live-history-item { border: 1px solid var(--t-color-border-subtle); border-radius: 9px; background: rgba(8, 13, 20, 0.82); padding: 8px; cursor: pointer; transition: border-color 0.16s ease, background 0.16s ease; }
 
 #t-rewrite-live-overlay .t-rewrite-live-history-item:hover { border-color: var(--t-color-accent-border-strong); background: rgba(18, 29, 43, 0.72); }
 
@@ -172,7 +172,7 @@
 
 #t-rewrite-live-overlay .t-rewrite-live-history-preview { font-size: 0.78em; line-height: 1.45; color: #d8e7f4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-empty { border: 1px dashed var(--t-color-border-glass); border-radius: 9px; padding: 10px; text-align: center; color: #7f95a8; font-size: 0.78em; background: rgba(255, 255, 255, 0.02); }
+#t-rewrite-live-overlay .t-rewrite-live-history-empty { border: 1px dashed var(--t-color-border-glass); border-radius: 9px; padding: 10px; text-align: center; color: #7f95a8; font-size: 0.78em; background: var(--t-color-surface-veil); }
 
 #t-rewrite-live-overlay #t-rewrite-live-prompt-json { min-height: 92px; }
 
@@ -197,11 +197,11 @@
 
 #t-rewrite-settings-overlay #t-rewrite-settings-rules-list { max-height: 320px; overflow: auto; padding-right: 2px; }
 
-#t-rewrite-overlay .t-rewrite-diff-empty, #t-rewrite-overlay .t-rewrite-empty-rule { border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px; text-align: center; color: #6f8698; background: rgba(255, 255, 255, 0.02); }
+#t-rewrite-overlay .t-rewrite-diff-empty, #t-rewrite-overlay .t-rewrite-empty-rule { border: 1px dashed var(--t-color-border-glass); border-radius: 8px; padding: 12px; text-align: center; color: #6f8698; background: var(--t-color-surface-veil); }
 
 #t-rewrite-overlay .t-rewrite-diff-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-#t-rewrite-overlay .t-rewrite-diff-cell { border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px; background: rgba(8, 13, 20, 0.8); }
+#t-rewrite-overlay .t-rewrite-diff-cell { border: 1px solid var(--t-color-border-subtle); border-radius: 8px; padding: 10px; background: rgba(8, 13, 20, 0.8); }
 
 #t-rewrite-overlay .t-rewrite-diff-before { border-color: rgba(224, 136, 136, 0.35); background: linear-gradient(180deg, rgba(78, 26, 31, 0.4) 0%, rgba(26, 16, 18, 0.74) 100%); }
 
@@ -285,7 +285,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid var(--t-color-border-faint);
     }
 
 #t-rewrite-settings-overlay .t-rewrite-cat-name-row { display: flex; align-items: center; gap: 8px; }
@@ -328,7 +328,7 @@
 
 @media (max-width: 700px) {
     #t-rewrite-overlay, #t-rewrite-settings-overlay, #t-rewrite-live-overlay { align-items: center; justify-content: center; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
-    #t-rewrite-overlay .t-rewrite-window, #t-rewrite-settings-overlay .t-rewrite-settings-window, #t-rewrite-live-overlay .t-rewrite-live-window { width: min(96vw, 760px); max-width: min(96vw, 760px); max-height: min(96dvh, 96vh); height: auto; border-radius: 14px; border-left: 1px solid rgba(255, 255, 255, 0.12); border-right: 1px solid rgba(255, 255, 255, 0.12); border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+    #t-rewrite-overlay .t-rewrite-window, #t-rewrite-settings-overlay .t-rewrite-settings-window, #t-rewrite-live-overlay .t-rewrite-live-window { width: min(96vw, 760px); max-width: min(96vw, 760px); max-height: min(96dvh, 96vh); height: auto; border-radius: 14px; border-left: 1px solid var(--t-color-border-subtle); border-right: 1px solid var(--t-color-border-subtle); border-bottom: 1px solid var(--t-color-border-subtle); }
     #t-rewrite-overlay .t-rewrite-window { width: min(96vw, 780px); max-width: min(96vw, 780px); }
     #t-rewrite-overlay .t-rewrite-head, #t-rewrite-settings-overlay .t-rewrite-head, #t-rewrite-live-overlay .t-rewrite-head { padding: 12px 14px; }
     #t-rewrite-overlay .t-rewrite-title, #t-rewrite-settings-overlay .t-rewrite-title, #t-rewrite-live-overlay .t-rewrite-title { font-size: 1em; }
@@ -420,7 +420,7 @@
     height: 30px;
     border-radius: 10px;
     border: 1px solid var(--t-color-border-glass);
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+    background: linear-gradient(145deg, var(--t-color-surface-active), var(--t-color-surface-hover-subtle));
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
@@ -428,5 +428,5 @@
 
 #t-rewrite-settings-overlay .t-window-close:hover {
     border-color: var(--t-color-accent-border-hover);
-    background: linear-gradient(145deg, var(--t-color-accent-soft-strong), rgba(255, 255, 255, 0.07));
+    background: linear-gradient(145deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover));
 }

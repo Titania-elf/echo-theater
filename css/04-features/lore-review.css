@@ -71,7 +71,7 @@
 }
 
 .t-window-close:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--t-color-surface-hover);
     color: var(--t-color-text-strong);
 }
 
@@ -100,7 +100,7 @@
 .t-control-group input[type="number"],
 .t-control-group input[type="text"] {
     background: var(--t-color-surface-recess-strong);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--t-color-border-hover-subtle);
     color: var(--t-color-text-strong);
     padding: 6px 12px;
     border-radius: 6px;
@@ -174,7 +174,7 @@
 /* 列表项卡片 */
 .t-lore-entry-item {
     background: var(--t-color-surface-veil);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--t-color-border-faint);
     border-radius: 8px;
     padding: 12px;
     margin-bottom: 10px;
@@ -388,7 +388,7 @@
 
 .t-target-select select {
     background: var(--t-color-surface-recess-strong);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--t-color-border-hover-subtle);
     color: var(--t-color-text-strong);
     padding: 8px 12px;
     border-radius: 6px;
@@ -435,7 +435,7 @@
 }
 
 .t-window-icon:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--t-color-surface-hover);
     color: var(--t-color-text-strong);
 }
 
@@ -532,8 +532,8 @@
         align-items: center;
         gap: 8px;
         padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: var(--t-color-surface-hover);
+        border: 1px solid var(--t-color-border-hover-subtle);
         border-radius: 6px;
         color: var(--t-color-accent);
         font-size: 0.9em;
@@ -542,7 +542,7 @@
     }
 
     .t-mobile-back-btn:hover {
-        background: rgba(255, 255, 255, 0.15);
+        background: var(--t-color-surface-active);
     }
 
     .t-mobile-editor-title {
@@ -565,7 +565,7 @@
     }
 
     .t-mobile-nav-btn:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.15);
+        background: var(--t-color-surface-active);
         color: var(--t-color-text-strong);
     }
 
@@ -694,7 +694,7 @@
 #t-lore-settings-dialog .t-lore-settings-header {
     padding: 12px 16px;
     background: linear-gradient(180deg, rgba(18, 30, 44, 0.9) 0%, rgba(16, 22, 31, 0.85) 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 /* 本对话框的设置外壳（body / nav / tab / content）已迁至
@@ -714,8 +714,8 @@
     margin-bottom: 14px;
     padding: 12px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.86);
+    border: 1px solid var(--t-color-border-subtle);
+    background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), rgba(10, 15, 22, 0.86);
 }
 
 #t-lore-settings-dialog .t-form-label {
@@ -777,7 +777,7 @@
 .t-quick-btn {
     padding: 4px 10px;
     background: var(--t-color-surface-hover);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--t-color-border-hover-subtle);
     border-radius: 4px;
     color: var(--t-color-dialog-close);
     font-size: 0.8em;
@@ -901,7 +901,7 @@
 
 .t-mode-tab {
     padding: 10px 20px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--t-color-surface-hover-subtle);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px 8px 0 0;
     color: var(--t-color-dialog-close);
@@ -915,7 +915,7 @@
 }
 
 .t-mode-tab:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--t-color-surface-hover);
     color: var(--t-color-text-cool);
 }
 
@@ -1083,7 +1083,7 @@
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-vector-info .t-info-row:last-child {
@@ -1221,7 +1221,7 @@
 
 .t-custom-prompt-body {
     padding: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--t-color-border-faint);
 }
 
 .t-custom-prompt-body textarea {
@@ -1318,7 +1318,7 @@
 
 .t-prompt-tab {
     padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--t-color-surface-hover-subtle);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 6px;
     color: var(--t-color-dialog-close);
@@ -1331,7 +1331,7 @@
 }
 
 .t-prompt-tab:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--t-color-surface-hover);
     color: var(--t-color-text-cool);
 }
 
@@ -1544,7 +1544,7 @@
 .t-hide-range-inputs input[type="number"] {
     padding: 8px 10px;
     background: var(--t-color-surface-recess-strong);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--t-color-border-hover-subtle);
     border-radius: 6px;
     color: var(--t-color-text-cool);
     font-size: 0.9em;
