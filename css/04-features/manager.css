@@ -131,7 +131,7 @@
     flex-wrap: wrap;
     gap: 12px;
     font-size: 0.8em;
-    color: #8b8b8b;
+    color: var(--t-color-text-muted);
 }
 
 .t-mgr-ov-top {
@@ -139,7 +139,7 @@
     align-items: center;
     gap: 6px;
     font-size: 0.8em;
-    color: #9d9d9d;
+    color: var(--t-color-text-secondary);
     flex-wrap: wrap;
 }
 
@@ -205,7 +205,7 @@
 
 .t-mgr-item-stats {
     font-size: 0.75em;
-    color: #7a7a7a;
+    color: var(--t-color-text-dim);
     margin-top: 3px;
     white-space: nowrap;
     overflow: hidden;
@@ -470,6 +470,6 @@
    用在使用统计里），刻意不合并。 */
 .t-mgr-list-empty {
     text-align: center;
-    color: #555;
+    color: var(--t-color-text-disabled);
     margin-top: 50px;
 }

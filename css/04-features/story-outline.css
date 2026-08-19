@@ -82,7 +82,7 @@
     border-radius: 8px;
     border: 1px solid rgba(168, 201, 224, 0.32);
     background: rgba(8, 14, 20, 0.82);
-    color: #f1f6fb;
+    color: var(--t-color-text);
     padding: 7px 12px;
     min-width: 210px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -136,7 +136,7 @@
     border-radius: 50%;
     border: 1px solid rgba(114, 228, 209, 0.72);
     background: linear-gradient(135deg, rgba(48, 166, 173, 0.97), rgba(74, 206, 172, 0.97));
-    color: #f2fdff;
+    color: var(--t-color-text-strong);
     box-shadow: 0 12px 24px rgba(26, 116, 120, 0.45);
     font-size: 20px;
     cursor: pointer;
@@ -278,7 +278,7 @@
 .t-hub-primary-action {
     background: linear-gradient(135deg, rgba(52, 148, 172, 0.95), rgba(84, 192, 172, 0.95));
     border: 1px solid rgba(133, 238, 220, 0.8);
-    color: #f4ffff;
+    color: var(--t-color-text-strong);
     font-weight: 700;
     box-shadow: 0 4px 14px rgba(52, 148, 172, 0.35);
 }
@@ -509,7 +509,7 @@
     border-radius: 10px;
     border: 1px solid rgba(114, 228, 209, 0.75);
     background: linear-gradient(135deg, rgba(48, 166, 173, 0.96), rgba(74, 206, 172, 0.96));
-    color: #f4fdff;
+    color: var(--t-color-text-strong);
     box-shadow: 0 8px 18px rgba(44, 150, 152, 0.32);
     font-weight: 700;
     transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
@@ -685,7 +685,7 @@
 .t-outline-label {
     display: block;
     margin-bottom: 8px;
-    color: #e7edf4;
+    color: var(--t-color-text);
     font-weight: 600;
 }
 
@@ -695,7 +695,7 @@
     border-radius: 8px;
     border: 1px solid rgba(116, 185, 255, 0.35);
     background: rgba(8, 12, 16, 0.75);
-    color: #f2f5f8;
+    color: var(--t-color-text);
     padding: 10px;
     box-sizing: border-box;
 }
@@ -772,7 +772,7 @@
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(10, 14, 18, 0.75);
-    color: #f0f2f4;
+    color: var(--t-color-text);
     padding: 6px 8px;
 }
 
@@ -860,7 +860,7 @@
     border-radius: 6px;
     border: 1px solid var(--t-color-border-glass);
     background: rgba(10, 14, 18, 0.72);
-    color: #f0f2f4;
+    color: var(--t-color-text);
     box-sizing: border-box;
     padding: 8px;
 }
@@ -1363,7 +1363,7 @@
     }
 
     .t-outline-mobile-title {
-        color: #e8f0f8;
+        color: var(--t-color-text);
         font-weight: 600;
         margin-bottom: 6px;
     }
@@ -1407,7 +1407,7 @@
         justify-content: space-between;
         padding: 10px 12px;
         border-bottom: 1px solid var(--t-color-border-subtle);
-        color: #e8f0f8;
+        color: var(--t-color-text);
         font-weight: 600;
     }
 

@@ -17,7 +17,7 @@
     border-radius: 50%;
     background: rgba(30, 30, 30, 0.6);
     backdrop-filter: blur(4px);
-    color: #777;
+    color: var(--t-color-text-dim);
     border: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     align-items: center;
@@ -38,7 +38,7 @@
 #t-main-view.t-layout-legacy .t-tools-btn.active {
     opacity: 1;
     background: var(--t-color-brand);
-    color: #000;
+    color: var(--t-color-text-on-accent);
 }
 
 #t-main-view.t-layout-legacy .t-tools-btn.zen-active {

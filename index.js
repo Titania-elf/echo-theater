@@ -2224,6 +2224,23 @@ function loadCssFiles() {
     --t-color-text: rgb(var(--t-c-neutral-12-rgb));
     /* #eee\uFF0C= \u73B0 .t-box \u7684 color */
     --t-color-text-strong: rgb(var(--t-c-neutral-13-rgb));
+    /* \u2500\u2500 Phase 6b \u8865\u7684\u4E09\u6863\u6587\u5B57\u8272 \u2500\u2500
+       \u76EE\u6807\u662F\u6DF1\u6D45\u4E3B\u9898\u5207\u6362\uFF0C\u8981\u6C42\u6240\u6709\u989C\u8272\u90FD\u8D70 token\u3002\u76D8\u70B9 04-features \u7684
+       \u300Ccolor: + \u4E0D\u900F\u660E\u4E2D\u6027\u7070\u300D\u5171 108 \u5904\u540E\u53D1\u73B0\u523B\u5EA6\u6709\u4E09\u5904\u7F3A\u53E3\uFF1A
+         #ddd \u5728 label(#ccc) \u4E0E text(#eee) \u4E4B\u95F4   \u2014\u2014 16 \u5904\u5438\u9644\u5230\u8FD9\u91CC
+         #777 \u5728 muted(#888) \u4E0E faint(#666) \u4E4B\u95F4  \u2014\u2014 23 \u5904
+         #555 \u6BD4 faint(#666) \u66F4\u6697                 \u2014\u2014 14 \u5904
+       \u8865\u4E0A\u540E\u6574\u6BB5\u5438\u9644\u7684\u6700\u5927\u611F\u77E5\u8272\u5DEE \u0394E = 7.0\uFF08\u591A\u6570 \u2264 4\uFF09\uFF0C
+       \u4E0D\u8865\u5219\u6700\u5927 \u0394E \u4F1A\u5230 15 \u4EE5\u4E0A\u3002
+
+       \u26A0 \u523B\u610F**\u4E0D**\u63D2\u8FDB --t-c-neutral-N \u539F\u8BED\u5E8F\u5217\uFF1A\u90A3\u4E2A\u5E8F\u5217\u6309\u660E\u5EA6\u5355\u8C03\u7F16\u53F7
+       \uFF08\u20267=68, 8=102, 9=136, 11=204, 12=238\u2026\uFF09\uFF0C\u63D2\u503C\u8981\u91CD\u7F16\u53F7\u5E76\u6CE2\u53CA\u6240\u6709\u6D88\u8D39\u8005\u3002
+       \u8FD9\u91CC\u76F4\u63A5\u5199\u5B57\u9762\u91CF\uFF0C\u4E0E --t-color-surface-inset / -well \u7684\u65E2\u6709\u505A\u6CD5\u4E00\u81F4\u3002
+       Phase 7 \u82E5\u8981\u7ED9\u539F\u8BED\u91CD\u7F16\u53F7\uFF0C\u518D\u628A\u8FD9\u4E09\u6863\u63A5\u56DE\u53BB\u3002 */
+    --t-color-text-soft: rgb(221 221 221);
+    --t-color-text-dim: rgb(119 119 119);
+    --t-color-text-disabled: rgb(85 85 85);
+
     --t-color-text-label: rgb(var(--t-c-neutral-11-rgb));
     /* #ccc \u8868\u5355\u6807\u7B7E / \u5206\u533A\u5C0F\u6807\u9898 / \u5143\u4FE1\u606F\u3002\u4E2D\u6027\u9636\u91CC neutral-11 \u672C\u5C31\u5B58\u5728\uFF0C
        \u53EA\u662F\u6B64\u524D\u6CA1\u6709\u8BED\u4E49\u540D\uFF1B\u4EAE\u5EA6\u4ECB\u4E8E --t-color-text(#eee) \u4E0E
@@ -4826,7 +4843,7 @@ textarea.t-input {
 }
 
 .t-history-toggle:hover .t-toggle-text {
-    color: #bbb;
+    color: var(--t-color-text-label);
 }
 
 .t-history-toggle.active:hover .t-toggle-text {
@@ -4962,7 +4979,7 @@ textarea.t-input {
     right: 15px;
     top: 50%;
     transform: translateY(-50%);
-    color: #555;
+    color: var(--t-color-text-disabled);
     font-size: 1.2em;
 }
 
@@ -5061,7 +5078,7 @@ textarea.t-input {
 .t-tools-icon.active {
     opacity: 1;
     background: var(--t-color-brand);
-    color: #000;
+    color: var(--t-color-text-on-accent);
 }
 
 .t-tools-icon.is-faved {
@@ -5095,7 +5112,7 @@ textarea.t-input {
     border: 1px solid var(--t-color-border-control);
     border-radius: 999px;
     background: #232323;
-    color: #999;
+    color: var(--t-color-text-secondary);
     font: inherit;
     font-size: 11px;
     white-space: nowrap;
@@ -5106,7 +5123,7 @@ textarea.t-input {
 .t-shortcut-btn:hover {
     border-color: rgba(191, 161, 95, .5);
     background: #2b2b2b;
-    color: #ddd;
+    color: var(--t-color-text-soft);
 }
 
 .t-shortcut-btn.t-shortcut-compose {
@@ -5180,7 +5197,7 @@ textarea.t-input {
 
 .t-toolbox-header span,
 .t-toolbox-section-title {
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 11px;
 }
 
@@ -5225,7 +5242,7 @@ textarea.t-input {
     border: 1px solid #393939;
     border-radius: 6px;
     background: #232323;
-    color: #bbb;
+    color: var(--t-color-text-label);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -5254,7 +5271,7 @@ textarea.t-input {
 }
 
 .t-toolbox-action.inactive {
-    color: #777;
+    color: var(--t-color-text-dim);
 }
 
 .t-toolbox-action-wide {
@@ -5336,7 +5353,7 @@ textarea.t-input {
 
 .t-filter-item.active {
     background: var(--t-color-brand);
-    color: #000;
+    color: var(--t-color-text-on-accent);
     font-weight: bold;
 }
 
@@ -5361,7 +5378,7 @@ textarea.t-input {
     border: 0;
     border-radius: 6px;
     background: transparent;
-    color: #6d6d6d;
+    color: var(--t-color-text-faint);
     font-size: 0.85em;
     cursor: pointer;
     transition: color 0.15s, background-color 0.15s;
@@ -5937,7 +5954,7 @@ textarea.t-input {
     background: linear-gradient(90deg, var(--t-color-notify), #00b894);
     border: none;
     border-radius: 15px;
-    color: #000;
+    color: var(--t-color-text-on-accent);
     font-size: 0.85em;
     font-weight: bold;
     cursor: pointer;
@@ -6176,7 +6193,7 @@ textarea.t-input {
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #555;
+    color: var(--t-color-text-disabled);
 }
 
 .t-output-placeholder i {
@@ -6210,7 +6227,7 @@ textarea.t-input {
     border-radius: 50%;
     background: rgba(30, 30, 30, 0.6);
     backdrop-filter: blur(4px);
-    color: #777;
+    color: var(--t-color-text-dim);
     border: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     align-items: center;
@@ -6231,7 +6248,7 @@ textarea.t-input {
 #t-main-view.t-layout-legacy .t-tools-btn.active {
     opacity: 1;
     background: var(--t-color-brand);
-    color: #000;
+    color: var(--t-color-text-on-accent);
 }
 
 #t-main-view.t-layout-legacy .t-tools-btn.zen-active {
@@ -6683,7 +6700,7 @@ textarea.t-input {
 
 .t-sel-cat-btn:hover {
     background: #252525;
-    color: #ddd;
+    color: var(--t-color-text-soft);
 }
 
 .t-sel-cat-btn.active {
@@ -6719,7 +6736,7 @@ textarea.t-input {
 
 .t-card-desc {
     font-size: 0.8em;
-    color: #777;
+    color: var(--t-color-text-dim);
     line-height: 1.3;
     overflow: hidden;
     display: -webkit-box;
@@ -6729,14 +6746,14 @@ textarea.t-input {
 
 .t-card-stats {
     font-size: 0.74em;
-    color: #8e8e8e;
+    color: var(--t-color-text-muted);
     margin-top: 2px;
 }
 
 .t-sel-footer {
     padding: 7px 12px;
     font-size: 0.78em;
-    color: #7f7f7f;
+    color: var(--t-color-text-dim);
     border-top: 1px solid var(--t-color-border);
     background: var(--t-color-surface-sunken);
     border-radius: 0 0 8px 8px;
@@ -6796,7 +6813,7 @@ textarea.t-input {
 
     .t-sel-cat-btn.active {
         background: var(--t-color-brand);
-        color: #000;
+        color: var(--t-color-text-on-accent);
         border: 1px solid var(--t-color-brand);
         border-left: 1px solid var(--t-color-brand);
     }
@@ -6813,7 +6830,7 @@ textarea.t-input {
 .t-sel-grid-empty {
     grid-column: 1 / -1;
     text-align: center;
-    color: #555;
+    color: var(--t-color-text-disabled);
     margin-top: 50px;
 }
 
@@ -6874,7 +6891,7 @@ textarea.t-input {
     border: 0;
     border-radius: 0;
     background: transparent;
-    color: #999;
+    color: var(--t-color-text-secondary);
     cursor: pointer;
     font: inherit;
     font-size: 0.86em;
@@ -6887,7 +6904,7 @@ textarea.t-input {
 }
 
 .t-wi-tab-btn:hover {
-    color: #d0d0d0;
+    color: var(--t-color-text-label);
     background: rgba(255, 255, 255, 0.035);
 }
 
@@ -6917,7 +6934,7 @@ textarea.t-input {
 }
 
 .t-wi-tab-count {
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 0.82em;
     font-variant-numeric: tabular-nums;
 }
@@ -6947,7 +6964,7 @@ textarea.t-input {
 .t-wi-books-header {
     padding: 10px;
     border-bottom: 1px solid var(--t-color-border);
-    color: #999;
+    color: var(--t-color-text-secondary);
     font-size: 0.8em;
 }
 
@@ -6972,7 +6989,7 @@ textarea.t-input {
     border-radius: 6px;
     border: 1px solid transparent;
     cursor: pointer;
-    color: #bbb;
+    color: var(--t-color-text-label);
     transition: all 0.2s;
 }
 
@@ -7050,7 +7067,7 @@ textarea.t-input {
 }
 
 .t-wi-entry-pane-title {
-    color: #ddd;
+    color: var(--t-color-text-soft);
     font-weight: bold;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -7074,7 +7091,7 @@ textarea.t-input {
 }
 
 .t-wi-entry-pane-badge.inactive {
-    color: #999;
+    color: var(--t-color-text-secondary);
 }
 
 /* \u6761\u76EE\u641C\u7D22\uFF08\u6309\u6807\u9898\u8FC7\u6EE4\uFF09\u3002\u73B0\u5728\u662F\u5DE5\u5177\u884C\u91CC\u7684\u4E00\u4E2A flex \u5B50\u9879\uFF0C
@@ -7102,7 +7119,7 @@ textarea.t-input {
     border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
     background: #222;
-    color: #ddd;
+    color: var(--t-color-text-soft);
     font-size: 12px;
     box-sizing: border-box;
     transition: border-color 0.2s;
@@ -7146,7 +7163,7 @@ textarea.t-input {
 }
 
 .t-wi-hide-disabled:hover {
-    color: #bbb;
+    color: var(--t-color-text-label);
 }
 
 /* \u52FE\u9009\u540E\u7528\u7981\u7528\u6807\u8BB0\u7684\u540C\u8272\uFF0C\u548C\u6761\u76EE\u4E0A\u90A3\u4E2A\u300C\u9152\u9986\u4E2D\u5DF2\u7981\u7528\u300D\u5FBD\u7AE0\u547C\u5E94 */
@@ -7155,7 +7172,7 @@ textarea.t-input {
 }
 
 .t-wi-search-clear:hover {
-    color: #ddd;
+    color: var(--t-color-text-soft);
 }
 
 .t-wi-entry-search.has-query .t-wi-search-clear {
@@ -7400,13 +7417,13 @@ textarea.t-input {
         border: 1px solid var(--t-color-border-control);
         border-radius: 8px;
         background: #222;
-        color: #ddd;
+        color: var(--t-color-text-soft);
         font-size: 13px;
         box-sizing: border-box;
     }
 
 .t-wi-book-select:disabled {
-        color: #777;
+        color: var(--t-color-text-dim);
     }
 
 .t-wi-entry-pane {
@@ -7661,7 +7678,7 @@ textarea.t-input {
 .t-continuation-context-btn:hover,
 .t-continuation-context-btn.active {
     background: #303030;
-    color: #ddd;
+    color: var(--t-color-text-soft);
 }
 
 .t-continuation-input-wrap {
@@ -7692,7 +7709,7 @@ textarea.t-input {
 }
 
 .t-continuation-input-wrap textarea::placeholder {
-    color: #777;
+    color: var(--t-color-text-dim);
 }
 
 .t-continuation-input-wrap textarea:focus {
@@ -7707,7 +7724,7 @@ textarea.t-input {
     width: 38px;
     margin-left: 0;
     background: var(--t-color-brand);
-    color: #171717;
+    color: var(--t-color-text-on-accent);
 }
 
 .t-continuation-send:hover:not(:disabled) {
@@ -7738,7 +7755,7 @@ textarea.t-input {
     border: 1px solid #3f3f3f;
     border-radius: 5px;
     background: transparent;
-    color: #999;
+    color: var(--t-color-text-secondary);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -7826,7 +7843,7 @@ textarea.t-input {
 }
 
 .t-continuation-stepper span {
-    color: #bbb;
+    color: var(--t-color-text-label);
     font-size: 12px;
     text-align: center;
 }
@@ -8066,7 +8083,7 @@ textarea.t-input {
 }
 
 .t-cont-history-header span {
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 11px;
 }
 
@@ -8080,7 +8097,7 @@ textarea.t-input {
     display: grid;
     min-height: 180px;
     place-items: center;
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 13px;
 }
 
@@ -8141,7 +8158,7 @@ textarea.t-input {
 .t-cont-history-session-toggle > small {
     margin-left: auto;
     flex-shrink: 0;
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 10px;
 }
 
@@ -8228,14 +8245,14 @@ textarea.t-input {
 }
 
 .t-cont-history-branch-heading span {
-    color: #8c857a;
+    color: var(--t-color-text-muted);
     font-size: 10px;
     line-height: 1.35;
 }
 
 .t-cont-history-branch-title small {
     margin-left: auto;
-    color: #777;
+    color: var(--t-color-text-dim);
     flex-shrink: 0;
 }
 
@@ -8254,7 +8271,7 @@ textarea.t-input {
 
 .t-cont-history-round-title {
     gap: 8px;
-    color: #ddd;
+    color: var(--t-color-text-soft);
 }
 
 .t-cont-history-round-title span {
@@ -8288,7 +8305,7 @@ textarea.t-input {
 .t-cont-history-preview {
     margin-top: 5px;
     overflow: hidden;
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -8439,7 +8456,7 @@ textarea.t-input {
 
 .t-cont-char-count {
     font-size: 12px;
-    color: #777;
+    color: var(--t-color-text-dim);
 }
 
 .t-cont-recent-list {
@@ -8453,7 +8470,7 @@ textarea.t-input {
 .t-cont-recent-item {
     border: 1px solid #3d3d3d;
     background: #262626;
-    color: #ddd;
+    color: var(--t-color-text-soft);
     border-radius: 999px;
     padding: 6px 12px;
     font-size: 12px;
@@ -8466,7 +8483,7 @@ textarea.t-input {
 
 .t-cont-recent-empty {
     font-size: 12px;
-    color: #777;
+    color: var(--t-color-text-dim);
 }
 
 .t-cont-inject-box {
@@ -8489,12 +8506,12 @@ textarea.t-input {
 
 .t-cont-inject-label {
     font-size: 12px;
-    color: #ddd;
+    color: var(--t-color-text-soft);
 }
 
 .t-cont-rounds-total {
     font-size: 12px;
-    color: #9aa;
+    color: var(--t-color-text-secondary);
 }
 
 .t-cont-inject-row {
@@ -8526,7 +8543,7 @@ textarea.t-input {
 
 .t-cont-context-estimate {
     font-size: 12px;
-    color: #9aa;
+    color: var(--t-color-text-secondary);
 }
 
 /* \u8D85\u51FA token \u9884\u7B97\u7684\u544A\u8B66\u6001\u3002\u539F\u5148\u7531 JS \`.css({color, fontWeight})\` \u76F4\u63A5\u5199\u5185\u8054\uFF0C
@@ -8878,7 +8895,7 @@ textarea.t-input {
     background: #0d0d0d;
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
-    color: #e0e0e0;
+    color: var(--t-color-text-soft);
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 13px;
     line-height: 1.5;
@@ -9097,7 +9114,7 @@ textarea.t-input {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    color: #d9e2eb;
+    color: var(--t-color-text-soft);
     background: #14191f;
     border: 1px solid rgba(100, 220, 190, 0.35);
     border-radius: 14px;
@@ -9122,7 +9139,7 @@ textarea.t-input {
 
 .titania-update-header h2 {
     margin: 4px 0 0;
-    color: #f2f7f5;
+    color: var(--t-color-text);
     font-size: 20px;
 }
 
@@ -9643,7 +9660,7 @@ textarea.t-input {
 }
 
 .t-code-editor::placeholder {
-    color: #555;
+    color: var(--t-color-text-disabled);
 }
 
 /* CSS \u9009\u62E9\u5668\u63D0\u793A\u5217\u8868 */
@@ -10075,7 +10092,7 @@ textarea.t-input {
 
 .t-header-action-grip {
     flex-shrink: 0;
-    color: #555;
+    color: var(--t-color-text-disabled);
     cursor: grab;
 }
 
@@ -10214,14 +10231,14 @@ textarea.t-input {
    var(--t-color-text-faint) \u4E14 margin-top:8px\uFF09\u4E0D\u662F\u4E00\u5957\uFF0C\u523B\u610F\u4E0D\u5408\u5E76\u3002 */
 .t-set-field-hint {
     font-size: 0.75em;
-    color: #555;
+    color: var(--t-color-text-disabled);
     margin-top: 5px;
 }
 
 /* \u7EDF\u8BA1\u5361\u7247\u7684\u526F\u6807\u9898\uFF08"\u5F53\u524D\u62E5\u6709\u81EA\u5B9A\u4E49\u5267\u672C: N \u4E2A"\uFF09\u3002 */
 .t-set-stat-sub {
     font-size: 0.85em;
-    color: #777;
+    color: var(--t-color-text-dim);
     margin-top: 5px;
 }
 
@@ -10240,7 +10257,7 @@ textarea.t-input {
 .t-set-log-empty {
     text-align: center;
     margin-top: 100px;
-    color: #555;
+    color: var(--t-color-text-disabled);
 }
 
 /* ============================================================
@@ -10524,7 +10541,7 @@ textarea.t-input {
     flex-wrap: wrap;
     gap: 12px;
     font-size: 0.8em;
-    color: #8b8b8b;
+    color: var(--t-color-text-muted);
 }
 
 .t-mgr-ov-top {
@@ -10532,7 +10549,7 @@ textarea.t-input {
     align-items: center;
     gap: 6px;
     font-size: 0.8em;
-    color: #9d9d9d;
+    color: var(--t-color-text-secondary);
     flex-wrap: wrap;
 }
 
@@ -10598,7 +10615,7 @@ textarea.t-input {
 
 .t-mgr-item-stats {
     font-size: 0.75em;
-    color: #7a7a7a;
+    color: var(--t-color-text-dim);
     margin-top: 3px;
     white-space: nowrap;
     overflow: hidden;
@@ -10863,7 +10880,7 @@ textarea.t-input {
    \u7528\u5728\u4F7F\u7528\u7EDF\u8BA1\u91CC\uFF09\uFF0C\u523B\u610F\u4E0D\u5408\u5E76\u3002 */
 .t-mgr-list-empty {
     text-align: center;
-    color: #555;
+    color: var(--t-color-text-disabled);
     margin-top: 50px;
 }
 
@@ -11001,7 +11018,7 @@ textarea.t-input {
     padding: 8px 15px;
     background: #151515;
     border-bottom: 1px solid var(--t-color-surface-raised);
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 0.8em;
     flex-shrink: 0;
 }
@@ -11118,7 +11135,7 @@ textarea.t-input {
 }
 
 .t-ws-card-title {
-    color: #f0f0f0;
+    color: var(--t-color-text);
     font-weight: bold;
     font-size: 1em;
     line-height: 1.35;
@@ -11138,7 +11155,7 @@ textarea.t-input {
     padding: 1px 7px;
     border-radius: 10px;
     background: #262626;
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 0.72em;
     white-space: nowrap;
 }
@@ -11150,7 +11167,7 @@ textarea.t-input {
 
 .t-ws-card-desc {
     flex: 1 1 auto;
-    color: #9a9a9a;
+    color: var(--t-color-text-secondary);
     font-size: 0.84em;
     line-height: 1.45;
     overflow: hidden;
@@ -11221,7 +11238,7 @@ textarea.t-input {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #14100a;
+    color: var(--t-color-text-on-accent);
     font-weight: bold;
     font-size: 0.8em;
 }
@@ -11262,7 +11279,7 @@ textarea.t-input {
 /* \u2500\u2500 \u5360\u4F4D\u6001\uFF1A\u7A7A / \u65E0\u5339\u914D / \u51FA\u9519 \u2500\u2500 */
 .t-ws-placeholder {
     text-align: center;
-    color: #555;
+    color: var(--t-color-text-disabled);
     padding: 40px 20px;
     /* \u7F51\u683C\u662F\u591A\u5217\u7684\uFF0C\u5360\u4F4D\u5185\u5BB9\u8981\u6A2A\u8DE8\u6574\u884C\u624D\u4E0D\u4F1A\u88AB\u6324\u6210\u4E00\u6761 */
     grid-column: 1 / -1;
@@ -11361,7 +11378,7 @@ textarea.t-input {
 }
 
 .t-ws-pv-desc {
-    color: #bbb;
+    color: var(--t-color-text-label);
     font-size: 0.88em;
     line-height: 1.55;
     padding: 8px 12px;
@@ -11404,7 +11421,7 @@ textarea.t-input {
 }
 
 .t-ws-pv-comments-head strong {
-    color: #ddd;
+    color: var(--t-color-text-soft);
     font-size: 0.85em;
 }
 
@@ -11431,12 +11448,12 @@ textarea.t-input {
     gap: 2px;
 }
 
-.t-ws-pv-comment-author strong { font-size: 0.86em; color: #e5e5e5; }
+.t-ws-pv-comment-author strong { font-size: 0.86em; color: var(--t-color-text-soft); }
 .t-ws-pv-comment-author small { color: var(--t-color-text-muted); font-size: 0.72em; }
-.t-ws-pv-comment-body { margin-top: 8px; white-space: pre-wrap; line-height: 1.5; color: #d0d0d0; font-size: 0.86em; }
+.t-ws-pv-comment-body { margin-top: 8px; white-space: pre-wrap; line-height: 1.5; color: var(--t-color-text-label); font-size: 0.86em; }
 .t-ws-pv-comment-reply { margin-top: 8px; padding: 7px 9px; border-left: 2px solid var(--t-theme); background: rgba(255, 255, 255, 0.04); display: grid; gap: 3px; font-size: 0.82em; }
 .t-ws-pv-comment-reply strong { color: #d9c18a; }
-.t-ws-pv-comment-reply span { white-space: pre-wrap; color: #bbb; }
+.t-ws-pv-comment-reply span { white-space: pre-wrap; color: var(--t-color-text-label); }
 .t-ws-pv-comments-empty { color: var(--t-color-text-muted); font-size: 0.84em; padding: 12px 0; }
 
 /* \u2500\u2500 \u79FB\u52A8\u7AEF \u2500\u2500 */
@@ -11614,7 +11631,7 @@ textarea.t-input {
 .t-fav-filter-select,
 .t-fav-search {
     background: rgba(30, 30, 30, 0.88);
-    color: #f2efe8;
+    color: var(--t-color-text);
     border: 1px solid rgba(191, 161, 95, 0.3);
     padding: 6px 8px;
     border-radius: 8px;
@@ -11826,7 +11843,7 @@ textarea.t-input {
 .t-fav-card-script {
     font-weight: 700;
     font-size: clamp(1.08em, 2.2vw, 1.34em);
-    color: #f6f2ea;
+    color: var(--t-color-text);
     margin-bottom: 1px;
     white-space: nowrap;
     overflow: hidden;
@@ -12245,7 +12262,7 @@ textarea.t-input {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #555;
+    color: var(--t-color-text-disabled);
     font-size: 0.8em;
 }
 
@@ -12263,7 +12280,7 @@ textarea.t-input {
 
 .t-img-path {
     font-size: 0.8em;
-    color: #777;
+    color: var(--t-color-text-dim);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -12378,7 +12395,7 @@ textarea.t-input {
 .t-fav-card.selected .t-fav-card-checkbox {
     background: rgba(231, 202, 143, 0.95);
     border-color: #e7ca8f;
-    color: #000;
+    color: var(--t-color-text-on-accent);
 }
 
 .t-fav-card.selected .t-fav-card-overlay {
@@ -12746,7 +12763,7 @@ textarea.t-input {
 /* \u7F16\u8F91\u9875\u7684\u5206\u9875\u7EDF\u8BA1\uFF08"\u7B2C 1/1 \u9875"\uFF09\u3002\u539F\u4E3A favsWindow.js:716 \u7684\u5185\u8054 style\u3002
    \u7528 ID \u662F\u56E0\u4E3A\u8BE5\u5143\u7D20\u672C\u5C31\u5E26 #t-edit-page-stat\uFF0C\u4E14\u65E0\u540C\u7C7B\u5144\u5F1F\u9700\u8981\u590D\u7528\u3002 */
 #t-edit-page-stat {
-    color: #8f949b;
+    color: var(--t-color-text-muted);
     font-size: 0.85em;
     min-width: 180px;
     text-align: center;
@@ -12759,7 +12776,7 @@ textarea.t-input {
 .t-fav-char-empty {
     text-align: center;
     padding: 30px;
-    color: #555;
+    color: var(--t-color-text-disabled);
 }
 
 
@@ -12813,7 +12830,7 @@ textarea.t-input {
     border: 0;
     border-bottom: 2px solid transparent;
     background: transparent;
-    color: #777;
+    color: var(--t-color-text-dim);
     font: inherit;
     font-size: 11px;
     cursor: pointer;
@@ -12822,7 +12839,7 @@ textarea.t-input {
 
 #t-debug-view .t-prompt-source-tab:hover,
 #t-debug-view .t-prompt-info-btn:hover {
-    color: #bbb;
+    color: var(--t-color-text-label);
     background: #1d1d1d;
 }
 
@@ -12868,7 +12885,7 @@ textarea.t-input {
 }
 
 #t-debug-view .t-prompt-info-popover strong {
-    color: #e5e7eb;
+    color: var(--t-color-text);
     font-size: 12px;
 }
 
@@ -12913,7 +12930,7 @@ textarea.t-input {
     align-items: center;
     gap: 10px;
     min-width: 0;
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 12px;
 }
 
@@ -12954,7 +12971,7 @@ textarea.t-input {
 }
 
 #t-debug-view .t-prompt-count b {
-    color: #bbb;
+    color: var(--t-color-text-label);
 }
 
 #t-debug-view .t-prompt-tool-btn {
@@ -12963,7 +12980,7 @@ textarea.t-input {
     gap: 5px;
     padding: 6px 10px;
     font-size: 11px;
-    color: #999;
+    color: var(--t-color-text-secondary);
     background: #1b1b1b;
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
@@ -13039,7 +13056,7 @@ textarea.t-input {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #e5e7eb;
+    color: var(--t-color-text);
     font-weight: 600;
     font-size: 13px;
     min-width: 0;
@@ -13077,7 +13094,7 @@ textarea.t-input {
 #t-debug-view .t-prompt-chevron {
     font-size: 10px;
     width: 12px;
-    color: #555;
+    color: var(--t-color-text-disabled);
     transition: transform 0.2s;
     flex-shrink: 0;
 }
@@ -13103,7 +13120,7 @@ textarea.t-input {
 
 #t-debug-view .t-prompt-token-count {
     font-size: 11px;
-    color: #777;
+    color: var(--t-color-text-dim);
     font-family: var(--t-font-mono);
     flex-shrink: 0;
 }
@@ -13112,7 +13129,7 @@ textarea.t-input {
     display: none;
     margin: 0;
     padding: 2px 16px 16px 62px;
-    color: #d4d4d4;
+    color: var(--t-color-text-label);
     font-size: 12px;
     line-height: 1.55;
     font-family: var(--t-font-mono);
@@ -13133,19 +13150,19 @@ textarea.t-input {
     justify-content: center;
     gap: 8px;
     min-height: 220px;
-    color: #8a8a8a;
+    color: var(--t-color-text-muted);
     font-size: 13px;
     text-align: center;
 }
 
 #t-debug-view .t-prompt-empty i {
-    color: #555;
+    color: var(--t-color-text-disabled);
     font-size: 26px;
     margin-bottom: 4px;
 }
 
 #t-debug-view .t-prompt-empty small {
-    color: #5f5f5f;
+    color: var(--t-color-text-faint);
     font-size: 11px;
 }
 
@@ -13214,7 +13231,7 @@ textarea.t-input {
         width: auto;
         min-width: 0;
         overflow: visible;
-        color: #999;
+        color: var(--t-color-text-secondary);
         gap: 6px;
     }
 
@@ -13354,7 +13371,7 @@ textarea.t-input {
 .t-diag-log-empty {
     text-align: center;
     margin-top: 50px;
-    color: #555;
+    color: var(--t-color-text-disabled);
 }
 
 .t-diag-log-empty i {
@@ -14731,7 +14748,7 @@ textarea.t-input {
     word-break: break-word;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 0.85em;
-    color: #ddd;
+    color: var(--t-color-text-soft);
     line-height: 1.6;
     max-height: 45vh;
     overflow: auto;
@@ -15208,7 +15225,7 @@ textarea.t-input {
     word-break: break-word;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 0.9em;
-    color: #ddd;
+    color: var(--t-color-text-soft);
     line-height: 1.5;
 }
 
@@ -15504,7 +15521,7 @@ textarea.t-input {
     border-radius: 8px;
     border: 1px solid rgba(168, 201, 224, 0.32);
     background: rgba(8, 14, 20, 0.82);
-    color: #f1f6fb;
+    color: var(--t-color-text);
     padding: 7px 12px;
     min-width: 210px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -15558,7 +15575,7 @@ textarea.t-input {
     border-radius: 50%;
     border: 1px solid rgba(114, 228, 209, 0.72);
     background: linear-gradient(135deg, rgba(48, 166, 173, 0.97), rgba(74, 206, 172, 0.97));
-    color: #f2fdff;
+    color: var(--t-color-text-strong);
     box-shadow: 0 12px 24px rgba(26, 116, 120, 0.45);
     font-size: 20px;
     cursor: pointer;
@@ -15700,7 +15717,7 @@ textarea.t-input {
 .t-hub-primary-action {
     background: linear-gradient(135deg, rgba(52, 148, 172, 0.95), rgba(84, 192, 172, 0.95));
     border: 1px solid rgba(133, 238, 220, 0.8);
-    color: #f4ffff;
+    color: var(--t-color-text-strong);
     font-weight: 700;
     box-shadow: 0 4px 14px rgba(52, 148, 172, 0.35);
 }
@@ -15931,7 +15948,7 @@ textarea.t-input {
     border-radius: 10px;
     border: 1px solid rgba(114, 228, 209, 0.75);
     background: linear-gradient(135deg, rgba(48, 166, 173, 0.96), rgba(74, 206, 172, 0.96));
-    color: #f4fdff;
+    color: var(--t-color-text-strong);
     box-shadow: 0 8px 18px rgba(44, 150, 152, 0.32);
     font-weight: 700;
     transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
@@ -16107,7 +16124,7 @@ textarea.t-input {
 .t-outline-label {
     display: block;
     margin-bottom: 8px;
-    color: #e7edf4;
+    color: var(--t-color-text);
     font-weight: 600;
 }
 
@@ -16117,7 +16134,7 @@ textarea.t-input {
     border-radius: 8px;
     border: 1px solid rgba(116, 185, 255, 0.35);
     background: rgba(8, 12, 16, 0.75);
-    color: #f2f5f8;
+    color: var(--t-color-text);
     padding: 10px;
     box-sizing: border-box;
 }
@@ -16194,7 +16211,7 @@ textarea.t-input {
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(10, 14, 18, 0.75);
-    color: #f0f2f4;
+    color: var(--t-color-text);
     padding: 6px 8px;
 }
 
@@ -16282,7 +16299,7 @@ textarea.t-input {
     border-radius: 6px;
     border: 1px solid var(--t-color-border-glass);
     background: rgba(10, 14, 18, 0.72);
-    color: #f0f2f4;
+    color: var(--t-color-text);
     box-sizing: border-box;
     padding: 8px;
 }
@@ -16785,7 +16802,7 @@ textarea.t-input {
     }
 
     .t-outline-mobile-title {
-        color: #e8f0f8;
+        color: var(--t-color-text);
         font-weight: 600;
         margin-bottom: 6px;
     }
@@ -16829,7 +16846,7 @@ textarea.t-input {
         justify-content: space-between;
         padding: 10px 12px;
         border-bottom: 1px solid var(--t-color-border-subtle);
-        color: #e8f0f8;
+        color: var(--t-color-text);
         font-weight: 600;
     }
 

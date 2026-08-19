@@ -53,7 +53,7 @@
     border: 0;
     border-radius: 0;
     background: transparent;
-    color: #999;
+    color: var(--t-color-text-secondary);
     cursor: pointer;
     font: inherit;
     font-size: 0.86em;
@@ -66,7 +66,7 @@
 }
 
 .t-wi-tab-btn:hover {
-    color: #d0d0d0;
+    color: var(--t-color-text-label);
     background: rgba(255, 255, 255, 0.035);
 }
 
@@ -96,7 +96,7 @@
 }
 
 .t-wi-tab-count {
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 0.82em;
     font-variant-numeric: tabular-nums;
 }
@@ -126,7 +126,7 @@
 .t-wi-books-header {
     padding: 10px;
     border-bottom: 1px solid var(--t-color-border);
-    color: #999;
+    color: var(--t-color-text-secondary);
     font-size: 0.8em;
 }
 
@@ -151,7 +151,7 @@
     border-radius: 6px;
     border: 1px solid transparent;
     cursor: pointer;
-    color: #bbb;
+    color: var(--t-color-text-label);
     transition: all 0.2s;
 }
 
@@ -229,7 +229,7 @@
 }
 
 .t-wi-entry-pane-title {
-    color: #ddd;
+    color: var(--t-color-text-soft);
     font-weight: bold;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -253,7 +253,7 @@
 }
 
 .t-wi-entry-pane-badge.inactive {
-    color: #999;
+    color: var(--t-color-text-secondary);
 }
 
 /* 条目搜索（按标题过滤）。现在是工具行里的一个 flex 子项，
@@ -281,7 +281,7 @@
     border: 1px solid var(--t-color-border-control);
     border-radius: 6px;
     background: #222;
-    color: #ddd;
+    color: var(--t-color-text-soft);
     font-size: 12px;
     box-sizing: border-box;
     transition: border-color 0.2s;
@@ -325,7 +325,7 @@
 }
 
 .t-wi-hide-disabled:hover {
-    color: #bbb;
+    color: var(--t-color-text-label);
 }
 
 /* 勾选后用禁用标记的同色，和条目上那个「酒馆中已禁用」徽章呼应 */
@@ -334,7 +334,7 @@
 }
 
 .t-wi-search-clear:hover {
-    color: #ddd;
+    color: var(--t-color-text-soft);
 }
 
 .t-wi-entry-search.has-query .t-wi-search-clear {
@@ -579,13 +579,13 @@
         border: 1px solid var(--t-color-border-control);
         border-radius: 8px;
         background: #222;
-        color: #ddd;
+        color: var(--t-color-text-soft);
         font-size: 13px;
         box-sizing: border-box;
     }
 
 .t-wi-book-select:disabled {
-        color: #777;
+        color: var(--t-color-text-dim);
     }
 
 .t-wi-entry-pane {

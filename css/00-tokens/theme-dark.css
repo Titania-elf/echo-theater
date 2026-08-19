@@ -152,6 +152,23 @@
     --t-color-text: rgb(var(--t-c-neutral-12-rgb));
     /* #eee，= 现 .t-box 的 color */
     --t-color-text-strong: rgb(var(--t-c-neutral-13-rgb));
+    /* ── Phase 6b 补的三档文字色 ──
+       目标是深浅主题切换，要求所有颜色都走 token。盘点 04-features 的
+       「color: + 不透明中性灰」共 108 处后发现刻度有三处缺口：
+         #ddd 在 label(#ccc) 与 text(#eee) 之间   —— 16 处吸附到这里
+         #777 在 muted(#888) 与 faint(#666) 之间  —— 23 处
+         #555 比 faint(#666) 更暗                 —— 14 处
+       补上后整段吸附的最大感知色差 ΔE = 7.0（多数 ≤ 4），
+       不补则最大 ΔE 会到 15 以上。
+
+       ⚠ 刻意**不**插进 --t-c-neutral-N 原语序列：那个序列按明度单调编号
+       （…7=68, 8=102, 9=136, 11=204, 12=238…），插值要重编号并波及所有消费者。
+       这里直接写字面量，与 --t-color-surface-inset / -well 的既有做法一致。
+       Phase 7 若要给原语重编号，再把这三档接回去。 */
+    --t-color-text-soft: rgb(221 221 221);
+    --t-color-text-dim: rgb(119 119 119);
+    --t-color-text-disabled: rgb(85 85 85);
+
     --t-color-text-label: rgb(var(--t-c-neutral-11-rgb));
     /* #ccc 表单标签 / 分区小标题 / 元信息。中性阶里 neutral-11 本就存在，
        只是此前没有语义名；亮度介于 --t-color-text(#eee) 与

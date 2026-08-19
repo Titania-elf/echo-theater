@@ -61,7 +61,7 @@
 .t-fav-filter-select,
 .t-fav-search {
     background: rgba(30, 30, 30, 0.88);
-    color: #f2efe8;
+    color: var(--t-color-text);
     border: 1px solid rgba(191, 161, 95, 0.3);
     padding: 6px 8px;
     border-radius: 8px;
@@ -273,7 +273,7 @@
 .t-fav-card-script {
     font-weight: 700;
     font-size: clamp(1.08em, 2.2vw, 1.34em);
-    color: #f6f2ea;
+    color: var(--t-color-text);
     margin-bottom: 1px;
     white-space: nowrap;
     overflow: hidden;
@@ -692,7 +692,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #555;
+    color: var(--t-color-text-disabled);
     font-size: 0.8em;
 }
 
@@ -710,7 +710,7 @@
 
 .t-img-path {
     font-size: 0.8em;
-    color: #777;
+    color: var(--t-color-text-dim);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -825,7 +825,7 @@
 .t-fav-card.selected .t-fav-card-checkbox {
     background: rgba(231, 202, 143, 0.95);
     border-color: #e7ca8f;
-    color: #000;
+    color: var(--t-color-text-on-accent);
 }
 
 .t-fav-card.selected .t-fav-card-overlay {
@@ -1193,7 +1193,7 @@
 /* 编辑页的分页统计（"第 1/1 页"）。原为 favsWindow.js:716 的内联 style。
    用 ID 是因为该元素本就带 #t-edit-page-stat，且无同类兄弟需要复用。 */
 #t-edit-page-stat {
-    color: #8f949b;
+    color: var(--t-color-text-muted);
     font-size: 0.85em;
     min-width: 180px;
     text-align: center;
@@ -1206,5 +1206,5 @@
 .t-fav-char-empty {
     text-align: center;
     padding: 30px;
-    color: #555;
+    color: var(--t-color-text-disabled);
 }

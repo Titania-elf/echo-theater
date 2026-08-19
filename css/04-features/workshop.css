@@ -130,7 +130,7 @@
     padding: 8px 15px;
     background: #151515;
     border-bottom: 1px solid var(--t-color-surface-raised);
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 0.8em;
     flex-shrink: 0;
 }
@@ -247,7 +247,7 @@
 }
 
 .t-ws-card-title {
-    color: #f0f0f0;
+    color: var(--t-color-text);
     font-weight: bold;
     font-size: 1em;
     line-height: 1.35;
@@ -267,7 +267,7 @@
     padding: 1px 7px;
     border-radius: 10px;
     background: #262626;
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 0.72em;
     white-space: nowrap;
 }
@@ -279,7 +279,7 @@
 
 .t-ws-card-desc {
     flex: 1 1 auto;
-    color: #9a9a9a;
+    color: var(--t-color-text-secondary);
     font-size: 0.84em;
     line-height: 1.45;
     overflow: hidden;
@@ -350,7 +350,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #14100a;
+    color: var(--t-color-text-on-accent);
     font-weight: bold;
     font-size: 0.8em;
 }
@@ -391,7 +391,7 @@
 /* ── 占位态：空 / 无匹配 / 出错 ── */
 .t-ws-placeholder {
     text-align: center;
-    color: #555;
+    color: var(--t-color-text-disabled);
     padding: 40px 20px;
     /* 网格是多列的，占位内容要横跨整行才不会被挤成一条 */
     grid-column: 1 / -1;
@@ -490,7 +490,7 @@
 }
 
 .t-ws-pv-desc {
-    color: #bbb;
+    color: var(--t-color-text-label);
     font-size: 0.88em;
     line-height: 1.55;
     padding: 8px 12px;
@@ -533,7 +533,7 @@
 }
 
 .t-ws-pv-comments-head strong {
-    color: #ddd;
+    color: var(--t-color-text-soft);
     font-size: 0.85em;
 }
 
@@ -560,12 +560,12 @@
     gap: 2px;
 }
 
-.t-ws-pv-comment-author strong { font-size: 0.86em; color: #e5e5e5; }
+.t-ws-pv-comment-author strong { font-size: 0.86em; color: var(--t-color-text-soft); }
 .t-ws-pv-comment-author small { color: var(--t-color-text-muted); font-size: 0.72em; }
-.t-ws-pv-comment-body { margin-top: 8px; white-space: pre-wrap; line-height: 1.5; color: #d0d0d0; font-size: 0.86em; }
+.t-ws-pv-comment-body { margin-top: 8px; white-space: pre-wrap; line-height: 1.5; color: var(--t-color-text-label); font-size: 0.86em; }
 .t-ws-pv-comment-reply { margin-top: 8px; padding: 7px 9px; border-left: 2px solid var(--t-theme); background: rgba(255, 255, 255, 0.04); display: grid; gap: 3px; font-size: 0.82em; }
 .t-ws-pv-comment-reply strong { color: #d9c18a; }
-.t-ws-pv-comment-reply span { white-space: pre-wrap; color: #bbb; }
+.t-ws-pv-comment-reply span { white-space: pre-wrap; color: var(--t-color-text-label); }
 .t-ws-pv-comments-empty { color: var(--t-color-text-muted); font-size: 0.84em; padding: 12px 0; }
 
 /* ── 移动端 ── */

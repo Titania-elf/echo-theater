@@ -195,7 +195,7 @@
 }
 
 .t-history-toggle:hover .t-toggle-text {
-    color: #bbb;
+    color: var(--t-color-text-label);
 }
 
 .t-history-toggle.active:hover .t-toggle-text {
@@ -331,7 +331,7 @@
     right: 15px;
     top: 50%;
     transform: translateY(-50%);
-    color: #555;
+    color: var(--t-color-text-disabled);
     font-size: 1.2em;
 }
 
@@ -430,7 +430,7 @@
 .t-tools-icon.active {
     opacity: 1;
     background: var(--t-color-brand);
-    color: #000;
+    color: var(--t-color-text-on-accent);
 }
 
 .t-tools-icon.is-faved {
@@ -464,7 +464,7 @@
     border: 1px solid var(--t-color-border-control);
     border-radius: 999px;
     background: #232323;
-    color: #999;
+    color: var(--t-color-text-secondary);
     font: inherit;
     font-size: 11px;
     white-space: nowrap;
@@ -475,7 +475,7 @@
 .t-shortcut-btn:hover {
     border-color: rgba(191, 161, 95, .5);
     background: #2b2b2b;
-    color: #ddd;
+    color: var(--t-color-text-soft);
 }
 
 .t-shortcut-btn.t-shortcut-compose {
@@ -549,7 +549,7 @@
 
 .t-toolbox-header span,
 .t-toolbox-section-title {
-    color: #777;
+    color: var(--t-color-text-dim);
     font-size: 11px;
 }
 
@@ -594,7 +594,7 @@
     border: 1px solid #393939;
     border-radius: 6px;
     background: #232323;
-    color: #bbb;
+    color: var(--t-color-text-label);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -623,7 +623,7 @@
 }
 
 .t-toolbox-action.inactive {
-    color: #777;
+    color: var(--t-color-text-dim);
 }
 
 .t-toolbox-action-wide {
@@ -705,7 +705,7 @@
 
 .t-filter-item.active {
     background: var(--t-color-brand);
-    color: #000;
+    color: var(--t-color-text-on-accent);
     font-weight: bold;
 }
 
@@ -730,7 +730,7 @@
     border: 0;
     border-radius: 6px;
     background: transparent;
-    color: #6d6d6d;
+    color: var(--t-color-text-faint);
     font-size: 0.85em;
     cursor: pointer;
     transition: color 0.15s, background-color 0.15s;
@@ -1306,7 +1306,7 @@
     background: linear-gradient(90deg, var(--t-color-notify), #00b894);
     border: none;
     border-radius: 15px;
-    color: #000;
+    color: var(--t-color-text-on-accent);
     font-size: 0.85em;
     font-weight: bold;
     cursor: pointer;
@@ -1545,7 +1545,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #555;
+    color: var(--t-color-text-disabled);
 }
 
 .t-output-placeholder i {

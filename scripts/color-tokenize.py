@@ -299,6 +299,102 @@ def cmd_report():
             ' '.join('%s×%d' % x for x in hits[k].most_common(3))))
 
 
+
+# ══════════════════════════════════════════════════════════════════════
+# Phase 6b：把「同一角色里彼此接近的颜色」吸附到刻度上
+#
+# 与上面的等值替换不同，这一步**会改色**。做法是给每个角色定一条刻度，
+# 把字面量吸附到最近的一档，并算出感知色差 ΔE(CIE76)：
+#   ΔE<1 肉眼不可辨 / 1-2 极难辨 / 2-4 细看可辨 / 4-8 明显 / >8 显著
+# 只有 ΔE <= SNAP_MAX_DE 才替换，超出的一律报出、人工处理。
+# ══════════════════════════════════════════════════════════════════════
+SNAP_MAX_DE = 8.0
+
+# 中性灰文字刻度（10 档；--soft/-dim/-disabled 是 Phase 6b 补的）
+TEXT_NEUTRAL_SCALE = [
+    ('--t-color-text-strong', (255, 255, 255)),
+    ('--t-color-text', (238, 238, 238)),
+    ('--t-color-text-soft', (221, 221, 221)),
+    ('--t-color-text-label', (204, 204, 204)),
+    ('--t-color-text-secondary', (170, 170, 170)),
+    ('--t-color-text-muted', (136, 136, 136)),
+    ('--t-color-text-dim', (119, 119, 119)),
+    ('--t-color-text-faint', (102, 102, 102)),
+    ('--t-color-text-disabled', (85, 85, 85)),
+    # 近黑 = 浅底 / 亮色徽章上的文字，是独立一档
+    ('--t-color-text-on-accent', (18, 18, 18)),
+]
+
+
+def _lin(c):
+    c /= 255.0
+    return c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4
+
+
+def _lab(rgb):
+    r, g, b = (_lin(x) for x in rgb[:3])
+    x, y, z = (r * .4124 + g * .3576 + b * .1805, r * .2126 + g * .7152 + b * .0722,
+               r * .0193 + g * .1192 + b * .9505)
+
+    def f(t):
+        return t ** (1 / 3) if t > .008856 else 7.787 * t + 16 / 116
+    fx, fy, fz = f(x / .95047), f(y), f(z / 1.08883)
+    return (116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz))
+
+
+def delta_e(a, b):
+    import math
+    return math.sqrt(sum((p - q) ** 2 for p, q in zip(_lab(a), _lab(b))))
+
+
+def is_neutral(rgb, tol=18):
+    return max(rgb[:3]) - min(rgb[:3]) <= tol
+
+
+def snap_text(path, apply_it):
+    """把 color: 上的不透明中性灰吸附到 TEXT_NEUTRAL_SCALE。返回 (变更列表, 超阈值列表)"""
+    raw = open(path, encoding='utf-8', newline='').read()
+    crlf, lf = eol_of(raw)
+    if crlf and lf:
+        return None, None, '行尾混用，跳过'
+    spans = [(m.start(), m.end()) for m in COMMENT_RE.finditer(raw)]
+
+    def in_comment(i):
+        return any(a <= i < b for a, b in spans)
+
+    out, last, changes, over = [], 0, [], []
+    for dm in DECL_RE.finditer(raw):
+        if dm.group(2).lower() != 'color' or in_comment(dm.start(2)):
+            continue
+        vs, ve = dm.start(3), dm.end(3)
+        seg, pieces, pos = raw[vs:ve], [], 0
+        for cm in COLOR_RE.finditer(seg):
+            k = canon(cm.group(0))
+            if not k or k[3] < 0.99 or not is_neutral(k):
+                continue
+            best, bd = None, 1e9
+            for name, rgb in TEXT_NEUTRAL_SCALE:
+                d = delta_e(k, rgb + (1.0,))
+                if d < bd:
+                    best, bd = name, d
+            if bd > SNAP_MAX_DE:
+                over.append((path, cm.group(0), best, bd))
+                continue
+            pieces.append(seg[pos:cm.start()])
+            pieces.append('var(%s)' % best)
+            pos = cm.end()
+            changes.append((path, cm.group(0), best, bd))
+        if pieces:
+            out.append(raw[last:vs])
+            out.append(''.join(pieces) + seg[pos:])
+            last = ve
+    out.append(raw[last:])
+    new = ''.join(out)
+    assert eol_of(new) == (crlf, lf), '%s 行尾变了' % path
+    if apply_it and changes:
+        open(path, 'w', encoding='utf-8', newline='').write(new)
+    return changes, over, None
+
 def main():
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument('files', nargs='*')
@@ -306,6 +402,8 @@ def main():
     ap.add_argument('--verify', action='store_true')
     ap.add_argument('--report', action='store_true')
     ap.add_argument('--normalize-eol', action='store_true')
+    ap.add_argument('--snap-text', action='store_true',
+                    help='把 color: 上的中性灰吸附到文字刻度（会改色，逐处报 ΔE）')
     ap.add_argument('-h', '--help', action='store_true')
     a = ap.parse_args()
     if a.help:
@@ -327,6 +425,36 @@ def main():
                     raw.replace('\r\n', '\n').replace('\n', nl))
                 print('%-42s 行尾归一化 CRLF=%d LF=%d -> 全 %s' % (
                     p, crlf, lf, 'CRLF' if nl == '\r\n' else 'LF'))
+        return
+
+    if a.snap_text:
+        from collections import Counter
+        allc, allo = [], []
+        for p in files:
+            c, o, err = snap_text(p, a.apply)
+            if err:
+                print('%-42s %s' % (p, err))
+                continue
+            allc += c
+            allo += o
+        band = Counter()
+        for _, _, _, d in allc:
+            band['ΔE<1' if d < 1 else 'ΔE1-2' if d < 2 else 'ΔE2-4' if d < 4 else 'ΔE4-8'] += 1
+        print('%s：吸附 %d 处，超阈值(ΔE>%.0f)未动 %d 处' % (
+            '已应用' if a.apply else 'DRY-RUN', len(allc), SNAP_MAX_DE, len(allo)))
+        print('色差分布：%s' % dict(band))
+        agg = Counter()
+        for _, v, t, d in allc:
+            agg[(v.lower(), t, round(d, 1))] += 1
+        print()
+        print('%-24s -> %-30s %6s %5s' % ('原值', 'token', 'ΔE', '处数'))
+        for (v, t, d), n in sorted(agg.items(), key=lambda x: -x[1]):
+            print('%-24s -> %-30s %6.1f %5d' % (v, t, d, n))
+        if allo:
+            print()
+            print('超阈值、需人工处理：')
+            for p, v, t, d in allo:
+                print('  %-40s %-14s 最近档 %-28s ΔE %.1f' % (p, v, t, d))
         return
 
     if a.verify:

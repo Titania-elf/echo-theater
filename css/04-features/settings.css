@@ -275,7 +275,7 @@
 }
 
 .t-code-editor::placeholder {
-    color: #555;
+    color: var(--t-color-text-disabled);
 }
 
 /* CSS 选择器提示列表 */
@@ -707,7 +707,7 @@
 
 .t-header-action-grip {
     flex-shrink: 0;
-    color: #555;
+    color: var(--t-color-text-disabled);
     cursor: grab;
 }
 
@@ -846,14 +846,14 @@
    var(--t-color-text-faint) 且 margin-top:8px）不是一套，刻意不合并。 */
 .t-set-field-hint {
     font-size: 0.75em;
-    color: #555;
+    color: var(--t-color-text-disabled);
     margin-top: 5px;
 }
 
 /* 统计卡片的副标题（"当前拥有自定义剧本: N 个"）。 */
 .t-set-stat-sub {
     font-size: 0.85em;
-    color: #777;
+    color: var(--t-color-text-dim);
     margin-top: 5px;
 }
 
@@ -872,7 +872,7 @@
 .t-set-log-empty {
     text-align: center;
     margin-top: 100px;
-    color: #555;
+    color: var(--t-color-text-disabled);
 }
 
 /* ============================================================

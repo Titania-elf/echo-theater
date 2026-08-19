@@ -30,7 +30,7 @@
     background: #0d0d0d;
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
-    color: #e0e0e0;
+    color: var(--t-color-text-soft);
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 13px;
     line-height: 1.5;
