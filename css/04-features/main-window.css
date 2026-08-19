@@ -495,7 +495,7 @@
     inset: 0;
     z-index: 106;
     visibility: hidden;
-    background: rgba(0, 0, 0, .28);
+    background: var(--t-color-surface-recess-strong);
     opacity: 0;
     transition: opacity .2s, visibility .2s;
 }
@@ -1384,7 +1384,7 @@
     max-height: 82vh;
     display: flex;
     flex-direction: column;
-    background: rgba(30, 30, 35, 0.96);
+    background: var(--t-color-dialog-surface);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--t-color-border-subtle);

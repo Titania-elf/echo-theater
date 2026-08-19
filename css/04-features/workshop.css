@@ -452,7 +452,7 @@
 .t-ws-preview-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.72);
+    background: var(--t-color-dialog-scrim);
     backdrop-filter: blur(2px);
     z-index: 20002;
     display: flex;

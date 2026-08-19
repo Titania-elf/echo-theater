@@ -5221,7 +5221,7 @@ textarea.t-input {
     inset: 0;
     z-index: 106;
     visibility: hidden;
-    background: rgba(0, 0, 0, .28);
+    background: var(--t-color-surface-recess-strong);
     opacity: 0;
     transition: opacity .2s, visibility .2s;
 }
@@ -6110,7 +6110,7 @@ textarea.t-input {
     max-height: 82vh;
     display: flex;
     flex-direction: column;
-    background: rgba(30, 30, 35, 0.96);
+    background: var(--t-color-dialog-surface);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--t-color-border-subtle);
@@ -11429,7 +11429,7 @@ textarea.t-input {
 .t-ws-preview-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.72);
+    background: var(--t-color-dialog-scrim);
     backdrop-filter: blur(2px);
     z-index: 20002;
     display: flex;
@@ -11920,7 +11920,7 @@ textarea.t-input {
     z-index: 3;
     padding: 20px 22px 18px;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.82);
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(2, 2, 2, 0.75));
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.04), var(--t-color-dialog-scrim));
 }
 
 .t-fav-card-header {
@@ -12491,7 +12491,7 @@ textarea.t-input {
     background: linear-gradient(to bottom,
             rgba(231, 202, 143, 0.09) 0%,
             rgba(0, 0, 0, 0.48) 48%,
-            rgba(0, 0, 0, 0.9) 100%);
+            var(--t-color-dialog-scrim-strongest) 100%);
 }
 
 /* \u7F16\u8F91\u6A21\u5F0F\u4E0B\u5361\u7247\u60AC\u505C\u6548\u679C\u8C03\u6574 */
@@ -12547,7 +12547,7 @@ textarea.t-input {
 }
 
 .t-fav-card-chain .t-fav-card-overlay {
-    background: linear-gradient(to bottom, var(--t-color-brand-veil) 0%, rgba(0, 0, 0, 0.58) 50%, rgba(0, 0, 0, 0.92) 100%);
+    background: linear-gradient(to bottom, var(--t-color-brand-veil) 0%, var(--t-color-scrim) 50%, var(--t-color-dialog-scrim-strongest) 100%);
 }
 
 /* \u5BFC\u51FA\u56FE\u7247\u9009\u9879\u5F39\u5C42 */
@@ -12555,7 +12555,7 @@ textarea.t-input {
     position: absolute;
     inset: 0;
     z-index: 60;
-    background: rgba(0, 0, 0, 0.55);
+    background: var(--t-color-scrim);
     display: flex;
     justify-content: center;
     align-items: flex-end;
@@ -13480,7 +13480,7 @@ textarea.t-input {
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    background: rgba(30, 30, 35, 0.95);
+    background: var(--t-color-dialog-surface);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--t-color-border-subtle);
@@ -13622,7 +13622,7 @@ textarea.t-input {
     border-right: 1px solid var(--t-color-border-faint);
     display: flex;
     flex-direction: column;
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--t-color-surface-recess);
 }
 
 .t-list-header {
@@ -14367,7 +14367,7 @@ textarea.t-input {
     display: flex;
     gap: 5px;
     padding: 10px 20px;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--t-color-surface-recess);
     border-bottom: 1px solid var(--t-color-border-faint);
 }
 
@@ -14528,7 +14528,7 @@ textarea.t-input {
 /* ========== \u5411\u91CF\u7D22\u5F15\u7BA1\u7406\u9762\u677F\u6837\u5F0F ========== */
 .t-vector-status-card,
 .t-vector-actions-card {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--t-color-surface-recess);
     border: 1px solid var(--t-color-border-faint);
     border-radius: 10px;
     padding: 20px;
@@ -14658,7 +14658,7 @@ textarea.t-input {
 
 /* ========== \u81EA\u5B9A\u4E49\u63D0\u793A\u8BCD\u533A\u57DF\u6837\u5F0F ========== */
 .t-custom-prompt-section {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--t-color-surface-recess);
     border: 1px solid var(--t-color-border-faint);
     border-radius: 8px;
     margin: 0 20px 15px 20px;
@@ -14784,7 +14784,7 @@ textarea.t-input {
     display: flex;
     gap: 5px;
     padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--t-color-surface-recess);
     border-bottom: 1px solid var(--t-color-border-faint);
 }
 
@@ -15147,7 +15147,7 @@ textarea.t-input {
 }
 
 .t-original-content-box::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--t-color-surface-recess);
     border-radius: 3px;
 }
 
@@ -15164,7 +15164,7 @@ textarea.t-input {
 .t-save-mode-section {
     margin-top: 15px;
     padding: 15px;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--t-color-surface-recess);
     border: 1px solid var(--t-color-border-faint);
     border-radius: 8px;
 }

@@ -8,7 +8,7 @@
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    background: rgba(30, 30, 35, 0.95);
+    background: var(--t-color-dialog-surface);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--t-color-border-subtle);
@@ -150,7 +150,7 @@
     border-right: 1px solid var(--t-color-border-faint);
     display: flex;
     flex-direction: column;
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--t-color-surface-recess);
 }
 
 .t-list-header {
@@ -895,7 +895,7 @@
     display: flex;
     gap: 5px;
     padding: 10px 20px;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--t-color-surface-recess);
     border-bottom: 1px solid var(--t-color-border-faint);
 }
 
@@ -1056,7 +1056,7 @@
 /* ========== 向量索引管理面板样式 ========== */
 .t-vector-status-card,
 .t-vector-actions-card {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--t-color-surface-recess);
     border: 1px solid var(--t-color-border-faint);
     border-radius: 10px;
     padding: 20px;
@@ -1186,7 +1186,7 @@
 
 /* ========== 自定义提示词区域样式 ========== */
 .t-custom-prompt-section {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--t-color-surface-recess);
     border: 1px solid var(--t-color-border-faint);
     border-radius: 8px;
     margin: 0 20px 15px 20px;
@@ -1312,7 +1312,7 @@
     display: flex;
     gap: 5px;
     padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--t-color-surface-recess);
     border-bottom: 1px solid var(--t-color-border-faint);
 }
 
@@ -1675,7 +1675,7 @@
 }
 
 .t-original-content-box::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--t-color-surface-recess);
     border-radius: 3px;
 }
 
@@ -1692,7 +1692,7 @@
 .t-save-mode-section {
     margin-top: 15px;
     padding: 15px;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--t-color-surface-recess);
     border: 1px solid var(--t-color-border-faint);
     border-radius: 8px;
 }

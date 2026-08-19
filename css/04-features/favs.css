@@ -261,7 +261,7 @@
     z-index: 3;
     padding: 20px 22px 18px;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.82);
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(2, 2, 2, 0.75));
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.04), var(--t-color-dialog-scrim));
 }
 
 .t-fav-card-header {
@@ -832,7 +832,7 @@
     background: linear-gradient(to bottom,
             rgba(231, 202, 143, 0.09) 0%,
             rgba(0, 0, 0, 0.48) 48%,
-            rgba(0, 0, 0, 0.9) 100%);
+            var(--t-color-dialog-scrim-strongest) 100%);
 }
 
 /* 编辑模式下卡片悬停效果调整 */
@@ -888,7 +888,7 @@
 }
 
 .t-fav-card-chain .t-fav-card-overlay {
-    background: linear-gradient(to bottom, var(--t-color-brand-veil) 0%, rgba(0, 0, 0, 0.58) 50%, rgba(0, 0, 0, 0.92) 100%);
+    background: linear-gradient(to bottom, var(--t-color-brand-veil) 0%, var(--t-color-scrim) 50%, var(--t-color-dialog-scrim-strongest) 100%);
 }
 
 /* 导出图片选项弹层 */
@@ -896,7 +896,7 @@
     position: absolute;
     inset: 0;
     z-index: 60;
-    background: rgba(0, 0, 0, 0.55);
+    background: var(--t-color-scrim);
     display: flex;
     justify-content: center;
     align-items: flex-end;
