@@ -354,6 +354,63 @@
     --t-color-teal-border-hover: rgb(var(--t-c-teal-rgb) / .6);
     --t-color-teal-strong: rgb(var(--t-c-teal-rgb) / .75);
 
+    /* ---- 强调色相三元组（Phase 6b-12 起）────────────────────────────
+       ⚠ 这一族与上面的 teal / brand / accent 几族**写法不同**，是刻意的：
+       这里只声明「色相三元组」，alpha 留在 feature 里的 `rgb(var(--x-rgb) / .25)` 上。
+
+       为什么：实测 04-features 里有 106 个不同的强调色三元组、197 个
+       (色相, alpha) 组合。若沿用「每个 alpha 档起一个语义 token」的两层写法，
+       token 层要膨胀到约 300 条声明（#e7ca8f 一个色相就占 10 条）。而
+       **alpha 本来就不随主题变** —— 浅色主题要改的是色相，不是发光的不透明度，
+       所以把 alpha 编进 token 名对「能换主题」零贡献，纯属把 token 层撑成 3 倍。
+
+       为什么不放 primitives.css：这些是**深色主题专用的取值**（浅底上的蓝不能是
+       #74b9ff），而 primitives.css 自称「与主题无关的原始尺度」。
+       theme-light.css 覆盖同名 token 即可换主题。
+
+       ⚠ 消费方式只有 `rgb(var(--t-accent-x-rgb) / α)` 一种。直接写
+       `color: var(--t-accent-x-rgb)` 会产出非法声明并**静默失效**（浏览器丢弃该
+       声明、元素继承父级颜色，看起来"差不多对"）。审计 A25 是常驻护栏。
+
+       ⚠ 强调色**不做合并**。实测按 ΔE≤8 合并只需 56 个 token，但要付 75 处
+       肉眼明显的变色 —— 那是重新配色不是重构。只有 ΔE<2（不可感知）的同角色
+       重复才合并。分档实测见 scripts/color-tokenize.py 的 HUE_TOKENS 上方。
+
+       命名：全库有一个统一写法 `linear-gradient(135deg, <本色>, <同色相深版>)`
+       用于图标与按钮填充（剧场蓝 #4a9eff→#2d7fd3、设定提取紫 #a29bfe→#6c5ce7、
+       中止红 #ff6b6b→#ee5a5a、记忆靛 #667eea→#764ba2）。故用
+       `<色相>` / `<色相>-deep` 表达这层配对关系，浅色主题照搬关系即可。 */
+    --t-accent-azure-rgb: 74 158 255;
+    /* #4a9eff 15 处 / 6 文件 —— 主交互蓝：按钮填充、发光、渐变起点。
+       ⚠ 与 --t-c-blue-rgb(#90cdf4) 是**两个不同的蓝**，差 ΔE 37，勿合并。 */
+    --t-accent-azure-light-rgb: 116 185 255;
+    /* #74b9ff 14 处 / 4 文件 —— 上者的浅版，用于文字与描边（深底上可读）。
+       与 --t-accent-azure-rgb 差 ΔE 18.6，是两档而非漂移。 */
+    --t-accent-azure-pale-rgb: 106 176 255;
+    /* #6ab0ff 2 处 —— 运行队列按钮渐变的亮端（起点是 azure）。 */
+    --t-accent-azure-hover-rgb: 90 175 255;
+    /* #5aafff 1 处 —— 上述渐变 hover 态的起点。
+       ⚠ 与 -pale 只差 ΔE 2.8 但**不能并**：并了之后 hover 渐变的起点会等于
+       base 渐变的终点，交互反馈的方向感就乱了。 */
+    --t-accent-azure-hover-pale-rgb: 122 192 255;
+    /* #7ac0ff 1 处 —— 上述渐变 hover 态的亮端。 */
+    --t-accent-azure-mid-rgb: 66 153 225;
+    /* #4299e1 1 处 —— 设定审阅窗进度条渐变的起点。 */
+    --t-accent-azure-deep-rgb: 45 127 211;
+    /* #2d7fd3 1 处 —— 剧场图标渐变的暗端（起点是 azure）。 */
+    --t-accent-azure-dim-rgb: 47 95 138;
+    /* #2f5f8a 1 处 —— 调试窗工具钮激活态的描边（低明度，不是发光色）。 */
+    --t-accent-sky-rgb: 144 205 244;
+    /* #90cdf4 5 处 —— 与 --t-c-blue-rgb 同值。此处独立声明而非 var() 转发：
+       它们在浅色主题下会分叉（泛用交互色 vs 这几处渐变止点/光晕），
+       转发会把两者焊死。5 处分布：rewrite ×3、settings ×2。 */
+    --t-accent-indigo-rgb: 102 126 234;
+    /* #667eea 7 处 —— 记忆回溯窗的身份色（仅该窗使用）。 */
+    --t-accent-indigo-deep-rgb: 108 92 231;
+    /* #6c5ce7 1 处 —— 设定提取图标渐变的暗端（起点是 --t-c-violet-rgb）。 */
+    --t-accent-violet-rgb: 162 155 254;
+    /* #a29bfe 5 处 —— 与 --t-c-violet-rgb 同值，独立声明，理由同 -sky。 */
+
     /* ---- 反馈色 ----
        soft = 底色（≈.2），veil = 更淡的底色（≈.12），border = 描边（≈.45）。
        四个色族对称补齐，避免「有 danger-border 却没有 success-border」

@@ -188,18 +188,18 @@
 }
 
 #t-main-view.t-layout-legacy .t-run-queue {
-    background: linear-gradient(135deg, #4a9eff, #6ab0ff);
+    background: linear-gradient(135deg, rgb(var(--t-accent-azure-rgb)), rgb(var(--t-accent-azure-pale-rgb)));
     color: var(--t-color-text-strong);
     border-radius: 0 30px 30px 0;
 }
 
 #t-main-view.t-layout-legacy .t-run-queue:hover:not(:disabled) {
-    background: linear-gradient(135deg, #5aafff, #7ac0ff);
-    box-shadow: 0 0 15px rgba(74, 158, 255, 0.4);
+    background: linear-gradient(135deg, rgb(var(--t-accent-azure-hover-rgb)), rgb(var(--t-accent-azure-hover-pale-rgb)));
+    box-shadow: 0 0 15px rgb(var(--t-accent-azure-rgb) / .4);
 }
 
 #t-main-view.t-layout-legacy .t-run-queue.active {
-    box-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
+    box-shadow: 0 0 10px rgb(var(--t-accent-azure-rgb) / .5);
 }
 
 #t-main-view.t-layout-legacy .t-run-queue.inactive {

@@ -1244,7 +1244,7 @@
 
 .t-goto-live-btn {
     padding: 5px 12px;
-    background: linear-gradient(90deg, #4a9eff, #6ab0ff);
+    background: linear-gradient(90deg, rgb(var(--t-accent-azure-rgb)), rgb(var(--t-accent-azure-pale-rgb)));
     border: none;
     border-radius: 15px;
     color: var(--t-color-text-strong);
@@ -1256,7 +1256,7 @@
 
 .t-goto-live-btn:hover {
     filter: brightness(1.1);
-    box-shadow: 0 2px 10px rgba(74, 158, 255, 0.4);
+    box-shadow: 0 2px 10px rgb(var(--t-accent-azure-rgb) / .4);
 }
 
 .t-goto-live-btn:active {

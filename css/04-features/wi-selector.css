@@ -665,8 +665,8 @@
 }
 
 .t-wi-entry-badge--constant {
-    background: #4a9eff33;
-    color: #4a9eff;
+    background: rgb(var(--t-accent-azure-rgb) / .2);
+    color: rgb(var(--t-accent-azure-rgb));
 }
 
 .t-wi-entry-badge--disabled {

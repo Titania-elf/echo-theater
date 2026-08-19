@@ -228,15 +228,15 @@
 
 /* 剧场按钮 */
 .t-menu-icon-btn.main {
-    color: #74b9ff;
+    color: rgb(var(--t-accent-azure-light-rgb));
 }
 
 .t-menu-icon-btn.main:hover {
-    background: radial-gradient(circle at center, rgba(74, 158, 255, 0.25) 0%, rgba(74, 158, 255, 0.1) 70%);
-    border-color: rgba(74, 158, 255, 0.5);
+    background: radial-gradient(circle at center, rgb(var(--t-accent-azure-rgb) / .25) 0%, rgb(var(--t-accent-azure-rgb) / .1) 70%);
+    border-color: rgb(var(--t-accent-azure-rgb) / .5);
     box-shadow:
-        0 0 15px rgba(74, 158, 255, 0.4),
-        inset 0 0 10px rgba(74, 158, 255, 0.1);
+        0 0 15px rgb(var(--t-accent-azure-rgb) / .4),
+        inset 0 0 10px rgb(var(--t-accent-azure-rgb) / .1);
 }
 
 /* 设定提取按钮 */
@@ -245,11 +245,11 @@
 }
 
 .t-menu-icon-btn.lore:hover {
-    background: radial-gradient(circle at center, rgba(162, 155, 254, 0.25) 0%, rgba(162, 155, 254, 0.1) 70%);
-    border-color: rgba(162, 155, 254, 0.5);
+    background: radial-gradient(circle at center, rgb(var(--t-accent-violet-rgb) / .25) 0%, rgb(var(--t-accent-violet-rgb) / .1) 70%);
+    border-color: rgb(var(--t-accent-violet-rgb) / .5);
     box-shadow:
-        0 0 15px rgba(162, 155, 254, 0.4),
-        inset 0 0 10px rgba(162, 155, 254, 0.1);
+        0 0 15px rgb(var(--t-accent-violet-rgb) / .4),
+        inset 0 0 10px rgb(var(--t-accent-violet-rgb) / .1);
 }
 
 /* 故事大纲按钮 */
@@ -346,12 +346,12 @@
 }
 
 .t-menu-icon.main {
-    background: linear-gradient(135deg, #4a9eff, #2d7fd3);
-    border: 2px solid #74b9ff;
+    background: linear-gradient(135deg, rgb(var(--t-accent-azure-rgb)), rgb(var(--t-accent-azure-deep-rgb)));
+    border: 2px solid rgb(var(--t-accent-azure-light-rgb));
 }
 
 .t-menu-icon.lore {
-    background: linear-gradient(135deg, var(--t-color-decor), #6c5ce7);
+    background: linear-gradient(135deg, var(--t-color-decor), rgb(var(--t-accent-indigo-deep-rgb)));
     border: 2px solid var(--t-color-decor);
 }
 

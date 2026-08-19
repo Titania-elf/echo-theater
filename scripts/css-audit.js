@@ -47,7 +47,7 @@ const EXTERNAL_ANIMATIONS = new Set(['fa-spin', 'fa-beat', 'fa-fade', 'fa-flip',
 // 与 B2（滚动条泄漏）同类，是本项目最严重的一类缺陷。提升时 A8 为 0 违规，
 // 故零成本；此前正因为它只是报告级，input[list]::-webkit-calendar-picker-indicator
 // 无作用域地重写整个 ST 的 datalist 指示器一直没被拦下。
-const PHASE0_BLOCKING = new Set(['A8', 'A10', 'A11', 'A14', 'A15', 'A22', 'A23', 'A24']);
+const PHASE0_BLOCKING = new Set(['A8', 'A10', 'A11', 'A14', 'A15', 'A22', 'A23', 'A24', 'A25']);
 
 // ─────────────────────────────────────────────────────────────
 // 输入收集
@@ -418,6 +418,36 @@ check('A24', '—', '调色板预览色保持字面量（不被 token 化）', (
         }
     }
     return { violations, stats: { '带字面量颜色的选择器规则': total } };
+});
+
+// ── A25：三元组 token（*-rgb）只能写在 rgb()/rgba() 里面 ────────────
+// Phase 6b-12 起，强调色的**色相三元组**以 `--t-accent-x-rgb: 74 158 255` 形式声明，
+// alpha 留在消费点上：`rgb(var(--t-accent-x-rgb) / .25)`。
+// 这样做的理由见 css/00-tokens/theme-dark.css 里「强调色相三元组」一节
+// （197 个 (色相, alpha) 组合，两层写法要膨胀到约 300 条声明，而 alpha 不随主题变）。
+//
+// 代价是多了一种**会静默失效**的写错方式：`color: var(--t-accent-x-rgb)` 展开成
+// `color: 74 158 255`，那不是合法颜色，浏览器**丢弃整条声明**，元素继承父级颜色。
+// 结果往往"看起来差不多对"，既不报错也不易察觉，而 --verify 只比对能解析出的
+// 颜色位、对解析不出的两侧同为 None，所以自证也看不见。故列为阻断项。
+check('A25', '—', '三元组 token 只在 rgb()/rgba() 内消费', () => {
+    const violations = [];
+    let total = 0;
+    for (const f of styleSources) {
+        const css = stripComments(f.raw);
+        const lineAt = makeLineLookup(css);
+        for (const m of css.matchAll(/var\(\s*(--t-[\w-]*-rgb)\s*[,)]/g)) {
+            total++;
+            // 合法形态：紧邻的左侧是 `rgb(` 或 `rgba(`（允许其间有空白）
+            if (/rgba?\(\s*$/.test(css.slice(Math.max(0, m.index - 8), m.index))) continue;
+            violations.push({
+                loc: `${f.rel}:${lineAt(m.index)}`,
+                msg: `${m[1]} 是通道三元组，必须写成 rgb(var(${m[1]}) / α)；`
+                    + '直接当颜色用会让整条声明被浏览器丢弃并静默失效',
+            });
+        }
+    }
+    return { violations, stats: { '三元组 token 消费点': total } };
 });
 
 // ── A7：@keyframes 只能在 01-base/keyframes.css 且带 t- 前缀（R6）──

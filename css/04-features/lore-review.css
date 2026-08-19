@@ -1154,7 +1154,7 @@
 
 .t-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #4299e1, var(--t-color-accent));
+    background: linear-gradient(90deg, rgb(var(--t-accent-azure-mid-rgb)), var(--t-color-accent));
     border-radius: 4px;
     transition: width 0.3s ease;
 }

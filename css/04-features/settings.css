@@ -123,8 +123,8 @@
     height: 130%;
     border-radius: 50%;
     background:
-        radial-gradient(circle at 50% 0%, #74b9ff 0%, transparent 25%),
-        radial-gradient(circle at 50% 100%, #74b9ff 0%, transparent 25%);
+        radial-gradient(circle at 50% 0%, rgb(var(--t-accent-azure-light-rgb)) 0%, transparent 25%),
+        radial-gradient(circle at 50% 100%, rgb(var(--t-accent-azure-light-rgb)) 0%, transparent 25%);
     animation: t-arc-rotate 1.5s linear infinite reverse;
     opacity: 0.6;
 }
@@ -546,7 +546,7 @@
 
 .t-prompt-entry-card.is-drag-over {
     border-color: var(--t-color-accent);
-    box-shadow: 0 -3px 0 rgba(144, 205, 244, 0.75);
+    box-shadow: 0 -3px 0 rgb(var(--t-accent-sky-rgb) / .75);
 }
 
 .t-prompt-entry-header {
@@ -697,7 +697,7 @@
 
 .t-header-action-card.is-drag-over {
     border-color: var(--t-color-accent);
-    box-shadow: 0 -3px 0 rgba(144, 205, 244, 0.75);
+    box-shadow: 0 -3px 0 rgb(var(--t-accent-sky-rgb) / .75);
 }
 
 /* 已达上限时未选中的项：变暗提示选不了，但仍可拖动调序 */
@@ -794,7 +794,7 @@
    ⚠ 上方 .t-toolbar-item i 只设 font-size / width / text-align，不设 color，
    故这里 (0,1,0) 不会被它的 (0,1,1) 压掉。 */
 .t-toolbar-icon--theater {
-    color: #74b9ff;
+    color: rgb(var(--t-accent-azure-light-rgb));
 }
 
 .t-toolbar-icon--gear {

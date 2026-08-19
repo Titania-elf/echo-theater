@@ -92,7 +92,7 @@
 }
 
 #t-confirm-yes {
-    background: #4a9eff;
+    background: rgb(var(--t-accent-azure-rgb));
 }
 
 #t-confirm-no {

@@ -121,17 +121,28 @@ MAP = {
 
 
 def hex2rgb(h):
+    """返回 (r, g, b, alpha)。认不出的返回 None。
+
+    ⚠ 必须解析 4 位与 8 位 hex 的 **alpha 字节**。早期版本直接 `h = h[:6]` 把它
+    截掉，于是 `#4a9eff33`（20% 的淡蓝洗色）被读成不透明蓝 —— 一旦对它做 token 化
+    就会把淡洗色改成实心色块，而**自证抓不到**：HEAD 侧与工作区侧走的是同一个
+    坏解析，两边都得出 alpha=1.0，逐位比对完全一致。
+    这类「解析器共用的偏差」是自证的盲区，只能靠单独校验解析器本身来发现。
+    全库当时有 2 处（wi-selector.css 的 #4a9eff33 / #ff9f4333）。
+    """
     h = h.lstrip('#')
-    if len(h) == 3:
-        h = ''.join(c * 2 for c in h)
-    if len(h) == 4:
+    a = 1.0
+    if len(h) in (3, 4):
+        if len(h) == 4:
+            a = int(h[3] * 2, 16) / 255.0
         h = ''.join(c * 2 for c in h[:3])
-    if len(h) == 8:
+    elif len(h) == 8:
+        a = int(h[6:8], 16) / 255.0
         h = h[:6]
     if len(h) != 6:
         return None
     try:
-        return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+        return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4)) + (round(a, 3),)
     except ValueError:
         return None
 
@@ -142,8 +153,7 @@ def canon(v):
     # 去空格会变成 rgb(242424) 而解析失败（本项目的 token 就是空格写法）。
     v = v.strip().lower()
     if v.startswith('#'):
-        r = hex2rgb(v)
-        return r + (1.0,) if r else None
+        return hex2rgb(v)
     m = re.match(r'rgba?\(([^)]*)\)$', v)
     if not m:
         return None
@@ -213,6 +223,29 @@ PALETTE_RULE = re.compile(
 VAR_FALLBACK = re.compile(r'var\(\s*--[\w-]+\s*,([^()]*(?:\([^()]*\)[^()]*)*)\)')
 
 
+# 声明值里的「一个颜色」：token 引用或字面量。
+# ⚠ 第 ① 支必须排在第 ② 支之前。feature 层从 Phase 6b-12 起会出现
+#   `rgb(var(--t-accent-x-rgb) / .25)`：若先匹配到内层的 `var(--t-accent-x-rgb)`，
+#   它解析出的是三元组字符串 `74 158 255`（canon 认不出 → None），
+#   **alpha 会被整段丢掉**，两侧都得出 None 而"比对通过"。
+# ⚠ 这个模式**只能有一份**。它原先在 color_sequence() 与 bg_map() 里各写了一遍，
+#   于是修了前者、后者仍带着 bug —— --verify 说「1905 个颜色位零变化」的同一批改动，
+#   --check-state 却报出一处「毁掉了可见反馈」的假回归（两侧都解析成 None 而相等）。
+#   两个自证工具对同一份 CSS 给出矛盾结论，只可能是其中一个的解析器坏了。
+COLOR_OR_VAR = re.compile(r'(rgba?\(\s*var\(--t-[\w-]+\)\s*(?:/\s*[\d.]+\s*)?\))'
+                          r'|var\((--t-[\w-]+)(?:,[^()]*(?:\([^()]*\)[^()]*)*)?\)'
+                          r'|#[0-9a-fA-F]{3,8}\b|rgba?\([^()]*\)')
+
+
+def resolve_match(defs, cm):
+    """把 COLOR_OR_VAR 的一个匹配解析成 (r,g,b,a)；解析不出返回 None。"""
+    if cm.group(1):
+        return resolve(defs, cm.group(1))
+    if cm.group(2):
+        return resolve(defs, defs.get(cm.group(2), ''))
+    return canon(cm.group(0))
+
+
 def eol_of(raw):
     crlf = raw.count('\r\n')
     return crlf, raw.count('\n') - crlf
@@ -262,13 +295,8 @@ def color_sequence(text, defs):
     """[(属性名, (最终颜色序列))]，用于证明计算值不变。"""
     text = COMMENT_RE.sub('', text)
     seq = []
-    pat = re.compile(r'var\((--t-[\w-]+)(?:,[^()]*(?:\([^()]*\)[^()]*)*)?\)'
-                     r'|#[0-9a-fA-F]{3,8}\b|rgba?\([^()]*\)')
     for dm in DECL_RE.finditer(text):
-        colors = []
-        for cm in pat.finditer(dm.group(3)):
-            colors.append(resolve(defs, defs.get(cm.group(1), '')) if cm.group(1)
-                          else canon(cm.group(0)))
+        colors = [resolve_match(defs, cm) for cm in COLOR_OR_VAR.finditer(dm.group(3))]
         if colors:
             seq.append((dm.group(2).lower(), tuple(colors)))
     return seq
@@ -886,11 +914,7 @@ def bg_map(text, defs, want_role='surface'):
         for dm in DECL_RE.finditer(body):
             if role_of(dm.group(2)) != want_role:
                 continue
-            seq = []
-            for cm in re.finditer(r'var\((--t-[\w-]+)(?:,[^()]*)?\)'
-                                  r'|#[0-9a-fA-F]{3,8}\b|rgba?\([^()]*\)', dm.group(3)):
-                seq.append(resolve(defs, defs.get(cm.group(1), '')) if cm.group(1)
-                           else canon(cm.group(0)))
+            seq = [resolve_match(defs, cm) for cm in COLOR_OR_VAR.finditer(dm.group(3))]
             if seq:
                 colors = tuple(seq)
         if colors is None:
@@ -931,6 +955,103 @@ def seq_delta_e(a, b):
             return -1.0
         worst = max(worst, alpha_delta_e(x, y))
     return worst
+
+
+# ══════════════════════════════════════════════════════════════════════
+# Phase 6b-12 起：色相三元组 token 化（--tokenize-hue）
+#
+# 为什么换掉前面几批的「吸附」做法：强调色的人口**不是漂移**。实测 04-features
+# 里 106 个不同的强调色三元组，把它们按 ΔE≤8 合并只需 56 个 token，
+# 但要付 **75 处肉眼明显（ΔE 4–8）的变色** —— 那是重新配色，不是重构。
+# 分档实测：
+#     阈值 ΔE≤0 → 99 个 token，0 处改色
+#          ΔE≤4 → 85 个 token，23 处改色（全在 ΔE 2–4，需凑近才看得出）
+#          ΔE≤8 → 56 个 token，101 处改色，其中 75 处明显
+# 从 ≤4 走到 ≤8 只省 29 个 token 却付 75 处明显变色，明显不划算。
+# 故强调色**按原值 token 化，不合并**（ΔE<2 的同角色重复才合并，那是不可感知的）。
+#
+# 为什么 token 只存三元组、不给每个 alpha 档起名（与 teal/brand 那几族不同）：
+# 实测有 197 个 (色相, alpha) 组合，两层模式要写约 300 条声明；而 **alpha 本来就不
+# 随主题变**（浅色主题改的是色相，不是发光的不透明度），把 alpha 编进 token 名
+# 对「能换主题」零贡献，只是把 token 层撑成 3 倍。#e7ca8f 一个色相就有 10 个 alpha。
+#
+# ⚠ 这是 feature 层第一次出现 `*-rgb` 三元组 token。它**只能**出现在 rgb()/rgba()
+#   里面；直接写 `color: var(--t-accent-azure-rgb)` 会产出非法声明并**静默失效**
+#   （浏览器丢弃该声明，元素继承父级颜色，看起来"差不多对"）。审计 A25 挡这条。
+#
+# ⚠ 三元组的值声明在 theme-dark.css 而非 primitives.css：它们是深色主题专用的
+#   取值（浅底上的蓝不能是 #74b9ff），而 primitives.css 自称「与主题无关」。
+#   theme-light.css 覆盖同名 token 即可换主题。
+#
+# 键是 (r,g,b)，值是 token 名。alpha 一律保留原值。
+HUE_TOKENS = {
+    # ── 蓝 / 靛 / 紫（Phase 6b-12，54 处）──
+    # 全库有一个统一写法：`linear-gradient(135deg, <本色>, <同色相的深版>)`，
+    # 用于图标与按钮填充。故命名用 <色相> / <色相>-deep 表达这层配对关系，
+    # 浅色主题照着把「配对关系」搬过去即可。
+    (74, 158, 255): '--t-accent-azure-rgb',            # #4a9eff 15 处 6 文件：主交互蓝
+    (116, 185, 255): '--t-accent-azure-light-rgb',     # #74b9ff 14 处：文字/描边用的浅版
+    (102, 126, 234): '--t-accent-indigo-rgb',          # #667eea  7 处：记忆回溯窗身份色
+    (162, 155, 254): '--t-accent-violet-rgb',          # #a29bfe  5 处 = --t-c-violet-rgb
+    (144, 205, 244): '--t-accent-sky-rgb',             # #90cdf4  5 处 = --t-c-blue-rgb
+    (106, 176, 255): '--t-accent-azure-pale-rgb',      # #6ab0ff  2 处：运行队列渐变亮端
+    (90, 175, 255): '--t-accent-azure-hover-rgb',      # #5aafff  1 处：该渐变 hover 起点
+    (122, 192, 255): '--t-accent-azure-hover-pale-rgb',  # #7ac0ff 1 处：该渐变 hover 亮端
+    (45, 127, 211): '--t-accent-azure-deep-rgb',       # #2d7fd3  1 处：剧场图标渐变暗端
+    (47, 95, 138): '--t-accent-azure-dim-rgb',         # #2f5f8a  1 处：调试窗激活态描边
+    (66, 153, 225): '--t-accent-azure-mid-rgb',        # #4299e1  1 处：进度条渐变起点
+    (108, 92, 231): '--t-accent-indigo-deep-rgb',      # #6c5ce7  1 处：设定提取图标渐变暗端
+}
+
+
+def fmt_a(a):
+    """alpha 按 CSS 习惯写法输出：1 省略、0.25 写 .25。"""
+    s = ('%g' % round(a, 4))
+    return s[1:] if s.startswith('0.') else s
+
+
+def tokenize_hue(path, apply_it):
+    """把 HUE_TOKENS 里的三元组改写成 rgb(var(--token) / α)。零变色。
+
+    返回 (变更列表, [], 错误)。签名与 _snap 对齐，好共用 main() 的汇总代码。
+    """
+    raw = open(path, encoding='utf-8', newline='').read()
+    crlf, lf = eol_of(raw)
+    if crlf and lf:
+        return None, None, '行尾混用，跳过'
+    spans = [(m.start(), m.end()) for m in COMMENT_RE.finditer(raw)]
+    # 与 _snap 同两条护栏：调色板预览球（审计 A24）与 var() 回退值（B5）。
+    skip = [(m.start(), m.end()) for m in PALETTE_RULE.finditer(raw)]
+    skip += [(m.start(1), m.end(1)) for m in VAR_FALLBACK.finditer(raw)]
+    out, last, changes = [], 0, []
+    for dm in DECL_RE.finditer(raw):
+        if any(a <= dm.start(2) < b for a, b in spans):
+            continue
+        vs, ve = dm.start(3), dm.end(3)
+        seg, pieces, pos = raw[vs:ve], [], 0
+        for cm in COLOR_RE.finditer(seg):
+            k = canon(cm.group(0))
+            if not k or k[:3] not in HUE_TOKENS:
+                continue
+            if any(a <= vs + cm.start() < b for a, b in skip):
+                continue
+            tok = HUE_TOKENS[k[:3]]
+            rep = ('rgb(var(%s))' % tok if k[3] >= 0.999
+                   else 'rgb(var(%s) / %s)' % (tok, fmt_a(k[3])))
+            pieces.append(seg[pos:cm.start()])
+            pieces.append(rep)
+            pos = cm.end()
+            changes.append((path, cm.group(0), tok, 0.0))
+        if pieces:
+            out.append(raw[last:vs])
+            out.append(''.join(pieces) + seg[pos:])
+            last = ve
+    out.append(raw[last:])
+    new = ''.join(out)
+    assert eol_of(new) == (crlf, lf), '%s 行尾变了' % path
+    if apply_it and changes:
+        open(path, 'w', encoding='utf-8', newline='').write(new)
+    return changes, [], None
 
 
 def cmd_check_state(files):
@@ -1000,6 +1121,8 @@ def main():
                     help='中性暗色：描边与底色各用自己的 token 族')
     ap.add_argument('--snap-alpha', action='store_true',
                     help='把色族半透明色的 alpha 吸附到该族阶梯（会改色；之后必跑 --check-state）')
+    ap.add_argument('--tokenize-hue', action='store_true',
+                    help='把 HUE_TOKENS 里的色相三元组改写成 rgb(var(--x-rgb) / α)，零变色')
     ap.add_argument('--check-state', action='store_true',
                     help='检测 base 与其 :hover/.active 是否被吸到同一档（交互反馈消失）')
     ap.add_argument('-h', '--help', action='store_true')
@@ -1030,13 +1153,14 @@ def main():
 
     if (a.snap_text or a.snap_surface or a.snap_alpha or a.snap_text_cool
             or a.snap_glass_dark or a.snap_neutral_dark
-            or a.snap_teal):
+            or a.snap_teal or a.tokenize_hue):
         from collections import Counter
         fn = (snap_text if a.snap_text else
               snap_text_cool if a.snap_text_cool else
               snap_glass_dark if a.snap_glass_dark else
               snap_teal if a.snap_teal else
               snap_neutral_dark if a.snap_neutral_dark else
+              tokenize_hue if a.tokenize_hue else
               snap_surface if a.snap_surface else snap_alpha)
         allc, allo = [], []
         for p in files:
