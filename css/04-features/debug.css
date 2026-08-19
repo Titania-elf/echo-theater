@@ -62,7 +62,7 @@
 
 #t-debug-view .t-prompt-source-tab.active {
     border-bottom-color: #74b9ff;
-    color: #d8e9f8;
+    color: var(--t-glass-text-bright);
 }
 
 #t-debug-view .t-prompt-source-tab i {
@@ -183,7 +183,7 @@
 }
 
 #t-debug-view .t-prompt-count strong {
-    color: #d8e9f8;
+    color: var(--t-glass-text-bright);
     font-size: 14px;
 }
 

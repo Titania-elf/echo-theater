@@ -49,7 +49,7 @@
 }
 
 .titania-update-status {
-    color: #aebdca;
+    color: var(--t-glass-text-secondary);
     font-size: 12px;
     line-height: 1.45;
 }
@@ -71,12 +71,12 @@
     gap: 8px 16px;
     flex-wrap: wrap;
     margin-top: 9px;
-    color: #8296a8;
+    color: var(--t-glass-text-muted);
     font-size: 11px;
 }
 
 .titania-update-summary strong {
-    color: #d9e6ef;
+    color: var(--t-glass-text);
     font-weight: 700;
 }
 
@@ -178,7 +178,7 @@
     width: 32px;
     height: 32px;
     padding: 0;
-    color: #91a0ad;
+    color: var(--t-glass-text-faint);
     background: transparent;
     border: 0;
     border-radius: 8px;
@@ -201,7 +201,7 @@
 
 .titania-update-entry {
     padding: 16px 0;
-    color: #bdc8d2;
+    color: var(--t-glass-text-soft);
     border-bottom: 1px solid var(--t-color-border-faint);
     font-size: 13px;
     line-height: 1.8;
@@ -323,7 +323,7 @@
     margin-bottom: 8px;
     font-size: 12px;
     font-weight: 700;
-    color: #d8e4f0;
+    color: var(--t-glass-text-bright);
 }
 
 .titania-switch-row {
@@ -345,14 +345,14 @@
 }
 
 .titania-switch-main {
-    color: #dce7f3;
+    color: var(--t-glass-text-bright);
     font-size: 13px;
     font-weight: 600;
     line-height: 1.35;
 }
 
 .titania-switch-text small {
-    color: #93a8bb;
+    color: var(--t-glass-text-faint);
     line-height: 1.4;
     font-size: 11px;
 }
@@ -366,7 +366,7 @@
 }
 
 .titania-backup-desc {
-    color: #93a8bb;
+    color: var(--t-glass-text-faint);
     line-height: 1.45;
     font-size: 11px;
     margin-bottom: 8px;
@@ -381,7 +381,7 @@
 .titania-mini-btn {
     border: 1px solid var(--t-color-border-glass);
     background: var(--t-color-surface-veil);
-    color: #d5e2ef;
+    color: var(--t-glass-text-bright);
     border-radius: 8px;
     min-height: 30px;
     padding: 0 10px;

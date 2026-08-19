@@ -362,6 +362,48 @@ def snap_text(path, apply_it):
                  lambda k: is_neutral(k))
 
 
+# ── 冷调文字刻度（5 档）─────────────────────────────────────────────────
+# ⚠ 为什么要单独一条：6b-1 的中性灰刻度只收 R≈G≈B 的灰（容差 18），冷调文字
+# （#d8e8f6 冷暖差 +30、#a9bfd3 +42）全部被排除在外，于是它们在「全局最近邻」里
+# 找不到家 —— 一度被误判成「无合并结构」。实测拿**对的词汇表**（--t-glass-text* 这族）
+# 去比，story-outline 的 32 个冷调文字取值里有 30 个落在 ΔE<=8 内。
+# 教训：**「没有合并结构」这个结论，只在候选词汇表正确时才成立。**
+#
+# --soft 与 --tertiary 是本批新增，填两处实测出的空档：
+#   (205,220,235) 一带 5 处，到 text(226,232,240) 差 ΔE 10、到 secondary 差 13
+#   (150,167,182) 一带 12 处，到 secondary 差 ΔE 7、到 muted 差 9
+TEXT_COOL_SCALE = [
+    ('--t-glass-text-bright', (215, 231, 245)),     # 新增，最亮（人口重心，15 处）
+    ('--t-glass-text', (226, 232, 240)),            # cool-12，已存在，正文
+    ('--t-glass-text-soft', (203, 213, 224)),       # cool-11，新增，次要正文
+    ('--t-glass-text-secondary', (169, 191, 209)),  # cool-10，已存在，说明文字
+    ('--t-glass-text-tertiary', (160, 174, 192)),   # cool-9，新增，更弱
+    ('--t-glass-text-faint', (142, 162, 180)),      # 新增，填 cool-8/9 之间的空档
+    ('--t-glass-text-muted', (120, 150, 170)),      # cool-8，已存在，最弱
+]
+# 档数是实测挑的：5 档时有 50 处落在「明显」(ΔE4-8)；补 (215,231,245) 降到 30；
+# 再补 (142,162,180) 降到 12；第 8 档只再少 1 处，不值得。
+# 冷调判定：蓝通道明显高于红通道，且亮度在文字区间内。
+# 阈值 12 的下界要高于中性刻度的容差（18 是按 max-min 算的，这里按 b-r 算），
+# 两条刻度的收集集合刻意不重叠 —— 重叠会让同一处被两条刻度抢。
+COOL_TEXT_MIN_BR = 12
+
+
+def is_cool_text(k):
+    r, g, b = k[:3]
+    # ⚠ 必须有饱和度上限：只用 b-r>=12 会把青绿 #81ecec(b-r=107) 与浅红 #ff9d9d
+    # 一类**强调色**也收进来，它们到冷灰刻度最远差 ΔE 72，纯属误收。
+    # 冷灰文字的 max-min 实测都在 45 以内（#a9bfd3 是 40）。
+    return (b - r >= COOL_TEXT_MIN_BR and max(k[:3]) - min(k[:3]) <= 55
+            and 90 <= max(k[:3]) <= 250)
+
+
+def snap_text_cool(path, apply_it):
+    """把 color: 上的**冷调**不透明文字色吸附到 TEXT_COOL_SCALE。"""
+    return _snap(path, apply_it, TEXT_COOL_SCALE, lambda p: p.lower() == 'color',
+                 is_cool_text)
+
+
 # ── 表面色刻度（不透明中性灰，9 档，由深到浅）──────────────────────────
 # ⚠ 与文字刻度有两点本质不同，见交接文档 §6b：
 #   1) 表面是**嵌套**的：父子元素差一档就是视觉层级本身。两个不同取值吸到同一档，
@@ -820,6 +862,8 @@ def main():
                     help='把 color: 上的中性灰吸附到文字刻度（会改色，逐处报 ΔE）')
     ap.add_argument('--snap-surface', action='store_true',
                     help='把 background 上的纯灰吸附到表面刻度（会改色；之后必跑 --check-state）')
+    ap.add_argument('--snap-text-cool', action='store_true',
+                    help='把 color: 上的冷调文字色吸附到冷调刻度（会改色，逐处报 ΔE）')
     ap.add_argument('--snap-alpha', action='store_true',
                     help='把色族半透明色的 alpha 吸附到该族阶梯（会改色；之后必跑 --check-state）')
     ap.add_argument('--check-state', action='store_true',
@@ -850,9 +894,10 @@ def main():
                     p, crlf, lf, 'CRLF' if nl == '\r\n' else 'LF'))
         return
 
-    if a.snap_text or a.snap_surface or a.snap_alpha:
+    if a.snap_text or a.snap_surface or a.snap_alpha or a.snap_text_cool:
         from collections import Counter
         fn = (snap_text if a.snap_text else
+              snap_text_cool if a.snap_text_cool else
               snap_surface if a.snap_surface else snap_alpha)
         allc, allo = [], []
         for p in files:

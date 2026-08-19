@@ -206,7 +206,7 @@
 .t-conn-hint {
     margin-top: 8px;
     font-size: 0.8em;
-    color: #8da5b8;
+    color: var(--t-glass-text-faint);
 }
 
 .t-prof-header {

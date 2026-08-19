@@ -1443,7 +1443,7 @@
 .t-chat-inject-visible small {
     display: block;
     margin-top: 3px;
-    color: #8f9bb0;
+    color: var(--t-glass-text-faint);
     line-height: 1.5;
 }
 
@@ -1491,7 +1491,7 @@
 }
 
 .t-chat-inject-item-preview {
-    color: #a8b3c4;
+    color: var(--t-glass-text-tertiary);
     line-height: 1.55;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1502,7 +1502,7 @@
 .t-chat-inject-empty {
     text-align: center;
     padding: 32px 20px;
-    color: #8f9bb0;
+    color: var(--t-glass-text-faint);
 }
 
 .t-chat-inject-empty > i {

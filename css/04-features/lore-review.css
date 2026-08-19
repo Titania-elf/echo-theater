@@ -733,7 +733,7 @@
 }
 
 #t-lore-settings-dialog .t-info-label {
-    color: #8da5b8;
+    color: var(--t-glass-text-faint);
 }
 
 #t-lore-settings-dialog .t-lore-settings-footer.t-dialog-footer {
@@ -1878,5 +1878,5 @@
 /* Embedding 连接测试的结果文字。原为 loreReviewWindow.js:285 的内联 style。 */
 #t-lore-embed-test-result {
     font-size: 0.82em;
-    color: #8da5b8;
+    color: var(--t-glass-text-faint);
 }

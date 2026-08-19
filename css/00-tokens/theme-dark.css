@@ -157,10 +157,27 @@
     /* 折叠卡片头 / 列表项 hover，替换 rgba(28,34,44,.7) 与 rgba(18,29,43,.72) */
     --t-glass-row-hover: rgb(var(--t-c-cool-5-rgb) / .7);
     /* 折叠卡片头 hover，替换 rgba(34,42,54,.7) */
+    /* 冷玻璃表面的文字刻度（7 档，Phase 6b-8 补齐 4 档）。
+       ⚠ 档数是**实测挑的**，不是拍的：04-features 里冷调文字散在 **85 个取值 / 125 处**上，
+       原先只有 12/10/8 三档，此时有 50 处落在「明显」(ΔE 4-8)；
+       补 (215,231,245) 降到 30，再补 (142,162,180) 降到 12，第 8 档只再少 1 处 —— 停在 7 档。
+       ⚠ (215,231,245) 与 (142,162,180) 不在 --t-c-cool-* 阶上，故写字面量；
+       与 --t-glass-tab-text-hover 的既有做法一致（那一档也是这个理由）。
+       ⚠ -soft / -tertiary 取自已有原语阶（cool-11 / cool-9），与
+       --t-color-dialog-label / --t-color-dialog-close 同值但角色不同
+       （那两个专指弹窗标签与关闭钮），浅色主题下会分叉，故未合并。 */
+    --t-glass-text-bright: rgb(215 231 245);
+    /* 最亮的一档，也是人口重心（15 处的 #d8e8f6 / #d3e9f9 / #d8e9f8 一族） */
     --t-glass-text: rgb(var(--t-c-cool-12-rgb));
     /* 冷玻璃表面的正文，替换 #d7e7f5 / #dff0ff / #d8f5e4 / #ccefdc */
+    --t-glass-text-soft: rgb(var(--t-c-cool-11-rgb));
+    /* 冷玻璃表面的次要正文，替换 #c6d0db / #c8d7e6 / #bfd1e2 / #c6d3df 一族 */
     --t-glass-text-secondary: rgb(var(--t-c-cool-10-rgb));
     /* 冷玻璃表面的次要文字，替换 #a9bfd1 一族 */
+    --t-glass-text-tertiary: rgb(var(--t-c-cool-9-rgb));
+    /* 冷玻璃表面的更弱文字，替换 #9eb4c8 / #a8b3c4 / #99aabb 一族 */
+    --t-glass-text-faint: rgb(142 162 180);
+    /* 填 cool-8 与 cool-9 之间的空档，替换 #8ea0b3 / #8da5b8 / #8ea8bc / #90a9bc 一族 */
     --t-glass-text-muted: rgb(var(--t-c-cool-8-rgb));
     /* 冷玻璃表面的弱提示，替换 #7f96aa 一族 */
 

@@ -267,7 +267,7 @@
 
 /* 设置按钮 */
 .t-menu-icon-btn.settings {
-    color: #b0bec5;
+    color: var(--t-glass-text-secondary);
 }
 
 .t-menu-icon-btn.settings:hover {
