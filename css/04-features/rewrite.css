@@ -38,7 +38,7 @@
 
 #t-rewrite-overlay .t-window-close:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(144, 205, 244, 0.45); }
 
-#t-rewrite-overlay .t-rewrite-body { flex: 1; overflow: hidden; display: grid; grid-template-columns: minmax(340px, 0.92fr) minmax(440px, 1.08fr); gap: 16px; padding: 16px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), var(--t-glass-body); }
+#t-rewrite-overlay .t-rewrite-body { flex: 1; overflow: hidden; display: grid; grid-template-columns: minmax(340px, 0.92fr) minmax(440px, 1.08fr); gap: 16px; padding: 16px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, var(--t-color-brand-veil) 0%, rgba(191, 161, 95, 0) 32%), var(--t-glass-body); }
 
 #t-rewrite-overlay .t-rewrite-left, #t-rewrite-overlay .t-rewrite-right { min-height: 0; display: flex; flex-direction: column; gap: 12px; }
 
@@ -50,7 +50,7 @@
 
 #t-rewrite-overlay #t-rewrite-api-url:focus, #t-rewrite-overlay #t-rewrite-api-key:focus, #t-rewrite-overlay #t-rewrite-model:focus { border-color: var(--t-color-field-glass-focus-border); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
 
-#t-rewrite-overlay #t-rewrite-trigger { height: 36px; min-height: 36px; line-height: 1; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: #dbe8f4; font-weight: 600; transition: all 0.18s ease; white-space: nowrap; letter-spacing: 0.1px; min-width: 164px; padding: 0 16px; background: linear-gradient(135deg, rgba(144, 205, 244, 0.18), rgba(191, 161, 95, 0.16)); border-color: rgba(144, 205, 244, 0.42); justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
+#t-rewrite-overlay #t-rewrite-trigger { height: 36px; min-height: 36px; line-height: 1; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: #dbe8f4; font-weight: 600; transition: all 0.18s ease; white-space: nowrap; letter-spacing: 0.1px; min-width: 164px; padding: 0 16px; background: linear-gradient(135deg, rgba(144, 205, 244, 0.18), var(--t-color-brand-soft)); border-color: rgba(144, 205, 244, 0.42); justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
 
 #t-rewrite-overlay #t-rewrite-trigger:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(144, 205, 244, 0.44); }
 
@@ -140,7 +140,7 @@
 
 #t-rewrite-live-overlay .t-rewrite-live-window { width: min(980px, 96vw); max-width: 96vw; max-height: 92vh; height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.96); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
 
-#t-rewrite-live-overlay .t-rewrite-live-body { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), var(--t-glass-body); }
+#t-rewrite-live-overlay .t-rewrite-live-body { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, var(--t-color-brand-veil) 0%, rgba(191, 161, 95, 0) 32%), var(--t-glass-body); }
 
 #t-rewrite-live-overlay .t-rewrite-live-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 

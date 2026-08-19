@@ -255,13 +255,40 @@
     /* hover 时的描边，替换 .55/.6/.65 三档 */
     --t-color-focus-ring: rgb(var(--t-c-blue-rgb) / .4);
 
-    /* ---- 品牌（金）—— 与 accent 显式分离，解决 S3 ---- */
+    /* ---- 品牌（金）—— 与 accent 显式分离，解决 S3 ----
+       Phase 6b-3 把 04-features 里 61 处写死的 rgba(191,161,95,*) 吸附到下面这条
+       7 档 alpha 阶梯上。原先这 61 处散在 **24 个不同 alpha**（.05 到 .75），
+       是历史漂移不是设计 —— 同一个"金色淡底"在不同文件里写成 .08/.10/.12/.13/.15/.16。
+
+         .08  brand-veil            最淡的底色
+         .14  brand-soft            已存在，值不动
+         .20  brand-soft-strong     实底色
+         .30  brand-border-subtle   淡描边
+         .45  brand-border-soft     中描边
+         .55  brand-border          已存在，值不动
+         .75  brand-strong          重描边 / 强调底
+
+       ⚠ 为什么 .45 与 .55 同时留着（看起来偏密）：`--t-color-brand-border` 已有消费者，
+       在吸附批次里改一个**已存在 token 的值**会连带改掉那些消费者的外观，
+       与本批的「把字面量吸到刻度」混成两种变化，无法归因（本项目没有视觉基线）。
+       所以只加档、不挪档。将来要并档是独立一步。
+
+       ⚠ alpha = 0 的两处（渐变淡出止点）刻意不吸附：那里 RGB 无意义，
+       吸到 .08 会让淡出变成不淡出。工具用 MIN_MEANINGFUL_ALPHA 挡掉。
+
+       ⚠ favs.css 的浅金 #e7ca8f（12 处）与 #d4a574（2 处）不在本族内，
+       它们与 #bfa15f 差 ΔE 16 / 27，合并是真实改色，留待单独评估。 */
     --t-color-brand: rgb(var(--t-c-gold-rgb));
     /* #bfa15f */
+    --t-color-brand-veil: rgb(var(--t-c-gold-rgb) / .08);
     --t-color-brand-soft: rgb(var(--t-c-gold-rgb) / .14);
     /* = 现 .t-btn-soft 的值 */
+    --t-color-brand-soft-strong: rgb(var(--t-c-gold-rgb) / .2);
+    --t-color-brand-border-subtle: rgb(var(--t-c-gold-rgb) / .3);
+    --t-color-brand-border-soft: rgb(var(--t-c-gold-rgb) / .45);
     --t-color-brand-border: rgb(var(--t-c-gold-rgb) / .55);
     /* = 现 .t-btn-soft 的边框 */
+    --t-color-brand-strong: rgb(var(--t-c-gold-rgb) / .75);
 
     /* ---- 反馈色 ----
        soft = 底色（≈.2），veil = 更淡的底色（≈.12），border = 描边（≈.45）。

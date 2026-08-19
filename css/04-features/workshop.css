@@ -273,7 +273,7 @@
 }
 
 .t-ws-heat.is-hot {
-    background: rgba(191, 161, 95, 0.16);
+    background: var(--t-color-brand-soft);
     color: var(--t-theme);
 }
 
@@ -310,7 +310,7 @@
 }
 
 .t-ws-tag-cat {
-    background: rgba(191, 161, 95, 0.16);
+    background: var(--t-color-brand-soft);
     color: var(--t-theme);
 }
 .t-ws-tag-mature { background: #4a2530; color: #ffa8b0; }

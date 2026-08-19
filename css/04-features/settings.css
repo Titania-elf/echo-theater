@@ -161,7 +161,7 @@
 
 .t-anim-option.active {
     border-color: var(--t-color-brand);
-    background: rgba(191, 161, 95, 0.1);
+    background: var(--t-color-brand-veil);
 }
 
 .t-anim-option .t-anim-name {
@@ -194,7 +194,7 @@
 .t-upload-card:hover {
     border-color: var(--t-color-brand);
     color: var(--t-color-brand);
-    background-color: rgba(191, 161, 95, 0.05);
+    background-color: var(--t-color-brand-veil);
 }
 
 /* Profile 管理 */
@@ -536,7 +536,7 @@
 
 /* 用户自建条目：左侧金色描边，跟预设自带的条目区分开 */
 .t-prompt-entry-card.is-custom {
-    border-left: 2px solid rgba(191, 161, 95, 0.75);
+    border-left: 2px solid var(--t-color-brand-strong);
 }
 
 .t-prompt-entry-delete:hover {

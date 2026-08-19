@@ -265,8 +265,8 @@
 }
 
 #t-main-view.t-layout-legacy #t-btn-edit:hover {
-    background: rgba(191, 161, 95, 0.15);
-    border-color: rgba(191, 161, 95, 0.4);
+    background: var(--t-color-brand-soft);
+    border-color: var(--t-color-brand-border-soft);
 }
 
 #t-main-view.t-layout-legacy .t-btn-stop {

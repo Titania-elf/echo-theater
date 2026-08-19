@@ -262,12 +262,12 @@
 }
 
 .t-mode-btn.active {
-    background: rgba(191, 161, 95, 0.15);
+    background: var(--t-color-brand-soft);
     color: var(--t-color-brand);
 }
 
 .t-mode-btn.active:hover {
-    background: rgba(191, 161, 95, 0.2);
+    background: var(--t-color-brand-soft-strong);
 }
 
 /* Trigger Card */
@@ -376,8 +376,8 @@
 
 .t-filter-btn.active-filter {
     color: var(--t-color-brand);
-    border-color: rgba(191, 161, 95, 0.3);
-    background: rgba(191, 161, 95, 0.1);
+    border-color: var(--t-color-brand-border-subtle);
+    background: var(--t-color-brand-veil);
 }
 
 .t-dice-btn {
@@ -473,7 +473,7 @@
 }
 
 .t-shortcut-btn:hover {
-    border-color: rgba(191, 161, 95, .5);
+    border-color: var(--t-color-brand-border-soft);
     background: var(--t-color-surface-raised);
     color: var(--t-color-text-soft);
 }
@@ -737,7 +737,7 @@
 }
 
 .t-more-pin:hover:not(:disabled) {
-    background: rgba(191, 161, 95, 0.16);
+    background: var(--t-color-brand-soft);
     color: var(--t-color-brand);
 }
 
@@ -1113,7 +1113,7 @@
 
 .t-page-nav:hover:not(:disabled) {
     opacity: 1;
-    background: rgba(191, 161, 95, 0.3);
+    background: var(--t-color-brand-border-subtle);
     color: var(--t-color-brand);
 }
 
@@ -1466,7 +1466,7 @@
 }
 
 .t-chat-inject-item:hover {
-    background: rgba(191, 161, 95, 0.12);
+    background: var(--t-color-brand-soft);
     border-color: var(--t-theme, var(--t-color-brand));
     transform: translateX(2px);
 }

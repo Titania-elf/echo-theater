@@ -452,6 +452,116 @@ def _snap(path, apply_it, scale, want_prop, want_color):
 
 
 # ══════════════════════════════════════════════════════════════════════
+# Phase 6b-3 起：色族 alpha 阶
+#
+# ⚠ 这一段**不能用 Lab 最近邻**（前两段的做法）。实测品牌金 #bfa15f 一个颜色就
+# 出现在 24 个不同 alpha 上；在 Lab 空间做最近邻时，同 alpha 带内只有别的色族
+# 可选，会给出 ΔE 40-100 的荒谬结果（红→绿、金→蓝）。
+#
+# 正确做法两步：① 先按色相归族（与原语族色比 ΔE）② 再把 alpha 吸到该族的标准阶梯。
+#
+# ⚠ 色差也不能直接比 rgba：半透明色的观感取决于它合成到什么背景上。
+# Δalpha=0.05 在浅背景上几乎看不见、在深背景上是可见的。故 `alpha_delta_e()`
+# 把新旧两色**分别合成到插件最深与最浅的两种底色上**（#111 / #333），取较大的
+# 那个 ΔE 作为判据 —— 这样无论元素实际坐在哪种底上，可见变化都被这个上界罩住。
+# ══════════════════════════════════════════════════════════════════════
+# 合成用的两种代表背景：插件表面刻度的两端
+COMPOSITE_BACKDROPS = ((17, 17, 17), (51, 51, 51))
+# alpha 低于此值视为「透明」：那是渐变淡出止点，RGB 无意义，吸附会让淡出失效
+MIN_MEANINGFUL_ALPHA = 0.03
+
+
+def over(fg, backdrop):
+    """把 (r,g,b,a) 合成到不透明背景上，返回不透明 rgb。"""
+    a = fg[3]
+    return tuple(int(round(a * fg[i] + (1 - a) * backdrop[i])) for i in range(3))
+
+
+def alpha_delta_e(c1, c2):
+    """半透明色的感知差：分别合成到两种代表背景，取较大的 ΔE（可见变化的上界）。"""
+    return max(delta_e(over(c1, b), over(c2, b)) for b in COMPOSITE_BACKDROPS)
+
+
+# 色族锚点与各族的 alpha 阶梯。
+# ⚠ 阶梯里**已存在的 token 一律保留其原有 alpha，不在吸附批次里改它的值**——
+# 改一个已有 token 的值会连带改掉它现有消费者的外观，那属于另一种变化，
+# 混在同一批里就无法归因（本项目没有视觉基线）。所以 brand 的 .55 保留为一档，
+# 另在 .45 加一档，而不是把 .55 挪成 .45。
+ALPHA_FAMILIES = [
+    {
+        'name': 'brand 品牌金',
+        'anchor': (191, 161, 95),
+        'max_de': 1.0,          # 只收 #bfa15f 本身；近金变体单独评估，见交接文档 §6b-3
+        'ladder': [
+            (0.08, '--t-color-brand-veil'),
+            (0.14, '--t-color-brand-soft'),            # 已存在
+            (0.20, '--t-color-brand-soft-strong'),
+            (0.30, '--t-color-brand-border-subtle'),
+            (0.45, '--t-color-brand-border-soft'),
+            (0.55, '--t-color-brand-border'),          # 已存在
+            (0.75, '--t-color-brand-strong'),
+        ],
+    },
+]
+
+
+def snap_alpha(path, apply_it, families=None):
+    """把色族半透明色的 alpha 吸附到该族阶梯。shadow 角色刻意不处理（见 §6a）。"""
+    families = families or ALPHA_FAMILIES
+    raw = open(path, encoding='utf-8', newline='').read()
+    crlf, lf = eol_of(raw)
+    if crlf and lf:
+        return None, None, '行尾混用，跳过'
+    spans = [(m.start(), m.end()) for m in COMMENT_RE.finditer(raw)]
+    skip = [(m.start(), m.end()) for m in PALETTE_RULE.finditer(raw)]
+    skip += [(m.start(1), m.end(1)) for m in VAR_FALLBACK.finditer(raw)]
+
+    out, last, changes, over_list = [], 0, [], []
+    for dm in DECL_RE.finditer(raw):
+        # 只做 surface / border：shadow 的彩色光晕应转整条 --t-shadow-*（另一步）
+        if role_of(dm.group(2)) not in ('surface', 'border'):
+            continue
+        if any(a <= dm.start(2) < b for a, b in spans):
+            continue
+        vs, ve = dm.start(3), dm.end(3)
+        seg, pieces, pos = raw[vs:ve], [], 0
+        for cm in COLOR_RE.finditer(seg):
+            k = canon(cm.group(0))
+            if not k or not (MIN_MEANINGFUL_ALPHA <= k[3] < 0.99):
+                continue
+            if any(a <= vs + cm.start() < b for a, b in skip):
+                continue
+            fam = None
+            for f in families:
+                if delta_e(k[:3] + (1.0,), f['anchor'] + (1.0,)) <= f['max_de']:
+                    fam = f
+                    break
+            if fam is None:
+                continue
+            tok, ta = min(((t, a) for a, t in fam['ladder']),
+                          key=lambda x: abs(x[1] - k[3]))
+            d = alpha_delta_e(k, k[:3] + (ta,))
+            rec = (path, cm.group(0), tok, d, k[3], ta)
+            if d > SNAP_MAX_DE:
+                over_list.append(rec)
+                continue
+            pieces.append(seg[pos:cm.start()])
+            pieces.append('var(%s)' % tok)
+            pos = cm.end()
+            changes.append(rec)
+        if pieces:
+            out.append(raw[last:vs])
+            out.append(''.join(pieces) + seg[pos:])
+            last = ve
+    out.append(raw[last:])
+    new = ''.join(out)
+    assert eol_of(new) == (crlf, lf), '%s 行尾变了' % path
+    if apply_it and changes:
+        open(path, 'w', encoding='utf-8', newline='').write(new)
+    return changes, over_list, None
+
+
+# ══════════════════════════════════════════════════════════════════════
 # --check-state：状态对塌陷检测
 #
 # 吸附刻度的唯一真实危险是**把 base 与它的 :hover / .active 吸到同一档**——
@@ -468,8 +578,8 @@ STATE_TAIL = re.compile(
     r'|\[aria-[^\]]*\])+$')
 
 
-def bg_map(text, defs):
-    """{单个选择器: [(at-rule 上下文, 最终 background 颜色序列), ...]}，按出现顺序。
+def bg_map(text, defs, want_role='surface'):
+    """{单个选择器: [(at-rule 上下文, 该角色的最终颜色序列), ...]}，按出现顺序。
 
     ⚠ 上下文必须一起返回：@media 块里的 base 与全局的 :hover 是**同时生效**的
     （media 规则叠加在全局之上），所以配对是对的 —— 但塌陷只在那个视口下发生。
@@ -498,7 +608,7 @@ def bg_map(text, defs):
             continue
         colors = None
         for dm in DECL_RE.finditer(body):
-            if role_of(dm.group(2)) != 'surface':
+            if role_of(dm.group(2)) != want_role:
                 continue
             seq = []
             for cm in re.finditer(r'var\((--t-[\w-]+)(?:,[^()]*)?\)'
@@ -534,24 +644,28 @@ def state_pairs(m):
 def cmd_check_state(files):
     defs = token_defs()
     total = new = 0
-    for p in files:
-        r = subprocess.run(['git', 'show', 'HEAD:' + p], capture_output=True)
-        old = bg_map(r.stdout.decode('utf-8'), defs) if not r.returncode else {}
-        cur = bg_map(open(p, encoding='utf-8').read(), defs)
-        for b, s in state_pairs(cur):
-            if last_color(cur[b]) != last_color(cur[s]):
-                continue
-            total += 1
-            was_same = (b in old and s in old
-                        and last_color(old[b]) == last_color(old[s]))
-            if not was_same:
-                new += 1
-            print('  %s' % os.path.basename(p))
-            print('      base  %-46s %s' % (b, cur[b][-1][0] or '（全局）'))
-            print('      state %-46s %s' % (s, cur[s][-1][0] or '（全局）'))
-            print('      %s' % ('HEAD 里本来就同色，非本次引入'
-                                if was_same else '★ 本次新增塌陷'))
-    print('\n状态对同色共 %d 处，其中本次新增 %d 处' % (total, new))
+    # ⚠ 必须同时查底色与描边：6b-3 改的一半是描边，而「base 与 hover 的描边被吸到
+    # 同一档」跟底色塌陷是同一类 bug（交互反馈静默消失）。只查 background 会漏掉一半。
+    for role, label in (('surface', '底色'), ('border', '描边')):
+        for p in files:
+            r = subprocess.run(['git', 'show', 'HEAD:' + p], capture_output=True)
+            old = (bg_map(r.stdout.decode('utf-8'), defs, role)
+                   if not r.returncode else {})
+            cur = bg_map(open(p, encoding='utf-8').read(), defs, role)
+            for b, st in state_pairs(cur):
+                if last_color(cur[b]) != last_color(cur[st]):
+                    continue
+                total += 1
+                was_same = (b in old and st in old
+                            and last_color(old[b]) == last_color(old[st]))
+                if not was_same:
+                    new += 1
+                print('  %s  [%s]' % (os.path.basename(p), label))
+                print('      base  %-46s %s' % (b, cur[b][-1][0] or '（全局）'))
+                print('      state %-46s %s' % (st, cur[st][-1][0] or '（全局）'))
+                print('      %s' % ('HEAD 里本来就同色，非本次引入'
+                                    if was_same else '★ 本次新增塌陷'))
+    print('\n状态对同色共 %d 处（底色+描边），其中本次新增 %d 处' % (total, new))
     return new
 
 
@@ -566,6 +680,8 @@ def main():
                     help='把 color: 上的中性灰吸附到文字刻度（会改色，逐处报 ΔE）')
     ap.add_argument('--snap-surface', action='store_true',
                     help='把 background 上的纯灰吸附到表面刻度（会改色；之后必跑 --check-state）')
+    ap.add_argument('--snap-alpha', action='store_true',
+                    help='把色族半透明色的 alpha 吸附到该族阶梯（会改色；之后必跑 --check-state）')
     ap.add_argument('--check-state', action='store_true',
                     help='检测 base 与其 :hover/.active 是否被吸到同一档（交互反馈消失）')
     ap.add_argument('-h', '--help', action='store_true')
@@ -594,9 +710,10 @@ def main():
                     p, crlf, lf, 'CRLF' if nl == '\r\n' else 'LF'))
         return
 
-    if a.snap_text or a.snap_surface:
+    if a.snap_text or a.snap_surface or a.snap_alpha:
         from collections import Counter
-        fn = snap_text if a.snap_text else snap_surface
+        fn = (snap_text if a.snap_text else
+              snap_surface if a.snap_surface else snap_alpha)
         allc, allo = [], []
         for p in files:
             c, o, err = fn(p, a.apply)
@@ -606,23 +723,26 @@ def main():
             allc += c
             allo += o
         band = Counter()
-        for _, _, _, d in allc:
+        for rec in allc:
+            d = rec[3]
             band['ΔE<1' if d < 1 else 'ΔE1-2' if d < 2 else 'ΔE2-4' if d < 4 else 'ΔE4-8'] += 1
         print('%s：吸附 %d 处，超阈值(ΔE>%.0f)未动 %d 处' % (
             '已应用' if a.apply else 'DRY-RUN', len(allc), SNAP_MAX_DE, len(allo)))
-        print('色差分布：%s' % dict(band))
+        print('色差分布：%s%s' % (dict(band),
+                              '（半透明色差已合成到 #111/#333 两种底上取上界）'
+                              if a.snap_alpha else ''))
         agg = Counter()
-        for _, v, t, d in allc:
-            agg[(v.lower(), t, round(d, 1))] += 1
+        for rec in allc:
+            agg[(rec[1].lower(), rec[2], round(rec[3], 1))] += 1
         print()
-        print('%-24s -> %-30s %6s %5s' % ('原值', 'token', 'ΔE', '处数'))
+        print('%-30s -> %-34s %6s %5s' % ('原值', 'token', 'ΔE', '处数'))
         for (v, t, d), n in sorted(agg.items(), key=lambda x: -x[1]):
-            print('%-24s -> %-30s %6.1f %5d' % (v, t, d, n))
+            print('%-30s -> %-34s %6.1f %5d' % (v, t, d, n))
         if allo:
             print()
             print('超阈值、需人工处理：')
-            for p, v, t, d in allo:
-                print('  %-40s %-14s 最近档 %-28s ΔE %.1f' % (p, v, t, d))
+            for rec in allo:
+                print('  %-40s %-22s 最近档 %-30s ΔE %.1f' % (rec[0], rec[1], rec[2], rec[3]))
         return
 
     if a.verify:
