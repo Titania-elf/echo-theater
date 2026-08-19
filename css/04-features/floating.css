@@ -254,12 +254,12 @@
 
 /* 故事大纲按钮 */
 .t-menu-icon-btn.outline {
-    color: #81ecec;
+    color: var(--t-color-teal);
 }
 
 .t-menu-icon-btn.outline:hover {
-    background: radial-gradient(circle at center, rgba(129, 236, 236, 0.25) 0%, rgba(129, 236, 236, 0.1) 70%);
-    border-color: rgba(129, 236, 236, 0.5);
+    background: radial-gradient(circle at center, var(--t-color-teal-soft-strong) 0%, var(--t-color-teal-veil) 70%);
+    border-color: var(--t-color-teal-border);
     box-shadow:
         0 0 15px rgba(129, 236, 236, 0.35),
         inset 0 0 10px rgba(129, 236, 236, 0.1);

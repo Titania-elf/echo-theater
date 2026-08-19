@@ -338,6 +338,22 @@
     /* = 现 .t-btn-soft 的边框 */
     --t-color-brand-strong: rgb(var(--t-c-gold-rgb) / .75);
 
+    /* ---- 青绿（故事大纲窗的主强调色）----
+       Phase 6b-11 新建。原语层此前没有青绿一族，导致这 21 处（散在 **15 个 alpha** 上：
+       .08 .10 .12 .24 .25 .28 .30 .32 .35 .50 .60 .68 .70 .75 1.00）在最近邻里只能
+       匹配到 mint(#55efc4)，差 ΔE 27 —— 属误配，且会被误判成「没有合并结构」。
+       阶梯档位是实测挑的：最大合成 ΔE 5.5、只有 2 处落在「明显」；
+       7 档（去掉 .60）会有 1 处超阈值。
+       ⚠ 近似变体 #72e4d1 / #85eedc / #a9e9da（共 5 处）**不并入本族**：
+       它们偏绿，合到 #81ecec 要差 ΔE 12.9，是另一族。 */
+    --t-color-teal: rgb(var(--t-c-teal-rgb));
+    --t-color-teal-veil: rgb(var(--t-c-teal-rgb) / .1);
+    --t-color-teal-soft-strong: rgb(var(--t-c-teal-rgb) / .25);
+    --t-color-teal-border-subtle: rgb(var(--t-c-teal-rgb) / .32);
+    --t-color-teal-border: rgb(var(--t-c-teal-rgb) / .5);
+    --t-color-teal-border-hover: rgb(var(--t-c-teal-rgb) / .6);
+    --t-color-teal-strong: rgb(var(--t-c-teal-rgb) / .75);
+
     /* ---- 反馈色 ----
        soft = 底色（≈.2），veil = 更淡的底色（≈.12），border = 描边（≈.45）。
        四个色族对称补齐，避免「有 danger-border 却没有 success-border」

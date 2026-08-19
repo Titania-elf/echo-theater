@@ -486,6 +486,33 @@ def is_neutral_dark_surface(k):
             and max(k[:3]) - min(k[:3]) <= 6)
 
 
+# ── 青绿族（故事大纲窗主色）：一个色相 × 8 档 alpha ────────────────────
+# ⚠ 用 paired 模式而不是 snap_alpha：本族的 1.00 档也要参与（snap_alpha 只收
+# alpha < 0.99 的半透明），且要覆盖 text 角色（snap_alpha 只做 surface/border）。
+TEAL_ANCHOR = (129, 236, 236)
+TEAL_SCALE = [
+    ('--t-color-teal-veil', TEAL_ANCHOR + (0.10,)),
+    ('--t-color-teal-soft-strong', TEAL_ANCHOR + (0.25,)),
+    ('--t-color-teal-border-subtle', TEAL_ANCHOR + (0.32,)),
+    ('--t-color-teal-border', TEAL_ANCHOR + (0.50,)),
+    ('--t-color-teal-border-hover', TEAL_ANCHOR + (0.60,)),
+    ('--t-color-teal-strong', TEAL_ANCHOR + (0.75,)),
+    ('--t-color-teal', TEAL_ANCHOR + (1.00,)),
+]
+
+
+def is_teal(k):
+    # 严格只收 #81ecec 本身：近似变体 #72e4d1 / #85eedc / #a9e9da 偏绿，
+    # 合进来要差 ΔE 12.9，是另一族（见 theme-dark.css 的说明）。
+    return k[3] >= 0.005 and delta_e(k[:3] + (1.0,), TEAL_ANCHOR + (1.0,)) <= 3.0
+
+
+def snap_teal(path, apply_it):
+    return _snap(path, apply_it, TEAL_SCALE,
+                 lambda p: role_of(p) in ('surface', 'border', 'text'),
+                 is_teal, paired=True)
+
+
 def snap_neutral_dark(path, apply_it):
     """描边与底色各用自己的族，结果合并。"""
     c1, o1, e1 = _snap(path, apply_it, BORDER_NEUTRAL_SCALE,
@@ -967,6 +994,8 @@ def main():
                     help='把 color: 上的冷调文字色吸附到冷调刻度（会改色，逐处报 ΔE）')
     ap.add_argument('--snap-glass-dark', action='store_true',
                     help='把冷调暗底吸附到冷玻璃刻度（同时吸颜色与 alpha）')
+    ap.add_argument('--snap-teal', action='store_true',
+                    help='青绿族：一个色相 × 8 档 alpha（含不透明档与 text 角色）')
     ap.add_argument('--snap-neutral-dark', action='store_true',
                     help='中性暗色：描边与底色各用自己的 token 族')
     ap.add_argument('--snap-alpha', action='store_true',
@@ -1000,11 +1029,13 @@ def main():
         return
 
     if (a.snap_text or a.snap_surface or a.snap_alpha or a.snap_text_cool
-            or a.snap_glass_dark or a.snap_neutral_dark):
+            or a.snap_glass_dark or a.snap_neutral_dark
+            or a.snap_teal):
         from collections import Counter
         fn = (snap_text if a.snap_text else
               snap_text_cool if a.snap_text_cool else
               snap_glass_dark if a.snap_glass_dark else
+              snap_teal if a.snap_teal else
               snap_neutral_dark if a.snap_neutral_dark else
               snap_surface if a.snap_surface else snap_alpha)
         allc, allo = [], []
@@ -1024,7 +1055,7 @@ def main():
         print('色差分布：%s%s' % (dict(band),
                               '（半透明色差已合成到 #111/#333/#ccc 三种底上取上界；'
                               '含亮底是为了不低估「黑蒙层盖在图片上」的变化）'
-                              if (a.snap_alpha or a.snap_glass_dark) else ''))
+                              if (a.snap_alpha or a.snap_glass_dark or a.snap_teal) else ''))
         agg = Counter()
         for rec in allc:
             agg[(rec[1].lower(), rec[2], round(rec[3], 1))] += 1

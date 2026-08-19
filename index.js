@@ -1857,6 +1857,11 @@ function loadCssFiles() {
     /* #90cdf4  64 \u6B21\uFF0C\u4EA4\u4E92\u8272\uFF08\u7B2C\u4E8C\u9AD8\u9891\u4E14\u539F\u672C\u65E0\u53D8\u91CF\uFF09 */
     --t-c-mint-rgb: 85 239 196;
     /* #55efc4  18 \u6B21\uFF0C\u901A\u77E5\u8272 */
+    --t-c-teal-rgb: 129 236 236;
+    /* #81ecec  \u6545\u4E8B\u5927\u7EB2\u7A97\u7684\u4E3B\u5F3A\u8C03\u8272\u3002Phase 6b-11 \u65B0\u589E \u2014\u2014 \u6B64\u524D\u539F\u8BED\u5C42\u6CA1\u6709\u9752\u7EFF\u4E00\u65CF\uFF0C
+       \u5BFC\u81F4\u8FD9 21 \u5904\uFF08\u6563\u5728 15 \u4E2A alpha \u4E0A\uFF09\u5728\u300C\u6700\u8FD1\u90BB\u300D\u91CC\u53EA\u80FD\u5339\u914D\u5230 mint(#55efc4)\uFF0C
+       \u5DEE \u0394E 27\uFF0C\u5C5E\u8BEF\u914D\u3002\u26A0 \u7F3A\u4E00\u4E2A\u65CF\u5C31\u4F1A\u8BA9\u8BE5\u65CF\u7684\u5B57\u9762\u91CF\u5168\u90E8\u88AB\u5F3A\u884C\u5339\u914D\u5230\u522B\u7684\u65CF\u4E0A\uFF0C
+       \u5E76\u88AB\u8BEF\u5224\u6210\u300C\u6CA1\u6709\u5408\u5E76\u7ED3\u6784\u300D\uFF08\u89C1\u4EA4\u63A5\u6587\u6863 \xA76b-5 \u4E0E \xA76b-8 \u7684\u66F4\u6B63\uFF09\u3002 */
     --t-c-red-rgb: 255 107 107;
     /* #ff6b6b  \u6536\u655B 4 \u4E2A\u7EA2\uFF08#ff6b6b/#f56565/#e74c3c/#ff9d9d\uFF09 */
     --t-c-green-rgb: 72 187 120;
@@ -2409,6 +2414,22 @@ function loadCssFiles() {
     --t-color-brand-border: rgb(var(--t-c-gold-rgb) / .55);
     /* = \u73B0 .t-btn-soft \u7684\u8FB9\u6846 */
     --t-color-brand-strong: rgb(var(--t-c-gold-rgb) / .75);
+
+    /* ---- \u9752\u7EFF\uFF08\u6545\u4E8B\u5927\u7EB2\u7A97\u7684\u4E3B\u5F3A\u8C03\u8272\uFF09----
+       Phase 6b-11 \u65B0\u5EFA\u3002\u539F\u8BED\u5C42\u6B64\u524D\u6CA1\u6709\u9752\u7EFF\u4E00\u65CF\uFF0C\u5BFC\u81F4\u8FD9 21 \u5904\uFF08\u6563\u5728 **15 \u4E2A alpha** \u4E0A\uFF1A
+       .08 .10 .12 .24 .25 .28 .30 .32 .35 .50 .60 .68 .70 .75 1.00\uFF09\u5728\u6700\u8FD1\u90BB\u91CC\u53EA\u80FD
+       \u5339\u914D\u5230 mint(#55efc4)\uFF0C\u5DEE \u0394E 27 \u2014\u2014 \u5C5E\u8BEF\u914D\uFF0C\u4E14\u4F1A\u88AB\u8BEF\u5224\u6210\u300C\u6CA1\u6709\u5408\u5E76\u7ED3\u6784\u300D\u3002
+       \u9636\u68AF\u6863\u4F4D\u662F\u5B9E\u6D4B\u6311\u7684\uFF1A\u6700\u5927\u5408\u6210 \u0394E 5.5\u3001\u53EA\u6709 2 \u5904\u843D\u5728\u300C\u660E\u663E\u300D\uFF1B
+       7 \u6863\uFF08\u53BB\u6389 .60\uFF09\u4F1A\u6709 1 \u5904\u8D85\u9608\u503C\u3002
+       \u26A0 \u8FD1\u4F3C\u53D8\u4F53 #72e4d1 / #85eedc / #a9e9da\uFF08\u5171 5 \u5904\uFF09**\u4E0D\u5E76\u5165\u672C\u65CF**\uFF1A
+       \u5B83\u4EEC\u504F\u7EFF\uFF0C\u5408\u5230 #81ecec \u8981\u5DEE \u0394E 12.9\uFF0C\u662F\u53E6\u4E00\u65CF\u3002 */
+    --t-color-teal: rgb(var(--t-c-teal-rgb));
+    --t-color-teal-veil: rgb(var(--t-c-teal-rgb) / .1);
+    --t-color-teal-soft-strong: rgb(var(--t-c-teal-rgb) / .25);
+    --t-color-teal-border-subtle: rgb(var(--t-c-teal-rgb) / .32);
+    --t-color-teal-border: rgb(var(--t-c-teal-rgb) / .5);
+    --t-color-teal-border-hover: rgb(var(--t-c-teal-rgb) / .6);
+    --t-color-teal-strong: rgb(var(--t-c-teal-rgb) / .75);
 
     /* ---- \u53CD\u9988\u8272 ----
        soft = \u5E95\u8272\uFF08\u2248.2\uFF09\uFF0Cveil = \u66F4\u6DE1\u7684\u5E95\u8272\uFF08\u2248.12\uFF09\uFF0Cborder = \u63CF\u8FB9\uFF08\u2248.45\uFF09\u3002
@@ -4623,12 +4644,12 @@ textarea.t-input {
 
 /* \u6545\u4E8B\u5927\u7EB2\u6309\u94AE */
 .t-menu-icon-btn.outline {
-    color: #81ecec;
+    color: var(--t-color-teal);
 }
 
 .t-menu-icon-btn.outline:hover {
-    background: radial-gradient(circle at center, rgba(129, 236, 236, 0.25) 0%, rgba(129, 236, 236, 0.1) 70%);
-    border-color: rgba(129, 236, 236, 0.5);
+    background: radial-gradient(circle at center, var(--t-color-teal-soft-strong) 0%, var(--t-color-teal-veil) 70%);
+    border-color: var(--t-color-teal-border);
     box-shadow:
         0 0 15px rgba(129, 236, 236, 0.35),
         inset 0 0 10px rgba(129, 236, 236, 0.1);
@@ -15661,7 +15682,7 @@ textarea.t-input {
 
 .t-outline-plan-name:not(.is-readonly):focus {
     outline: none;
-    border-color: rgba(129, 236, 236, 0.75);
+    border-color: var(--t-color-teal-strong);
     box-shadow: 0 0 0 2px rgba(129, 236, 236, 0.2);
 }
 
@@ -15800,7 +15821,7 @@ textarea.t-input {
 }
 
 .t-scene-page-card {
-    border: 1px solid rgba(129, 236, 236, 0.24);
+    border: 1px solid var(--t-color-teal-soft-strong);
     border-radius: 8px;
     background: var(--t-glass-card);
     padding: 8px;
@@ -15867,7 +15888,7 @@ textarea.t-input {
 }
 
 .t-plan-accordion-item.expanded {
-    border-color: rgba(129, 236, 236, 0.6);
+    border-color: var(--t-color-teal-border-hover);
     box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.15) inset;
 }
 
@@ -15972,8 +15993,8 @@ textarea.t-input {
 }
 
 .t-plan-item-nav-btn:hover:not(:disabled) {
-    background: rgba(129, 236, 236, 0.12);
-    border-color: rgba(129, 236, 236, 0.5);
+    background: var(--t-color-teal-veil);
+    border-color: var(--t-color-teal-border);
     color: var(--t-glass-text-bright);
 }
 
@@ -16023,7 +16044,7 @@ textarea.t-input {
 }
 
 .t-scene-hub-item.active {
-    border-color: rgba(129, 236, 236, 0.7);
+    border-color: var(--t-color-teal-strong);
     box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.2) inset;
 }
 
@@ -16111,7 +16132,7 @@ textarea.t-input {
 }
 
 .t-opening-picker-item.active {
-    border-color: rgba(129, 236, 236, 0.68);
+    border-color: var(--t-color-teal-strong);
     box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.2) inset;
 }
 
@@ -16148,12 +16169,12 @@ textarea.t-input {
 }
 
 .t-opening-card:hover {
-    border-color: rgba(129, 236, 236, 0.5);
+    border-color: var(--t-color-teal-border);
     transform: translateY(-1px);
 }
 
 .t-opening-card.active {
-    border-color: rgba(129, 236, 236, 0.75);
+    border-color: var(--t-color-teal-strong);
     box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.2) inset;
 }
 
@@ -16213,7 +16234,7 @@ textarea.t-input {
 }
 
 .t-plan-scene {
-    border: 1px dashed rgba(129, 236, 236, 0.35);
+    border: 1px dashed var(--t-color-teal-border-subtle);
     border-radius: 8px;
     padding: 8px;
     background: var(--t-glass-row-head);
@@ -16377,7 +16398,7 @@ textarea.t-input {
 }
 
 .t-outline-table tbody tr[data-index]:hover {
-    background: rgba(129, 236, 236, 0.08);
+    background: var(--t-color-teal-veil);
 }
 
 .t-outline-table td[data-edit-field] {
@@ -16443,7 +16464,7 @@ textarea.t-input {
 }
 
 .t-outline-scene-wrap {
-    border: 1px dashed rgba(129, 236, 236, 0.32);
+    border: 1px dashed var(--t-color-teal-border-subtle);
     border-radius: 8px;
     padding: 10px;
     background: var(--t-glass-panel);
@@ -16545,7 +16566,7 @@ textarea.t-input {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #81ecec;
+    background: var(--t-color-teal);
     box-shadow: 0 0 0 0 rgba(129, 236, 236, 0.45);
     animation: t-raw-pulse 1s ease-in-out infinite;
 }
@@ -16919,7 +16940,7 @@ textarea.t-input {
 
     .t-outline-mobile-head .idx {
         font-weight: 700;
-        color: #81ecec;
+        color: var(--t-color-teal);
     }
 
     .t-outline-mobile-head .scene-count {
@@ -17034,7 +17055,7 @@ textarea.t-input {
     }
 
     .t-mobile-scene-empty {
-        border: 1px dashed rgba(129, 236, 236, 0.3);
+        border: 1px dashed var(--t-color-teal-border-subtle);
         border-radius: 8px;
         color: var(--t-glass-text-faint);
         font-size: 12px;
@@ -17043,7 +17064,7 @@ textarea.t-input {
     }
 
     .t-mobile-scene-card {
-        border: 1px solid rgba(129, 236, 236, 0.24);
+        border: 1px solid var(--t-color-teal-soft-strong);
         border-radius: 8px;
         background: var(--t-glass-card);
         padding: 8px;
@@ -17177,7 +17198,7 @@ textarea.t-input {
     }
 
     .t-outline-scene-table tr {
-        border: 1px solid rgba(129, 236, 236, 0.28);
+        border: 1px solid var(--t-color-teal-soft-strong);
         border-radius: 8px;
         padding: 8px;
         margin-bottom: 8px;

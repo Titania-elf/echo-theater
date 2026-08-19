@@ -96,7 +96,7 @@
 
 .t-outline-plan-name:not(.is-readonly):focus {
     outline: none;
-    border-color: rgba(129, 236, 236, 0.75);
+    border-color: var(--t-color-teal-strong);
     box-shadow: 0 0 0 2px rgba(129, 236, 236, 0.2);
 }
 
@@ -235,7 +235,7 @@
 }
 
 .t-scene-page-card {
-    border: 1px solid rgba(129, 236, 236, 0.24);
+    border: 1px solid var(--t-color-teal-soft-strong);
     border-radius: 8px;
     background: var(--t-glass-card);
     padding: 8px;
@@ -302,7 +302,7 @@
 }
 
 .t-plan-accordion-item.expanded {
-    border-color: rgba(129, 236, 236, 0.6);
+    border-color: var(--t-color-teal-border-hover);
     box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.15) inset;
 }
 
@@ -407,8 +407,8 @@
 }
 
 .t-plan-item-nav-btn:hover:not(:disabled) {
-    background: rgba(129, 236, 236, 0.12);
-    border-color: rgba(129, 236, 236, 0.5);
+    background: var(--t-color-teal-veil);
+    border-color: var(--t-color-teal-border);
     color: var(--t-glass-text-bright);
 }
 
@@ -458,7 +458,7 @@
 }
 
 .t-scene-hub-item.active {
-    border-color: rgba(129, 236, 236, 0.7);
+    border-color: var(--t-color-teal-strong);
     box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.2) inset;
 }
 
@@ -546,7 +546,7 @@
 }
 
 .t-opening-picker-item.active {
-    border-color: rgba(129, 236, 236, 0.68);
+    border-color: var(--t-color-teal-strong);
     box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.2) inset;
 }
 
@@ -583,12 +583,12 @@
 }
 
 .t-opening-card:hover {
-    border-color: rgba(129, 236, 236, 0.5);
+    border-color: var(--t-color-teal-border);
     transform: translateY(-1px);
 }
 
 .t-opening-card.active {
-    border-color: rgba(129, 236, 236, 0.75);
+    border-color: var(--t-color-teal-strong);
     box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.2) inset;
 }
 
@@ -648,7 +648,7 @@
 }
 
 .t-plan-scene {
-    border: 1px dashed rgba(129, 236, 236, 0.35);
+    border: 1px dashed var(--t-color-teal-border-subtle);
     border-radius: 8px;
     padding: 8px;
     background: var(--t-glass-row-head);
@@ -812,7 +812,7 @@
 }
 
 .t-outline-table tbody tr[data-index]:hover {
-    background: rgba(129, 236, 236, 0.08);
+    background: var(--t-color-teal-veil);
 }
 
 .t-outline-table td[data-edit-field] {
@@ -878,7 +878,7 @@
 }
 
 .t-outline-scene-wrap {
-    border: 1px dashed rgba(129, 236, 236, 0.32);
+    border: 1px dashed var(--t-color-teal-border-subtle);
     border-radius: 8px;
     padding: 10px;
     background: var(--t-glass-panel);
@@ -980,7 +980,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #81ecec;
+    background: var(--t-color-teal);
     box-shadow: 0 0 0 0 rgba(129, 236, 236, 0.45);
     animation: t-raw-pulse 1s ease-in-out infinite;
 }
@@ -1354,7 +1354,7 @@
 
     .t-outline-mobile-head .idx {
         font-weight: 700;
-        color: #81ecec;
+        color: var(--t-color-teal);
     }
 
     .t-outline-mobile-head .scene-count {
@@ -1469,7 +1469,7 @@
     }
 
     .t-mobile-scene-empty {
-        border: 1px dashed rgba(129, 236, 236, 0.3);
+        border: 1px dashed var(--t-color-teal-border-subtle);
         border-radius: 8px;
         color: var(--t-glass-text-faint);
         font-size: 12px;
@@ -1478,7 +1478,7 @@
     }
 
     .t-mobile-scene-card {
-        border: 1px solid rgba(129, 236, 236, 0.24);
+        border: 1px solid var(--t-color-teal-soft-strong);
         border-radius: 8px;
         background: var(--t-glass-card);
         padding: 8px;
@@ -1612,7 +1612,7 @@
     }
 
     .t-outline-scene-table tr {
-        border: 1px solid rgba(129, 236, 236, 0.28);
+        border: 1px solid var(--t-color-teal-soft-strong);
         border-radius: 8px;
         padding: 8px;
         margin-bottom: 8px;
