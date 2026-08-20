@@ -241,7 +241,7 @@
 /* ===== 注入 ST DOM 的元素(依 ADR-02 视觉独立,但 keyframes 依 R6 集中声明) ===== */
 
 /* rewriteEntryButton.js  ·  原定义在 rewriteEntryButton.js 的 REWRITE_PANEL_CSS 内联样式中 */
-@keyframes t-rewrite-badge-flow { 0% { background-position: 0% 50%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); } 50% { background-position: 100% 50%; box-shadow: 0 6px 22px rgba(100, 168, 214, 0.3); } 100% { background-position: 200% 50%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); } }
+@keyframes t-rewrite-badge-flow { 0% { background-position: 0% 50%; box-shadow: 0 6px 18px var(--t-shadow-ink-28); } 50% { background-position: 100% 50%; box-shadow: 0 6px 22px rgb(var(--t-accent-sky-glow-rgb) / .3); } 100% { background-position: 200% 50%; box-shadow: 0 6px 18px var(--t-shadow-ink-28); } }
 
 /* rewriteEntryButton.js */
 @keyframes t-rewrite-badge-icon { 0%,100% { transform: scale(1) rotate(0deg); opacity: 0.9; } 50% { transform: scale(1.12) rotate(8deg); opacity: 1; } }

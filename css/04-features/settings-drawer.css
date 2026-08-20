@@ -149,7 +149,7 @@
     background: var(--t-glass-body);
     border: 1px solid rgb(var(--t-accent-update-rgb) / .35);
     border-radius: 14px;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 24px 70px var(--t-shadow-ink-55);
 }
 
 .titania-update-header {

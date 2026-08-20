@@ -420,7 +420,7 @@
         left: 0;
         right: 0;
         width: 100%;
-        box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.6);
+        box-shadow: 0 -5px 15px var(--t-shadow-ink-60);
     }
 
     .t-batch-active .t-mgr-list {

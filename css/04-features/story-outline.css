@@ -178,7 +178,7 @@
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: var(--t-glass-body);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.44);
+    box-shadow: 0 12px 28px var(--t-shadow-ink-44);
     opacity: 0;
     transform: translateY(8px);
     pointer-events: none;
@@ -1014,7 +1014,7 @@
     border: 1px solid var(--t-color-border-cool);
     border-radius: 12px;
     background: var(--t-glass-body);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 16px 40px var(--t-shadow-ink-45);
     z-index: 20030;
     display: none;
     overflow: hidden;
@@ -1384,7 +1384,7 @@
         z-index: 20020;
         background: var(--t-glass-body);
         border-top: 1px solid var(--t-color-border-cool);
-        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 -10px 30px var(--t-shadow-ink-45);
         transition: transform 0.22s ease, visibility 0.22s ease;
         max-height: 88vh;
         border-top-left-radius: 14px;

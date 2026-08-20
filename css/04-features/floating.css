@@ -118,7 +118,7 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--t-color-border-subtle);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--t-shadow-sm);
 
     color: rgb(var(--t-accent-timer-rgb));
     font-family: var(--t-font-mono);
@@ -170,9 +170,9 @@
 
     /* 柔和阴影 */
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(255, 255, 255, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        0 8px 32px var(--t-shadow-ink-30),
+        0 0 0 1px var(--t-shadow-sheen-05),
+        inset 0 1px 0 var(--t-shadow-sheen-10);
 
     opacity: 0;
     transform: scale(0.8);
@@ -341,7 +341,7 @@
     justify-content: center;
     font-size: 16px;
     color: var(--t-color-text-strong);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--t-shadow-sm);
     transition: transform 0.2s;
 }
 

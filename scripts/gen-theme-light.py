@@ -189,10 +189,16 @@ def transform_value(name, val):
         return emit_rgb(darken_accent(rgb)), 'R-B'
 
     if SHADOW.match(name):
+        # R-E（白色高光，× 0.7）与 R-D（黑投影，× 0.55）的分派。
+        # ⚠ 不能只看 'inset'：Phase 6b-22 的 --t-shadow-sheen-05 是
+        #   `0 0 0 1px` 的一圈细描边高光、**不是 inset**，叫它 inset 是对几何说谎。
+        #   故按 inset|sheen|gloss 三个标记分派，名字表达角色而非几何。
+        hi = re.search(r'inset|sheen|gloss', name)
+
         def f(m):
             a = float(m.group(1))
-            return '/ %.3f' % (a * (0.7 if 'inset' in name else 0.55))
-        return re.sub(r'/\s*([\d.]+)', f, val), ('R-E' if 'inset' in name else 'R-D')
+            return '/ %.3f' % (a * (0.7 if hi else 0.55))
+        return re.sub(r'/\s*([\d.]+)', f, val), ('R-E' if hi else 'R-D')
 
     if KEEP_BLACK.match(name):
         return None, None

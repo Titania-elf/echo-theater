@@ -92,7 +92,7 @@
     border-radius: 8px;
     background: var(--t-color-surface-elevated);
     color: var(--t-color-text-secondary);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, .55);
+    box-shadow: 0 12px 30px var(--t-shadow-ink-55);
     font-size: 11px;
     line-height: 1.55;
 }

@@ -11,7 +11,7 @@
     position: relative;
     isolation: isolate;
     border: 1px solid var(--t-color-brand-soft-strong);
-    box-shadow: 0 18px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 245, 222, 0.05);
+    box-shadow: 0 18px 80px var(--t-shadow-ink-60), inset 0 1px 0 var(--t-shadow-sheen-cream-05);
 }
 
 .t-fav-container::before {
@@ -137,7 +137,7 @@
     border-radius: 16px;
     border: 1px solid var(--t-color-brand-border-subtle);
     background: radial-gradient(130% 120% at 20% 0%, rgb(var(--t-warm-surface-1-rgb) / .45), var(--t-color-bg));
-    box-shadow: inset 0 1px 0 rgba(255, 240, 210, 0.06), 0 14px 36px rgba(0, 0, 0, 0.45);
+    box-shadow: inset 0 1px 0 var(--t-shadow-sheen-cream-06), 0 14px 36px var(--t-shadow-ink-45);
 }
 
 .t-fav-empty {
@@ -260,7 +260,7 @@
     position: relative;
     z-index: 3;
     padding: 20px 22px 18px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.82);
+    text-shadow: 0 2px 10px var(--t-shadow-ink-82);
     background: linear-gradient(180deg, rgb(var(--t-scrim-media-rgb) / .04), var(--t-color-dialog-scrim));
 }
 
@@ -515,7 +515,7 @@
     border: 1px solid var(--t-color-brand-border-subtle);
     border-radius: 8px;
     background: rgb(var(--t-warm-surface-3-rgb));
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 12px 30px var(--t-shadow-ink-55);
     animation: t-fade-in 0.14s ease;
 }
 
@@ -819,7 +819,7 @@
 /* 选中状态的卡片 */
 .t-fav-card.selected {
     border-color: rgb(var(--t-accent-fav-gold-rgb));
-    box-shadow: 0 0 0 2px rgb(var(--t-accent-fav-gold-rgb) / .3), 0 16px 32px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 0 2px rgb(var(--t-accent-fav-gold-rgb) / .3), 0 16px 32px var(--t-shadow-ink-45);
 }
 
 .t-fav-card.selected .t-fav-card-checkbox {
@@ -908,7 +908,7 @@
     border-radius: 14px;
     border: 1px solid var(--t-color-brand-border-subtle);
     background: linear-gradient(180deg, rgb(var(--t-warm-surface-4-rgb) / .96), var(--t-color-surface-well));
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 24px 60px var(--t-shadow-ink-45);
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -1026,7 +1026,7 @@
         border: 1px solid var(--t-color-brand-border-subtle);
         border-radius: 10px;
         background: rgb(var(--t-warm-surface-4-rgb));
-        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+        box-shadow: 0 16px 36px var(--t-shadow-ink-55);
         animation: t-fade-in 0.14s ease;
     }
 

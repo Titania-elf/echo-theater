@@ -16,7 +16,7 @@
 
 #t-rewrite-overlay { z-index: 30060; }
 
-#t-rewrite-overlay .t-rewrite-window { width: min(1180px, 96vw); max-width: 96vw; max-height: 90vh; height: min(88vh, 920px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--t-color-border-subtle); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-overlay .t-rewrite-window { width: min(1180px, 96vw); max-width: 96vw; max-height: 90vh; height: min(88vh, 920px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--t-color-border-subtle); box-shadow: 0 22px 58px var(--t-shadow-ink-56); border-radius: 14px; }
 
 #t-rewrite-overlay .t-rewrite-head { padding: 14px 18px; background: linear-gradient(180deg, var(--t-glass-nav) 0%, var(--t-glass-nav) 100%); border-bottom: 1px solid var(--t-color-border-faint); }
 
@@ -24,11 +24,11 @@
 
 #t-rewrite-overlay .t-rewrite-settings-btn:hover i { color: var(--t-glass-text-bright); }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn { height: 32px; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: var(--t-glass-text-bright); font-size: 0.78em; font-weight: 600; letter-spacing: 0.15px; background: linear-gradient(140deg, var(--t-color-surface-hover), var(--t-color-surface-veil)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--t-color-border-glass); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
+#t-rewrite-overlay .t-rewrite-head-text-btn { height: 32px; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: var(--t-glass-text-bright); font-size: 0.78em; font-weight: 600; letter-spacing: 0.15px; background: linear-gradient(140deg, var(--t-color-surface-hover), var(--t-color-surface-veil)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 14px var(--t-shadow-ink-20), inset 0 1px 0 var(--t-color-border-glass); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn:hover { transform: translateY(-1px); border-color: var(--t-color-accent-border-strong); background: linear-gradient(140deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover-subtle)); box-shadow: 0 10px 20px rgba(17, 34, 54, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
+#t-rewrite-overlay .t-rewrite-head-text-btn:hover { transform: translateY(-1px); border-color: var(--t-color-accent-border-strong); background: linear-gradient(140deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover-subtle)); box-shadow: 0 10px 20px var(--t-shadow-navy-28), inset 0 1px 0 var(--t-shadow-sheen-22); }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--t-color-field-glass-border); }
+#t-rewrite-overlay .t-rewrite-head-text-btn:active { transform: translateY(0); box-shadow: 0 4px 10px var(--t-shadow-ink-20), inset 0 1px 0 var(--t-color-field-glass-border); }
 
 #t-rewrite-overlay .t-rewrite-title { font-size: 1.08em; font-weight: 700; letter-spacing: 0.2px; display: flex; align-items: center; gap: 8px; }
 
@@ -124,7 +124,7 @@
 
 #t-rewrite-live-overlay { z-index: 30075; }
 
-#t-rewrite-settings-overlay .t-rewrite-settings-window { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; height: min(90vh, 940px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-settings-overlay .t-rewrite-settings-window { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; height: min(90vh, 940px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px var(--t-shadow-ink-56); border-radius: 14px; }
 
 /* 本浮层的设置外壳（body / nav / tab / content）已迁至
    02-components/settings-shell.css 的 `.t-set-glass-*` —— 与 lore-review.css 的
@@ -142,7 +142,7 @@
 
 #t-rewrite-settings-overlay .t-rewrite-settings-footer { padding: 10px 14px; border-top: 1px solid var(--t-color-border-subtle); display: flex; justify-content: flex-end; gap: 8px; background: var(--t-glass-nav); }
 
-#t-rewrite-live-overlay .t-rewrite-live-window { width: min(980px, 96vw); max-width: 96vw; max-height: 92vh; height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-live-overlay .t-rewrite-live-window { width: min(980px, 96vw); max-width: 96vw; max-height: 92vh; height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px var(--t-shadow-ink-56); border-radius: 14px; }
 
 #t-rewrite-live-overlay .t-rewrite-live-body { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgb(var(--t-accent-sky-rgb) / 0) 36%), radial-gradient(circle at 0% 100%, var(--t-color-brand-veil) 0%, rgb(var(--t-accent-brand-rgb) / 0) 32%), var(--t-glass-body); }
 
@@ -150,11 +150,11 @@
 
 #t-rewrite-live-overlay .t-rewrite-live-meta { font-size: 0.8em; color: var(--t-glass-text-faint); }
 
-#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
+#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); box-shadow: 0 8px 22px var(--t-shadow-ink-20); }
 
 #t-rewrite-live-overlay .t-rewrite-live-stream-title { font-size: 0.84em; font-weight: 700; color: var(--t-glass-text-bright); margin-bottom: 6px; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
+#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); box-shadow: 0 8px 22px var(--t-shadow-ink-20); }
 
 #t-rewrite-live-overlay .t-rewrite-live-history-title { font-size: 0.84em; font-weight: 700; color: var(--t-glass-text-bright); margin-bottom: 6px; }
 
@@ -423,7 +423,7 @@
     background: linear-gradient(145deg, var(--t-color-surface-active), var(--t-color-surface-hover-subtle));
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+    box-shadow: 0 8px 18px var(--t-shadow-ink-24);
 }
 
 #t-rewrite-settings-overlay .t-window-close:hover {

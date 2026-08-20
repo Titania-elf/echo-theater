@@ -11,6 +11,8 @@
   python scripts/color-tokenize.py <css文件...>             # dry-run
   python scripts/color-tokenize.py <css文件...> --apply     # 实际替换
   python scripts/color-tokenize.py <css文件...> --verify    # 与 HEAD 比对，证明计算值不变
+  python scripts/color-tokenize.py <css文件...> --tokenize-shadow --apply
+                                                            # 阴影 -> --t-shadow-* token
 
 映射表 MAP 是**手写**的，不自动猜。同一个颜色值可能对应多个 token，
 故按属性角色区分：color→text / background*→surface / border*|outline*→border / *shadow*→shadow。
@@ -1572,6 +1574,158 @@ def fmt_a(a):
     return s[1:] if s.startswith('0.') else s
 
 
+# ── Phase 6b-22：阴影（--tokenize-shadow）────────────────────────────
+#
+# 阴影的 token 形状与前 21 批**不同**：token 持有「颜色 + alpha」，几何留在消费点。
+# 理由：
+#   · alpha 必须进 token。浅色主题下同样的黑投影会显得脏重，生成器用 R-D
+#     「alpha × 0.55」处理；而 R-D 是按 token 名前缀匹配、改 token 值里的 alpha 的。
+#     若写成前 21 批那种 `rgb(var(--x-rgb) / .56)`，alpha 在消费点，R-D 碰不到，
+#     36 处黑投影会在浅色主题下按全强度渲染。
+#   · 几何不进 token。38 处里有 31 条不同几何，一处一 token 等于没收敛；而按几何
+#     吸附**没有可用的感知度量**（ΔE 量得了颜色，量不了 blur 半径），属设计判断。
+#
+# 曾考虑但**没有采用**的更紧凑写法：
+#     --t-shadow-ink-rgb: 0 0 0;  --t-shadow-dim: 1;   /* 浅色覆盖为 .55 */
+#     box-shadow: 0 22px 58px rgb(var(--t-shadow-ink-rgb) / calc(.56 * var(--t-shadow-dim)));
+#   只要 4 个 token（而非 19 个），alpha 还留在消费点、漂移保持可见，并且与现有
+#   8 个整条配方 token 统一到同一个旋钮上（R-D/R-E 可整条删掉），两主题下数值
+#   逐位等价。放弃的唯一原因：**本环境无法验证 calc() 用在 rgb() 的 alpha 位**，
+#   而它的失败模式是「整条声明被丢弃 → 阴影静默消失」，一次波及 49 处。
+#   A25 就是为这类静默失效加的。故本批只用仓库里已验证可用的构造（纯 var() 代换）。
+#   等能在浏览器里实测后再考虑换成 calc 写法。
+SHADOW_TOKENS = {
+    # 黑投影：14 档。并到现有 4 档 {.2 .3 .5 .8} 要付 18 处 ΔE>4（明显），
+    # 最坏 8.31 —— 阴影 alpha 直接在亮底上移动 L，比色相敏感得多。
+    ((0, 0, 0), .2): '--t-shadow-ink-20',
+    ((0, 0, 0), .24): '--t-shadow-ink-24',
+    ((0, 0, 0), .28): '--t-shadow-ink-28',
+    ((0, 0, 0), .3): '--t-shadow-ink-30',
+    ((0, 0, 0), .35): '--t-shadow-ink-35',
+    ((0, 0, 0), .44): '--t-shadow-ink-44',
+    ((0, 0, 0), .45): '--t-shadow-ink-45',
+    ((0, 0, 0), .48): '--t-shadow-ink-48',
+    ((0, 0, 0), .5): '--t-shadow-ink-50',
+    ((0, 0, 0), .55): '--t-shadow-ink-55',
+    ((0, 0, 0), .56): '--t-shadow-ink-56',
+    ((0, 0, 0), .6): '--t-shadow-ink-60',
+    ((0, 0, 0), .72): '--t-shadow-ink-72',
+    ((0, 0, 0), .82): '--t-shadow-ink-82',
+    # 白/奶油高光：名字带 sheen 才会走 R-E（保持白、alpha × 0.7）而非 R-D
+    ((255, 255, 255), .05): '--t-shadow-sheen-05',
+    ((255, 255, 255), .1): '--t-shadow-sheen-10',
+    ((255, 255, 255), .22): '--t-shadow-sheen-22',
+    ((255, 245, 222), .05): '--t-shadow-sheen-cream-05',
+    ((255, 240, 210), .06): '--t-shadow-sheen-cream-06',
+    # 有色投影
+    ((17, 34, 54), .28): '--t-shadow-navy-28',
+}
+
+# 辉光不是投影：颜色引用强调色三元组、alpha 留消费点（沿用 --t-shadow-glow-* 写法）。
+# 挂进 --t-shadow-* 会走 R-D「只减淡」，浅底上一个更淡的蓝就看不见了。
+SHADOW_HUE = {(100, 168, 214): '--t-accent-sky-glow-rgb'}
+
+
+def _norm_recipe(v):
+    """把一条阴影值归一化成可比字符串：颜色统一写法、空白折叠。
+
+    ⚠ 必须连**几何**一起比。--verify 只提取颜色序列，看不见 blur/offset ——
+      所以「整条配方等值替换」的等价性不能靠 --verify 证明，只能在改写时就
+      按归一化后的整条字符串精确匹配来保证。这是本批唯一一处 --verify 覆盖不到
+      的地方，故在这里做成硬条件（不等就不换）。
+    """
+    def f(m):
+        k = canon(m.group(0))
+        if not k:
+            return m.group(0)
+        a = '' if k[3] >= 0.999 else ' / %s' % fmt_a(k[3])
+        return 'rgb(%d %d %d%s)' % (k[0], k[1], k[2], a)
+    return ' '.join(COLOR_RE.sub(f, v).split())
+
+
+def tokenize_shadow(path, apply_it):
+    """阴影字面量 -> token。零变色。两条路径，先整条后逐值：
+
+      ① 整条配方逐字等于现成 --t-shadow-<尺寸> -> 换成 var(--t-shadow-<尺寸>)
+         （几何也必须逐字相同，见 _norm_recipe）
+      ② 其余：把每个颜色字面量换成 var(--t-shadow-ink-NN) 等；辉光换成
+         rgb(var(--t-accent-sky-glow-rgb) / α)
+
+    返回 (变更列表, 未命中列表, 错误)，签名与 _snap / tokenize_hue 对齐。
+    """
+    raw = open(path, encoding='utf-8', newline='').read()
+    crlf, lf = eol_of(raw)
+    if crlf and lf:
+        return None, None, '行尾混用，跳过'
+    spans = [(m.start(), m.end()) for m in COMMENT_RE.finditer(raw)]
+    # 与 tokenize_hue 同两道护栏：调色板预览球（A24）与 var() 回退值（B5）。
+    # ⚠ 回退值这道对本批是**真的会命中**：keyframes.css 有 2 处
+    #   `box-shadow: 0 0 5px var(--t-border-color, #55efc4)`，回退位里的
+    #   #55efc4 不许动，而它正好在一条 box-shadow 上。
+    skip = [(m.start(), m.end()) for m in PALETTE_RULE.finditer(raw)]
+    skip += [(m.start(1), m.end(1)) for m in VAR_FALLBACK.finditer(raw)]
+
+    recipes = {}
+    for n, v in token_defs().items():
+        if n.startswith('--t-shadow-') and 'var(' not in v:
+            recipes[_norm_recipe(v)] = n
+
+    out, last, changes, miss = [], 0, [], []
+    for dm in DECL_RE.finditer(raw):
+        if any(a <= dm.start(3) < b for a, b in spans):
+            continue
+        if 'shadow' not in dm.group(2):
+            continue
+        vs, ve = dm.start(3), dm.end(3)
+        seg = raw[vs:ve]
+        if not COLOR_RE.search(seg):
+            continue
+        if any(a <= vs + m.start() < b
+               for m in COLOR_RE.finditer(seg) for a, b in skip):
+            continue
+
+        # ① 整条配方
+        hit = recipes.get(_norm_recipe(seg))
+        if hit:
+            out.append(raw[last:vs])
+            out.append('var(%s)' % hit)
+            last = ve
+            changes.append((path, ' '.join(seg.split()), hit, 0.0))
+            continue
+
+        # ② 逐个颜色字面量
+        pieces, pos = [], 0
+        for cm in COLOR_RE.finditer(seg):
+            k = canon(cm.group(0))
+            if not k:
+                continue
+            tok = SHADOW_TOKENS.get((k[:3], round(k[3], 3)))
+            if tok:
+                rep = 'var(%s)' % tok
+            else:
+                hue = SHADOW_HUE.get(k[:3])
+                if not hue:
+                    miss.append((path, cm.group(0), '无对应 token', 0.0))
+                    continue
+                rep = ('rgb(var(%s))' % hue if k[3] >= 0.999
+                       else 'rgb(var(%s) / %s)' % (hue, fmt_a(k[3])))
+                tok = hue
+            pieces.append(seg[pos:cm.start()])
+            pieces.append(rep)
+            pos = cm.end()
+            changes.append((path, cm.group(0), tok, 0.0))
+        if pieces:
+            out.append(raw[last:vs])
+            out.append(''.join(pieces) + seg[pos:])
+            last = ve
+    out.append(raw[last:])
+    new = ''.join(out)
+    assert eol_of(new) == (crlf, lf), '%s 行尾变了' % path
+    if apply_it and changes:
+        open(path, 'w', encoding='utf-8', newline='').write(new)
+    return changes, miss, None
+
+
 def tokenize_hue(path, apply_it):
     """把色相三元组改写成 rgb(var(--token) / α)。
 
@@ -1704,6 +1858,8 @@ def main():
                     help='把色族半透明色的 alpha 吸附到该族阶梯（会改色；之后必跑 --check-state）')
     ap.add_argument('--tokenize-hue', action='store_true',
                     help='把 HUE_TOKENS 里的色相三元组改写成 rgb(var(--x-rgb) / α)，零变色')
+    ap.add_argument('--tokenize-shadow', action='store_true',
+                    help='阴影字面量 -> --t-shadow-* token（持颜色+alpha，几何留消费点），零变色')
     ap.add_argument('--tol', type=float, default=0.0,
                     help='--verify 允许的逐位感知差上界（默认 0 = 严格相等）。'
                          '只用于放过 HUE_ALIASES 那种手误级合并；每处仍会连 ΔE 打出来')
@@ -1737,7 +1893,7 @@ def main():
 
     if (a.snap_text or a.snap_surface or a.snap_alpha or a.snap_text_cool
             or a.snap_glass_dark or a.snap_neutral_dark
-            or a.snap_teal or a.tokenize_hue):
+            or a.snap_teal or a.tokenize_hue or a.tokenize_shadow):
         from collections import Counter
         fn = (snap_text if a.snap_text else
               snap_text_cool if a.snap_text_cool else
@@ -1745,6 +1901,7 @@ def main():
               snap_teal if a.snap_teal else
               snap_neutral_dark if a.snap_neutral_dark else
               tokenize_hue if a.tokenize_hue else
+              tokenize_shadow if a.tokenize_shadow else
               snap_surface if a.snap_surface else snap_alpha)
         allc, allo = [], []
         for p in files:

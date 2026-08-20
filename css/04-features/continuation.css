@@ -272,7 +272,7 @@
     border: 1px solid var(--t-color-border-strong);
     border-radius: 7px;
     background: var(--t-color-surface);
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, .48);
+    box-shadow: 0 -10px 30px var(--t-shadow-ink-48);
 }
 
 .t-continuation-context-popover[hidden] {
@@ -492,7 +492,7 @@
     flex-shrink: 0;
     border: 1px solid var(--t-color-brand-border-subtle);
     background: var(--t-color-surface-sunken);
-    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 5px 16px var(--t-shadow-ink-35);
 }
 
 .t-cont-inline-actions .t-cont-inline-branch-option button:hover {
@@ -524,7 +524,7 @@
     border: 1px solid rgb(var(--t-glass-panel-warm-rgb));
     border-radius: 12px;
     background: var(--t-color-bg);
-    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.72);
+    box-shadow: 0 16px 50px var(--t-shadow-ink-72);
 }
 
 .t-cont-history-header {

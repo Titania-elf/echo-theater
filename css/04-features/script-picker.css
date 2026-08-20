@@ -37,7 +37,7 @@
     border: 1px solid var(--t-color-border-strong);
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    box-shadow: var(--t-shadow-xl);
     animation: t-fade-in 0.2s;
 }
 

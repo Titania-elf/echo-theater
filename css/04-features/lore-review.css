@@ -13,7 +13,7 @@
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 12px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--t-shadow-dialog);
     overflow: hidden;
     color: var(--t-color-text-cool);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -187,7 +187,7 @@
 .t-lore-entry-item:hover {
     background: var(--t-color-surface-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px var(--t-shadow-ink-20);
 }
 
 .t-lore-entry-item.active {
@@ -687,7 +687,7 @@
     overflow: hidden;
     background: var(--t-glass-window);
     border: 1px solid var(--t-color-field-glass-border);
-    box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56);
+    box-shadow: 0 22px 58px var(--t-shadow-ink-56);
     border-radius: 14px;
 }
 

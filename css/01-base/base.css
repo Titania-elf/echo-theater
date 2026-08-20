@@ -37,7 +37,7 @@
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    box-shadow: var(--t-shadow-xl);
     color: var(--t-color-text);
     font-family: var(--t-font-global);
     font-size: calc(12px * var(--t-ui-font-scale));

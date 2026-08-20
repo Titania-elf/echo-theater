@@ -2507,6 +2507,13 @@ function loadCssFiles() {
     /* #90cdf4 5 \u5904 \u2014\u2014 \u4E0E --t-c-blue-rgb \u540C\u503C\u3002\u6B64\u5904\u72EC\u7ACB\u58F0\u660E\u800C\u975E var() \u8F6C\u53D1\uFF1A
        \u5B83\u4EEC\u5728\u6D45\u8272\u4E3B\u9898\u4E0B\u4F1A\u5206\u53C9\uFF08\u6CDB\u7528\u4EA4\u4E92\u8272 vs \u8FD9\u51E0\u5904\u6E10\u53D8\u6B62\u70B9/\u5149\u6655\uFF09\uFF0C
        \u8F6C\u53D1\u4F1A\u628A\u4E24\u8005\u710A\u6B7B\u30025 \u5904\u5206\u5E03\uFF1Arewrite \xD73\u3001settings \xD72\u3002 */
+    --t-accent-sky-glow-rgb: 100 168 214;
+    /* #64a8d6 1 \u5904 \u2014\u2014 \u6539\u5199\u5FBD\u6807\u6D41\u5149\u52A8\u753B\u4E2D\u6BB5\u7684\u8F89\u5149\uFF08keyframes.css\uFF09\u3002
+       \u26A0 \u653E\u5728\u5F3A\u8C03\u8272\u65CF\u800C\u975E --t-shadow-* \u65CF\u662F\u523B\u610F\u7684\uFF1A\u5B83\u662F**\u8F89\u5149**\u4E0D\u662F\u6295\u5F71\u3002
+         \u6302\u8FDB --t-shadow-* \u4F1A\u8D70 R-D\uFF08\u4FDD\u6301\u8272\u76F8\u3001alpha \xD7 0.55\uFF09\uFF0C\u6D45\u5E95\u4E0A\u4E00\u4E2A\u66F4\u6DE1\u7684
+         \u84DD\u5C31\u770B\u4E0D\u89C1\u4E86\uFF1B\u6302\u5728\u5F3A\u8C03\u8272\u65CF\u8D70 R-B\uFF08\u4FDD\u8272\u76F8\u4E0E\u5F69\u5EA6\u3001\u538B\u6697 L\uFF09\uFF0C\u6D45\u5E95\u4E0A\u624D\u4ECD
+         \u53EF\u89C1\u3002\u6CBF\u7528\u73B0\u6210 --t-shadow-glow-* \u7684\u5199\u6CD5\uFF1A\u8F89\u5149\u7684\u989C\u8272\u5F15\u7528\u5F3A\u8C03\u8272\u4E09\u5143\u7EC4\uFF0C
+         alpha \u7559\u5728\u6D88\u8D39\u70B9\u3002\u4E0E\u6700\u8FD1\u7684\u73B0\u6210\u4E09\u5143\u7EC4\u5DEE \u0394E 12.7\uFF0C\u662F\u72EC\u7ACB\u8EAB\u4EFD\u8272\u4E0D\u662F\u6F02\u79FB\u3002 */
     --t-accent-indigo-rgb: 102 126 234;
     /* #667eea 7 \u5904 \u2014\u2014 \u8BB0\u5FC6\u56DE\u6EAF\u7A97\u7684\u8EAB\u4EFD\u8272\uFF08\u4EC5\u8BE5\u7A97\u4F7F\u7528\uFF09\u3002 */
     --t-accent-indigo-deep-rgb: 108 92 231;
@@ -3041,6 +3048,86 @@ function loadCssFiles() {
     --t-shadow-lift: 0 10px 22px rgb(var(--t-c-cool-5-rgb) / .32);
     /* hover \u62AC\u8D77\u65F6\u7684\u51B7\u8C03\u6295\u5F71\uFF0C\u66FF\u6362 rgba(17,34,54,.28~.32) */
 
+    /* ---- \u9634\u5F71\u58A8\u8272\u9636\uFF08Phase 6b-22\uFF09----
+       \u4E0A\u9762 8 \u4E2A --t-shadow-<\u5C3A\u5BF8> \u662F**\u6574\u6761\u914D\u65B9**\uFF08\u51E0\u4F55+\u989C\u8272\uFF09\uFF1B\u4E0B\u9762\u8FD9\u4E00\u65CF\u53EA\u6301
+       **\u989C\u8272+alpha**\uFF0C\u51E0\u4F55\u7559\u5728\u6D88\u8D39\u70B9\u3002\u4E24\u79CD\u5F62\u72B6\u5E76\u5B58\u662F\u523B\u610F\u7684\uFF1A
+
+       \xB7 \u4E3A\u4EC0\u4E48\u5FC5\u987B\u628A alpha \u6536\u8FDB token\uFF1A\u6D45\u8272\u4E3B\u9898\u4E0B\u540C\u6837\u7684\u9ED1\u6295\u5F71\u4F1A\u663E\u5F97\u810F\u91CD\uFF08\u8FD9\u662F\u6D45\u8272
+         \u4E3B\u9898\u6700\u5E38\u89C1\u7684\u7FFB\u8F66\u70B9\uFF09\uFF0C\u751F\u6210\u5668\u7528 R-D\u300Calpha \xD7 0.55\u300D\u5904\u7406\u5B83\u3002\u800C R-D \u662F\u6309
+         **token \u540D\u524D\u7F00** \`--t-shadow-\` \u5339\u914D\u3001\u6539 token \u503C\u91CC\u7684 alpha \u7684 \u2014\u2014 \u82E5\u5199\u6210
+         \`rgb(var(--t-shadow-ink-rgb) / .56)\`\uFF0Calpha \u5728\u6D88\u8D39\u70B9\uFF0CR-D \u6839\u672C\u78B0\u4E0D\u5230\u5B83\uFF0C
+         \u90A3 36 \u5904\u9ED1\u6295\u5F71\u5C31\u4F1A\u5728\u6D45\u8272\u4E3B\u9898\u4E0B\u6309\u5168\u5F3A\u5EA6\u6E32\u67D3\u3002
+       \xB7 \u4E3A\u4EC0\u4E48\u4E0D\u505A\u6574\u6761\u914D\u65B9 token\uFF1A\u8FD9 38 \u5904\u91CC\u6709 31 \u6761\u4E0D\u540C\u51E0\u4F55\uFF0C\u4E00\u5904\u4E00 token \u7B49\u4E8E
+         \u6CA1\u6536\u655B\uFF1B\u800C\u6309\u51E0\u4F55\u5438\u9644**\u6CA1\u6709\u53EF\u7528\u7684\u611F\u77E5\u5EA6\u91CF**\uFF08\u0394E \u91CF\u5F97\u4E86\u989C\u8272\uFF0C\u91CF\u4E0D\u4E86 blur
+         \u534A\u5F84\uFF09\uFF0C\u5C5E\u8BBE\u8BA1\u5224\u65AD\uFF0C\u4E0D\u8BE5\u7531\u91CD\u6784\u987A\u624B\u505A\u6389\u3002
+
+       \u4E3A\u4EC0\u4E48\u662F 14 \u6863\u800C\u4E0D\u662F\u5E76\u5230\u73B0\u6709 4 \u6863 {.2 .3 .5 .8}\uFF1A\u9634\u5F71 alpha \u6BD4\u8272\u76F8\u654F\u611F\u5F97\u591A\uFF0C
+       \u5B83\u76F4\u63A5\u5728\u4EAE\u5E95\u4E0A\u79FB\u52A8 L\u3002\u5B9E\u6D4B\u5E76\u5230 4 \u6863\u8981\u4ED8 **18 \u5904 \u0394E>4\uFF08\u660E\u663E\uFF09**\u3001\u6700\u574F 8.31
+       \uFF08.5\u2192.6 \u4E00\u6B65\u5C31\u662F \u0394E 8.3\uFF09\u3002\u8FD9\u4E0E 6b-12 \u5BF9\u5F3A\u8C03\u8272\u7684\u7ED3\u8BBA\u540C\u6E90\uFF1A\u90A3\u662F\u91CD\u65B0\u914D\u8272\uFF0C
+       \u4E0D\u662F\u91CD\u6784\u300214 \u6863\u91CC\u76F8\u90BB\u4E24\u6863\u7684\u6700\u5C0F \u0394E \u89C1\u4E0B\u65B9\u6CE8\u91CA\uFF0C\u53EA\u6709\u4E24\u5BF9\u5728\u611F\u77E5\u9608\u4EE5\u4E0B\u3002
+
+       \u26A0 \u4ECD\u53EF\u5408\u5E76\u7684\u4E24\u5BF9\uFF08\u0394E<1\uFF0C\u65E0\u6CD5\u5BDF\u89C9\uFF09\uFF0C\u523B\u610F**\u6CA1\u6709**\u5728\u672C\u6279\u505A \u2014\u2014
+         \u505A\u4E86\u672C\u6279\u5C31\u5931\u53BB\u300C\u9010\u4F4D\u96F6\u53D8\u5316\u300D\u8FD9\u4E2A\u6700\u5F3A\u81EA\u8BC1\uFF1A
+           .44 \u2194 .45  \u0394E 0.80   \uFF081 \u5904 + 5 \u5904\uFF09
+           .56 \u2194 .55  \u0394E 0.83   \uFF084 \u5904 + 4 \u5904\uFF09
+         \u5408\u5E76\u540E 14 \u6863 \u2192 12 \u6863\u3001\u52A8 5 \u5904\u3002\u8981\u505A\u8BF7\u5355\u72EC\u4E00\u6279\u5E76\u9644 \u0394E\u3002 */
+    --t-shadow-ink-20: rgb(0 0 0 / .2);
+    /* 5 \u5904\uFF1B\u4E0E .24 \u5DEE \u0394E 3.01 */
+    --t-shadow-ink-24: rgb(0 0 0 / .24);
+    /* 1 \u5904 */
+    --t-shadow-ink-28: rgb(0 0 0 / .28);
+    /* 2 \u5904\uFF1B\u4E0E .3 \u5DEE \u0394E 1.53 */
+    --t-shadow-ink-30: rgb(0 0 0 / .3);
+    /* 1 \u5904 */
+    --t-shadow-ink-35: rgb(0 0 0 / .35);
+    /* 1 \u5904\uFF1B\u4E0E .44 \u5DEE \u0394E 7.50 */
+    --t-shadow-ink-44: rgb(0 0 0 / .44);
+    /* 1 \u5904\uFF1B\u2605 \u4E0E .45 \u4EC5\u5DEE \u0394E 0.80\uFF0C\u53EF\u5E76 */
+    --t-shadow-ink-45: rgb(0 0 0 / .45);
+    /* 5 \u5904 */
+    --t-shadow-ink-48: rgb(0 0 0 / .48);
+    /* 1 \u5904\uFF1B\u4E0E .5 \u5DEE \u0394E 1.63 */
+    --t-shadow-ink-50: rgb(0 0 0 / .5);
+    /* 6 \u5904 */
+    --t-shadow-ink-55: rgb(0 0 0 / .55);
+    /* 4 \u5904 */
+    --t-shadow-ink-56: rgb(0 0 0 / .56);
+    /* 4 \u5904\uFF1B\u2605 \u4E0E .55 \u4EC5\u5DEE \u0394E 0.83\uFF0C\u53EF\u5E76 */
+    --t-shadow-ink-60: rgb(0 0 0 / .6);
+    /* 3 \u5904 */
+    --t-shadow-ink-72: rgb(0 0 0 / .72);
+    /* 1 \u5904\uFF1B\u4E0E .6 \u5DEE \u0394E 10.91 */
+    --t-shadow-ink-82: rgb(0 0 0 / .82);
+    /* 1 \u5904\uFF1B\u4E0E .72 \u5DEE \u0394E 9.29 */
+
+    /* ---- \u9634\u5F71\u9AD8\u5149\u9636\uFF08Phase 6b-22\uFF09----
+       \u540D\u5B57\u91CC\u7684 \`sheen\` \u662F\u7ED9\u751F\u6210\u5668\u770B\u7684\uFF1AR-E\uFF08\u4FDD\u6301\u767D\u3001alpha \xD7 0.7\uFF09\u6309
+       \`inset|sheen|gloss\` \u5339\u914D\uFF0CR-D\uFF08\u4FDD\u6301\u9ED1\u3001alpha \xD7 0.55\uFF09\u5339\u914D\u5176\u4F59\u3002
+       \u767D\u8272\u9AD8\u5149\u6A21\u62DF\u300C\u5149\u4ECE\u4E0A\u65B9\u6765\u300D\uFF0C\u4E24\u79CD\u4E3B\u9898\u4E0B\u90FD\u662F\u767D\u7684\u3001\u53EA\u9700\u51CF\u5F31\uFF0C\u8870\u51CF\u5E45\u5EA6\u6BD4
+       \u9ED1\u6295\u5F71\u5C0F \u2014\u2014 \u6240\u4EE5\u5FC5\u987B\u8D70 R-E \u800C\u4E0D\u662F R-D\u3002
+       \u26A0 \u4E0D\u80FD\u9760\u300C\u540D\u5B57\u91CC\u6709 inset\u300D\u6765\u5206\u6D3E\uFF1Afloating.css \u90A3\u5904 .05 \u662F
+         \`0 0 0 1px\`\uFF08\u975E inset \u7684\u4E00\u5708\u7EC6\u63CF\u8FB9\u9AD8\u5149\uFF09\uFF0C\u53EB\u5B83 inset \u662F\u5BF9\u51E0\u4F55\u8BF4\u8C0E\u3002 */
+    --t-shadow-sheen-05: rgb(255 255 255 / .05);
+    /* 1 \u5904\uFF0C\u60AC\u6D6E\u7403\u5916\u5708 1px \u7EC6\u5149 */
+    --t-shadow-sheen-10: rgb(255 255 255 / .1);
+    /* 1 \u5904\uFF0C\u60AC\u6D6E\u7403\u9876\u8FB9\u5185\u9AD8\u5149 */
+    --t-shadow-sheen-22: rgb(255 255 255 / .22);
+    /* 1 \u5904\uFF0C\u6539\u5199\u7A97\u6309\u94AE hover \u9876\u8FB9\u5185\u9AD8\u5149 */
+    --t-shadow-sheen-cream-05: rgb(255 245 222 / .05);
+    /* 1 \u5904\uFF0C\u6536\u85CF\u7A97\u5916\u58F3\u3002\u26A0 \u8FD9\u70B9\u6696\u8C03\u5728\u611F\u77E5\u4E0A\u51E0\u4E4E\u4E0D\u5B58\u5728\uFF08\u4E0E\u540C alpha \u7EAF\u767D\u5DEE
+       \u0394E 0.99\uFF09\uFF0C\u4F46\u300C\u5E26\u8272\u504F\u7684\u6697\u5E95\u662F\u523B\u610F\u8BBE\u8BA1\u300D\u90A3\u6761\u62A4\u680F\u9488\u5BF9\u7684\u662F\u8BBE\u8BA1\u610F\u56FE\u800C\u975E
+       \u53EF\u8FA8\u6027\uFF0C\u6545\u4FDD\u7559\u72EC\u7ACB token\uFF1B\u8981\u5E76\u5165 sheen-05 \u5C5E\u6539\u8272\uFF0C\u9700\u5355\u72EC\u4E00\u6279\u3002 */
+    --t-shadow-sheen-cream-06: rgb(255 240 210 / .06);
+    /* 1 \u5904\uFF0C\u6536\u85CF\u7A97\u8F6E\u64AD\u53F0\u3002\u4E0E\u540C alpha \u7EAF\u767D\u5DEE \u0394E 1.16\uFF0C\u540C\u4E0A */
+
+    /* ---- \u6709\u8272\u6295\u5F71\uFF08Phase 6b-22\uFF09---- */
+    --t-shadow-navy-28: rgb(17 34 54 / .28);
+    /* 1 \u5904\uFF0C\u6539\u5199\u7A97\u6309\u94AE hover \u7684\u51B7\u8C03\u6295\u5F71\u3002
+       \u26A0 \u4E0E\u4E0A\u9762\u7684 --t-shadow-lift \u662F\u8FD1\u91CD\u590D\uFF08\u540E\u8005\u6CE8\u91CA\u8FD8\u5199\u7740\u300C\u66FF\u6362
+         rgba(17,34,54,.28~.32)\u300D\uFF09\uFF0C\u4F46\u4E09\u9879\u90FD\u4E0D\u540C\uFF1A\u51E0\u4F55 0 10px 20px vs 22px\u3001
+         \u8272 17 34 54 vs 34 42 54\u3001alpha .28 vs .32\uFF0C\u989C\u8272\u5408\u6210 \u0394E 2.18\u3002
+         \u76F4\u63A5\u6539\u7528 lift \u662F\u6539\u8272\uFF0C\u4E0D\u80FD\u8FDB\u96F6\u53D8\u5316\u6279\u6B21\u3002\u8FD9\u4E2A\u8FD1\u91CD\u590D\u7559\u5F85\u4EBA\u5DE5\u5B9A\u593A\u3002 */
+
     /* ---- \u590D\u5408\u8FC7\u6E21\uFF1A\u6309\u4EA4\u4E92\u573A\u666F\u800C\u975E\u6309\u5C5E\u6027 ----
        \u540C\u65F6\u7528\u4E8E\u6D88\u706D 54 \u5904 \`transition: all\`\uFF08\u5BA1\u8BA1 A20\uFF09\uFF1A
        \`all\` \u4F1A\u628A width/height/transform/box-shadow \u4E00\u8D77\u7EB3\u5165\u8FC7\u6E21\uFF0C
@@ -3131,7 +3218,7 @@ function loadCssFiles() {
      \u8981\u8C03\u6574\u5C31\u6539\u751F\u6210\u5668\u91CC\u7684\u89C4\u5219\u6216 EXCEPTIONS \u8868\uFF0C\u7136\u540E\u91CD\u8DD1\u3002
      \u624B\u6539\u4F1A\u5728\u4E0B\u6B21\u91CD\u8DD1\u65F6\u88AB\u8986\u76D6\uFF0C\u800C\u4E14\u4F1A\u8BA9\u300C\u89C4\u5219\u300D\u4E0E\u300C\u7ED3\u679C\u300D\u4E0D\u4E00\u81F4\u3001\u65E0\u6CD5\u590D\u6838\u3002
 
-   \u4E3A\u4EC0\u4E48\u7528\u751F\u6210\u5668\uFF1A\u6D45\u8272\u4E3B\u9898\u8981\u51B3\u5B9A 231 \u4E2A\u91CF\u3002\u624B\u5199\u4F1A\u505A\u6210\u4E00\u5806\u4E92\u4E0D\u76F8\u5173\u7684\u62CD\u8111\u888B\u503C\uFF0C
+   \u4E3A\u4EC0\u4E48\u7528\u751F\u6210\u5668\uFF1A\u6D45\u8272\u4E3B\u9898\u8981\u51B3\u5B9A 252 \u4E2A\u91CF\u3002\u624B\u5199\u4F1A\u505A\u6210\u4E00\u5806\u4E92\u4E0D\u76F8\u5173\u7684\u62CD\u8111\u888B\u503C\uFF0C
    \u6CA1\u4EBA\u80FD\u590D\u6838\uFF0C\u4E5F\u56DE\u7B54\u4E0D\u4E86\u300C\u4E3A\u4EC0\u4E48\u8FD9\u4E2A\u662F\u8FD9\u6837\u300D\u3002\u5199\u6210\u89C4\u5219\u5219\uFF1A\u89C4\u5219\u672C\u8EAB\u53EF\u590D\u6838\u3001
    \u6DF1\u8272\u4E3B\u9898\u65E5\u540E\u52A0 token \u91CD\u8DD1\u5C31\u8DDF\u4E0A\u3001\u51FA\u95EE\u9898\u6539\u7684\u662F\u4E00\u6761\u89C4\u5219\u800C\u4E0D\u662F\u51E0\u5341\u4E2A\u503C\u3002
 
@@ -3259,6 +3346,7 @@ function loadCssFiles() {
     --t-accent-azure-deep-rgb: 45 127 211;   /* \u6DF1\u8272: 45 127 211 */
     --t-accent-azure-dim-rgb: 47 95 138;   /* \u6DF1\u8272: 47 95 138 */
     --t-accent-sky-rgb: 37 107 142;   /* \u6DF1\u8272: 144 205 244 */
+    --t-accent-sky-glow-rgb: 54 129 172;   /* \u6DF1\u8272: 100 168 214 */
     --t-accent-indigo-rgb: 102 126 234;   /* \u6DF1\u8272: 102 126 234 */
     --t-accent-indigo-deep-rgb: 108 92 231;   /* \u6DF1\u8272: 108 92 231 */
     --t-accent-violet-rgb: 111 108 201;   /* \u6DF1\u8272: 162 155 254 */
@@ -3440,6 +3528,32 @@ function loadCssFiles() {
     --t-shadow-inset-hairline: inset 0 1px 0 rgb(255 255 255 / 0.042);   /* \u6DF1\u8272: inset 0 1px 0 rgb(255 255 255 / .06) */
     --t-shadow-inset-gloss: inset 0 1px 0 rgb(255 255 255 / 0.126);   /* \u6DF1\u8272: inset 0 1px 0 rgb(255 255 255 / .18) */
 
+    /* ---- \u89C4\u5219 R-D ---- */
+    --t-shadow-ink-20: rgb(0 0 0 / 0.110);   /* \u6DF1\u8272: rgb(0 0 0 / .2) */
+    --t-shadow-ink-24: rgb(0 0 0 / 0.132);   /* \u6DF1\u8272: rgb(0 0 0 / .24) */
+    --t-shadow-ink-28: rgb(0 0 0 / 0.154);   /* \u6DF1\u8272: rgb(0 0 0 / .28) */
+    --t-shadow-ink-30: rgb(0 0 0 / 0.165);   /* \u6DF1\u8272: rgb(0 0 0 / .3) */
+    --t-shadow-ink-35: rgb(0 0 0 / 0.193);   /* \u6DF1\u8272: rgb(0 0 0 / .35) */
+    --t-shadow-ink-44: rgb(0 0 0 / 0.242);   /* \u6DF1\u8272: rgb(0 0 0 / .44) */
+    --t-shadow-ink-45: rgb(0 0 0 / 0.248);   /* \u6DF1\u8272: rgb(0 0 0 / .45) */
+    --t-shadow-ink-48: rgb(0 0 0 / 0.264);   /* \u6DF1\u8272: rgb(0 0 0 / .48) */
+    --t-shadow-ink-50: rgb(0 0 0 / 0.275);   /* \u6DF1\u8272: rgb(0 0 0 / .5) */
+    --t-shadow-ink-55: rgb(0 0 0 / 0.303);   /* \u6DF1\u8272: rgb(0 0 0 / .55) */
+    --t-shadow-ink-56: rgb(0 0 0 / 0.308);   /* \u6DF1\u8272: rgb(0 0 0 / .56) */
+    --t-shadow-ink-60: rgb(0 0 0 / 0.330);   /* \u6DF1\u8272: rgb(0 0 0 / .6) */
+    --t-shadow-ink-72: rgb(0 0 0 / 0.396);   /* \u6DF1\u8272: rgb(0 0 0 / .72) */
+    --t-shadow-ink-82: rgb(0 0 0 / 0.451);   /* \u6DF1\u8272: rgb(0 0 0 / .82) */
+
+    /* ---- \u89C4\u5219 R-E ---- */
+    --t-shadow-sheen-05: rgb(255 255 255 / 0.035);   /* \u6DF1\u8272: rgb(255 255 255 / .05) */
+    --t-shadow-sheen-10: rgb(255 255 255 / 0.070);   /* \u6DF1\u8272: rgb(255 255 255 / .1) */
+    --t-shadow-sheen-22: rgb(255 255 255 / 0.154);   /* \u6DF1\u8272: rgb(255 255 255 / .22) */
+    --t-shadow-sheen-cream-05: rgb(255 245 222 / 0.035);   /* \u6DF1\u8272: rgb(255 245 222 / .05) */
+    --t-shadow-sheen-cream-06: rgb(255 240 210 / 0.042);   /* \u6DF1\u8272: rgb(255 240 210 / .06) */
+
+    /* ---- \u89C4\u5219 R-D ---- */
+    --t-shadow-navy-28: rgb(17 34 54 / 0.154);   /* \u6DF1\u8272: rgb(17 34 54 / .28) */
+
     /* ---- \u89C4\u5219 R-B ---- */
     --t-gradient-accent: linear-gradient(90deg, rgb(0 127 220), rgb(102 126 234));   /* \u6DF1\u8272: linear-gradient(90deg, #4a9eff, #667eea) */
     --t-gradient-notify: linear-gradient(90deg, rgb(5 104 82), rgb(1 121 118));   /* \u6DF1\u8272: linear-gradient(90deg, #55efc4, #00cec9) */
@@ -3604,7 +3718,7 @@ function loadCssFiles() {
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    box-shadow: var(--t-shadow-xl);
     color: var(--t-color-text);
     font-family: var(--t-font-global);
     font-size: calc(12px * var(--t-ui-font-scale));
@@ -4055,7 +4169,7 @@ function loadCssFiles() {
 /* ===== \u6CE8\u5165 ST DOM \u7684\u5143\u7D20(\u4F9D ADR-02 \u89C6\u89C9\u72EC\u7ACB,\u4F46 keyframes \u4F9D R6 \u96C6\u4E2D\u58F0\u660E) ===== */
 
 /* rewriteEntryButton.js  \xB7  \u539F\u5B9A\u4E49\u5728 rewriteEntryButton.js \u7684 REWRITE_PANEL_CSS \u5185\u8054\u6837\u5F0F\u4E2D */
-@keyframes t-rewrite-badge-flow { 0% { background-position: 0% 50%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); } 50% { background-position: 100% 50%; box-shadow: 0 6px 22px rgba(100, 168, 214, 0.3); } 100% { background-position: 200% 50%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); } }
+@keyframes t-rewrite-badge-flow { 0% { background-position: 0% 50%; box-shadow: 0 6px 18px var(--t-shadow-ink-28); } 50% { background-position: 100% 50%; box-shadow: 0 6px 22px rgb(var(--t-accent-sky-glow-rgb) / .3); } 100% { background-position: 200% 50%; box-shadow: 0 6px 18px var(--t-shadow-ink-28); } }
 
 /* rewriteEntryButton.js */
 @keyframes t-rewrite-badge-icon { 0%,100% { transform: scale(1) rotate(0deg); opacity: 0.9; } 50% { transform: scale(1.12) rotate(8deg); opacity: 1; } }
@@ -5415,7 +5529,7 @@ textarea.t-input {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--t-color-border-subtle);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--t-shadow-sm);
 
     color: rgb(var(--t-accent-timer-rgb));
     font-family: var(--t-font-mono);
@@ -5467,9 +5581,9 @@ textarea.t-input {
 
     /* \u67D4\u548C\u9634\u5F71 */
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(255, 255, 255, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        0 8px 32px var(--t-shadow-ink-30),
+        0 0 0 1px var(--t-shadow-sheen-05),
+        inset 0 1px 0 var(--t-shadow-sheen-10);
 
     opacity: 0;
     transform: scale(0.8);
@@ -5638,7 +5752,7 @@ textarea.t-input {
     justify-content: center;
     font-size: 16px;
     color: var(--t-color-text-strong);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--t-shadow-sm);
     transition: transform 0.2s;
 }
 
@@ -6202,7 +6316,7 @@ textarea.t-input {
     flex-direction: column;
     background: var(--t-color-surface-sunken);
     border-left: 1px solid var(--t-color-border-strong);
-    box-shadow: -14px 0 34px rgba(0, 0, 0, .5);
+    box-shadow: -14px 0 34px var(--t-shadow-ink-50);
     transform: translateX(102%);
     transition: transform .24s ease;
 }
@@ -6347,7 +6461,7 @@ textarea.t-input {
     background: var(--t-color-surface);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 6px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 5px 15px var(--t-shadow-ink-50);
     padding: 5px;
     width: 150px;
     display: flex;
@@ -6881,7 +6995,7 @@ textarea.t-input {
     background: var(--t-color-surface-sunken);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 10px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    box-shadow: var(--t-shadow-xl);
     z-index: 3000;
     display: flex;
     flex-direction: column;
@@ -6918,7 +7032,7 @@ textarea.t-input {
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--t-color-accent-border-subtle);
     border-radius: 25px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 20px var(--t-shadow-ink-50);
     animation: t-indicator-slide-up 0.3s ease;
 }
 
@@ -6971,7 +7085,7 @@ textarea.t-input {
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgb(var(--t-accent-mint-rgb) / .3);
     border-radius: 25px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 20px var(--t-shadow-ink-50);
     animation: t-indicator-slide-up 0.3s ease;
 }
 
@@ -7080,7 +7194,7 @@ textarea.t-input {
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 12px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--t-shadow-dialog);
     overflow: hidden;
     color: var(--t-color-text-cool);
 }
@@ -7307,7 +7421,7 @@ textarea.t-input {
     background: var(--t-color-surface);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 8px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 5px 20px var(--t-shadow-ink-50);
     z-index: 101;
     min-width: 140px;
     padding: 5px;
@@ -7391,7 +7505,7 @@ textarea.t-input {
     gap: 0;
     border-radius: 30px;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--t-shadow-md);
 }
 
 #t-main-view.t-layout-legacy .t-run-btn {
@@ -7656,7 +7770,7 @@ textarea.t-input {
     border: 1px solid var(--t-color-border-strong);
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    box-shadow: var(--t-shadow-xl);
     animation: t-fade-in 0.2s;
 }
 
@@ -7902,7 +8016,7 @@ textarea.t-input {
     background: var(--t-color-surface-sunken);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 10px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    box-shadow: var(--t-shadow-xl);
     z-index: 3000;
     display: flex;
     flex-direction: column;
@@ -8835,7 +8949,7 @@ textarea.t-input {
     border: 1px solid var(--t-color-border-strong);
     border-radius: 7px;
     background: var(--t-color-surface);
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, .48);
+    box-shadow: 0 -10px 30px var(--t-shadow-ink-48);
 }
 
 .t-continuation-context-popover[hidden] {
@@ -9055,7 +9169,7 @@ textarea.t-input {
     flex-shrink: 0;
     border: 1px solid var(--t-color-brand-border-subtle);
     background: var(--t-color-surface-sunken);
-    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 5px 16px var(--t-shadow-ink-35);
 }
 
 .t-cont-inline-actions .t-cont-inline-branch-option button:hover {
@@ -9087,7 +9201,7 @@ textarea.t-input {
     border: 1px solid rgb(var(--t-glass-panel-warm-rgb));
     border-radius: 12px;
     background: var(--t-color-bg);
-    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.72);
+    box-shadow: 0 16px 50px var(--t-shadow-ink-72);
 }
 
 .t-cont-history-header {
@@ -9620,7 +9734,7 @@ textarea.t-input {
     background: var(--t-color-surface-sunken);
     border: 1px solid var(--t-color-border-strong);
     border-radius: 10px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    box-shadow: var(--t-shadow-xl);
     z-index: 3000;
     display: flex;
     flex-direction: column;
@@ -10165,7 +10279,7 @@ textarea.t-input {
     background: var(--t-glass-body);
     border: 1px solid rgb(var(--t-accent-update-rgb) / .35);
     border-radius: 14px;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 24px 70px var(--t-shadow-ink-55);
 }
 
 .titania-update-header {
@@ -10496,7 +10610,7 @@ textarea.t-input {
     transition: all 0.2s;
     position: relative;
     overflow: visible;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 4px 12px var(--t-shadow-ink-60);
 }
 
 .t-preview-ball img {
@@ -11884,7 +11998,7 @@ textarea.t-input {
         left: 0;
         right: 0;
         width: 100%;
-        box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.6);
+        box-shadow: 0 -5px 15px var(--t-shadow-ink-60);
     }
 
     .t-batch-active .t-mgr-list {
@@ -12150,7 +12264,7 @@ textarea.t-input {
 .t-ws-card:hover {
     transform: translateY(-2px);
     border-color: var(--t-color-brand-border);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 6px 20px var(--t-shadow-ink-50);
 }
 
 /* \u5DF2\u4E0B\u8F7D\u8FC7\u7684\u6574\u5361\u538B\u6697\uFF0C\u65B9\u4FBF\u4E00\u773C\u8DF3\u8FC7 */
@@ -12635,7 +12749,7 @@ textarea.t-input {
     position: relative;
     isolation: isolate;
     border: 1px solid var(--t-color-brand-soft-strong);
-    box-shadow: 0 18px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 245, 222, 0.05);
+    box-shadow: 0 18px 80px var(--t-shadow-ink-60), inset 0 1px 0 var(--t-shadow-sheen-cream-05);
 }
 
 .t-fav-container::before {
@@ -12761,7 +12875,7 @@ textarea.t-input {
     border-radius: 16px;
     border: 1px solid var(--t-color-brand-border-subtle);
     background: radial-gradient(130% 120% at 20% 0%, rgb(var(--t-warm-surface-1-rgb) / .45), var(--t-color-bg));
-    box-shadow: inset 0 1px 0 rgba(255, 240, 210, 0.06), 0 14px 36px rgba(0, 0, 0, 0.45);
+    box-shadow: inset 0 1px 0 var(--t-shadow-sheen-cream-06), 0 14px 36px var(--t-shadow-ink-45);
 }
 
 .t-fav-empty {
@@ -12884,7 +12998,7 @@ textarea.t-input {
     position: relative;
     z-index: 3;
     padding: 20px 22px 18px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.82);
+    text-shadow: 0 2px 10px var(--t-shadow-ink-82);
     background: linear-gradient(180deg, rgb(var(--t-scrim-media-rgb) / .04), var(--t-color-dialog-scrim));
 }
 
@@ -13139,7 +13253,7 @@ textarea.t-input {
     border: 1px solid var(--t-color-brand-border-subtle);
     border-radius: 8px;
     background: rgb(var(--t-warm-surface-3-rgb));
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 12px 30px var(--t-shadow-ink-55);
     animation: t-fade-in 0.14s ease;
 }
 
@@ -13443,7 +13557,7 @@ textarea.t-input {
 /* \u9009\u4E2D\u72B6\u6001\u7684\u5361\u7247 */
 .t-fav-card.selected {
     border-color: rgb(var(--t-accent-fav-gold-rgb));
-    box-shadow: 0 0 0 2px rgb(var(--t-accent-fav-gold-rgb) / .3), 0 16px 32px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 0 2px rgb(var(--t-accent-fav-gold-rgb) / .3), 0 16px 32px var(--t-shadow-ink-45);
 }
 
 .t-fav-card.selected .t-fav-card-checkbox {
@@ -13532,7 +13646,7 @@ textarea.t-input {
     border-radius: 14px;
     border: 1px solid var(--t-color-brand-border-subtle);
     background: linear-gradient(180deg, rgb(var(--t-warm-surface-4-rgb) / .96), var(--t-color-surface-well));
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 24px 60px var(--t-shadow-ink-45);
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -13650,7 +13764,7 @@ textarea.t-input {
         border: 1px solid var(--t-color-brand-border-subtle);
         border-radius: 10px;
         background: rgb(var(--t-warm-surface-4-rgb));
-        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+        box-shadow: 0 16px 36px var(--t-shadow-ink-55);
         animation: t-fade-in 0.14s ease;
     }
 
@@ -13929,7 +14043,7 @@ textarea.t-input {
     border-radius: 8px;
     background: var(--t-color-surface-elevated);
     color: var(--t-color-text-secondary);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, .55);
+    box-shadow: 0 12px 30px var(--t-shadow-ink-55);
     font-size: 11px;
     line-height: 1.55;
 }
@@ -14450,7 +14564,7 @@ textarea.t-input {
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--t-color-border-subtle);
     border-radius: 12px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--t-shadow-dialog);
     overflow: hidden;
     color: var(--t-color-text-cool);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -14624,7 +14738,7 @@ textarea.t-input {
 .t-lore-entry-item:hover {
     background: var(--t-color-surface-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px var(--t-shadow-ink-20);
 }
 
 .t-lore-entry-item.active {
@@ -15124,7 +15238,7 @@ textarea.t-input {
     overflow: hidden;
     background: var(--t-glass-window);
     border: 1px solid var(--t-color-field-glass-border);
-    box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56);
+    box-shadow: 0 22px 58px var(--t-shadow-ink-56);
     border-radius: 14px;
 }
 
@@ -16671,7 +16785,7 @@ textarea.t-input {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
     background: var(--t-glass-body);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.44);
+    box-shadow: 0 12px 28px var(--t-shadow-ink-44);
     opacity: 0;
     transform: translateY(8px);
     pointer-events: none;
@@ -17507,7 +17621,7 @@ textarea.t-input {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 12px;
     background: var(--t-glass-body);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 16px 40px var(--t-shadow-ink-45);
     z-index: 20030;
     display: none;
     overflow: hidden;
@@ -17877,7 +17991,7 @@ textarea.t-input {
         z-index: 20020;
         background: var(--t-glass-body);
         border-top: 1px solid var(--t-color-border-cool);
-        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 -10px 30px var(--t-shadow-ink-45);
         transition: transform 0.22s ease, visibility 0.22s ease;
         max-height: 88vh;
         border-top-left-radius: 14px;
@@ -18558,7 +18672,7 @@ textarea.t-input {
 
 #t-rewrite-overlay { z-index: 30060; }
 
-#t-rewrite-overlay .t-rewrite-window { width: min(1180px, 96vw); max-width: 96vw; max-height: 90vh; height: min(88vh, 920px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--t-color-border-subtle); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-overlay .t-rewrite-window { width: min(1180px, 96vw); max-width: 96vw; max-height: 90vh; height: min(88vh, 920px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--t-color-border-subtle); box-shadow: 0 22px 58px var(--t-shadow-ink-56); border-radius: 14px; }
 
 #t-rewrite-overlay .t-rewrite-head { padding: 14px 18px; background: linear-gradient(180deg, var(--t-glass-nav) 0%, var(--t-glass-nav) 100%); border-bottom: 1px solid var(--t-color-border-faint); }
 
@@ -18566,11 +18680,11 @@ textarea.t-input {
 
 #t-rewrite-overlay .t-rewrite-settings-btn:hover i { color: var(--t-glass-text-bright); }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn { height: 32px; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: var(--t-glass-text-bright); font-size: 0.78em; font-weight: 600; letter-spacing: 0.15px; background: linear-gradient(140deg, var(--t-color-surface-hover), var(--t-color-surface-veil)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--t-color-border-glass); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
+#t-rewrite-overlay .t-rewrite-head-text-btn { height: 32px; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--t-color-field-glass-border); color: var(--t-glass-text-bright); font-size: 0.78em; font-weight: 600; letter-spacing: 0.15px; background: linear-gradient(140deg, var(--t-color-surface-hover), var(--t-color-surface-veil)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 14px var(--t-shadow-ink-20), inset 0 1px 0 var(--t-color-border-glass); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn:hover { transform: translateY(-1px); border-color: var(--t-color-accent-border-strong); background: linear-gradient(140deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover-subtle)); box-shadow: 0 10px 20px rgba(17, 34, 54, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
+#t-rewrite-overlay .t-rewrite-head-text-btn:hover { transform: translateY(-1px); border-color: var(--t-color-accent-border-strong); background: linear-gradient(140deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover-subtle)); box-shadow: 0 10px 20px var(--t-shadow-navy-28), inset 0 1px 0 var(--t-shadow-sheen-22); }
 
-#t-rewrite-overlay .t-rewrite-head-text-btn:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--t-color-field-glass-border); }
+#t-rewrite-overlay .t-rewrite-head-text-btn:active { transform: translateY(0); box-shadow: 0 4px 10px var(--t-shadow-ink-20), inset 0 1px 0 var(--t-color-field-glass-border); }
 
 #t-rewrite-overlay .t-rewrite-title { font-size: 1.08em; font-weight: 700; letter-spacing: 0.2px; display: flex; align-items: center; gap: 8px; }
 
@@ -18666,7 +18780,7 @@ textarea.t-input {
 
 #t-rewrite-live-overlay { z-index: 30075; }
 
-#t-rewrite-settings-overlay .t-rewrite-settings-window { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; height: min(90vh, 940px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-settings-overlay .t-rewrite-settings-window { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; height: min(90vh, 940px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px var(--t-shadow-ink-56); border-radius: 14px; }
 
 /* \u672C\u6D6E\u5C42\u7684\u8BBE\u7F6E\u5916\u58F3\uFF08body / nav / tab / content\uFF09\u5DF2\u8FC1\u81F3
    02-components/settings-shell.css \u7684 \`.t-set-glass-*\` \u2014\u2014 \u4E0E lore-review.css \u7684
@@ -18684,7 +18798,7 @@ textarea.t-input {
 
 #t-rewrite-settings-overlay .t-rewrite-settings-footer { padding: 10px 14px; border-top: 1px solid var(--t-color-border-subtle); display: flex; justify-content: flex-end; gap: 8px; background: var(--t-glass-nav); }
 
-#t-rewrite-live-overlay .t-rewrite-live-window { width: min(980px, 96vw); max-width: 96vw; max-height: 92vh; height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
+#t-rewrite-live-overlay .t-rewrite-live-window { width: min(980px, 96vw); max-width: 96vw; max-height: 92vh; height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: var(--t-glass-window); border: 1px solid var(--t-color-field-glass-border); box-shadow: 0 22px 58px var(--t-shadow-ink-56); border-radius: 14px; }
 
 #t-rewrite-live-overlay .t-rewrite-live-body { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgb(var(--t-accent-sky-rgb) / 0) 36%), radial-gradient(circle at 0% 100%, var(--t-color-brand-veil) 0%, rgb(var(--t-accent-brand-rgb) / 0) 32%), var(--t-glass-body); }
 
@@ -18692,11 +18806,11 @@ textarea.t-input {
 
 #t-rewrite-live-overlay .t-rewrite-live-meta { font-size: 0.8em; color: var(--t-glass-text-faint); }
 
-#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
+#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); box-shadow: 0 8px 22px var(--t-shadow-ink-20); }
 
 #t-rewrite-live-overlay .t-rewrite-live-stream-title { font-size: 0.84em; font-weight: 700; color: var(--t-glass-text-bright); margin-bottom: 6px; }
 
-#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
+#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid var(--t-color-field-glass-border); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card); box-shadow: 0 8px 22px var(--t-shadow-ink-20); }
 
 #t-rewrite-live-overlay .t-rewrite-live-history-title { font-size: 0.84em; font-weight: 700; color: var(--t-glass-text-bright); margin-bottom: 6px; }
 
@@ -19039,7 +19153,7 @@ textarea.t-input {
     background: linear-gradient(145deg, var(--t-color-surface-active), var(--t-color-surface-hover-subtle));
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+    box-shadow: 0 8px 18px var(--t-shadow-ink-24);
 }
 
 #t-rewrite-settings-overlay .t-window-close:hover {
@@ -19091,7 +19205,7 @@ textarea.t-input {
     padding: 25px;
     max-width: 400px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--t-shadow-lg);
     margin: auto;
 }
 
