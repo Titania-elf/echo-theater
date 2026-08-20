@@ -41,6 +41,8 @@ R-E 白色内高光（--t-shadow-inset-*）：保持白，alpha × 0.7。
 -----------------
 三个语义 token 无法靠原语翻转得到正确结果 —— 它们与另一个语义 token 共用原语，
 但浅色主题下需要的目标不同。实测冲突只有这三个，全在中性阶上。
+外加一个 --t-color-scheme：它压根不是颜色（是 color-scheme 关键字），
+没有可推导性，只能列在这里。
 """
 import io
 import os
@@ -142,8 +144,14 @@ ACCENT_TRIPLE = re.compile(r'^--t-(accent|sky-text|glass|surface|c)-[\w-]*rgb$')
 KEEP_BLACK = re.compile(r'^--t-(color-surface-recess|color-scrim|color-dialog-scrim|scrim)')
 SHADOW = re.compile(r'^--t-shadow-')
 
-# 三个必须单独给值的语义 token。理由见文件头「例外」。
+# 必须单独给值的 token。理由见文件头「例外」。
 EXCEPTIONS = {
+    '--t-color-scheme': (
+        'light',
+        '不是颜色，是 color-scheme 关键字（由 .t-root 消费，见 01-base/scope.css）。\n'
+        '       走例外表而非推导规则有两个原因：① 它不是颜色，transform_value 的\n'
+        '       任何一条规则都不适用；② 它只有 dark/light 两个取值，没有可推导性。\n'
+        '       决定插件根内 70 个原生 checkbox / radio / range / select 的控件配色。'),
     '--t-color-text-on-accent': (
         'rgb(255 255 255)',
         '压在强调色按钮**上面**的文字。深色主题里它是近黑(#121212)，因为那时强调色\n'

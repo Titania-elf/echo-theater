@@ -408,11 +408,23 @@ def rewrite(path):
     return (new, done), None
 
 
+# 名字像颜色、但值不是颜色的属性。必须排除，否则它们会被算成「带颜色的声明」。
+# ⚠ Phase 6c-3 踩到的：`color-scheme` 以 color 开头，HEAD 侧值是关键字 `dark`
+#   （不匹配 COLOR_RE、不计入），改成 `var(--t-color-scheme)` 后匹配了
+#   COLOR_OR_VAR 的 var 分支、被计入 —— --verify 于是报「scope.css 带颜色的
+#   声明数变了 3 -> 4」这种**假违规**，而一条永久的假违规会掩盖真的。
+#   role_of() 对它返回 'other' 已经是对的，问题出在声明枚举阶段无条件扫全部属性。
+NON_COLOR_PROPS = frozenset(['color-scheme', 'color-interpolation',
+                             'color-interpolation-filters', 'color-rendering'])
+
+
 def color_sequence(text, defs):
     """[(属性名, (最终颜色序列))]，用于证明计算值不变。"""
     text = COMMENT_RE.sub('', text)
     seq = []
     for dm in DECL_RE.finditer(text):
+        if dm.group(2).lower() in NON_COLOR_PROPS:
+            continue
         colors = []
         for cm in COLOR_OR_VAR.finditer(dm.group(3)):
             colors.extend(resolve_multi(defs, cm))

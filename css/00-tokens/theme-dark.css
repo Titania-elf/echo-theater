@@ -11,6 +11,17 @@
 :root,
 :root[data-t-theme="dark"] {
 
+    /* ---- 非颜色、但随主题变的值 ----
+       目前只有一个。放在主题文件里而不是 01-base，是为了保住「一个主题的全部
+       决定都在一个文件里」这条性质 —— 否则加第三个主题的人会漏掉 scope.css。 */
+    --t-color-scheme: dark;
+    /* 由 .t-root 消费（01-base/scope.css）。它覆盖 ST body 的
+       `color-scheme: only light`，决定插件根内 70 个原生 checkbox / radio /
+       range / select 用深色还是浅色控件。
+       ⚠ 若本 token 未定义，`color-scheme: var(--t-color-scheme)` 会在计算值阶段
+         失效；因 color-scheme 是**继承**属性，届时会退回继承 ST 的 only light ——
+         即 Phase 3 之前的行为。是可接受的降级，不会整块失效。 */
+
     /* ---- 表面层（elevation）----
        Phase 6b-2 把 04-features 里 95 处写死的纯灰底色吸附到下面这条 9 档刻度上。
        由深到浅（数字是灰阶值）：

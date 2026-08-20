@@ -21,7 +21,11 @@
     font-size: var(--t-font-size-root);
     /* calc(12px * var(--t-ui-font-scale, 1)) */
     color: var(--t-color-text);
-    color-scheme: dark;
+    color-scheme: var(--t-color-scheme);
+    /* Phase 6c-3：原先写死 `dark`。改成 token 后随主题翻转 ——
+       浅底上的深色 checkbox / radio / range 是浅色主题最扎眼的一处不协调。
+       ⚠ 作用域外的 ST DOM 不受影响；ST body 的 `color-scheme: only light`
+         里的 `only` 只是禁止 UA 自动反色，不阻止后代自行声明。 */
 }
 
 /* 盒模型自洽：不依赖宿主。
@@ -47,7 +51,20 @@
       plan.md §12.2 的「已知视觉变化」清单里没有这一条，属计划遗漏。
       应作为独立一步实施并单独比对，不与 token 落盘混在一起。
 
-   color-scheme: dark 已在 Phase 3 落地：它覆盖 ST body 的
-   `color-scheme: only light`，让插件根内的原生 checkbox / radio / range
-   使用暗色控件；作用域外的 ST DOM 不受影响。
+   color-scheme 已在 Phase 3 落地、Phase 6c-3 改为跟随主题（见上方 .t-root）。
+   仍未纳入插件作用域的两处，是刻意的：
+
+   1) ST 扩展设置抽屉（settings.html，根是 #titania-settings-drawer）**没有**
+      .t-root，故其 10 个原生控件继承 ST 的 `only light`、渲染为浅色控件。
+      浅色主题下这正好是对的；深色主题下是「浅控件配深抽屉」，属 Phase 3 之前
+      就有的观感，不是本次引入。给抽屉加 .t-root 会同时改掉字号基准
+      （12px vs ST 的 15px）并重排整个抽屉，远超本步范围。
+   2) openPromptEntryEditor 的 shadow DOM（settingsWindow.js）用
+      `all: initial !important` 完全隔离，其 6.9k 字符样式里有 24 处颜色字面量、
+      **0 处 token 引用** —— 它是一座深色孤岛，两种主题下都是深色。
+      故其内部写死的 `color-scheme: dark` 是**对的**，不该跟随主题：
+      它有 7 个 textarea / 16 个 select，配浅控件会与自身深底冲突。
+      ⚠ 顺带记一条实测结论：`all` 按规范**不重置自定义属性**，所以
+        var(--t-*) 其实能穿过这层隔离。要给这座孤岛做主题化是可行的
+        （不需要 JS 传值），但那是 24 处字面量的迁移，属另一批。
    ============================================================ */

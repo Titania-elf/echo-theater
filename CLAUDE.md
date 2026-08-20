@@ -100,9 +100,15 @@ A16 剩余约 360 处静态内联的全量清理（属卫生问题，机会主�
    ST 的 body 没设 line-height，插件现在继承浏览器默认（约 1.2）。设成 1.5 会让
    所有未自行声明 line-height 的元素行距变大、窗口高度改变。plan.md §12.2 的
    「已知视觉变化」清单漏了这一条，应独立成一步实施并单独比对。
-2. **`.t-root` 上的 `color-scheme: dark`**（属 Phase 3）
-   ST 的 body 设了 `color-scheme: only light`，这是 S2 的根因。改为 dark 会让
-   66 个原生 checkbox/radio/range 外观立刻翻转，需在 ST 深/浅/第三方主题下逐一验证。
+2. ~~**`.t-root` 上的 `color-scheme: dark`**（属 Phase 3）~~
+   **已完成，本条曾长期过期、误导过后续会话。** `color-scheme: dark` 其实早在
+   Phase 3 就落地在 `css/01-base/scope.css` 上（该文件注释里写明了），
+   而本清单一直把它列作"待办"。Phase 6c-3 又把它改成
+   `color-scheme: var(--t-color-scheme)` 随主题翻转（`dark` / `light`）。
+   仍**刻意**留在作用域外的两处，理由写在 `scope.css` 文件尾：
+   ST 扩展设置抽屉（10 个原生控件，加 `.t-root` 会连字号基准一起改）、
+   `openPromptEntryEditor` 的 shadow DOM（`all: initial` 隔离的深色孤岛，
+   两种主题下都是深色，其内部写死 `dark` 是对的）。
 3. **B5 的 4 个变量不在 `:root` 补默认值**
    `--t-border-color` 有 5 种互不相同的 fallback（`#55efc4`/`#a29bfe`/`#90cdf4`/
    `#74b9ff`/`#444`），补任何单一默认值都会改色（最直接是设置页预览球的呼吸光晕由青变蓝）。
