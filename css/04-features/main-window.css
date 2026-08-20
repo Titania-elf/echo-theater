@@ -199,7 +199,7 @@
 }
 
 .t-history-toggle.active:hover .t-toggle-text {
-    color: #a8d8f8;
+    color: rgb(var(--t-sky-text-2-rgb));
 }
 
 /* 「只要角色发言」：历史开关的子项，窄一点以免顶栏被两个同宽开关挤满 */
@@ -422,7 +422,7 @@
 
 .t-tools-icon:hover {
     opacity: 1;
-    background: rgba(51, 51, 51, 0.8);
+    background: rgb(var(--t-surface-high-rgb) / .8);
     color: var(--t-color-text-strong);
     transform: scale(1.08);
 }
@@ -619,7 +619,7 @@
 #t-btn-queue-settings.active {
     border-color: var(--t-color-accent-border-strong);
     background: var(--t-color-accent-soft);
-    color: #b8e0fa;
+    color: rgb(var(--t-sky-text-1-rgb));
 }
 
 .t-toolbox-action.inactive {
@@ -634,10 +634,10 @@
     display: none;
     min-height: 44px;
     margin: 0 12px 12px;
-    border: 1px solid rgba(255, 107, 107, .45);
+    border: 1px solid rgb(var(--t-accent-danger-rgb) / .45);
     border-radius: 6px;
-    background: rgba(255, 107, 107, .1);
-    color: #ff8a8a;
+    background: rgb(var(--t-accent-danger-rgb) / .1);
+    color: rgb(var(--t-accent-danger-text-rgb));
     font: inherit;
     cursor: pointer;
 }
@@ -988,7 +988,7 @@
     z-index: 100;
 
     /* 透明毛玻璃效果 */
-    background: rgba(0, 0, 0, 0.5);
+    background: rgb(var(--t-scrim-panel-rgb) / .5);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
 
@@ -1024,12 +1024,12 @@
 }
 
 .t-stats-sep {
-    color: rgba(255, 255, 255, 0.15);
+    color: rgb(var(--t-text-white-rgb) / .15);
     font-size: 9px;
 }
 
 .t-stats-label {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgb(var(--t-text-white-rgb) / .4);
     font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.3px;
@@ -1051,7 +1051,7 @@
 
 /* 生成时间使用不同颜色 */
 #t-stat-time {
-    color: #ffeaa7;
+    color: rgb(var(--t-accent-stat-time-rgb));
 }
 
 /* Zen 模式下隐藏统计 HUD */
@@ -1103,7 +1103,7 @@
     height: 50px;
     border: none;
     background: var(--t-color-surface-recess-strong);
-    color: rgba(255, 255, 255, 0.5);
+    color: rgb(var(--t-text-white-rgb) / .5);
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
@@ -1145,7 +1145,7 @@
     right: 8px;
     z-index: 150;
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgb(var(--t-text-white-rgb) / .3);
     font-family: 'Consolas', 'Monaco', monospace;
     pointer-events: none;
 }
@@ -1275,10 +1275,10 @@
     align-items: center;
     gap: 12px;
     padding: 12px 18px;
-    background: rgba(25, 35, 25, 0.95);
+    background: rgb(var(--t-accent-success-fill-rgb) / .95);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(85, 239, 196, 0.3);
+    border: 1px solid rgb(var(--t-accent-mint-rgb) / .3);
     border-radius: 25px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     animation: t-indicator-slide-up 0.3s ease;
@@ -1303,7 +1303,7 @@
 
 .t-gcn-view-btn {
     padding: 6px 14px;
-    background: linear-gradient(90deg, var(--t-color-notify), #00b894);
+    background: linear-gradient(90deg, var(--t-color-notify), rgb(var(--t-accent-emerald-rgb)));
     border: none;
     border-radius: 15px;
     color: var(--t-color-text-on-accent);
@@ -1315,7 +1315,7 @@
 
 .t-gcn-view-btn:hover {
     filter: brightness(1.1);
-    box-shadow: 0 2px 10px rgba(85, 239, 196, 0.4);
+    box-shadow: 0 2px 10px rgb(var(--t-accent-mint-rgb) / .4);
 }
 
 .t-gcn-view-btn:active {
@@ -1485,7 +1485,7 @@
 }
 
 .t-chat-inject-item-time {
-    color: #6f7b8f;
+    color: rgb(var(--t-glass-text-dim-cool-rgb));
     font-size: 0.9em;
     flex-shrink: 0;
 }
@@ -1507,7 +1507,7 @@
 
 .t-chat-inject-empty > i {
     font-size: 2.2em;
-    color: #4a5568;
+    color: rgb(var(--t-glass-text-faintest-rgb));
     margin-bottom: 12px;
     display: block;
 }

@@ -114,13 +114,13 @@
     left: 20px;
 
     /* 毛玻璃效果 */
-    background: rgba(30, 30, 30, 0.5);
+    background: rgb(var(--t-surface-rgb) / .5);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--t-color-border-subtle);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
-    color: #00d9ff;
+    color: rgb(var(--t-accent-timer-rgb));
     font-family: var(--t-font-mono);
     font-size: 11px;
 
@@ -199,7 +199,7 @@
     align-items: center;
     justify-content: center;
     font-size: 16px;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgb(var(--t-text-white-rgb) / .85);
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -261,8 +261,8 @@
     background: radial-gradient(circle at center, var(--t-color-teal-soft-strong) 0%, var(--t-color-teal-veil) 70%);
     border-color: var(--t-color-teal-border);
     box-shadow:
-        0 0 15px rgba(129, 236, 236, 0.35),
-        inset 0 0 10px rgba(129, 236, 236, 0.1);
+        0 0 15px rgb(var(--t-accent-teal-rgb) / .35),
+        inset 0 0 10px rgb(var(--t-accent-teal-rgb) / .1);
 }
 
 /* 设置按钮 */
@@ -271,51 +271,51 @@
 }
 
 .t-menu-icon-btn.settings:hover {
-    background: radial-gradient(circle at center, rgba(176, 190, 197, 0.2) 0%, rgba(176, 190, 197, 0.08) 70%);
-    border-color: rgba(176, 190, 197, 0.4);
+    background: radial-gradient(circle at center, rgb(var(--t-accent-settings-rgb) / .2) 0%, rgb(var(--t-accent-settings-rgb) / .08) 70%);
+    border-color: rgb(var(--t-accent-settings-rgb) / .4);
     box-shadow:
-        0 0 15px rgba(176, 190, 197, 0.3),
-        inset 0 0 10px rgba(176, 190, 197, 0.1);
+        0 0 15px rgb(var(--t-accent-settings-rgb) / .3),
+        inset 0 0 10px rgb(var(--t-accent-settings-rgb) / .1);
     color: var(--t-color-text-strong);
 }
 
 /* 收藏夹按钮 */
 .t-menu-icon-btn.favs {
-    color: #ffd93d;
+    color: rgb(var(--t-accent-fav-yellow-rgb));
 }
 
 .t-menu-icon-btn.favs:hover {
-    background: radial-gradient(circle at center, rgba(255, 217, 61, 0.25) 0%, rgba(255, 217, 61, 0.1) 70%);
-    border-color: rgba(255, 217, 61, 0.5);
+    background: radial-gradient(circle at center, rgb(var(--t-accent-fav-yellow-rgb) / .25) 0%, rgb(var(--t-accent-fav-yellow-rgb) / .1) 70%);
+    border-color: rgb(var(--t-accent-fav-yellow-rgb) / .5);
     box-shadow:
-        0 0 15px rgba(255, 217, 61, 0.4),
-        inset 0 0 10px rgba(255, 217, 61, 0.1);
+        0 0 15px rgb(var(--t-accent-fav-yellow-rgb) / .4),
+        inset 0 0 10px rgb(var(--t-accent-fav-yellow-rgb) / .1);
 }
 
 /* 剧本管理按钮 */
 .t-menu-icon-btn.scripts {
-    color: #d4a574;
+    color: rgb(var(--t-accent-tan-rgb));
 }
 
 .t-menu-icon-btn.scripts:hover {
-    background: radial-gradient(circle at center, rgba(212, 165, 116, 0.25) 0%, rgba(212, 165, 116, 0.1) 70%);
-    border-color: rgba(212, 165, 116, 0.5);
+    background: radial-gradient(circle at center, rgb(var(--t-accent-tan-rgb) / .25) 0%, rgb(var(--t-accent-tan-rgb) / .1) 70%);
+    border-color: rgb(var(--t-accent-tan-rgb) / .5);
     box-shadow:
-        0 0 15px rgba(212, 165, 116, 0.4),
-        inset 0 0 10px rgba(212, 165, 116, 0.1);
+        0 0 15px rgb(var(--t-accent-tan-rgb) / .4),
+        inset 0 0 10px rgb(var(--t-accent-tan-rgb) / .1);
 }
 
 /* 调试按钮 */
 .t-menu-icon-btn.debug {
-    color: #ff9f43;
+    color: rgb(var(--t-accent-orange-rgb));
 }
 
 .t-menu-icon-btn.debug:hover {
-    background: radial-gradient(circle at center, rgba(255, 159, 67, 0.25) 0%, rgba(255, 159, 67, 0.1) 70%);
-    border-color: rgba(255, 159, 67, 0.5);
+    background: radial-gradient(circle at center, rgb(var(--t-accent-orange-rgb) / .25) 0%, rgb(var(--t-accent-orange-rgb) / .1) 70%);
+    border-color: rgb(var(--t-accent-orange-rgb) / .5);
     box-shadow:
-        0 0 15px rgba(255, 159, 67, 0.4),
-        inset 0 0 10px rgba(255, 159, 67, 0.1);
+        0 0 15px rgb(var(--t-accent-orange-rgb) / .4),
+        inset 0 0 10px rgb(var(--t-accent-orange-rgb) / .1);
 }
 
 /* 中止按钮 */
@@ -325,11 +325,11 @@
 }
 
 .t-menu-icon-btn.cancel:hover {
-    background: radial-gradient(circle at center, rgba(255, 107, 107, 0.3) 0%, rgba(255, 107, 107, 0.12) 70%);
-    border-color: rgba(255, 107, 107, 0.6);
+    background: radial-gradient(circle at center, rgb(var(--t-accent-danger-rgb) / .3) 0%, rgb(var(--t-accent-danger-rgb) / .12) 70%);
+    border-color: rgb(var(--t-accent-danger-rgb) / .6);
     box-shadow:
-        0 0 18px rgba(255, 107, 107, 0.5),
-        inset 0 0 12px rgba(255, 107, 107, 0.15);
+        0 0 18px rgb(var(--t-accent-danger-rgb) / .5),
+        inset 0 0 12px rgb(var(--t-accent-danger-rgb) / .15);
 }
 
 .t-menu-icon {
@@ -356,8 +356,8 @@
 }
 
 .t-menu-icon.cancel {
-    background: linear-gradient(135deg, var(--t-color-danger), #ee5a5a);
-    border: 2px solid #ff4757;
+    background: linear-gradient(135deg, var(--t-color-danger), rgb(var(--t-accent-danger-deep-rgb)));
+    border: 2px solid rgb(var(--t-accent-danger-vivid-rgb));
     animation: t-cancel-pulse 1.5s ease-in-out infinite;
 }
 
@@ -383,9 +383,9 @@
 }
 
 .t-menu-icon-btn.model:hover {
-    background: radial-gradient(circle at center, rgba(0, 206, 201, 0.25) 0%, var(--t-color-field-dialog-notify-ring) 70%);
-    border-color: rgba(0, 206, 201, 0.5);
+    background: radial-gradient(circle at center, rgb(var(--t-accent-model-rgb) / .25) 0%, var(--t-color-field-dialog-notify-ring) 70%);
+    border-color: rgb(var(--t-accent-model-rgb) / .5);
     box-shadow:
-        0 0 15px rgba(0, 206, 201, 0.4),
-        inset 0 0 10px rgba(0, 206, 201, 0.1);
+        0 0 15px rgb(var(--t-accent-model-rgb) / .4),
+        inset 0 0 10px rgb(var(--t-accent-model-rgb) / .1);
 }

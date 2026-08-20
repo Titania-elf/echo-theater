@@ -161,7 +161,7 @@
 }
 
 .t-wi-book-item.selected {
-    color: #dff1ff;
+    color: rgb(var(--t-sky-text-0-rgb));
     background: var(--t-color-accent-soft);
     border-color: var(--t-color-accent-border);
 }
@@ -176,7 +176,7 @@
 
 .t-wi-book-item-dot.active {
     background: var(--t-color-notify);
-    box-shadow: 0 0 6px rgba(85, 239, 196, 0.6);
+    box-shadow: 0 0 6px rgb(var(--t-accent-mint-rgb) / .6);
 }
 
 .t-wi-book-item-name {
@@ -248,8 +248,8 @@
 
 .t-wi-entry-pane-badge.active {
     color: var(--t-color-notify);
-    border-color: rgba(85, 239, 196, 0.45);
-    background: rgba(85, 239, 196, 0.08);
+    border-color: rgb(var(--t-accent-mint-rgb) / .45);
+    background: rgb(var(--t-accent-mint-rgb) / .08);
 }
 
 .t-wi-entry-pane-badge.inactive {
@@ -343,7 +343,7 @@
 
 .t-wi-title-hit {
     background: var(--t-color-accent-soft-strong);
-    color: #cfe8ff;
+    color: rgb(var(--t-sky-text-0-rgb));
     border-radius: 2px;
 }
 
@@ -630,7 +630,7 @@
 /* 世界书数据加载失败的错误态（mainWindow.js:1940 一带） */
 .t-wi-load-error {
     text-align: center;
-    color: #e74c3c;
+    color: rgb(var(--t-accent-error-rgb));
     padding: 20px;
 }
 
@@ -670,6 +670,6 @@
 }
 
 .t-wi-entry-badge--disabled {
-    background: #ff9f4333;
+    background: rgb(var(--t-accent-orange-rgb) / .2);
     color: var(--t-color-warning-muted);
 }

@@ -35,7 +35,7 @@
     font-size: 0.8em;
 }
 #t-ws-rating-toggle:hover { border-color: var(--t-theme); color: var(--t-color-text-strong); }
-#t-ws-rating-toggle.is-mature { border-color: #7e3847; background: #4a2530; color: #ffa8b0; }
+#t-ws-rating-toggle.is-mature { border-color: rgb(var(--t-accent-mature-border-rgb)); background: rgb(var(--t-accent-mature-fill-rgb)); color: rgb(var(--t-accent-mature-rgb)); }
 
 /* 工坊头部的图标钮比主窗口大一号（36 vs 32）：只覆盖尺寸变量。
    热区/居中/无 margin/user-select 已由 02-components/icon-button.css 提供（修 B13）。 */
@@ -166,7 +166,7 @@
        竖向渐变压出纵深，右上角一团暖光呼应金色主题 */
     background:
         linear-gradient(180deg, var(--t-color-surface-recess), var(--t-color-scrim)),
-        radial-gradient(90% 140% at 100% 0%, rgba(54, 40, 24, 0.28), transparent 70%);
+        radial-gradient(90% 140% at 100% 0%, rgb(var(--t-warm-surface-1-rgb) / .28), transparent 70%);
 }
 
 .t-ws-grid-empty {
@@ -313,7 +313,7 @@
     background: var(--t-color-brand-soft);
     color: var(--t-theme);
 }
-.t-ws-tag-mature { background: #4a2530; color: #ffa8b0; }
+.t-ws-tag-mature { background: rgb(var(--t-accent-mature-fill-rgb)); color: rgb(var(--t-accent-mature-rgb)); }
 
 /* 底部操作 */
 .t-ws-card-actions {
@@ -399,7 +399,7 @@
 
 .t-ws-placeholder>i {
     font-size: 2.6em;
-    color: #333;
+    color: rgb(var(--t-glass-placeholder-rgb));
     margin-bottom: 14px;
     display: block;
 }
@@ -564,7 +564,7 @@
 .t-ws-pv-comment-author small { color: var(--t-color-text-muted); font-size: 0.72em; }
 .t-ws-pv-comment-body { margin-top: 8px; white-space: pre-wrap; line-height: 1.5; color: var(--t-color-text-label); font-size: 0.86em; }
 .t-ws-pv-comment-reply { margin-top: 8px; padding: 7px 9px; border-left: 2px solid var(--t-theme); background: var(--t-color-surface-veil); display: grid; gap: 3px; font-size: 0.82em; }
-.t-ws-pv-comment-reply strong { color: #d9c18a; }
+.t-ws-pv-comment-reply strong { color: rgb(var(--t-accent-gold-text-warm-rgb)); }
 .t-ws-pv-comment-reply span { white-space: pre-wrap; color: var(--t-color-text-label); }
 .t-ws-pv-comments-empty { color: var(--t-color-text-muted); font-size: 0.84em; padding: 12px 0; }
 

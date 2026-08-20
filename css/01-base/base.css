@@ -14,7 +14,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--t-color-scrim);
     z-index: 20000;
     backdrop-filter: blur(2px);
     display: flex;
@@ -33,12 +33,12 @@
     height: auto;
     max-height: 85vh;
     background: var(--t-bg-dark);
-    border: 1px solid #555;
+    border: 1px solid var(--t-color-border-bright);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-    color: #eee;
+    color: var(--t-color-text);
     font-family: var(--t-font-global);
     font-size: calc(12px * var(--t-ui-font-scale));
     overflow: hidden;
@@ -64,16 +64,16 @@
     top: 10%;
     height: 80%;
     width: 4px;
-    background: linear-gradient(to bottom, #ff9a9e, #fad0c4);
+    background: var(--t-gradient-brand-bar);
     border-radius: 2px;
-    box-shadow: 0 0 8px rgba(255, 154, 158, 0.6);
+    box-shadow: 0 0 8px rgb(var(--t-accent-rose-rgb) / .6);
 }
 
 .t-title-main {
     font-size: 1.4em;
     font-weight: 800;
     line-height: 1.1;
-    background: linear-gradient(135deg, #e0c3fc 0%, #ff9a9e 100%);
+    background: var(--t-gradient-title);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 1px;
@@ -81,13 +81,13 @@
 
 .t-title-sub {
     font-size: 0.55em;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     text-transform: uppercase;
     letter-spacing: 4px;
     margin-top: 2px;
     opacity: 0.7;
     font-weight: 300;
-    background: linear-gradient(90deg, #ff9a9e, #e0c3fc);
+    background: var(--t-gradient-title-sub);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -103,9 +103,12 @@
 .t-tool-btn {
     font-size: 0.75em;
     padding: 4px 10px;
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid #666;
-    color: #ccc;
+    /* ⚠ 用 -recess-deep 而非 --t-color-scrim，尽管两者当前值相同（黑 /.6）：
+       scrim 是「盖住整个页面的遮罩」，这里是「凹陷的控件底」。
+       浅色主题下前者仍要是深色半透明，后者要变成浅灰 —— 共用一个 token 就锁死了。 */
+    background: var(--t-color-surface-recess-deep);
+    border: 1px solid var(--t-color-border-mid);
+    color: var(--t-color-text-label);
     cursor: pointer;
     border-radius: 3px;
     display: flex;
@@ -115,22 +118,22 @@
 }
 
 .t-tool-btn:hover {
-    background: #444;
-    color: white;
+    background: var(--t-color-surface-hover-solid);
+    color: var(--t-color-text-strong);
 }
 
 .t-close {
     cursor: pointer;
     font-size: 1.8em;
     line-height: 1;
-    color: #888;
+    color: var(--t-color-text-muted);
     transition: 0.2s;
     padding: 0 5px;
     margin-left: 15px;
 }
 
 .t-close:hover {
-    color: #fff;
+    color: var(--t-color-text-strong);
     transform: rotate(90deg);
 }
 

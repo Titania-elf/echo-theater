@@ -98,6 +98,27 @@
     --t-color-surface-recess-strong: rgb(0 0 0 / .3);
     /* 压暗两档 —— 卡片头，替换 rgba(0,0,0,.3)
        （白膜是「加亮」，本对是「压暗」；两个方向都需要，否则 feature 层只能写字面量） */
+    --t-color-surface-recess-deep: rgb(0 0 0 / .6);
+    /* 压暗三档 —— .t-tool-btn 的静息底（Phase 6b-20 新增）。
+       ⚠ 与 --t-color-scrim 值相同、角色不同，故必须分成两个 token：
+         scrim 是「盖住整个页面的遮罩」，本 token 是「凹陷的控件底」。
+         浅色主题下前者仍要是深色半透明（遮罩），后者要变成浅灰 —— 合并就锁死了。
+         这是第五次遇到「同值不同角色」（前四次：6b-2 表面、6b-6 白膜、
+         6b-10 描边、6b-14 金族的 surface/text）。 */
+    --t-color-scrollbar-thumb: rgb(var(--t-c-neutral-13-rgb) / .2);
+    /* 滚动条滑块（Phase 6b-20 新增）。⚠ 不并入 --t-color-surface-* 白膜族：
+       浅色主题下滑块要变成**深色**，而白膜族仍是白色叠加，方向相反。 */
+    --t-color-scrollbar-thumb-hover: rgb(var(--t-c-neutral-13-rgb) / .4);
+    /* 滚动条滑块 hover。与静息档差 .2，是刻意的交互反馈。 */
+    --t-color-surface-hover-solid: rgb(var(--t-c-neutral-7-rgb));
+    /* #444 不透明 —— .t-tool-btn:hover 的底（Phase 6b-20 新增）。
+       ⚠ 与 --t-color-border-strong 同值不同角色（那是描边）。
+         表面刻度里 -high 是 #333、-highest 是 #555，#444 正好落在两档之间
+         （到两边各差 ΔE 5.6 / 5.1，都可辨），故不吸附而新建一档。 */
+    --t-color-border-mid: rgb(var(--t-c-neutral-8-rgb));
+    /* #666 —— .t-tool-btn 的描边（Phase 6b-20 新增）。
+       描边刻度此前只到 -bright(#555)，#666 是缺的一档；
+       同值的 --t-color-text-faint 是文字角色，不能拿来当描边用。 */
     --t-color-scrim: rgb(0 0 0 / .6);
     /* 遮罩，= 现 .t-overlay 的 rgba(0,0,0,.6) */
 
@@ -411,6 +432,481 @@
     --t-accent-violet-rgb: 162 155 254;
     /* #a29bfe 5 处 —— 与 --t-c-violet-rgb 同值，独立声明，理由同 -sky。 */
 
+    /* ---- 红：危险 / 错误 / 警告（Phase 6b-13，57 处）────────────────
+       26 个取值其实是三条语义线，外加几组「同一组件的 base + hover 配对」：
+
+         danger  危险与中止操作 —— .t-btn-danger / .t-btn-stop / .t-toolbox-stop /
+                 .t-menu-icon-btn.cancel / .t-continuation-send.is-stop
+         error   错误提示 —— .t-raw-error-banner / .t-dialog-header-error /
+                 .titania-update-error / .t-wi-load-error
+         warn    警告 —— .is-warning / .is-over-budget / .t-rewrite-cat-*-warn
+
+       跨多种角色使用的取值改用「色相 + 明度」名（-soft / -pale），免得名字说谎。
+       ⚠ 只并了两对**同一个颜色被打成两种写法**的手误：
+         #ff7676 → #ff7675（ΔE 0.5）、#f08f8f → #ef8f8f（ΔE 0.4），
+         都远低于可辨阈值 1.0。其余一律保留原值。
+       ⚠ 别把看着相近的合了：#d95757 与 #e86868 是同一个停止钮的 base / :hover
+         （差 ΔE 6.1），并掉交互反馈就消失了。#ffb4b4 与 #ffb8b8 差 ΔE 2.0，
+         也分属两个不同组件，同样不并。 */
+    --t-accent-danger-rgb: 255 107 107;
+    /* #ff6b6b 14 处 / 6 文件 —— 与 --t-c-red-rgb 同值，独立声明（理由同 -sky）。
+       ⚠ settings.css 里另有一条 .t-color-swatch[data-color="#ff6b6b"]，它贡献
+         2 次文本出现（选择器 + background）但必须保持字面量（审计 A24）：
+         那是调色板预览球，画的就是用户挑的那个 hex。故 grep 到 16 次、实改 14 处。
+       9 个 alpha（.1 .12 .15 .25 .3 .45 .5 .55 .6）全部与现有
+       --t-color-danger-* 三档（1.0/.2/.4）错开，所以一处都没能走旧 token。 */
+    --t-accent-danger-text-rgb: 255 138 138;
+    /* #ff8a8a 2 处 —— 中止钮的文字色（比钮底浅，深底上可读）。 */
+    --t-accent-danger-fill-rgb: 217 87 87;
+    /* #d95757 1 处 —— .t-continuation-send.is-stop 的不透明实底。 */
+    --t-accent-danger-fill-hover-rgb: 232 104 104;
+    /* #e86868 1 处 —— 上者的 :hover。⚠ 与 -fill 差 ΔE 6.1，是刻意的交互反馈。 */
+    --t-accent-danger-deep-rgb: 238 90 90;
+    /* #ee5a5a 1 处 —— .t-menu-icon.cancel 渐变的暗端（起点是 -danger）。 */
+    --t-accent-danger-vivid-rgb: 255 71 87;
+    /* #ff4757 1 处 —— 同一图标的描边，比 -danger 更偏洋红。 */
+    --t-accent-danger-plan-rgb: 255 157 157;
+    /* #ff9d9d 1 处 —— 故事大纲的删除钮。 */
+    --t-accent-danger-bulk-border-rgb: 248 113 113;
+    /* #f87171 1 处 —— 续写历史批量操作栏的危险描边。 */
+    --t-accent-danger-bulk-fill-rgb: 185 28 28;
+    /* #b91c1c 1 处 —— 同上的底（alpha .18，全族最深的一档）。 */
+    --t-accent-danger-icon-rgb: 221 102 102;
+    /* #dd6666 1 处 —— 收藏窗「更多」菜单里危险项的图标。 */
+    --t-accent-danger-menu-fill-rgb: 220 60 60;
+    /* #dc3c3c 1 处 —— 同一菜单项的 hover 底。 */
+    --t-accent-danger-menu-hover-rgb: 255 180 180;
+    /* #ffb4b4 1 处 —— 同一菜单项的 hover 文字。 */
+    --t-accent-error-rgb: 231 76 60;
+    /* #e74c3c 8 处 —— 错误横幅与错误对话框头（设定审阅窗 ×7、世界书选择器 ×1）。
+       比 -danger 更深更偏橙：那是「出错了」而非「这个操作有危险」。 */
+    --t-accent-error-soft-rgb: 245 101 101;
+    /* #f56565 3 处 —— 空索引状态与 Event 分类标记。 */
+    --t-accent-error-text-rgb: 252 129 129;
+    /* #fc8181 1 处 —— .t-error-state 的文字。 */
+    --t-accent-error-pale-rgb: 255 184 184;
+    /* #ffb8b8 2 处 —— 更新卡片错误态的文字。 */
+    --t-accent-error-fill-rgb: 220 70 70;
+    /* #dc4646 2 处 —— 更新卡片错误态的底（alpha .12）。 */
+    --t-accent-error-border-rgb: 255 100 100;
+    /* #ff6464 2 处 —— 更新卡片错误态的描边（alpha .28 / .3）。 */
+    --t-accent-warn-red-rgb: 238 136 136;
+    /* #ee8888 2 处 —— 改写设置里警告分类的名字与状态。 */
+    --t-accent-red-soft-rgb: 255 118 117;
+    /* #ff7675 5 处 —— 跨「警告文字 / 删除钮 hover / 更新卡片错误描边」三种角色，
+       故用明度名而非角色名。已并入 #ff7676（ΔE 0.5，同值手误）。 */
+    --t-accent-red-pale-rgb: 239 143 143;
+    /* #ef8f8f 2 处 —— 危险菜单项文字 + 改写状态「出错」。
+       已并入 #f08f8f（ΔE 0.4，同值手误）。 */
+    --t-accent-diff-before-rgb: 224 136 136;
+    /* #e08888 1 处 —— 改写对比里「原文」一侧的描边（alpha .35）。 */
+    --t-accent-mature-rgb: 255 168 176;
+    /* #ffa8b0 2 处 —— 工坊的成人分级标签文字（偏粉，不属 danger 线）。 */
+    --t-accent-mature-border-rgb: 126 56 71;
+    /* #7e3847 1 处 —— 同上的描边。深酒红，与族内其它值差 ΔE 33 以上，是独立一档。 */
+
+    /* ---- 金 / 琥珀（Phase 6b-14，60 处）───────────────────────────────
+       21 个取值分**两条线**，它们在浅色主题下的走向不同，故分开命名：
+
+         亮琥珀（S、V 都高）= 状态色 —— 警告文字、调试身份色、分类标记。
+                              浅色主题下要保持醒目，压暗幅度小。
+         暖金（低饱和）      = 品牌与羊皮纸质感 —— 收藏窗、续写说明文字、
+                              legacy 运行钮。浅色主题下要压成深棕，幅度大。
+
+       ⚠ #e7ca8f 一个色相散在 **10 个 alpha** 上（.09 .3 .32 .42 .5 .7 .75 .86 .95 1.0），
+         是全库 alpha 漂移最重的一处 —— 也正是「alpha 不进 token 名」这个决定
+         省下最多声明的地方（否则光它一族就要 10 条）。
+       ⚠ 已并 #e5c88c → #e7ca8f（ΔE 0.9，同文件同族的同值手误）。
+       ⚠ 别把看着相近的合了：#d4c08b（底）与 #d4b06b / #e5d1a0（hover 渐变两端）
+         是 legacy 单次运行钮的 base / :hover；#d4c08b 与 #d9c18a 差 ΔE 2.1 但分属
+         surface / text 两种角色、两个文件（按角色分档的规矩，同值不同角色不并）。 */
+    --t-accent-fav-gold-rgb: 231 202 143;
+    /* #e7ca8f 15 处 —— 收藏窗的暖金主色，10 个 alpha 全在描边与卡片底上。 */
+    --t-accent-fav-gold-focus-rgb: 228 196 120;
+    /* #e4c478 2 处 —— 收藏窗搜索框/筛选框的 focus 描边与光晕。 */
+    --t-accent-fav-gold-dim-rgb: 156 143 111;
+    /* #9c8f6f 1 处 —— 收藏窗「更多」菜单的图标（压暗到近乎中性）。 */
+    --t-accent-brand-rgb: 191 161 95;
+    /* #bfa15f 3 处 —— 与 --t-c-gold-rgb 同值，独立声明（理由同 -sky）。
+       其中 1 处 alpha 为 0：那是渐变的淡出止点，保留原样。 */
+    --t-accent-tan-rgb: 212 165 116;
+    /* #d4a574 6 处 —— 悬浮球「剧本管理」图标的褐金身份色。 */
+    --t-accent-gold-hover-rgb: 208 181 117;
+    /* #d0b575 2 处 —— 续写窗发送/重放钮的 hover。 */
+    --t-accent-gold-fill-rgb: 212 192 139;
+    /* #d4c08b 1 处 —— legacy 布局「单次运行」钮的实底。 */
+    --t-accent-gold-fill-hover-rgb: 212 176 107;
+    /* #d4b06b 1 处 —— 上者 :hover 渐变的暗端。 */
+    --t-accent-gold-fill-hover-pale-rgb: 229 209 160;
+    /* #e5d1a0 1 处 —— 上者 :hover 渐变的亮端。 */
+    --t-accent-gold-text-rgb: 211 191 143;
+    /* #d3bf8f 1 处 —— 剧本管理器的概览项文字。 */
+    --t-accent-gold-text-warm-rgb: 217 193 138;
+    /* #d9c18a 1 处 —— 工坊预览里回复的强调文字。 */
+    --t-accent-parchment-rgb: 201 185 143;
+    /* #c9b98f 1 处 —— 续写窗内联分支选项。以下三档明度递减，是同一条说明文字阶。 */
+    --t-accent-parchment-dim-rgb: 183 169 137;
+    /* #b7a989 1 处 —— 续写历史的指令文字。 */
+    --t-accent-parchment-faint-rgb: 154 138 99;
+    /* #9a8a63 1 处 —— 续写的跨话提示（最弱一档）。 */
+    --t-accent-orange-rgb: 255 159 67;
+    /* #ff9f43 10 处 / 3 文件 —— 调试的身份色（悬浮球调试图标 + 调试窗 + 世界书选择器）。
+       与 --t-accent-amber-rgb(#f59e0b) 差 ΔE 15.5，是两个不同的橙。 */
+    --t-accent-amber-rgb: 245 158 11;
+    /* #f59e0b 5 处 —— 与 --t-c-amber-rgb 同值，独立声明（理由同 -sky）。 */
+    --t-accent-amber-soft-rgb: 246 173 85;
+    /* #f6ad55 1 处 —— 设定审阅窗 Character 分类的色标。 */
+    --t-accent-amber-bright-rgb: 251 191 36;
+    /* #fbbf24 1 处 —— legacy 诊断钮的 hover 文字。 */
+    --t-accent-warn-rgb: 254 202 87;
+    /* #feca57 5 处 / 3 文件 —— 警告文字：.t-set-warn / .t-set-unsaved-hint /
+       .t-diag-guide-title / .t-summary-text strong。 */
+    --t-accent-warn-pale-rgb: 242 194 125;
+    /* #f2c27d 1 处 —— 改写状态条的「警告」态文字。 */
+
+    /* ---- 青绿 / 薄荷 / 绿（Phase 6b-15，77 处）─────────────────────────
+       27 个取值是**五个互不相干的身份**，不是一族的漂移。分组如下：
+
+         ① 扩展更新（settings-drawer）—— #62d9bc 13 处 + 3 个配套
+         ② 故事大纲的两套按钮渐变 —— .t-outline-add-fab 系 / .t-hub-primary-action
+         ③ 通知与成功绿 —— mint / green 两个原语，加各窗自己的成功色
+         ④ 改写命中 —— 与红族的 --t-accent-diff-before-rgb 配对
+         ⑤ 悬浮球上的模型选择与计时器
+
+       ⚠ 两套大纲按钮渐变的色相**真的不同**：#30a6ad 偏青、#3494ac 偏蓝，
+         差 ΔE 13.3。不是同一个颜色写歪了，是两个按钮层级刻意不同
+         （前者是「新增/生成」，后者是场景中枢的主操作）。
+       ⚠ #62d9bc(base) 与 #78e4c9(:hover) 差 ΔE 5.2，是真交互反馈，不能并。
+       ⚠ 已并 #64dcbe → #62d9bc（ΔE 1.2，同文件同族同角色的同值手误）。
+       ⚠ #55efc4 在 settings.css 另有 1 处调色板预览球，保持字面量（审计 A24）。 */
+    --t-accent-update-rgb: 98 217 188;
+    /* #62d9bc 13 处 —— 扩展更新的身份色（卡片、徽章、更新钮、日志标题）。 */
+    --t-accent-update-hover-rgb: 120 228 201;
+    /* #78e4c9 2 处 —— 更新钮的 :hover 底。 */
+    --t-accent-update-text-rgb: 114 239 208;
+    /* #72efd0 2 处 —— 更新状态文字与导出钮文字。 */
+    --t-accent-update-code-rgb: 169 233 218;
+    /* #a9e9da 1 处 —— 更新日志里的行内 code。 */
+    --t-accent-teal-rgb: 129 236 236;
+    /* #81ecec 8 处 —— 与 --t-c-teal-rgb 同值，独立声明（理由同 -sky）。
+       全部是 box-shadow 光晕，5 个 alpha（.1 .15 .2 .35 .45）都与 Phase 6b-11
+       建的 --t-color-teal-* 那 7 档错开，所以一处都没能走旧 token。 */
+    --t-accent-outline-btn-rgb: 48 166 173;
+    /* #30a6ad 3 处 —— 大纲主按钮（新增 FAB / 场景发送 / 生成）渐变的暗端。 */
+    --t-accent-outline-btn-pale-rgb: 74 206 172;
+    /* #4aceac 3 处 —— 同上渐变的亮端。 */
+    --t-accent-outline-btn-border-rgb: 114 228 209;
+    /* #72e4d1 3 处 —— 同上的描边。 */
+    --t-accent-outline-btn-glow-rgb: 44 150 152;
+    /* #2c9698 2 处 —— 同上的外发光。 */
+    --t-accent-outline-fab-glow-rgb: 26 116 120;
+    /* #1a7478 1 处 —— 新增 FAB 单独用的更深光晕。 */
+    --t-accent-hub-btn-rgb: 52 148 172;
+    /* #3494ac 3 处 —— 场景中枢主操作钮渐变的暗端（偏蓝，与 -outline-btn 差 ΔE 13.3）。 */
+    --t-accent-hub-btn-pale-rgb: 84 192 172;
+    /* #54c0ac 1 处 —— 同上渐变的亮端。 */
+    --t-accent-hub-btn-border-rgb: 133 238 220;
+    /* #85eedc 1 处 —— 同上的描边。 */
+    --t-accent-mint-rgb: 85 239 196;
+    /* #55efc4 8 处 —— 与 --t-c-mint-rgb 同值，独立声明（理由同 -sky）。 */
+    --t-accent-green-rgb: 72 187 120;
+    /* #48bb78 3 处 —— 与 --t-c-green-rgb 同值，独立声明（理由同 -sky）。 */
+    --t-accent-green-light-rgb: 104 211 145;
+    /* #68d391 2 处 —— 设定审阅窗快捷筛选的激活态文字。 */
+    --t-accent-green-vivid-rgb: 46 204 113;
+    /* #2ecc71 1 处 —— 统计项「正常」图标。 */
+    --t-accent-interactive-rgb: 74 222 128;
+    /* #4ade80 5 处 —— 收藏窗「此条含可交互内容」的标记（文字+底+描边+hover）。 */
+    --t-accent-emerald-rgb: 0 184 148;
+    /* #00b894 1 处 —— 生成完成通知的「查看」钮。 */
+    --t-accent-recall-ok-rgb: 76 175 80;
+    /* #4caf50 1 处 —— 记忆回溯「可用」徽章文字。 */
+    --t-accent-recall-avail-rgb: 0 255 127;
+    /* #00ff7f 1 处 —— 记忆回溯「可用」状态底（alpha .3）。 */
+    --t-accent-diff-after-rgb: 122 203 159;
+    /* #7acb9f 5 处 —— 改写的命中行/命中标签/「改后」一侧。
+       与红族的 --t-accent-diff-before-rgb(#e08888) 是一对，浅色主题下要一起调。 */
+    --t-accent-diff-after-text-rgb: 121 217 168;
+    /* #79d9a8 1 处 —— 「改后」一侧的文字。 */
+    --t-accent-ok-dim-rgb: 102 170 153;
+    /* #66aa99 1 处 —— 改写设置里分类状态「正常」（压暗到近乎中性）。 */
+    --t-accent-model-rgb: 0 206 201;
+    /* #00cec9 4 处 —— 悬浮球「模型选择」图标的身份色。 */
+    --t-accent-timer-rgb: 0 217 255;
+    /* #00d9ff 1 处 —— 悬浮球计时器的读数色。 */
+
+    /* ---- 黄 + 紫 + 带色偏暗底（Phase 6b-16，38 处）─────────────────────
+       这一批**零合并**：族内最近的两两也差 ΔE 4.0（#6a4d2b↔#604929、
+       #552222↔#4e1a1f），没有一个到得了手误级阈值，故全部保留原值。
+
+       重点是好几个暗底与前几批的强调色**成对**，浅色主题下必须一起调，
+       否则「文字色变了、底色没变」会直接失去对比度：
+
+         --t-accent-diff-after-fill-rgb  (#184433) ↔ --t-accent-diff-after-rgb
+         --t-accent-diff-before-fill-rgb (#4e1a1f) ↔ --t-accent-diff-before-rgb
+         --t-accent-mature-fill-rgb      (#4a2530) ↔ --t-accent-mature-rgb / -border
+         --t-accent-azure-dim-fill-rgb   (#23496c) ↔ --t-accent-azure-dim-rgb
+         --t-accent-recall-ok-fill-rgb   (#2a4a3a) ↔ --t-accent-recall-ok-rgb
+         --t-accent-recall-bad-fill-rgb  (#4a2a2a) ↔ --t-accent-danger 系
+
+       ⚠ #ffd93d 在 settings.css 另有 1 处调色板预览球，保持字面量（审计 A24）。 */
+    --t-accent-fav-yellow-rgb: 255 217 61;
+    /* #ffd93d 7 处 —— 收藏夹身份色（悬浮球图标 + 工具栏图标）。 */
+    --t-accent-fav-chain-rgb: 243 227 178;
+    /* #f3e3b2 1 处 —— 收藏「链」徽章的文字。 */
+    --t-accent-lore-update-rgb: 236 201 75;
+    /* #ecc94b 6 处 —— 设定审阅窗「此条有更新」的标记与信息框。 */
+    --t-accent-warn-log-rgb: 241 196 15;
+    /* #f1c40f 2 处 —— 日志的警告级文字与字体设置警告。
+       ⚠ 与 --t-accent-warn-rgb(#feca57) 差 ΔE 21，是两个不同的警告黄，
+         分别属于「日志级别」与「界面提示」两套语义，不要合。 */
+    --t-accent-stat-time-rgb: 255 234 167;
+    /* #ffeaa7 1 处 —— 主窗口的耗时读数。 */
+    --t-accent-role-assistant-rgb: 199 146 234;
+    /* #c792ea 2 处 —— 调试窗里 assistant 角色的左描边与标签。 */
+    --t-accent-recall-rgb: 118 75 162;
+    /* #764ba2 2 处 —— 记忆回溯的身份色（深紫）。它是 --t-accent-indigo-rgb(#667eea)
+       那条渐变的暗端，也用在 .t-recall-search-btn 上。 */
+    --t-accent-lore-item-rgb: 159 122 234;
+    /* #9f7aea 1 处 —— 设定审阅窗 Item 分类的色标。 */
+    --t-accent-diff-after-fill-rgb: 24 68 51;
+    /* #184433 3 处 —— 改写「改后」/命中行的暗绿底。 */
+    --t-accent-diff-before-fill-rgb: 78 26 31;
+    /* #4e1a1f 1 处 —— 改写「原文」一侧的暗红底。 */
+    --t-accent-fav-fill-rgb: 84 64 38;
+    /* #544026 2 处 —— 收藏窗视图切换激活态与导出主钮的暖褐底。 */
+    --t-accent-fav-fill-soft-rgb: 96 73 41;
+    /* #604929 1 处 —— 无封面卡片的海报占位底。 */
+    --t-accent-fav-fill-warm-rgb: 106 77 43;
+    /* #6a4d2b 1 处 —— 收藏窗容器的暖光晕（::before）。 */
+    --t-accent-fav-edit-border-rgb: 58 90 58;
+    /* #3a5a3a 1 处 —— 收藏工具栏进入编辑态时的暗绿下边框。 */
+    --t-accent-mature-fill-rgb: 74 37 48;
+    /* #4a2530 2 处 —— 工坊成人分级开关与标签的暗酒红底。 */
+    --t-accent-mgr-footer-border-rgb: 85 34 34;
+    /* #552222 1 处 —— 剧本管理器页脚栏的暗红上边框。 */
+    --t-accent-recall-ok-fill-rgb: 42 74 58;
+    /* #2a4a3a 1 处 —— 记忆回溯「可用」徽章底。 */
+    --t-accent-recall-bad-fill-rgb: 74 42 42;
+    /* #4a2a2a 1 处 —— 记忆回溯「不可用」徽章底。 */
+    --t-accent-azure-dim-fill-rgb: 35 73 108;
+    /* #23496c 1 处 —— 调试窗工具钮激活态的底（描边是 --t-accent-azure-dim-rgb）。 */
+    --t-accent-slot-hover-rgb: 34 48 64;
+    /* #223040 1 处 —— 提示词插入槽 hover 时的标签底。 */
+    --t-accent-danger-bulk-text-rgb: 255 214 214;
+    /* #ffd6d6 1 处 —— 续写历史批量操作栏里危险项的文字。与 -bulk-border(#f87171)
+       和 -bulk-fill(#b91c1c) 是同一组件的三块，浅色主题下要一起调。
+       ⚠ 它 r-b=41 看着「很暖」，但 g==b，是淡红不是米色 —— 到下面的奶油刻度
+         差 ΔE 14.7，所以不进那条阶（is_cream_text 用 g-b>=6 把它挡在外面）。 */
+    --t-accent-diff-before-deep-rgb: 26 16 18;
+    /* rgba(26,16,18,.74) 1 处 —— .t-rewrite-diff-before 渐变的第二个止点，
+       第一个止点是 --t-accent-diff-before-fill-rgb。同一条渐变，浅色主题要一起调。 */
+    --t-accent-mgr-footer-rgb: 42 26 26;
+    /* #2a1a1a 1 处 —— 剧本管理页脚栏的底（描边是 -mgr-footer-border-rgb）。 */
+    --t-accent-import-rgb: 154 207 245;
+    /* #9acff5 1 处 —— .titania-mini-btn.is-import 的身份色。
+       它的兄弟 .is-export(--t-accent-update-text-rgb) 与
+       .is-update(--t-accent-update-rgb) 都是精确 token，故它也走精确值 ——
+       进浅蓝刻度会差 ΔE 5.4，且破坏三兄弟的并列关系。 */
+    --t-accent-update-text-on-rgb: 8 37 30;
+    /* #08251e 3 处 —— 印在薄荷绿更新钮**上面**的文字（深青，为对比度）。
+       浅色主题下若把 -update 调暗，这个必须相应调亮，否则文字消失。 */
+    --t-accent-diff-after-tag-rgb: 194 238 217;
+    /* #c2eed9 1 处 —— 改写命中标签的文字（底是 --t-accent-diff-after-rgb / .12）。 */
+
+    /* ---- 暖调奶油文字阶（Phase 6b-17，20 处 → 8 档）───────────────────
+       ⚠ 这一批与 6b-12~16 的做法**相反**：那几批按原值 token 化、一处不并；
+         这批合并。判据是这一路测出来最有用的一条 ——
+
+             取值多、每个只出现一两次  ⇒ 漂移，该合并
+             取值少、各占十几处        ⇒ 身份，不该合并
+
+         强调色是后者（#4a9eff 一个值 15 处、#e7ca8f 一个值 15 处）；奶油文字是
+         前者（18 个取值 / 20 处）。收藏窗一个窗口就用了 11 个几乎一样的米色
+         （#e2dccc #e4dbc9 #e8e0d2 #efe4cb #eaddc5 #f5e6c2 #d1c4a9 #c4b699
+         #b7aaa0 #8d866f #f3e3b2），每个只出现一两次，两两差 ΔE 1–4。
+         没人会刻意为一个窗口挑 11 个相近的米色。
+
+       档位按**实测人口重心**挑，不等分：亮端 L 88–92 挤了 9 个取值，暗端 L 56–70
+       只有 2 个。7 档时 #f4e2bc / #eaddc5 会落在 ΔE 4.3 / 4.4（肉眼可辨），
+       补上 --t-cream-2 这一档后**「明显」档清零**，最大 ΔE 降到 3.2。
+
+       这里用三元组而非「每档一个 --t-color-text-* 全色 token」，是因为其中
+       .t-fav-card-footer 用在 alpha .62 上 —— 三元组形式一条声明同时覆盖
+       不透明与半透明两种用法。 */
+    --t-cream-0-rgb: 246 241 230;
+    /* #f6f1e6  L95  近白暖白（.t-box 标题一类） */
+    --t-cream-1-rgb: 242 229 198;
+    /* #f2e5c6  L92  亮米 —— 吃 5 处，是人口重心 */
+    --t-cream-2-rgb: 239 224 193;
+    /* #efe0c1  L90  6b-17 新增的一档，专治 #f4e2bc / #eaddc5 那 2 处可辨变化 */
+    --t-cream-3-rgb: 228 220 204;
+    /* #e4dccc  L88  正文米 —— 吃 4 处 */
+    --t-cream-4-rgb: 217 210 194;
+    /* #d9d2c2  L84  次要说明 */
+    --t-cream-5-rgb: 201 188 159;
+    /* #c9bc9f  L77  弱说明 —— 吃 3 处 */
+    --t-cream-6-rgb: 183 170 160;
+    /* #b7aaa0  L70  取消钮一类 */
+    --t-cream-7-rgb: 141 134 111;
+    /* #8d866f  L56  空态提示（最弱一档） */
+
+    /* ---- 暖调暗底阶（Phase 6b-18，15 处 → 6 档）─────────────────────────
+       13 个取值几乎全在收藏窗，两两差 ΔE 0.5–2.5 —— 比奶油文字漂移得更极端
+       （#312516↔#302415 差 0.5、#201912↔#1f1811 也是 0.5）。同一个暖褐底被
+       手打成 13 种写法。
+
+       ⚠ 档位必须让 .t-fav-card-bg.no-img 的**渐变三个止点**保持可区分：
+           radial-gradient(120% 120% at 20% 0%, #3a2d1e 0%, #201912 48%, #120f0b 100%)
+         它们分别落在 T0 / T3 / T5，跨度没被压掉。若只设 3~4 档，中间止点会被吸到
+         与端点同档、渐变塌成纯色 —— 这类「同一条渐变的止点被合并」
+         --check-state **看不见**（它只比 base 与 :hover），只能设计档位时手动核对。
+
+       ⚠ 这条刻度**不是**中性表面刻度的替代。CLAUDE.md 那条护栏
+         「表面刻度只接受纯灰（R=G=B，容差 4）」正是为了不让收藏窗的暖金底被吸成
+         中性灰、抹掉设计意图。本刻度保留暖色偏，是对那条护栏的补充而非违反。
+
+       ⚠ 谓词用 `g > b` 把**棕**与**暗红**分开：#1a1012（g<b）与 #2a1a1a（g==b）
+         各自与已有红族 token 配对，是身份不是漂移，故走精确值
+         （--t-accent-diff-before-deep-rgb / --t-accent-mgr-footer-rgb）。 */
+    --t-warm-surface-0-rgb: 58 45 30;
+    /* #3a2d1e L19.5 无封面卡片渐变的顶端 */
+    --t-warm-surface-1-rgb: 51 38 23;
+    /* #332617 L16.3 网格区 / 轮播舞台 / 视图切换激活底 —— 吃 5 处 */
+    --t-warm-surface-2-rgb: 43 31 18;
+    /* #2b1f12 L12.8 收藏窗容器底 */
+    --t-warm-surface-3-rgb: 31 26 20;
+    /* #1f1a14 L 9.8 工具抽屉 / 更多菜单 / 上述渐变中段 —— 吃 4 处 */
+    --t-warm-surface-4-rgb: 27 23 16;
+    /* #1b1710 L 7.4 导出面板与其钮 —— 吃 3 处 */
+    --t-warm-surface-5-rgb: 18 15 11;
+    /* #120f0b L 4.5 无封面卡片渐变的底端 */
+
+    /* ---- 冷调浅蓝文字阶（Phase 6b-19，13 处 → 4 档）─────────────────────
+       这一族正是 Phase 6b-8 建 --t-glass-text* 时**超阈值剩下的**那批。原因与
+       6b-11 的青绿族相同 —— 词汇表缺一族：它们比冷灰族饱和得多（#9cc3ea 的
+       b-r 有 78），到最近的 --t-glass-text-secondary 差 ΔE 12，属误配。
+
+       顶档 #d7ecfd 是实测挑的，不是人口重心：
+         复用已有 --t-glass-text-bright(215,231,245) → .t-wi-title-hit 差 ΔE 5.4（可辨）
+         取人口重心 #dcefff                          → 仍差 ΔE 4.9
+         取 #d7ecfd                                  → **「明显」档清零**，最大 3.9
+       多一个 token 换掉一处可见变化，值得。
+       ⚠ 别再往上加第 5 档：实测加了之后 --t-glass-text-bright 变成零消费者。 */
+    --t-sky-text-0-rgb: 215 236 253;
+    /* #d7ecfd L92 最亮 —— 世界书选中项、改写设置区块标题（3 处） */
+    --t-sky-text-1-rgb: 184 217 239;
+    /* #b8d9ef L85 —— 改写区块标题、JSON 框、大纲移动端头（4 处） */
+    --t-sky-text-2-rgb: 168 218 246;
+    /* #a8daf6 L85 —— 工具箱与队列设置的激活态（2 处） */
+    --t-sky-text-3-rgb: 156 195 234;
+    /* #9cc3ea L77 —— 故事大纲的序号与列头（4 处） */
+
+    /* ---- 冷灰文字余料（Phase 6b-19，7 处，全部精确值）───────────────────
+       这 5 个冷灰各只出现 1~2 处、散在 4 个窗口，两两差 ΔE 4.6~15。
+       按「取值多且各只出现一两次 ⇒ 漂移」本该合并，但它们到已有
+       --t-glass-text-faint(142,162,180) 最近也差 ΔE 13.3，得新建 2~3 档，
+       而合并后仍有 1~2 处落在 ΔE 4.6（可辨）。7 处的规模不值得为此改色，
+       故先精确 token 化 —— 日后要合并只是改这里的值，不必再动 feature 层。 */
+    --t-glass-text-dim-rgb: 106 128 144;
+    /* #6a8090 2 处 —— 改写设置的分类计数与字段提示。 */
+    --t-glass-text-dim-cool-rgb: 111 123 143;
+    /* #6f7b8f 1 处 —— 主窗口注入项的时间戳。 */
+    --t-glass-text-hint-rgb: 119 131 138;
+    /* #77838a 1 处 —— 锁定的提示词条目的拖拽提示。 */
+    --t-glass-text-disabled-rgb: 160 176 192;
+    /* #a0b0c0 1 处（alpha .5）—— 大纲条目导航钮的 disabled 态。
+       ⚠ 它与 --t-sky-text-0 的来源 #dff1ff **色度完全相同**（b-r 都是 32），
+         只有亮度能分开（L 71.1 vs 94.2）。除了 is_sky_text 的 L>=76，
+         它还必须列在 HUE_TOKENS 里作第二道护栏。 */
+    --t-glass-text-faintest-rgb: 74 85 104;
+    /* #4a5568 2 处 —— 配置分隔线与注入空态图标。与 --t-c-cool-6 同值。 */
+
+    /* ---- 标题装饰色（Phase 6b-20，01-base）──────────────────────────────
+       .t-title-main / .t-title-sub / .t-title-container::before 三条渐变的止点。
+       它们是插件的**门面色**（粉→桃→薰衣草），只出现在窗口标题区，
+       与 --t-color-brand(金) 是两套东西 —— 前者装饰、后者品牌。
+       浅色主题下这三个要一起加深，否则白底上的浅粉标题会读不出来。 */
+    --t-accent-rose-rgb: 255 154 158;
+    /* #ff9a9e —— 三条渐变共用的粉，另有 1 处 .t-title-container::before 的光晕 */
+    --t-accent-peach-rgb: 250 208 196;
+    /* #fad0c4 —— brand-bar 渐变的下端 */
+    --t-accent-lilac-rgb: 224 195 252;
+    /* #e0c3fc —— title-main / title-sub 渐变的另一端 */
+
+    /* ---- 非阴影收尾（Phase 6b-21，53 处）────────────────────────────────
+       做完这批，除阴影外全库不再有颜色字面量。
+
+       ⚠ 黑蒙层拆成两个 token，值相同但**浅色主题下走向相反**：
+         -scrim-media 盖在用户封面图上，是可读性蒙层，浅色主题下**仍要是黑**；
+         -scrim-panel 是 UI 面板与页面背景遮罩，浅色主题下要翻成浅色。
+         合成一个就锁死了，而这个错误在深色主题下完全看不出来。
+         这是第六次「同值不同角色」（#333333 的 surface/text 是第七次）。 */
+    --t-scrim-media-rgb: 0 0 0;
+    /* 4 处 —— 收藏卡片的封面蒙层：.t-fav-card-content(.04) /
+       .t-fav-card-overlay(.08 .52，原值 #070707) / .selected 态(.48)。
+       ⚠ 已并 #070707 → #000：合成 ΔE 在 alpha .08 上 0.00、.52 上 2.02
+         （判据含 #ccc 亮底，正是为了不低估「盖在图片上」的变化）。 */
+    --t-scrim-panel-rgb: 0 0 0;
+    /* 3 处 —— UI 面板与背景遮罩：设定编辑器(.05) / 统计 HUD(.5) /
+       大纲抽屉背景(.45)。这三处浅色主题下要翻成浅色。 */
+    --t-surface-rgb: 30 30 30;
+    /* #1e1e1e 2 处（alpha .5 / .6）—— 与 --t-color-surface 同值，
+       但那个是不透明 token、这两处要半透明，故需三元组。 */
+    --t-surface-high-rgb: 51 51 51;
+    /* #333333 1 处（alpha .8）—— 工具图标 hover 底。 */
+    --t-surface-mid-rgb: 102 102 102;
+    /* #666 1 处（alpha .3）—— 版本徽章底。已并 #646464：
+       合成 ΔE 在 alpha .3 上是 **0.00**，两值在该透明度下完全不可分。 */
+    --t-glass-placeholder-rgb: 51 51 51;
+    /* #333333 1 处 —— 工坊占位图标的文字。与 --t-surface-high-rgb 同值不同角色：
+       浅色主题下底色要变浅、文字要变深，方向相反，不能共用。 */
+    --t-text-white-rgb: 255 255 255;
+    /* 9 处，散在 8 个 alpha 上（.1 .15 .3 .35 .4 .5 .8 .85）——
+       与现有 --t-color-text-strong（不透明白）全部错开，一处都走不了旧 token。 */
+    --t-accent-settings-rgb: 176 190 197;
+    /* #b0bec5 5 处 —— 悬浮球「设置」图标的四件套（底 .2/.08 + 描边 .4 + 光晕 .3/.1）。
+       与其它八个图标一样，是一个独立身份色。 */
+    --t-accent-diff-after-fill-deep-rgb: 14 22 18;
+    /* #0e1612 3 处 —— 改写「改后 / 命中」渐变的第二止点，
+       第一止点是 --t-accent-diff-after-fill-rgb(#184433)。 */
+    --t-accent-fav-edit-fill-rgb: 26 42 26;
+    /* #1a2a1a 1 处 —— 收藏工具栏编辑态的底，描边是 --t-accent-fav-edit-border-rgb。 */
+    --t-accent-success-fill-rgb: 25 35 25;
+    /* #192319 1 处 —— 生成完成通知的底。 */
+    --t-accent-outline-btn-alt-rgb: 30 45 58;
+    /* #1e2d3a 1 处 —— 「生成全部场景」钮的底（比主按钮低一级）。 */
+    --t-accent-fav-checkbox-rgb: 255 236 201;
+    /* #ffecc9 1 处 —— 收藏卡片勾选框的描边。 */
+    --t-glass-nav-rgb: 18 26 34;
+    /* #121a22 2 处 —— 大纲条目导航钮的 base(.2) 与 disabled(.45)。 */
+    --t-glass-pre-rgb: 26 26 46;
+    /* #1a1a2e 2 处 —— 设定审阅窗的 <pre> 代码块（带紫调，刻意的）。 */
+    --t-glass-scene-used-rgb: 58 62 68;
+    /* #3a3e44 1 处 —— 已使用的场景条目。 */
+    --t-glass-insert-rgb: 85 105 122;
+    /* #55697a 2 处 —— 提示词插入槽的分隔线（底）与标签描边，同值同族。 */
+    --t-glass-miss-rgb: 182 193 205;
+    /* 3 处 —— 改写窗「未命中」的标签底(.12) + 标签描边(.35) + 行描边(.28)。
+       原本是 #b1bdc9 / #bdc7d2 / #b0bcc9 三个写法，合到一档最大合成 ΔE 1.0。
+       跨 surface / border 两种角色共用一个 token 在这里是对的：
+       它们是同一个组件的同一个视觉状态，浅色主题下必然一起变。 */
+    --t-glass-border-blue-rgb: 160 194 213;
+    /* 3 处 —— 故事大纲的浅蓝描边（原 #a8c9e0 / #9ac0d8 / #a0b8cc），
+       合到一档最大合成 ΔE 1.9。 */
+    --t-glass-border-blue-dim-rgb: 133 167 190;
+    /* 2 处 —— 同上更暗的一档（原 #83aac4 / #8ca0b2），最大合成 ΔE 1.1。 */
+    --t-glass-locked-border-rgb: 52 61 67;
+    /* #343d43 1 处 —— 锁定的提示词条目描边。 */
+    --t-glass-locked-border-hover-rgb: 62 74 81;
+    /* #3e4a51 1 处 —— 上者的 :hover。⚠ 与 base 差 ΔE 5.6，是刻意的交互反馈，不能并。 */
+    --t-glass-panel-warm-rgb: 70 65 56;
+    /* #464138 1 处 —— 续写历史面板的暖调描边。 */
+    --t-glass-btn-warm-rgb: 169 136 136;
+    /* #a98888 1 处 —— 续写历史头部按钮（经 --t-btn-color 局部变量传入）。 */
+    --t-glass-footer-rgb: 16 22 31;
+    /* #10161f 1 处 —— 设定设置对话框页脚底（经 --t-dialog-footer-background 传入）。 */
+
     /* ---- 反馈色 ----
        soft = 底色（≈.2），veil = 更淡的底色（≈.12），border = 描边（≈.45）。
        四个色族对称补齐，避免「有 danger-border 却没有 success-border」
@@ -480,15 +976,28 @@
 
     /* ---- 渐变 ----
        必须单独 token 化：颜色 token 不会自动适配渐变，
-       浅色主题下可能需要完全不同的配方（plan.md §9.2）。 */
-    --t-gradient-title: linear-gradient(135deg, #e0c3fc 0%, #ff9a9e 100%);
-    /* = 现 .t-title-main */
-    --t-gradient-title-sub: linear-gradient(90deg, #ff9a9e, #e0c3fc);
-    /* = 现 .t-title-sub */
+       浅色主题下可能需要完全不同的配方（plan.md §9.2）。
+
+       ⚠ Phase 6b-20 才把下面三个标题渐变**真正接上** —— 它们从 Phase 1 建起来
+         就是零消费者：`01-base/base.css` 里的字面量渐变一直没换成 token，
+         等于建了个兼容层却没人用。这类「token 已存在但字面量仍在」的重复
+         是会漂移的（改一处忘另一处），审计 A13 报的就是它。
+       ⚠ --t-gradient-accent 与 --t-gradient-notify 至今仍是零消费者。
+         没有顺手接上是刻意的：它们的取值 #4a9eff/#667eea/#55efc4/#00cec9 现在
+         分别归 --t-accent-azure / -indigo / -mint / -model，而 -model 是
+         「悬浮球模型选择图标」的身份色 —— 拿它当通知渐变的止点会把两件不相干的
+         东西焊死。要接需要先决定语义归属，属另一件事。 */
+    --t-gradient-title: linear-gradient(135deg, rgb(var(--t-accent-lilac-rgb)) 0%,
+            rgb(var(--t-accent-rose-rgb)) 100%);
+    /* = .t-title-main（Phase 6b-20 接上） */
+    --t-gradient-title-sub: linear-gradient(90deg, rgb(var(--t-accent-rose-rgb)),
+            rgb(var(--t-accent-lilac-rgb)));
+    /* = .t-title-sub（Phase 6b-20 接上） */
     --t-gradient-accent: linear-gradient(90deg, #4a9eff, #667eea);
     --t-gradient-notify: linear-gradient(90deg, #55efc4, #00cec9);
-    --t-gradient-brand-bar: linear-gradient(to bottom, #ff9a9e, #fad0c4);
-    /* = 现 .t-title-container::before */
+    --t-gradient-brand-bar: linear-gradient(to bottom, rgb(var(--t-accent-rose-rgb)),
+            rgb(var(--t-accent-peach-rgb)));
+    /* = .t-title-container::before（Phase 6b-20 接上） */
     --t-gradient-surface: linear-gradient(180deg, rgb(255 255 255 / .04),
             rgb(255 255 255 / .015));
     /* 卡片顶部微光，需叠在底色之上使用：

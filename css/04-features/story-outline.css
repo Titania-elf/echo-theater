@@ -74,13 +74,13 @@
     gap: 6px;
     padding: 4px 6px;
     border-radius: 10px;
-    border: 1px solid rgba(131, 170, 196, 0.32);
+    border: 1px solid rgb(var(--t-glass-border-blue-dim-rgb) / .32);
     background: linear-gradient(180deg, var(--t-glass-nav), var(--t-glass-field));
 }
 
 .t-outline-plan-name {
     border-radius: 8px;
-    border: 1px solid rgba(168, 201, 224, 0.32);
+    border: 1px solid rgb(var(--t-glass-border-blue-rgb) / .32);
     background: var(--t-glass-card);
     color: var(--t-color-text);
     padding: 7px 12px;
@@ -97,7 +97,7 @@
 .t-outline-plan-name:not(.is-readonly):focus {
     outline: none;
     border-color: var(--t-color-teal-strong);
-    box-shadow: 0 0 0 2px rgba(129, 236, 236, 0.2);
+    box-shadow: 0 0 0 2px rgb(var(--t-accent-teal-rgb) / .2);
 }
 
 .t-outline-editor-view,
@@ -134,10 +134,10 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    border: 1px solid rgba(114, 228, 209, 0.72);
-    background: linear-gradient(135deg, rgba(48, 166, 173, 0.97), rgba(74, 206, 172, 0.97));
+    border: 1px solid rgb(var(--t-accent-outline-btn-border-rgb) / .72);
+    background: linear-gradient(135deg, rgb(var(--t-accent-outline-btn-rgb) / .97), rgb(var(--t-accent-outline-btn-pale-rgb) / .97));
     color: var(--t-color-text-strong);
-    box-shadow: 0 12px 24px rgba(26, 116, 120, 0.45);
+    box-shadow: 0 12px 24px rgb(var(--t-accent-outline-fab-glow-rgb) / .45);
     font-size: 20px;
     cursor: pointer;
     transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
@@ -155,7 +155,7 @@
 .t-outline-add-sheet-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgb(var(--t-scrim-panel-rgb) / .45);
     z-index: 20023;
     opacity: 0;
     pointer-events: none;
@@ -276,16 +276,16 @@
 }
 
 .t-hub-primary-action {
-    background: linear-gradient(135deg, rgba(52, 148, 172, 0.95), rgba(84, 192, 172, 0.95));
-    border: 1px solid rgba(133, 238, 220, 0.8);
+    background: linear-gradient(135deg, rgb(var(--t-accent-hub-btn-rgb) / .95), rgb(var(--t-accent-hub-btn-pale-rgb) / .95));
+    border: 1px solid rgb(var(--t-accent-hub-btn-border-rgb) / .8);
     color: var(--t-color-text-strong);
     font-weight: 700;
-    box-shadow: 0 4px 14px rgba(52, 148, 172, 0.35);
+    box-shadow: 0 4px 14px rgb(var(--t-accent-hub-btn-rgb) / .35);
 }
 
 .t-hub-primary-action:hover:not(:disabled) {
     filter: brightness(1.06);
-    box-shadow: 0 6px 16px rgba(52, 148, 172, 0.45);
+    box-shadow: 0 6px 16px rgb(var(--t-accent-hub-btn-rgb) / .45);
 }
 
 .t-hub-primary-action:disabled {
@@ -303,7 +303,7 @@
 
 .t-plan-accordion-item.expanded {
     border-color: var(--t-color-teal-border-hover);
-    box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.15) inset;
+    box-shadow: 0 0 0 1px rgb(var(--t-accent-teal-rgb) / .15) inset;
 }
 
 .t-plan-accordion-head {
@@ -375,7 +375,7 @@
    token，且 #ff9d9d 本来就在本文件另一处（.t-outline-row-btn.danger）出现。
    整体 token 化归 Phase 6，判据见交接文档 §5b「5b-4 的三条经验」第 2 条。 */
 .t-plan-delete-btn {
-    color: #ff9d9d;
+    color: rgb(var(--t-accent-danger-plan-rgb));
 }
 
 .t-plan-preview-body {
@@ -395,9 +395,9 @@
     width: 36px;
     height: 36px;
     align-self: center;
-    border: 1px solid rgba(160, 184, 204, 0.3);
+    border: 1px solid rgb(var(--t-glass-border-blue-rgb) / .3);
     border-radius: 999px;
-    background: rgba(18, 26, 34, 0.45);
+    background: rgb(var(--t-glass-nav-rgb) / .45);
     color: var(--t-glass-text-secondary);
     font-size: 14px;
     font-weight: 600;
@@ -414,9 +414,9 @@
 
 .t-plan-item-nav-btn:disabled {
     opacity: 0.32;
-    border-color: rgba(140, 160, 178, 0.18);
-    color: rgba(160, 176, 192, 0.5);
-    background: rgba(18, 26, 34, 0.2);
+    border-color: rgb(var(--t-glass-border-blue-dim-rgb) / .18);
+    color: rgb(var(--t-glass-text-disabled-rgb) / .5);
+    background: rgb(var(--t-glass-nav-rgb) / .2);
     cursor: not-allowed;
 }
 
@@ -459,7 +459,7 @@
 
 .t-scene-hub-item.active {
     border-color: var(--t-color-teal-strong);
-    box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.2) inset;
+    box-shadow: 0 0 0 1px rgb(var(--t-accent-teal-rgb) / .2) inset;
 }
 
 .t-scene-hub-item.used {
@@ -473,7 +473,7 @@
 }
 
 .t-scene-hub-no {
-    color: #9cc3ea;
+    color: rgb(var(--t-sky-text-3-rgb));
     font-weight: 700;
 }
 
@@ -507,10 +507,10 @@
     min-height: 36px;
     padding: 0 12px;
     border-radius: 10px;
-    border: 1px solid rgba(114, 228, 209, 0.75);
-    background: linear-gradient(135deg, rgba(48, 166, 173, 0.96), rgba(74, 206, 172, 0.96));
+    border: 1px solid rgb(var(--t-accent-outline-btn-border-rgb) / .75);
+    background: linear-gradient(135deg, rgb(var(--t-accent-outline-btn-rgb) / .96), rgb(var(--t-accent-outline-btn-pale-rgb) / .96));
     color: var(--t-color-text-strong);
-    box-shadow: 0 8px 18px rgba(44, 150, 152, 0.32);
+    box-shadow: 0 8px 18px rgb(var(--t-accent-outline-btn-glow-rgb) / .32);
     font-weight: 700;
     transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
 }
@@ -547,7 +547,7 @@
 
 .t-opening-picker-item.active {
     border-color: var(--t-color-teal-strong);
-    box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.2) inset;
+    box-shadow: 0 0 0 1px rgb(var(--t-accent-teal-rgb) / .2) inset;
 }
 
 .t-opening-picker-head {
@@ -589,7 +589,7 @@
 
 .t-opening-card.active {
     border-color: var(--t-color-teal-strong);
-    box-shadow: 0 0 0 1px rgba(129, 236, 236, 0.2) inset;
+    box-shadow: 0 0 0 1px rgb(var(--t-accent-teal-rgb) / .2) inset;
 }
 
 .t-opening-card-head {
@@ -657,7 +657,7 @@
 .t-plan-scene.used {
     border-color: var(--t-color-border-glass);
     border-style: solid;
-    background: rgba(58, 62, 68, 0.35);
+    background: rgb(var(--t-glass-scene-used-rgb) / .35);
     opacity: 0.72;
 }
 
@@ -719,17 +719,17 @@
 .t-outline-primary-actions #t-outline-generate {
     min-height: 42px;
     border-radius: 12px;
-    border: 1px solid rgba(114, 228, 209, 0.75);
-    background: linear-gradient(135deg, rgba(48, 166, 173, 0.96), rgba(74, 206, 172, 0.96));
-    box-shadow: 0 8px 18px rgba(44, 150, 152, 0.32);
+    border: 1px solid rgb(var(--t-accent-outline-btn-border-rgb) / .75);
+    background: linear-gradient(135deg, rgb(var(--t-accent-outline-btn-rgb) / .96), rgb(var(--t-accent-outline-btn-pale-rgb) / .96));
+    box-shadow: 0 8px 18px rgb(var(--t-accent-outline-btn-glow-rgb) / .32);
     font-weight: 700;
 }
 
 .t-outline-primary-actions #t-outline-generate-all-scenes {
     min-height: 40px;
     border-radius: 12px;
-    border: 1px solid rgba(154, 192, 216, 0.42);
-    background: linear-gradient(180deg, rgba(30, 45, 58, 0.92), var(--t-glass-nav));
+    border: 1px solid rgb(var(--t-glass-border-blue-rgb) / .42);
+    background: linear-gradient(180deg, rgb(var(--t-accent-outline-btn-alt-rgb) / .92), var(--t-glass-nav));
     color: var(--t-glass-text-bright);
 }
 
@@ -829,7 +829,7 @@
 .t-outline-col-index {
     width: 58px;
     text-align: center;
-    color: #9cc3ea;
+    color: rgb(var(--t-sky-text-3-rgb));
     font-weight: 700;
 }
 
@@ -889,7 +889,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
-    color: #a9dff5;
+    color: rgb(var(--t-sky-text-2-rgb));
 }
 
 .t-outline-scene-table-wrap {
@@ -919,7 +919,7 @@
 .t-scene-col-index {
     width: 56px;
     text-align: center;
-    color: #9cc3ea;
+    color: rgb(var(--t-sky-text-3-rgb));
     font-weight: 700;
 }
 
@@ -981,7 +981,7 @@
     height: 6px;
     border-radius: 50%;
     background: var(--t-color-teal);
-    box-shadow: 0 0 0 0 rgba(129, 236, 236, 0.45);
+    box-shadow: 0 0 0 0 rgb(var(--t-accent-teal-rgb) / .45);
     animation: t-raw-pulse 1s ease-in-out infinite;
 }
 
@@ -1348,7 +1348,7 @@
         gap: 8px;
         align-items: center;
         margin-bottom: 6px;
-        color: #9cc3ea;
+        color: rgb(var(--t-sky-text-3-rgb));
         font-size: 12px;
     }
 
@@ -1456,7 +1456,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        color: #b8d5eb;
+        color: rgb(var(--t-sky-text-1-rgb));
         font-size: 12px;
     }
 

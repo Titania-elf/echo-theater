@@ -216,7 +216,7 @@
 #t-debug-view .t-prompt-tool-btn.active {
     color: rgb(var(--t-accent-azure-light-rgb));
     border-color: rgb(var(--t-accent-azure-dim-rgb));
-    background: rgba(35, 73, 108, 0.25);
+    background: rgb(var(--t-accent-azure-dim-fill-rgb) / .25);
 }
 
 #t-debug-view .t-prompt-tool-btn i {
@@ -251,7 +251,7 @@
 }
 
 #t-debug-view .t-prompt-role-assistant {
-    border-left-color: #c792ea;
+    border-left-color: rgb(var(--t-accent-role-assistant-rgb));
 }
 
 #t-debug-view .t-prompt-section-head {
@@ -300,7 +300,7 @@
 
 #t-debug-view .t-prompt-role-system .t-prompt-role-label { color: rgb(var(--t-accent-azure-light-rgb)); }
 #t-debug-view .t-prompt-role-user .t-prompt-role-label { color: var(--t-color-notify); }
-#t-debug-view .t-prompt-role-assistant .t-prompt-role-label { color: #c792ea; }
+#t-debug-view .t-prompt-role-assistant .t-prompt-role-label { color: rgb(var(--t-accent-role-assistant-rgb)); }
 
 #t-debug-view .t-prompt-name {
     overflow: hidden;
@@ -506,7 +506,7 @@
 }
 
 #t-diagnostics-view .t-dbg-title-row i {
-    color: #ff9f43;
+    color: rgb(var(--t-accent-orange-rgb));
 }
 
 /* 顶部说明带与底部操作带。两者的 padding + background 相同，但一个 border-bottom、
@@ -527,15 +527,15 @@
 }
 
 .t-diag-guide {
-    background: rgba(255, 159, 67, 0.1);
-    border: 1px solid rgba(255, 159, 67, 0.3);
+    background: rgb(var(--t-accent-orange-rgb) / .1);
+    border: 1px solid rgb(var(--t-accent-orange-rgb) / .3);
     padding: 12px;
     border-radius: 6px;
 }
 
 .t-diag-guide-title {
     font-weight: bold;
-    color: #feca57;
+    color: rgb(var(--t-accent-warn-rgb));
     font-size: 0.9em;
     margin-bottom: 5px;
 }

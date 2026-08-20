@@ -148,7 +148,7 @@
     border-radius: 999px;
     background: var(--t-color-brand-soft);
     border: 1px solid var(--t-color-brand-border-subtle);
-    color: #d3bf8f;
+    color: rgb(var(--t-accent-gold-text-rgb));
     max-width: 160px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -247,8 +247,8 @@
 
 .t-mgr-footer-bar {
     height: 50px;
-    background: #2a1a1a;
-    border-top: 1px solid #522;
+    background: rgb(var(--t-accent-mgr-footer-rgb));
+    border-top: 1px solid rgb(var(--t-accent-mgr-footer-border-rgb));
     display: none;
     align-items: center;
     justify-content: space-between;

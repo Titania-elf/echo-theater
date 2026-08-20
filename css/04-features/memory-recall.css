@@ -4,7 +4,7 @@
 /* ===== 快捷工具栏中的记忆召回按钮样式 ===== */
 /* 按钮使用 fa-brain 图标，紫色渐变背景 */
 .t-menu-icon-btn.recall {
-    background: linear-gradient(135deg, rgb(var(--t-accent-indigo-rgb)) 0%, #764ba2 100%);
+    background: linear-gradient(135deg, rgb(var(--t-accent-indigo-rgb)) 0%, rgb(var(--t-accent-recall-rgb)) 100%);
 }
 
 .t-menu-icon-btn.recall:hover {
@@ -19,11 +19,11 @@
 }
 
 .t-recall-status.available {
-    background: rgba(0, 255, 127, 0.3);
+    background: rgb(var(--t-accent-recall-avail-rgb) / .3);
 }
 
 .t-recall-status.unavailable {
-    background: rgba(255, 107, 107, 0.3);
+    background: rgb(var(--t-accent-danger-rgb) / .3);
 }
 
 /* 记忆检索面板的状态徽标。原为 memoryRecallPanel.js:74 的内联 style。
@@ -47,12 +47,12 @@
 }
 
 .t-recall-status-badge.available {
-    background: #2a4a3a;
-    color: #4caf50;
+    background: rgb(var(--t-accent-recall-ok-fill-rgb));
+    color: rgb(var(--t-accent-recall-ok-rgb));
 }
 
 .t-recall-status-badge.unavailable {
-    background: #4a2a2a;
+    background: rgb(var(--t-accent-recall-bad-fill-rgb));
     color: var(--t-color-danger);
 }
 
@@ -60,7 +60,7 @@
     margin-left: auto;
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgb(var(--t-text-white-rgb) / .8);
     cursor: pointer;
     padding: 5px;
     font-size: 16px;
@@ -73,7 +73,7 @@
 
 .t-recall-search-btn {
     padding: 10px 16px;
-    background: linear-gradient(135deg, rgb(var(--t-accent-indigo-rgb)) 0%, #764ba2 100%);
+    background: linear-gradient(135deg, rgb(var(--t-accent-indigo-rgb)) 0%, rgb(var(--t-accent-recall-rgb)) 100%);
     color: var(--t-color-text-strong);
     border: none;
     border-radius: 8px;

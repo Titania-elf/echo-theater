@@ -20,17 +20,17 @@
  */
 
 .titania-update-card {
-    border-color: rgba(98, 217, 188, 0.28);
-    background: linear-gradient(135deg, rgba(98, 217, 188, 0.08), var(--t-color-surface-veil));
+    border-color: rgb(var(--t-accent-update-rgb) / .28);
+    background: linear-gradient(135deg, rgb(var(--t-accent-update-rgb) / .08), var(--t-color-surface-veil));
 }
 
 .titania-update-card[data-state="available"] {
-    border-color: rgba(98, 217, 188, 0.65);
-    box-shadow: inset 3px 0 0 #62d9bc;
+    border-color: rgb(var(--t-accent-update-rgb) / .65);
+    box-shadow: inset 3px 0 0 rgb(var(--t-accent-update-rgb));
 }
 
 .titania-update-card[data-state="error"] {
-    border-color: rgba(255, 118, 118, 0.4);
+    border-color: rgb(var(--t-accent-red-soft-rgb) / .4);
 }
 
 .titania-update-card-head {
@@ -55,7 +55,7 @@
 }
 
 .titania-update-card[data-state="available"] .titania-update-status {
-    color: #72efd0;
+    color: rgb(var(--t-accent-update-text-rgb));
     font-weight: 700;
 }
 
@@ -94,29 +94,29 @@
 }
 
 .titania-mini-btn.is-update {
-    color: #08251e;
-    background: #62d9bc;
-    border-color: #62d9bc;
+    color: rgb(var(--t-accent-update-text-on-rgb));
+    background: rgb(var(--t-accent-update-rgb));
+    border-color: rgb(var(--t-accent-update-rgb));
 }
 
 .titania-mini-btn.is-update:hover:not(:disabled) {
-    background: #78e4c9;
+    background: rgb(var(--t-accent-update-hover-rgb));
 }
 
 .titania-update-inline-error {
     margin-top: 9px;
     padding: 8px 10px;
-    color: #ffb8b8;
-    background: rgba(220, 70, 70, 0.12);
-    border: 1px solid rgba(255, 100, 100, 0.28);
+    color: rgb(var(--t-accent-error-pale-rgb));
+    background: rgb(var(--t-accent-error-fill-rgb) / .12);
+    border: 1px solid rgb(var(--t-accent-error-border-rgb) / .28);
     border-radius: 7px;
     font-size: 11px;
     line-height: 1.45;
 }
 
 .titania-version-badge.has-update {
-    color: #08251e;
-    background: #62d9bc;
+    color: rgb(var(--t-accent-update-text-on-rgb));
+    background: rgb(var(--t-accent-update-rgb));
     font-weight: 700;
 }
 
@@ -147,7 +147,7 @@
     overflow: hidden;
     color: var(--t-color-text-soft);
     background: var(--t-glass-body);
-    border: 1px solid rgba(100, 220, 190, 0.35);
+    border: 1px solid rgb(var(--t-accent-update-rgb) / .35);
     border-radius: 14px;
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
 }
@@ -162,7 +162,7 @@
 }
 
 .titania-update-kicker {
-    color: #62d9bc;
+    color: rgb(var(--t-accent-update-rgb));
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -213,23 +213,23 @@
 
 .titania-update-entry h3 {
     margin: 0 0 8px;
-    color: #62d9bc;
+    color: rgb(var(--t-accent-update-rgb));
     font-size: 14px;
 }
 
 .titania-update-entry code {
     padding: 1px 5px;
-    color: #a9e9da;
-    background: rgba(98, 217, 188, 0.1);
+    color: rgb(var(--t-accent-update-code-rgb));
+    background: rgb(var(--t-accent-update-rgb) / .1);
     border-radius: 4px;
 }
 
 .titania-update-error {
     margin: 0 22px 12px;
     padding: 10px 12px;
-    color: #ffb8b8;
-    background: rgba(220, 70, 70, 0.12);
-    border: 1px solid rgba(255, 100, 100, 0.3);
+    color: rgb(var(--t-accent-error-pale-rgb));
+    background: rgb(var(--t-accent-error-fill-rgb) / .12);
+    border: 1px solid rgb(var(--t-accent-error-border-rgb) / .3);
     border-radius: 8px;
     font-size: 12px;
     line-height: 1.5;
@@ -244,14 +244,14 @@
 }
 
 #titania-update-now {
-    color: #08251e;
-    background: #62d9bc;
-    border-color: #62d9bc;
+    color: rgb(var(--t-accent-update-text-on-rgb));
+    background: rgb(var(--t-accent-update-rgb));
+    border-color: rgb(var(--t-accent-update-rgb));
     font-weight: 700;
 }
 
 #titania-update-now:hover:not(:disabled) {
-    background: #78e4c9;
+    background: rgb(var(--t-accent-update-hover-rgb));
 }
 
 .titania-update-close:disabled,
@@ -358,7 +358,7 @@
 }
 
 .titania-version-badge {
-    background: rgba(100, 100, 100, 0.3);
+    background: rgb(var(--t-surface-mid-rgb) / .3);
     color: var(--t-color-text-muted);
     font-size: 10px;
     padding: 2px 6px;
@@ -394,13 +394,13 @@
 }
 
 .titania-mini-btn.is-export {
-    border-color: rgba(85, 239, 196, 0.65);
-    color: #72efd0;
+    border-color: rgb(var(--t-accent-mint-rgb) / .65);
+    color: rgb(var(--t-accent-update-text-rgb));
 }
 
 .titania-mini-btn.is-import {
     border-color: var(--t-color-accent-active);
-    color: #9acff5;
+    color: rgb(var(--t-accent-import-rgb));
 }
 
 .titania-mini-btn:hover:not(:disabled) {

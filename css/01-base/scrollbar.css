@@ -76,7 +76,7 @@
 [class*=" titania-"] ::-webkit-scrollbar-thumb,
 [id^="t-"] ::-webkit-scrollbar-thumb,
 [id^="titania-"] ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--t-color-scrollbar-thumb);
     border-radius: 3px;
 }
 
@@ -93,5 +93,5 @@
 [class*=" titania-"] ::-webkit-scrollbar-thumb:hover,
 [id^="t-"] ::-webkit-scrollbar-thumb:hover,
 [id^="titania-"] ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--t-color-scrollbar-thumb-hover);
 }
