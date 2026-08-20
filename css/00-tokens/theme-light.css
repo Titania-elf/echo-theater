@@ -1,0 +1,330 @@
+/* ============================================================
+   00-tokens/theme-light.css —— 浅色主题
+
+   ⚠ 本文件由 `python scripts/gen-theme-light.py` 生成，**不要手改**。
+     要调整就改生成器里的规则或 EXCEPTIONS 表，然后重跑。
+     手改会在下次重跑时被覆盖，而且会让「规则」与「结果」不一致、无法复核。
+
+   为什么用生成器：浅色主题要决定 231 个量。手写会做成一堆互不相关的拍脑袋值，
+   没人能复核，也回答不了「为什么这个是这样」。写成规则则：规则本身可复核、
+   深色主题日后加 token 重跑就跟上、出问题改的是一条规则而不是几十个值。
+
+   推导规则（详见生成器文件头）：
+     R-A 阶梯类  在 Lab 里翻转 L*（L → 100−L），**保留 a/b**
+                 —— 中性阶得到纯灰镜像；冷调/暖底/奶油阶保留冷暖性格，只反转明暗
+     R-B 强调色  保留色相角与彩度，把 L 从 [60,100] **线性压缩**到 [55,30]
+                 —— 九个图标的身份色不会串；同族「亮/暗」两档顺序会反转，那是对的
+                 ⚠ 必须是压缩、不能瞄准固定目标：clamp 到某个 L、或二分到「刚好
+                   4.5:1 对比度」，两种写法都会把同族兄弟推到同一个值上（实测
+                   分别塌陷 1 对与 5 对）。**瞄准固定目标本身就是收敛器。**
+     R-C 压暗叠加 保持黑不变 —— 白底上黑色低透明度就是浅灰，翻成白会让凹陷变凸起
+     R-D 阴影    保持黑，alpha × 0.55 —— 同样的黑投影在浅底上显得脏重
+     R-E 内高光  保持白，alpha × 0.7 —— 它模拟「光从上方来」，两种主题下都是白的
+
+   ⚠ 只有 R-D / R-E 改了 alpha。其余一律不动 —— 「alpha 不随主题变」是
+     Phase 6b-12 那个「token 只存色相」决定的前提。
+
+   生成器末尾跑两个自检，两个都是必需的：
+     · 同族塌陷检查 —— 深色下可辨的同族两档，浅色下必须仍可辨。
+       浅色主题是**新增**的值，没有「原值」可比，所以「计算值不变」那套自证在这里
+       完全失效，只能拿「同族相对关系」当不变量。R-B 的两次 bug 都是它抓出来的。
+     · 对比度检查 —— 文字类 token 对浅色窗口底若不足 4.5:1 就列出来，
+       但**不自动压暗**：压了会破坏它与同族兄弟的关系，属设计取舍，
+       不该由脚本替人做。当前有 26 个偏低，多数是暖色系（Lab 的 L 与 WCAG 亮度
+       不是一回事，同一个 L 上黄红系的实际对比度更低）。
+       ⚠ 这个数字由生成器实时代入，不是写死的 —— 它依赖 04-features 里各 token
+         的**实际消费角色**统计，6b 的每一批改色都会让它变（曾经写死 25，
+         几批之后实际已是 26）。生成物里写死会变的数字，下次重跑就是错的。
+
+   作用域：`:root[data-t-theme="light"]`，由 src/ui/settingsWindow.js 的
+   applyUITheme() 写到 documentElement 上。必须排在 theme-dark.css **之后**
+   （见 css/manifest.js），否则同优先级下先声明的会被覆盖。
+   ============================================================ */
+:root[data-t-theme="light"] {
+    /* ---- 例外：与另一个语义 token 共用原语、但浅色主题下目标不同 ----
+       实测冲突只有这三处，全在中性阶上。 */
+    --t-color-text-on-accent: rgb(255 255 255);
+    /* 压在强调色按钮**上面**的文字。深色主题里它是近黑(#121212)，因为那时强调色
+       很亮(L 75~90)；浅色主题按 R-B 把强调色压暗到 L 30~55 之后，压在上面的
+       字必须**翻成白色**。
+       ⚠ 这个例外一开始写反了（也给了深色值）—— 因为「深色主题用深色字」看着
+         像个不变量，其实它是「强调色亮」的推论，前提在浅色主题下正好反过来。
+       它与 --t-color-bg 共用 --t-c-neutral-0，故必须单独覆盖。16 处消费者。 */
+    --t-color-surface-high: rgb(233 235 238);
+    /* 与 --t-color-border(66 处) 共用 --t-c-neutral-5。翻转后描边得到中灰
+       （白底上正好），但表面需要的是**浅灰**，两者目标不同，故单独给值。 */
+    --t-color-surface-hover-solid: rgb(224 227 232);
+    /* 与 --t-color-border-strong(42 处) 共用 --t-c-neutral-7，同上。 */
+
+    /* ---- 规则 R-A ---- */
+    --t-c-neutral-0-rgb: 239 239 239;   /* 深色: 18 18 18 */
+    --t-c-neutral-1-rgb: 228 228 228;   /* 深色: 26 26 26 */
+    --t-c-neutral-2-rgb: 223 223 223;   /* 深色: 30 30 30 */
+    --t-c-neutral-3-rgb: 217 217 217;   /* 深色: 34 34 34 */
+    --t-c-neutral-4-rgb: 206 206 206;   /* 深色: 42 42 42 */
+    --t-c-neutral-5-rgb: 195 195 195;   /* 深色: 51 51 51 */
+    --t-c-neutral-6-rgb: 186 186 186;   /* 深色: 58 58 58 */
+    --t-c-neutral-7-rgb: 174 174 174;   /* 深色: 68 68 68 */
+    --t-c-neutral-8-rgb: 136 136 136;   /* 深色: 102 102 102 */
+    --t-c-neutral-9-rgb: 102 102 102;   /* 深色: 136 136 136 */
+    --t-c-neutral-10-rgb: 72 72 72;   /* 深色: 170 170 170 */
+    --t-c-neutral-11-rgb: 44 44 44;   /* 深色: 204 204 204 */
+    --t-c-neutral-12-rgb: 19 19 19;   /* 深色: 238 238 238 */
+    --t-c-neutral-13-rgb: 0 0 0;   /* 深色: 255 255 255 */
+    --t-c-cool-0-rgb: 243 247 254;   /* 深色: 7 11 18 */
+    --t-c-cool-1-rgb: 239 243 252;   /* 深色: 10 15 22 */
+    --t-c-cool-2-rgb: 230 235 245;   /* 深色: 18 22 29 */
+    --t-c-cool-3-rgb: 222 228 240;   /* 深色: 22 27 36 */
+    --t-c-cool-4-rgb: 211 218 232;   /* 深色: 28 34 44 */
+    --t-c-cool-5-rgb: 199 208 224;   /* 深色: 34 42 54 */
+    --t-c-cool-6-rgb: 145 156 177;   /* 深色: 74 85 104 */
+    --t-c-cool-7-rgb: 97 112 134;   /* 深色: 113 128 150 */
+    --t-c-cool-8-rgb: 67 97 115;   /* 深色: 120 150 170 */
+    --t-c-cool-9-rgb: 57 71 86;   /* 深色: 160 174 192 */
+    --t-c-cool-10-rgb: 38 59 74;   /* 深色: 169 191 209 */
+    --t-c-cool-11-rgb: 31 39 47;   /* 深色: 203 213 224 */
+    --t-c-cool-12-rgb: 20 24 30;   /* 深色: 226 232 240 */
+
+    /* ---- 规则 R-B ---- */
+    --t-c-gold-rgb: 143 116 53;   /* 深色: 191 161 95 */
+    --t-c-blue-rgb: 37 107 142;   /* 深色: 144 205 244 */
+    --t-c-mint-rgb: 5 104 82;   /* 深色: 85 239 196 */
+    --t-c-teal-rgb: 1 100 101;   /* 深色: 129 236 236 */
+    --t-c-red-rgb: 219 75 79;   /* 深色: 255 107 107 */
+    --t-c-green-rgb: 11 136 77;   /* 深色: 72 187 120 */
+    --t-c-amber-rgb: 158 100 2;   /* 深色: 245 158 11 */
+    --t-c-violet-rgb: 111 108 201;   /* 深色: 162 155 254 */
+
+    /* ---- 规则 R-A ---- */
+    --t-color-surface-inset: rgb(231 231 231);   /* 深色: rgb(24 24 24) */
+    --t-color-surface-highest: rgb(155 155 155);   /* 深色: rgb(85 85 85) */
+    --t-color-surface-well: rgb(240 240 240);   /* 深色: rgb(17 17 17) */
+    --t-color-field-disabled: rgb(240 240 240);   /* 深色: rgb(17 17 17) */
+    --t-color-field-dialog-notify: rgb(0 67 65);   /* 深色: rgb(0 206 201) */
+    --t-color-field-dialog-notify-ring: rgb(0 67 65 / .1);   /* 深色: rgb(0 206 201 / .1) */
+    --t-color-field-glass-text: rgb(15 25 33);   /* 深色: rgb(220 233 244) */
+    --t-color-window-header: rgb(211 211 226);   /* 深色: rgb(36 37 48) */
+    --t-color-panel-header: rgb(214 214 214);   /* 深色: rgb(36 36 36) */
+    --t-color-set-nav-surface: rgb(231 231 231);   /* 深色: rgb(24 24 24) */
+    --t-color-dialog-surface: rgb(222 222 229 / .98);   /* 深色: rgb(30 30 35 / .98) */
+
+    /* ---- 规则 R-B ---- */
+    --t-glass-panel: rgb(12 17 22 / .74);   /* 深色: rgb(12 17 22 / .74) */
+
+    /* ---- 规则 R-A ---- */
+    --t-glass-text-bright: rgb(13 27 37);   /* 深色: rgb(215 231 245) */
+    --t-glass-text-faint: rgb(64 83 99);   /* 深色: rgb(142 162 180) */
+    --t-glass-nav: rgb(225 232 245 / .9);   /* 深色: rgb(18 24 33 / .9) */
+    --t-glass-tab-text: rgb(55 74 88);   /* 深色: rgb(153 173 190) */
+    --t-glass-tab-text-hover: rgb(13 27 37);   /* 深色: rgb(215 231 245) */
+    --t-glass-tab-text-active: rgb(5 41 58);   /* 深色: rgb(185 216 238) */
+    --t-color-text-soft: rgb(31 31 31);   /* 深色: rgb(221 221 221) */
+    --t-color-text-dim: rgb(119 119 119);   /* 深色: rgb(119 119 119) */
+    --t-color-text-disabled: rgb(155 155 155);   /* 深色: rgb(85 85 85) */
+
+    /* ---- 规则 R-B ---- */
+    --t-color-border-bright: rgb(85 85 85);   /* 深色: rgb(85 85 85) */
+    --t-accent-azure-rgb: 0 127 220;   /* 深色: 74 158 255 */
+    --t-accent-azure-light-rgb: 17 116 180;   /* 深色: 116 185 255 */
+    --t-accent-azure-pale-rgb: 20 119 193;   /* 深色: 106 176 255 */
+    --t-accent-azure-hover-rgb: 3 121 192;   /* 深色: 90 175 255 */
+    --t-accent-azure-hover-pale-rgb: 9 113 170;   /* 深色: 122 192 255 */
+    --t-accent-azure-mid-rgb: 37 135 206;   /* 深色: 66 153 225 */
+    --t-accent-azure-deep-rgb: 45 127 211;   /* 深色: 45 127 211 */
+    --t-accent-azure-dim-rgb: 47 95 138;   /* 深色: 47 95 138 */
+    --t-accent-sky-rgb: 37 107 142;   /* 深色: 144 205 244 */
+    --t-accent-indigo-rgb: 102 126 234;   /* 深色: 102 126 234 */
+    --t-accent-indigo-deep-rgb: 108 92 231;   /* 深色: 108 92 231 */
+    --t-accent-violet-rgb: 111 108 201;   /* 深色: 162 155 254 */
+    --t-accent-danger-rgb: 219 75 79;   /* 深色: 255 107 107 */
+    --t-accent-danger-text-rgb: 189 80 84;   /* 深色: 255 138 138 */
+    --t-accent-danger-fill-rgb: 217 87 87;   /* 深色: 217 87 87 */
+    --t-accent-danger-fill-hover-rgb: 232 104 104;   /* 深色: 232 104 104 */
+    --t-accent-danger-deep-rgb: 238 90 90;   /* 深色: 238 90 90 */
+    --t-accent-danger-vivid-rgb: 255 71 87;   /* 深色: 255 71 87 */
+    --t-accent-danger-plan-rgb: 170 81 84;   /* 深色: 255 157 157 */
+    --t-accent-danger-bulk-border-rgb: 212 81 84;   /* 深色: 248 113 113 */
+    --t-accent-danger-bulk-fill-rgb: 185 28 28;   /* 深色: 185 28 28 */
+    --t-accent-danger-icon-rgb: 221 102 102;   /* 深色: 221 102 102 */
+    --t-accent-danger-menu-fill-rgb: 220 60 60;   /* 深色: 220 60 60 */
+    --t-accent-danger-menu-hover-rgb: 146 81 83;   /* 深色: 255 180 180 */
+    --t-accent-error-rgb: 231 76 60;   /* 深色: 231 76 60 */
+    --t-accent-error-soft-rgb: 222 81 84;   /* 深色: 245 101 101 */
+    --t-accent-error-text-rgb: 197 81 85;   /* 深色: 252 129 129 */
+    --t-accent-error-pale-rgb: 142 81 83;   /* 深色: 255 184 184 */
+    --t-accent-error-fill-rgb: 220 70 70;   /* 深色: 220 70 70 */
+    --t-accent-error-border-rgb: 225 73 77;   /* 深色: 255 100 100 */
+    --t-accent-warn-red-rgb: 186 90 92;   /* 深色: 238 136 136 */
+    --t-accent-red-soft-rgb: 209 77 80;   /* 深色: 255 118 117 */
+    --t-accent-red-pale-rgb: 179 90 92;   /* 深色: 239 143 143 */
+    --t-accent-diff-before-rgb: 181 98 99;   /* 深色: 224 136 136 */
+    --t-accent-mature-rgb: 158 81 90;   /* 深色: 255 168 176 */
+    --t-accent-mature-border-rgb: 126 56 71;   /* 深色: 126 56 71 */
+    --t-accent-fav-gold-rgb: 116 94 41;   /* 深色: 231 202 143 */
+    --t-accent-fav-gold-focus-rgb: 121 97 25;   /* 深色: 228 196 120 */
+    --t-accent-fav-gold-dim-rgb: 156 143 111;   /* 深色: 156 143 111 */
+    --t-accent-brand-rgb: 143 116 53;   /* 深色: 191 161 95 */
+    --t-accent-tan-rgb: 147 106 60;   /* 深色: 212 165 116 */
+    --t-accent-gold-hover-rgb: 128 106 46;   /* 深色: 208 181 117 */
+    --t-accent-gold-fill-rgb: 117 102 54;   /* 深色: 212 192 139 */
+    --t-accent-gold-fill-hover-rgb: 135 106 40;   /* 深色: 212 176 107 */
+    --t-accent-gold-fill-hover-pale-rgb: 107 93 49;   /* 深色: 229 209 160 */
+    --t-accent-gold-text-rgb: 118 102 59;   /* 深色: 211 191 143 */
+    --t-accent-gold-text-warm-rgb: 119 100 50;   /* 深色: 217 193 138 */
+    --t-accent-parchment-rgb: 119 106 68;   /* 深色: 201 185 143 */
+    --t-accent-parchment-dim-rgb: 128 115 85;   /* 深色: 183 169 137 */
+    --t-accent-parchment-faint-rgb: 154 138 99;   /* 深色: 154 138 99 */
+    --t-accent-orange-rgb: 166 91 1;   /* 深色: 255 159 67 */
+    --t-accent-amber-rgb: 158 100 2;   /* 深色: 245 158 11 */
+    --t-accent-amber-soft-rgb: 152 93 0;   /* 深色: 246 173 85 */
+    --t-accent-amber-bright-rgb: 127 94 5;   /* 深色: 251 191 36 */
+    --t-accent-warn-rgb: 120 90 3;   /* 深色: 254 202 87 */
+    --t-accent-warn-pale-rgb: 129 92 27;   /* 深色: 242 194 125 */
+    --t-accent-update-rgb: 7 115 95;   /* 深色: 98 217 188 */
+    --t-accent-update-hover-rgb: 4 107 89;   /* 深色: 120 228 201 */
+    --t-accent-update-text-rgb: 8 102 84;   /* 深色: 114 239 208 */
+    --t-accent-update-code-rgb: 36 98 87;   /* 深色: 169 233 218 */
+    --t-accent-teal-rgb: 1 100 101;   /* 深色: 129 236 236 */
+    --t-accent-outline-btn-rgb: 7 142 149;   /* 深色: 48 166 173 */
+    --t-accent-outline-btn-pale-rgb: 2 122 98;   /* 深色: 74 206 172 */
+    --t-accent-outline-btn-border-rgb: 7 107 95;   /* 深色: 114 228 209 */
+    --t-accent-outline-btn-glow-rgb: 44 150 152;   /* 深色: 44 150 152 */
+    --t-accent-outline-fab-glow-rgb: 26 116 120;   /* 深色: 26 116 120 */
+    --t-accent-hub-btn-rgb: 52 148 172;   /* 深色: 52 148 172 */
+    --t-accent-hub-btn-pale-rgb: 2 129 112;   /* 深色: 84 192 172 */
+    --t-accent-hub-btn-border-rgb: 3 100 89;   /* 深色: 133 238 220 */
+    --t-accent-mint-rgb: 5 104 82;   /* 深色: 85 239 196 */
+    --t-accent-green-rgb: 11 136 77;   /* 深色: 72 187 120 */
+    --t-accent-green-light-rgb: 2 121 67;   /* 深色: 104 211 145 */
+    --t-accent-green-vivid-rgb: 7 128 66;   /* 深色: 46 204 113 */
+    --t-accent-interactive-rgb: 0 118 57;   /* 深色: 74 222 128 */
+    --t-accent-emerald-rgb: 4 137 110;   /* 深色: 0 184 148 */
+    --t-accent-recall-ok-rgb: 40 144 51;   /* 深色: 76 175 80 */
+    --t-accent-recall-avail-rgb: 5 102 47;   /* 深色: 0 255 127 */
+    --t-accent-diff-after-rgb: 38 121 82;   /* 深色: 122 203 159 */
+    --t-accent-diff-after-text-rgb: 2 115 74;   /* 深色: 121 217 168 */
+    --t-accent-ok-dim-rgb: 68 136 120;   /* 深色: 102 170 153 */
+    --t-accent-model-rgb: 1 121 118;   /* 深色: 0 206 201 */
+    --t-accent-timer-rgb: 6 110 130;   /* 深色: 0 217 255 */
+    --t-accent-fav-yellow-rgb: 105 88 0;   /* 深色: 255 217 61 */
+    --t-accent-fav-chain-rgb: 95 84 42;   /* 深色: 243 227 178 */
+    --t-accent-lore-update-rgb: 116 96 0;   /* 深色: 236 201 75 */
+    --t-accent-warn-log-rgb: 120 97 3;   /* 深色: 241 196 15 */
+    --t-accent-stat-time-rgb: 93 81 21;   /* 深色: 255 234 167 */
+    --t-accent-role-assistant-rgb: 147 97 181;   /* 深色: 199 146 234 */
+    --t-accent-recall-rgb: 118 75 162;   /* 深色: 118 75 162 */
+    --t-accent-lore-item-rgb: 159 122 234;   /* 深色: 159 122 234 */
+    --t-accent-diff-after-fill-rgb: 24 68 51;   /* 深色: 24 68 51 */
+    --t-accent-diff-before-fill-rgb: 78 26 31;   /* 深色: 78 26 31 */
+    --t-accent-fav-fill-rgb: 84 64 38;   /* 深色: 84 64 38 */
+    --t-accent-fav-fill-soft-rgb: 96 73 41;   /* 深色: 96 73 41 */
+    --t-accent-fav-fill-warm-rgb: 106 77 43;   /* 深色: 106 77 43 */
+    --t-accent-fav-edit-border-rgb: 58 90 58;   /* 深色: 58 90 58 */
+    --t-accent-mature-fill-rgb: 74 37 48;   /* 深色: 74 37 48 */
+    --t-accent-mgr-footer-border-rgb: 85 34 34;   /* 深色: 85 34 34 */
+    --t-accent-recall-ok-fill-rgb: 42 74 58;   /* 深色: 42 74 58 */
+    --t-accent-recall-bad-fill-rgb: 74 42 42;   /* 深色: 74 42 42 */
+    --t-accent-azure-dim-fill-rgb: 35 73 108;   /* 深色: 35 73 108 */
+    --t-accent-slot-hover-rgb: 34 48 64;   /* 深色: 34 48 64 */
+    --t-accent-danger-bulk-text-rgb: 112 78 79;   /* 深色: 255 214 214 */
+    --t-accent-diff-before-deep-rgb: 26 16 18;   /* 深色: 26 16 18 */
+    --t-accent-mgr-footer-rgb: 42 26 26;   /* 深色: 42 26 26 */
+    --t-accent-import-rgb: 46 105 138;   /* 深色: 154 207 245 */
+    --t-accent-update-text-on-rgb: 8 37 30;   /* 深色: 8 37 30 */
+    --t-accent-diff-after-tag-rgb: 53 92 75;   /* 深色: 194 238 217 */
+
+    /* ---- 规则 R-A ---- */
+    --t-cream-0-rgb: 20 16 3;   /* 深色: 246 241 230 */
+    --t-cream-1-rgb: 32 25 0;   /* 深色: 242 229 198 */
+    --t-cream-2-rgb: 36 27 0;   /* 深色: 239 224 193 */
+    --t-cream-3-rgb: 36 31 19;   /* 深色: 228 220 204 */
+    --t-cream-4-rgb: 43 39 27;   /* 深色: 217 210 194 */
+    --t-cream-5-rgb: 64 55 31;   /* 深色: 201 188 159 */
+    --t-cream-6-rgb: 78 68 59;   /* 深色: 183 170 160 */
+    --t-cream-7-rgb: 111 104 82;   /* 深色: 141 134 111 */
+    --t-warm-surface-0-rgb: 215 197 178;   /* 深色: 58 45 30 */
+    --t-warm-surface-1-rgb: 225 206 186;   /* 深色: 51 38 23 */
+    --t-warm-surface-2-rgb: 234 215 198;   /* 深色: 43 31 18 */
+    --t-warm-surface-3-rgb: 234 226 218;   /* 深色: 31 26 20 */
+    --t-warm-surface-4-rgb: 237 231 223;   /* 深色: 27 23 16 */
+    --t-warm-surface-5-rgb: 245 242 238;   /* 深色: 18 15 11 */
+
+    /* ---- 规则 R-B ---- */
+    --t-sky-text-0-rgb: 65 84 98;   /* 深色: 215 236 253 */
+    --t-sky-text-1-rgb: 65 97 116;   /* 深色: 184 217 239 */
+    --t-sky-text-2-rgb: 47 99 124;   /* 深色: 168 218 246 */
+    --t-sky-text-3-rgb: 67 108 143;   /* 深色: 156 195 234 */
+
+    /* ---- 规则 R-A ---- */
+    --t-glass-text-dim-rgb: 94 116 131;   /* 深色: 106 128 144 */
+    --t-glass-text-dim-cool-rgb: 104 116 136;   /* 深色: 111 123 143 */
+    --t-glass-text-hint-rgb: 99 111 118;   /* 深色: 119 131 138 */
+    --t-glass-text-disabled-rgb: 55 70 83;   /* 深色: 160 176 192 */
+    --t-glass-text-faintest-rgb: 145 156 177;   /* 深色: 74 85 104 */
+
+    /* ---- 规则 R-B ---- */
+    --t-accent-rose-rgb: 173 81 88;   /* 深色: 255 154 158 */
+    --t-accent-peach-rgb: 116 82 72;   /* 深色: 250 208 196 */
+    --t-accent-lilac-rgb: 110 86 136;   /* 深色: 224 195 252 */
+
+    /* ---- 规则 R-A ---- */
+    --t-surface-rgb: 223 223 223;   /* 深色: 30 30 30 */
+    --t-surface-high-rgb: 195 195 195;   /* 深色: 51 51 51 */
+    --t-surface-mid-rgb: 136 136 136;   /* 深色: 102 102 102 */
+    --t-glass-placeholder-rgb: 195 195 195;   /* 深色: 51 51 51 */
+
+    /* ---- 规则 R-C ---- */
+    --t-text-white-rgb: 0 0 0;   /* 深色: 255 255 255 */
+
+    /* ---- 规则 R-B ---- */
+    --t-accent-settings-rgb: 95 108 115;   /* 深色: 176 190 197 */
+    --t-accent-diff-after-fill-deep-rgb: 14 22 18;   /* 深色: 14 22 18 */
+    --t-accent-fav-edit-fill-rgb: 26 42 26;   /* 深色: 26 42 26 */
+    --t-accent-success-fill-rgb: 25 35 25;   /* 深色: 25 35 25 */
+    --t-accent-outline-btn-alt-rgb: 30 45 58;   /* 深色: 30 45 58 */
+    --t-accent-fav-checkbox-rgb: 91 78 49;   /* 深色: 255 236 201 */
+
+    /* ---- 规则 R-A ---- */
+    --t-glass-nav-rgb: 221 231 242;   /* 深色: 18 26 34 */
+    --t-glass-pre-rgb: 226 223 251;   /* 深色: 26 26 46 */
+    --t-glass-scene-used-rgb: 178 182 189;   /* 深色: 58 62 68 */
+    --t-glass-insert-rgb: 118 138 156;   /* 深色: 85 105 122 */
+    --t-glass-miss-rgb: 45 55 64;   /* 深色: 182 193 205 */
+    --t-glass-border-blue-rgb: 25 60 75;   /* 深色: 160 194 213 */
+    --t-glass-border-blue-dim-rgb: 48 82 102;   /* 深色: 133 167 190 */
+    --t-glass-locked-border-rgb: 175 186 193;   /* 深色: 52 61 67 */
+    --t-glass-locked-border-hover-rgb: 158 171 179;   /* 深色: 62 74 81 */
+    --t-glass-panel-warm-rgb: 183 176 166;   /* 深色: 70 65 56 */
+    --t-glass-btn-warm-rgb: 118 87 88;   /* 深色: 169 136 136 */
+    --t-glass-footer-rgb: 228 235 248;   /* 深色: 16 22 31 */
+
+    /* ---- 规则 R-B ---- */
+    --t-color-warning-muted: rgb(143 88 1);   /* 深色: rgb(255 185 104) */
+    --t-color-cyan-muted: rgb(7 111 112);   /* 深色: rgb(117 216 216) */
+
+    /* ---- 规则 R-D ---- */
+    --t-shadow-xs: 0 1px 3px rgb(0 0 0 / 0.110);   /* 深色: 0 1px 3px rgb(0 0 0 / .2) */
+    --t-shadow-sm: 0 2px 8px rgb(0 0 0 / 0.110);   /* 深色: 0 2px 8px rgb(0 0 0 / .2) */
+    --t-shadow-md: 0 4px 15px rgb(0 0 0 / 0.165);   /* 深色: 0 4px 15px rgb(0 0 0 / .3) */
+    --t-shadow-lg: 0 10px 30px rgb(0 0 0 / 0.275);   /* 深色: 0 10px 30px rgb(0 0 0 / .5) */
+    --t-shadow-dialog: 0 20px 50px rgb(0 0 0 / 0.275);   /* 深色: 0 20px 50px rgb(0 0 0 / .5) */
+    --t-shadow-xl: 0 10px 40px rgb(0 0 0 / 0.440);   /* 深色: 0 10px 40px rgb(0 0 0 / .8) */
+
+    /* ---- 规则 R-E ---- */
+    --t-shadow-inset-hairline: inset 0 1px 0 rgb(255 255 255 / 0.042);   /* 深色: inset 0 1px 0 rgb(255 255 255 / .06) */
+    --t-shadow-inset-gloss: inset 0 1px 0 rgb(255 255 255 / 0.126);   /* 深色: inset 0 1px 0 rgb(255 255 255 / .18) */
+
+    /* ---- 规则 R-B ---- */
+    --t-gradient-accent: linear-gradient(90deg, rgb(0 127 220), rgb(102 126 234));   /* 深色: linear-gradient(90deg, #4a9eff, #667eea) */
+    --t-gradient-notify: linear-gradient(90deg, rgb(5 104 82), rgb(1 121 118));   /* 深色: linear-gradient(90deg, #55efc4, #00cec9) */
+
+    /* ---- 规则 R-A ---- */
+    --t-gradient-surface: linear-gradient(180deg, rgb(0 0 0 / .04),
+            rgb(0 0 0 / .015));   /* 深色: linear-gradient(180deg, rgb(255 255 255 / .04),
+            rgb(255 255 255 / .015)) */
+
+    /* ---- 规则 R-B ---- */
+    --t-gradient-glass-btn: linear-gradient(140deg, rgb(71 71 71 / .12),
+            rgb(71 71 71 / .04));   /* 深色: linear-gradient(140deg, rgb(255 255 255 / .12),
+            rgb(255 255 255 / .04)) */
+}

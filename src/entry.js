@@ -19,7 +19,7 @@ import { dryRunFavsMigration } from "./core/favsStore.js";
 import { initExtensionUpdate } from "./core/extensionUpdate.js";
 import { initSyncListener } from "./core/worldInfoManager.js";
 import { createFloatingButton, destroyFloatingButton, refreshFloatingTuck } from "./ui/floatingBtn.js";
-import { applyCustomCSS, applyFontSettings, applyUIFontScale } from "./ui/settingsWindow.js";
+import { applyCustomCSS, applyFontSettings, applyUIFontScale, applyUITheme } from "./ui/settingsWindow.js";
 import { initOutlineEntryButton } from "./ui/outlineEntryButton.js";
 import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteEntryButton.js";
 import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
@@ -162,6 +162,7 @@ function initCoreFeatures() {
 
     // 应用 UI 字体缩放（不影响内容区）
     applyUIFontScale(extData.appearance?.ui_font_scale);
+    applyUITheme(extData.appearance?.ui_theme);
 
     // 监听生成结束事件（自动演绎）
     eventSource.on(event_types.GENERATION_ENDED, onGenerationEnded);

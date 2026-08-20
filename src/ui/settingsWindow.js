@@ -3,6 +3,7 @@
 import { getExtData, saveExtData } from "../utils/storage.js";
 import { GlobalState } from "../core/state.js";
 import { TitaniaLogger } from "../core/logger.js";
+import { defaultSettings } from "../config/defaults.js";
 import { fileToBase64 } from "../utils/helpers.js";
 import { createFloatingButton } from "./floatingBtn.js";
 import { loadScripts } from "../core/scriptData.js";
@@ -154,6 +155,7 @@ export function openSettingsWindow() {
     if (tempApp.border_opacity === undefined) tempApp.border_opacity = 100;
     if (tempApp.bg_opacity === undefined) tempApp.bg_opacity = 100;
     if (tempApp.ui_font_scale === undefined) tempApp.ui_font_scale = 100;
+    if (tempApp.ui_theme !== "light") tempApp.ui_theme = "dark";
 
     // 旧配置兼容：内容是图片 data URI 时，自动纠正为 image 类型
     const isTempAppImageData = typeof tempApp.content === 'string' && tempApp.content.trim().toLowerCase().startsWith("data:image/");
@@ -280,7 +282,16 @@ export function openSettingsWindow() {
                         <input class="t-w-full" type="range" id="p-ui-font-scale" min="80" max="130" step="5" value="${tempApp.ui_font_scale}">
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">影响插件全部界面字体（不影响内容区渲染文本）。</p>
                     </div>
-                    
+
+                    <div class="t-form-group">
+                        <label class="t-form-label">界面主题</label>
+                        <div style="display:flex; gap:20px;">
+                            <label><input type="radio" name="p-ui-theme" value="dark" ${tempApp.ui_theme !== 'light' ? 'checked' : ''}> 深色</label>
+                            <label><input type="radio" name="p-ui-theme" value="light" ${tempApp.ui_theme === 'light' ? 'checked' : ''}> 浅色</label>
+                        </div>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">只影响插件自己的界面，不改 SillyTavern 主题。切换后立即生效。</p>
+                    </div>
+
                     <div class="t-form-group">
                         <label class="t-form-label">图标类型</label>
                         <div style="display:flex; gap:20px; margin-bottom:15px;">
@@ -941,6 +952,12 @@ export function openSettingsWindow() {
     $("#p-ui-font-scale").on("input", function () {
         tempApp.ui_font_scale = parseInt($(this).val()) || 100;
         $("#p-ui-font-scale-val").text(tempApp.ui_font_scale + "%");
+    });
+    // 主题立即生效（不等「保存」）：切主题要看的就是整个界面的观感，
+    // 只有当场看到才能判断要不要留。若用户最后取消，下面的清理会还原。
+    $("input[name='p-ui-theme']").on("change", function () {
+        tempApp.ui_theme = $(this).val() === 'light' ? 'light' : 'dark';
+        applyUITheme(tempApp.ui_theme);
     });
     $("#p-emoji-input").on("input", function () {
         tempApp.content = $(this).val();
@@ -2183,6 +2200,9 @@ export function openSettingsWindow() {
         openScriptManager();
     });
     $("#t-set-close").on("click", () => {
+        // 主题是「立即生效」的（见 p-ui-theme 的 change 处理），关窗等于放弃修改，
+        // 所以必须还原成**已保存**的值，否则未保存的主题会留在界面上。
+        applyUITheme(getExtData()?.appearance?.ui_theme);
         document.getElementById("t-prompt-editor-modal")?.remove();
         $("#t-settings-view").remove();
         // 如果主窗口存在则显示它，否则关闭整个 overlay
@@ -2220,12 +2240,32 @@ export function openSettingsWindow() {
             animation: tempApp.animation || "ripple",
             size: tempApp.size || 56,
             ui_font_scale: tempApp.ui_font_scale !== undefined ? tempApp.ui_font_scale : 100,
+            // ⚠ 本对象是**整体替换**（不是合并），所以每个要持久化的字段都必须
+            //   在这份白名单里出现一次。漏掉的字段会在保存时被静默丢弃 ——
+            //   Phase 6c-1 的 ui_theme 就是这么丢的：切换立即生效、一保存就翻回
+            //   深色，因为下面 applyUITheme(d.appearance?.ui_theme) 读到 undefined。
+            ui_theme: tempApp.ui_theme === "light" ? "light" : "dark",
             border_color: tempApp.border_color || "#90cdf4",
             bg_color: tempApp.bg_color || "#2b2b2b",
             border_opacity: tempApp.border_opacity !== undefined ? tempApp.border_opacity : 100,
             bg_opacity: tempApp.bg_opacity !== undefined ? tempApp.bg_opacity : 100,
             show_timer: $("#p-show-timer").is(":checked")
         };
+
+        // ── 白名单漏字段自检 ──────────────────────────────────────────
+        // 上面是**整体替换**，漏掉的字段保存时会被静默丢弃。这个 bug 的表现极具
+        // 误导性：Phase 6c-1 漏了 ui_theme，症状是「切换立即生效、一点保存就翻回
+        // 深色」—— 看起来像主题功能没写好，实际是保存把字段吃了，随后
+        // applyUITheme(undefined) 走默认值又把界面改回去。
+        // 拿 defaultSettings.appearance 当权威清单比对，把静默丢弃变成显式告警，
+        // 这样下一个加字段的人漏了也会立刻看到。
+        const missingApp = Object.keys(defaultSettings.appearance || {})
+            .filter(k => !(k in d.appearance));
+        if (missingApp.length) {
+            TitaniaLogger.warn(
+                `设置保存：appearance 白名单缺少字段 ${missingApp.join(", ")}，`
+                + `这些设置不会被持久化（见 settingsWindow.js 的 d.appearance 赋值处）`);
+        }
         // 逐字段写入，避免覆盖 script_sort_mode 等其它偏好
         if (!d.ui_prefs) d.ui_prefs = {};
         d.ui_prefs.main_window_mode = $("#p-main-window-mode").val() === "legacy" ? "legacy" : "modern";
@@ -2336,6 +2376,7 @@ export function openSettingsWindow() {
         applyCustomCSS(d.custom_css); // 应用自定义 CSS
         applyFontSettings(d.font_settings); // 应用字体设置
         applyUIFontScale(d.appearance?.ui_font_scale); // 应用 UI 字体大小
+        applyUITheme(d.appearance?.ui_theme); // 应用界面主题
         if (window.toastr) toastr.success("设置已保存");
     });
 
@@ -2351,4 +2392,21 @@ export function applyUIFontScale(scalePercent = 100) {
     const n = Number(scalePercent);
     const clamped = Number.isFinite(n) ? Math.max(80, Math.min(130, n)) : 100;
     document.documentElement.style.setProperty('--t-ui-font-scale', (clamped / 100).toFixed(2));
+}
+
+/**
+ * 应用插件 UI 的深/浅主题。
+ *
+ * 写在 documentElement 上而非 .t-root 上：token 定义在 `:root`，而 .t-root 有
+ * 49 个挂载点（各窗口/弹窗/悬浮球各自一个），挨个加属性既漏又难维护。
+ * 浅色覆盖用 `:root[data-t-theme="light"]`，一处属性就能覆盖全部挂载点。
+ *
+ * ⚠ 'dark' 走的是**移除属性**而不是设成 "dark"：深色是 theme-dark.css 里
+ *   `:root` 的无条件声明，属性存在与否只决定 theme-light.css 那层是否命中。
+ *   设成 data-t-theme="dark" 也能工作，但会让人以为存在第三种状态。
+ */
+export function applyUITheme(theme = 'dark') {
+    const root = document.documentElement;
+    if (theme === 'light') root.dataset.tTheme = 'light';
+    else delete root.dataset.tTheme;
 }

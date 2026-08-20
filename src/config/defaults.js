@@ -69,18 +69,24 @@ export const defaultSettings = {
         wi_hide_disabled: false
     },
     appearance: {
+        // ⚠ 这份清单是「保存白名单」的权威基线：settingsWindow.js 保存时会拿它比对，
+        //   白名单里缺哪个字段就告警（那里的 d.appearance 是整体替换，漏了就静默丢弃）。
+        //   所以这里只能列**真正在用**的字段，多一个少一个都会让那个自检失真。
+        //   Phase 6c-1 清理前，这里有 5 个死字段（color_theme / color_notify /
+        //   color_bg / color_icon / color_notify_bg，全库零引用，早被 border_color
+        //   与 bg_color 取代），同时缺 3 个在用的（bg_color / border_opacity /
+        //   bg_opacity）—— 基线两头都是错的，自检会永久误报 5 条。
         type: "emoji",
         content: "🎭",
-        color_theme: "#bfa15f",
-        color_notify: "#55efc4",
-        color_bg: "#2b2b2b",   // 球体背景色
-        color_icon: "#ffffff", // 图标颜色
-        color_notify_bg: "#2b2b2b", // 通知状态背景色
-        border_color: "#90cdf4", // 球体边框颜色
-        animation: "ripple",   // 动画类型: ripple(脉冲波纹) | arc(电磁闪烁)
+        border_color: "#90cdf4",   // 球体边框颜色
+        bg_color: "#2b2b2b",       // 球体背景色
+        border_opacity: 100,
+        bg_opacity: 100,
+        animation: "ripple",       // 动画类型: ripple(脉冲波纹) | arc(电磁闪烁)
         size: 56,
         ui_font_scale: 100,
-        show_timer: true       // 是否显示生成计时统计
+        ui_theme: "dark",          // 插件 UI 主题: dark | light（Phase 6c）
+        show_timer: true           // 是否显示生成计时统计
     },
     director: {
         instruction: ""  // 自由编辑的导演指令

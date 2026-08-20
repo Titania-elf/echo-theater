@@ -14,7 +14,12 @@ export const CSS_LAYERS = [
             'primitives.css',      // 与主题无关的原始尺度（组件层禁止直接引用，R3b）
             'semantic.css',        // 语义角色中不随主题变化的部分（圆角/间距/排版）
             'theme-dark.css',      // 暗色主题：语义 → 原语绑定（= 当前视觉）
-            // 'theme-light.css',  ← Phase 6 之后新增
+            // ⚠ theme-light.css 必须紧跟在 theme-dark.css **之后**：两者选择器
+            //   特异度不同（:root vs :root[data-t-theme="light"]），本来靠特异度
+            //   就能胜出，但顺序放前面会让人误以为可以互换。由 scripts/css-audit.js
+            //   的 A14 断言文件存在，顺序由本清单唯一决定。
+            //   本文件由 scripts/gen-theme-light.py 生成，勿手改。
+            'theme-light.css',     // 浅色主题：只覆盖需要变的 token（231 条）
             'legacy-aliases.css',  // ⚠ 旧变量名 → 新 token（Phase 7 删除）
         ]
     },
