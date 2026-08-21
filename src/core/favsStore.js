@@ -352,6 +352,26 @@ export function describeCurrentFavsFootprint() {
 }
 
 /**
+ * 已搬家后的存储占用，**只读索引、零 HTTP 请求**。
+ *
+ * bodyBytes 由索引里每条的 bytes 累加得出（写入时记的真实字节数，
+ * upsertFav 每次改正文都会刷新它），所以不必去挨个 HEAD 那 N 个文件。
+ * 与 describeCurrentFavsFootprint() 的区别：那个算的是「settings.json 里旧数据还占多少」，
+ * 这个算的是「搬完之后正文和索引各占多少」。
+ *
+ * @returns {{count:number, bodyBytes:number, indexBytes:number}|null} 未搬家返回 null
+ */
+export function describeFavsStorageFootprint() {
+    const store = getFavsIndex();
+    if (!store) return null;
+    return {
+        count: store.entries.length,
+        bodyBytes: store.entries.reduce((sum, entry) => sum + (Number(entry.bytes) || 0), 0),
+        indexBytes: utf8ByteLength(JSON.stringify(store.entries))
+    };
+}
+
+/**
  * 挑一批有代表性的收藏做「读回来逐字对比」。
  * 全量回读要 N 次请求，对手机不友好；而只验证存在性证明不了内容写对了。
  * 所以：最大的、最小的、首尾各一条、外加最多 3 条分组收藏。
@@ -905,12 +925,27 @@ async function verifyMigrationAgainstLegacy(options = {}) {
  * 删掉 settings.json 里的旧收藏数据。**必须先通过全量核对。**
  * 这是整个搬家里唯一不可逆的一步，也是 settings.json 真正瘦下来的那一步。
  *
- * @returns {Promise<{ok:boolean, removedBytes:number, problems?:string[]}>}
+ * options.confirmBeforeDelete 是给 UI 层插人工闸门用的：核对通过之后、真删之前
+ * await 它一次，返回假就一个字都不删。刻意做成回调而不是「让 UI 先自己核对一遍再调本函数」——
+ * 后者会让 N 条各发两轮请求，而且「删除前必须全量核对通过」这条不变量就跑到 UI 层去了，
+ * 从此谁都能绕过它。回调参数在本文件是既有模式（onProgress 同理）。
+ *
+ * @param {{onProgress?: (done:number, total:number) => void,
+ *          confirmBeforeDelete?: (verification: {checked:number}) => boolean|Promise<boolean>}} [options]
+ * @returns {Promise<{ok:boolean, removedBytes:number, cancelled?:boolean, problems?:string[]}>}
  */
 export async function dropLegacyFavs(options = {}) {
     const verification = await verifyMigrationAgainstLegacy(options);
     if (!verification.ok) {
         return { ok: false, removedBytes: 0, problems: verification.problems };
+    }
+
+    if (typeof options.confirmBeforeDelete === "function") {
+        const proceed = await options.confirmBeforeDelete(verification);
+        if (!proceed) {
+            TitaniaLogger.info("核对已通过，但用户在删除前取消，旧数据保留");
+            return { ok: false, removedBytes: 0, cancelled: true, checked: verification.checked };
+        }
     }
 
     const data = getExtData();
@@ -919,7 +954,7 @@ export async function dropLegacyFavs(options = {}) {
     saveExtData();
 
     TitaniaLogger.info(`旧收藏数据已删除，settings.json 减少约 ${removedBytes} 字节`);
-    return { ok: true, removedBytes };
+    return { ok: true, removedBytes, checked: verification.checked };
 }
 
 /* ------------------------------------------------------------------ *

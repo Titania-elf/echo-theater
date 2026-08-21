@@ -21121,86 +21121,14 @@ function describeCurrentFavsFootprint() {
     bytes
   };
 }
-function pickReadbackSample(records) {
-  if (records.length === 0) return [];
-  const byBytes = [...records].sort((a, b) => a.written.bytes - b.written.bytes);
-  const chains = records.filter((r) => r.fav?.type === "chain").slice(0, 3);
-  const picked = /* @__PURE__ */ new Map();
-  const take = (record) => {
-    if (record) picked.set(String(record.fav?.id), record);
+function describeFavsStorageFootprint() {
+  const store = getFavsIndex();
+  if (!store) return null;
+  return {
+    count: store.entries.length,
+    bodyBytes: store.entries.reduce((sum, entry) => sum + (Number(entry.bytes) || 0), 0),
+    indexBytes: utf8ByteLength(JSON.stringify(store.entries))
   };
-  take(byBytes[byBytes.length - 1]);
-  take(byBytes[0]);
-  take(records[0]);
-  take(records[records.length - 1]);
-  chains.forEach(take);
-  return [...picked.values()];
-}
-async function dryRunFavsMigration(options = {}) {
-  const startedAt = Date.now();
-  const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
-  const data = getExtData();
-  const favs = Array.isArray(data.favs) ? data.favs : [];
-  const footprint = describeCurrentFavsFootprint();
-  const records = [];
-  const failures = [];
-  for (let i = 0; i < favs.length; i++) {
-    const fav = favs[i];
-    try {
-      const written = await writeFavBody(fav, 1);
-      records.push({ fav, written });
-    } catch (e) {
-      failures.push({ id: fav?.id, title: String(fav?.title || ""), error: e?.message || String(e) });
-      TitaniaLogger.error(`\u8BD5\u8FD0\u884C\uFF1A\u6536\u85CF ${fav?.id} \u5199\u5165\u5931\u8D25`, e);
-    }
-    if (onProgress) onProgress(i + 1, favs.length);
-  }
-  const index = records.map(({ fav, written }) => buildFavIndexEntry(fav, {
-    file: written.file,
-    rev: written.rev,
-    bytes: written.bytes
-  }));
-  let verifyResult = {};
-  let verifyError = null;
-  try {
-    verifyResult = await verifyFavFiles(index.map((entry) => entry.file));
-  } catch (e) {
-    verifyError = e?.message || String(e);
-    TitaniaLogger.error("\u8BD5\u8FD0\u884C\uFF1A\u6587\u4EF6\u6821\u9A8C\u8BF7\u6C42\u5931\u8D25", e);
-  }
-  const missing = Object.entries(verifyResult).filter(([, exists]) => !exists).map(([path]) => path);
-  const sample = pickReadbackSample(records);
-  const mismatched = [];
-  for (const record of sample) {
-    const entry = index.find((item) => String(item.id) === String(record.fav?.id));
-    try {
-      const body = await readFavBody(entry);
-      if (JSON.stringify(body) !== record.written.text) {
-        mismatched.push({ id: record.fav?.id, reason: "\u8BFB\u56DE\u7684\u5185\u5BB9\u4E0E\u5199\u51FA\u7684\u4E0D\u4E00\u81F4" });
-      }
-    } catch (e) {
-      mismatched.push({ id: record.fav?.id, reason: e?.message || String(e) });
-    }
-  }
-  const bytesList = records.map((r) => r.written.bytes);
-  const report = {
-    ok: failures.length === 0 && missing.length === 0 && mismatched.length === 0 && !verifyError,
-    durationMs: Date.now() - startedAt,
-    settings: footprint,
-    written: {
-      count: records.length,
-      bytesTotal: bytesList.reduce((sum, n) => sum + n, 0),
-      bytesMax: bytesList.length ? Math.max(...bytesList) : 0
-    },
-    indexBytes: utf8ByteLength(JSON.stringify(index)),
-    failures,
-    verify: { checked: Object.keys(verifyResult).length, missing, error: verifyError },
-    readback: { sampled: sample.length, mismatched },
-    // 迁移后 settings.json 里收藏一段的净变化：索引留下，正文搬走
-    projectedSavingBytes: footprint.bytes - utf8ByteLength(JSON.stringify(index))
-  };
-  TitaniaLogger.info("\u6536\u85CF\u642C\u5BB6\u8BD5\u8FD0\u884C\u5B8C\u6210", report);
-  return report;
 }
 function getFavsIndex() {
   const store = getExtData()[FAVS_INDEX_KEY];
@@ -21467,12 +21395,19 @@ async function dropLegacyFavs(options = {}) {
   if (!verification.ok) {
     return { ok: false, removedBytes: 0, problems: verification.problems };
   }
+  if (typeof options.confirmBeforeDelete === "function") {
+    const proceed = await options.confirmBeforeDelete(verification);
+    if (!proceed) {
+      TitaniaLogger.info("\u6838\u5BF9\u5DF2\u901A\u8FC7\uFF0C\u4F46\u7528\u6237\u5728\u5220\u9664\u524D\u53D6\u6D88\uFF0C\u65E7\u6570\u636E\u4FDD\u7559");
+      return { ok: false, removedBytes: 0, cancelled: true, checked: verification.checked };
+    }
+  }
   const data = getExtData();
   const removedBytes = utf8ByteLength(JSON.stringify(data.favs || []));
   delete data.favs;
   saveExtData();
   TitaniaLogger.info(`\u65E7\u6536\u85CF\u6570\u636E\u5DF2\u5220\u9664\uFF0Csettings.json \u51CF\u5C11\u7EA6 ${removedBytes} \u5B57\u8282`);
-  return { ok: true, removedBytes };
+  return { ok: true, removedBytes, checked: verification.checked };
 }
 function findOrphanFavFiles() {
   const data = getExtData();
@@ -46287,10 +46222,7 @@ function bindDrawerBackupControls() {
       $(this).val("");
     }
   });
-  bindFavsMigrationDryRun();
-  bindFavsMigrationRun();
-  bindFavsMigrationCleanup();
-  bindFavsArtifactCleanup();
+  renderFavsStorageCard();
 }
 function formatBytes(bytes) {
   const n = Number(bytes) || 0;
@@ -46298,194 +46230,191 @@ function formatBytes(bytes) {
   if (Math.abs(n) >= 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${n} B`;
 }
+function backupFileName(tag) {
+  const stamp = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_");
+  return `titania_backup_${tag}_${stamp}.json`;
+}
 function showFavsMigrationReport(html, tone) {
-  const reportId = "titania-favs-migrate-report";
+  const reportId = "titania-favs-storage-report";
   let $report = $(`#${reportId}`);
   if ($report.length === 0) {
-    const $card = $("#titania-favs-migrate-dryrun").closest(".titania-panel-card");
+    const $card = $("#titania-favs-storage-card");
     if ($card.length === 0) return;
     $report = $(`<div class="titania-backup-desc" id="${reportId}"></div>`);
     $card.append($report);
   }
   $report.html(`<span style="color:${tone};">${html}</span>`);
 }
-function bindFavsMigrationDryRun() {
-  const $btn = $("#titania-favs-migrate-dryrun");
-  if ($btn.length === 0) return;
-  const showReport = showFavsMigrationReport;
-  $btn.off("click").on("click", async function() {
-    const $self = $(this);
-    const oldHtml = $self.html();
-    $self.prop("disabled", true);
-    try {
-      const report = await dryRunFavsMigration({
-        onProgress: (done, total) => {
-          $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> \u5199\u5165\u4E2D ${done}/${total}`);
-        }
-      });
-      const lines = [
-        `\u6536\u85CF ${report.settings.count} \u6761\uFF08\u5206\u7EC4 ${report.settings.chainCount} / \u666E\u901A ${report.settings.plainCount}\uFF09\uFF0C\u5F53\u524D\u5728 settings.json \u91CC\u5360 ${formatBytes(report.settings.bytes)}`,
-        `\u5DF2\u5199\u51FA ${report.written.count} \u4E2A\u6B63\u6587\u6587\u4EF6\uFF0C\u5171 ${formatBytes(report.written.bytesTotal)}\uFF0C\u6700\u5927\u5355\u4E2A ${formatBytes(report.written.bytesMax)}`,
-        `\u7D22\u5F15\u5927\u5C0F ${formatBytes(report.indexBytes)} \u2014\u2014 \u6B63\u5F0F\u642C\u5BB6\u540E settings.json \u53EF\u51CF\u5C11\u7EA6 <b>${formatBytes(report.projectedSavingBytes)}</b>`,
-        `\u843D\u76D8\u6821\u9A8C\uFF1A${report.verify.checked} \u4E2A\u5DF2\u786E\u8BA4` + (report.verify.missing.length ? `\uFF0C<b>\u7F3A\u5931 ${report.verify.missing.length} \u4E2A</b>` : "\uFF0C\u65E0\u7F3A\u5931") + (report.verify.error ? `\uFF0C\u6821\u9A8C\u8BF7\u6C42\u51FA\u9519\uFF1A${report.verify.error}` : ""),
-        `\u62BD\u6837\u56DE\u8BFB\u6BD4\u5BF9\uFF1A${report.readback.sampled} \u6761` + (report.readback.mismatched.length ? `\uFF0C<b>\u4E0D\u4E00\u81F4 ${report.readback.mismatched.length} \u6761</b>` : "\uFF0C\u5168\u90E8\u4E00\u81F4"),
-        `\u8017\u65F6 ${(report.durationMs / 1e3).toFixed(1)} \u79D2`
-      ];
-      if (report.failures.length) {
-        lines.push(`<b>\u5199\u5165\u5931\u8D25 ${report.failures.length} \u6761</b>\uFF1A` + report.failures.slice(0, 3).map((f) => `${f.id}\uFF08${f.error}\uFF09`).join("\uFF1B") + (report.failures.length > 3 ? " \u2026" : ""));
-      }
-      const tone = report.ok ? "#55efc4" : "#ff7675";
-      const head = report.ok ? "\u2705 \u8BD5\u8FD0\u884C\u901A\u8FC7\uFF0C\u672A\u6539\u52A8\u4EFB\u4F55\u73B0\u6709\u6570\u636E" : "\u26A0\uFE0F \u8BD5\u8FD0\u884C\u53D1\u73B0\u95EE\u9898\uFF0C\u672A\u6539\u52A8\u4EFB\u4F55\u73B0\u6709\u6570\u636E";
-      showReport(`${head}<br>\xB7 ${lines.join("<br>\xB7 ")}`, tone);
-      console.log("[Titania] \u6536\u85CF\u642C\u5BB6\u8BD5\u8FD0\u884C\u62A5\u544A", report);
-      if (window.toastr) {
-        if (report.ok) {
-          toastr.success(`\u5DF2\u5199\u51FA ${report.written.count} \u4E2A\u6587\u4EF6\u5E76\u5168\u90E8\u6821\u9A8C\u901A\u8FC7\uFF0C\u53EF\u51CF\u5C11\u7EA6 ${formatBytes(report.projectedSavingBytes)}`, "Titania Echo");
-        } else {
-          toastr.warning("\u8BD5\u8FD0\u884C\u53D1\u73B0\u95EE\u9898\uFF0C\u8BE6\u60C5\u89C1\u8BBE\u7F6E\u9875\u4E0E\u63A7\u5236\u53F0", "Titania Echo");
-        }
-      }
-    } catch (e) {
-      console.error("Titania: \u6536\u85CF\u642C\u5BB6\u8BD5\u8FD0\u884C\u5931\u8D25", e);
-      showReport(`\u274C \u8BD5\u8FD0\u884C\u5931\u8D25\uFF1A${e?.message || String(e)}\uFF08\u672A\u6539\u52A8\u4EFB\u4F55\u73B0\u6709\u6570\u636E\uFF09`, "#ff7675");
-      if (window.toastr) toastr.error(e?.message || "\u8BD5\u8FD0\u884C\u5931\u8D25", "Titania Echo");
-    } finally {
-      $self.prop("disabled", false).html(oldHtml);
-    }
-  });
-}
-var FAVS_MIGRATE_RUN_LABEL = '<i class="fa-solid fa-box-archive"></i> \u6B63\u5F0F\u642C\u5BB6\uFF08\u4FDD\u7559\u539F\u6570\u636E\uFF09';
-var FAVS_MIGRATE_CLEANUP_LABEL = '<i class="fa-solid fa-broom"></i> \u6536\u5C3E\uFF1A\u5220\u9664\u65E7\u6570\u636E\uFF08\u4E0D\u53EF\u9006\uFF09';
-function refreshFavsMigrationButtons() {
+function describeFavsStorageState() {
   const migrated = isFavsMigrated();
   const legacyFavs = getExtData().favs;
-  const legacyLeft = Array.isArray(legacyFavs) && legacyFavs.length > 0;
-  const $run = $("#titania-favs-migrate-run");
-  if ($run.length) {
-    if (migrated) {
-      $run.prop("disabled", true).attr("title", "").html('<i class="fa-solid fa-check"></i> \u5DF2\u642C\u5BB6\uFF08\u539F\u6570\u636E\u4ECD\u4FDD\u7559\uFF09');
-    } else {
-      $run.prop("disabled", false).attr("title", "").html(FAVS_MIGRATE_RUN_LABEL);
-    }
-  }
-  const $cleanup = $("#titania-favs-migrate-cleanup");
-  if ($cleanup.length) {
-    if (!migrated) {
-      $cleanup.prop("disabled", true).attr("title", "\u8BF7\u5148\u5B8C\u6210\u6B63\u5F0F\u642C\u5BB6").html(FAVS_MIGRATE_CLEANUP_LABEL);
-    } else if (!legacyLeft) {
-      $cleanup.prop("disabled", true).attr("title", "").html('<i class="fa-solid fa-check"></i> \u65E7\u6570\u636E\u5DF2\u6E05\u7406');
-    } else {
-      $cleanup.prop("disabled", false).attr("title", "").html(FAVS_MIGRATE_CLEANUP_LABEL);
-    }
-  }
+  const legacyCount = Array.isArray(legacyFavs) ? legacyFavs.length : 0;
+  const artifacts = migrated ? describeLegacyArtifacts() : { keys: [], keyBytes: 0, orphanFiles: [] };
+  const artifactCount = artifacts.keys.length + artifacts.orphanFiles.length;
+  let state;
+  if (!migrated) state = legacyCount > 0 ? "needs-migration" : "empty";
+  else if (legacyCount > 0) state = "needs-cleanup";
+  else state = artifactCount > 0 ? "has-artifacts" : "done";
+  return { state, migrated, legacyCount, artifacts, artifactCount, footprint: describeFavsStorageFootprint() };
 }
-function bindFavsMigrationRun() {
-  const $btn = $("#titania-favs-migrate-run");
-  if ($btn.length === 0) return;
-  refreshFavsMigrationButtons();
-  $btn.off("click").on("click", async function() {
-    const $self = $(this);
-    if (isFavsMigrated()) {
-      showFavsMigrationReport("\u6536\u85CF\u5DF2\u7ECF\u642C\u8FC7\u5BB6\u4E86\uFF0C\u65E0\u9700\u91CD\u590D\u64CD\u4F5C\u3002", "#feca57");
-      return;
-    }
-    const footprint = describeCurrentFavsFootprint();
-    if (footprint.count === 0) {
-      showFavsMigrationReport("\u5F53\u524D\u6CA1\u6709\u6536\u85CF\uFF0C\u65E0\u9700\u642C\u5BB6\u3002", "#feca57");
-      return;
-    }
-    const confirmed = confirm(
-      `\u5373\u5C06\u628A ${footprint.count} \u6761\u6536\u85CF\u7684\u6B63\u6587\u6539\u7531\u72EC\u7ACB\u6587\u4EF6\u627F\u8F7D\u3002
-
-\xB7 \u4F1A\u5148\u4E0B\u8F7D\u4E00\u4EFD\u5B8C\u6574\u5907\u4EFD\uFF0C\u8BF7\u52A1\u5FC5\u4FDD\u5B58\u597D
-\xB7 settings.json \u91CC\u7684\u539F\u6570\u636E\u3010\u4ECD\u7136\u4FDD\u7559\u3011\uFF0C\u968F\u65F6\u53EF\u9000\u56DE\u4E0A\u4E2A\u63D2\u4EF6\u7248\u672C
-\xB7 \u6536\u85CF\u5939\u4F1A\u6539\u6210\u300C\u5217\u8868\u8BFB\u7D22\u5F15\u3001\u70B9\u5F00\u624D\u53D6\u6B63\u6587\u300D
-
-\u786E\u5B9A\u7EE7\u7EED\u5417\uFF1F`
+function favsStorageStatusLine(footprint) {
+  if (!footprint) return "";
+  return `\u6536\u85CF <b>${footprint.count}</b> \u6761 \xB7 \u6B63\u6587 <b>${formatBytes(footprint.bodyBytes)}</b> \u5728 <code>user/files/</code> \xB7 \u7D22\u5F15 <b>${formatBytes(footprint.indexBytes)}</b> \u5728 settings.json`;
+}
+function renderFavsStorageCard() {
+  const $card = $("#titania-favs-storage-card");
+  if ($card.length === 0) return;
+  const $desc = $("#titania-favs-storage-desc");
+  const $actions = $("#titania-favs-storage-actions");
+  const info = describeFavsStorageState();
+  if (info.state === "empty") {
+    $card.attr("hidden", "hidden");
+    return;
+  }
+  $card.removeAttr("hidden");
+  const CHECK_BTN = `<button class="titania-mini-btn" data-act="check"><i class="fa-solid fa-stethoscope"></i> \u68C0\u67E5\u5B58\u50A8\u5B8C\u6574\u6027</button>`;
+  if (info.state === "needs-migration") {
+    $desc.html(
+      `\u6536\u85CF\u6B63\u6587\u73B0\u5728\u5168\u6324\u5728 SillyTavern \u7684 settings.json \u91CC\uFF0C\u4E8E\u662F\u4F60\u6539\u4EFB\u4F55\u4E00\u4E2A\u8BBE\u7F6E\u90FD\u8981\u8FDE\u5E26\u91CD\u5199\u5168\u90E8\u6536\u85CF \u2014\u2014 \u6536\u85CF\u8D8A\u591A\u8D8A\u5361\u3002<br>\u642C\u5BB6\u4F1A\u628A\u6B63\u6587\u6539\u7531 <code>user/files/</code> \u4E0B\u7684\u72EC\u7ACB\u6587\u4EF6\u627F\u8F7D\uFF0Csettings.json \u91CC\u53EA\u7559\u4E00\u4EFD\u8F7B\u91CF\u7D22\u5F15\u3002<br>\u4E00\u6B21\u70B9\u5B8C\uFF1A<b>\u4E0B\u8F7D\u5907\u4EFD \u2192 \u5199\u6587\u4EF6 \u2192 \u6821\u9A8C \u2192 \u5EFA\u7D22\u5F15 \u2192 \u5168\u91CF\u9010\u5B57\u6838\u5BF9 \u2192 \u5220\u65E7\u6570\u636E</b>\u3002\u5220\u4E4B\u524D\u4F1A\u518D\u95EE\u4F60\u4E00\u6B21\u3002<br><span style="color:#feca57;">\u26A0\uFE0F \u8FC7\u7A0B\u4E2D\u4F1A\u5F3A\u5236\u4E0B\u8F7D\u4E00\u4EFD\u5B8C\u6574\u5907\u4EFD\uFF0C\u8BF7\u4FDD\u5B58\u597D\u8BE5\u6587\u4EF6\u3002</span>`
     );
-    if (!confirmed) return;
-    $self.prop("disabled", true);
-    try {
-      $self.html('<i class="fa-solid fa-spinner fa-spin"></i> \u6B63\u5728\u5907\u4EFD...');
-      try {
-        const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-        const filename = `titania_backup_before_favs_migration_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
-        downloadBackupPayload(snapshot, filename);
-      } catch (backupErr) {
-        console.error("Titania: \u642C\u5BB6\u524D\u5907\u4EFD\u5931\u8D25", backupErr);
-        showFavsMigrationReport(
-          `\u274C \u642C\u5BB6\u524D\u7684\u5907\u4EFD\u5931\u8D25\uFF0C\u5DF2\u4E2D\u6B62\uFF0C\u672A\u6539\u52A8\u4EFB\u4F55\u6570\u636E\uFF1A${backupErr?.message || String(backupErr)}`,
-          "#ff7675"
-        );
-        if (window.toastr) toastr.error("\u5907\u4EFD\u5931\u8D25\uFF0C\u642C\u5BB6\u5DF2\u4E2D\u6B62", "Titania Echo");
-        return;
-      }
-      const report = await migrateFavsToFiles({
-        onProgress: (done, total) => {
-          $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> \u642C\u5BB6\u4E2D ${done}/${total}`);
-        }
-      });
-      if (!report.ok) {
-        const reason = report.reason || "\u672A\u77E5\u539F\u56E0";
-        showFavsMigrationReport(
-          `\u274C \u642C\u5BB6\u5DF2\u4E2D\u6B62\uFF0C\u7D22\u5F15\u672A\u5199\u5165\uFF0Csettings.json \u672A\u6539\u52A8\uFF1A${reason}<br>\xB7 \u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\uFF0C\u53EF\u653E\u5FC3\u91CD\u8BD5<br>\xB7 \u8BE6\u60C5\u89C1\u63A7\u5236\u53F0`,
-          "#ff7675"
-        );
-        console.error("[Titania] \u6536\u85CF\u642C\u5BB6\u4E2D\u6B62", report);
-        if (window.toastr) toastr.error("\u642C\u5BB6\u5DF2\u4E2D\u6B62\uFF0C\u672A\u6539\u52A8\u539F\u6570\u636E", "Titania Echo");
-        return;
-      }
-      showFavsMigrationReport(
-        `\u2705 \u642C\u5BB6\u5B8C\u6210\uFF0Csettings.json \u91CC\u7684\u539F\u6570\u636E\u4ECD\u4FDD\u7559\uFF08\u53EF\u968F\u65F6\u9000\u56DE\uFF09<br>\xB7 ${report.written.count} \u6761\u6B63\u6587\u5DF2\u843D\u6587\u4EF6\uFF0C\u5171 ${formatBytes(report.written.bytesTotal)}\uFF0C\u6700\u5927\u5355\u4E2A ${formatBytes(report.written.bytesMax)}<br>\xB7 \u7D22\u5F15 ${formatBytes(report.indexBytes)}\uFF0C\u5168\u90E8\u6587\u4EF6\u6821\u9A8C\u901A\u8FC7<br>\xB7 \u8017\u65F6 ${(report.durationMs / 1e3).toFixed(1)} \u79D2<br>\xB7 <b>\u4E0B\u4E00\u6B65\u8BF7\u6253\u5F00\u6536\u85CF\u5939\u9010\u9879\u68C0\u67E5</b>\uFF1A\u5217\u8868\u3001\u641C\u7D22\u3001\u7B5B\u9009\u3001\u70B9\u5F00\u770B\u3001\u5BFC\u51FA\u3001\u5220\u9664\u3002\u786E\u8BA4\u65E0\u8BEF\u540E\u518D\u5220\u6389 settings.json \u91CC\u90A3 ${formatBytes(report.pendingRemovalBytes)} \u65E7\u6570\u636E\uFF0C<b>\u5361\u987F\u5230\u90A3\u4E00\u6B65\u624D\u4F1A\u771F\u6B63\u6539\u5584\u3002</b>`,
-        "#55efc4"
-      );
-      console.log("[Titania] \u6536\u85CF\u642C\u5BB6\u62A5\u544A", report);
-      refreshFavsMigrationButtons();
-      if (window.toastr) {
-        toastr.success(`${report.written.count} \u6761\u6536\u85CF\u5DF2\u642C\u5BB6\uFF0C\u539F\u6570\u636E\u4ECD\u4FDD\u7559`, "Titania Echo");
-      }
-    } catch (e) {
-      console.error("Titania: \u6536\u85CF\u642C\u5BB6\u5931\u8D25", e);
-      showFavsMigrationReport(`\u274C \u642C\u5BB6\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
-      if (window.toastr) toastr.error(e?.message || "\u642C\u5BB6\u5931\u8D25", "Titania Echo");
-    } finally {
-      refreshFavsMigrationButtons();
+    $actions.html(
+      `<button class="titania-mini-btn is-import" data-act="migrate"><i class="fa-solid fa-box-archive"></i> \u4E00\u952E\u642C\u5BB6\uFF08\u81EA\u52A8\u5907\u4EFD\uFF09</button>`
+    );
+  } else if (info.state === "needs-cleanup") {
+    $desc.html(
+      `\u6B63\u6587\u5DF2\u7ECF\u642C\u5230 <code>user/files/</code> \u4E86\uFF0C\u4F46 settings.json \u91CC\u7684\u65E7\u6570\u636E\u8FD8\u5728\uFF0C\u6240\u4EE5\u4FDD\u5B58\u901F\u5EA6<b>\u8FD8\u6CA1\u6709\u53D8\u5FEB</b>\u3002<br>\u6536\u5C3E\u4F1A\u5168\u91CF\u9010\u5B57\u6838\u5BF9\u6BCF\u4E00\u6761\u6B63\u6587\uFF0C\u901A\u8FC7\u4E4B\u540E\u624D\u5220\u65E7\u6570\u636E\u3002<br><span style="color:#feca57;">\u26A0\uFE0F \u8FD9\u662F\u552F\u4E00\u4E0D\u53EF\u9006\u7684\u4E00\u6B65\uFF0C\u6267\u884C\u524D\u4F1A\u5F3A\u5236\u4E0B\u8F7D\u4E00\u4EFD\u5B8C\u6574\u5907\u4EFD\u3002</span>`
+    );
+    $actions.html(
+      `<button class="titania-mini-btn is-export" data-act="finish"><i class="fa-solid fa-broom"></i> \u5B8C\u6210\u6536\u5C3E\uFF08\u5220\u9664\u65E7\u6570\u636E\uFF09</button>`
+    );
+  } else if (info.state === "has-artifacts") {
+    const keyText = info.artifacts.keys.length ? `${info.artifacts.keys.length} \u4E2A\u96F6\u5F15\u7528\u65E7\u952E\uFF08${formatBytes(info.artifacts.keyBytes)}\uFF09` : "";
+    const fileText = info.artifacts.orphanFiles.length ? `${info.artifacts.orphanFiles.length} \u4E2A\u65E0\u4EBA\u5F15\u7528\u7684\u6B63\u6587\u6587\u4EF6` : "";
+    $desc.html(
+      favsStorageStatusLine(info.footprint) + `<br>\u8FD8\u5269\u4E00\u70B9\u5386\u53F2\u9057\u7559\u53EF\u4EE5\u6E05\u6389\uFF1A${[keyText, fileText].filter(Boolean).join("\u3001")}\u3002\u90FD\u662F\u5F53\u524D\u4EE3\u7801\u91CC\u6CA1\u6709\u4EFB\u4F55\u5730\u65B9\u8BFB\u5199\u7684\u6B7B\u6570\u636E\uFF0C\u5220\u9664\u4E0D\u5F71\u54CD\u4EFB\u4F55\u529F\u80FD\u3002`
+    );
+    $actions.html(
+      `<button class="titania-mini-btn" data-act="artifacts"><i class="fa-solid fa-trash-can"></i> \u6E05\u7406\u9057\u7559\u6570\u636E</button>${CHECK_BTN}`
+    );
+  } else {
+    $desc.html(
+      favsStorageStatusLine(info.footprint) + `<br>\u65B0\u589E\u4E00\u6761\u6536\u85CF\u53EA\u5199\u5B83\u81EA\u5DF1\u90A3\u4E00\u4E2A\u6587\u4EF6\uFF0C\u4FDD\u5B58\u8BBE\u7F6E\u4E0D\u518D\u91CD\u5199\u6536\u85CF\u3002\u5BFC\u51FA\u5907\u4EFD\u4F1A\u81EA\u52A8\u628A\u6B63\u6587\u8BFB\u56DE\u6765\u6253\u5305\uFF0C\u4ECD\u7136\u81EA\u6210\u4E00\u4F53\u3002`
+    );
+    $actions.html(CHECK_BTN);
+  }
+  $actions.find("button").off("click").on("click", function() {
+    const $self = $(this);
+    switch ($self.data("act")) {
+      case "migrate":
+        return runOneClickMigration($self);
+      case "finish":
+        return runFinishCleanup($self, { backupAlreadyDone: false });
+      case "artifacts":
+        return runArtifactCleanup($self);
+      case "check":
+        return runStorageCheck($self);
     }
   });
 }
-function bindFavsMigrationCleanup() {
-  const $btn = $("#titania-favs-migrate-cleanup");
-  if ($btn.length === 0) return;
-  refreshFavsMigrationButtons();
-  $btn.off("click").on("click", async function() {
-    const $self = $(this);
-    if (!isFavsMigrated()) {
-      showFavsMigrationReport("\u8BF7\u5148\u5B8C\u6210\u300C\u6B63\u5F0F\u642C\u5BB6\u300D\uFF0C\u518D\u6267\u884C\u6536\u5C3E\u3002", "#feca57");
+async function runOneClickMigration($btn) {
+  if (isFavsMigrated()) {
+    showFavsMigrationReport("\u6536\u85CF\u5DF2\u7ECF\u642C\u8FC7\u5BB6\u4E86\uFF0C\u65E0\u9700\u91CD\u590D\u64CD\u4F5C\u3002", "#feca57");
+    renderFavsStorageCard();
+    return;
+  }
+  const footprint = describeCurrentFavsFootprint();
+  if (footprint.count === 0) {
+    showFavsMigrationReport("\u5F53\u524D\u6CA1\u6709\u6536\u85CF\uFF0C\u65E0\u9700\u642C\u5BB6\u3002", "#feca57");
+    renderFavsStorageCard();
+    return;
+  }
+  const confirmed = confirm(
+    `\u5373\u5C06\u628A ${footprint.count} \u6761\u6536\u85CF\u7684\u6B63\u6587\u6539\u7531\u72EC\u7ACB\u6587\u4EF6\u627F\u8F7D\uFF08\u7EA6 ${formatBytes(footprint.bytes)}\uFF09\u3002
+
+\u6D41\u7A0B\uFF1A
+  1. \u4E0B\u8F7D\u4E00\u4EFD\u5B8C\u6574\u5907\u4EFD\uFF08\u8BF7\u52A1\u5FC5\u4FDD\u5B58\u597D\uFF09
+  2. \u628A\u6BCF\u6761\u6B63\u6587\u5199\u6210 user/files/ \u4E0B\u7684\u72EC\u7ACB\u6587\u4EF6\u5E76\u6821\u9A8C
+  3. \u5728 settings.json \u91CC\u5EFA\u4E00\u4EFD\u8F7B\u91CF\u7D22\u5F15
+  4. \u5168\u91CF\u9010\u5B57\u6838\u5BF9\u6BCF\u4E00\u6761\u6B63\u6587
+  5. \u6838\u5BF9\u901A\u8FC7\u540E\u5220\u6389 settings.json \u91CC\u7684\u65E7\u6570\u636E\uFF08\u5220\u4E4B\u524D\u4F1A\u518D\u95EE\u4F60\u4E00\u6B21\uFF09
+  6. \u987A\u5E26\u6E05\u6389\u5DF2\u786E\u8BA4\u96F6\u5F15\u7528\u7684\u65E7\u952E\u4E0E\u65E0\u4EBA\u5F15\u7528\u7684\u6587\u4EF6
+
+\u786E\u5B9A\u7EE7\u7EED\u5417\uFF1F`
+  );
+  if (!confirmed) return;
+  $btn.prop("disabled", true);
+  try {
+    $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> \u6B63\u5728\u5907\u4EFD...');
+    try {
+      const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+      downloadBackupPayload(snapshot, backupFileName("before_favs_migration"));
+    } catch (backupErr) {
+      console.error("Titania: \u642C\u5BB6\u524D\u5907\u4EFD\u5931\u8D25", backupErr);
+      showFavsMigrationReport(
+        `\u274C \u642C\u5BB6\u524D\u7684\u5907\u4EFD\u5931\u8D25\uFF0C\u5DF2\u4E2D\u6B62\uFF0C\u672A\u6539\u52A8\u4EFB\u4F55\u6570\u636E\uFF1A${backupErr?.message || String(backupErr)}`,
+        "#ff7675"
+      );
+      if (window.toastr) toastr.error("\u5907\u4EFD\u5931\u8D25\uFF0C\u642C\u5BB6\u5DF2\u4E2D\u6B62", "Titania Echo");
       return;
     }
-    const footprint = describeCurrentFavsFootprint();
-    if (footprint.count === 0) {
-      showFavsMigrationReport("settings.json \u91CC\u5DF2\u7ECF\u6CA1\u6709\u65E7\u6536\u85CF\u6570\u636E\u4E86\u3002", "#feca57");
-      refreshFavsMigrationButtons();
+    const report = await migrateFavsToFiles({
+      onProgress: (done, total) => {
+        $btn.html(`<i class="fa-solid fa-spinner fa-spin"></i> \u642C\u5BB6\u4E2D ${done}/${total}`);
+      }
+    });
+    if (!report.ok) {
+      showFavsMigrationReport(
+        `\u274C \u642C\u5BB6\u5DF2\u4E2D\u6B62\uFF0C\u7D22\u5F15\u672A\u5199\u5165\uFF0Csettings.json \u672A\u6539\u52A8\uFF1A${report.reason || "\u672A\u77E5\u539F\u56E0"}<br>\xB7 \u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\uFF0C\u53EF\u653E\u5FC3\u91CD\u8BD5<br>\xB7 \u8BE6\u60C5\u89C1\u63A7\u5236\u53F0`,
+        "#ff7675"
+      );
+      console.error("[Titania] \u6536\u85CF\u642C\u5BB6\u4E2D\u6B62", report);
+      if (window.toastr) toastr.error("\u642C\u5BB6\u5DF2\u4E2D\u6B62\uFF0C\u672A\u6539\u52A8\u539F\u6570\u636E", "Titania Echo");
       return;
     }
+    console.log("[Titania] \u6536\u85CF\u642C\u5BB6\u62A5\u544A", report);
+    await runFinishCleanup($btn, {
+      backupAlreadyDone: true,
+      migrationSummary: `${report.written.count} \u6761\u6B63\u6587\u5DF2\u843D\u6587\u4EF6\uFF0C\u5171 ${formatBytes(report.written.bytesTotal)}\uFF0C\u7D22\u5F15 ${formatBytes(report.indexBytes)}`
+    });
+  } catch (e) {
+    console.error("Titania: \u6536\u85CF\u642C\u5BB6\u5931\u8D25", e);
+    showFavsMigrationReport(`\u274C \u642C\u5BB6\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
+    if (window.toastr) toastr.error(e?.message || "\u642C\u5BB6\u5931\u8D25", "Titania Echo");
+  } finally {
+    renderFavsStorageCard();
+  }
+}
+async function runFinishCleanup($btn, { backupAlreadyDone = false, migrationSummary = "" } = {}) {
+  if (!isFavsMigrated()) {
+    showFavsMigrationReport("\u8BF7\u5148\u5B8C\u6210\u642C\u5BB6\uFF0C\u518D\u6267\u884C\u6536\u5C3E\u3002", "#feca57");
+    renderFavsStorageCard();
+    return;
+  }
+  const footprint = describeCurrentFavsFootprint();
+  if (footprint.count === 0) {
+    showFavsMigrationReport("settings.json \u91CC\u5DF2\u7ECF\u6CA1\u6709\u65E7\u6536\u85CF\u6570\u636E\u4E86\u3002", "#feca57");
+    renderFavsStorageCard();
+    return;
+  }
+  if (!backupAlreadyDone) {
     const confirmed = confirm(
       `\u5373\u5C06\u4ECE settings.json \u5220\u9664 ${footprint.count} \u6761\u6536\u85CF\u7684\u65E7\u6570\u636E\uFF08\u7EA6 ${formatBytes(footprint.bytes)}\uFF09\u3002
 
 \xB7 \u5220\u9664\u524D\u4F1A\u5168\u91CF\u6838\u5BF9\u6BCF\u4E00\u6761\u6B63\u6587\uFF0C\u4EFB\u4F55\u4E00\u6761\u4E0D\u4E00\u81F4\u5C31\u4E2D\u6B62
 \xB7 \u4F1A\u5148\u4E0B\u8F7D\u4E00\u4EFD\u5B8C\u6574\u5907\u4EFD\uFF0C\u8BF7\u52A1\u5FC5\u4FDD\u5B58\u597D
-\xB7 \u3010\u6B64\u64CD\u4F5C\u4E0D\u53EF\u9006\u3011\u5220\u9664\u540E\u6B63\u6587\u53EA\u5B58\u5728\u4E8E user/files/ \u91CC
+\xB7 \u6838\u5BF9\u901A\u8FC7\u540E\u4F1A\u518D\u95EE\u4F60\u4E00\u6B21
 
 \u786E\u5B9A\u7EE7\u7EED\u5417\uFF1F`
     );
     if (!confirmed) return;
-    $self.prop("disabled", true);
-    try {
-      $self.html('<i class="fa-solid fa-spinner fa-spin"></i> \u6B63\u5728\u5907\u4EFD...');
+  }
+  $btn.prop("disabled", true);
+  try {
+    if (!backupAlreadyDone) {
+      $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> \u6B63\u5728\u5907\u4EFD...');
       try {
         const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-        const filename = `titania_backup_before_favs_cleanup_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
-        downloadBackupPayload(snapshot, filename);
+        downloadBackupPayload(snapshot, backupFileName("before_favs_cleanup"));
       } catch (backupErr) {
         console.error("Titania: \u6536\u5C3E\u524D\u5907\u4EFD\u5931\u8D25", backupErr);
         showFavsMigrationReport(
@@ -46495,53 +46424,88 @@ function bindFavsMigrationCleanup() {
         if (window.toastr) toastr.error("\u5907\u4EFD\u5931\u8D25\uFF0C\u6536\u5C3E\u5DF2\u4E2D\u6B62", "Titania Echo");
         return;
       }
-      const result = await dropLegacyFavs({
-        onProgress: (done, total) => {
-          $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> \u6838\u5BF9\u4E2D ${done}/${total}`);
-        }
-      });
-      if (!result.ok) {
-        showFavsMigrationReport(
-          `\u274C \u6838\u5BF9\u672A\u901A\u8FC7\uFF0C<b>\u65E7\u6570\u636E\u4E00\u4E2A\u5B57\u90FD\u6CA1\u5220</b>\uFF1A<br>\xB7 ${(result.problems || []).join("<br>\xB7 ")}<br>\u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\uFF0C\u53EF\u653E\u5FC3\u6392\u67E5\u540E\u91CD\u8BD5\u3002`,
-          "#ff7675"
-        );
-        console.error("[Titania] \u6536\u5C3E\u6838\u5BF9\u672A\u901A\u8FC7", result);
-        if (window.toastr) toastr.error("\u6838\u5BF9\u672A\u901A\u8FC7\uFF0C\u672A\u5220\u9664\u4EFB\u4F55\u6570\u636E", "Titania Echo");
-        return;
-      }
+    }
+    const result = await dropLegacyFavs({
+      onProgress: (done, total) => {
+        $btn.html(`<i class="fa-solid fa-spinner fa-spin"></i> \u6838\u5BF9\u4E2D ${done}/${total}`);
+      },
+      confirmBeforeDelete: (verification) => confirm(
+        `${verification.checked} \u6761\u6B63\u6587\u5DF2\u5168\u90E8\u9010\u5B57\u6838\u5BF9\u901A\u8FC7\uFF0Csettings.json \u91CC\u90A3 ${formatBytes(footprint.bytes)} \u65E7\u6570\u636E\u53EF\u4EE5\u5220\u4E86\u3002
+
+\u5EFA\u8BAE\u73B0\u5728\u5148\u6253\u5F00\u6536\u85CF\u5939\u770B\u4E00\u773C\uFF1A\u5217\u8868\u3001\u641C\u7D22\u3001\u7B5B\u9009\u3001\u70B9\u5F00\u770B\u3001\u5BFC\u51FA\u3001\u5220\u9664\u3002
+
+\u786E\u5B9A = \u7ACB\u5373\u5220\u9664\uFF08\u4E0D\u53EF\u9006\uFF09
+\u53D6\u6D88 = \u4FDD\u7559\u65E7\u6570\u636E\uFF0C\u7A0D\u540E\u53EF\u56DE\u6765\u70B9\u300C\u5B8C\u6210\u6536\u5C3E\u300D`
+      )
+    });
+    if (result.cancelled) {
       showFavsMigrationReport(
-        `\u2705 \u6536\u5C3E\u5B8C\u6210\uFF0Csettings.json \u51CF\u5C11 <b>${formatBytes(result.removedBytes)}</b><br>\xB7 \u6536\u85CF\u6B63\u6587\u73B0\u5728\u53EA\u5B58\u5728\u4E8E user/files/ \u91CC\uFF0C\u65B0\u589E\u4E00\u6761\u6536\u85CF\u53EA\u5199\u5B83\u81EA\u5DF1\u90A3\u4E00\u4E2A\u6587\u4EF6<br>\xB7 \u4FDD\u5B58\u8BBE\u7F6E\u4E0D\u518D\u91CD\u5199\u6536\u85CF\uFF0C\u5361\u987F\u5230\u8FD9\u4E00\u6B65\u624D\u771F\u6B63\u6539\u5584<br>\xB7 \u5BFC\u51FA\u5907\u4EFD\u4F1A\u81EA\u52A8\u628A\u6B63\u6587\u8BFB\u56DE\u6765\u6253\u5305\uFF0C\u4ECD\u7136\u81EA\u6210\u4E00\u4F53<br>\xB7 <b>\u5EFA\u8BAE\u5237\u65B0\u9875\u9762</b>\uFF0C\u786E\u8BA4\u6536\u85CF\u5939\u4E00\u5207\u6B63\u5E38`,
+        `\u2705 ${result.checked} \u6761\u6B63\u6587\u5DF2\u5168\u90E8\u6838\u5BF9\u901A\u8FC7\uFF0C<b>\u65E7\u6570\u636E\u4ECD\u4FDD\u7559</b><br>\xB7 \u8BF7\u6253\u5F00\u6536\u85CF\u5939\u68C0\u67E5\uFF1A\u5217\u8868\u3001\u641C\u7D22\u3001\u7B5B\u9009\u3001\u70B9\u5F00\u770B\u3001\u5BFC\u51FA\u3001\u5220\u9664<br>\xB7 \u786E\u8BA4\u65E0\u8BEF\u540E\u56DE\u6765\u70B9\u300C\u5B8C\u6210\u6536\u5C3E\u300D\uFF0C\u5220\u6389\u90A3 ${formatBytes(footprint.bytes)} \u65E7\u6570\u636E \u2014\u2014<b>\u4FDD\u5B58\u901F\u5EA6\u5230\u90A3\u4E00\u6B65\u624D\u771F\u6B63\u6539\u5584</b>`,
         "#55efc4"
       );
-      console.log("[Titania] \u6536\u5C3E\u5B8C\u6210", result);
-      refreshFavsMigrationButtons();
-      if (window.toastr) {
-        toastr.success(`\u65E7\u6570\u636E\u5DF2\u6E05\u7406\uFF0Csettings.json \u51CF\u5C11 ${formatBytes(result.removedBytes)}`, "Titania Echo");
-      }
-    } catch (e) {
-      console.error("Titania: \u6536\u5C3E\u5931\u8D25", e);
-      showFavsMigrationReport(`\u274C \u6536\u5C3E\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
-      if (window.toastr) toastr.error(e?.message || "\u6536\u5C3E\u5931\u8D25", "Titania Echo");
-    } finally {
-      refreshFavsMigrationButtons();
-    }
-  });
-}
-function bindFavsArtifactCleanup() {
-  const $btn = $("#titania-favs-cleanup-artifacts");
-  if ($btn.length === 0) return;
-  $btn.off("click").on("click", async function() {
-    const $self = $(this);
-    const oldHtml = $self.html();
-    const plan = describeLegacyArtifacts();
-    if (plan.keys.length === 0 && plan.orphanFiles.length === 0) {
-      showFavsMigrationReport("\u6CA1\u6709\u53EF\u6E05\u7406\u7684\u9057\u7559\u6570\u636E\u3002", "#feca57");
       return;
     }
-    const keyList = plan.keys.map((item) => `  \xB7 ${item.key}\uFF08${formatBytes(item.bytes)}\uFF09`).join("\n");
-    const fileList = plan.orphanFiles.map((path) => `  \xB7 ${path}`).join("\n");
-    const confirmed = confirm(
-      `\u5C06\u6E05\u7406\u4EE5\u4E0B\u5DF2\u786E\u8BA4\u96F6\u5F15\u7528\u7684\u9057\u7559\u6570\u636E\uFF1A
+    if (!result.ok) {
+      showFavsMigrationReport(
+        `\u274C \u6838\u5BF9\u672A\u901A\u8FC7\uFF0C<b>\u65E7\u6570\u636E\u4E00\u4E2A\u5B57\u90FD\u6CA1\u5220</b>\uFF1A<br>\xB7 ${(result.problems || []).join("<br>\xB7 ")}<br>\u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\uFF0C\u53EF\u653E\u5FC3\u6392\u67E5\u540E\u91CD\u8BD5\u3002`,
+        "#ff7675"
+      );
+      console.error("[Titania] \u6536\u5C3E\u6838\u5BF9\u672A\u901A\u8FC7", result);
+      if (window.toastr) toastr.error("\u6838\u5BF9\u672A\u901A\u8FC7\uFF0C\u672A\u5220\u9664\u4EFB\u4F55\u6570\u636E", "Titania Echo");
+      return;
+    }
+    $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> \u6E05\u7406\u9057\u7559...');
+    let artifactReport = null;
+    try {
+      artifactReport = await cleanupLegacyArtifacts();
+    } catch (e) {
+      console.error("Titania: \u9057\u7559\u6570\u636E\u6E05\u7406\u5931\u8D25\uFF08\u65E7\u6570\u636E\u5DF2\u5220\u9664\u6210\u529F\uFF09", e);
+    }
+    const lines = [];
+    if (migrationSummary) lines.push(migrationSummary);
+    lines.push(`settings.json \u51CF\u5C11 <b>${formatBytes(result.removedBytes)}</b>\uFF08${result.checked} \u6761\u5168\u90E8\u6838\u5BF9\u901A\u8FC7\uFF09`);
+    if (artifactReport) lines.push(...describeArtifactReportLines(artifactReport));
+    lines.push("\u6536\u85CF\u6B63\u6587\u73B0\u5728\u53EA\u5B58\u5728\u4E8E user/files/ \u91CC\uFF0C\u65B0\u589E\u4E00\u6761\u6536\u85CF\u53EA\u5199\u5B83\u81EA\u5DF1\u90A3\u4E00\u4E2A\u6587\u4EF6");
+    lines.push("\u4FDD\u5B58\u8BBE\u7F6E\u4E0D\u518D\u91CD\u5199\u6536\u85CF \u2014\u2014 \u5361\u987F\u5230\u8FD9\u4E00\u6B65\u624D\u771F\u6B63\u6539\u5584");
+    lines.push("\u5BFC\u51FA\u5907\u4EFD\u4F1A\u81EA\u52A8\u628A\u6B63\u6587\u8BFB\u56DE\u6765\u6253\u5305\uFF0C\u4ECD\u7136\u81EA\u6210\u4E00\u4F53");
+    lines.push("<b>\u5EFA\u8BAE\u5237\u65B0\u9875\u9762</b>\uFF0C\u786E\u8BA4\u6536\u85CF\u5939\u4E00\u5207\u6B63\u5E38");
+    showFavsMigrationReport(`\u2705 \u642C\u5BB6\u5168\u90E8\u5B8C\u6210<br>\xB7 ${lines.join("<br>\xB7 ")}`, "#55efc4");
+    console.log("[Titania] \u6536\u5C3E\u5B8C\u6210", { result, artifactReport });
+    if (window.toastr) {
+      toastr.success(`\u65E7\u6570\u636E\u5DF2\u6E05\u7406\uFF0Csettings.json \u51CF\u5C11 ${formatBytes(result.removedBytes)}`, "Titania Echo");
+    }
+  } catch (e) {
+    console.error("Titania: \u6536\u5C3E\u5931\u8D25", e);
+    showFavsMigrationReport(`\u274C \u6536\u5C3E\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
+    if (window.toastr) toastr.error(e?.message || "\u6536\u5C3E\u5931\u8D25", "Titania Echo");
+  } finally {
+    renderFavsStorageCard();
+  }
+}
+function describeArtifactReportLines(report) {
+  const lines = [];
+  if (report.removedKeys.length) {
+    lines.push(`\u5DF2\u5220\u9664 ${report.removedKeys.length} \u4E2A\u96F6\u5F15\u7528\u65E7\u952E\uFF0Csettings.json \u518D\u51CF\u5C11 <b>${formatBytes(report.removedBytes)}</b>\uFF08${report.removedKeys.join("\u3001")}\uFF09`);
+  }
+  if (report.deletedFiles.length) {
+    lines.push(`\u5DF2\u5220\u9664 ${report.deletedFiles.length} \u4E2A\u65E0\u4EBA\u5F15\u7528\u7684\u6B63\u6587\u6587\u4EF6`);
+  }
+  if (report.failedFiles.length) {
+    lines.push(`<b>${report.failedFiles.length} \u4E2A\u6587\u4EF6\u5220\u9664\u5931\u8D25</b>\uFF0C\u5DF2\u4FDD\u7559 favs_meta \u4EE5\u4FBF\u4E0B\u6B21\u91CD\u8BD5`);
+  }
+  return lines;
+}
+async function runArtifactCleanup($btn) {
+  const plan = describeLegacyArtifacts();
+  if (plan.keys.length === 0 && plan.orphanFiles.length === 0) {
+    showFavsMigrationReport("\u6CA1\u6709\u53EF\u6E05\u7406\u7684\u9057\u7559\u6570\u636E\u3002", "#feca57");
+    renderFavsStorageCard();
+    return;
+  }
+  const keyList = plan.keys.map((item) => `  \xB7 ${item.key}\uFF08${formatBytes(item.bytes)}\uFF09`).join("\n");
+  const fileList = plan.orphanFiles.map((path) => `  \xB7 ${path}`).join("\n");
+  const confirmed = confirm(
+    `\u5C06\u6E05\u7406\u4EE5\u4E0B\u5DF2\u786E\u8BA4\u96F6\u5F15\u7528\u7684\u9057\u7559\u6570\u636E\uFF1A
 
 ` + (plan.keys.length ? `settings.json \u91CC\u7684 ${plan.keys.length} \u4E2A\u65E7\u952E\uFF08\u5171 ${formatBytes(plan.keyBytes)}\uFF09\uFF1A
 ${keyList}
@@ -46553,38 +46517,67 @@ ${fileList}
 \u5982\u9700\u4FDD\u9669\uFF0C\u53EF\u5148\u70B9\u4E0A\u9762\u7684\u300C\u5BFC\u51FA\u5907\u4EFD\u300D\u3002
 
 \u786E\u5B9A\u7EE7\u7EED\u5417\uFF1F`
+  );
+  if (!confirmed) return;
+  $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> \u6E05\u7406\u4E2D...');
+  try {
+    const report = await cleanupLegacyArtifacts();
+    const lines = describeArtifactReportLines(report);
+    if (lines.length === 0) lines.push("\u6CA1\u6709\u53EF\u6E05\u7406\u7684\u5185\u5BB9");
+    showFavsMigrationReport(
+      `${report.failedFiles.length ? "\u26A0\uFE0F \u6E05\u7406\u90E8\u5206\u5B8C\u6210" : "\u2705 \u6E05\u7406\u5B8C\u6210"}<br>\xB7 ${lines.join("<br>\xB7 ")}`,
+      report.failedFiles.length ? "#feca57" : "#55efc4"
     );
-    if (!confirmed) return;
-    $self.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> \u6E05\u7406\u4E2D...');
-    try {
-      const report = await cleanupLegacyArtifacts();
-      const lines = [];
-      if (report.removedKeys.length) {
-        lines.push(`\u5DF2\u5220\u9664 ${report.removedKeys.length} \u4E2A\u65E7\u952E\uFF0Csettings.json \u51CF\u5C11 <b>${formatBytes(report.removedBytes)}</b>`);
-      }
-      if (report.deletedFiles.length) {
-        lines.push(`\u5DF2\u5220\u9664 ${report.deletedFiles.length} \u4E2A\u65E0\u4EBA\u5F15\u7528\u7684\u6B63\u6587\u6587\u4EF6`);
-      }
-      if (report.failedFiles.length) {
-        lines.push(`<b>${report.failedFiles.length} \u4E2A\u6587\u4EF6\u5220\u9664\u5931\u8D25</b>\uFF0C\u5DF2\u4FDD\u7559 favs_meta \u4EE5\u4FBF\u4E0B\u6B21\u91CD\u8BD5`);
-      }
-      if (lines.length === 0) lines.push("\u6CA1\u6709\u53EF\u6E05\u7406\u7684\u5185\u5BB9");
-      showFavsMigrationReport(
-        `${report.failedFiles.length ? "\u26A0\uFE0F \u6E05\u7406\u90E8\u5206\u5B8C\u6210" : "\u2705 \u6E05\u7406\u5B8C\u6210"}<br>\xB7 ${lines.join("<br>\xB7 ")}`,
-        report.failedFiles.length ? "#feca57" : "#55efc4"
-      );
-      console.log("[Titania] \u9057\u7559\u6570\u636E\u6E05\u7406\u62A5\u544A", report);
-      if (window.toastr) {
-        toastr.success(`\u9057\u7559\u6570\u636E\u5DF2\u6E05\u7406\uFF0Csettings.json \u51CF\u5C11 ${formatBytes(report.removedBytes)}`, "Titania Echo");
-      }
-    } catch (e) {
-      console.error("Titania: \u9057\u7559\u6570\u636E\u6E05\u7406\u5931\u8D25", e);
-      showFavsMigrationReport(`\u274C \u6E05\u7406\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
-      if (window.toastr) toastr.error(e?.message || "\u6E05\u7406\u5931\u8D25", "Titania Echo");
-    } finally {
-      $self.prop("disabled", false).html(oldHtml);
+    console.log("[Titania] \u9057\u7559\u6570\u636E\u6E05\u7406\u62A5\u544A", report);
+    if (window.toastr) {
+      toastr.success(`\u9057\u7559\u6570\u636E\u5DF2\u6E05\u7406\uFF0Csettings.json \u51CF\u5C11 ${formatBytes(report.removedBytes)}`, "Titania Echo");
     }
-  });
+  } catch (e) {
+    console.error("Titania: \u9057\u7559\u6570\u636E\u6E05\u7406\u5931\u8D25", e);
+    showFavsMigrationReport(`\u274C \u6E05\u7406\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
+    if (window.toastr) toastr.error(e?.message || "\u6E05\u7406\u5931\u8D25", "Titania Echo");
+  } finally {
+    renderFavsStorageCard();
+  }
+}
+async function runStorageCheck($btn) {
+  const store = getFavsIndex();
+  if (!store) {
+    showFavsMigrationReport("\u5C1A\u672A\u642C\u5BB6\uFF0C\u6CA1\u6709\u53EF\u68C0\u67E5\u7684\u6587\u4EF6\u5B58\u50A8\u3002", "#feca57");
+    renderFavsStorageCard();
+    return;
+  }
+  $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> \u68C0\u67E5\u4E2D...');
+  try {
+    const paths = store.entries.map((entry) => entry.file);
+    const result = await verifyFavFiles(paths);
+    const missing = Object.entries(result).filter(([, exists]) => !exists).map(([path]) => path);
+    if (missing.length === 0) {
+      const footprint = describeFavsStorageFootprint();
+      showFavsMigrationReport(
+        `\u2705 ${paths.length} \u4E2A\u6B63\u6587\u6587\u4EF6\u5168\u90E8\u5728\u4F4D\uFF0C\u5171 ${formatBytes(footprint.bodyBytes)}`,
+        "#55efc4"
+      );
+      if (window.toastr) toastr.success(`${paths.length} \u4E2A\u6B63\u6587\u6587\u4EF6\u5168\u90E8\u5728\u4F4D`, "Titania Echo");
+    } else {
+      const named = missing.slice(0, 5).map((path) => {
+        const entry = store.entries.find((item) => item.file === path);
+        return String(entry?.title || path);
+      });
+      showFavsMigrationReport(
+        `\u274C <b>${missing.length} / ${paths.length} \u4E2A\u6B63\u6587\u6587\u4EF6\u4E0D\u5B58\u5728</b><br>\xB7 ${named.join("<br>\xB7 ")}${missing.length > 5 ? "<br>\xB7 \u2026" : ""}<br>\u8FD9\u51E0\u6761\u6536\u85CF\u70B9\u5F00\u4F1A\u62A5\u8BFB\u53D6\u5931\u8D25\u3002\u8BF7\u7528\u4E0A\u9762\u7684\u300C\u5BFC\u5165\u5907\u4EFD\u300D\u6062\u590D\uFF0C\u6216\u5220\u6389\u5B83\u4EEC\u8BA9\u7D22\u5F15\u4E0E\u78C1\u76D8\u91CD\u65B0\u4E00\u81F4\u3002\u5B8C\u6574\u6E05\u5355\u89C1\u63A7\u5236\u53F0\u3002`,
+        "#ff7675"
+      );
+      console.error("[Titania] \u7F3A\u5931\u7684\u6B63\u6587\u6587\u4EF6", missing);
+      if (window.toastr) toastr.error(`${missing.length} \u4E2A\u6B63\u6587\u6587\u4EF6\u4E0D\u5B58\u5728`, "Titania Echo");
+    }
+  } catch (e) {
+    console.error("Titania: \u5B58\u50A8\u68C0\u67E5\u5931\u8D25", e);
+    showFavsMigrationReport(`\u274C \u68C0\u67E5\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
+    if (window.toastr) toastr.error(e?.message || "\u68C0\u67E5\u5931\u8D25", "Titania Echo");
+  } finally {
+    renderFavsStorageCard();
+  }
 }
 async function loadExtensionSettings() {
   extension_settings2[extensionName] = extension_settings2[extensionName] || {};
