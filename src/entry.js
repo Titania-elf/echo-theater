@@ -589,6 +589,42 @@ function bindFavsMigrationDryRun() {
     });
 }
 
+/* 三个迁移按钮的可用状态互相依赖：搬完家收尾才可点，收尾完两个都该锁死。
+ * 原先各自在绑定时算一次，而绑定只发生在页面加载 —— 于是搬家成功后
+ * 收尾按钮仍停留在「请先完成正式搬家」的置灰状态，必须刷新页面才解锁。
+ * 现在统一由这一个函数整体刷新，每步操作结束都调它一次。
+ * 文案也在这里统一给出，避免与 settings.html 里的初始文案漂移。 */
+const FAVS_MIGRATE_RUN_LABEL = '<i class="fa-solid fa-box-archive"></i> 正式搬家（保留原数据）';
+const FAVS_MIGRATE_CLEANUP_LABEL = '<i class="fa-solid fa-broom"></i> 收尾：删除旧数据（不可逆）';
+
+function refreshFavsMigrationButtons() {
+    const migrated = isFavsMigrated();
+    // 刻意不用 describeCurrentFavsFootprint()：它会把 7 MB 的 favs 整体序列化算字节数，
+    // 而这里只需要知道还剩没剩
+    const legacyFavs = getExtData().favs;
+    const legacyLeft = Array.isArray(legacyFavs) && legacyFavs.length > 0;
+
+    const $run = $("#titania-favs-migrate-run");
+    if ($run.length) {
+        if (migrated) {
+            $run.prop("disabled", true).attr("title", "").html('<i class="fa-solid fa-check"></i> 已搬家（原数据仍保留）');
+        } else {
+            $run.prop("disabled", false).attr("title", "").html(FAVS_MIGRATE_RUN_LABEL);
+        }
+    }
+
+    const $cleanup = $("#titania-favs-migrate-cleanup");
+    if ($cleanup.length) {
+        if (!migrated) {
+            $cleanup.prop("disabled", true).attr("title", "请先完成正式搬家").html(FAVS_MIGRATE_CLEANUP_LABEL);
+        } else if (!legacyLeft) {
+            $cleanup.prop("disabled", true).attr("title", "").html('<i class="fa-solid fa-check"></i> 旧数据已清理');
+        } else {
+            $cleanup.prop("disabled", false).attr("title", "").html(FAVS_MIGRATE_CLEANUP_LABEL);
+        }
+    }
+}
+
 /**
  * 「正式搬家」按钮。
  *
@@ -600,16 +636,10 @@ function bindFavsMigrationRun() {
     const $btn = $("#titania-favs-migrate-run");
     if ($btn.length === 0) return;
 
-    const refreshButtonState = () => {
-        if (isFavsMigrated()) {
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-check"></i> 已搬家（原数据仍保留）');
-        }
-    };
-    refreshButtonState();
+    refreshFavsMigrationButtons();
 
     $btn.off("click").on("click", async function () {
         const $self = $(this);
-        const oldHtml = $self.html();
 
         if (isFavsMigrated()) {
             showFavsMigrationReport("收藏已经搬过家了，无需重复操作。", "#feca57");
@@ -681,7 +711,7 @@ function bindFavsMigrationRun() {
                 "#55efc4"
             );
             console.log("[Titania] 收藏搬家报告", report);
-            refreshButtonState();
+            refreshFavsMigrationButtons();
             if (window.toastr) {
                 toastr.success(`${report.written.count} 条收藏已搬家，原数据仍保留`, "Titania Echo");
             }
@@ -690,7 +720,9 @@ function bindFavsMigrationRun() {
             showFavsMigrationReport(`❌ 搬家失败：${e?.message || String(e)}`, "#ff7675");
             if (window.toastr) toastr.error(e?.message || "搬家失败", "Titania Echo");
         } finally {
-            if (!isFavsMigrated()) $self.prop("disabled", false).html(oldHtml);
+            // 文案与可用状态一律交给 refreshFavsMigrationButtons 统一给出，
+            // 不在这里按 isFavsMigrated() 各判一次（那正是收尾按钮解锁不了的成因）
+            refreshFavsMigrationButtons();
         }
     });
 }
@@ -709,22 +741,10 @@ function bindFavsMigrationCleanup() {
     const $btn = $("#titania-favs-migrate-cleanup");
     if ($btn.length === 0) return;
 
-    const refreshButtonState = () => {
-        const migrated = isFavsMigrated();
-        const legacyLeft = Array.isArray(getExtData().favs) && getExtData().favs.length > 0;
-        if (!migrated) {
-            $btn.prop("disabled", true).attr("title", "请先完成正式搬家");
-        } else if (!legacyLeft) {
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-check"></i> 旧数据已清理');
-        } else {
-            $btn.prop("disabled", false).attr("title", "");
-        }
-    };
-    refreshButtonState();
+    refreshFavsMigrationButtons();
 
     $btn.off("click").on("click", async function () {
         const $self = $(this);
-        const oldHtml = $self.html();
 
         if (!isFavsMigrated()) {
             showFavsMigrationReport("请先完成「正式搬家」，再执行收尾。", "#feca57");
@@ -733,7 +753,7 @@ function bindFavsMigrationCleanup() {
         const footprint = describeCurrentFavsFootprint();
         if (footprint.count === 0) {
             showFavsMigrationReport("settings.json 里已经没有旧收藏数据了。", "#feca57");
-            refreshButtonState();
+            refreshFavsMigrationButtons();
             return;
         }
 
@@ -799,7 +819,7 @@ function bindFavsMigrationCleanup() {
                 "#55efc4"
             );
             console.log("[Titania] 收尾完成", result);
-            refreshButtonState();
+            refreshFavsMigrationButtons();
             if (window.toastr) {
                 toastr.success(`旧数据已清理，settings.json 减少 ${formatBytes(result.removedBytes)}`, "Titania Echo");
             }
@@ -808,15 +828,15 @@ function bindFavsMigrationCleanup() {
             showFavsMigrationReport(`❌ 收尾失败：${e?.message || String(e)}`, "#ff7675");
             if (window.toastr) toastr.error(e?.message || "收尾失败", "Titania Echo");
         } finally {
-            // 先无条件还原文案，再让 refreshButtonState 按最终状态覆盖
-            // （否则核对失败时按钮会一直卡在「核对中 176/176」）
-            $self.html(oldHtml);
-            refreshButtonState();
+            // 同上：文案与可用状态统一由 refreshFavsMigrationButtons 给出，
+            // 否则核对失败时按钮会一直卡在「核对中 176/176」
+            refreshFavsMigrationButtons();
         }
     });
 }
 
-async function loadExtensionSettings() {    // 确保配置对象存在
+async function loadExtensionSettings() {
+    // 确保配置对象存在
     extension_settings[extensionName] = extension_settings[extensionName] || {};
     if (Object.keys(extension_settings[extensionName]).length === 0) {
         Object.assign(extension_settings[extensionName], defaultSettings);

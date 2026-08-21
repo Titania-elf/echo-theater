@@ -46295,18 +46295,37 @@ function bindFavsMigrationDryRun() {
     }
   });
 }
+var FAVS_MIGRATE_RUN_LABEL = '<i class="fa-solid fa-box-archive"></i> \u6B63\u5F0F\u642C\u5BB6\uFF08\u4FDD\u7559\u539F\u6570\u636E\uFF09';
+var FAVS_MIGRATE_CLEANUP_LABEL = '<i class="fa-solid fa-broom"></i> \u6536\u5C3E\uFF1A\u5220\u9664\u65E7\u6570\u636E\uFF08\u4E0D\u53EF\u9006\uFF09';
+function refreshFavsMigrationButtons() {
+  const migrated = isFavsMigrated();
+  const legacyFavs = getExtData().favs;
+  const legacyLeft = Array.isArray(legacyFavs) && legacyFavs.length > 0;
+  const $run = $("#titania-favs-migrate-run");
+  if ($run.length) {
+    if (migrated) {
+      $run.prop("disabled", true).attr("title", "").html('<i class="fa-solid fa-check"></i> \u5DF2\u642C\u5BB6\uFF08\u539F\u6570\u636E\u4ECD\u4FDD\u7559\uFF09');
+    } else {
+      $run.prop("disabled", false).attr("title", "").html(FAVS_MIGRATE_RUN_LABEL);
+    }
+  }
+  const $cleanup = $("#titania-favs-migrate-cleanup");
+  if ($cleanup.length) {
+    if (!migrated) {
+      $cleanup.prop("disabled", true).attr("title", "\u8BF7\u5148\u5B8C\u6210\u6B63\u5F0F\u642C\u5BB6").html(FAVS_MIGRATE_CLEANUP_LABEL);
+    } else if (!legacyLeft) {
+      $cleanup.prop("disabled", true).attr("title", "").html('<i class="fa-solid fa-check"></i> \u65E7\u6570\u636E\u5DF2\u6E05\u7406');
+    } else {
+      $cleanup.prop("disabled", false).attr("title", "").html(FAVS_MIGRATE_CLEANUP_LABEL);
+    }
+  }
+}
 function bindFavsMigrationRun() {
   const $btn = $("#titania-favs-migrate-run");
   if ($btn.length === 0) return;
-  const refreshButtonState = () => {
-    if (isFavsMigrated()) {
-      $btn.prop("disabled", true).html('<i class="fa-solid fa-check"></i> \u5DF2\u642C\u5BB6\uFF08\u539F\u6570\u636E\u4ECD\u4FDD\u7559\uFF09');
-    }
-  };
-  refreshButtonState();
+  refreshFavsMigrationButtons();
   $btn.off("click").on("click", async function() {
     const $self = $(this);
-    const oldHtml = $self.html();
     if (isFavsMigrated()) {
       showFavsMigrationReport("\u6536\u85CF\u5DF2\u7ECF\u642C\u8FC7\u5BB6\u4E86\uFF0C\u65E0\u9700\u91CD\u590D\u64CD\u4F5C\u3002", "#feca57");
       return;
@@ -46362,7 +46381,7 @@ function bindFavsMigrationRun() {
         "#55efc4"
       );
       console.log("[Titania] \u6536\u85CF\u642C\u5BB6\u62A5\u544A", report);
-      refreshButtonState();
+      refreshFavsMigrationButtons();
       if (window.toastr) {
         toastr.success(`${report.written.count} \u6761\u6536\u85CF\u5DF2\u642C\u5BB6\uFF0C\u539F\u6570\u636E\u4ECD\u4FDD\u7559`, "Titania Echo");
       }
@@ -46371,28 +46390,16 @@ function bindFavsMigrationRun() {
       showFavsMigrationReport(`\u274C \u642C\u5BB6\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
       if (window.toastr) toastr.error(e?.message || "\u642C\u5BB6\u5931\u8D25", "Titania Echo");
     } finally {
-      if (!isFavsMigrated()) $self.prop("disabled", false).html(oldHtml);
+      refreshFavsMigrationButtons();
     }
   });
 }
 function bindFavsMigrationCleanup() {
   const $btn = $("#titania-favs-migrate-cleanup");
   if ($btn.length === 0) return;
-  const refreshButtonState = () => {
-    const migrated = isFavsMigrated();
-    const legacyLeft = Array.isArray(getExtData().favs) && getExtData().favs.length > 0;
-    if (!migrated) {
-      $btn.prop("disabled", true).attr("title", "\u8BF7\u5148\u5B8C\u6210\u6B63\u5F0F\u642C\u5BB6");
-    } else if (!legacyLeft) {
-      $btn.prop("disabled", true).html('<i class="fa-solid fa-check"></i> \u65E7\u6570\u636E\u5DF2\u6E05\u7406');
-    } else {
-      $btn.prop("disabled", false).attr("title", "");
-    }
-  };
-  refreshButtonState();
+  refreshFavsMigrationButtons();
   $btn.off("click").on("click", async function() {
     const $self = $(this);
-    const oldHtml = $self.html();
     if (!isFavsMigrated()) {
       showFavsMigrationReport("\u8BF7\u5148\u5B8C\u6210\u300C\u6B63\u5F0F\u642C\u5BB6\u300D\uFF0C\u518D\u6267\u884C\u6536\u5C3E\u3002", "#feca57");
       return;
@@ -46400,7 +46407,7 @@ function bindFavsMigrationCleanup() {
     const footprint = describeCurrentFavsFootprint();
     if (footprint.count === 0) {
       showFavsMigrationReport("settings.json \u91CC\u5DF2\u7ECF\u6CA1\u6709\u65E7\u6536\u85CF\u6570\u636E\u4E86\u3002", "#feca57");
-      refreshButtonState();
+      refreshFavsMigrationButtons();
       return;
     }
     const confirmed = confirm(
@@ -46448,7 +46455,7 @@ function bindFavsMigrationCleanup() {
         "#55efc4"
       );
       console.log("[Titania] \u6536\u5C3E\u5B8C\u6210", result);
-      refreshButtonState();
+      refreshFavsMigrationButtons();
       if (window.toastr) {
         toastr.success(`\u65E7\u6570\u636E\u5DF2\u6E05\u7406\uFF0Csettings.json \u51CF\u5C11 ${formatBytes(result.removedBytes)}`, "Titania Echo");
       }
@@ -46457,8 +46464,7 @@ function bindFavsMigrationCleanup() {
       showFavsMigrationReport(`\u274C \u6536\u5C3E\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
       if (window.toastr) toastr.error(e?.message || "\u6536\u5C3E\u5931\u8D25", "Titania Echo");
     } finally {
-      $self.html(oldHtml);
-      refreshButtonState();
+      refreshFavsMigrationButtons();
     }
   });
 }
