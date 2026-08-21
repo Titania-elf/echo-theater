@@ -22,6 +22,8 @@ import {
     describeCurrentFavsFootprint,
     exportFavsAsLegacyArray,
     dropLegacyFavs,
+    describeLegacyArtifacts,
+    cleanupLegacyArtifacts,
     FAVS_INDEX_KEY
 } from "./core/favsStore.js";
 import { initExtensionUpdate } from "./core/extensionUpdate.js";
@@ -500,6 +502,7 @@ function bindDrawerBackupControls() {
     bindFavsMigrationDryRun();
     bindFavsMigrationRun();
     bindFavsMigrationCleanup();
+    bindFavsArtifactCleanup();
 }
 
 /** 把字节数说成人话 */
@@ -758,16 +761,10 @@ function bindFavsMigrationCleanup() {
         }
 
         const confirmed = confirm(
-            `即将从 settings.json 删除 ${footprint.count} 条收藏的旧数据（约 ${formatBytes(footprint.bytes)}）。
-
-`
-            + `· 删除前会全量核对每一条正文，任何一条不一致就中止
-`
-            + `· 会先下载一份完整备份，请务必保存好
-`
-            + `· 【此操作不可逆】删除后正文只存在于 user/files/ 里
-
-`
+            `即将从 settings.json 删除 ${footprint.count} 条收藏的旧数据（约 ${formatBytes(footprint.bytes)}）。\n\n`
+            + `· 删除前会全量核对每一条正文，任何一条不一致就中止\n`
+            + `· 会先下载一份完整备份，请务必保存好\n`
+            + `· 【此操作不可逆】删除后正文只存在于 user/files/ 里\n\n`
             + `确定继续吗？`
         );
         if (!confirmed) return;
@@ -831,6 +828,76 @@ function bindFavsMigrationCleanup() {
             // 同上：文案与可用状态统一由 refreshFavsMigrationButtons 给出，
             // 否则核对失败时按钮会一直卡在「核对中 176/176」
             refreshFavsMigrationButtons();
+        }
+    });
+}
+
+/**
+ * 「清理遗留数据」按钮。
+ *
+ * 清的是两类**已确认零引用**的东西：
+ *   · settings.json 里 11 个没有任何代码读写的旧键（含 8 月未完成迁移留下的
+ *     favs_meta / favs_migrated_at，已被 favs_index 取代）
+ *   · user/files 里不再被 favs_index 引用的正文文件
+ *
+ * 不强制备份：这些是死数据，删掉不影响任何功能，而收尾那次备份刚做过不久，
+ * 再读一遍 178 个正文文件只是噪音。确认框会逐项列清楚删什么。
+ */
+function bindFavsArtifactCleanup() {
+    const $btn = $("#titania-favs-cleanup-artifacts");
+    if ($btn.length === 0) return;
+
+    $btn.off("click").on("click", async function () {
+        const $self = $(this);
+        const oldHtml = $self.html();
+        const plan = describeLegacyArtifacts();
+
+        if (plan.keys.length === 0 && plan.orphanFiles.length === 0) {
+            showFavsMigrationReport("没有可清理的遗留数据。", "#feca57");
+            return;
+        }
+
+        const keyList = plan.keys.map(item => `  · ${item.key}（${formatBytes(item.bytes)}）`).join("\n");
+        const fileList = plan.orphanFiles.map(path => `  · ${path}`).join("\n");
+        const confirmed = confirm(
+            `将清理以下已确认零引用的遗留数据：\n\n`
+            + (plan.keys.length ? `settings.json 里的 ${plan.keys.length} 个旧键（共 ${formatBytes(plan.keyBytes)}）：\n${keyList}\n\n` : "")
+            + (plan.orphanFiles.length ? `${plan.orphanFiles.length} 个不再被引用的正文文件：\n${fileList}\n\n` : "")
+            + `这些都是没有任何代码读写的死数据，删除不影响任何功能。\n`
+            + `如需保险，可先点上面的「导出备份」。\n\n确定继续吗？`
+        );
+        if (!confirmed) return;
+
+        $self.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 清理中...');
+
+        try {
+            const report = await cleanupLegacyArtifacts();
+            const lines = [];
+            if (report.removedKeys.length) {
+                lines.push(`已删除 ${report.removedKeys.length} 个旧键，settings.json 减少 <b>${formatBytes(report.removedBytes)}</b>`);
+            }
+            if (report.deletedFiles.length) {
+                lines.push(`已删除 ${report.deletedFiles.length} 个无人引用的正文文件`);
+            }
+            if (report.failedFiles.length) {
+                lines.push(`<b>${report.failedFiles.length} 个文件删除失败</b>，已保留 favs_meta 以便下次重试`);
+            }
+            if (lines.length === 0) lines.push("没有可清理的内容");
+
+            showFavsMigrationReport(
+                `${report.failedFiles.length ? "⚠️ 清理部分完成" : "✅ 清理完成"}<br>· ${lines.join("<br>· ")}`,
+                report.failedFiles.length ? "#feca57" : "#55efc4"
+            );
+            console.log("[Titania] 遗留数据清理报告", report);
+            if (window.toastr) {
+                toastr.success(`遗留数据已清理，settings.json 减少 ${formatBytes(report.removedBytes)}`, "Titania Echo");
+            }
+        } catch (e) {
+            console.error("Titania: 遗留数据清理失败", e);
+            showFavsMigrationReport(`❌ 清理失败：${e?.message || String(e)}`, "#ff7675");
+            if (window.toastr) toastr.error(e?.message || "清理失败", "Titania Echo");
+        } finally {
+            $self.prop("disabled", false).html(oldHtml);
         }
     });
 }

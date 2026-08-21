@@ -143,12 +143,14 @@
                     但<b>仍然保留</b> settings.json 里的原数据 —— 所以随时可以退回上个插件版本。
                     <br><b>收尾</b>会删掉 settings.json 里的旧收藏数据，删之前会全量核对每一条正文。
                     这是<b>唯一不可逆</b>的一步，也是保存速度真正变快的那一步。
+                    <br><b>清理遗留数据</b>删除已确认零引用的旧键，以及不再被任何收藏引用的正文文件。
                     <br><span style="color:#feca57;">⚠️ 正式搬家与收尾前都会强制下载一份完整备份，请保存好该文件。</span>
                 </div>
                 <div class="titania-backup-actions">
                     <button id="titania-favs-migrate-dryrun" class="titania-mini-btn"><i class="fa-solid fa-flask"></i> 试运行搬家（不动原数据）</button>
                     <button id="titania-favs-migrate-run" class="titania-mini-btn is-import"><i class="fa-solid fa-box-archive"></i> 正式搬家（保留原数据）</button>
                     <button id="titania-favs-migrate-cleanup" class="titania-mini-btn is-export"><i class="fa-solid fa-broom"></i> 收尾：删除旧数据（不可逆）</button>
+                    <button id="titania-favs-cleanup-artifacts" class="titania-mini-btn"><i class="fa-solid fa-trash-can"></i> 清理遗留数据</button>
                 </div>
             </section>
         </div>

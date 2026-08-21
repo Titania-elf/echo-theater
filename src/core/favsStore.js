@@ -921,3 +921,99 @@ export async function dropLegacyFavs(options = {}) {
     TitaniaLogger.info(`旧收藏数据已删除，settings.json 减少约 ${removedBytes} 字节`);
     return { ok: true, removedBytes };
 }
+
+/* ------------------------------------------------------------------ *
+ * 清理历史遗留：零引用的旧键 + 无人引用的正文文件
+ * ------------------------------------------------------------------ */
+
+/**
+ * settings.json 里零引用的旧键。
+ * 每一个都用 `grep -rl <key> src/` 逐个确认过：当前代码里没有任何地方读写它们
+ * （favs_meta 仅出现在本文件的说明注释里，不是代码引用）。
+ *
+ * favs_meta / favs_migrated_at 是 2026-08-08 那次**未完成**的迁移留下的：
+ * 当时正文文件写出去了、索引也建了，但读写它们的代码从未进入仓库，
+ * 且 data.favs 一直没删，于是同一份数据存了两份。它们已被 favs_index 取代。
+ */
+const ORPHAN_SETTINGS_KEYS = [
+    "favs_meta",
+    "favs_migrated_at",
+    "lore_extractor_config",
+    "float_style",
+    "custom_style",
+    "story_outline_st_api_key",
+    "story_outline_profile_mode",
+    "last_seen_version",
+    "ignored_version",
+    "welcomed",
+    "theater_model_override"
+];
+
+/** 从旧索引 favs_meta 里找出「已不被 favs_index 引用」的正文文件 */
+function findOrphanFavFiles() {
+    const data = getExtData();
+    const legacyMeta = Array.isArray(data.favs_meta) ? data.favs_meta : [];
+    const store = getFavsIndex();
+    const live = new Set((store?.entries || []).map(entry => String(entry.file || "")));
+
+    const orphans = [];
+    for (const entry of legacyMeta) {
+        const file = String(entry?.file || "").trim();
+        if (!file) continue;
+        // favs_meta 里存的是裸文件名，favs_index 里是 /user/files/xxx 形式，统一成后者比对
+        const path = file.startsWith("/") ? file : `/user/files/${file}`;
+        if (!live.has(path) && !orphans.includes(path)) orphans.push(path);
+    }
+    return orphans;
+}
+
+/** 预演：报告将要清理什么，不做任何改动 */
+export function describeLegacyArtifacts() {
+    const data = getExtData();
+    const keys = ORPHAN_SETTINGS_KEYS
+        .filter(key => Object.prototype.hasOwnProperty.call(data, key))
+        .map(key => ({ key, bytes: utf8ByteLength(JSON.stringify(data[key])) }));
+    return {
+        keys,
+        keyBytes: keys.reduce((sum, item) => sum + item.bytes, 0),
+        orphanFiles: findOrphanFavFiles()
+    };
+}
+
+/**
+ * 清理遗留数据。
+ *
+ * 顺序是刻意的：先删孤儿文件，再删键。
+ * 因为 favs_meta 是定位那些孤儿文件的**唯一线索**（客户端没有列目录的接口），
+ * 一旦先把它删了，删不掉的孤儿就再也找不回来了。所以文件没删成功就保留 favs_meta。
+ *
+ * @returns {Promise<object>}
+ */
+export async function cleanupLegacyArtifacts() {
+    const plan = describeLegacyArtifacts();
+    const deletedFiles = [];
+    const failedFiles = [];
+
+    for (const path of plan.orphanFiles) {
+        if (await deleteFavFile(path)) deletedFiles.push(path);
+        else failedFiles.push(path);
+    }
+
+    const data = getExtData();
+    const removedKeys = [];
+    let removedBytes = 0;
+
+    for (const item of plan.keys) {
+        // 有孤儿文件没删掉时保住 favs_meta，否则就永久失去定位它们的线索
+        if (item.key === "favs_meta" && failedFiles.length > 0) continue;
+        delete data[item.key];
+        removedKeys.push(item.key);
+        removedBytes += item.bytes;
+    }
+
+    if (removedKeys.length > 0) saveExtData();
+
+    const report = { removedKeys, removedBytes, deletedFiles, failedFiles };
+    TitaniaLogger.info("遗留数据清理完成", report);
+    return report;
+}

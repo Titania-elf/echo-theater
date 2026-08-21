@@ -21474,7 +21474,52 @@ async function dropLegacyFavs(options = {}) {
   TitaniaLogger.info(`\u65E7\u6536\u85CF\u6570\u636E\u5DF2\u5220\u9664\uFF0Csettings.json \u51CF\u5C11\u7EA6 ${removedBytes} \u5B57\u8282`);
   return { ok: true, removedBytes };
 }
-var FAV_FILE_PREFIX, FAV_BODY_VERSION, FAVS_INDEX_KEY, BASE64_CHUNK, VOID_RESOURCE_TAG_RE, FAVS_INDEX_VERSION;
+function findOrphanFavFiles() {
+  const data = getExtData();
+  const legacyMeta = Array.isArray(data.favs_meta) ? data.favs_meta : [];
+  const store = getFavsIndex();
+  const live = new Set((store?.entries || []).map((entry) => String(entry.file || "")));
+  const orphans = [];
+  for (const entry of legacyMeta) {
+    const file = String(entry?.file || "").trim();
+    if (!file) continue;
+    const path = file.startsWith("/") ? file : `/user/files/${file}`;
+    if (!live.has(path) && !orphans.includes(path)) orphans.push(path);
+  }
+  return orphans;
+}
+function describeLegacyArtifacts() {
+  const data = getExtData();
+  const keys = ORPHAN_SETTINGS_KEYS.filter((key) => Object.prototype.hasOwnProperty.call(data, key)).map((key) => ({ key, bytes: utf8ByteLength(JSON.stringify(data[key])) }));
+  return {
+    keys,
+    keyBytes: keys.reduce((sum, item) => sum + item.bytes, 0),
+    orphanFiles: findOrphanFavFiles()
+  };
+}
+async function cleanupLegacyArtifacts() {
+  const plan = describeLegacyArtifacts();
+  const deletedFiles = [];
+  const failedFiles = [];
+  for (const path of plan.orphanFiles) {
+    if (await deleteFavFile(path)) deletedFiles.push(path);
+    else failedFiles.push(path);
+  }
+  const data = getExtData();
+  const removedKeys = [];
+  let removedBytes = 0;
+  for (const item of plan.keys) {
+    if (item.key === "favs_meta" && failedFiles.length > 0) continue;
+    delete data[item.key];
+    removedKeys.push(item.key);
+    removedBytes += item.bytes;
+  }
+  if (removedKeys.length > 0) saveExtData();
+  const report = { removedKeys, removedBytes, deletedFiles, failedFiles };
+  TitaniaLogger.info("\u9057\u7559\u6570\u636E\u6E05\u7406\u5B8C\u6210", report);
+  return report;
+}
+var FAV_FILE_PREFIX, FAV_BODY_VERSION, FAVS_INDEX_KEY, BASE64_CHUNK, VOID_RESOURCE_TAG_RE, FAVS_INDEX_VERSION, ORPHAN_SETTINGS_KEYS;
 var init_favsStore = __esm({
   "src/core/favsStore.js"() {
     init_helpers();
@@ -21486,6 +21531,19 @@ var init_favsStore = __esm({
     BASE64_CHUNK = 32768;
     VOID_RESOURCE_TAG_RE = /<(?:img|link|input|source|track|embed|base)\b(?:"[^"]*"|'[^']*'|[^>])*>/gi;
     FAVS_INDEX_VERSION = 1;
+    ORPHAN_SETTINGS_KEYS = [
+      "favs_meta",
+      "favs_migrated_at",
+      "lore_extractor_config",
+      "float_style",
+      "custom_style",
+      "story_outline_st_api_key",
+      "story_outline_profile_mode",
+      "last_seen_version",
+      "ignored_version",
+      "welcomed",
+      "theater_model_override"
+    ];
   }
 });
 
@@ -46232,6 +46290,7 @@ function bindDrawerBackupControls() {
   bindFavsMigrationDryRun();
   bindFavsMigrationRun();
   bindFavsMigrationCleanup();
+  bindFavsArtifactCleanup();
 }
 function formatBytes(bytes) {
   const n = Number(bytes) || 0;
@@ -46465,6 +46524,65 @@ function bindFavsMigrationCleanup() {
       if (window.toastr) toastr.error(e?.message || "\u6536\u5C3E\u5931\u8D25", "Titania Echo");
     } finally {
       refreshFavsMigrationButtons();
+    }
+  });
+}
+function bindFavsArtifactCleanup() {
+  const $btn = $("#titania-favs-cleanup-artifacts");
+  if ($btn.length === 0) return;
+  $btn.off("click").on("click", async function() {
+    const $self = $(this);
+    const oldHtml = $self.html();
+    const plan = describeLegacyArtifacts();
+    if (plan.keys.length === 0 && plan.orphanFiles.length === 0) {
+      showFavsMigrationReport("\u6CA1\u6709\u53EF\u6E05\u7406\u7684\u9057\u7559\u6570\u636E\u3002", "#feca57");
+      return;
+    }
+    const keyList = plan.keys.map((item) => `  \xB7 ${item.key}\uFF08${formatBytes(item.bytes)}\uFF09`).join("\n");
+    const fileList = plan.orphanFiles.map((path) => `  \xB7 ${path}`).join("\n");
+    const confirmed = confirm(
+      `\u5C06\u6E05\u7406\u4EE5\u4E0B\u5DF2\u786E\u8BA4\u96F6\u5F15\u7528\u7684\u9057\u7559\u6570\u636E\uFF1A
+
+` + (plan.keys.length ? `settings.json \u91CC\u7684 ${plan.keys.length} \u4E2A\u65E7\u952E\uFF08\u5171 ${formatBytes(plan.keyBytes)}\uFF09\uFF1A
+${keyList}
+
+` : "") + (plan.orphanFiles.length ? `${plan.orphanFiles.length} \u4E2A\u4E0D\u518D\u88AB\u5F15\u7528\u7684\u6B63\u6587\u6587\u4EF6\uFF1A
+${fileList}
+
+` : "") + `\u8FD9\u4E9B\u90FD\u662F\u6CA1\u6709\u4EFB\u4F55\u4EE3\u7801\u8BFB\u5199\u7684\u6B7B\u6570\u636E\uFF0C\u5220\u9664\u4E0D\u5F71\u54CD\u4EFB\u4F55\u529F\u80FD\u3002
+\u5982\u9700\u4FDD\u9669\uFF0C\u53EF\u5148\u70B9\u4E0A\u9762\u7684\u300C\u5BFC\u51FA\u5907\u4EFD\u300D\u3002
+
+\u786E\u5B9A\u7EE7\u7EED\u5417\uFF1F`
+    );
+    if (!confirmed) return;
+    $self.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> \u6E05\u7406\u4E2D...');
+    try {
+      const report = await cleanupLegacyArtifacts();
+      const lines = [];
+      if (report.removedKeys.length) {
+        lines.push(`\u5DF2\u5220\u9664 ${report.removedKeys.length} \u4E2A\u65E7\u952E\uFF0Csettings.json \u51CF\u5C11 <b>${formatBytes(report.removedBytes)}</b>`);
+      }
+      if (report.deletedFiles.length) {
+        lines.push(`\u5DF2\u5220\u9664 ${report.deletedFiles.length} \u4E2A\u65E0\u4EBA\u5F15\u7528\u7684\u6B63\u6587\u6587\u4EF6`);
+      }
+      if (report.failedFiles.length) {
+        lines.push(`<b>${report.failedFiles.length} \u4E2A\u6587\u4EF6\u5220\u9664\u5931\u8D25</b>\uFF0C\u5DF2\u4FDD\u7559 favs_meta \u4EE5\u4FBF\u4E0B\u6B21\u91CD\u8BD5`);
+      }
+      if (lines.length === 0) lines.push("\u6CA1\u6709\u53EF\u6E05\u7406\u7684\u5185\u5BB9");
+      showFavsMigrationReport(
+        `${report.failedFiles.length ? "\u26A0\uFE0F \u6E05\u7406\u90E8\u5206\u5B8C\u6210" : "\u2705 \u6E05\u7406\u5B8C\u6210"}<br>\xB7 ${lines.join("<br>\xB7 ")}`,
+        report.failedFiles.length ? "#feca57" : "#55efc4"
+      );
+      console.log("[Titania] \u9057\u7559\u6570\u636E\u6E05\u7406\u62A5\u544A", report);
+      if (window.toastr) {
+        toastr.success(`\u9057\u7559\u6570\u636E\u5DF2\u6E05\u7406\uFF0Csettings.json \u51CF\u5C11 ${formatBytes(report.removedBytes)}`, "Titania Echo");
+      }
+    } catch (e) {
+      console.error("Titania: \u9057\u7559\u6570\u636E\u6E05\u7406\u5931\u8D25", e);
+      showFavsMigrationReport(`\u274C \u6E05\u7406\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
+      if (window.toastr) toastr.error(e?.message || "\u6E05\u7406\u5931\u8D25", "Titania Echo");
+    } finally {
+      $self.prop("disabled", false).html(oldHtml);
     }
   });
 }
