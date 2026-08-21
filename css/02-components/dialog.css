@@ -1,0 +1,202 @@
+/* ============================================================
+   02-components/dialog.css —— 弹窗组件
+
+   共用结构由组件层负责；feature 只保留业务布局，尺寸差异通过修饰类表达。
+   ============================================================ */
+
+.t-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--t-dialog-scrim, var(--t-color-dialog-scrim));
+    z-index: 20001;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.t-dialog-overlay--outline {
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    min-height: 100dvh;
+    padding: 10px;
+    box-sizing: border-box;
+    background: var(--t-color-dialog-scrim-outline);
+    z-index: 20040;
+}
+
+/* 窗口内遮罩 —— 铺满最近的定位祖先（插件自己的窗口）而不是视口。
+   与视口级遮罩的两处差别都在这里收口：
+     1) position: absolute —— 只遮住宿主窗口，窗口外的 ST 界面照常可见；
+     2) 去掉 backdrop-filter —— 窗口内遮罩若保留模糊会把宿主窗口内容一起糊掉；
+        且 backdrop-filter 会为内部 fixed 后代创建包含块，改变其定位基准。
+   scrim 深浅由消费者通过 --t-dialog-scrim 指定（本组件的默认值是 .7）。
+   消费者：.t-imp-modal（脚本管理器 4 个弹窗）、.t-wi-preview-modal、.t-img-mgr-overlay。 */
+.t-dialog-overlay--contained {
+    position: absolute;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* 扁平弹窗表面 —— 共享的「底 / 描边 / 圆角 / 投影」四元组。
+   刻意**不做** .t-dialog-box 的修饰类：.t-dialog-box 还带着
+   width / max-width / max-height / overflow / display / flex-direction 一整套布局，
+   而这三个消费者的尺寸与内部排列各不相同（400px 定宽块 / 90%+max-height 70% /
+   600px+70vh），套基类会迫使 feature 反向中和 6 条布局声明 —— 声明总数反而上升。
+   消费者：.t-imp-box、.t-wi-preview-box、.t-img-mgr-box。
+   三者原本的 background / border / border-radius 逐字节相同（#1e1e1e / #444 / 8px）。
+   投影默认 --t-shadow-lg，图鉴管理用 --t-dialog-panel-shadow 抬到 --t-shadow-xl。 */
+.t-dialog-panel {
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-container);
+    box-shadow: var(--t-dialog-panel-shadow, var(--t-shadow-lg));
+}
+
+.t-dialog-box {
+    width: 90%;
+    max-width: 500px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--t-color-dialog-surface);
+    border: 1px solid var(--t-color-field-dialog-border);
+    border-radius: var(--t-radius-window);
+    box-shadow: var(--t-shadow-dialog);
+}
+
+.t-dialog-overlay--outline > .t-dialog-box {
+    width: min(920px, 96vw);
+    margin: 0 auto;
+    max-height: min(82dvh, 82vh);
+}
+
+.t-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--t-color-surface-recess);
+    border-bottom: 1px solid var(--t-color-border-faint);
+    color: var(--t-color-text-cool);
+    font-weight: var(--t-font-weight-semibold);
+}
+
+.t-dialog-header i {
+    margin-right: 8px;
+    color: var(--t-color-accent);
+}
+
+.t-dialog-close {
+    padding: 5px 10px;
+    border-radius: var(--t-radius-inline);
+    color: var(--t-color-dialog-close);
+    cursor: pointer;
+    transition: var(--t-transition-hover);
+}
+
+.t-dialog-close:hover {
+    background: var(--t-color-dialog-close-hover);
+    color: var(--t-color-text-strong);
+}
+
+.t-dialog-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* .t-dialog-body 的四个修饰类。刻意不合并成一个「预览弹窗」复合类：
+   按需组合（--flush --clip --stack），任意组合都不会重复声明同一属性。
+   ⚠ 唯一的例外是 --flush 与 --tight 都改 padding，二者互斥。
+
+   为什么放在组件层而不是各 feature 里：全库有 11 处弹窗 body 在 JS 内联 style 里
+   改 padding（本文件 3 处 padding:0，storyOutlineWindow.js 8 处 padding:12px）。
+   若各 feature 自行覆盖 .t-dialog-body，归属启发式（审计 A6）会把这个组件类
+   误判成某个 feature 的私有类并逐个报冲突。
+
+   ⚠ 四者都与 .t-dialog-body 同为 (0,1,0)，靠紧随其后取胜，位置不可上移。
+   --clip 用 overflow 简写压掉基类的 overflow-y: auto；基类的 flex: 1 不受影响。 */
+.t-dialog-body--flush {
+    padding: 0;
+}
+
+/* 8 处在用（storyOutlineWindow.js 的全部弹窗）。与 --flush 互斥，不要同时加。 */
+.t-dialog-body--tight {
+    padding: 12px;
+}
+
+.t-dialog-body--clip {
+    overflow: hidden;
+}
+
+.t-dialog-body--stack {
+    display: flex;
+    flex-direction: column;
+}
+
+.t-dialog-body :is(.t-form-group) {
+    margin-bottom: 20px;
+}
+
+.t-dialog-body :is(.t-form-label) {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--t-color-dialog-label);
+    font-weight: var(--t-font-weight-medium);
+    font-size: var(--t-text-body);
+}
+
+.t-dialog-body small {
+    display: block;
+    margin-top: 5px;
+    color: var(--t-color-text-faint);
+    font-size: var(--t-text-caption);
+}
+
+.t-dialog-footer {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: var(--t-dialog-footer-background, var(--t-color-surface-recess));
+    border-top: 1px solid var(--t-dialog-footer-border, var(--t-color-border-faint));
+}
+
+.t-dialog-footer .t-btn {
+    padding: 8px 16px;
+}
+
+@media (max-width: 768px) {
+    .t-dialog-overlay {
+        right: 0;
+        bottom: 0;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    /* 窗口内遮罩不需要这层视口边距：宿主窗口本身已经有外边距，
+       再加 10px 会把居中的表面挤小一圈（迁移前这三个弹窗没有 padding）。 */
+    .t-dialog-overlay--contained {
+        padding: 0;
+    }
+
+    .t-dialog-overlay--outline {
+        overflow: auto;
+    }
+
+    .t-dialog-box {
+        width: 95%;
+        max-width: 95%;
+        max-height: 85vh;
+        margin: auto;
+        position: relative;
+    }
+}

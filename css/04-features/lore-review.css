@@ -1,4 +1,4 @@
-/* css/lore-review.css */
+/* css/04-features/lore-review.css */
 
 /* 窗口容器 */
 .t-lore-review-window {
@@ -8,14 +8,14 @@
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    background: rgba(30, 30, 35, 0.95);
+    background: var(--t-color-dialog-surface);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 12px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--t-shadow-dialog);
     overflow: hidden;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     position: relative;
     /* 为下拉菜单提供定位上下文 */
@@ -35,25 +35,25 @@
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-recess);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-window-title {
     font-size: 1.2em;
     font-weight: 700;
-    background: linear-gradient(90deg, #90cdf4, #bfa15f);
+    background: linear-gradient(90deg, var(--t-color-accent), var(--t-color-brand));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     display: flex;
     align-items: center;
     gap: 10px;
-    text-shadow: 0 0 20px rgba(144, 205, 244, 0.3);
+    text-shadow: 0 0 20px var(--t-color-accent-border-subtle);
 }
 
 .t-window-title i {
     -webkit-text-fill-color: initial;
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-window-controls {
@@ -67,12 +67,12 @@
     padding: 5px 10px;
     border-radius: 4px;
     transition: all 0.2s;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
 }
 
 .t-window-close:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background: var(--t-color-surface-hover);
+    color: var(--t-color-text-strong);
 }
 
 /* 顶部控制栏 */
@@ -81,8 +81,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-recess);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-control-group {
@@ -92,16 +92,16 @@
 }
 
 .t-control-group label {
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     font-size: 0.9em;
 }
 
 .t-control-group select,
 .t-control-group input[type="number"],
 .t-control-group input[type="text"] {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
+    background: var(--t-color-surface-recess-strong);
+    border: 1px solid var(--t-color-border-hover-subtle);
+    color: var(--t-color-text-strong);
     padding: 6px 12px;
     border-radius: 6px;
     outline: none;
@@ -112,17 +112,28 @@
 .t-control-group select:focus,
 .t-control-group input[type="number"]:focus,
 .t-control-group input[type="text"]:focus {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
 }
 
-/* 针对 datalist 的输入框样式微调 */
-input[list]::-webkit-calendar-picker-indicator {
+/* 针对 datalist 的输入框样式微调。
+   ⚠ 原先是**无作用域**的 `input[list]::-webkit-calendar-picker-indicator`，
+   会给整个 SillyTavern 里所有 <input list> 的选择器指示器套上
+   opacity:0.6 + filter:invert(1) —— 与 B2（滚动条泄漏）同类缺陷。
+   已补 `.t-root` 前缀（CLAUDE.md 第 5 条 / 规则 R7）。
+   审计 A8 当时没抓到，因为它的 GLOBAL_PSEUDO 白名单里没有这个伪元素；
+   同批已把表单控件类伪元素补进 scripts/css-audit.js。
+
+   ⚠ 另一个遗留：这条规则的**消费者全在 scriptManager.js**
+   （:121 t-imp-cat-m、:173 t-move-cat、:850 ed-cat），本该在 manager.css。
+   与 5b-7 记的 .t-log-box 同类错位，一并留给 Phase 7 做纯搬运。
+   （注意清单里 manager.css 早于 lore-review.css，搬过去会变早，须先查冲突。） */
+.t-root input[list]::-webkit-calendar-picker-indicator {
     opacity: 0.6;
     filter: invert(1);
     cursor: pointer;
 }
 
-input[list]:hover::-webkit-calendar-picker-indicator {
+.t-root input[list]:hover::-webkit-calendar-picker-indicator {
     opacity: 1;
 }
 
@@ -136,35 +147,22 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 /* 左侧列表容器 */
 .t-lore-list-container {
     width: 380px;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: 1px solid var(--t-color-border-faint);
     display: flex;
     flex-direction: column;
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--t-color-surface-recess);
 }
 
 .t-list-header {
     padding: 12px 15px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-color-surface-veil);
     font-weight: 600;
     font-size: 0.9em;
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.t-list-actions .t-btn {
-    padding: 2px 8px;
-    font-size: 0.8em;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: #a0aec0;
-}
-
-.t-list-actions .t-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-lore-list {
@@ -175,8 +173,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 /* 列表项卡片 */
 .t-lore-entry-item {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--t-color-surface-veil);
+    border: 1px solid var(--t-color-border-faint);
     border-radius: 8px;
     padding: 12px;
     margin-bottom: 10px;
@@ -187,14 +185,14 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-lore-entry-item:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px var(--t-shadow-ink-20);
 }
 
 .t-lore-entry-item.active {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.4);
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-focus-ring);
 }
 
 /* 左侧指示条 */
@@ -205,7 +203,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     top: 0;
     bottom: 0;
     width: 4px;
-    background: #718096;
+    background: var(--t-color-text-cool-muted);
     /* 默认颜色 */
     opacity: 0.5;
     transition: opacity 0.2s;
@@ -213,49 +211,43 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-lore-entry-item.active::before {
     opacity: 1;
-    background: #90cdf4;
+    background: var(--t-color-accent);
 }
 
 /* 分类颜色指示 */
 .t-lore-entry-item[data-cat="Location"]::before {
-    background: #48bb78;
+    background: var(--t-color-success);
 }
 
 .t-lore-entry-item[data-cat="Character"]::before {
-    background: #f6ad55;
+    background: rgb(var(--t-accent-amber-soft-rgb));
 }
 
 .t-lore-entry-item[data-cat="Item"]::before {
-    background: #9f7aea;
+    background: rgb(var(--t-accent-lore-item-rgb));
 }
 
 .t-lore-entry-item[data-cat="Event"]::before {
-    background: #f56565;
+    background: rgb(var(--t-accent-error-soft-rgb));
 }
 
 /* 更新状态样式 */
 .t-lore-entry-item.t-is-update {
-    border-left: 1px solid #ecc94b;
+    border-left: 1px solid rgb(var(--t-accent-lore-update-rgb));
 }
 
 .t-lore-entry-item.t-is-update::before {
-    background: #ecc94b !important;
+    background: rgb(var(--t-accent-lore-update-rgb));
 }
 
 .t-lore-entry-item.t-is-update .t-entry-keys i {
-    color: #ecc94b;
+    color: rgb(var(--t-accent-lore-update-rgb));
     animation: t-spin 2s linear infinite;
     animation-play-state: paused;
 }
 
 .t-lore-entry-item.t-is-update:hover .t-entry-keys i {
     animation-play-state: running;
-}
-
-@keyframes t-spin {
-    100% {
-        transform: rotate(360deg);
-    }
 }
 
 .t-entry-header {
@@ -267,7 +259,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-entry-keys {
     font-weight: 600;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -278,16 +270,16 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 .t-entry-tag {
     font-size: 0.7em;
     padding: 2px 6px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border-radius: 4px;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .t-entry-preview {
     font-size: 0.85em;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -302,7 +294,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     flex-direction: column;
     padding: 25px;
     overflow-y: auto;
-    background: rgba(0, 0, 0, 0.05);
+    background: rgb(var(--t-scrim-panel-rgb) / .05);
 }
 
 .t-editor-header {
@@ -310,8 +302,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     font-weight: 600;
     margin-bottom: 25px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    color: #90cdf4;
+    border-bottom: 1px solid var(--t-color-border-subtle);
+    color: var(--t-color-accent);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -324,7 +316,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 .t-lore-editor label {
     display: block;
     margin-bottom: 8px;
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     font-weight: 500;
     font-size: 0.9em;
 }
@@ -334,10 +326,10 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 .t-lore-editor textarea {
     width: 100%;
     padding: 12px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--t-color-surface-recess);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
-    color: #fff;
+    color: var(--t-color-text-strong);
     font-family: inherit;
     font-size: 0.95em;
     transition: all 0.2s;
@@ -346,9 +338,9 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 .t-lore-editor input[type="text"]:focus,
 .t-lore-editor select:focus,
 .t-lore-editor textarea:focus {
-    border-color: #90cdf4;
-    background: rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 0 3px rgba(144, 205, 244, 0.1);
+    border-color: var(--t-color-accent);
+    background: var(--t-color-surface-recess-strong);
+    box-shadow: 0 0 0 3px var(--t-color-field-dialog-ring);
     outline: none;
 }
 
@@ -359,11 +351,11 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-static-text {
     padding: 12px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-color-surface-veil);
     border-radius: 8px;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     font-size: 0.9em;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border: 1px dashed var(--t-color-border-subtle);
 }
 
 .t-update-info-box {
@@ -371,33 +363,18 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     align-items: center;
     justify-content: space-between;
     padding: 10px;
-    background: rgba(236, 201, 75, 0.1);
-    border: 1px solid rgba(236, 201, 75, 0.3);
+    background: rgb(var(--t-accent-lore-update-rgb) / .1);
+    border: 1px solid rgb(var(--t-accent-lore-update-rgb) / .3);
     border-radius: 8px;
-    color: #ecc94b;
+    color: rgb(var(--t-accent-lore-update-rgb));
     font-size: 0.9em;
-}
-
-.t-btn-xs {
-    padding: 2px 8px;
-    font-size: 0.8em;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: #a0aec0;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.t-btn-xs:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
 }
 
 /* 底部操作栏 */
 .t-window-footer {
     padding: 15px 25px;
-    background: rgba(0, 0, 0, 0.2);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-recess);
+    border-top: 1px solid var(--t-color-border-faint);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -410,51 +387,12 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-target-select select {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
+    background: var(--t-color-surface-recess-strong);
+    border: 1px solid var(--t-color-border-hover-subtle);
+    color: var(--t-color-text-strong);
     padding: 8px 12px;
     border-radius: 6px;
     min-width: 220px;
-}
-
-.t-btn-success {
-    background: linear-gradient(135deg, #48bb78, #38a169);
-    border: none;
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
-    transition: all 0.2s;
-}
-
-.t-btn-success:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(72, 187, 120, 0.4);
-}
-
-.t-btn-success:disabled {
-    background: #4a5568;
-    color: #a0aec0;
-    cursor: not-allowed;
-    box-shadow: none;
-}
-
-.t-btn-primary {
-    background: linear-gradient(135deg, #4299e1, #3182ce);
-    border: none;
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
-    transition: all 0.2s;
-}
-
-.t-btn-primary:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(66, 153, 225, 0.4);
 }
 
 /* 状态提示 */
@@ -466,7 +404,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     text-align: center;
     padding: 40px;
 }
@@ -480,7 +418,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-error-state {
-    color: #fc8181;
+    color: rgb(var(--t-accent-error-text-rgb));
 }
 
 /* 模型下拉菜单样式 */
@@ -489,7 +427,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     padding: 5px 10px;
     border-radius: 4px;
     transition: all 0.2s;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     margin-right: 8px;
     display: flex;
     align-items: center;
@@ -497,53 +435,13 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-window-icon:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background: var(--t-color-surface-hover);
+    color: var(--t-color-text-strong);
 }
 
-.t-model-dropdown {
-    position: absolute;
-    top: 55px;
-    /* 稍微低于标题栏底部 */
-    right: 20px;
-    width: 300px;
-    background: rgba(30, 30, 35, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 8px;
-    padding: 12px;
-    z-index: 10000;
-    /* 提高 z-index 确保在最上层 */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-.t-dropdown-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 0.9em;
-    color: #cbd5e0;
-}
-
-.t-dropdown-header button {
-    padding: 4px 8px;
-    font-size: 0.8em;
-}
-
-.t-model-dropdown select {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
-    padding: 8px;
-    border-radius: 6px;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.t-model-dropdown select:focus {
-    border-color: #90cdf4;
+/* Default state; the mobile layout below reveals this toolbar. */
+.t-mobile-editor-header {
+    display: none;
 }
 
 /* 移动端适配 - 全屏切换式布局 */
@@ -579,7 +477,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         top: 0;
         left: 0;
         z-index: 1;
-        background: rgba(30, 30, 35, 1);
+        background: var(--t-color-dialog-surface);
         transition: transform 0.3s ease, opacity 0.3s ease;
     }
 
@@ -593,7 +491,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         top: 0;
         left: 0;
         z-index: 0;
-        background: rgba(30, 30, 35, 1);
+        background: var(--t-color-dialog-surface);
         transform: translateX(100%);
         transition: transform 0.3s ease;
     }
@@ -622,8 +520,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         align-items: center;
         gap: 12px;
         padding: 15px;
-        background: rgba(0, 0, 0, 0.3);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--t-color-surface-recess-strong);
+        border-bottom: 1px solid var(--t-color-border-subtle);
         position: sticky;
         top: 0;
         z-index: 10;
@@ -634,46 +532,41 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         align-items: center;
         gap: 8px;
         padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: var(--t-color-surface-hover);
+        border: 1px solid var(--t-color-border-hover-subtle);
         border-radius: 6px;
-        color: #90cdf4;
+        color: var(--t-color-accent);
         font-size: 0.9em;
         cursor: pointer;
         transition: all 0.2s;
     }
 
     .t-mobile-back-btn:hover {
-        background: rgba(255, 255, 255, 0.15);
+        background: var(--t-color-surface-active);
     }
 
     .t-mobile-editor-title {
         flex: 1;
         font-weight: 600;
-        color: #e2e8f0;
+        color: var(--t-color-text-cool);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .t-mobile-nav-btns {
-        display: flex;
-        gap: 5px;
-    }
-
     .t-mobile-nav-btn {
         padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--t-color-surface-hover);
+        border: 1px solid var(--t-color-border-subtle);
         border-radius: 6px;
-        color: #a0aec0;
+        color: var(--t-color-dialog-close);
         cursor: pointer;
         transition: all 0.2s;
     }
 
     .t-mobile-nav-btn:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.15);
-        color: #fff;
+        background: var(--t-color-surface-active);
+        color: var(--t-color-text-strong);
     }
 
     .t-mobile-nav-btn:disabled {
@@ -688,7 +581,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
     /* 移动端 placeholder 隐藏 */
     #t-editor-placeholder {
-        display: none !important;
+        display: none !important; /* override jQuery .show() inline display on mobile */
     }
 
     /* 移动端 textarea 增大高度 */
@@ -744,28 +637,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         padding: 10px 15px;
     }
 
-    .t-model-dropdown {
-        width: calc(100% - 40px);
-        right: 20px;
-        left: 20px;
-    }
-
-    /* 移动端显示返回按钮栏 */
-    .t-mobile-editor-header {
-        display: flex !important;
-    }
-}
-
-/* 桌面端隐藏移动端专用元素 */
-@media (min-width: 769px) {
-    .t-mobile-editor-header {
-        display: none !important;
-    }
-}
-
-/* 默认隐藏移动端专用元素（桌面端） */
-.t-mobile-editor-header {
-    display: none;
 }
 
 /* 配置信息栏 */
@@ -774,14 +645,14 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: rgba(144, 205, 244, 0.08);
-    border-bottom: 1px solid rgba(144, 205, 244, 0.15);
+    background: var(--t-color-accent-veil);
+    border-bottom: 1px solid var(--t-color-accent-soft);
     font-size: 0.85em;
     flex-wrap: wrap;
 }
 
 .t-config-label {
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     display: flex;
     align-items: center;
     gap: 5px;
@@ -792,142 +663,13 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-config-value {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-weight: 500;
 }
 
 .t-config-separator {
-    color: #4a5568;
+    color: rgb(var(--t-glass-text-faintest-rgb));
     margin: 0 5px;
-}
-
-/* 配置弹窗样式 */
-.t-dialog-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 20001;
-    /* 高于主 overlay (20000) */
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-}
-
-.t-dialog-box {
-    background: rgba(30, 30, 35, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 85vh;
-    overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-}
-
-.t-dialog-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    font-weight: 600;
-    color: #e2e8f0;
-}
-
-.t-dialog-header i {
-    margin-right: 8px;
-    color: #90cdf4;
-}
-
-.t-dialog-close {
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: all 0.2s;
-    color: #a0aec0;
-}
-
-.t-dialog-close:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-}
-
-.t-dialog-body {
-    padding: 20px;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.t-dialog-body .t-form-group {
-    margin-bottom: 20px;
-}
-
-.t-dialog-body .t-form-label {
-    display: block;
-    margin-bottom: 8px;
-    color: #cbd5e0;
-    font-weight: 500;
-    font-size: 0.9em;
-}
-
-.t-dialog-body .t-input {
-    width: 100%;
-    padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 6px;
-    color: #fff;
-    font-size: 0.95em;
-    transition: all 0.2s;
-}
-
-.t-dialog-body .t-input:focus {
-    border-color: #90cdf4;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(144, 205, 244, 0.1);
-}
-
-.t-dialog-body small {
-    display: block;
-    margin-top: 5px;
-    color: #666;
-    font-size: 0.8em;
-}
-
-.t-dialog-footer {
-    padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.2);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
-
-.t-dialog-footer .t-btn {
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.t-dialog-footer .t-btn:not(.t-btn-primary) {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #a0aec0;
-}
-
-.t-dialog-footer .t-btn:not(.t-btn-primary):hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
 }
 
 /* 智能提取与总结设置窗口（对齐主设置窗口风格） */
@@ -943,105 +685,44 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: rgba(19, 22, 30, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56);
+    background: var(--t-glass-window);
+    border: 1px solid var(--t-color-field-glass-border);
+    box-shadow: 0 22px 58px var(--t-shadow-ink-56);
     border-radius: 14px;
 }
 
 #t-lore-settings-dialog .t-lore-settings-header {
     padding: 12px 16px;
-    background: linear-gradient(180deg, rgba(18, 30, 44, 0.9) 0%, rgba(16, 22, 31, 0.85) 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    background: linear-gradient(180deg, var(--t-glass-nav) 0%, var(--t-glass-nav) 100%);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
-#t-lore-settings-dialog .t-set-body {
-    flex: 1;
-    display: flex;
-    min-height: 0;
-    overflow: hidden;
-}
+/* 本对话框的设置外壳（body / nav / tab / content）已迁至
+   02-components/settings-shell.css 的 `.t-set-glass-*` —— 与 rewrite.css 的
+   改写设置浮层逐字节相同（只有 nav 的 width 不同：本处 170px、那边 180px）。
+   width 是布局属性，留在下面。 */
 
 #t-lore-settings-dialog .t-set-nav {
     width: 170px;
-    background: rgba(18, 24, 33, 0.9);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 10px 0;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
 }
 
-#t-lore-settings-dialog .t-set-tab-btn {
-    padding: 11px 14px;
-    color: #99adbe;
-    cursor: pointer;
-    transition: all 0.16s ease;
-    font-size: 0.86em;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-left: 3px solid transparent;
-}
-
-#t-lore-settings-dialog .t-set-tab-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #d7e7f5;
-}
-
-#t-lore-settings-dialog .t-set-tab-btn.active {
-    color: #b9d8ee;
-    background: rgba(144, 205, 244, 0.16);
-    border-left-color: rgba(144, 205, 244, 0.86);
-    font-weight: 700;
-}
-
-#t-lore-settings-dialog .t-set-content {
-    flex: 1;
-    min-width: 0;
-    padding: 14px;
-    overflow-y: auto;
-    background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d;
-}
-
-#t-lore-settings-dialog .t-set-page {
-    display: none;
-}
-
-#t-lore-settings-dialog .t-set-page.active {
-    display: block;
-}
+/* `.t-set-page` / `.t-set-page.active` 只有 `display: none` / `display: block`，
+   与 settings.css 的裸类逐字节相同（裸类无作用域，对本对话框一样生效），
+   且全库没有任何 @media 规则动这两个类 —— 纯冗余，已删除（A13 重复组）。 */
 
 #t-lore-settings-dialog .t-form-group {
     margin-bottom: 14px;
     padding: 12px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.86);
+    border: 1px solid var(--t-color-border-subtle);
+    background: linear-gradient(170deg, var(--t-color-surface-veil), var(--t-color-surface-veil) 55%), var(--t-glass-card);
 }
 
 #t-lore-settings-dialog .t-form-label {
     display: block;
-    color: #a9bfd1;
+    color: var(--t-glass-text-secondary);
     margin-bottom: 6px;
     font-size: 0.82em;
-}
-
-#t-lore-settings-dialog .t-input {
-    width: 100%;
-    box-sizing: border-box;
-    background: rgba(7, 11, 18, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: #dce9f4;
-    border-radius: 8px;
-    padding: 9px 11px;
-    outline: none;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-#t-lore-settings-dialog .t-input:focus {
-    border-color: rgba(144, 205, 244, 0.55);
-    box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16);
 }
 
 #t-lore-settings-dialog .t-lore-settings-model-row {
@@ -1051,49 +732,17 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     gap: 8px;
 }
 
-#t-lore-settings-dialog .t-lore-settings-tip-card {
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 12px;
-    padding: 12px;
-    background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84);
-    color: #c8d9e8;
-    display: grid;
-    gap: 8px;
-    font-size: 0.84em;
-    line-height: 1.55;
-}
-
-#t-lore-settings-dialog .t-lore-settings-tip-card i {
-    color: #90cdf4;
-    width: 14px;
-}
-
-#t-lore-settings-dialog .t-profile-info-box {
-    background: rgba(8, 13, 20, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 8px;
-}
-
 #t-lore-settings-dialog .t-info-label {
-    color: #8da5b8;
+    color: var(--t-glass-text-faint);
 }
 
-#t-lore-settings-dialog .t-dialog-footer.t-lore-settings-footer {
+#t-lore-settings-dialog .t-lore-settings-footer.t-dialog-footer {
     padding: 10px 14px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    --t-dialog-footer-border: rgb(var(--t-text-white-rgb) / .1);
+    --t-dialog-footer-background: rgb(var(--t-glass-footer-rgb) / .9);
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    background: rgba(16, 22, 31, 0.9);
-}
-
-/* 方案信息框 */
-.t-profile-info-box {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 12px;
-    margin-top: 10px;
 }
 
 .t-info-row {
@@ -1109,42 +758,28 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-info-label {
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     min-width: 70px;
 }
 
 .t-info-row span:last-child {
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     word-break: break-all;
-}
-
-/* 控制按钮组 */
-.t-control-buttons {
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 /* 楼层信息显示 */
 .t-floor-info {
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     font-size: 0.85em;
     white-space: nowrap;
 }
 
-/* 快捷按钮组 */
-.t-quick-btns {
-    display: flex;
-    gap: 4px;
-    margin-left: 8px;
-}
-
 .t-quick-btn {
     padding: 4px 10px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--t-color-surface-hover);
+    border: 1px solid var(--t-color-border-hover-subtle);
     border-radius: 4px;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     font-size: 0.8em;
     cursor: pointer;
     transition: all 0.2s;
@@ -1152,80 +787,51 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-quick-btn:hover {
-    background: rgba(144, 205, 244, 0.15);
-    border-color: rgba(144, 205, 244, 0.4);
-    color: #90cdf4;
+    background: var(--t-color-accent-soft);
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
 }
 
 .t-quick-btn.active {
-    background: rgba(144, 205, 244, 0.2);
-    border-color: rgba(144, 205, 244, 0.5);
-    color: #90cdf4;
+    background: var(--t-color-accent-soft-strong);
+    border-color: var(--t-color-accent-border-strong);
+    color: var(--t-color-accent);
 }
 
 .t-quick-btn-all {
-    background: rgba(72, 187, 120, 0.1);
-    border-color: rgba(72, 187, 120, 0.3);
-    color: #48bb78;
+    background: var(--t-color-success-veil-subtle);
+    border-color: var(--t-color-success-border-subtle);
+    color: var(--t-color-success);
 }
 
 .t-quick-btn-all:hover {
-    background: rgba(72, 187, 120, 0.2);
-    border-color: rgba(72, 187, 120, 0.5);
-    color: #68d391;
+    background: var(--t-color-success-soft);
+    border-color: rgb(var(--t-accent-green-rgb) / .5);
+    color: rgb(var(--t-accent-green-light-rgb));
 }
 
 .t-quick-btn-all.active {
-    background: rgba(72, 187, 120, 0.25);
-    border-color: rgba(72, 187, 120, 0.6);
-    color: #68d391;
+    background: rgb(var(--t-accent-green-rgb) / .25);
+    border-color: rgb(var(--t-accent-green-rgb) / .6);
+    color: rgb(var(--t-accent-green-light-rgb));
 }
 
 /* 错误状态弹窗头部 */
 .t-dialog-header-error {
-    background: rgba(231, 76, 60, 0.15);
-    border-bottom-color: rgba(231, 76, 60, 0.3);
+    background: rgb(var(--t-accent-error-rgb) / .15);
+    border-bottom-color: rgb(var(--t-accent-error-rgb) / .3);
 }
 
 .t-dialog-header-error i {
-    color: #e74c3c !important;
+    color: rgb(var(--t-accent-error-rgb));
 }
 
 /* 移动端配置弹窗适配 */
 @media (max-width: 768px) {
 
-    /* 确保弹窗覆盖层在移动端正确居中 */
-    .t-dialog-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px;
-        box-sizing: border-box;
-    }
-
-    .t-dialog-box {
-        width: 95%;
-        max-width: 95%;
-        max-height: 85vh;
-        margin: auto;
-        position: relative;
-        /* 确保不受父元素影响 */
-    }
-
     .t-config-info-bar {
         padding: 8px 15px;
         font-size: 0.8em;
-    }
-
-    .t-control-buttons {
-        flex-wrap: wrap;
     }
 
     #t-lore-settings-dialog .t-lore-settings-window {
@@ -1245,7 +851,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         flex-wrap: nowrap;
         padding: 0;
         border-right: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid var(--t-color-border-subtle);
         overflow-x: auto;
         overflow-y: hidden;
         scrollbar-gutter: stable;
@@ -1265,11 +871,16 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         flex: 0 0 auto;
         min-width: max-content;
         justify-content: center;
-        background: transparent;
+        /* 原有一条 `background: transparent`，已删除。
+           它在迁移前是**空操作**：静息态本来就没有任何规则给 tab 设过底色
+           （金色基类与冷玻璃基类都只在 :hover / .active 上设 background）。
+           但迁移后它会变成有害的 —— 本条是 (1,1,0)，带 ID，会压过组件层
+           `.t-set-glass-tab:hover` 的 (0,2,0)，把窄屏下的 hover 白膜吃掉。
+           `.active` 那条的 background: transparent 是必要的，保留在下面。 */
     }
 
     #t-lore-settings-dialog .t-set-tab-btn.active {
-        border-bottom-color: rgba(144, 205, 244, 0.8);
+        border-bottom-color: var(--t-color-accent-hover);
         border-left-color: transparent;
         background: transparent;
     }
@@ -1284,16 +895,16 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     display: flex;
     gap: 5px;
     padding: 10px 20px;
-    background: rgba(0, 0, 0, 0.15);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-recess);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-mode-tab {
     padding: 10px 20px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--t-color-surface-hover-subtle);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px 8px 0 0;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     cursor: pointer;
     font-size: 0.9em;
     font-weight: 500;
@@ -1304,14 +915,14 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-mode-tab:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    background: var(--t-color-surface-hover);
+    color: var(--t-color-text-cool);
 }
 
 .t-mode-tab.active {
-    background: rgba(144, 205, 244, 0.15);
-    border-color: rgba(144, 205, 244, 0.4);
-    color: #90cdf4;
+    background: var(--t-color-accent-soft);
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
     border-bottom-color: transparent;
 }
 
@@ -1334,16 +945,16 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-mode-panel::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
 }
 
 .t-mode-panel::-webkit-scrollbar-thumb {
-    background: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-border-subtle);
     border-radius: 4px;
 }
 
 .t-mode-panel::-webkit-scrollbar-thumb:hover {
-    background: rgba(144, 205, 244, 0.5);
+    background: var(--t-color-accent-border-strong);
 }
 
 .t-mode-panel:not(.active) {
@@ -1365,8 +976,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     align-items: center;
     margin-bottom: 15px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    color: #90cdf4;
+    border-bottom: 1px solid var(--t-color-border-subtle);
+    color: var(--t-color-accent);
     font-weight: 600;
 }
 
@@ -1377,8 +988,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-summary-result {
     flex: 1;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--t-color-surface-recess);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 8px;
     padding: 20px;
     overflow-y: auto;
@@ -1394,29 +1005,29 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-summary-result::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-radius: 4px;
 }
 
 .t-summary-result::-webkit-scrollbar-thumb {
-    background: rgba(144, 205, 244, 0.4);
+    background: var(--t-color-focus-ring);
     border-radius: 4px;
 }
 
 .t-summary-result::-webkit-scrollbar-thumb:hover {
-    background: rgba(144, 205, 244, 0.6);
+    background: var(--t-color-accent-border-hover);
 }
 
 .t-summary-text {
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
 }
 
 .t-summary-text h3.t-summary-h3 {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-size: 1.1em;
     margin: 20px 0 12px 0;
     padding-bottom: 8px;
-    border-bottom: 1px solid rgba(144, 205, 244, 0.2);
+    border-bottom: 1px solid var(--t-color-accent-soft-strong);
 }
 
 .t-summary-text h3.t-summary-h3:first-child {
@@ -1424,13 +1035,13 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-summary-text h4.t-summary-h4 {
-    color: #bfa15f;
+    color: var(--t-color-brand);
     font-size: 1em;
     margin: 15px 0 8px 0;
 }
 
 .t-summary-text strong {
-    color: #feca57;
+    color: rgb(var(--t-accent-warn-rgb));
 }
 
 .t-summary-text li {
@@ -1445,8 +1056,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 /* ========== 向量索引管理面板样式 ========== */
 .t-vector-status-card,
 .t-vector-actions-card {
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-recess);
+    border: 1px solid var(--t-color-border-faint);
     border-radius: 10px;
     padding: 20px;
     margin: 15px 20px;
@@ -1454,7 +1065,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-vector-status-card h3,
 .t-vector-actions-card h3 {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     font-size: 1em;
     margin-bottom: 15px;
     display: flex;
@@ -1463,7 +1074,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-vector-info {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-radius: 8px;
     padding: 15px;
 }
@@ -1472,7 +1083,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-vector-info .t-info-row:last-child {
@@ -1480,20 +1091,30 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-vector-info .t-info-label {
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
 }
 
 .t-vector-info .t-info-value {
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-weight: 500;
 }
 
+/* 向量化面板的分区容器。配 `.t-action-item` / `.t-action-row` 使用，
+   内部是 h4 → 说明 → 按钮的纵向流。
+
+   ⚠ Phase 4b-2 前这里有个跨 feature 泄漏：main-window.css 有个同名
+     `.t-action-group`（横向按钮簇，见 A12），它在 manifest 里排在
+     lore-review.css **之前**、特异度同为 (0,1,0)，所以它的
+     `display: flex; gap: 5px; flex-shrink: 0` 会一并作用到这四个分区上，
+     把 h4 / 说明 / 按钮挤成一行。main-window 侧已改名 `.t-trigger-actions`，
+     这里恢复为 block 流 —— 也就是 `.t-action-item` 与下面 h4 的
+     margin-bottom 本来预期的排版。 */
 .t-action-group {
     margin-bottom: 15px;
 }
 
 .t-action-group h4 {
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     font-size: 0.9em;
     margin-bottom: 10px;
     display: flex;
@@ -1508,7 +1129,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 .t-action-item small {
     display: block;
     margin-top: 8px;
-    color: #666;
+    color: var(--t-color-text-faint);
     font-size: 0.8em;
 }
 
@@ -1526,14 +1147,14 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 /* 进度条 */
 .t-progress-bar {
     height: 8px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--t-color-surface-recess-strong);
     border-radius: 4px;
     overflow: hidden;
 }
 
 .t-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #4299e1, #90cdf4);
+    background: linear-gradient(90deg, rgb(var(--t-accent-azure-mid-rgb)), var(--t-color-accent));
     border-radius: 4px;
     transition: width 0.3s ease;
 }
@@ -1541,7 +1162,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 .t-progress-text {
     margin-top: 8px;
     font-size: 0.85em;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     text-align: center;
 }
 
@@ -1554,49 +1175,19 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-index-status.t-index-ready {
-    background: rgba(72, 187, 120, 0.2);
-    color: #48bb78;
+    background: var(--t-color-success-soft);
+    color: var(--t-color-success);
 }
 
 .t-index-status.t-index-empty {
-    background: rgba(245, 101, 101, 0.2);
-    color: #f56565;
-}
-
-/* 危险按钮 */
-.t-btn-danger {
-    background: rgba(245, 101, 101, 0.2);
-    border: 1px solid rgba(245, 101, 101, 0.4);
-    color: #f56565;
-}
-
-.t-btn-danger:hover:not(:disabled) {
-    background: rgba(245, 101, 101, 0.3);
-    color: #fff;
-}
-
-.t-btn-danger:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Checkbox 样式优化 */
-.t-control-group input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    margin-right: 6px;
-    cursor: pointer;
-}
-
-.t-control-group input[type="checkbox"]:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    background: rgb(var(--t-accent-error-soft-rgb) / .2);
+    color: rgb(var(--t-accent-error-soft-rgb));
 }
 
 /* ========== 自定义提示词区域样式 ========== */
 .t-custom-prompt-section {
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-recess);
+    border: 1px solid var(--t-color-border-faint);
     border-radius: 8px;
     margin: 0 20px 15px 20px;
     overflow: hidden;
@@ -1607,21 +1198,21 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     align-items: center;
     gap: 10px;
     padding: 12px 15px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-color-surface-veil);
     cursor: pointer;
     transition: background 0.2s;
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     font-weight: 500;
     font-size: 0.9em;
 }
 
 .t-custom-prompt-header:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--t-color-surface-hover-subtle);
 }
 
 .t-custom-prompt-header i:first-child {
     transition: transform 0.2s;
-    color: #90cdf4;
+    color: var(--t-color-accent);
 }
 
 .t-custom-prompt-header .t-btn {
@@ -1630,16 +1221,16 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-custom-prompt-body {
     padding: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--t-color-border-faint);
 }
 
 .t-custom-prompt-body textarea {
     width: 100%;
     padding: 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--t-color-surface-recess-strong);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 6px;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 0.9em;
     line-height: 1.6;
@@ -1649,29 +1240,29 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-custom-prompt-body textarea:focus {
-    border-color: #90cdf4;
+    border-color: var(--t-color-accent);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(144, 205, 244, 0.1);
+    box-shadow: 0 0 0 3px var(--t-color-field-dialog-ring);
 }
 
 .t-custom-prompt-body textarea::placeholder {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 .t-prompt-hint {
     margin-top: 10px;
     padding: 10px;
-    background: rgba(144, 205, 244, 0.08);
+    background: var(--t-color-accent-veil);
     border-radius: 6px;
     font-size: 0.85em;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     display: flex;
     align-items: flex-start;
     gap: 8px;
 }
 
 .t-prompt-hint i {
-    color: #90cdf4;
+    color: var(--t-color-accent);
     margin-top: 2px;
 }
 
@@ -1681,8 +1272,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     flex-wrap: wrap;
     gap: 15px;
     padding: 15px 20px;
-    background: rgba(144, 205, 244, 0.08);
-    border-bottom: 1px solid rgba(144, 205, 244, 0.15);
+    background: var(--t-color-accent-veil);
+    border-bottom: 1px solid var(--t-color-accent-soft);
 }
 
 .t-stat-item {
@@ -1690,7 +1281,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     align-items: center;
     gap: 8px;
     font-size: 0.9em;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
 }
 
 .t-stat-item i {
@@ -1698,7 +1289,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-stat-item strong {
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-weight: 600;
 }
 
@@ -1721,16 +1312,16 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     display: flex;
     gap: 5px;
     padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.15);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-recess);
+    border-bottom: 1px solid var(--t-color-border-faint);
 }
 
 .t-prompt-tab {
     padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--t-color-surface-hover-subtle);
+    border: 1px solid var(--t-color-border-subtle);
     border-radius: 6px;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     cursor: pointer;
     font-size: 0.85em;
     transition: all 0.2s;
@@ -1740,14 +1331,14 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-prompt-tab:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    background: var(--t-color-surface-hover);
+    color: var(--t-color-text-cool);
 }
 
 .t-prompt-tab.active {
-    background: rgba(144, 205, 244, 0.15);
-    border-color: rgba(144, 205, 244, 0.4);
-    color: #90cdf4;
+    background: var(--t-color-accent-soft);
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
 }
 
 .t-prompt-content-container {
@@ -1765,8 +1356,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-prompt-pre {
-    background: #1a1a2e;
-    border: 1px solid #333;
+    background: rgb(var(--t-glass-pre-rgb));
+    border: 1px solid var(--t-color-border);
     border-radius: 6px;
     padding: 15px;
     margin: 0;
@@ -1774,7 +1365,7 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     word-break: break-word;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 0.85em;
-    color: #ddd;
+    color: var(--t-color-text-soft);
     line-height: 1.6;
     max-height: 45vh;
     overflow: auto;
@@ -1787,17 +1378,17 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-prompt-pre::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     border-radius: 4px;
 }
 
 .t-prompt-pre::-webkit-scrollbar-thumb {
-    background: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-border-subtle);
     border-radius: 4px;
 }
 
 .t-prompt-pre::-webkit-scrollbar-thumb:hover {
-    background: rgba(144, 205, 244, 0.5);
+    background: var(--t-color-accent-border-strong);
 }
 
 /* 弹窗 footer 调整 */
@@ -1854,13 +1445,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         flex-wrap: wrap;
     }
 
-    /* 移动端快捷按钮调整 */
-    .t-quick-btns {
-        margin-left: 0;
-        margin-top: 8px;
-        flex-wrap: wrap;
-    }
-
     .t-quick-btn {
         padding: 6px 12px;
         font-size: 0.85em;
@@ -1903,8 +1487,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 /* ========== 隐藏楼层功能区样式 ========== */
 .t-hide-floors-section {
-    background: rgba(245, 158, 11, 0.08);
-    border: 1px solid rgba(245, 158, 11, 0.2);
+    background: rgb(var(--t-accent-amber-rgb) / .08);
+    border: 1px solid var(--t-color-warning-soft);
     border-radius: 10px;
     margin: 15px 20px;
     overflow: hidden;
@@ -1915,9 +1499,9 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     align-items: center;
     gap: 10px;
     padding: 12px 15px;
-    background: rgba(245, 158, 11, 0.1);
-    border-bottom: 1px solid rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
+    background: var(--t-color-warning-veil-subtle);
+    border-bottom: 1px solid rgb(var(--t-accent-amber-rgb) / .15);
+    color: var(--t-color-warning);
     font-weight: 600;
     font-size: 0.95em;
 }
@@ -1933,11 +1517,11 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-hidden-status .t-status-warn {
-    color: #f59e0b;
+    color: var(--t-color-warning);
 }
 
 .t-hidden-status .t-status-ok {
-    color: #48bb78;
+    color: var(--t-color-success);
 }
 
 .t-hide-floors-body {
@@ -1953,37 +1537,30 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-hide-range-inputs label {
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     font-size: 0.9em;
 }
 
 .t-hide-range-inputs input[type="number"] {
     padding: 8px 10px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--t-color-surface-recess-strong);
+    border: 1px solid var(--t-color-border-hover-subtle);
     border-radius: 6px;
-    color: #e2e8f0;
+    color: var(--t-color-text-cool);
     font-size: 0.9em;
     text-align: center;
 }
 
 .t-hide-range-inputs input[type="number"]:focus {
-    border-color: #f59e0b;
+    border-color: var(--t-color-warning);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
+    box-shadow: 0 0 0 2px rgb(var(--t-accent-amber-rgb) / .15);
 }
 
 .t-hide-count {
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     font-size: 0.85em;
     margin-left: 5px;
-}
-
-.t-hide-quick-btns {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: 15px;
 }
 
 .t-hide-quick-btns .t-quick-btn {
@@ -2001,15 +1578,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     flex: 1;
     min-width: 120px;
     padding: 10px 16px;
-    font-size: 0.9em;
-}
-
-.t-hide-actions .t-btn-primary {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-}
-
-.t-hide-actions .t-btn-primary:hover {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
 }
 
 /* 移动端隐藏功能区适配 */
@@ -2040,10 +1608,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         /* 防止 iOS 缩放 */
     }
 
-    .t-hide-quick-btns {
-        gap: 5px;
-    }
-
     .t-hide-quick-btns .t-quick-btn {
         flex: 1;
         min-width: 70px;
@@ -2063,10 +1627,10 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 /* ========== 原有内容对比区域样式 ========== */
 .t-original-content-section {
     margin-top: 15px;
-    border: 1px solid rgba(144, 205, 244, 0.2);
+    border: 1px solid var(--t-color-accent-soft-strong);
     border-radius: 8px;
     overflow: hidden;
-    background: rgba(144, 205, 244, 0.05);
+    background: var(--t-color-accent-veil);
 }
 
 .t-original-header {
@@ -2074,9 +1638,9 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     justify-content: space-between;
     align-items: center;
     padding: 10px 12px;
-    background: rgba(144, 205, 244, 0.1);
-    border-bottom: 1px solid rgba(144, 205, 244, 0.15);
-    color: #90cdf4;
+    background: var(--t-color-accent-veil);
+    border-bottom: 1px solid var(--t-color-accent-soft);
+    color: var(--t-color-accent);
     font-size: 0.9em;
     font-weight: 500;
 }
@@ -2095,14 +1659,14 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 
 .t-original-content-text {
     font-size: 0.9em;
-    color: #a0aec0;
+    color: var(--t-color-dialog-close);
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--t-color-surface-recess);
     padding: 12px;
     border-radius: 6px;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border: 1px dashed var(--t-color-border-subtle);
 }
 
 /* 原有内容区滚动条 */
@@ -2111,31 +1675,31 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-original-content-box::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--t-color-surface-recess);
     border-radius: 3px;
 }
 
 .t-original-content-box::-webkit-scrollbar-thumb {
-    background: rgba(144, 205, 244, 0.3);
+    background: var(--t-color-accent-border-subtle);
     border-radius: 3px;
 }
 
 .t-original-content-box::-webkit-scrollbar-thumb:hover {
-    background: rgba(144, 205, 244, 0.5);
+    background: var(--t-color-accent-border-strong);
 }
 
 /* ========== 保存模式选择样式 ========== */
 .t-save-mode-section {
     margin-top: 15px;
     padding: 15px;
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--t-color-surface-recess);
+    border: 1px solid var(--t-color-border-faint);
     border-radius: 8px;
 }
 
 .t-save-mode-section>label {
     display: block;
-    color: #cbd5e0;
+    color: var(--t-color-dialog-label);
     font-weight: 500;
     font-size: 0.9em;
     margin-bottom: 12px;
@@ -2145,95 +1709,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
     display: flex;
     flex-direction: column;
     gap: 10px;
-}
-
-.t-radio-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.t-radio-label:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.15);
-}
-
-.t-radio-label input[type="radio"] {
-    width: 18px;
-    height: 18px;
-    margin: 0;
-    margin-top: 2px;
-    cursor: pointer;
-    accent-color: #90cdf4;
-}
-
-.t-radio-label input[type="radio"]:checked+span {
-    color: #90cdf4;
-}
-
-.t-radio-label span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #e2e8f0;
-    font-weight: 500;
-    font-size: 0.95em;
-}
-
-.t-radio-label span i {
-    font-size: 0.9em;
-    width: 16px;
-    text-align: center;
-}
-
-.t-radio-label small {
-    display: block;
-    color: #718096;
-    font-size: 0.8em;
-    margin-top: 4px;
-    margin-left: 28px;
-}
-
-/* 选中状态 */
-.t-radio-label:has(input[type="radio"]:checked) {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
-}
-
-/* 替换模式 - 橙色 */
-.t-radio-label:has(input[value="replace"]:checked) {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.3);
-}
-
-.t-radio-label:has(input[value="replace"]:checked) span {
-    color: #f59e0b;
-}
-
-/* 追加模式 - 绿色 */
-.t-radio-label:has(input[value="append"]:checked) {
-    background: rgba(72, 187, 120, 0.1);
-    border-color: rgba(72, 187, 120, 0.3);
-}
-
-.t-radio-label:has(input[value="append"]:checked) span {
-    color: #48bb78;
-}
-
-/* 前置模式 - 蓝色 */
-.t-radio-label:has(input[value="prepend"]:checked) {
-    background: rgba(144, 205, 244, 0.1);
-    border-color: rgba(144, 205, 244, 0.3);
-}
-
-.t-radio-label:has(input[value="prepend"]:checked) span {
-    color: #90cdf4;
 }
 
 /* 移动端适配 */
@@ -2251,14 +1726,6 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         margin-top: 12px;
     }
 
-    .t-radio-label {
-        padding: 10px;
-    }
-
-    .t-radio-label small {
-        margin-left: 0;
-        margin-top: 6px;
-    }
 }
 
 /* ========== 增量向量化状态样式 ========== */
@@ -2271,13 +1738,13 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-incremental-status.t-status-new {
-    background: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: var(--t-color-warning-veil-subtle);
+    border: 1px solid var(--t-color-warning-border-subtle);
 }
 
 .t-incremental-status.t-status-ok {
-    background: rgba(72, 187, 120, 0.1);
-    border: 1px solid rgba(72, 187, 120, 0.3);
+    background: var(--t-color-success-veil-subtle);
+    border: 1px solid var(--t-color-success-border-subtle);
 }
 
 .t-incremental-info {
@@ -2288,19 +1755,19 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-incremental-status.t-status-new .t-incremental-info {
-    color: #f59e0b;
+    color: var(--t-color-warning);
 }
 
 .t-incremental-status.t-status-new .t-incremental-info i {
-    color: #f59e0b;
+    color: var(--t-color-warning);
 }
 
 .t-incremental-status.t-status-ok .t-incremental-info {
-    color: #48bb78;
+    color: var(--t-color-success);
 }
 
 .t-incremental-status.t-status-ok .t-incremental-info i {
-    color: #48bb78;
+    color: var(--t-color-success);
 }
 
 .t-incremental-info strong {
@@ -2308,26 +1775,8 @@ input[list]:hover::-webkit-calendar-picker-indicator {
 }
 
 .t-incremental-info small {
-    color: #718096;
+    color: var(--t-color-text-cool-muted);
     font-size: 0.85em;
-}
-
-/* 构建索引按钮组 */
-.t-build-index-buttons {
-    display: flex;
-    gap: 10px;
-    width: 100%;
-}
-
-.t-build-index-buttons .t-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.t-build-index-buttons .t-btn-primary {
-    flex: 1;
 }
 
 /* 移动端适配 */
@@ -2341,11 +1790,93 @@ input[list]:hover::-webkit-calendar-picker-indicator {
         font-size: 0.85em;
     }
 
-    .t-build-index-buttons {
-        flex-direction: column;
-    }
+}
 
-    .t-build-index-buttons .t-btn {
-        width: 100%;
-    }
+/* ========== 原始响应弹窗（showRawResponseDialog）==========
+   以下规则原为 loreReviewWindow.js 里的内联 style（Phase 5b-4 迁出）。
+   弹窗外壳尺寸用 ID 定位，沿用本文件末尾 #t-prompt-view-dialog 的既有做法：
+   dialog.css 刻意不提供 .t-dialog-box 的尺寸修饰类（理由见该文件注释）。 */
+#t-raw-response-dialog .t-dialog-box {
+    max-width: 800px;
+    max-height: 80vh;
+}
+
+.t-raw-error-banner {
+    padding: 15px;
+    background: rgb(var(--t-accent-error-rgb) / .1);
+    border-bottom: 1px solid rgb(var(--t-accent-error-rgb) / .3);
+}
+
+.t-raw-error-banner i,
+.t-raw-error-banner span {
+    color: rgb(var(--t-accent-error-rgb));
+}
+
+.t-raw-section {
+    padding: 15px;
+}
+
+.t-raw-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.t-raw-meta-label {
+    color: var(--t-color-text-muted);
+    font-size: 0.9em;
+}
+
+/* ⚠ 与 .t-prompt-pre 高度相似但**不可合并**：边框色（var(--t-color-border) vs #333）、
+   字号（0.9em vs 0.85em）、行高（1.5 vs 1.6）、max-height（50vh vs 45vh）都不同，
+   且本类刻意**不设** margin —— 原内联 style 没有 margin:0，<pre> 保留 UA 默认外边距。 */
+.t-raw-pre {
+    background: rgb(var(--t-glass-pre-rgb));
+    border: 1px solid var(--t-color-border);
+    border-radius: 6px;
+    padding: 15px;
+    max-height: 50vh;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+    color: var(--t-color-text-soft);
+    line-height: 1.5;
+}
+
+/* ========== 提示词预览弹窗（showPromptPreviewDialog）==========
+   同为 Phase 5b-4 从内联 style 迁出。 */
+#t-prompt-view-dialog .t-dialog-box {
+    max-width: 900px;
+    max-height: 85vh;
+}
+
+.t-prompt-copy-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* 统计项图标的状态色。原先是 JS 三元表达式直接写进 style，现改为切类。
+   ⚠ 刻意保留 #2ecc71 / #e74c3c / #888 原值。本文件整体尚未 token 化
+   （通篇 #90cdf4 / #a0aec0 / #e2e8f0 / #1a1a2e），此处单独换成
+   --t-color-success / --t-color-danger 会只改这三个图标的颜色而与全文不一致。
+   归并留给 Phase 6，连同本文件其余字面量一起决定。交接文档 §5a 有同样结论。 */
+.t-stat-item i.t-stat-ok {
+    color: rgb(var(--t-accent-green-vivid-rgb));
+}
+
+.t-stat-item i.t-stat-bad {
+    color: rgb(var(--t-accent-error-rgb));
+}
+
+.t-stat-item i.t-stat-none {
+    color: var(--t-color-text-muted);
+}
+
+/* Embedding 连接测试的结果文字。原为 loreReviewWindow.js:285 的内联 style。 */
+#t-lore-embed-test-result {
+    font-size: 0.82em;
+    color: var(--t-glass-text-faint);
 }

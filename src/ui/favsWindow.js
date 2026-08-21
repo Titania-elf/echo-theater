@@ -6,6 +6,124 @@ import { getContextData } from "../core/context.js";
 import { parseMeta, getSnippet, renderToShadowDOMReal, extractFromShadowDOM, canUseShadowDOM, detectInteractiveContent, openInNewWindow, exportAsHtmlFile } from "../utils/helpers.js";
 import { updateFavButtonUI } from "./mainWindow.js";
 import { getContinuationRoundsForFav } from "../core/api.js";
+import {
+    isFavsMigrated,
+    listFavsForUi,
+    ensureFavBody,
+    upsertFav,
+    patchFavIndexEntry,
+    removeFavsByIds,
+    getFullFavById
+} from "../core/favsStore.js";
+import { TitaniaLogger } from "../core/logger.js";
+
+/* ------------------------------------------------------------------ *
+ * 收藏读写的统一入口
+ *
+ * 三个阶段用的是同一份代码，靠两个条件自然分流：
+ *   搬家前     —— data.favs 存在、索引不存在 → 只动 data.favs（与老行为完全一致）
+ *   搬家后未收尾 —— 两者都存在              → 双写，data.favs 仍是权威源
+ *   收尾后     —— data.favs 已删、索引存在   → 只动文件存储
+ * 所以不需要在调用点区分模式，也不会留下「等收尾时再删一遍」的过渡代码。
+ * ------------------------------------------------------------------ */
+
+/**
+ * 取 data.favs，并把「已搬家 + favs 是空数组」当作不存在。
+ *
+ * 为什么需要这个判断：defaultSettings 里仍有 `favs: []`，收尾把该键删掉之后，
+ * 任何一次「把默认值合并回来」的操作都会让它复活成空数组。若把那个空数组当真，
+ * 去重会失效、写入会往它里面塞、列表会显示为空。
+ *
+ * 代价（明确记录）：搬家后若用户把收藏全删光再新增，这一轮不会写进 data.favs，
+ * 此时退回旧版插件会丢掉新增的那几条。取舍理由是反面更糟 ——
+ * 误信伪空数组会让 176 条收藏在界面上直接消失。
+ *
+ * @returns {object[]|null}
+ */
+function getLegacyFavs() {
+    const data = getExtData();
+    if (!Array.isArray(data.favs)) return null;
+    if (data.favs.length === 0 && isFavsMigrated()) return null;
+    return data.favs;
+}
+
+/** 写入 / 更新一条收藏 */
+async function putFav(fav) {
+    const legacy = getLegacyFavs();
+    if (legacy) {
+        const at = legacy.findIndex(x => String(x?.id) === String(fav.id));
+        if (at >= 0) legacy[at] = fav;
+        else legacy.unshift(fav);
+        saveExtData();
+    }
+    if (isFavsMigrated()) {
+        try {
+            await upsertFav(fav);
+        } catch (e) {
+            TitaniaLogger.error(`收藏 ${fav?.id} 写入文件存储失败`, e);
+            // 收尾后文件存储就是唯一的家，失败必须让用户知道内容没保存住
+            const fatal = !legacy;
+            if (window.toastr) {
+                if (fatal) toastr.error(`收藏保存失败：${e?.message || String(e)}`, "Titania");
+                else toastr.warning("收藏已保存，但文件存储同步失败，详见控制台", "Titania");
+            }
+            if (fatal) throw e;
+        }
+    }
+}
+
+/** 删除若干条收藏 */
+async function deleteFavs(ids) {
+    const wanted = new Set((Array.isArray(ids) ? ids : [ids]).map(id => String(id)));
+    if (wanted.size === 0) return;
+
+    const data = getExtData();
+    const legacy = getLegacyFavs();
+    if (legacy) {
+        const before = legacy.length;
+        data.favs = legacy.filter(f => !wanted.has(String(f?.id)));
+        if (data.favs.length !== before) saveExtData();
+    }
+    if (isFavsMigrated()) {
+        try {
+            await removeFavsByIds([...wanted]);
+        } catch (e) {
+            TitaniaLogger.error("删除同步到文件存储失败", e);
+            if (window.toastr) toastr.warning("删除未能同步到文件存储，详见控制台", "Titania");
+        }
+    }
+}
+
+/** 取一条完整收藏（含正文），供写入路径修改后再存回 */
+async function loadFavForWrite(id) {
+    const legacy = getLegacyFavs();
+    if (legacy) return legacy.find(x => String(x?.id) === String(id)) || null;
+    return await getFullFavById(id);
+}
+
+/** 列出全部收藏的元数据，供去重判断（不含正文） */
+function listFavMetaForDedup() {
+    return getLegacyFavs() || listFavsForUi() || [];
+}
+
+/**
+ * 取收藏夹要用的列表。已搬家就读索引（不含正文），否则退回 data.favs。
+ * 双写期间两边条数不一致说明漂移过，此时退回 data.favs 保证看到的是真数据。
+ */
+function resolveFavsForWindow() {
+    const legacy = getLegacyFavs();
+    const indexed = listFavsForUi();
+    if (!indexed) return legacy || [];
+    if (!legacy) return indexed;
+
+    if (indexed.length !== legacy.length) {
+        TitaniaLogger.warn(
+            `收藏索引与 data.favs 条数不一致（索引 ${indexed.length} / 实际 ${legacy.length}），本次退回读 data.favs`
+        );
+        return legacy;
+    }
+    return indexed;
+}
 
 function getCurrentAvatarSrc() {
     let avatarSrc = null;
@@ -426,6 +544,44 @@ function isSameChainSession(favEntry, scriptId, branchKey, currentItems) {
 }
 
 /**
+ * 在候选里找同一个剧场会话。
+ *
+ * 快路径只看 branchKey，索引里就有，不必读正文。只有两边 branchKey 缺失时
+ * 才退回比对首段正文 —— 那需要正文，所以先用「同 scriptId + 是 chain +
+ * branchKey 缺失」把候选缩到通常个位数，再逐个补齐正文，不会退化成全量加载。
+ *
+ * @param {object[]} favMeta 全部收藏的元数据
+ * @param {string} scriptId
+ * @param {string} branchKey
+ * @param {object[]} currentItems
+ * @returns {Promise<object|null>}
+ */
+async function findSameChainSession(favMeta, scriptId, branchKey, currentItems) {
+    const normalizedBranchKey = String(branchKey || "").trim();
+    const sameScript = favMeta.filter(f =>
+        f?.type === "chain" && String(f.scriptId || "") === String(scriptId || ""));
+
+    // 快路径：两边都有 branchKey
+    if (normalizedBranchKey) {
+        const byBranch = sameScript.find(f => String(f.branchKey || "").trim() === normalizedBranchKey);
+        if (byBranch) return byBranch;
+    }
+
+    // 慢路径：只有 branchKey 缺失的候选才需要读正文
+    const needsBody = sameScript.filter(f => !String(f.branchKey || "").trim());
+    for (const candidate of needsBody) {
+        try {
+            await ensureFavBody(candidate);
+        } catch (e) {
+            TitaniaLogger.warn(`去重比对时读不出收藏 ${candidate?.id} 的正文，跳过该候选`);
+            continue;
+        }
+        if (isSameChainSessionByBaseHtml(candidate, scriptId, currentItems)) return candidate;
+    }
+    return null;
+}
+
+/**
  * 保存当前剧本会话为分组收藏（首次生成 + 全部续写）
  */
 export async function saveContinuationChainFavorite() {
@@ -491,9 +647,13 @@ export async function saveContinuationChainFavorite() {
     const chainSignature = buildChainSignature(scriptId, normalizedRounds);
 
     const data = getExtData();
-    if (!Array.isArray(data.favs)) data.favs = [];
+    // 搬家前需要保证数组存在；收尾后 data.favs 已删除，此时由文件存储承载，不再重建它
+    if (!Array.isArray(data.favs) && !isFavsMigrated()) data.favs = [];
 
-    const duplicated = data.favs.find(f => f?.type === "chain" && f?.chainSignature === chainSignature);
+    // 去重只看元数据，不必把 176 条正文全读回来
+    const favMeta = listFavMetaForDedup();
+
+    const duplicated = favMeta.find(f => f?.type === "chain" && f?.chainSignature === chainSignature);
     if (duplicated) {
         GlobalState.lastFavId = duplicated.id;
         syncFavIdToCurrentHistory(duplicated.id);
@@ -507,32 +667,36 @@ export async function saveContinuationChainFavorite() {
     const now = Date.now();
 
     const activeFavId = Number(GlobalState.lastFavId) || null;
-    let existingChain = null;
+    let existingMeta = null;
     if (activeFavId) {
-        existingChain = data.favs.find(f => f?.type === "chain" && Number(f?.id) === activeFavId) || null;
+        existingMeta = favMeta.find(f => f?.type === "chain" && Number(f?.id) === activeFavId) || null;
     }
-    if (!existingChain) {
-        existingChain = data.favs.find(f => isSameChainSession(f, scriptId, branchKey, items)) || null;
+    if (!existingMeta) {
+        existingMeta = await findSameChainSession(favMeta, scriptId, branchKey, items);
     }
 
-    if (existingChain) {
-        existingChain.title = `${scriptName} - ${ctx.charName}`;
-        existingChain.charName = ctx.charName;
-        existingChain.scriptName = scriptName;
-        existingChain.scriptId = scriptId;
-        existingChain.date = new Date(now).toLocaleString();
-        existingChain.html = mergedHtml;
-        existingChain.avatar = avatarSrc;
-        existingChain.branchKey = branchKey;
-        existingChain.chainSignature = chainSignature;
-        existingChain.items = items;
+    if (existingMeta) {
+        // 收尾后元数据里没有正文，要先把完整对象取回来再改
+        const existingChain = await loadFavForWrite(existingMeta.id);
+        if (existingChain) {
+            existingChain.title = `${scriptName} - ${ctx.charName}`;
+            existingChain.charName = ctx.charName;
+            existingChain.scriptName = scriptName;
+            existingChain.scriptId = scriptId;
+            existingChain.date = new Date(now).toLocaleString();
+            existingChain.html = mergedHtml;
+            existingChain.avatar = avatarSrc;
+            existingChain.branchKey = branchKey;
+            existingChain.chainSignature = chainSignature;
+            existingChain.items = items;
 
-        saveExtData();
-        GlobalState.lastFavId = existingChain.id;
-        syncFavIdToCurrentHistory(existingChain.id);
-        updateFavButtonUI();
-        if (window.toastr) toastr.success(`已更新当前剧场分组收藏（共 ${items.length} 段）`);
-        return true;
+            await putFav(existingChain);
+            GlobalState.lastFavId = existingChain.id;
+            syncFavIdToCurrentHistory(existingChain.id);
+            updateFavButtonUI();
+            if (window.toastr) toastr.success(`已更新当前剧场分组收藏（共 ${items.length} 段）`);
+            return true;
+        }
     }
 
     const entry = {
@@ -550,8 +714,7 @@ export async function saveContinuationChainFavorite() {
         items
     };
 
-    data.favs.unshift(entry);
-    saveExtData();
+    await putFav(entry);
 
     GlobalState.lastFavId = entry.id;
     syncFavIdToCurrentHistory(entry.id);
@@ -563,28 +726,19 @@ export async function saveContinuationChainFavorite() {
 
 /**
  * 取消收藏功能
- * @returns {boolean} 是否成功取消
+ * @returns {Promise<boolean>} 是否成功取消
  */
-export function unsaveFavorite() {
+export async function unsaveFavorite() {
     if (!GlobalState.lastFavId) {
         if (window.toastr) toastr.warning("当前内容未收藏");
         return false;
     }
 
-    const data = getExtData();
-    if (!data.favs) {
-        GlobalState.lastFavId = null;
-        return false;
-    }
-
     const targetFavId = String(GlobalState.lastFavId);
+    const existed = listFavMetaForDedup().some(f => String(f?.id) === targetFavId);
 
-    // 从收藏列表中删除（兼容 number/string id）
-    const originalLength = data.favs.length;
-    data.favs = data.favs.filter(f => String(f?.id) !== targetFavId);
-
-    if (data.favs.length < originalLength) {
-        saveExtData();
+    if (existed) {
+        await deleteFavs([targetFavId]);
         GlobalState.lastFavId = null;
 
         // 同步收藏 ID 到当前查看的历史记录项
@@ -612,7 +766,7 @@ export function openFavsWindow() {
     setFavsWindowOpen(true);
     $("#t-main-view").hide();
     const data = getExtData();
-    const favs = data.favs || [];
+    const favs = resolveFavsForWindow();
 
     let currentFilteredList = [];
     let currentIndex = -1;
@@ -661,32 +815,56 @@ export function openFavsWindow() {
 
     // 构建角色索引，优先使用独立的 charName 字段（兼容旧数据）
     const charIndex = new Set();
-    favs.forEach(f => {
+
+    /** 给一条收藏补上卡片渲染要用的 _meta（索引条目与旧对象都走这里） */
+    const applyFavMeta = (f) => {
         // 优先使用独立存储的 charName，否则从 title 解析（兼容旧数据）
         if (f.charName) {
             f._meta = {
                 char: f.charName,
-                script: f.scriptName || f.title.split(' - ')[0] || f.title
+                script: f.scriptName || String(f.title || "").split(' - ')[0] || f.title
             };
         } else {
             // 兼容旧数据：从 title 解析
             f._meta = parseMeta(f.title || "");
         }
+        return f;
+    };
+
+    /**
+     * 把本地 favs 数组与存储重新对齐，并保证每条都带 _meta。
+     *
+     * 原来这里是裸的 favs.splice(0, favs.length, ...d.favs) —— 那时 favs 与
+     * data.favs 是同一批对象引用，_meta 早在开窗时就挂上了，所以直接塞回去没问题。
+     * 现在 favs 可能来自索引（另一批对象），塞进 data.favs 的对象就会是
+     * 从没设过 _meta 的，卡片渲染读 item._meta.char 会直接抛错。
+     * 所以统一走这个函数，并顺带重建角色下拉的候选集。
+     */
+    const resyncLocalFavs = () => {
+        const next = resolveFavsForWindow().map(applyFavMeta);
+        favs.splice(0, favs.length, ...next);
+        charIndex.clear();
+        favs.forEach(f => charIndex.add(f._meta.char));
+        return favs;
+    };
+
+    favs.forEach(f => {
+        applyFavMeta(f);
         charIndex.add(f._meta.char);
     });
     const charList = ["全部角色", ...[...charIndex].sort()];
 
     // HTML 结构 (样式见 css/favs.css)
     const html = `
-    <div class="t-box t-fav-container" id="t-favs-view">
-        <div class="t-header" style="flex-shrink:0;">
+    <div class="t-box t-root t-fav-container" id="t-favs-view">
+        <div class="t-header t-shrink-0">
             <span class="t-title-main">📖 收藏画廊</span>
             <span class="t-close" id="t-fav-close">&times;</span>
         </div>
         
         <!-- 普通工具栏：抽屉内为同一套真实控件，桌面端 display:contents 平铺，移动端折叠为下拉面板 -->
         <div class="t-fav-toolbar" id="t-fav-toolbar-normal">
-            <i class="fa-solid fa-filter t-fav-filter-icon" style="color:#666;"></i>
+            <i class="fa-solid fa-filter t-fav-filter-icon" style="color:var(--t-color-text-faint);"></i>
             <select id="t-fav-filter-char" class="t-fav-filter-select">
                 ${charList.map(c => `<option value="${c}">${c}</option>`).join('')}
             </select>
@@ -710,10 +888,10 @@ export function openFavsWindow() {
             <div style="display:flex; align-items:center; gap:10px; flex-grow:1;">
                 <button id="t-btn-select-all" class="t-tool-btn"><i class="fa-regular fa-square-check"></i> 全选</button>
                 <button id="t-btn-deselect-all" class="t-tool-btn"><i class="fa-regular fa-square"></i> 取消全选</button>
-                <span id="t-edit-count" style="color:#888; font-size:0.9em;">已选择 0 项</span>
+                <span id="t-edit-count" style="color:var(--t-color-text-muted); font-size:0.9em;">已选择 0 项</span>
                 <div id="t-edit-pager" style="display:none; align-items:center; gap:8px; margin-left:8px;">
                     <button id="t-edit-page-prev" class="t-tool-btn" title="上一页"><i class="fa-solid fa-chevron-left"></i></button>
-                    <span id="t-edit-page-stat" style="color:#8f949b; font-size:0.85em; min-width:180px; text-align:center;">第 1/1 页</span>
+                    <span id="t-edit-page-stat">第 1/1 页</span>
                     <button id="t-edit-page-next" class="t-tool-btn" title="下一页"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
             </div>
@@ -733,10 +911,10 @@ export function openFavsWindow() {
         <div class="t-fav-reader" id="t-fav-reader">
             <div class="t-read-header">
                 <div style="display:flex; align-items:center; gap:15px; overflow:hidden; flex-grow:1;">
-                    <i class="fa-solid fa-chevron-left" id="t-read-back" style="cursor:pointer; font-size:1.2em; padding:5px; color:#aaa;"></i>
+                    <i class="fa-solid fa-chevron-left" id="t-read-back" style="cursor:pointer; font-size:1.2em; padding:5px; color:var(--t-color-text-secondary);"></i>
                     <div style="display:flex; flex-direction:column; justify-content:center; overflow:hidden;">
-                        <div id="t-read-meta" class="t-read-meta-text" style="font-weight:bold; color:#ccc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
-                        <div id="t-read-index" style="font-size:0.75em; color:#666;">0 / 0</div>
+                        <div id="t-read-meta" class="t-read-meta-text" style="font-weight:bold; color:var(--t-color-text-label); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+                        <div id="t-read-index" style="font-size:0.75em; color:var(--t-color-text-faint);">0 / 0</div>
                     </div>
                 </div>
                 <div class="t-read-actions">
@@ -1097,7 +1275,8 @@ export function openFavsWindow() {
         const useLite = options.lite === true;
         const isChain = item?.type === "chain";
         const chainItems = Array.isArray(item?.items) ? item.items : [];
-        const chainCount = chainItems.length;
+        // 正文按需加载后 items 可能还没到，段数用索引里的 itemCount 兜底
+        const chainCount = chainItems.length || (Number(item?.itemCount) || 0);
         const snippet = useLite ? "内容预览加载中..." : getCachedSnippet(item);
         const charName = item._meta.char;
         let bgUrl = "";
@@ -1393,11 +1572,24 @@ export function openFavsWindow() {
     let currentViewingHtml = "";
     let currentViewingTitle = "";
 
-    const loadReaderItem = (index) => {
+    const loadReaderItem = async (index) => {
         if (index < 0 || index >= currentFilteredList.length) return;
         currentIndex = index;
         const item = currentFilteredList[index];
         currentFavId = item.id;
+
+        // 唯一需要「去取一趟」的地方：正文住在独立文件里，列表里只有元数据。
+        // 读失败必须显式报错并中止 —— 渲染成空白会让用户以为内容丢了，进而去删掉它。
+        try {
+            await ensureFavBody(item);
+        } catch (e) {
+            TitaniaLogger.error(`收藏 ${item?.id} 的正文读取失败`, e);
+            if (window.toastr) toastr.error(`正文读取失败：${e?.message || String(e)}`, "Titania");
+            return;
+        }
+
+        // 打开阅读器期间用户可能已经翻到别处，晚到的结果不许覆盖当前画面
+        if (currentIndex !== index) return;
 
         if (item?.type === "chain") {
             // 使用实时重建的折叠布局（带内联样式）
@@ -1644,7 +1836,7 @@ export function openFavsWindow() {
             return;
         }
 
-        loadReaderItem(itemIndex);
+        void loadReaderItem(itemIndex);
     });
 
     // 编辑模式相关事件
@@ -1665,31 +1857,16 @@ export function openFavsWindow() {
         updateSelectionCount();
     });
 
-    $("#t-btn-delete-selected").on("click", () => {
+    $("#t-btn-delete-selected").on("click", async () => {
         const count = selectedIds.size;
         if (count === 0) return;
 
         if (confirm(`确定删除选中的 ${count} 条收藏？此操作不可撤销。`)) {
-            const d = getExtData();
-            d.favs = d.favs.filter(x => !selectedIds.has(x.id));
-            saveExtData();
+            const removedIds = [...selectedIds];
+            await deleteFavs(removedIds);
 
-            // 同步更新本地 favs 数组
-            favs.splice(0, favs.length, ...d.favs);
-
-            // 重建角色索引（使用独立的 charName 字段）
-            charIndex.clear();
-            favs.forEach(f => {
-                if (f.charName) {
-                    f._meta = {
-                        char: f.charName,
-                        script: f.scriptName || f.title.split(' - ')[0] || f.title
-                    };
-                } else {
-                    f._meta = parseMeta(f.title || "");
-                }
-                charIndex.add(f._meta.char);
-            });
+            // 同步更新本地 favs 数组并重建角色索引
+            resyncLocalFavs();
 
             selectedIds.clear();
             updateSelectionCount();
@@ -1711,8 +1888,8 @@ export function openFavsWindow() {
         const touchEndX = e.originalEvent.changedTouches[0].clientX; const touchEndY = e.originalEvent.changedTouches[0].clientY;
         const diffX = touchEndX - touchStartX; const diffY = touchEndY - touchStartY;
         if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 2) {
-            if (diffX > 0) { if (currentIndex > 0) loadReaderItem(currentIndex - 1); }
-            else { if (currentIndex < currentFilteredList.length - 1) loadReaderItem(currentIndex + 1); }
+            if (diffX > 0) { if (currentIndex > 0) void loadReaderItem(currentIndex - 1); }
+            else { if (currentIndex < currentFilteredList.length - 1) void loadReaderItem(currentIndex + 1); }
         }
     });
 
@@ -1768,7 +1945,7 @@ export function openFavsWindow() {
 
             const sheetHtml = `
                 <div id="t-fav-export-sheet" class="t-fav-export-sheet-backdrop">
-                    <div class="t-fav-export-sheet">
+                    <div class="t-fav-export-sheet t-root">
                         <div class="t-fav-export-sheet-title">图片导出选项</div>
                         <div class="t-fav-export-sheet-desc">请选择导出时是否对 User 名称打码</div>
 
@@ -1931,14 +2108,17 @@ export function openFavsWindow() {
 
         const trimmedTitle = newTitle.trim();
 
-        // 更新存储
+        // 更新存储。改名只动元数据，正文文件不必重写
         const d = getExtData();
-        const targetFav = d.favs.find(x => x.id === currentFavId);
+        const targetFav = Array.isArray(d.favs) ? d.favs.find(x => x.id === currentFavId) : null;
+        const indexEntry = isFavsMigrated() ? patchFavIndexEntry(currentFavId, { title: trimmedTitle }) : null;
         if (targetFav) {
             targetFav.title = trimmedTitle;
             // 注意：不修改 charName 和 scriptName，保持角色筛选功能正常
             saveExtData();
+        }
 
+        if (targetFav || indexEntry) {
             // 同步更新本地 favs 数组中的对应项
             const localFav = favs.find(x => x.id === currentFavId);
             if (localFav) {
@@ -1960,19 +2140,18 @@ export function openFavsWindow() {
         }
     });
 
-    $("#t-read-del-one").on("click", () => {
+    $("#t-read-del-one").on("click", async () => {
         if (confirm("确定删除此条收藏？")) {
-            const d = getExtData();
-            d.favs = d.favs.filter(x => x.id !== currentFavId);
-            saveExtData();
-            favs.splice(0, favs.length, ...d.favs);
+            const removedId = currentFavId;
+            await deleteFavs([removedId]);
+            resyncLocalFavs();
             scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
             if (currentFilteredList.length === 0) {
                 $("#t-fav-reader").removeClass("show");
             } else {
                 let newIdx = currentIndex;
                 if (newIdx >= currentFilteredList.length) newIdx = currentFilteredList.length - 1;
-                loadReaderItem(newIdx);
+                void loadReaderItem(newIdx);
             }
         }
     });
@@ -2018,12 +2197,13 @@ export function openFavsWindow() {
         syncToggleMetaButton(shouldOpen);
     });
 
-    $("#t-read-del-segment").on("click", () => {
+    $("#t-read-del-segment").on("click", async () => {
         if (!currentFavId) return;
 
         const currentItem = currentFilteredList[currentIndex];
         if (!currentItem || currentItem.type !== "chain") return;
 
+        // 能走到这里说明阅读器已经打开过这条，正文早在 loadReaderItem 里补齐了
         const chainItems = Array.isArray(currentItem.items) ? currentItem.items : [];
         if (chainItems.length === 0) {
             if (window.toastr) toastr.warning("该分组没有可删除的段落");
@@ -2050,40 +2230,46 @@ export function openFavsWindow() {
         const removeRound = Number(target?.round) || (removeIndex + 1);
         if (!confirm(`确定删除第 ${removeRound} 段吗？`)) return;
 
-        const d = getExtData();
-        const targetFav = d.favs.find(x => x.id === currentFavId);
+        const targetFav = await loadFavForWrite(currentFavId);
         if (!targetFav || targetFav.type !== "chain") return;
 
         if (!Array.isArray(targetFav.items)) targetFav.items = [];
         targetFav.items.splice(removeIndex, 1);
 
         if (targetFav.items.length === 0) {
-            d.favs = d.favs.filter(x => x.id !== currentFavId);
-            saveExtData();
-            favs.splice(0, favs.length, ...d.favs);
+            await deleteFavs([currentFavId]);
+            resyncLocalFavs();
             scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
 
             if (currentFilteredList.length === 0) {
                 $("#t-fav-reader").removeClass("show");
             } else {
                 const newIdx = Math.min(currentIndex, currentFilteredList.length - 1);
-                loadReaderItem(newIdx);
+                void loadReaderItem(newIdx);
             }
 
             if (window.toastr) toastr.success("已删除该段，分组已清空并移除");
             return;
         }
 
+        // 正文变了，要重写正文文件并更新索引（摘要 / 段数都会跟着变）
         targetFav.html = buildChainMergedHtml(targetFav.items, { withStyles: true });
-        saveExtData();
+        await putFav(targetFav);
 
         const localFav = favs.find(x => x.id === currentFavId);
         if (localFav) {
             localFav.items = targetFav.items;
             localFav.html = targetFav.html;
+            localFav.itemCount = targetFav.items.length;
+            // 正文已就地更新，别让 ensureFavBody 再去文件里拉一份旧的盖掉。
+            // upsertFav 刚把 rev 加了 1，本地的 _rev 已经过期，留着会读到旧版本。
+            localFav._bodyLoaded = true;
+            // 摘要要按新正文重算，清掉 memo
+            delete localFav._snippetText;
+            delete localFav._instructionText;
         }
 
-        loadReaderItem(currentIndex);
+        void loadReaderItem(currentIndex);
         scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
         if (window.toastr) toastr.success(`已删除第 ${removeRound} 段`);
     });
@@ -2140,7 +2326,8 @@ export function openCharImageManager(onCloseCallback) {
     if (!data.character_map) data.character_map = {};
 
     // 1. 提取所有收藏中出现过的角色名（优先使用独立字段）
-    const favs = data.favs || [];
+    // 走统一入口：收尾后 data.favs 已不存在，角色名要从索引里取
+    const favs = listFavMetaForDedup();
     const charNames = new Set();
     favs.forEach(f => {
         if (f.charName) {
@@ -2180,22 +2367,22 @@ export function openCharImageManager(onCloseCallback) {
 
     // HTML 结构 (样式见 css/favs.css)
     const html = `
-    <div class="t-img-mgr-overlay" id="t-img-mgr">
-        <div class="t-img-mgr-box">
+    <div class="t-dialog-overlay t-dialog-overlay--contained t-img-mgr-overlay t-root" id="t-img-mgr">
+        <div class="t-dialog-panel t-img-mgr-box">
             <div class="t-header">
                 <span class="t-title-main">🖼️ 角色图鉴管理</span>
                 <span class="t-close" id="t-img-close">&times;</span>
             </div>
-            <div style="padding:10px 15px; background:#2a2a2a; color:#888; font-size:0.85em; border-bottom:1px solid #333;">
+            <div style="padding:10px 15px; background:var(--t-color-surface-raised); color:var(--t-color-text-muted); font-size:0.85em; border-bottom:1px solid var(--t-color-border);">
                 <i class="fa-solid fa-circle-info"></i> 设置图片后，该角色所有收藏卡片将自动使用此背景。优先读取“图鉴设置”，其次读取“单卡数据”。
             </div>
             <div class="t-img-list" id="t-img-list-container"></div>
-            <div style="padding:15px; border-top:1px solid #333; text-align:right;">
+            <div style="padding:15px; border-top:1px solid var(--t-color-border); text-align:right;">
                 <button class="t-btn primary" id="t-img-save">💾 保存并应用</button>
             </div>
         </div>
         <!-- 隐藏的文件上传 input -->
-        <input type="file" id="t-img-upload-input" accept="image/*" style="display:none;">
+        <input class="is-hidden" type="file" id="t-img-upload-input" accept="image/*">
     </div>`;
 
     $("#t-favs-view").append(html);
@@ -2209,7 +2396,7 @@ export function openCharImageManager(onCloseCallback) {
         $list.empty();
 
         if (sortedChars.length === 0) {
-            $list.append('<div style="text-align:center; padding:30px; color:#555;">暂无角色数据，请先去收藏一些剧本吧~</div>');
+            $list.append('<div class="t-fav-char-empty">暂无角色数据，请先去收藏一些剧本吧~</div>');
             return;
         }
 
@@ -2229,7 +2416,7 @@ export function openCharImageManager(onCloseCallback) {
                         <button class="t-act-btn auto btn-auto-find" title="尝试从系统角色列表抓取头像" data-char="${char}"><i class="fa-solid fa-wand-magic-sparkles"></i> 自动</button>
                         <button class="t-act-btn btn-upload" title="上传本地图片" data-char="${char}"><i class="fa-solid fa-upload"></i></button>
                         <button class="t-act-btn btn-url" title="输入图片 URL" data-char="${char}"><i class="fa-solid fa-link"></i></button>
-                        ${hasImg ? `<button class="t-act-btn btn-clear" title="清除" data-char="${char}" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        ${hasImg ? `<button class="t-act-btn btn-clear" title="清除" data-char="${char}" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>` : ''}
                     </div>
                 </div>
             `);

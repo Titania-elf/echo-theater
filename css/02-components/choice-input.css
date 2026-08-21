@@ -1,0 +1,66 @@
+/* Native checkbox and radio inputs. Feature CSS owns surrounding layout only. */
+.t-root .t-choice-input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.t-root .t-choice-input--brand {
+    accent-color: var(--t-color-brand);
+}
+
+.t-root .t-choice-input--accent {
+    accent-color: var(--t-color-accent);
+}
+
+.t-root .t-choice-input--warning-muted {
+    accent-color: var(--t-color-warning-muted);
+}
+
+.t-root .t-choice-input--cyan-muted {
+    accent-color: var(--t-color-cyan-muted);
+}
+
+.t-root .t-choice-input--sm {
+    width: 14px;
+    height: 14px;
+}
+
+.t-root .t-choice-input--lg {
+    width: 18px;
+    height: 18px;
+}
+
+.t-root .t-choice-input--responsive-lg {
+    width: 18px;
+    height: 18px;
+}
+
+.t-root .t-choice-input--inline-gap {
+    margin-right: 6px;
+}
+
+.t-root .t-choice-input--inline-gap-md {
+    margin-right: 8px;
+}
+
+.t-root .t-choice-input:disabled {
+    cursor: not-allowed;
+}
+
+.t-root .t-choice-input--muted-disabled:disabled {
+    opacity: 0.5;
+}
+
+.t-root .t-choice-input--subdued-disabled:disabled {
+    opacity: 0.45;
+}
+
+@media screen and (max-width: 600px) {
+    .t-root .t-choice-input--responsive-lg {
+        width: 16px;
+        height: 16px;
+    }
+}

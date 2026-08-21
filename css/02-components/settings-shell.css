@@ -1,0 +1,151 @@
+/* ============================================================
+   02-components/settings-shell.css —— 设置界面外壳（侧边导航 + 标签 + 内容区）
+
+   四个界面共用这套外壳：设置窗口、细纲提示词管理器、
+   世界书设置对话框、改写设置浮层。它有两套表面语言：
+
+     .t-set-shell-*   中性灰 + 品牌金（设置窗口、细纲提示词管理器）
+     .t-set-glass-*   冷调玻璃 + 交互蓝（世界书设置、改写设置）
+
+   glass 是**叠加**在 shell 之上的修饰，不是替代 —— 元素要同时带两个类。
+   原因：glass 只覆盖 7 个属性，nav 的 flex-shrink / min-height / max-height /
+   overflow-x / overscroll-behavior / scrollbar-gutter / -webkit-overflow-scrolling
+   这 7 条一直是从中性基类继承的。这也正是迁移前的层叠结构
+   （settings.css 的裸类 + 各自 ID 作用域的覆盖）。
+
+   ── 为什么不直接沿用 `.t-set-body` / `.t-set-tab-btn` 这批类名 ──
+   会破掉现在通过的 A5：审计用「选择器最后一个复合段」判定组件类归属，
+   一旦 `.t-set-nav` 成为组件类，各 feature 的 @media 覆盖里那些
+   `border-*` / `background` 就都变成「feature 重定义组件类视觉属性」。
+   而那些 @media 覆盖**必须**留在 feature —— 四个界面的断点各不相同
+   （settings 600px、细纲/世界书 768px、改写 700px），组件层无法表达
+   「同一个组件在不同消费者处用不同断点」。归并断点属 Phase 7。
+
+   所以：组件层用新类名承载基础视觉，feature 层继续用 `.t-set-*` 做
+   响应式覆盖。元素上两套类名并存，与 4a-4 的 `.t-dialog-panel t-imp-box`、
+   4b-3 的 `.t-panel-header t-wi-header` 是同一个模式。
+
+   ── 仍留在 04-features/settings.css 的两条（不是遗漏）──
+   `.t-set-page` / `.t-set-page.active` 只有 `display: none` / `block`，
+   没有 glass 变体、没有重复、也没有任何 @media 覆盖它们，
+   搬进来只会多出 16 处标记改动而零收益。
+   ============================================================ */
+
+/* ── 中性灰 + 品牌金（基础）── */
+
+.t-set-shell-body {
+    flex-grow: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.t-set-shell-nav {
+    width: 160px;
+    background: var(--t-color-set-nav-surface);
+    border-right: 1px solid var(--t-color-border);
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
+}
+
+.t-set-shell-tab {
+    padding: 12px 20px;
+    color: var(--t-color-text-muted);
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.95em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.t-set-shell-tab:hover {
+    background: var(--t-color-set-tab-hover-surface);
+    color: var(--t-color-set-tab-hover-text);
+}
+
+.t-set-shell-tab.active {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-brand);
+    border-left: 3px solid var(--t-color-brand);
+    font-weight: bold;
+}
+
+.t-set-shell-content {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: var(--t-color-bg);
+}
+
+/* ── 冷调玻璃 + 交互蓝（修饰，必须叠在上面那套之上）──
+   声明顺序必须晚于 .t-set-shell-*：两者特异度相同，靠源码顺序决胜。 */
+
+.t-set-glass-body {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.t-set-glass-nav {
+    /* 宽度不在这里定：世界书设置是 170px、改写设置是 180px，
+       各自在 feature 层用 .t-set-nav 指定（width 是布局属性，不受 A5 限制）。 */
+    background: var(--t-glass-nav);
+    border-right: 1px solid var(--t-color-border-subtle);
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.t-set-glass-tab {
+    padding: 11px 14px;
+    color: var(--t-glass-tab-text);
+    cursor: pointer;
+    /* 保留 `all`：迁移前两处都是 `all 0.16s ease`，收成一处后 A20 反而 -1。
+       改成具体属性列表是行为变更（会少过渡若干属性），属 Phase 7 的 A20 清理。 */
+    transition: all 0.16s ease;
+    font-size: 0.86em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-left: 3px solid transparent;
+}
+
+.t-set-glass-tab:hover {
+    background: var(--t-glass-tab-hover-surface);
+    color: var(--t-glass-tab-text-hover);
+}
+
+.t-set-glass-tab.active {
+    color: var(--t-glass-tab-text-active);
+    background: var(--t-glass-tab-active-surface);
+    /* 用简写而非 border-left-color 长写：`.t-set-shell-tab.active` 的
+       `border-left: 3px solid var(--t-color-brand)` 与本条特异度相同(0,2,0)，
+       只靠源码顺序决胜。若这里只写长写，简写的 width/style 会来自金色那条、
+       color 来自本条 —— 结果虽然相同，但简写/长写交叉极易被后人改错。
+       迁移前的值是 `3px solid rgba(144,205,244,.86)`，此处逐字节等价。 */
+    border-left: 3px solid var(--t-glass-tab-active-border);
+    font-weight: 700;
+}
+
+.t-set-glass-content {
+    flex: 1;
+    min-width: 0;
+    padding: 14px;
+    overflow-y: auto;
+    /* --t-gradient-glass-wash 是 Phase 1 就为这个配方建好的 token
+       （注释写「现 4 处逐字节相同」），但一直没落地。这里是第一次真正使用：
+       双角洗色 + 不透明基底 var(--t-glass-body) = #12161d，与原值逐字节相等。 */
+    background: var(--t-gradient-glass-wash);
+}

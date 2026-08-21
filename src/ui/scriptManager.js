@@ -60,7 +60,7 @@ export function openScriptManager() {
 
     // HTML 结构 (样式见 css/manager.css)
     const html = `
-    <div class="t-box" id="t-mgr-view">
+    <div class="t-box t-root" id="t-mgr-view">
         <div class="t-header"><span class="t-title-main">📂 剧本资源管理</span><span class="t-close" id="t-mgr-close">&times;</span></div>
         <div class="t-mgr-body">
             <div class="t-mgr-sidebar" id="t-mgr-sidebar-desktop">
@@ -93,12 +93,12 @@ export function openScriptManager() {
                     <button id="t-mgr-workshop-btn" class="t-tool-btn" title="回声工坊"><i class="fa-solid fa-store"></i> 工坊</button>
                     <button id="t-mgr-import-btn" class="t-tool-btn" title="导入"><i class="fa-solid fa-file-import"></i></button>
                     <button id="t-mgr-export-btn" class="t-tool-btn" title="导出"><i class="fa-solid fa-file-export"></i></button>
-                    <button id="t-mgr-batch-toggle" class="t-tool-btn" style="border:1px solid #444;" title="批量管理">
+                    <button id="t-mgr-batch-toggle" class="t-tool-btn" style="border:1px solid var(--t-color-border-strong);" title="批量管理">
                         <i class="fa-solid fa-list-check"></i> 管理
                     </button>
                 </div>
                 <div class="t-mgr-overview" id="t-mgr-overview"></div>
-                <div class="t-mgr-header-row t-batch-elem" style="padding: 8px 15px; background: #2a2a2a; border-bottom: 1px solid #333; color: #ccc; font-size: 0.9em; flex-shrink:0;">
+                <div class="t-mgr-header-row t-batch-elem" style="padding: 8px 15px; background: var(--t-color-surface-raised); border-bottom: 1px solid var(--t-color-border); color: var(--t-color-text-label); font-size: 0.9em; flex-shrink:0;">
                     <label style="display:flex; align-items:center; cursor:pointer;">
                         <input type="checkbox" id="t-mgr-select-all" style="margin-right:10px;"> 全选当前列表
                     </label>
@@ -106,42 +106,42 @@ export function openScriptManager() {
                 <div class="t-mgr-list" id="t-mgr-list-container"></div>
                 <div class="t-mgr-footer-bar t-batch-elem">
                     <span id="t-batch-count-label">已选: 0</span>
-                    <button id="t-mgr-move-to" class="t-tool-btn" style="color:#bfa15f; border-color:#bfa15f;">📁 移动到</button>
-                    <button id="t-mgr-export-selected" class="t-tool-btn" style="color:#90cdf4; border-color:#90cdf4;">📤 导出</button>
-                    <button id="t-mgr-del-confirm" class="t-tool-btn" style="color:#ff6b6b; border-color:#ff6b6b;">🗑️ 删除</button>
+                    <button id="t-mgr-move-to" class="t-tool-btn" style="color:var(--t-color-brand); border-color:var(--t-color-brand);">📁 移动到</button>
+                    <button id="t-mgr-export-selected" class="t-tool-btn" style="color:var(--t-color-accent); border-color:var(--t-color-accent);">📤 导出</button>
+                    <button id="t-mgr-del-confirm" class="t-tool-btn" style="color:var(--t-color-danger); border-color:var(--t-color-danger);">🗑️ 删除</button>
                 </div>
             </div>
         </div>
         
-        <div id="t-imp-modal" class="t-imp-modal">
-            <div class="t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📥 导入剧本</h3>
+        <div id="t-imp-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">📥 导入剧本</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">存入分类:</span>
-                    <input id="t-imp-cat-m" list="t-cat-dl-m" class="t-input" placeholder="输入或选择分类 (可选)" style="width:100%;">
+                    <input id="t-imp-cat-m" list="t-cat-dl-m" class="t-input t-w-full" placeholder="输入或选择分类 (可选)">
                     <datalist id="t-cat-dl-m"></datalist>
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">选择文件 (.txt):</span>
-                    <div style="display:flex; gap:10px; align-items:center; background:#111; padding:5px; border-radius:4px; border:1px solid #333;">
-                        <input type="file" id="t-file-input-m" accept=".txt" style="display:none;">
+                    <div style="display:flex; gap:10px; align-items:center; background:var(--t-color-surface-well); padding:5px; border-radius:4px; border:1px solid var(--t-color-border);">
+                        <input class="is-hidden" type="file" id="t-file-input-m" accept=".txt">
                         <button id="t-btn-choose-file" class="t-btn" style="font-size:0.9em; padding:4px 10px;">📂 浏览文件...</button>
-                        <span id="t-file-name-label" style="font-size:0.85em; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">未选择文件</span>
+                        <span id="t-file-name-label" style="font-size:0.85em; color:var(--t-color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">未选择文件</span>
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-imp-cancel" class="t-btn" style="flex:1;">取消</button>
-                    <button id="t-imp-ok" class="t-btn primary" style="flex:1;">开始导入</button>
+                    <button id="t-imp-cancel" class="t-btn t-flex-1">取消</button>
+                    <button id="t-imp-ok" class="t-btn primary t-flex-1">开始导入</button>
                 </div>
             </div>
         </div>
         
-        <div id="t-export-modal" class="t-imp-modal">
-            <div class="t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📤 导出剧本</h3>
+        <div id="t-export-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">📤 导出剧本</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">导出范围:</span>
-                    <div style="background:#111; padding:10px; border-radius:4px; border:1px solid #333; display:flex; flex-direction:column; gap:8px;">
+                    <div style="background:var(--t-color-surface-well); padding:10px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; flex-direction:column; gap:8px;">
                         <label><input type="radio" name="exp-scope" value="all" checked> 导出全部用户剧本</label>
                         <label><input type="radio" name="exp-scope" value="category"> 导出指定分类</label>
                         <label><input type="radio" name="exp-scope" value="current"> 导出当前列表 (<span id="exp-current-count">0</span> 个)</label>
@@ -149,50 +149,50 @@ export function openScriptManager() {
                 </div>
                 <div class="t-imp-row" id="exp-cat-row" style="display:none;">
                     <span class="t-imp-label">选择分类:</span>
-                    <select id="t-exp-cat" class="t-input" style="width:100%;"></select>
+                    <select id="t-exp-cat" class="t-input t-w-full"></select>
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">导出格式:</span>
-                    <div style="background:#111; padding:5px; border-radius:4px; border:1px solid #333; display:flex; gap:15px;">
+                    <div style="background:var(--t-color-surface-well); padding:5px; border-radius:4px; border:1px solid var(--t-color-border); display:flex; gap:15px;">
                         <label><input type="radio" name="exp-format" value="txt" checked> TXT (纯文本)</label>
                         <label><input type="radio" name="exp-format" value="json"> JSON (结构化)</label>
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-exp-cancel" class="t-btn" style="flex:1;">取消</button>
-                    <button id="t-exp-ok" class="t-btn primary" style="flex:1;">开始导出</button>
+                    <button id="t-exp-cancel" class="t-btn t-flex-1">取消</button>
+                    <button id="t-exp-ok" class="t-btn primary t-flex-1">开始导出</button>
                 </div>
             </div>
         </div>
         
-        <div id="t-move-modal" class="t-imp-modal">
-            <div class="t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">📁 移动到分类</h3>
+        <div id="t-move-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">📁 移动到分类</h3>
                 <div class="t-imp-row">
                     <span class="t-imp-label">目标分类:</span>
-                    <input id="t-move-cat" list="t-move-cat-list" class="t-input" placeholder="输入或选择分类" style="width:100%;">
+                    <input id="t-move-cat" list="t-move-cat-list" class="t-input t-w-full" placeholder="输入或选择分类">
                     <datalist id="t-move-cat-list"></datalist>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-move-cancel" class="t-btn" style="flex:1;">取消</button>
-                    <button id="t-move-ok" class="t-btn primary" style="flex:1;">确认移动</button>
+                    <button id="t-move-cancel" class="t-btn t-flex-1">取消</button>
+                    <button id="t-move-ok" class="t-btn primary t-flex-1">确认移动</button>
                 </div>
             </div>
         </div>
         
-        <div id="t-cat-rename-modal" class="t-imp-modal">
-            <div class="t-imp-box">
-                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">✏️ 重命名分类</h3>
+        <div id="t-cat-rename-modal" class="t-dialog-overlay t-dialog-overlay--contained t-imp-modal t-root">
+            <div class="t-dialog-panel t-imp-box">
+                <h3 style="margin-top:0; border-bottom:1px solid var(--t-color-border); padding-bottom:10px;">✏️ 重命名分类</h3>
                 <div class="t-imp-row">
-                    <span class="t-imp-label">当前分类: <span id="t-rename-old" style="color:#bfa15f;"></span></span>
+                    <span class="t-imp-label">当前分类: <span id="t-rename-old" style="color:var(--t-color-brand);"></span></span>
                 </div>
                 <div class="t-imp-row">
                     <span class="t-imp-label">新名称:</span>
-                    <input id="t-rename-new" class="t-input" placeholder="输入新的分类名称" style="width:100%;">
+                    <input id="t-rename-new" class="t-input t-w-full" placeholder="输入新的分类名称">
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="t-rename-cancel" class="t-btn" style="flex:1;">取消</button>
-                    <button id="t-rename-ok" class="t-btn primary" style="flex:1;">确认重命名</button>
+                    <button id="t-rename-cancel" class="t-btn t-flex-1">取消</button>
+                    <button id="t-rename-ok" class="t-btn primary t-flex-1">确认重命名</button>
                 </div>
             </div>
         </div>
@@ -399,7 +399,7 @@ export function openScriptManager() {
         });
 
         if (filtered.length === 0) {
-            $list.append(`<div style="text-align:center; color:#555; margin-top:50px;">无数据</div>`);
+            $list.append(`<div class="t-mgr-list-empty">无数据</div>`);
             return;
         }
 
@@ -407,7 +407,7 @@ export function openScriptManager() {
         filtered.forEach(s => {
             const isUser = s._type === 'user';
             const catLabel = s.category ? `<span class="t-mgr-tag">${s.category}</span>` : '';
-            const presetLabel = !isUser ? `<span class="t-mgr-tag" style="background:#444;">预设</span>` : '';
+            const presetLabel = !isUser ? `<span class="t-mgr-tag t-mgr-tag--preset">预设</span>` : '';
             const stats = readStats(s.id);
             const statsLine = `使用 ${stats.generated_count || 0} 次 · 选择 ${stats.selected_count || 0} 次 · 最近 ${formatRelativeTime(stats.last_generated_at || stats.last_selected_at)}`;
 
@@ -422,7 +422,7 @@ export function openScriptManager() {
                         <div class="t-mgr-item-stats">${statsLine}</div>
                     </div>
                     <div style="padding-left:10px;">
-                        <i class="fa-solid fa-pen" style="color:#666; cursor:pointer;"></i>
+                        <i class="fa-solid fa-pen" style="color:var(--t-color-text-faint); cursor:pointer;"></i>
                     </div>
                 </div>
             `);
@@ -837,7 +837,7 @@ export function openEditor(id, source = 'main') {
     const dataListOpts = existingCats.map(c => `<option value="${c}">`).join("");
 
     const html = `
-    <div class="t-box" id="t-editor-view">
+    <div class="t-box t-root" id="t-editor-view">
         <div class="t-header"><span class="t-title-main">${isPreset ? '查看' : (isEdit ? '编辑' : '新建')}</span></div>
         <div class="t-body">
             <div style="display:flex; gap:10px; margin-bottom:5px;">
@@ -861,8 +861,8 @@ export function openEditor(id, source = 'main') {
             <textarea id="ed-prompt" class="t-input" rows="6" ${isPreset ? 'disabled' : ''}>${data.prompt}</textarea>
             
             <div class="t-btn-row">
-                ${!isPreset ? '<button id="ed-save" class="t-btn primary" style="flex:1;">保存</button>' : ''}
-                <button id="ed-cancel" class="t-btn" style="flex:1;">返回</button>
+                ${!isPreset ? '<button id="ed-save" class="t-btn primary t-flex-1">保存</button>' : ''}
+                <button id="ed-cancel" class="t-btn t-flex-1">返回</button>
             </div>
         </div>
     </div>`;
@@ -889,17 +889,17 @@ export function openEditor(id, source = 'main') {
         // 创建大屏编辑视图，添加遮罩层防止点击穿透
         // 使用 padding 确保在手机端也能正确居中显示
         const largeEditHtml = `
-        <div id="t-large-edit-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:20000; display:flex; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
-            <div class="t-box" id="t-large-edit-view" style="width:100%; max-width:800px; height:90vh; max-height:90vh; margin:auto; display:flex; flex-direction:column;">
-                <div class="t-header" style="flex-shrink:0;">
+        <div id="t-large-edit-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--t-color-dialog-scrim); z-index:20000; display:flex; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
+            <div class="t-box t-root" id="t-large-edit-view" style="width:100%; max-width:800px; height:90vh; max-height:90vh; margin:auto; display:flex; flex-direction:column;">
+                <div class="t-header t-shrink-0">
                     <span class="t-title-main">大屏编辑模式</span>
                     <span class="t-close" id="ed-large-close">&times;</span>
                 </div>
                 <div class="t-body" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
                     <textarea id="ed-large-text" class="t-input" style="flex:1; resize:none; font-family:monospace; line-height:1.5; font-size:14px; min-height:0;">${originalContent}</textarea>
                     <div class="t-btn-row" style="flex-shrink:0; margin-top:10px;">
-                        <button id="ed-large-ok" class="t-btn primary" style="flex:1;">确认保存</button>
-                        <button id="ed-large-cancel" class="t-btn" style="flex:1;">取消</button>
+                        <button id="ed-large-ok" class="t-btn primary t-flex-1">确认保存</button>
+                        <button id="ed-large-cancel" class="t-btn t-flex-1">取消</button>
                     </div>
                 </div>
             </div>

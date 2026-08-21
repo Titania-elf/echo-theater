@@ -173,10 +173,10 @@ export async function showDebugInfo() {
     }
 
     const html = `
-    <div class="t-box" id="t-debug-view" style="max-width:1400px; width:95vw; height:92vh; display:flex; flex-direction:column;">
-        <div class="t-header" style="flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-layer-group" style="color:#74b9ff;"></i>
+    <div class="t-box t-root" id="t-debug-view">
+        <div class="t-header t-shrink-0">
+            <div class="t-dbg-title-row">
+                <i class="fa-solid fa-layer-group"></i>
                 <span class="t-title-main">提示词查看</span>
             </div>
             <span class="t-close" id="t-debug-close">&times;</span>
@@ -437,42 +437,42 @@ export function showDiagnosticsWindow() {
     }
 
     const html = `
-    <div class="t-box t-diagnostics-container" id="t-diagnostics-view">
-        <div class="t-header" style="flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-stethoscope" style="color:#ff9f43;"></i>
+    <div class="t-box t-root t-diagnostics-container" id="t-diagnostics-view">
+        <div class="t-header t-shrink-0">
+            <div class="t-dbg-title-row">
+                <i class="fa-solid fa-stethoscope"></i>
                 <span class="t-title-main">诊断日志</span>
             </div>
             <span class="t-close" id="t-diag-close">&times;</span>
         </div>
         
-        <div style="padding:15px; background:#181818; border-bottom:1px solid #333;">
-            <div style="background: rgba(255, 159, 67, 0.1); border:1px solid rgba(255, 159, 67, 0.3); padding:12px; border-radius:6px;">
-                <div style="font-weight:bold; color:#feca57; font-size:0.9em; margin-bottom:5px;">
+        <div class="t-diag-notice-band">
+            <div class="t-diag-guide">
+                <div class="t-diag-guide-title">
                     <i class="fa-solid fa-triangle-exclamation"></i> 报错排查指南
                 </div>
-                <div style="font-size:0.85em; color:#ccc; line-height:1.5;">
+                <div class="t-diag-guide-body">
                     如果您遇到生成失败或内容被截断的情况，请点击下方"导出完整报告"按钮，将生成的 JSON 文件发送给开发者。
                     报告中包含您的 Prompt（用于排查安全审查），但 <b>API Key 已自动脱敏</b>。
                 </div>
             </div>
         </div>
         
-        <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; padding:15px;">
-            <div style="font-weight:bold; color:#aaa; margin-bottom:10px;">
-                <i class="fa-solid fa-scroll"></i> 实时日志 <span style="font-size:0.8em; color:#666;">(内存缓存 50 条)</span>
+        <div class="t-diag-log-section">
+            <div class="t-diag-log-title">
+                <i class="fa-solid fa-scroll"></i> 实时日志 <span class="t-diag-log-hint">(内存缓存 50 条)</span>
             </div>
-            <div class="t-log-box" id="t-diag-log-viewer" style="flex:1; overflow-y:auto;"></div>
+            <div class="t-log-box" id="t-diag-log-viewer"></div>
         </div>
         
-        <div style="padding:15px; background:#181818; border-top:1px solid #333; display:flex; gap:10px;">
+        <div class="t-diag-actions">
             <button id="t-diag-refresh" class="t-btn">
                 <i class="fa-solid fa-rotate-right"></i> 刷新日志
             </button>
-            <button id="t-diag-clear" class="t-btn" style="color:#ff6b6b; border-color:#ff6b6b;">
+            <button id="t-diag-clear" class="t-btn">
                 <i class="fa-solid fa-trash"></i> 清空日志
             </button>
-            <button id="t-diag-export" class="t-btn primary" style="margin-left:auto;">
+            <button id="t-diag-export" class="t-btn primary">
                 <i class="fa-solid fa-download"></i> 导出完整报告 (.json)
             </button>
         </div>
@@ -486,7 +486,7 @@ export function showDiagnosticsWindow() {
         const $viewer = $("#t-diag-log-viewer");
 
         if (!logs || logs.length === 0) {
-            $viewer.html('<div style="text-align:center; margin-top:50px; color:#555;"><i class="fa-solid fa-inbox" style="font-size:2em; margin-bottom:10px;"></i><br>暂无日志</div>');
+            $viewer.html('<div class="t-diag-log-empty"><i class="fa-solid fa-inbox"></i><br>暂无日志</div>');
             return;
         }
 

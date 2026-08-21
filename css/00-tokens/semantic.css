@@ -1,0 +1,70 @@
+/* ============================================================
+   00-tokens/semantic.css —— 语义层（与主题无关的部分）
+
+   本文件承载「语义角色 → 原语」的绑定中**不随主题变化**的那一半：
+   圆角角色、间距角色、排版角色。
+   随主题变化的那一半（颜色 / 阴影 / 渐变 / 过渡）在 theme-*.css。
+
+   组件层只允许消费本文件与 theme-*.css 的 token，
+   禁止直接引用 primitives.css 的 --t-c-* / --t-radius-* 等原语（R3b）。
+
+   ── 语义 token 契约 ──
+   下方每个 token 都写明「用在哪」。新增组件时先在这里找角色，
+   找不到再考虑加新 token —— 而不是直接写字面量或引用原语。
+   ============================================================ */
+:root {
+
+    /* ---- 圆角角色（plan.md §5.1 已决策）---- */
+    --t-radius-control: var(--t-radius-md);
+    /* 6px  —— button / input / select / badge 等控件 */
+    --t-radius-container: var(--t-radius-lg);
+    /* 8px  —— card / panel 等容器 */
+    --t-radius-panel: var(--t-radius-xl);
+    /* 10px —— 窗口**内部**分区面板的头/脚（.t-panel-header / .t-panel-footer）
+       ⚠ 过渡 token：语义上与 --t-radius-container(8px) 重叠，但现有代码这三处
+         面板写的就是 10px，收口时若改成 8px 就是视觉变更。Phase 7 归并圆角
+         阶梯时应把它合并进 --t-radius-container，并单独比对那一步。 */
+    --t-radius-window: var(--t-radius-2xl);
+    /* 12px —— 窗口 / 弹窗根 */
+    --t-radius-inline: var(--t-radius-sm);
+    /* 4px  —— 内联小元素（tag / code / 缩略图） */
+    --t-radius-circle: var(--t-radius-full);
+    /* 50%  —— 圆形图标钮 / 头像 */
+    --t-radius-track: var(--t-radius-pill);
+    /* 999px —— 进度条 / 开关轨道 / 胶囊按钮 */
+
+    /* ---- 间距角色 ---- */
+    --t-gap-inline: var(--t-space-sm);
+    /* 6px  —— 图标与文字之间、按钮组内 */
+    --t-gap-stack: var(--t-space-md);
+    /* 8px  —— 表单行之间、列表项之间 */
+    --t-gap-section: var(--t-space-xl);
+    /* 16px —— 区块之间 */
+
+    --t-pad-control: var(--t-space-md) var(--t-space-lg);
+    /* 8px 12px —— 控件内边距 */
+    --t-pad-container: var(--t-space-lg);
+    /* 12px —— 卡片 / 面板内边距 */
+    --t-pad-window: var(--t-space-lg) var(--t-space-15);
+    /* 12px 15px —— 窗口头/脚内边距（沿用现值，15px 待 Phase 7 归并） */
+
+    /* ---- 排版角色 ---- */
+    --t-text-body: var(--t-font-size-md);
+    /* 0.9em —— 正文默认（现 61 次，最高频） */
+    --t-text-label: var(--t-font-size-sm);
+    /* 0.85em —— 表单标签 */
+    --t-text-caption: var(--t-font-size-xs);
+    /* 0.8em —— 辅助说明 / 计数 */
+    --t-text-micro: var(--t-font-size-2xs);
+    /* 0.72em —— 角标 / 极小提示 */
+    --t-text-title: var(--t-font-size-xl);
+    /* 1.25em —— 窗口标题 */
+    --t-text-subtitle: var(--t-font-size-lg);
+    /* 1.1em —— 区块标题 */
+
+    --t-leading-ui: var(--t-line-height-snug);
+    /* 1.35 —— 控件与紧凑 UI */
+    --t-leading-prose: var(--t-line-height-relaxed);
+    /* 1.6  —— 长文本阅读区 */
+}
+

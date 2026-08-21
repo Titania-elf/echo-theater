@@ -2,7 +2,7 @@
 
 import { getContextData } from "../core/context.js";
 import { normalizeApiBaseUrl, normalizeRewriteCustomProfiles } from "../core/apiProfileRegistry.js";
-import { extensionFolderPath } from "../config/defaults.js";
+import { ensureFeatureCss } from "../utils/dom.js";
 import { getExtData, saveExtData } from "../utils/storage.js";
 import { parseTagWhitelistInput, extractTextByWhitelist } from "../utils/chatTagWhitelist.js";
 import {
@@ -330,16 +330,9 @@ function stopResponseTimer() {
     setRawWaitingAnimation(false);
 }
 
+// 路径由 css/manifest.js 统一解析，不再硬编码扁平路径（B1）
 function ensureCssLoaded() {
-    const id = "titania-css-story-outline";
-    if (!document.getElementById(id)) {
-        const link = document.createElement("link");
-        link.id = id;
-        link.rel = "stylesheet";
-        link.type = "text/css";
-        link.href = `${extensionFolderPath}/css/story-outline.css`;
-        document.head.appendChild(link);
-    }
+    ensureFeatureCss("story-outline.css");
 }
 
 function escapeHtml(text) {
@@ -569,13 +562,13 @@ function openOpeningSourcePickerDialog(initialChatIndex = -1) {
     return new Promise((resolve) => {
         $("#t-outline-opening-picker").remove();
         const html = `
-        <div id="t-outline-opening-picker" class="t-dialog-overlay">
-            <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
+        <div id="t-outline-opening-picker" class="t-dialog-overlay t-dialog-overlay--outline t-root">
+            <div class="t-dialog-box">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-comment-dots"></i> 选择聊天记录参考来源</span>
                     <div class="t-dialog-close" id="t-opening-picker-close"><i class="fa-solid fa-times"></i></div>
                 </div>
-                <div class="t-dialog-body" style="padding: 12px;">
+                <div class="t-dialog-body t-dialog-body--tight">
                     <div id="t-opening-picker-list" class="t-opening-picker-list"></div>
                 </div>
                 <div class="t-dialog-footer">
@@ -638,13 +631,13 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
         $("#t-outline-opening-picker").remove();
         $("#t-opening-detail-dialog").remove();
         const html = `
-        <div id="t-outline-opening-picker" class="t-dialog-overlay">
-            <div class="t-dialog-box" style="max-width: 760px; max-height: 86vh;">
+        <div id="t-outline-opening-picker" class="t-dialog-overlay t-dialog-overlay--outline t-root">
+            <div class="t-dialog-box">
                 <div class="t-dialog-header">
                     <span><i class="fa-solid fa-book-open"></i> 选择参考开场白</span>
                     <div class="t-dialog-close" id="t-opening-picker-close"><i class="fa-solid fa-times"></i></div>
                 </div>
-                <div class="t-dialog-body" style="padding: 12px;">
+                <div class="t-dialog-body t-dialog-body--tight">
                     <div id="t-opening-picker-list" class="t-opening-card-grid"></div>
                 </div>
                 <div class="t-dialog-footer">
@@ -664,13 +657,13 @@ function openCardOpeningPickerDialog(initialOpeningIndex = -1) {
             if (!entry) return;
             $("#t-opening-detail-dialog").remove();
             const detailHtml = `
-            <div id="t-opening-detail-dialog" class="t-dialog-overlay">
-                <div class="t-dialog-box" style="max-width: 780px; max-height: 84vh;">
+            <div id="t-opening-detail-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
+                <div class="t-dialog-box">
                     <div class="t-dialog-header">
                         <span><i class="fa-solid fa-file-lines"></i> 开场白 ${entry.openingIndex + 1} 详情</span>
                         <div class="t-dialog-close" id="t-opening-detail-close"><i class="fa-solid fa-times"></i></div>
                     </div>
-                    <div class="t-dialog-body" style="padding: 12px;">
+                    <div class="t-dialog-body t-dialog-body--tight">
                         <pre class="t-outline-raw-pre">${escapeHtml(entry.text || "")}</pre>
                     </div>
                     <div class="t-dialog-footer">
@@ -949,20 +942,20 @@ export async function openPromptTemplateManager() {
     }));
 
     const html = `
-    <div id="t-outline-prompt-manager" class="t-dialog-overlay">
+    <div id="t-outline-prompt-manager" class="t-dialog-overlay t-dialog-overlay--outline t-root">
         <div class="t-dialog-box t-outline-settings-dialog">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-sliders"></i> 设置</span>
                 <div class="t-dialog-close" id="t-prompt-manager-close"><i class="fa-solid fa-times"></i></div>
             </div>
 
-            <div class="t-set-body">
-                <div class="t-set-nav">
-                    <div class="t-set-tab-btn active" data-tab="runtime">⚙️ 运行设置</div>
-                    <div class="t-set-tab-btn" data-tab="prompt">📜 提示词模板</div>
+            <div class="t-set-shell-body t-set-body">
+                <div class="t-set-shell-nav t-set-nav">
+                    <div class="t-set-shell-tab t-set-tab-btn active" data-tab="runtime">⚙️ 运行设置</div>
+                    <div class="t-set-shell-tab t-set-tab-btn" data-tab="prompt">📜 提示词模板</div>
                 </div>
 
-                <div class="t-set-content">
+                <div class="t-set-shell-content t-set-content">
                     <div id="t-outline-page-runtime" class="t-set-page active">
                         ${renderApiConnectionEditorHTML({
                             ids: {
@@ -1609,13 +1602,13 @@ function openPlanCreationDialog() {
     const draftStoryInput = String($("#t-outline-story-input").val() || "").trim();
 
     const html = `
-    <div id="t-outline-create-plan-dialog" class="t-dialog-overlay">
-        <div class="t-dialog-box" style="max-width: 620px; max-height: 84vh;">
+    <div id="t-outline-create-plan-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-plus"></i> 新建方案</span>
                 <div class="t-dialog-close" id="t-create-plan-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 <div class="t-plan-tip" style="font-size:13px; margin-bottom:10px;">创建后会直接进入「大纲生成」编辑页。</div>
                 <label class="t-outline-label">方案名称</label>
                 <input id="t-create-plan-name" class="t-outline-input" value="${escapeHtml(defaultPlanName)}" />
@@ -1936,7 +1929,7 @@ export function openSceneHubWindow() {
     sceneHubSelectedKey = "";
 
     const html = `
-    <div id="t-scene-hub-overlay" class="t-overlay">
+    <div id="t-scene-hub-overlay" class="t-overlay t-root">
         <div class="t-window t-story-outline-window">
             <div class="t-window-header">
                 <div class="t-window-title"><i class="fa-solid fa-clapperboard"></i> 细纲情节</div>
@@ -1999,13 +1992,13 @@ export function openOutlineEntryDialog() {
     const hasPlans = getPlans().length > 0;
 
     const html = `
-    <div id="t-outline-entry-dialog" class="t-dialog-overlay">
-        <div class="t-dialog-box" style="max-width: 420px;">
+    <div id="t-outline-entry-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-list-check"></i> 选择入口</span>
                 <div class="t-dialog-close" id="t-outline-entry-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px; display:grid; gap:8px;">
+            <div class="t-dialog-body t-dialog-body--tight t-outline-entry-form">
                 <button id="t-outline-entry-open-outline" class="t-btn t-btn-primary"><i class="fa-solid fa-list-check"></i> 故事大纲</button>
                 <button id="t-outline-entry-open-scenes" class="t-btn" ${hasPlans ? "" : "disabled"}><i class="fa-solid fa-clapperboard"></i> 细纲情节</button>
                 ${hasPlans ? "" : '<div class="t-plan-tip">请先至少保存一个方案后再使用细纲情节</div>'}
@@ -2094,13 +2087,13 @@ function showPlanDetailDialog(planId) {
     if (!plan) return;
     $("#t-outline-plan-detail-dialog").remove();
     const html = `
-    <div id="t-outline-plan-detail-dialog" class="t-dialog-overlay" data-plan-id="${plan.id}">
-        <div class="t-dialog-box" style="max-width: 900px; max-height: 88vh;">
+    <div id="t-outline-plan-detail-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root" data-plan-id="${plan.id}">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-folder-open"></i> <span id="t-plan-detail-dialog-title"></span></span>
                 <div class="t-dialog-close" id="t-plan-detail-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 <div id="t-plan-detail-dialog-meta" class="t-plan-detail-meta"></div>
                 <div id="t-plan-detail-dialog-content" class="t-plan-preview-body"></div>
             </div>
@@ -2160,7 +2153,7 @@ function renderPlanHub() {
                 </div>
                 <div class="t-plan-card-actions">
                     <label class="t-plan-source-radio" title="选择后，细纲情节页将从该方案读取并使用场景内容">
-                        <input type="radio" name="t-plan-scene-source" data-action="set-scene-source" data-plan-id="${plan.id}" ${isSource ? "checked" : ""}>
+                        <input type="radio" class="t-choice-input t-choice-input--cyan-muted" name="t-plan-scene-source" data-action="set-scene-source" data-plan-id="${plan.id}" ${isSource ? "checked" : ""}>
                         <span>作为细纲来源</span>
                     </label>
                     <div class="t-plan-source-note">说明：勾选后，细纲情节页会优先使用该方案中的场景。</div>
@@ -2180,13 +2173,13 @@ function showPlanInstructionDialog(plan) {
     $("#t-outline-plan-instruction-dialog").remove();
 
     const html = `
-    <div id="t-outline-plan-instruction-dialog" class="t-dialog-overlay">
-        <div class="t-dialog-box" style="max-width: 780px; max-height: 82vh;">
+    <div id="t-outline-plan-instruction-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-file-lines"></i> 故事指令 · ${escapeHtml(planName)}</span>
                 <div class="t-dialog-close" id="t-plan-instruction-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
+            <div class="t-dialog-body t-dialog-body--tight">
                 <pre class="t-outline-raw-pre">${escapeHtml(instructionText || "（无）")}</pre>
             </div>
             <div class="t-dialog-footer">
@@ -2435,23 +2428,23 @@ function showRawResponseDialog(rawContent, options = {}) {
 
     $("#t-outline-raw-dialog").remove();
     const html = `
-    <div id="t-outline-raw-dialog" class="t-dialog-overlay">
-        <div class="t-dialog-box" style="max-width: 820px; max-height: 82vh;">
+    <div id="t-outline-raw-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-code"></i> ${escapeHtml(title)}</span>
                 <div class="t-dialog-close" id="t-outline-raw-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 12px;">
-                ${historyOptions ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="color:#9eb4c8;white-space:nowrap;">历史记录</span><select id="t-outline-raw-history" class="t-outline-select" style="flex:1;">${historyOptions}</select></div>` : ""}
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <span id="t-outline-raw-length" style="color:#8ea0b3;">长度: ${defaultContent.length} 字符</span>
-                        <span id="t-outline-raw-elapsed" style="color:#8ea0b3;">耗时: ${formatElapsedDuration(getCurrentElapsedMs())}</span>
+            <div class="t-dialog-body t-dialog-body--tight">
+                ${historyOptions ? `<div class="t-outline-raw-history-row"><span class="t-outline-raw-history-label">历史记录</span><select id="t-outline-raw-history" class="t-outline-select t-flex-1">${historyOptions}</select></div>` : ""}
+                <div class="t-outline-raw-bar">
+                    <div class="t-outline-raw-meta">
+                        <span id="t-outline-raw-length" class="t-outline-raw-stat">长度: ${defaultContent.length} 字符</span>
+                        <span id="t-outline-raw-elapsed" class="t-outline-raw-stat">耗时: ${formatElapsedDuration(getCurrentElapsedMs())}</span>
                         <span id="t-outline-raw-mood" class="t-raw-wait-anim" aria-live="polite" aria-label="模型生成中动画">
                             <span></span><span></span><span></span>
                         </span>
                     </div>
-                    <div style="display:flex;gap:6px;">
+                    <div class="t-outline-raw-actions">
                         <button id="t-outline-export-raw-history" class="t-btn t-btn-xs"><i class="fa-solid fa-file-export"></i> 导出历史</button>
                     </div>
                 </div>
@@ -2686,7 +2679,7 @@ function renderRows() {
                         <button class="t-btn t-btn-xs" data-action="toggle-scenes" title="展开/收起该行情节细纲">
                             <i class="fa-solid fa-layer-group"></i> 展开细纲
                         </button>
-                        <button class="t-btn t-btn-xs" data-action="delete" title="删除本行" style="color:#ff9d9d;">
+                        <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="delete" title="删除本行">
                             <i class="fa-solid fa-trash"></i> 删除
                         </button>
                     </div>
@@ -2767,7 +2760,7 @@ function renderSceneEditorPage() {
             <textarea class="t-outline-textarea" rows="3" data-scene-page-field="sendable_prompt">${escapeHtml(scene.sendable_prompt)}</textarea>
             <label>备注</label>
             <textarea class="t-outline-textarea" rows="2" data-scene-page-field="notes">${escapeHtml(scene.notes)}</textarea>
-            <button class="t-btn t-btn-xs" data-action="scene-page-delete" data-scene-index="${sceneIdx}" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> 删除场景</button>
+            <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="scene-page-delete" data-scene-index="${sceneIdx}"><i class="fa-solid fa-trash"></i> 删除场景</button>
         </div>
     `).join("") || '<div class="t-outline-empty">暂无细纲场景，点击新增场景</div>';
 
@@ -2781,7 +2774,7 @@ function renderSceneEditorPage() {
         </div>
         <div class="t-scene-page-actions">
             <button class="t-btn t-btn-xs" data-action="scene-page-add"><i class="fa-solid fa-plus"></i> 新增场景</button>
-            <button class="t-btn t-btn-xs" data-action="scene-page-delete-item" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> 删除细纲条目</button>
+            <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="scene-page-delete-item"><i class="fa-solid fa-trash"></i> 删除细纲条目</button>
         </div>
         <div class="t-scene-page-list">${sceneBlocks}</div>
     `);
@@ -2983,7 +2976,7 @@ function renderMobileDrawerScenes(index) {
             <label>备注</label>
             <textarea class="t-outline-textarea" rows="2" data-mobile-scene-field="notes">${escapeHtml(scene.notes)}</textarea>
             <div class="t-mobile-scene-actions">
-                <button class="t-btn t-btn-xs" data-action="mobile-delete-scene" data-scene-index="${sceneIndex}" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> 删除场景</button>
+                <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="mobile-delete-scene" data-scene-index="${sceneIndex}"><i class="fa-solid fa-trash"></i> 删除场景</button>
             </div>
         </div>
     `).join("");
@@ -3564,7 +3557,7 @@ export function openStoryOutlineWindow() {
     const defaultPlanName = createPlanName(getCurrentCharCardName());
 
     const html = `
-    <div id="t-story-outline-overlay" class="t-overlay">
+    <div id="t-story-outline-overlay" class="t-overlay t-root">
         <div class="t-window t-story-outline-window">
             <div class="t-window-header">
                 <div class="t-window-title"><i class="fa-solid fa-list-check"></i> 大纲生成</div>
@@ -3677,7 +3670,7 @@ export function openStoryOutlineWindow() {
                         </div>
                         <div class="t-outline-mobile-drawer-actions">
                             <button id="t-mobile-drawer-save" class="t-btn t-btn-primary"><i class="fa-solid fa-check"></i> 保存</button>
-                            <button id="t-mobile-drawer-delete" class="t-btn" style="color:#ff9d9d;"><i class="fa-solid fa-trash"></i> 删除本条</button>
+                            <button id="t-mobile-drawer-delete" class="t-btn t-plan-delete-btn"><i class="fa-solid fa-trash"></i> 删除本条</button>
                         </div>
                     </div>
                     <div id="t-outline-add-sheet-backdrop" class="t-outline-add-sheet-backdrop"></div>
@@ -3685,7 +3678,7 @@ export function openStoryOutlineWindow() {
                         <button id="t-outline-add-fab" class="t-outline-add-fab" aria-expanded="false" aria-controls="t-outline-add-sheet" title="新增条目">
                             <i class="fa-solid fa-plus"></i>
                         </button>
-                        <div id="t-outline-add-sheet" class="t-outline-add-sheet" role="menu" aria-label="新增条目类型">
+                        <div id="t-outline-add-sheet" class="t-outline-add-sheet t-root" role="menu" aria-label="新增条目类型">
                             <button id="t-outline-add-outline-item" class="t-btn" role="menuitem"><i class="fa-solid fa-table"></i> 新增大纲条目</button>
                             <button id="t-outline-add-scene-item" class="t-btn" role="menuitem"><i class="fa-solid fa-clapperboard"></i> 新增细纲条目</button>
                         </div>

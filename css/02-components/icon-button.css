@@ -1,0 +1,81 @@
+/* ============================================================
+   02-components/icon-button.css —— 图标按钮
+
+   ── 修 B13 ──
+   base.css 原来的 .t-icon-btn 是「1.2em 裸图标 + margin-left: 15px」：
+   点击热区只有字形本身，在触屏上极难点中。main-window.css 与 workshop.css
+   各自用 4 层选择器（#view .t-header .t-header-actions .t-icon-btn）把它修正成
+   方形热区，注释都写明「间距统一由父级 gap 负责，清掉 base.css 的 margin-left」。
+
+   实测这两处**并非**逐字节相同（plan.md B13 记为「复制同一段修正」不准确）：
+       main-window  32×32，font-size 1.5em
+       workshop     36×36，font-size 1.35em，且把 .t-close 一起纳入
+   所以不能简单删掉两处补丁、由组件统一取代 —— 那会改掉其中一处的尺寸。
+
+   ── 解法：尺寸做成自定义属性 ──
+   组件负责「方形热区 + 居中 + 交互 + 无 margin」这部分真正重复的逻辑；
+   具体尺寸由 --t-icon-btn-size 提供默认值，feature 层需要不同尺寸时
+   只覆盖这个变量，而不是重新声明一遍 width/height/display/border-radius。
+   设置自定义属性不属于「重定义组件视觉属性」，不违反 R4。
+
+   font-size 仍留在 feature 层：主窗口与工坊的图标数量不同，字形大小是
+   各自的排版决定，不是组件契约的一部分。
+   ============================================================ */
+
+.t-icon-btn {
+    --t-icon-btn-size: 32px;
+    --t-icon-btn-font-size: 1.2em;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: var(--t-icon-btn-size);
+    height: var(--t-icon-btn-size);
+    padding: 0;
+    /* 不设 margin —— 间距一律由父容器的 gap 负责（这是 B13 的核心修正） */
+    margin: 0;
+    border: none;
+    border-radius: var(--t-radius-container);
+    background: transparent;
+    color: var(--t-color-text-secondary);
+    font-size: var(--t-icon-btn-font-size);
+    line-height: 1;
+    cursor: pointer;
+    transition: var(--t-transition-hover);
+    /* 避免移动端长按选中文本 / 点击出现高亮块 */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.t-icon-btn:hover:not(:disabled) {
+    color: var(--t-color-text-strong);
+    background: var(--t-color-surface-hover);
+}
+
+.t-icon-btn:active:not(:disabled) {
+    background: var(--t-color-surface-active);
+}
+
+.t-icon-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--t-shadow-focus);
+}
+
+.t-icon-btn:disabled,
+.t-icon-btn.is-disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* ---- .t-close 未纳入本组件 ----
+   .t-close 全库 17 处使用，但只有主窗口与工坊的头部（约 4 处）给它加了
+   margin-left: 0 补丁、由父级 gap 接管间距。其余 13 处仍**依赖**
+   base.css 的 margin-left: 15px 来撑开与相邻元素的距离，父容器没有 gap。
+   若现在把它改成方形热区并去掉 margin，这 13 处会立刻贴到邻居上 ——
+   而本项目没有视觉基线可比对。
+
+   故其定义原地留在 01-base/base.css 不动（同时也避免把 #888 这类
+   无对应语义 token 的值带进组件层，见 R3a）。
+   留待 Phase 4 统一 dialog / window 头部结构、每处都有父级 gap 之后，
+   再收敛为 .t-icon-btn--close 变体。 */

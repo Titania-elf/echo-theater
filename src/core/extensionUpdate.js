@@ -230,7 +230,7 @@ function showUpdateDialog(update) {
     `).join("");
 
     $("body").append(`
-        <div id="titania-update-overlay" class="titania-update-overlay">
+        <div id="titania-update-overlay" class="titania-update-overlay t-root">
             <div class="titania-update-dialog" role="dialog" aria-modal="true" aria-labelledby="titania-update-title">
                 <header class="titania-update-header">
                     <div>

@@ -3,7 +3,7 @@
 import { extractLoreFromHistory, previewExtractPrompt } from "../core/loreExtractor.js";
 import { getAvailableWorldBooks, getCharacterWorldBook, saveLoreEntry } from "../core/worldInfoManager.js";
 import { TitaniaLogger } from "../core/logger.js";
-import { extensionFolderPath } from "../config/defaults.js";
+import { ensureFeatureCss } from "../utils/dom.js";
 
 /**
  * 带超时的 Promise 包装器（与 context.js 保持一致）
@@ -97,17 +97,10 @@ let lastAnalyzedRange = { start: 0, end: 0 }; // 上次分析的范围
 
 /**
  * 确保 CSS 已加载
+ * 路径由 css/manifest.js 统一解析，不再硬编码扁平路径（B1）
  */
 function ensureCssLoaded() {
-    const id = "titania-css-lore-review";
-    if (!document.getElementById(id)) {
-        const link = document.createElement("link");
-        link.id = id;
-        link.rel = "stylesheet";
-        link.type = "text/css";
-        link.href = `${extensionFolderPath}/css/lore-review.css`;
-        document.head.appendChild(link);
-    }
+    ensureFeatureCss("lore-review.css");
 }
 
 /**
@@ -217,18 +210,18 @@ async function showProfileConfigDialog(onSave) {
     };
 
     const html = `
-    <div id="t-lore-settings-dialog" class="t-dialog-overlay">
+    <div id="t-lore-settings-dialog" class="t-dialog-overlay t-root">
         <div class="t-dialog-box t-lore-settings-window">
             <div class="t-dialog-header t-lore-settings-header">
                 <span><i class="fa-solid fa-gear"></i> 设置</span>
                 <div class="t-dialog-close" id="t-profile-dialog-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-set-body">
-                <div class="t-set-nav">
-                    <div class="t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-link"></i> API 连接</div>
-                    <div class="t-set-tab-btn" data-tab="embedding"><i class="fa-solid fa-brain"></i> Embedding</div>
+            <div class="t-set-shell-body t-set-glass-body t-set-body">
+                <div class="t-set-shell-nav t-set-glass-nav t-set-nav">
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-link"></i> API 连接</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="embedding"><i class="fa-solid fa-brain"></i> Embedding</div>
                 </div>
-                <div class="t-set-content">
+                <div class="t-set-shell-content t-set-glass-content t-set-content">
                     <div class="t-set-page active" data-page="api">
                         ${renderApiConnectionEditorHTML({
                             ids: {
@@ -248,9 +241,9 @@ async function showProfileConfigDialog(onSave) {
                                 stUrlDisplayId: "t-lore-settings-st-url",
                             },
                             classes: {
-                                input: "t-input",
-                                select: "t-input",
-                                profileSelect: "t-input",
+                                input: "t-input t-input--glass",
+                                select: "t-input t-input--glass",
+                                profileSelect: "t-input t-input--glass",
                                 button: "t-btn t-btn-xs",
                             },
                             labels: {
@@ -273,23 +266,23 @@ async function showProfileConfigDialog(onSave) {
                     <div class="t-set-page" data-page="embedding">
                         <div class="t-form-group">
                             <label class="t-form-label">Embedding API 地址</label>
-                            <input id="t-lore-embed-url" class="t-input" type="text" placeholder="例如: https://api.openai.com/v1">
+                            <input id="t-lore-embed-url" class="t-input t-input--glass" type="text" placeholder="例如: https://api.openai.com/v1">
 
                             <label class="t-form-label" style="margin-top:8px;">Embedding API Key</label>
-                            <input id="t-lore-embed-key" class="t-input" type="password" placeholder="sk-...">
+                            <input id="t-lore-embed-key" class="t-input t-input--glass" type="password" placeholder="sk-...">
 
                             <label class="t-form-label" style="margin-top:8px;">Embedding 模型</label>
                             <div class="t-lore-settings-model-row">
-                                <select id="t-lore-embed-model" class="t-input" style="flex:1;"></select>
+                                <select id="t-lore-embed-model" class="t-input t-input--glass t-flex-1"></select>
                                 <button id="t-lore-embed-fetch-models" class="t-btn t-btn-xs" type="button" title="获取模型列表"><i class="fa-solid fa-rotate"></i></button>
                             </div>
 
                             <label class="t-form-label" style="margin-top:8px;">向量维度（可选）</label>
-                            <input id="t-lore-embed-dimensions" class="t-input" type="number" min="256" max="3072" step="256" placeholder="留空使用模型默认值">
+                            <input id="t-lore-embed-dimensions" class="t-input t-input--glass" type="number" min="256" max="3072" step="256" placeholder="留空使用模型默认值">
 
                             <div style="margin-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                 <button id="t-lore-embed-test" class="t-btn t-btn-xs" type="button"><i class="fa-solid fa-vial"></i> 测试连接</button>
-                                <span id="t-lore-embed-test-result" style="font-size:0.82em; color:#8da5b8;"></span>
+                                <span id="t-lore-embed-test-result"></span>
                             </div>
                         </div>
 
@@ -307,9 +300,9 @@ async function showProfileConfigDialog(onSave) {
                                 <label><input id="t-lore-clean-bracket-all" type="checkbox"> 移除所有 [...] 内容</label>
                             </div>
                             <label class="t-form-label" style="margin-top:8px;">自定义移除标签（逗号分隔）</label>
-                            <input id="t-lore-clean-custom-tags" class="t-input" type="text" placeholder="例如: internal, debug, author_note">
+                            <input id="t-lore-clean-custom-tags" class="t-input t-input--glass" type="text" placeholder="例如: internal, debug, author_note">
                             <label class="t-form-label" style="margin-top:8px;">最小文本长度</label>
-                            <input id="t-lore-clean-min-length" class="t-input" type="number" min="10" max="200">
+                            <input id="t-lore-clean-min-length" class="t-input t-input--glass" type="number" min="10" max="200">
                         </div>
 
                         <div class="t-form-group">
@@ -317,7 +310,7 @@ async function showProfileConfigDialog(onSave) {
                             <label><input id="t-lore-auto-vectorize" type="checkbox"> 启用自动向量化</label>
                             <div id="t-lore-auto-vectorize-panel" style="margin-top:8px;">
                                 <label class="t-form-label">累积消息阈值</label>
-                                <input id="t-lore-auto-vectorize-threshold" class="t-input" type="number" min="3" max="50">
+                                <input id="t-lore-auto-vectorize-threshold" class="t-input t-input--glass" type="number" min="3" max="50">
                                 <label style="margin-top:8px; display:block;"><input id="t-lore-auto-vectorize-notify" type="checkbox"> 显示向量化完成通知</label>
                             </div>
                         </div>
@@ -325,7 +318,7 @@ async function showProfileConfigDialog(onSave) {
                         <div class="t-form-group">
                             <label class="t-form-label">聊天总结设置</label>
                             <label class="t-form-label">默认总结模板</label>
-                            <select id="t-lore-summary-template" class="t-input">
+                            <select id="t-lore-summary-template" class="t-input t-input--glass">
                                 <option value="structured">结构化 (分章节)</option>
                                 <option value="narrative">叙事性 (故事风格)</option>
                             </select>
@@ -593,42 +586,29 @@ function showRawResponseDialog(rawContent, isError = false) {
     const headerClass = isError ? "t-dialog-header-error" : "";
 
     const html = `
-    <div id="t-raw-response-dialog" class="t-dialog-overlay">
-        <div class="t-dialog-box" style="max-width: 800px; max-height: 80vh;">
+    <div id="t-raw-response-dialog" class="t-dialog-overlay t-root">
+        <div class="t-dialog-box">
             <div class="t-dialog-header ${headerClass}">
                 <span><i class="fa-solid fa-code"></i> ${title}</span>
                 <div class="t-dialog-close" id="t-raw-response-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 0;">
+            <div class="t-dialog-body t-dialog-body--flush">
                 ${isError ? `
-                <div style="padding: 15px; background: rgba(231, 76, 60, 0.1); border-bottom: 1px solid rgba(231, 76, 60, 0.3);">
-                    <i class="fa-solid fa-exclamation-triangle" style="color: #e74c3c;"></i>
-                    <span style="color: #e74c3c;">JSON 解析失败，请检查下方原始内容是否符合预期格式</span>
+                <div class="t-raw-error-banner">
+                    <i class="fa-solid fa-exclamation-triangle"></i>
+                    <span>JSON 解析失败，请检查下方原始内容是否符合预期格式</span>
                 </div>
                 ` : ''}
-                <div style="padding: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="color: #888; font-size: 0.9em;">
+                <div class="t-raw-section">
+                    <div class="t-raw-meta">
+                        <span class="t-raw-meta-label">
                             <i class="fa-solid fa-file-lines"></i> 响应长度: ${rawContent?.length || 0} 字符
                         </span>
                         <button id="t-btn-copy-raw" class="t-btn t-btn-xs">
                             <i class="fa-solid fa-copy"></i> 复制内容
                         </button>
                     </div>
-                    <pre id="t-raw-response-content" style="
-                        background: #1a1a2e;
-                        border: 1px solid #333;
-                        border-radius: 6px;
-                        padding: 15px;
-                        max-height: 50vh;
-                        overflow: auto;
-                        white-space: pre-wrap;
-                        word-break: break-word;
-                        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-                        font-size: 0.9em;
-                        color: #ddd;
-                        line-height: 1.5;
-                    ">${escapeHtml(rawContent || "(空)")}</pre>
+                    <pre id="t-raw-response-content" class="t-raw-pre">${escapeHtml(rawContent || "(空)")}</pre>
                 </div>
             </div>
             <div class="t-dialog-footer">
@@ -705,7 +685,7 @@ export async function showLoreReviewWindow() {
 
     // 构建基础 HTML
     const html = `
-    <div id="t-lore-review-overlay" class="t-overlay">
+    <div id="t-lore-review-overlay" class="t-overlay t-root">
         <div class="t-window t-lore-review-window" style="max-width: 1000px;">
             <div class="t-window-header">
                 <div class="t-window-title">
@@ -780,8 +760,8 @@ export async function showLoreReviewWindow() {
                         <div class="t-list-header">
                             <span>提取结果</span>
                             <div class="t-list-actions">
-                                <button id="t-btn-select-all" class="t-btn t-btn-xs">全选</button>
-                                <button id="t-btn-deselect-all" class="t-btn t-btn-xs">全不选</button>
+                                <button id="t-btn-select-all" class="t-btn t-btn--quiet t-btn--xs">全选</button>
+                                <button id="t-btn-deselect-all" class="t-btn t-btn--quiet t-btn--xs">全不选</button>
                             </div>
                         </div>
                         <div id="t-lore-entries-list" class="t-lore-list">
@@ -860,20 +840,20 @@ export async function showLoreReviewWindow() {
                                 <div class="t-save-mode-section">
                                     <label>保存模式:</label>
                                     <div class="t-save-mode-options">
-                                        <label class="t-radio-label">
-                                            <input type="radio" name="t-save-mode" value="replace" checked>
-                                            <span><i class="fa-solid fa-exchange-alt"></i> 替换</span>
-                                            <small>用新内容替换原有内容</small>
+                                        <label class="t-radio-label t-radio-card t-radio-card--warning">
+                                            <input type="radio" class="t-choice-input t-choice-input--lg" name="t-save-mode" value="replace" checked>
+                                            <span class="t-radio-card__title"><i class="fa-solid fa-exchange-alt"></i> 替换</span>
+                                            <small class="t-radio-card__description">用新内容替换原有内容</small>
                                         </label>
-                                        <label class="t-radio-label">
-                                            <input type="radio" name="t-save-mode" value="append">
-                                            <span><i class="fa-solid fa-plus"></i> 追加</span>
-                                            <small>在原有内容后追加新内容</small>
+                                        <label class="t-radio-label t-radio-card t-radio-card--success">
+                                            <input type="radio" class="t-choice-input t-choice-input--lg" name="t-save-mode" value="append">
+                                            <span class="t-radio-card__title"><i class="fa-solid fa-plus"></i> 追加</span>
+                                            <small class="t-radio-card__description">在原有内容后追加新内容</small>
                                         </label>
-                                        <label class="t-radio-label">
-                                            <input type="radio" name="t-save-mode" value="prepend">
-                                            <span><i class="fa-solid fa-arrow-up"></i> 前置</span>
-                                            <small>在原有内容前插入新内容</small>
+                                        <label class="t-radio-label t-radio-card">
+                                            <input type="radio" class="t-choice-input t-choice-input--lg" name="t-save-mode" value="prepend">
+                                            <span class="t-radio-card__title"><i class="fa-solid fa-arrow-up"></i> 前置</span>
+                                            <small class="t-radio-card__description">在原有内容前插入新内容</small>
                                         </label>
                                     </div>
                                 </div>
@@ -925,7 +905,7 @@ export async function showLoreReviewWindow() {
                         </div>
                         <div class="t-control-group">
                             <label>
-                                <input type="checkbox" id="t-use-vector-search" disabled>
+                                <input type="checkbox" id="t-use-vector-search" class="t-choice-input t-choice-input--inline-gap t-choice-input--muted-disabled" disabled>
                                 使用语义检索增强
                             </label>
                         </div>
@@ -973,7 +953,7 @@ export async function showLoreReviewWindow() {
                             <div class="t-empty-state">
                                 <i class="fa-solid fa-file-alt"></i>
                                 <p>点击「生成总结」开始分析聊天历史</p>
-                                <small style="color: #666;">启用「语义检索增强」可以召回相关的历史事件</small>
+                                <small style="color: var(--t-color-text-faint);">启用「语义检索增强」可以召回相关的历史事件</small>
                             </div>
                         </div>
                     </div>
@@ -1059,7 +1039,7 @@ export async function showLoreReviewWindow() {
                         <div class="t-action-group">
                             <div class="t-action-item">
                                 <div class="t-build-index-buttons">
-                                    <button id="t-btn-build-index" class="t-btn t-btn-primary" style="flex: 1;">
+                                    <button id="t-btn-build-index" class="t-btn t-btn-primary t-flex-1">
                                         <i class="fa-solid fa-plus"></i> 增量更新
                                     </button>
                                     <button id="t-btn-rebuild-index" class="t-btn" title="清除现有索引并完整重建">
@@ -1094,7 +1074,7 @@ export async function showLoreReviewWindow() {
 
                         <div class="t-action-group" style="margin-top: 20px;">
                             <h4><i class="fa-solid fa-broom"></i> 文本清洗预览</h4>
-                            <p style="color: #888; font-size: 0.85em; margin-bottom: 10px;">
+                            <p style="color: var(--t-color-text-muted); font-size: 0.85em; margin-bottom: 10px;">
                                 预览向量化前的文本清洗效果，查看哪些内容会被移除。
                             </p>
                             <button id="t-btn-preview-cleaning" class="t-btn">
@@ -1104,7 +1084,7 @@ export async function showLoreReviewWindow() {
 
                         <div class="t-action-group" style="margin-top: 20px;">
                             <h4><i class="fa-solid fa-plug"></i> Embedding API 配置</h4>
-                            <p style="color: #888; font-size: 0.85em; margin-bottom: 10px;">
+                            <p style="color: var(--t-color-text-muted); font-size: 0.85em; margin-bottom: 10px;">
                                 向量化需要专用的 Embedding API，请在「设置」中配置。
                             </p>
                             <button id="t-btn-test-embedding" class="t-btn">
@@ -1113,7 +1093,7 @@ export async function showLoreReviewWindow() {
                         </div>
                     </div>
 
-                    <input type="file" id="t-import-vector-file" accept=".json" style="display: none;">
+                    <input class="is-hidden" type="file" id="t-import-vector-file" accept=".json">
                 </div>
             </div>
         </div>
@@ -2418,11 +2398,11 @@ function showPromptPreviewDialog(messages, stats = {}) {
                 <span>请求条数: <strong>${stats.requestedLimit || '?'}</strong></span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-check-circle" style="color: ${stats.historyCount > 0 ? '#2ecc71' : '#e74c3c'};"></i>
+                <i class="fa-solid fa-check-circle ${stats.historyCount > 0 ? 't-stat-ok' : 't-stat-bad'}"></i>
                 <span>实际读取: <strong>${stats.historyCount || 0}</strong> 条</span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-book" style="color: ${stats.existingEntriesCount > 0 ? '#2ecc71' : '#888'};"></i>
+                <i class="fa-solid fa-book ${stats.existingEntriesCount > 0 ? 't-stat-ok' : 't-stat-none'}"></i>
                 <span>现有条目: <strong>${stats.existingEntriesCount || 0}</strong> 条</span>
             </div>
             <div class="t-stat-item">
@@ -2438,11 +2418,11 @@ function showPromptPreviewDialog(messages, stats = {}) {
                 <span>请求条数: <strong>${stats.requestedLimit || '?'}</strong></span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-check-circle" style="color: ${stats.historyCount > 0 ? '#2ecc71' : '#e74c3c'};"></i>
+                <i class="fa-solid fa-check-circle ${stats.historyCount > 0 ? 't-stat-ok' : 't-stat-bad'}"></i>
                 <span>实际读取: <strong>${stats.historyCount || 0}</strong> 条</span>
             </div>
             <div class="t-stat-item">
-                <i class="fa-solid fa-database" style="color: ${stats.relevantHistoryFound ? '#2ecc71' : '#888'};"></i>
+                <i class="fa-solid fa-database ${stats.relevantHistoryFound ? 't-stat-ok' : 't-stat-none'}"></i>
                 <span>相关历史: <strong>${stats.relevantHistoryFound ? '已召回' : '无'}</strong></span>
             </div>
             <div class="t-stat-item">
@@ -2453,13 +2433,13 @@ function showPromptPreviewDialog(messages, stats = {}) {
     }
 
     const html = `
-    <div id="t-prompt-view-dialog" class="t-dialog-overlay">
-        <div class="t-dialog-box" style="max-width: 900px; max-height: 85vh;">
+    <div id="t-prompt-view-dialog" class="t-dialog-overlay t-root">
+        <div class="t-dialog-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-eye"></i> 提示词预览${stats.isExtractMode ? ' (设定提取)' : ' (智能总结)'}</span>
                 <div class="t-dialog-close" id="t-prompt-view-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 0; overflow: hidden;">
+            <div class="t-dialog-body t-dialog-body--flush t-dialog-body--clip">
                 <!-- 统计信息栏 -->
                 <div class="t-prompt-stats">
                     ${statsHtml}
@@ -2478,12 +2458,12 @@ function showPromptPreviewDialog(messages, stats = {}) {
                 </div>
                 <div class="t-prompt-content-container">
                     <div id="t-prompt-content-system" class="t-prompt-content active"></div>
-                    <div id="t-prompt-content-user" class="t-prompt-content" style="display: none;"></div>
-                    <div id="t-prompt-content-raw" class="t-prompt-content" style="display: none;"></div>
+                    <div id="t-prompt-content-user" class="t-prompt-content is-hidden"></div>
+                    <div id="t-prompt-content-raw" class="t-prompt-content is-hidden"></div>
                 </div>
             </div>
             <div class="t-dialog-footer">
-                <div style="display: flex; gap: 8px;">
+                <div class="t-prompt-copy-group">
                     <button id="t-btn-copy-system-prompt" class="t-btn t-btn-xs">
                         <i class="fa-solid fa-copy"></i> 复制 System
                     </button>
@@ -2629,13 +2609,13 @@ function showCleaningPreviewDialog(samples) {
     `).join('');
 
     const html = `
-    <div id="t-cleaning-preview-dialog" class="t-dialog-overlay">
-        <div class="t-dialog-box t-cleaning-preview-box" style="max-width: 1000px; max-height: 85vh;">
+    <div id="t-cleaning-preview-dialog" class="t-dialog-overlay t-root">
+        <div class="t-dialog-box t-cleaning-preview-box">
             <div class="t-dialog-header">
                 <span><i class="fa-solid fa-broom"></i> 文本清洗预览</span>
                 <div class="t-dialog-close" id="t-cleaning-preview-close"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div class="t-dialog-body" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="t-dialog-body t-dialog-body--flush t-dialog-body--clip t-dialog-body--stack">
                 <!-- 统计信息栏 -->
                 <div class="t-cleaning-stats-bar">
                     <div class="t-cleaning-stat">
@@ -2647,7 +2627,7 @@ function showCleaningPreviewDialog(samples) {
                         <span>总压缩率: <strong>${totalReduction}%</strong></span>
                     </div>
                     <div class="t-cleaning-stat">
-                        <i class="fa-solid fa-check-circle" style="color: ${validCount === cleanedSamples.length ? '#2ecc71' : '#f39c12'};"></i>
+                        <i class="fa-solid fa-check-circle ${validCount === cleanedSamples.length ? 't-cstat-ok' : 't-cstat-warn'}"></i>
                         <span>有效消息: <strong>${validCount}/${cleanedSamples.length}</strong></span>
                     </div>
                     <div class="t-cleaning-stat">
@@ -2681,221 +2661,8 @@ function showCleaningPreviewDialog(samples) {
 
     $("body").append(html);
 
-    // 添加样式（如果尚未添加）
-    if (!document.getElementById("t-cleaning-preview-styles")) {
-        const styles = `
-        <style id="t-cleaning-preview-styles">
-            .t-cleaning-preview-box {
-                display: flex;
-                flex-direction: column;
-            }
-
-            .t-cleaning-stats-bar {
-                display: flex;
-                gap: 20px;
-                padding: 12px 16px;
-                background: rgba(0, 0, 0, 0.2);
-                border-bottom: 1px solid #333;
-                flex-wrap: wrap;
-            }
-
-            .t-cleaning-stat {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                color: #aaa;
-                font-size: 0.9em;
-            }
-
-            .t-cleaning-stat i {
-                color: #666;
-            }
-
-            .t-cleaning-stat strong {
-                color: #fff;
-            }
-
-            .t-cleaning-config-bar {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 10px 16px;
-                background: rgba(0, 0, 0, 0.1);
-                border-bottom: 1px solid #333;
-                flex-wrap: wrap;
-            }
-
-            .t-cleaning-config-bar .t-config-label {
-                color: #888;
-                font-size: 0.85em;
-            }
-
-            .t-config-tags {
-                display: flex;
-                gap: 6px;
-                flex-wrap: wrap;
-            }
-
-            .t-config-tag {
-                padding: 2px 8px;
-                border-radius: 4px;
-                font-size: 0.8em;
-                display: inline-flex;
-                align-items: center;
-                gap: 4px;
-            }
-
-            .t-config-enabled {
-                background: rgba(46, 204, 113, 0.2);
-                color: #2ecc71;
-            }
-
-            .t-config-disabled {
-                background: rgba(136, 136, 136, 0.2);
-                color: #666;
-            }
-
-            .t-custom-tags {
-                color: #f39c12;
-                font-size: 0.8em;
-                margin-left: auto;
-            }
-
-            .t-cleaning-samples-container {
-                flex: 1;
-                overflow-y: auto;
-                padding: 16px;
-            }
-
-            .t-cleaning-sample {
-                margin-bottom: 16px;
-                border: 1px solid #333;
-                border-radius: 8px;
-                overflow: hidden;
-                background: rgba(0, 0, 0, 0.2);
-            }
-
-            .t-cleaning-sample.t-sample-invalid {
-                border-color: rgba(243, 156, 18, 0.5);
-            }
-
-            .t-sample-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 14px;
-                background: rgba(0, 0, 0, 0.3);
-                border-bottom: 1px solid #333;
-            }
-
-            .t-sample-role {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                font-weight: 500;
-            }
-
-            .t-role-user {
-                color: #3498db;
-            }
-
-            .t-role-char {
-                color: #9b59b6;
-            }
-
-            .t-sample-stats {
-                color: #888;
-                font-size: 0.85em;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-
-            .t-reduction {
-                color: #666;
-            }
-
-            .t-reduction.t-has-reduction {
-                color: #2ecc71;
-            }
-
-            .t-invalid-badge {
-                background: rgba(243, 156, 18, 0.2);
-                color: #f39c12;
-                padding: 2px 6px;
-                border-radius: 4px;
-                font-size: 0.85em;
-            }
-
-            .t-sample-content {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1px;
-                background: #333;
-            }
-
-            .t-sample-pane {
-                background: #1e1e2e;
-            }
-
-            .t-pane-header {
-                padding: 8px 12px;
-                background: rgba(0, 0, 0, 0.2);
-                color: #888;
-                font-size: 0.8em;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-            }
-
-            .t-pane-original .t-pane-header {
-                color: #e74c3c;
-            }
-
-            .t-pane-cleaned .t-pane-header {
-                color: #2ecc71;
-            }
-
-            .t-pane-body {
-                padding: 12px;
-                font-size: 0.9em;
-                line-height: 1.5;
-                color: #ccc;
-                max-height: 200px;
-                overflow-y: auto;
-                white-space: pre-wrap;
-                word-break: break-word;
-            }
-
-            .t-footer-hint {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                color: #666;
-                font-size: 0.85em;
-            }
-
-            .t-footer-hint i {
-                color: #3498db;
-            }
-
-            @media (max-width: 768px) {
-                .t-sample-content {
-                    grid-template-columns: 1fr;
-                }
-
-                .t-cleaning-stats-bar {
-                    gap: 12px;
-                }
-
-                .t-cleaning-stat {
-                    font-size: 0.8em;
-                }
-            }
-        </style>
-        `;
-        $("head").append(styles);
-    }
+    // 样式已迁至 css/04-features/cleaning-preview.css，随插件 CSS 一同加载，
+    // 不再需要运行时注入到 document.head。
 
     // 绑定关闭事件
     $("#t-cleaning-preview-close, #t-btn-close-cleaning-preview").on("click", () => {

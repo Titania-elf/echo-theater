@@ -134,128 +134,25 @@
                     <input type="file" id="titania-backup-file-input" accept=".json" style="display:none;">
                 </div>
             </section>
+
+            <section class="titania-panel-card">
+                <div class="titania-card-title"><i class="fa-solid fa-flask"></i> 收藏存储迁移</div>
+                <div class="titania-backup-desc">
+                    收藏正文目前全挤在 SillyTavern 的 settings.json 里，导致改任何一个设置都要连带重写全部收藏。
+                    <br><b>试运行</b>只写文件并校验，什么都不改。<b>正式搬家</b>会把正文改由独立文件承载，
+                    但<b>仍然保留</b> settings.json 里的原数据 —— 所以随时可以退回上个插件版本。
+                    <br><b>收尾</b>会删掉 settings.json 里的旧收藏数据，删之前会全量核对每一条正文。
+                    这是<b>唯一不可逆</b>的一步，也是保存速度真正变快的那一步。
+                    <br><b>清理遗留数据</b>删除已确认零引用的旧键，以及不再被任何收藏引用的正文文件。
+                    <br><span style="color:#feca57;">⚠️ 正式搬家与收尾前都会强制下载一份完整备份，请保存好该文件。</span>
+                </div>
+                <div class="titania-backup-actions">
+                    <button id="titania-favs-migrate-dryrun" class="titania-mini-btn"><i class="fa-solid fa-flask"></i> 试运行搬家（不动原数据）</button>
+                    <button id="titania-favs-migrate-run" class="titania-mini-btn is-import"><i class="fa-solid fa-box-archive"></i> 正式搬家（保留原数据）</button>
+                    <button id="titania-favs-migrate-cleanup" class="titania-mini-btn is-export"><i class="fa-solid fa-broom"></i> 收尾：删除旧数据（不可逆）</button>
+                    <button id="titania-favs-cleanup-artifacts" class="titania-mini-btn"><i class="fa-solid fa-trash-can"></i> 清理遗留数据</button>
+                </div>
+            </section>
         </div>
     </div>
 </div>
-
-<style>
-    #titania-settings-drawer .inline-drawer-content {
-        padding-top: 10px;
-    }
-
-    .titania-header-main {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-    }
-
-    .titania-panel-grid {
-        display: grid;
-        gap: 10px;
-    }
-
-    .titania-panel-card {
-        padding: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 10px;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
-    }
-
-    .titania-card-title {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 8px;
-        font-size: 12px;
-        font-weight: 700;
-        color: #d8e4f0;
-    }
-
-    .titania-switch-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        margin-bottom: 8px;
-    }
-
-    .titania-switch-row:last-child {
-        margin-bottom: 0;
-    }
-
-    .titania-switch-text {
-        display: inline-flex;
-        flex-direction: column;
-        gap: 2px;
-        min-width: 0;
-    }
-
-    .titania-switch-main {
-        color: #dce7f3;
-        font-size: 13px;
-        font-weight: 600;
-        line-height: 1.35;
-    }
-
-    .titania-switch-text small {
-        color: #93a8bb;
-        line-height: 1.4;
-        font-size: 11px;
-    }
-
-    .titania-version-badge {
-        background: rgba(100, 100, 100, 0.3);
-        color: #888;
-        font-size: 10px;
-        padding: 2px 6px;
-        border-radius: 4px;
-    }
-
-    .titania-backup-desc {
-        color: #93a8bb;
-        line-height: 1.45;
-        font-size: 11px;
-        margin-bottom: 8px;
-    }
-
-    .titania-backup-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .titania-mini-btn {
-        border: 1px solid rgba(255, 255, 255, 0.24);
-        background: rgba(255, 255, 255, 0.03);
-        color: #d5e2ef;
-        border-radius: 8px;
-        min-height: 30px;
-        padding: 0 10px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .titania-mini-btn.is-export {
-        border-color: rgba(85, 239, 196, 0.65);
-        color: #72efd0;
-    }
-
-    .titania-mini-btn.is-import {
-        border-color: rgba(144, 205, 244, 0.65);
-        color: #9acff5;
-    }
-
-    .titania-mini-btn:hover:not(:disabled) {
-        filter: brightness(1.06);
-    }
-
-    .titania-mini-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-</style>

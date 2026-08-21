@@ -68,22 +68,21 @@ export async function openRecallPanel() {
 
     // 构建 HTML（参考 favsWindow 的结构）
     const html = `
-    <div class="t-box t-recall-container" id="t-recall-view">
-        <div class="t-header" style="flex-shrink:0;">
+    <div class="t-box t-root t-recall-container" id="t-recall-view">
+        <div class="t-header t-shrink-0">
             <span class="t-title-main"><i class="fa-solid fa-lightbulb"></i> 记忆召回</span>
-            <span class="t-recall-status-badge ${status.available ? 'available' : 'unavailable'}" style="margin-left: auto; margin-right: 15px; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background: ${status.available ? '#2a4a3a' : '#4a2a2a'}; color: ${status.available ? '#4caf50' : '#ff6b6b'};">
+            <span class="t-recall-status-badge ${status.available ? 'available' : 'unavailable'}">
                 ${status.message}
             </span>
             <span class="t-close" id="t-recall-close">&times;</span>
         </div>
         
-        <div class="t-recall-toolbar" style="padding: 15px; border-bottom: 1px solid #333; background: #1a1a1a;">
+        <div class="t-recall-toolbar" style="padding: 15px; border-bottom: 1px solid var(--t-color-border); background: var(--t-color-surface-sunken);">
             <div style="display: flex; gap: 10px; align-items: center;">
                 <input type="text"
                        id="t-recall-query"
-                       class="t-input"
+                       class="t-input t-flex-1"
                        placeholder="输入要检索的内容（留空使用最近消息）..."
-                       style="flex: 1;"
                        ${!status.available ? 'disabled' : ''}>
                 <button id="t-recall-search-btn"
                         class="t-btn t-btn-primary"
@@ -93,7 +92,7 @@ export async function openRecallPanel() {
             </div>
             
             <div style="display: flex; gap: 15px; margin-top: 10px;">
-                <label style="display: flex; align-items: center; gap: 5px; color: #aaa; font-size: 0.9em;">
+                <label style="display: flex; align-items: center; gap: 5px; color: var(--t-color-text-secondary); font-size: 0.9em;">
                     最大数量:
                     <select id="t-recall-max-results" class="t-input" style="width: 70px; padding: 4px;">
                         <option value="5">5</option>
@@ -102,7 +101,7 @@ export async function openRecallPanel() {
                         <option value="20">20</option>
                     </select>
                 </label>
-                <label style="display: flex; align-items: center; gap: 5px; color: #aaa; font-size: 0.9em;">
+                <label style="display: flex; align-items: center; gap: 5px; color: var(--t-color-text-secondary); font-size: 0.9em;">
                     最小相似度:
                     <select id="t-recall-min-score" class="t-input" style="width: 70px; padding: 4px;">
                         <option value="0.4">40%</option>
@@ -114,24 +113,24 @@ export async function openRecallPanel() {
             </div>
         </div>
         
-        <div style="padding: 10px 15px; background: #2a2a2a; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #888;">检索结果</span>
+        <div style="padding: 10px 15px; background: var(--t-color-surface-raised); border-bottom: 1px solid var(--t-color-border); display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--t-color-text-muted);">检索结果</span>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <button id="t-recall-select-all" class="t-tool-btn" disabled>全选</button>
                 <button id="t-recall-deselect-all" class="t-tool-btn" disabled>取消</button>
-                <span id="t-recall-selected-count" style="color: #888; font-size: 0.9em;">已选: 0</span>
+                <span id="t-recall-selected-count" style="color: var(--t-color-text-muted); font-size: 0.9em;">已选: 0</span>
             </div>
         </div>
         
         <div class="t-recall-results-area" style="flex: 1; overflow-y: auto; padding: 10px;">
             <div id="t-recall-results-list">
-                <div style="text-align: center; padding: 40px; color: #666;">
+                <div style="text-align: center; padding: 40px; color: var(--t-color-text-faint);">
                     ${status.available ? '输入关键词并点击检索' : '请先建立向量索引'}
                 </div>
             </div>
         </div>
         
-        <div style="padding: 15px; border-top: 1px solid #333; display: flex; justify-content: flex-end; gap: 10px; background: #1a1a1a;">
+        <div style="padding: 15px; border-top: 1px solid var(--t-color-border); display: flex; justify-content: flex-end; gap: 10px; background: var(--t-color-surface-sunken);">
             <button id="t-recall-cancel" class="t-btn">取消</button>
             <button id="t-recall-append" class="t-btn t-btn-primary" disabled>
                 <i class="fa-solid fa-paperclip"></i> 附加到输入框
@@ -234,20 +233,20 @@ async function handleSearch() {
     // 显示加载状态
     isSearching = true;
     $("#t-recall-search-btn").html('<i class="fa-solid fa-spinner fa-spin"></i> 检索中...').prop("disabled", true);
-    $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: #888;"><i class="fa-solid fa-spinner fa-spin"></i> 检索中...</div>');
+    $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: var(--t-color-text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> 检索中...</div>');
 
     try {
         searchResults = await recallMemories(query, { maxResults, minScore });
         selectedIndices.clear();
 
         if (searchResults.length === 0) {
-            $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: #666;">未找到相关记忆</div>');
+            $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: var(--t-color-text-faint);">未找到相关记忆</div>');
         } else {
             renderResults();
         }
     } catch (e) {
         TitaniaLogger.error("检索失败", e);
-        $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: #ff6b6b;">' + e.message + '</div>');
+        $("#t-recall-results-list").html('<div style="text-align: center; padding: 40px; color: var(--t-color-danger);">' + e.message + '</div>');
         if (window.toastr) {
             toastr.error(e.message, "检索失败");
         }
@@ -280,10 +279,10 @@ function renderResults() {
             '</div>' +
             '<div style="flex: 1; min-width: 0;">' +
             '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">' +
-            '<span style="color: #888; font-size: 0.85em;">#' + result.messageIndex + '</span>' +
+            '<span style="color: var(--t-color-text-muted); font-size: 0.85em;">#' + result.messageIndex + '</span>' +
             '<span style="color: ' + scoreColor + '; font-weight: bold; font-size: 0.9em;">' + scorePercent + '%</span>' +
             '</div>' +
-            '<div style="color: #ccc; font-size: 0.9em; line-height: 1.5; word-break: break-word;">' + displayText + '</div>' +
+            '<div style="color: var(--t-color-text-label); font-size: 0.9em; line-height: 1.5; word-break: break-word;">' + displayText + '</div>' +
             '</div>' +
             '</div>';
     }).join('');

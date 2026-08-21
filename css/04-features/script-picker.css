@@ -1,0 +1,263 @@
+/* ============================================================
+   04-features/script-picker.css —— 主窗口的剧本选择器面板
+
+   这一族样式原先整段写在 04-features/manager.css 里，但**零个**规则被
+   剧本管理器消费 —— 13 个类名全部只出现在 src/ui/mainWindow.js：
+
+     .t-selector-panel  .t-sel-header  .t-sel-body  .t-sel-sidebar
+     .t-sel-grid  .t-sel-footer  .t-sel-cat-btn  .t-sel-search-input
+     .t-sel-sort-select  .t-script-card  .t-card-title  .t-card-desc
+     .t-card-stats
+
+   （`.t-mgr-*` 一族才是剧本管理器自己的，仍留在 manager.css。）
+
+   ── 为什么换文件位置不影响层叠 ──
+   这 13 个类在全库**只有本文件一处定义**（迁移前只有 manager.css 一处），
+   没有任何其它文件按同名类或后代选择器覆盖它们，故本文件在 manifest 中
+   的位置对层叠结果无影响。放在 main-window-legacy.css 之后是按「归属」
+   排的：它属于主窗口的功能，不属于剧本管理器。
+
+   ⚠ `.t-card-title` / `.t-card-desc` / `.t-card-stats` 三个名字过于笼统，
+     是 A12 的隐患（任何 feature 再定义同名裸类就会撞车）。本批只搬家、
+     不改名，避免把「搬运」和「重命名」混在同一个提交里。
+     改名时记得同步 mainWindow.js:2638-2640。
+   ============================================================ */
+
+/* 剧本选择器面板 */
+.t-selector-panel {
+    position: absolute;
+    top: 80px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    background: var(--t-color-bg);
+    backdrop-filter: blur(10px);
+    z-index: 2001;
+    border-radius: 8px;
+    border: 1px solid var(--t-color-border-strong);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--t-shadow-xl);
+    animation: t-fade-in 0.2s;
+}
+
+.t-sel-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--t-color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--t-color-surface);
+    border-radius: 8px 8px 0 0;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* 剧本选择器搜索框 */
+.t-sel-search-input {
+    background: var(--t-color-surface-raised);
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    width: 150px;
+    transition: 0.2s;
+}
+
+.t-sel-sort-select {
+    background: var(--t-color-surface-raised);
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text);
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.t-sel-search-input:focus {
+    outline: none;
+    border-color: var(--t-color-brand);
+    width: 180px;
+}
+
+.t-sel-search-input::placeholder {
+    color: var(--t-color-text-faint);
+}
+
+.t-sel-body {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.t-sel-sidebar {
+    width: 160px;
+    background: var(--t-color-surface-inset);
+    border-right: 1px solid var(--t-color-border);
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.t-sel-grid {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    align-content: start;
+}
+
+.t-sel-cat-btn {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--t-color-text-muted);
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: 0.2s;
+    text-align: left;
+}
+
+/* hover 底刻意用 -raised(#2a2a2a) 而非最近档 -elevated(#222)：本行原值 #252525
+   与下面 @media ≤600px 里 `.t-sel-cat-btn` 的 #222 只差 ΔE 1.5，两者吸到同一档后
+   移动端 hover 反馈会完全消失（--check-state 报出）。抬一档同时与项目里其它
+   按钮的 hover 阶（elevated→raised）一致。 */
+.t-sel-cat-btn:hover {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-soft);
+}
+
+.t-sel-cat-btn.active {
+    background: var(--t-color-surface-high);
+    color: var(--t-color-text-strong);
+    font-weight: bold;
+    border-left: 3px solid var(--t-color-brand);
+}
+
+.t-script-card {
+    background: var(--t-color-surface-elevated);
+    border: 1px solid var(--t-color-border);
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.t-script-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--t-color-border-bright);
+    background: var(--t-color-surface-raised);
+}
+
+.t-card-title {
+    font-weight: bold;
+    color: var(--t-color-text);
+    font-size: 1em;
+}
+
+.t-card-desc {
+    font-size: 0.8em;
+    color: var(--t-color-text-dim);
+    line-height: 1.3;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.t-card-stats {
+    font-size: 0.74em;
+    color: var(--t-color-text-muted);
+    margin-top: 2px;
+}
+
+.t-sel-footer {
+    padding: 7px 12px;
+    font-size: 0.78em;
+    color: var(--t-color-text-dim);
+    border-top: 1px solid var(--t-color-border);
+    background: var(--t-color-surface-sunken);
+    border-radius: 0 0 8px 8px;
+}
+
+/* ── 移动端适配 ── */
+@media screen and (max-width: 600px) {
+    .t-selector-panel {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+    }
+
+    .t-sel-body {
+        flex-direction: column;
+    }
+
+    .t-sel-sidebar {
+        width: 100%;
+        max-height: 50px;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: none;
+        border-bottom: 1px solid var(--t-color-border);
+        padding: 5px;
+        gap: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* 移动端搜索框适配 */
+    .t-sel-search-input {
+        width: 120px;
+    }
+
+    .t-sel-search-input:focus {
+        width: 140px;
+    }
+
+    .t-sel-sort-select {
+        min-width: 100px;
+        max-width: 120px;
+    }
+
+    .t-sel-cat-btn {
+        text-align: center;
+        border-left: none;
+        padding: 6px 12px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        background: var(--t-color-surface-elevated);
+        border: 1px solid var(--t-color-border);
+    }
+
+    .t-sel-cat-btn.active {
+        background: var(--t-color-brand);
+        color: var(--t-color-text-on-accent);
+        border: 1px solid var(--t-color-brand);
+        border-left: 1px solid var(--t-color-brand);
+    }
+
+    .t-sel-grid {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+}
+
+/* 网格空态（"未找到…" / "此分类下暂无剧本"）。
+   Phase 5b-8 从 mainWindow.js:2617 的内联 style 迁出。
+   grid-column: 1 / -1 让它横跨 .t-sel-grid 的所有列。 */
+.t-sel-grid-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--t-color-text-disabled);
+    margin-top: 50px;
+}

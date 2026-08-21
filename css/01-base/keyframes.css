@@ -1,0 +1,250 @@
+/* ============================================================
+   01-base/keyframes.css —— 全库唯一的 @keyframes 声明处
+
+   规则 R6:任何 @keyframes 只能在本文件声明,且必须带 t- 前缀。
+   由 scripts/css-audit.js 的 A7 检查(Phase 6 起阻断构建)。
+
+   为什么集中:
+   - 无前缀的全局 keyframes 会与 SillyTavern 及其它第三方扩展撞名(B3)
+   - 悬浮球与设置页预览球曾各存一套 t-* / p-* 重复定义,改一处要改两处(B4)
+
+   本文件由 5.2.5 的 12 个 CSS + rewriteEntryButton.js 汇总而来:
+   28 处原始定义 → 归并 6 处字节级重复 → 22 个动画。
+   所有动画体均自原文件逐字节保留,仅重命名,不改数值。
+   ============================================================ */
+
+/* ===== 通用:淡入 / 上滑 ===== */
+
+/* base.css  ·  旧名 fadeIn(无前缀,与 ST 及其它扩展冲突)— 修 B3 */
+@keyframes t-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* manager.css  ·  旧名 slideUp(无前缀)— 修 B3 */
+@keyframes t-slide-up {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* main-window.css  ·  旧名 t-stats-fadeIn(驼峰) */
+@keyframes t-stats-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* main-window.css  ·  旧名 t-indicator-slideUp;已合并 t-gcn-slideUp(字节级等价) */
+@keyframes t-indicator-slide-up {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* ===== 悬浮球 / 设置页预览球(共用一套 —— 修 B4) ===== */
+
+/* floating.css  ·  已合并 settings.css 的 p-ripple-1(字节级等价) */
+@keyframes t-ripple-1 {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+/* floating.css  ·  已合并 settings.css 的 p-ripple-2(字节级等价) */
+@keyframes t-ripple-2 {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}
+
+/* floating.css  ·  已合并 settings.css 的 p-arc-rotate(字节级等价) */
+@keyframes t-arc-rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* floating.css  ·  已合并 settings.css 的 p-arc-flash(字节级等价) */
+@keyframes t-arc-flash-1 {
+
+    0%,
+    90%,
+    100% {
+        opacity: 0;
+    }
+
+    92%,
+    95% {
+        opacity: 1;
+    }
+}
+
+/* floating.css  ·  仅真球使用 */
+@keyframes t-arc-flash-2 {
+
+    0%,
+    80%,
+    100% {
+        opacity: 0;
+    }
+
+    82%,
+    88% {
+        opacity: 1;
+    }
+}
+
+/* floating.css  ·  已合并 settings.css 的 p-notify-glow。⚠ 二者原本不等价:
+   预览球旧版 glow 20px 且不动 border-color;现统一为真球版(25px + border-color)。
+   预览球未设置 --t-border-color,故 var() 回落 #55efc4,配色不变。
+   这是 B4 的预期结果:预览球本就应与真球一致 */
+@keyframes t-notify-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px var(--t-border-color, #55efc4);
+        border-color: var(--t-border-color, #55efc4);
+    }
+
+    50% {
+        box-shadow: 0 0 25px var(--t-border-color, #55efc4);
+        border-color: var(--t-border-color, #55efc4);
+    }
+}
+
+/* floating.css */
+@keyframes t-cancel-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px rgb(var(--t-accent-danger-vivid-rgb) / .5);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgb(var(--t-accent-danger-vivid-rgb) / .8);
+    }
+}
+
+/* floating.css */
+@keyframes t-cancel-pulse-icon {
+
+    0%,
+    100% {
+        text-shadow: 0 0 5px rgb(var(--t-accent-danger-rgb) / .5);
+    }
+
+    50% {
+        text-shadow: 0 0 15px rgb(var(--t-accent-danger-rgb) / .8);
+    }
+}
+
+/* ===== 功能视图专用 ===== */
+
+/* main-window.css */
+@keyframes t-queue-progress-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* lore-review.css */
+@keyframes t-spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* workshop.css */
+@keyframes t-ws-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* favs.css  ·  旧名 pulse-green(无前缀)— 修 B3 */
+@keyframes t-pulse-green {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgb(var(--t-accent-interactive-rgb) / .3);
+    }
+
+    50% {
+        box-shadow: 0 0 8px 2px rgb(var(--t-accent-interactive-rgb) / .2);
+    }
+}
+
+/* story-outline.css  ·  旧名 tRawPulse(驼峰无连字符)— 修 B3 */
+@keyframes t-raw-pulse {
+    0%,
+    80%,
+    100% {
+        transform: translateY(0) scale(0.85);
+        box-shadow: 0 0 0 0 rgb(var(--t-accent-teal-rgb) / 0);
+    }
+
+    40% {
+        transform: translateY(-2px) scale(1);
+        box-shadow: 0 0 0 4px rgb(var(--t-accent-teal-rgb) / .12);
+    }
+}
+
+/* ===== 注入 ST DOM 的元素(依 ADR-02 视觉独立,但 keyframes 依 R6 集中声明) ===== */
+
+/* rewriteEntryButton.js  ·  原定义在 rewriteEntryButton.js 的 REWRITE_PANEL_CSS 内联样式中 */
+@keyframes t-rewrite-badge-flow { 0% { background-position: 0% 50%; box-shadow: 0 6px 18px var(--t-shadow-ink-28); } 50% { background-position: 100% 50%; box-shadow: 0 6px 22px rgb(var(--t-accent-sky-glow-rgb) / .3); } 100% { background-position: 200% 50%; box-shadow: 0 6px 18px var(--t-shadow-ink-28); } }
+
+/* rewriteEntryButton.js */
+@keyframes t-rewrite-badge-icon { 0%,100% { transform: scale(1) rotate(0deg); opacity: 0.9; } 50% { transform: scale(1.12) rotate(8deg); opacity: 1; } }
+
+/* rewriteEntryButton.js */
+@keyframes t-rewrite-mark-fade-in { from { opacity: 0; } to { opacity: 1; } }

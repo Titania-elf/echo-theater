@@ -1,0 +1,232 @@
+/* ============================================================
+   00-tokens/primitives.css —— 原语层
+
+   与主题无关的原始尺度。只被 semantic / theme 层消费。
+   组件层禁止直接引用本文件的任何变量（规则 R3b，审计 A4）。
+
+   全部初始值取自 5.2.5 的现有高频实测值，不发明新数值 ——
+   因此 Phase 1 落地后视觉零变化。注释里的次数为实测出现频次。
+   ============================================================ */
+:root {
+    /* ---- 中性阶：收敛现状 25 个值 → 14 阶 ---- */
+    --t-c-neutral-0-rgb: 18 18 18;
+    /* #121212  现 10 次，窗口底 */
+    --t-c-neutral-1-rgb: 26 26 26;
+    /* #1a1a1a  合并 #181818/#1a1a1a/#1d1d1d */
+    --t-c-neutral-2-rgb: 30 30 30;
+    /* #1e1e1e  现 26 次 */
+    --t-c-neutral-3-rgb: 34 34 34;
+    /* #222     合并 #222/#232323/#242424 */
+    --t-c-neutral-4-rgb: 42 42 42;
+    /* #2a2a2a  合并 #252525/#2a2a2a/#2b2b2b/#2d2d2d */
+    --t-c-neutral-5-rgb: 51 51 51;
+    /* #333     现 74 次，单值最高频 */
+    --t-c-neutral-6-rgb: 58 58 58;
+    /* #3a3a3a  合并 #383838/#3a3a3a */
+    --t-c-neutral-7-rgb: 68 68 68;
+    /* #444     现 42 次 */
+    --t-c-neutral-8-rgb: 102 102 102;
+    /* #666     合并 #555/#666/#777 */
+    --t-c-neutral-9-rgb: 136 136 136;
+    /* #888     现 35 次 */
+    --t-c-neutral-10-rgb: 170 170 170;
+    /* #aaa     合并 #999/#aaa/#bbb */
+    --t-c-neutral-11-rgb: 204 204 204;
+    /* #ccc     合并 #ccc/#ddd */
+    --t-c-neutral-12-rgb: 238 238 238;
+    /* #eee     现 22 次 */
+    --t-c-neutral-13-rgb: 255 255 255;
+    /* #fff     现 59 次 */
+
+    /* ---- 冷调中性阶：项目真正的中性色 ----
+       Phase 1 只收了「三通道相等」的纯灰，漏掉了这条阶。实测 20 个 feature
+       文件里另有 251 处「偏蓝的灰」，散成 128 个手写值 —— 数量与纯灰同级，
+       不是笔误：它们共享同一条色相轴（hue ≈ 205–218°，饱和度 < 30%）。
+
+       亮端（7–12）不是自创，而是 Chakra UI 的 gray 阶，项目里已在精确使用：
+       gray.600 #4a5568 ×3 / gray.500 #718096 ×9 / gray.400 #a0aec0 ×24 /
+       gray.300 #cbd5e0 ×10 / gray.200 #e2e8f0 ×17。同源的 #90cdf4 = blue.200、
+       #48bb78 = green.400、#f56565 = red.400 也已在上方色相里。
+       暗端（0–5）Chakra 的 gray.700+ 项目未采用，故取项目自己的高频冷底值。
+
+       序号与 --t-c-neutral-* 对齐（0 最暗），便于「同一档、换冷暖」地替换。
+       缺 13 档：#dff0ff 与 12 档 #e2e8f0 亮度只差 6，不值一档。 */
+    --t-c-cool-0-rgb: 7 11 18;
+    /* #070b12  合并 rgba(7,11,18)/rgba(8,13,20) —— 输入框与代码块底 */
+    --t-c-cool-1-rgb: 10 15 22;
+    /* #0a0f16  合并 rgba(10,15,22)×6/rgba(13,19,28)/rgba(15,18,25) —— 卡片底 */
+    --t-c-cool-2-rgb: 18 22 29;
+    /* #12161d  合并 #12161d/rgba(19,22,30)/rgba(16,22,31)/rgba(15,24,35) 等 —— 窗口底 */
+    --t-c-cool-3-rgb: 22 27 36;
+    /* #161b24  合并 rgba(22,27,36)/rgba(18,28,38)/rgba(25,25,35) */
+    --t-c-cool-4-rgb: 28 34 44;
+    /* #1c222c  合并 rgba(28,34,44)/rgba(18,29,43)/rgba(18,30,44) */
+    --t-c-cool-5-rgb: 34 42 54;
+    /* #222a36  合并 rgba(34,42,54)/rgba(17,34,54)/rgba(34,54,76) */
+    --t-c-cool-6-rgb: 74 85 104;
+    /* #4a5568  Chakra gray.600，现 3 次 */
+    --t-c-cool-7-rgb: 113 128 150;
+    /* #718096  Chakra gray.500，现 9 次 */
+    --t-c-cool-8-rgb: 120 150 170;
+    /* #7896aa  现 20 次（均以 rgba 出现），合并 #7f95a8/#8899aa 一族 */
+    --t-c-cool-9-rgb: 160 174 192;
+    /* #a0aec0  Chakra gray.400，现 24 次 —— 冷调里最高频 */
+    --t-c-cool-10-rgb: 169 191 209;
+    /* #a9bfd1  合并 #a9bfd3/#a8bfd3/#bccdd8/rgba(176,188,201) 一族 */
+    --t-c-cool-11-rgb: 203 213 224;
+    /* #cbd5e0  Chakra gray.300，现 10 次 */
+    --t-c-cool-12-rgb: 226 232 240;
+    /* #e2e8f0  Chakra gray.200，现 17 次 —— 冷调正文 */
+
+    /* ---- 色相：全部取自现有高频值，不新增 ----
+       用 RGB 通道三元组而非 hex，因为 rgba() 无法接收 hex 变量，
+       而项目有 749 处 rgba() 字面量待 token 化（ADR-04）。
+       消费方式：rgb(var(--t-c-blue-rgb) / .12) */
+    --t-c-gold-rgb: 191 161 95;
+    /* #bfa15f  48 次，品牌色 */
+    --t-c-blue-rgb: 144 205 244;
+    /* #90cdf4  64 次，交互色（第二高频且原本无变量） */
+    --t-c-mint-rgb: 85 239 196;
+    /* #55efc4  18 次，通知色 */
+    --t-c-teal-rgb: 129 236 236;
+    /* #81ecec  故事大纲窗的主强调色。Phase 6b-11 新增 —— 此前原语层没有青绿一族，
+       导致这 21 处（散在 15 个 alpha 上）在「最近邻」里只能匹配到 mint(#55efc4)，
+       差 ΔE 27，属误配。⚠ 缺一个族就会让该族的字面量全部被强行匹配到别的族上，
+       并被误判成「没有合并结构」（见交接文档 §6b-5 与 §6b-8 的更正）。 */
+    --t-c-red-rgb: 255 107 107;
+    /* #ff6b6b  收敛 4 个红（#ff6b6b/#f56565/#e74c3c/#ff9d9d） */
+    --t-c-green-rgb: 72 187 120;
+    /* #48bb78  收敛 2 套绿 */
+    --t-c-amber-rgb: 245 158 11;
+    /* #f59e0b  收敛 3 个黄（#f59e0b/#feca57/#ecc94b） */
+    --t-c-violet-rgb: 162 155 254;
+    /* #a29bfe  装饰色 */
+
+    /* ---- 间距：4pt 基准 ---- */
+    --t-space-2xs: 2px;
+    /* gap 2px ×6 */
+    --t-space-xs: 4px;
+    /* gap 4px ×17 */
+    --t-space-sm: 6px;
+    /* gap 6px ×55 */
+    --t-space-md: 8px;
+    /* gap 8px ×98 + padding 8px ×27 —— 主力 */
+    --t-space-lg: 12px;
+    /* gap 12px ×13 + padding 12px ×25 */
+    --t-space-xl: 16px;
+    --t-space-2xl: 20px;
+    --t-space-3xl: 24px;
+
+    /* ---- 间距过渡别名 ⚠ ----
+       项目现存「4 倍数」与「5 倍数」两套间距系统，10px/15px 是最高频的 5 倍数值。
+       故意用值命名（通常是反模式），因为它们的唯一用途就是被删除。
+       Phase 1 只做「字面量 → 变量」等价替换；Phase 7 才归并，单独发版。 */
+    --t-space-10: 10px;
+    /* 119 处（padding 44 + gap 75）→ 目标归入 md(8) 或 lg(12) */
+    --t-space-15: 15px;
+    /* 27 处 → 目标归入 xl(16) */
+
+    /* ---- 圆角 ----
+       已决策：控件（button/input/select/badge）= md(6px)；
+               容器（card/panel）= lg(8px)；窗口/弹窗 = 2xl(12px)。
+       现有 11 个散值（5/7/11/14/15/16/20/25/30/50/99px）全部归入最近档。
+       语义角色见 semantic.css。 */
+    --t-radius-xs: 3px;
+    /* 12 次 */
+    --t-radius-sm: 4px;
+    /* 40 次 */
+    --t-radius-md: 6px;
+    /* 64 次 */
+    --t-radius-lg: 8px;
+    /* 60 次 */
+    --t-radius-xl: 10px;
+    /* 29 次 */
+    --t-radius-2xl: 12px;
+    /* 16 次 */
+    --t-radius-pill: 999px;
+    /* 10 次 */
+    --t-radius-full: 50%;
+    /* 22 次，圆形图标钮 */
+
+    /* ---- 字号：相对容器基准的 em 梯级 ----
+       用 em 不用 rem（ADR-05）：UI 缩放靠容器上的
+       font-size: calc(12px * var(--t-ui-font-scale)) 实现，
+       rem 相对 html 根字号会完全绕过该机制，导致缩放失效。 */
+    --t-font-size-2xs: 0.72em;
+    /* ≈9px   合并 0.66/0.7/0.72/0.74 */
+    --t-font-size-xs: 0.8em;
+    /* ≈10px  合并 0.75/0.78/0.8/0.82 */
+    --t-font-size-sm: 0.85em;
+    /* ≈10px  合并 0.84/0.85/0.86/0.88 */
+    --t-font-size-md: 0.9em;
+    /* ≈11px  现 61 次，最高频 */
+    --t-font-size-base: 1em;
+    /* =12px */
+    --t-font-size-lg: 1.1em;
+    --t-font-size-xl: 1.25em;
+    /* 合并 1.2/1.3 */
+    --t-font-size-2xl: 1.5em;
+
+    --t-font-weight-normal: 400;
+    --t-font-weight-medium: 500;
+    --t-font-weight-semibold: 600;
+    --t-font-weight-bold: 700;
+    /* 现有 22 处写 `bold`，统一为数值 */
+    --t-font-weight-black: 800;
+    /* .t-title-main */
+
+    --t-line-height-tight: 1.2;
+    --t-line-height-snug: 1.35;
+    --t-line-height-base: 1.5;
+    --t-line-height-relaxed: 1.6;
+
+    /* ---- 时长与缓动 ---- */
+    --t-duration-instant: 0.1s;
+    --t-duration-fast: 0.16s;
+    /* 合并现有 0.16/0.18 系列 */
+    --t-duration-base: 0.2s;
+    /* 现 60 次 */
+    --t-duration-slow: 0.3s;
+    --t-duration-slower: 0.45s;
+
+    --t-ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+    --t-ease-out: ease-out;
+    --t-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* 现有 ×2 */
+    --t-ease-decel: cubic-bezier(0.16, 1, 0.3, 1);
+    /* 现有 ×1 */
+
+    /* ---- 层级预算（收敛 CSS 37 + JS 10 个值）---- */
+    --t-z-base: 0;
+    --t-z-raised: 10;
+    --t-z-sticky: 100;
+    --t-z-float: 9000;
+    /* 悬浮球 / 计时器 / 滑出菜单 */
+    --t-z-overlay: 20000;
+    /* 主遮罩（保持现值） */
+    --t-z-window: 20010;
+    /* 窗口（现 20001） */
+    --t-z-dialog: 20100;
+    /* 二级弹窗（现也是 20001，与窗口同级，靠 DOM 顺序侥幸生效） */
+    --t-z-popover: 20200;
+    /* 下拉 / 选择器 / 更多菜单 */
+    --t-z-toast: 20300;
+
+    /* ---- 字体族（沿用现值，原在 base.css:16-21）---- */
+    /* 全局字体 —— 用户可自定义，应用于 UI 和内容区域 */
+    --t-font-global: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    /* 等宽字体 —— 固定用于代码编辑器和日志，不受用户设置影响 */
+    --t-font-mono: "Consolas", "Monaco", "Courier New", monospace;
+
+    /* UI 缩放系数 —— settingsWindow.js 会把它写到 documentElement 上覆盖本默认值 */
+    --t-ui-font-scale: 1;
+    /* 插件 UI 基准字号 —— 用于给 B8 那 6 个漏掉基准的弹窗根统一补上 */
+    --t-font-size-root: calc(12px * var(--t-ui-font-scale, 1));
+}
+
+/* ---- 断点约定（CSS 变量不能用于 @media，靠约定 + 审计 A18 保证）----
+   --t-bp-mobile   600px   主断点（现 16 次）
+   --t-bp-tablet   768px   次断点（现 CSS 12 次 + JS 4 次）
+   --t-bp-desktop  920px   宽屏（现 JS 1 次）
+   需归并的散值：480 / 620 / 700 / 769 / 900px（Phase 7）
+   JS 侧 matchMedia 字符串应集中到一处常量导出，避免 JS/CSS 断点不同步。 */

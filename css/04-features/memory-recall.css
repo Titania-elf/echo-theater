@@ -1,0 +1,168 @@
+/* css/04-features/memory-recall.css */
+/* 记忆召回功能样式 */
+
+/* ===== 快捷工具栏中的记忆召回按钮样式 ===== */
+/* 按钮使用 fa-brain 图标，紫色渐变背景 */
+.t-menu-icon-btn.recall {
+    background: linear-gradient(135deg, rgb(var(--t-accent-indigo-rgb)) 0%, rgb(var(--t-accent-recall-rgb)) 100%);
+}
+
+.t-menu-icon-btn.recall:hover {
+    box-shadow: 0 4px 15px rgb(var(--t-accent-indigo-rgb) / .5);
+}
+
+.t-recall-status {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: var(--t-color-surface-active);
+}
+
+.t-recall-status.available {
+    background: rgb(var(--t-accent-recall-avail-rgb) / .3);
+}
+
+.t-recall-status.unavailable {
+    background: rgb(var(--t-accent-danger-rgb) / .3);
+}
+
+/* 记忆检索面板的状态徽标。原为 memoryRecallPanel.js:74 的内联 style。
+
+   ⚠ 与上面的 .t-recall-status 三条规则**不是**一套，刻意不合并：
+   全库唯一的 t-recall-status* 用法是 memoryRecallPanel.js:74 的
+   `.t-recall-status-badge`，也就是上面那三条规则**零消费者**（含 :483 的
+   媒体查询共 4 条）。看取值差异（11px / 3px 8px / 10px /
+   rgba(255,255,255,.2) 对下面的 0.85em / 4px 10px / 12px / #2a4a3a）
+   像是类名改过而 CSS 未跟着改，于是当时改用了内联硬撑。
+   这里按内联原值落地；删除 .t-recall-status 归 Phase 7。
+
+   ⚠ available / unavailable 是裸类名，但只出现在复合选择器里，
+   本选择器 (0,2,0) 压得过宿主可能存在的 (0,1,0) 同名类。 */
+.t-recall-status-badge {
+    margin-left: auto;
+    margin-right: 15px;
+    font-size: 0.85em;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.t-recall-status-badge.available {
+    background: rgb(var(--t-accent-recall-ok-fill-rgb));
+    color: rgb(var(--t-accent-recall-ok-rgb));
+}
+
+.t-recall-status-badge.unavailable {
+    background: rgb(var(--t-accent-recall-bad-fill-rgb));
+    color: var(--t-color-danger);
+}
+
+.t-recall-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: rgb(var(--t-text-white-rgb) / .8);
+    cursor: pointer;
+    padding: 5px;
+    font-size: 16px;
+    transition: color 0.2s;
+}
+
+.t-recall-close:hover {
+    color: var(--t-color-text-strong);
+}
+
+.t-recall-search-btn {
+    padding: 10px 16px;
+    background: linear-gradient(135deg, rgb(var(--t-accent-indigo-rgb)) 0%, rgb(var(--t-accent-recall-rgb)) 100%);
+    color: var(--t-color-text-strong);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.t-recall-search-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgb(var(--t-accent-indigo-rgb) / .4);
+}
+
+.t-recall-search-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#t-recall-selected-count {
+    font-size: 11px;
+    color: rgb(var(--t-accent-indigo-rgb));
+    font-weight: 500;
+}
+
+/* 结果列表 */
+.t-recall-results-list {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 250px;
+}
+
+/* 结果项 */
+.t-recall-result-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--t-color-surface-hover-subtle);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.t-recall-result-item:hover {
+    background: var(--t-color-surface-hover);
+}
+
+.t-recall-result-item.selected {
+    background: rgb(var(--t-accent-indigo-rgb) / .15);
+    border-color: rgb(var(--t-accent-indigo-rgb) / .4);
+}
+
+/* ===== 隐藏注入的记忆标签 ===== */
+.mes_text titania-memory,
+.mes_text .titania-memory,
+#chat titania-memory {
+    /* Override host message-content rules so injected memory metadata stays hidden. */
+    display: none !important;
+}
+
+/* ===== 移动端适配 - 全屏覆盖式 ===== */
+@media (max-width: 768px) {
+
+    .t-recall-search-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+    }
+
+    .t-recall-results-list {
+        flex: 1;
+        max-height: none;
+        overflow-y: auto;
+    }
+}
+
+/* ===== 小屏幕手机进一步优化 ===== */
+@media (max-width: 480px) {
+
+    .t-recall-status {
+        font-size: 10px;
+    }
+}

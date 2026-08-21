@@ -257,64 +257,52 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
             ? recent.map(item => {
                 const encoded = encodeURIComponent(item);
                 const display = item.length > 24 ? `${item.slice(0, 24)}…` : item;
-                return `<button class="t-cont-recent-item" data-text="${encoded}" style="
-                            border:1px solid #3d3d3d;
-                            background:#262626;
-                            color:#ddd;
-                            border-radius:999px;
-                            padding:6px 12px;
-                            font-size:12px;
-                            cursor:pointer;
-                            max-width:100%;
-                            overflow:hidden;
-                            text-overflow:ellipsis;
-                            white-space:nowrap;
-                        " title="${escapeHtmlText(item)}">${escapeHtmlText(display)}</button>`;
+                return `<button class="t-cont-recent-item" data-text="${encoded}" title="${escapeHtmlText(item)}">${escapeHtmlText(display)}</button>`;
             }).join("")
-            : `<div style="color:#777; font-size:12px;">暂无最近续写指令</div>`;
+            : `<div class="t-cont-recent-empty">暂无最近续写指令</div>`;
 
         const html = `
         <div id="t-continuation-editor" class="t-content-editor">
-            <div class="t-ce-header">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color:#bfa15f;"></i>
-                    <span style="font-weight:bold;">续写操作台</span>
-                    <span style="font-size:0.8em; color:#666;">支持 Ctrl+Enter 快速发送</span>
+            <div class="t-panel-header t-ce-header">
+                <div class="t-cont-composer-head">
+                    <i class="fa-solid fa-wand-magic-sparkles t-cont-composer-icon"></i>
+                    <span class="t-cont-composer-title">续写操作台</span>
+                    <span class="t-cont-composer-subtitle">支持 Ctrl+Enter 快速发送</span>
                 </div>
                 <div class="t-close" id="t-cont-close">&times;</div>
             </div>
 
-            <div class="t-ce-body" style="display:flex; flex-direction:column; gap:10px; overflow:auto;">
-                <div style="color:#888; font-size:12px;">可留空表示“自然续写”；会基于当前剧场上下文继续生成。</div>
+            <div class="t-ce-body t-ce-body--stack">
+                <div class="t-cont-composer-hint">可留空表示“自然续写”；会基于当前剧场上下文继续生成。</div>
 
-                <textarea id="t-cont-input" class="t-ce-textarea" placeholder="例如：让两人矛盾升级，但保持克制，不要立刻和解。" spellcheck="false" style="height:auto; min-height:160px; flex:1;"></textarea>
+                <textarea id="t-cont-input" class="t-ce-textarea t-ce-textarea--grow" placeholder="例如：让两人矛盾升级，但保持克制，不要立刻和解。" spellcheck="false"></textarea>
 
-                <div style="display:flex; align-items:center; justify-content:flex-end;">
-                    <div id="t-cont-char-count" style="color:#777; font-size:12px;">0 字</div>
+                <div class="t-cont-count-row">
+                    <div id="t-cont-char-count" class="t-cont-char-count">0 字</div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="color:#aaa; font-size:12px;">最近使用（最多 ${CONTINUATION_RECENT_MAX} 条，点击复用）</div>
-                    <div id="t-cont-recent-list" style="display:flex; gap:8px; flex-wrap:wrap; max-height:88px; overflow:auto;">${recentHtml}</div>
+                <div class="t-cont-composer-section">
+                    <div class="t-cont-composer-label">最近使用（最多 ${CONTINUATION_RECENT_MAX} 条，点击复用）</div>
+                    <div id="t-cont-recent-list" class="t-cont-recent-list">${recentHtml}</div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:8px; border:1px solid #333; border-radius:8px; padding:10px; background:#1e1e1e;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                        <div style="color:#ddd; font-size:12px;">${regenerationTarget ? "分支上下文" : "注入最近续写条数（正文+指令）"}</div>
-                        <div id="t-cont-rounds-total" style="color:#9aa; font-size:12px;">已生成轮次：0</div>
+                <div class="t-cont-inject-box">
+                    <div class="t-cont-inject-head">
+                        <div class="t-cont-inject-label">${regenerationTarget ? "分支上下文" : "注入最近续写条数（正文+指令）"}</div>
+                        <div id="t-cont-rounds-total" class="t-cont-rounds-total">已生成轮次：0</div>
                     </div>
-                    <div style="display:${regenerationTarget ? "none" : "flex"}; align-items:center; gap:8px; flex-wrap:wrap;">
-                        <input type="number" id="t-cont-inject-count" class="t-input" min="3" max="20" step="1" value="${selectedInjectRounds}" placeholder="请输入 3-20" style="width:100px; padding:4px 8px; font-size:12px;">
-                        <span style="color:#888; font-size:12px;">条（3-20 条）</span>
+                    <div class="t-cont-inject-row${regenerationTarget ? " is-hidden" : ""}">
+                        <input type="number" id="t-cont-inject-count" class="t-input t-cont-inject-count" min="3" max="20" step="1" value="${selectedInjectRounds}" placeholder="请输入 3-20">
+                        <span class="t-cont-composer-hint">条（3-20 条）</span>
                     </div>
-                    <div id="t-cont-context-estimate" style="color:#9aa; font-size:12px;">${regenerationTarget ? `将完整注入目标轮之前的 ${Math.max(0, regenerationTarget.round - 1)} 轮内容` : "预估上下文长度：0 字符 (~0 tokens)"}</div>
+                    <div id="t-cont-context-estimate" class="t-cont-context-estimate">${regenerationTarget ? `将完整注入目标轮之前的 ${Math.max(0, regenerationTarget.round - 1)} 轮内容` : "预估上下文长度：0 字符 (~0 tokens)"}</div>
                 </div>
 
                 ${regenerationTarget ? `<div class="t-cont-regeneration-note"><i class="fa-solid fa-code-branch"></i> 将从${escapeHtmlText(regenerationTarget.label)}创建分支并重新生成。目标轮之前的全部内容会被注入，原分支会保留。</div>` : ""}
 
             </div>
 
-            <div class="t-ce-footer">
+            <div class="t-panel-footer t-ce-footer">
                 <div class="t-ce-stats"><span id="t-cont-char-count-footer">0 字</span></div>
                 <div class="t-ce-actions">
                     <button class="t-btn" id="t-cont-cancel">取消</button>
@@ -391,9 +379,9 @@ function openContinuationComposer(initialText = "", regenerationTarget = null, b
             $contextEstimate.text(`预估上下文长度：${stats.estimatedChars} 字符 (~${stats.estimatedTokens} tokens)`);
 
             if (stats.estimatedTokens > CONTINUATION_TOKEN_WARN_THRESHOLD) {
-                $contextEstimate.css({ color: "#ff7675", fontWeight: "bold" });
+                $contextEstimate.addClass("is-over-budget");
             } else {
-                $contextEstimate.css({ color: "#9aa", fontWeight: "" });
+                $contextEstimate.removeClass("is-over-budget");
             }
         };
 
@@ -577,7 +565,7 @@ async function openContinuationHistory(preferredScriptId = "") {
     if (preferredIndex > 0) sessions.unshift(sessions.splice(preferredIndex, 1)[0]);
 
     const selectionCheckbox = (level, chatId, scriptId, branchKey = "", roundKey = "", disabled = false) => continuationHistoryManaging
-        ? `<input class="t-cont-select" type="checkbox" data-selection-level="${level}" data-chat-id="${escapeHtmlText(chatId)}" data-script-id="${escapeHtmlText(scriptId)}" data-branch-key="${escapeHtmlText(branchKey)}" data-round-key="${escapeHtmlText(roundKey)}" ${disabled ? "disabled" : ""} aria-label="选择${level === "session" ? "剧本" : level === "branch" ? "分支" : "轮次"}">`
+        ? `<input class="t-cont-select t-choice-input t-choice-input--accent t-choice-input--inline-gap-md t-choice-input--subdued-disabled" type="checkbox" data-selection-level="${level}" data-chat-id="${escapeHtmlText(chatId)}" data-script-id="${escapeHtmlText(scriptId)}" data-branch-key="${escapeHtmlText(branchKey)}" data-round-key="${escapeHtmlText(roundKey)}" ${disabled ? "disabled" : ""} aria-label="选择${level === "session" ? "剧本" : level === "branch" ? "分支" : "轮次"}">`
         : "";
     const sessionsHtml = sessions.map((session, sessionIndex) => {
         const isOpen = sessionIndex === 0;
@@ -953,7 +941,7 @@ export async function openMainWindow() {
         : "narrative";
 
     // 2. 准备初始展示内容（占位符，实际内容在 DOM 创建后用 Shadow DOM 渲染）
-    const placeholderContent = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#555;"><i class="fa-solid fa-clapperboard" style="font-size:3em; margin-bottom:15px; opacity:0.5;"></i><div style="font-size:1.1em;">请选择剧本，开始演绎...</div></div>';
+    const placeholderContent = '<div class="t-output-placeholder"><i class="fa-solid fa-clapperboard"></i><div class="t-output-placeholder-text">请选择剧本，开始演绎...</div></div>';
 
     // 依据用户偏好选择布局，产出 DOM 骨架
     const layout = data.ui_prefs?.main_window_mode === "legacy" ? legacyLayout : modernLayout;
@@ -1267,12 +1255,12 @@ export async function openMainWindow() {
             }
 
             // 图标变绿色表示成功
-            btn.html('<i class="fa-solid fa-check" style="color:#55efc4;"></i>');
+            btn.html('<i class="fa-solid fa-check" style="color:var(--t-color-notify);"></i>');
             setTimeout(() => btn.html(originalHtml), 1000);
         } catch (err) {
             console.error("Titania: 复制失败", err);
             // 图标变红色表示失败
-            btn.html('<i class="fa-solid fa-xmark" style="color:#ff6b6b;"></i>');
+            btn.html('<i class="fa-solid fa-xmark" style="color:var(--t-color-danger);"></i>');
             setTimeout(() => btn.html(originalHtml), 1500);
 
             if (window.toastr) {
@@ -1893,15 +1881,15 @@ async function openWorldInfoSelector() {
 
     const loadingHtml = `
     <div id="t-wi-selector" class="t-wi-selector">
-        <div class="t-wi-header">
+        <div class="t-panel-header t-wi-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-book-atlas" style="color:#90cdf4;"></i>
+                <i class="fa-solid fa-book-atlas" style="color:var(--t-color-accent);"></i>
                 <span style="font-weight:bold;">世界书管理</span>
             </div>
             <div class="t-close" id="t-wi-close">&times;</div>
         </div>
         <div class="t-wi-body" style="display:flex; align-items:center; justify-content:center; min-height:200px;">
-            <div style="text-align:center; color:#888;">
+            <div style="text-align:center; color:var(--t-color-text-muted);">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size:2em; margin-bottom:10px;"></i>
                 <div>正在加载世界书数据...</div>
             </div>
@@ -1949,11 +1937,11 @@ async function openWorldInfoSelector() {
         console.error("Titania: 加载世界书数据失败", e);
         if (loadingCancelled || !$loadingPanel[0]?.isConnected) return;
         $loadingPanel.find(".t-wi-body").html(`
-            <div style="text-align:center; color:#e74c3c; padding:20px;">
-                <i class="fa-solid fa-exclamation-triangle" style="font-size:2em; margin-bottom:10px;"></i>
-                <div style="margin-bottom:10px;">加载世界书数据失败</div>
-                <div style="font-size:0.9em; color:#888;">${e.message}</div>
-                <button class="t-btn t-wi-load-error-close" style="margin-top:15px;">关闭</button>
+            <div class="t-wi-load-error">
+                <i class="fa-solid fa-exclamation-triangle"></i>
+                <div class="t-wi-load-error-title">加载世界书数据失败</div>
+                <div class="t-wi-load-error-detail">${e.message}</div>
+                <button class="t-btn t-wi-load-error-close">关闭</button>
             </div>
         `);
         $loadingPanel.find(".t-wi-load-error-close").on("click", () => $loadingPanel.remove());
@@ -2025,11 +2013,11 @@ async function openWorldInfoSelector() {
 
     const html = `
     <div id="t-wi-selector" class="t-wi-selector">
-        <div class="t-wi-header">
+        <div class="t-panel-header t-wi-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-book-atlas" style="color:#90cdf4;"></i>
+                <i class="fa-solid fa-book-atlas" style="color:var(--t-color-accent);"></i>
                 <span style="font-weight:bold;">世界书管理</span>
-                <span style="font-size:0.8em; color:#666;">${ctx.charName}</span>
+                <span style="font-size:0.8em; color:var(--t-color-text-faint);">${ctx.charName}</span>
             </div>
             <div class="t-close" id="t-wi-close">&times;</div>
         </div>
@@ -2064,7 +2052,7 @@ async function openWorldInfoSelector() {
                         <button type="button" class="t-btn t-btn-xs" id="t-wi-current-select-all">全选</button>
                         <button type="button" class="t-btn t-btn-xs" id="t-wi-current-select-none">取消全选</button>
                         <label class="t-wi-hide-disabled" id="t-wi-hide-disabled-label" title="仅从列表里隐藏，不改动已保存的勾选。已勾选的禁用条目仍会注入">
-                            <input type="checkbox" id="t-wi-hide-disabled" ${hideDisabled ? "checked" : ""}>
+                            <input type="checkbox" id="t-wi-hide-disabled" class="t-choice-input t-choice-input--warning-muted t-choice-input--sm" ${hideDisabled ? "checked" : ""}>
                             <span>隐藏已禁用</span>
                         </label>
                     </div>
@@ -2075,7 +2063,7 @@ async function openWorldInfoSelector() {
             </div>
         </div>
 
-        <div class="t-wi-footer">
+        <div class="t-panel-footer t-wi-footer">
             <span id="t-wi-stat">已选: 0/0</span>
             <button class="t-btn primary" id="t-wi-save" ${allBooks.length === 0 ? "disabled" : ""}>保存</button>
         </div>
@@ -2117,8 +2105,8 @@ async function openWorldInfoSelector() {
     const showEntryPreview = (title, content) => {
         $q(".t-wi-preview-modal").remove();
         const $modal = $(`
-            <div class="t-wi-preview-modal">
-                <div class="t-wi-preview-box">
+            <div class="t-dialog-overlay t-dialog-overlay--contained t-wi-preview-modal t-root">
+                <div class="t-dialog-panel t-wi-preview-box">
                     <div class="t-wi-preview-header">
                         <span class="t-wi-preview-title">${title}</span>
                         <span class="t-wi-preview-close">&times;</span>
@@ -2235,10 +2223,10 @@ async function openWorldInfoSelector() {
         visibleEntries.forEach(entry => {
             const checked = selectedSet.has(Number(entry.uid));
             const constantBadge = entry.isConstant
-                ? '<span style="background:#4a9eff33; color:#4a9eff; padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">蓝灯</span>'
+                ? '<span class="t-wi-entry-badge t-wi-entry-badge--constant">蓝灯</span>'
                 : "";
             const disabledBadge = entry.isDisabled
-                ? '<span style="background:#ff9f4333; color:#ffb968; padding:1px 4px; border-radius:3px; font-size:0.7em; margin-left:5px;">酒馆中已禁用</span>'
+                ? '<span class="t-wi-entry-badge t-wi-entry-badge--disabled">酒馆中已禁用</span>'
                 : "";
 
             const $entry = $(`
@@ -2396,7 +2384,7 @@ async function openWorldInfoSelector() {
 
         const $body = $q("#t-wi-entry-list");
         $body.html(`
-            <div style="text-align:center; color:#888; padding:30px 10px;">
+            <div style="text-align:center; color:var(--t-color-text-muted); padding:30px 10px;">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size:1.6em; margin-bottom:10px;"></i>
                 <div>正在加载「${escapeHtmlText(requestedBookName)}」...</div>
             </div>
@@ -2517,7 +2505,7 @@ function renderFilterMenu(currentFilter, $targetBtn, onSelect) {
             <span>🔄 全部</span>
             <i class="fa-solid fa-check t-filter-check"></i>
         </div>
-        <div style="height:1px; background:#333; margin:2px 0;"></div>
+        <div style="height:1px; background:var(--t-color-border); margin:2px 0;"></div>
         ${cats.map(c => `
             <div class="t-filter-item ${currentFilter === c ? 'active' : ''}" data-val="${c}">
                 <span>${c}</span>
@@ -2573,7 +2561,7 @@ function showScriptSelector(initialFilter = "ALL") {
     const html = `
     <div id="t-selector-panel" class="t-selector-panel">
         <div class="t-sel-header">
-            <div style="font-weight:bold; color:#ccc;">📚 选择剧本 <span style="font-size:0.8em; color:#666; font-weight:normal; margin-left:10px;">(共 ${list.length} 个)</span></div>
+            <div style="font-weight:bold; color:var(--t-color-text-label);">📚 选择剧本 <span style="font-size:0.8em; color:var(--t-color-text-faint); font-weight:normal; margin-left:10px;">(共 ${list.length} 个)</span></div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <select id="t-sel-sort" class="t-sel-sort-select" title="排序方式">
                     <option value="smart">智能排序</option>
@@ -2626,7 +2614,7 @@ function showScriptSelector(initialFilter = "ALL") {
             const msg = currentSearch.trim()
                 ? `未找到包含 "${currentSearch}" 的剧本`
                 : "此分类下暂无剧本";
-            $grid.append(`<div style="grid-column:1/-1; text-align:center; color:#555; margin-top:50px;">${msg}</div>`);
+            $grid.append(`<div class="t-sel-grid-empty">${msg}</div>`);
             return;
         }
 
@@ -2862,18 +2850,18 @@ function openContentEditor() {
 
     const html = `
     <div id="t-content-editor" class="t-content-editor">
-        <div class="t-ce-header">
+        <div class="t-panel-header t-ce-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-pen-nib" style="color:#bfa15f;"></i>
+                <i class="fa-solid fa-pen-nib" style="color:var(--t-color-brand);"></i>
                 <span style="font-weight:bold;">编辑内容</span>
-                <span style="font-size:0.8em; color:#666;">直接编辑 HTML 源码</span>
+                <span style="font-size:0.8em; color:var(--t-color-text-faint);">直接编辑 HTML 源码</span>
             </div>
             <div class="t-close" id="t-ce-close">&times;</div>
         </div>
         <div class="t-ce-body">
             <textarea id="t-ce-textarea" class="t-ce-textarea" spellcheck="false"></textarea>
         </div>
-        <div class="t-ce-footer">
+        <div class="t-panel-footer t-ce-footer">
             <div class="t-ce-stats">
                 <span id="t-ce-char-count">字符: ${currentContent.length}</span>
             </div>
@@ -2979,9 +2967,9 @@ function openQueueSettingsWindow() {
 
     const html = `
     <div id="t-queue-settings" class="t-queue-settings">
-        <div class="t-queue-header">
+        <div class="t-panel-header t-queue-header">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-layer-group" style="color:#90cdf4;"></i>
+                <i class="fa-solid fa-layer-group" style="color:var(--t-color-accent);"></i>
                 <span style="font-weight:bold;">队列生成设置</span>
             </div>
             <div class="t-close" id="t-queue-close">&times;</div>
@@ -3023,11 +3011,11 @@ function openQueueSettingsWindow() {
             
             <!-- 手动模式设置 -->
             <div class="t-queue-manual-panel" id="t-queue-manual-panel" style="${qState.mode === 'manual' ? '' : 'display:none;'}">
-                <div class="t-queue-label">选择剧本 <span style="color:#666; font-size:0.85em;">(已选 <span id="t-queue-selected-count">${qState.manualItems.length}</span> 个)</span></div>
+                <div class="t-queue-label">选择剧本 <span style="color:var(--t-color-text-faint); font-size:0.85em;">(已选 <span id="t-queue-selected-count">${qState.manualItems.length}</span> 个)</span></div>
                 <div class="t-queue-script-list" id="t-queue-script-list">
                     ${GlobalState.runtimeScripts.map(s => `
                         <div class="t-queue-script-item ${qState.manualItems.includes(s.id) ? 'selected' : ''}" data-id="${s.id}">
-                            <input type="checkbox" ${qState.manualItems.includes(s.id) ? 'checked' : ''}>
+                            <input type="checkbox" class="t-choice-input t-choice-input--accent" ${qState.manualItems.includes(s.id) ? 'checked' : ''}>
                             <div class="t-queue-script-info">
                                 <div class="t-queue-script-name">${s.name}</div>
                                 <div class="t-queue-script-cat">${s.category || (s._type === 'preset' ? '官方预设' : '未分类')}</div>
@@ -3036,15 +3024,15 @@ function openQueueSettingsWindow() {
                     `).join('')}
                 </div>
                 <div class="t-queue-script-actions">
-                    <button class="t-btn" id="t-queue-select-all">全选</button>
-                    <button class="t-btn" id="t-queue-select-none">清空</button>
+                    <button class="t-btn t-btn--sm" id="t-queue-select-all">全选</button>
+                    <button class="t-btn t-btn--sm" id="t-queue-select-none">清空</button>
                 </div>
             </div>
             
             <!-- 通用设置 -->
-            <div class="t-queue-section" style="border-top:1px solid #333; padding-top:12px; margin-top:5px;">
+            <div class="t-queue-section" style="border-top:1px solid var(--t-color-border); padding-top:12px; margin-top:5px;">
                 <div class="t-queue-row">
-                    <div class="t-queue-label">生成间隔 <span style="color:#666; font-size:0.85em;">(秒)</span></div>
+                    <div class="t-queue-label">生成间隔 <span style="color:var(--t-color-text-faint); font-size:0.85em;">(秒)</span></div>
                     <div class="t-queue-control">
                         <button class="t-queue-num-btn" id="t-queue-interval-dec">-</button>
                         <span class="t-queue-num-value" id="t-queue-interval-value">${qState.interval}</span>
@@ -3062,9 +3050,9 @@ function openQueueSettingsWindow() {
             </div>
         </div>
         
-        <div class="t-queue-footer">
+        <div class="t-panel-footer t-queue-footer">
             <div class="t-queue-status" id="t-queue-status">
-                ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:#55efc4;"></i> 队列已激活' : '<i class="fa-solid fa-circle" style="color:#666;"></i> 队列未激活'}
+                ${qState.enabled ? '<i class="fa-solid fa-check-circle" style="color:var(--t-color-notify);"></i> 队列已激活' : '<i class="fa-solid fa-circle" style="color:var(--t-color-text-faint);"></i> 队列未激活'}
             </div>
             <div class="t-queue-actions">
                 <button class="t-btn" id="t-queue-cancel">取消</button>

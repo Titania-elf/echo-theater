@@ -1,0 +1,226 @@
+/* ============================================================
+   02-components/button.css —— 按钮组件
+
+   只消费语义 token，禁止页面/ID 选择器与颜色字面量（R2 / R3a / R3b，审计 A2–A4）。
+   本文件替代 base.css 里原来的 .t-btn 家族定义。
+
+   ── 收敛目标 ──
+   现状 61 个按钮类名 / 68 条基态规则，收敛为 1 个基类 + 6 个变体 + 4 个尺寸。
+   旧类名由 _legacy.css 映射到这里，JS 侧类名替换在 Phase 2 之后按窗口分批做。
+
+   ── S4 决策：主按钮用蓝色 ──
+   现状两套并存：.t-btn.primary（粉渐变，38 处）与 .t-btn-primary（蓝渐变，19 处）。
+   统一取蓝（--t-color-accent）：它是事实上的交互色（#90cdf4 全库 64 次 vs 粉 4 次），
+   且粉渐变在将来的浅色主题下对比度不足、不可用。
+   粉渐变保留为 --t-gradient-title 供标题使用，不再用于按钮。
+   ============================================================ */
+
+.t-btn {
+    --t-btn-font-size: var(--t-text-body);
+    --t-btn-color: var(--t-color-text);
+    /* ⚠ 刻意保持 display: flex，未采用 plan.md §6.3 的 inline-flex。
+       两者差别不是视觉而是布局语义：在块级容器里 flex 会撑满宽度、
+       inline-flex 只占内容宽度。全库按钮的父容器类型未逐一核实，
+       且本项目没有视觉基线可比对，改这一项极易造成大面积布局塌陷。
+       需要内容宽度时用 .t-btn--inline，需要满宽时用 .t-btn--block。 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--t-gap-inline);
+    padding: var(--t-space-md) var(--t-space-lg);
+    min-height: 32px;
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-control);
+    background: var(--t-color-surface-raised);
+    color: var(--t-btn-color);
+    font-family: inherit;
+    font-size: var(--t-btn-font-size);
+    font-weight: var(--t-font-weight-semibold);
+    line-height: var(--t-line-height-tight);
+    text-align: center;
+    cursor: pointer;
+    /* 替代原来的 `transition: 0.2s`（等价于 all 0.2s，是移动端掉帧根因，审计 A20） */
+    transition: var(--t-transition-hover);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.t-btn:hover:not(:disabled) {
+    background: var(--t-color-surface-hover);
+    border-color: var(--t-color-border-strong);
+}
+
+.t-btn:active:not(:disabled) {
+    background: var(--t-color-surface-active);
+}
+
+.t-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--t-shadow-focus);
+}
+
+.t-btn:disabled,
+.t-btn.is-disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.t-btn.active,
+.t-btn.is-active {
+    background: var(--t-color-accent-soft-strong);
+    border-color: var(--t-color-accent-border-hover);
+}
+
+/* ---- 6 个变体，覆盖现有 7 类语义 ---- */
+
+.t-btn--primary {
+    background: var(--t-color-accent);
+    color: var(--t-color-text-on-accent);
+    border-color: transparent;
+}
+
+.t-btn--primary:hover:not(:disabled) {
+    background: var(--t-color-accent-hover);
+    border-color: transparent;
+}
+
+.t-btn--primary:active:not(:disabled) {
+    background: var(--t-color-accent-active);
+}
+
+/* = 默认基态，保留类名以显式化语义 */
+.t-btn--secondary {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text);
+    border-color: var(--t-color-border-strong);
+}
+
+.t-btn--danger {
+    background: var(--t-color-danger-soft);
+    color: var(--t-color-danger);
+    border-color: var(--t-color-danger-border);
+}
+
+.t-btn--danger:hover:not(:disabled) {
+    background: var(--t-color-danger);
+    color: var(--t-color-text-on-accent);
+    border-color: transparent;
+}
+
+.t-btn--success {
+    background: var(--t-color-success-soft);
+    color: var(--t-color-success);
+    border-color: transparent;
+}
+
+.t-btn--success:hover:not(:disabled) {
+    background: var(--t-color-success);
+    color: var(--t-color-text-on-accent);
+}
+
+/* 品牌金 —— 即原 .t-btn-soft */
+.t-btn--brand {
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-brand);
+    border-color: var(--t-color-brand-border);
+}
+
+.t-btn--brand:hover:not(:disabled) {
+    background: var(--t-color-brand);
+    color: var(--t-color-text-on-accent);
+}
+
+.t-btn--ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--t-color-text-secondary);
+}
+
+.t-btn--ghost:hover:not(:disabled) {
+    background: var(--t-color-surface-hover);
+    color: var(--t-color-text-strong);
+    border-color: transparent;
+}
+
+.t-btn--quiet {
+    background: var(--t-color-surface-hover);
+    border-color: transparent;
+    color: var(--t-color-text-secondary);
+}
+
+.t-btn--quiet:hover:not(:disabled) {
+    background: var(--t-color-surface-active);
+    color: var(--t-color-text-strong);
+    border-color: transparent;
+}
+
+.t-btn--glass {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: var(--t-radius-container);
+    border-color: var(--t-color-border-glass);
+    background: var(--t-gradient-glass-btn);
+    color: var(--t-glass-text);
+    font-size: var(--t-text-caption);
+    font-weight: var(--t-font-weight-semibold);
+    box-shadow: var(--t-shadow-sm), var(--t-shadow-inset-gloss);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.t-btn--glass:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: var(--t-color-accent-border-hover);
+    background: var(--t-gradient-glass-btn-hover);
+    box-shadow: var(--t-shadow-lift), var(--t-shadow-inset-gloss);
+}
+
+.t-btn--glass:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: var(--t-shadow-xs), var(--t-shadow-inset-hairline);
+}
+
+.t-btn--glass:disabled,
+.t-btn--glass.is-disabled {
+    transform: none;
+    box-shadow: var(--t-shadow-xs), var(--t-shadow-inset-hairline);
+}
+
+/* ---- 4 个尺寸，覆盖现有 12 种 padding 组合 ---- */
+
+.t-btn--xs,
+.t-btn.t-btn-xs {
+    padding: var(--t-space-xs) var(--t-space-md);
+    min-height: 22px;
+    font-size: var(--t-text-caption);
+    border-radius: var(--t-radius-inline);
+}
+
+.t-btn--sm {
+    padding: var(--t-space-sm) var(--t-space-lg);
+    min-height: 28px;
+    font-size: var(--t-text-label);
+}
+
+.t-btn--lg {
+    padding: var(--t-space-lg) var(--t-space-2xl);
+    min-height: 40px;
+    font-size: var(--t-font-size-base);
+}
+
+/* ---- 布局修饰 ---- */
+
+.t-btn--block {
+    width: 100%;
+}
+
+/* 内容宽度（配合上面 display:flex 的说明使用） */
+.t-btn--inline {
+    display: inline-flex;
+}
+
+.t-btn__icon {
+    flex: 0 0 auto;
+    line-height: 1;
+}

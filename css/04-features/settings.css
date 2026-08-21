@@ -1,0 +1,1029 @@
+/* css/04-features/settings.css - 插件自己的设置窗口（#t-settings-view）
+ * ST 扩展抽屉与更新弹窗已迁往 settings-drawer.css（修 B10）。 */
+
+#t-settings-view {
+    width: 800px;
+    height: 80vh;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: column;
+    background: var(--t-color-bg);
+    overflow: hidden;
+}
+
+/* `.t-set-body` / `.t-set-nav` / `.t-set-tab-btn`（含 :hover 与 .active）/
+   `.t-set-content` 的基础视觉已迁至 02-components/settings-shell.css 的
+   `.t-set-shell-*`。这批原先是**裸类、无作用域**，对全部四个设置界面都生效 ——
+   它既是「设置窗口的样式」也是另外三个界面的隐式基类，放在 feature 层是错位。
+
+   本文件保留的只有下方 @600px 的响应式覆盖（仍用 `.t-set-*` 选择器，
+   故不触发 A5）。`.t-set-page` / `.t-set-page.active` 也留在本文件，
+   理由见 settings-shell.css 头部注释。 */
+
+.t-set-page {
+    display: none;
+}
+
+.t-set-page.active {
+    display: block;
+}
+
+/* 表单元素 */
+.t-form-group {
+    margin-bottom: 20px;
+}
+
+.t-form-label {
+    display: block;
+    color: var(--t-color-text-secondary);
+    margin-bottom: 8px;
+    font-size: 0.9em;
+}
+
+/* 预览区容器 */
+.t-preview-container {
+    background: var(--t-color-surface-sunken);
+    border-radius: 8px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+    border: 1px solid var(--t-color-border);
+}
+
+/* 预览球基础样式 */
+.t-preview-ball {
+    border-radius: 50%;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--t-color-border-strong);
+    transition: all 0.2s;
+    position: relative;
+    overflow: visible;
+    box-shadow: 0 4px 12px var(--t-shadow-ink-60);
+}
+
+.t-preview-ball img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* ===== 预览动画效果 ===== */
+
+/* 动画 1: 脉冲波纹 */
+
+.t-preview-ball.p-anim-ripple {
+    border-color: var(--t-color-accent);
+}
+
+.t-preview-ball.p-anim-ripple::before,
+.t-preview-ball.p-anim-ripple::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--t-color-accent);
+    animation: t-ripple-1 1.5s ease-out infinite;
+}
+
+.t-preview-ball.p-anim-ripple::after {
+    animation: t-ripple-2 1.5s ease-out 0.5s infinite;
+}
+
+/* 动画 2: 电磁闪烁 */
+
+.t-preview-ball.p-anim-arc {
+    border-color: var(--t-color-decor);
+}
+
+.t-preview-ball.p-anim-arc::before {
+    content: "";
+    position: absolute;
+    width: 120%;
+    height: 120%;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 20% 0%, var(--t-color-decor) 0%, transparent 30%),
+        radial-gradient(circle at 80% 100%, var(--t-color-decor) 0%, transparent 30%);
+    animation: t-arc-rotate 1s linear infinite, t-arc-flash-1 0.3s ease infinite;
+    opacity: 0.8;
+}
+
+.t-preview-ball.p-anim-arc::after {
+    content: "";
+    position: absolute;
+    width: 130%;
+    height: 130%;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 0%, rgb(var(--t-accent-azure-light-rgb)) 0%, transparent 25%),
+        radial-gradient(circle at 50% 100%, rgb(var(--t-accent-azure-light-rgb)) 0%, transparent 25%);
+    animation: t-arc-rotate 1.5s linear infinite reverse;
+    opacity: 0.6;
+}
+
+/* 通知呼吸灯预览 */
+
+.t-preview-ball.p-notify {
+    border-color: var(--t-color-notify) !important; /* override color picker inline border during notify preview */
+    animation: t-notify-glow 1.5s infinite ease-in-out;
+}
+
+/* 动画选择网格 */
+.t-anim-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.t-anim-option {
+    background: var(--t-color-surface-elevated);
+    border: 2px solid var(--t-color-border);
+    border-radius: 8px;
+    padding: 15px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.t-anim-option:hover {
+    background: var(--t-color-surface-raised);
+    border-color: var(--t-color-border-bright);
+}
+
+.t-anim-option.active {
+    border-color: var(--t-color-brand);
+    background: var(--t-color-brand-veil);
+}
+
+.t-anim-option .t-anim-name {
+    font-size: 0.9em;
+    color: var(--t-color-text-label);
+    margin-top: 8px;
+}
+
+.t-anim-option .t-anim-icon {
+    font-size: 1.5em;
+}
+
+/* 上传框 */
+.t-upload-card {
+    width: 100px;
+    height: 100px;
+    border: 2px dashed var(--t-color-border-strong);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--t-color-text-faint);
+    transition: 0.2s;
+    background-size: cover;
+    background-position: center;
+}
+
+.t-upload-card:hover {
+    border-color: var(--t-color-brand);
+    color: var(--t-color-brand);
+    background-color: var(--t-color-brand-veil);
+}
+
+/* Profile 管理 */
+/* API 连接编辑器（src/ui/shared/apiConnectionEditor.js）的说明小字。
+   2 处在用：方案提示（profileTipId）与状态行（statusId）。
+   ⚠ 该编辑器是 loreReviewWindow / rewriteEntryButton 共用的组件，但它的
+   CSS 一直放在本文件（.t-prof-header 就在下面），故这条也放这里，不另立文件。
+   ⚠ #8da5b8 保留原值：本文件 105 处颜色字面量、仅 4 处 token。 */
+.t-conn-hint {
+    margin-top: 8px;
+    font-size: 0.8em;
+    color: var(--t-glass-text-faint);
+}
+
+.t-prof-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.t-prof-select {
+    flex-grow: 1;
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text);
+    border: 1px solid var(--t-color-border-strong);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+/* 诊断日志 */
+.t-log-box {
+    background: var(--t-color-surface-well);
+    color: var(--t-color-text-label);
+    padding: 10px;
+    border: 1px solid var(--t-color-border);
+    border-radius: 4px;
+    height: 250px;
+    overflow-y: auto;
+    font-family: var(--t-font-mono);
+    font-size: 0.8em;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-bottom: 10px;
+}
+
+.t-log-entry-error {
+    color: var(--t-color-danger);
+    border-bottom: 1px solid var(--t-color-border);
+    padding: 2px 0;
+}
+
+.t-log-entry-info {
+    color: var(--t-color-accent);
+    border-bottom: 1px solid var(--t-color-border);
+    padding: 2px 0;
+}
+
+.t-log-entry-warn {
+    color: rgb(var(--t-accent-warn-log-rgb));
+    border-bottom: 1px solid var(--t-color-border);
+    padding: 2px 0;
+}
+
+/* ===== 主题样式 Tab ===== */
+
+/* CSS 代码编辑器 */
+.t-code-editor {
+    font-family: var(--t-font-mono);
+    font-size: 0.9em;
+    line-height: 1.5;
+    tab-size: 4;
+    resize: vertical;
+    min-height: 200px;
+    background: var(--t-color-surface-well);
+    border-color: var(--t-color-border);
+    color: var(--t-color-text-label);
+}
+
+.t-code-editor::placeholder {
+    color: var(--t-color-text-disabled);
+}
+
+/* CSS 选择器提示列表 */
+.t-css-hints {
+    background: var(--t-color-surface-inset);
+    border: 1px solid var(--t-color-border);
+    border-radius: 6px;
+    padding: 15px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.t-css-hint-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--t-color-border-dim);
+    font-size: 0.85em;
+}
+
+.t-css-hint-item:last-child {
+    border-bottom: none;
+}
+
+.t-css-hint-item code {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-accent);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: var(--t-font-mono);
+    font-size: 0.95em;
+    min-width: 180px;
+    display: inline-block;
+}
+
+.t-css-hint-item span {
+    color: var(--t-color-text-muted);
+}
+
+/* ===== 快捷工具栏配置 ===== */
+.t-toolbar-config {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--t-color-surface-inset);
+    border: 1px solid var(--t-color-border);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.t-toolbar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--t-color-surface-elevated);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.t-toolbar-item:hover {
+    background: var(--t-color-surface-raised);
+}
+
+.t-toolbar-item i {
+    font-size: 1.1em;
+    width: 24px;
+    text-align: center;
+}
+
+.t-toolbar-item span {
+    color: var(--t-color-text-label);
+    font-size: 0.95em;
+}
+
+.t-toolbar-item .t-toolbar-hint {
+    color: var(--t-color-text-faint);
+    font-size: 0.8em;
+    margin-left: auto;
+}
+
+/* 禁用状态的工具栏项 */
+.t-toolbar-item:has(input:disabled) {
+    opacity: 0.7;
+}
+
+.t-toolbar-item:has(input:disabled):hover {
+    background: var(--t-color-surface-elevated);
+    cursor: default;
+}
+
+@media screen and (max-width: 600px) {
+    .t-set-body {
+        flex-direction: column;
+    }
+
+    .t-set-nav {
+        width: 100%;
+        height: 50px;
+        flex-direction: row;
+        overflow-x: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--t-color-border);
+    }
+
+    .t-set-tab-btn {
+        padding: 0 15px;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        white-space: nowrap;
+    }
+
+    .t-set-tab-btn.active {
+        border-left: none;
+        border-bottom-color: var(--t-color-brand);
+        background: transparent;
+    }
+
+    .t-anim-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 提示词方案条目卡片 */
+.t-prompt-entry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+/* 条目之间的插入点。
+   平时零高度、不占布局，鼠标移进卡片缝隙才浮出「＋ 在此插入」。
+   负 margin 抵消掉 .t-prompt-entry-list 两段 gap，保证插入点的存在不改变原有间距；
+   命中区交给 ::before，控制在 7px 缝隙以内，避免抢走卡片边缘的点击。 */
+.t-prompt-insert-slot {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 0;
+    margin: -3.5px 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+.t-prompt-insert-slot::before {
+    content: "";
+    position: absolute;
+    inset: -3px 0;
+}
+
+/* 隐藏时必须 pointer-events:none —— opacity:0 的元素照样吃点击，
+   否则溢出到卡片上的标签会挡住「点卡片编辑条目」 */
+.t-prompt-insert-slot > * {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+
+.t-prompt-insert-slot:hover > *,
+.t-prompt-insert-slot:focus-visible > * {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.t-prompt-insert-slot:focus-visible {
+    outline: none;
+}
+
+.t-prompt-insert-line {
+    flex: 1;
+    height: 1px;
+    background: repeating-linear-gradient(to right, rgb(var(--t-glass-insert-rgb)) 0 4px, transparent 4px 8px);
+}
+
+.t-prompt-insert-label {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border: 1px solid rgb(var(--t-glass-insert-rgb));
+    border-radius: 999px;
+    background: var(--t-color-dialog-surface);
+    color: var(--t-color-accent);
+    font-size: 0.72em;
+    line-height: 1.4;
+    white-space: nowrap;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.t-prompt-insert-slot:hover .t-prompt-insert-label,
+.t-prompt-insert-slot:focus-visible .t-prompt-insert-label {
+    border-color: var(--t-color-accent);
+    background: rgb(var(--t-accent-slot-hover-rgb));
+}
+
+/* 触屏没有 hover，插入点改为常驻可见并撑出真实高度 */
+@media (hover: none) {
+    .t-prompt-insert-slot {
+        height: 18px;
+        margin: -4px 0;
+    }
+
+    .t-prompt-insert-slot > * {
+        opacity: 0.55;
+        pointer-events: auto;
+    }
+}
+
+.t-prompt-entry-card {
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-control);
+    border-radius: 6px;
+    padding: 7px 9px;
+    box-sizing: border-box;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: grab;
+}
+
+.t-prompt-entry-card:active {
+    cursor: grabbing;
+}
+
+.t-prompt-entry-card:hover {
+    background: var(--t-color-surface);
+    border-color: var(--t-color-border-bright);
+}
+
+.t-prompt-entry-card.is-disabled {
+    opacity: 0.62;
+}
+
+.t-prompt-entry-card.is-locked {
+    cursor: default;
+    border-color: rgb(var(--t-glass-locked-border-rgb));
+    background: var(--t-color-dialog-surface);
+}
+
+.t-prompt-entry-card.is-locked:hover {
+    border-color: rgb(var(--t-glass-locked-border-hover-rgb));
+    background: var(--t-color-dialog-surface);
+}
+
+.t-prompt-entry-card.is-locked .t-prompt-entry-drag-hint {
+    color: rgb(var(--t-glass-text-hint-rgb));
+}
+
+.t-prompt-entry-card.is-dragging {
+    opacity: 0.45;
+    border-style: dashed;
+}
+
+/* 用户自建条目：左侧金色描边，跟预设自带的条目区分开 */
+.t-prompt-entry-card.is-custom {
+    border-left: 2px solid var(--t-color-brand-strong);
+}
+
+.t-prompt-entry-delete:hover {
+    color: rgb(var(--t-accent-red-soft-rgb));
+    border-color: rgb(var(--t-accent-red-soft-rgb) / .55);
+}
+
+.t-prompt-entry-card.is-drag-over {
+    border-color: var(--t-color-accent);
+    box-shadow: 0 -3px 0 rgb(var(--t-accent-sky-rgb) / .75);
+}
+
+.t-prompt-entry-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    height: 28px;
+    overflow: hidden;
+}
+
+.t-prompt-entry-index {
+    color: var(--t-color-text-faint);
+    font-size: 0.78em;
+    width: 26px;
+    flex-shrink: 0;
+    font-family: var(--t-font-mono);
+}
+
+.t-prompt-entry-name {
+    flex: 1;
+    min-width: 0;
+    color: var(--t-color-text);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-prompt-entry-badge {
+    color: var(--t-color-accent);
+    background: var(--t-color-accent-veil);
+    border: 1px solid var(--t-color-accent-soft-strong);
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 0.72em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.t-prompt-entry-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.t-prompt-entry-drag-hint {
+    color: var(--t-color-text-faint);
+    width: 12px;
+    font-size: 0.78em;
+    text-align: center;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.t-prompt-entry-actions button,
+.t-prompt-entry-toggle {
+    width: 28px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: 3px;
+    background: var(--t-color-panel-header);
+    color: var(--t-color-text-secondary);
+    cursor: pointer;
+}
+
+.t-prompt-entry-toggle {
+    width: auto;
+    min-width: 64px;
+    padding: 0 8px;
+    font-size: 0.75em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.t-prompt-entry-toggle.is-enabled {
+    color: var(--t-color-notify);
+    border-color: rgb(var(--t-accent-mint-rgb) / .55);
+    background: rgb(var(--t-accent-mint-rgb) / .1);
+}
+
+.t-prompt-entry-toggle.is-required {
+    cursor: default;
+}
+
+.t-prompt-entry-toggle.is-required:disabled {
+    color: var(--t-color-text-secondary);
+    opacity: 1;
+}
+
+.t-prompt-entry-actions button:hover:not(:disabled),
+.t-prompt-entry-toggle:hover:not(:disabled) {
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-accent);
+}
+
+.t-prompt-entry-actions button:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+/* === 标题栏图标配置 === */
+
+.t-header-action-count {
+    margin-left: 6px;
+    color: var(--t-color-text-faint);
+    font-size: 0.8em;
+    font-weight: normal;
+}
+
+.t-header-action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.t-header-action-card {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    border: 1px solid var(--t-color-border-control);
+    border-radius: 6px;
+    background: var(--t-color-surface-sunken);
+    cursor: grab;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.t-header-action-card:active {
+    cursor: grabbing;
+}
+
+.t-header-action-card:hover {
+    background: var(--t-color-surface);
+    border-color: var(--t-color-border-bright);
+}
+
+.t-header-action-card.is-dragging {
+    opacity: 0.45;
+    border-style: dashed;
+}
+
+.t-header-action-card.is-drag-over {
+    border-color: var(--t-color-accent);
+    box-shadow: 0 -3px 0 rgb(var(--t-accent-sky-rgb) / .75);
+}
+
+/* 已达上限时未选中的项：变暗提示选不了，但仍可拖动调序 */
+.t-header-action-card.is-blocked {
+    opacity: 0.5;
+}
+
+.t-header-action-grip {
+    flex-shrink: 0;
+    color: var(--t-color-text-disabled);
+    cursor: grab;
+}
+
+.t-header-action-icon {
+    width: 1.2em;
+    flex-shrink: 0;
+    color: var(--t-color-brand);
+    text-align: center;
+}
+
+.t-header-action-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--t-color-text-label);
+    font-size: 0.9em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.t-header-action-switch {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .t-prompt-entry-list {
+        gap: 5px;
+    }
+
+    .t-prompt-entry-card {
+        padding: 6px 7px;
+    }
+
+    .t-prompt-entry-header {
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 6px;
+        height: 28px;
+    }
+
+    .t-prompt-entry-name {
+        min-width: 0;
+        font-size: 0.88em;
+    }
+
+    .t-prompt-entry-index {
+        width: 22px;
+        font-size: 0.7em;
+    }
+
+    .t-prompt-entry-badge {
+        max-width: 54px;
+        padding: 2px 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .t-prompt-entry-toggle {
+        width: 28px;
+        min-width: 28px;
+        padding: 0;
+    }
+
+    .t-prompt-entry-toggle-label {
+        display: none;
+    }
+
+}
+
+/* ============================================================
+   Phase 5b-10：从 settingsWindow.js 的内联 style 迁出（14 个属性）。
+
+   ⚠ 颜色一律保留原值：本文件 105 处颜色字面量、仅 4 处 token，
+   单独换这几处会与全文不一致。整体 token 化归 Phase 6。
+   ============================================================ */
+
+/* ── 工具栏项的图标色 ──
+   4 个工具栏项各一色。刻意把 4 个都迁过来（其中 gear / script 原本用的就是
+   token，不算 A17），否则会留下「2 个内联 + 2 个在 CSS」的割裂状态。
+   ⚠ 上方 .t-toolbar-item i 只设 font-size / width / text-align，不设 color，
+   故这里 (0,1,0) 不会被它的 (0,1,1) 压掉。 */
+.t-toolbar-icon--theater {
+    color: rgb(var(--t-accent-azure-light-rgb));
+}
+
+.t-toolbar-icon--gear {
+    color: var(--t-color-text-secondary);
+}
+
+.t-toolbar-icon--fav {
+    color: rgb(var(--t-accent-fav-yellow-rgb));
+}
+
+.t-toolbar-icon--script {
+    color: var(--t-color-brand);
+}
+
+/* ── 警告文字 ──
+   #feca57 在设置窗口里出现 4 次（本节 3 个类共 4 处用），是本窗口的警告色。
+   ⚠ .t-set-font-warn 用的是**另一个黄** #f1c40f —— 全库第 5 种黄
+   （已有 #f59e0b / #feca57 / #ecc94b / #ffd93d）。原值保留，
+   归并归 Phase 6，交接文档 §5a 的家族表已登记。 */
+.t-set-warn {
+    color: rgb(var(--t-accent-warn-rgb));
+}
+
+.t-set-warn-title {
+    color: rgb(var(--t-accent-warn-rgb));
+    font-weight: bold;
+}
+
+.t-set-font-warn {
+    color: rgb(var(--t-accent-warn-log-rgb));
+}
+
+/* 「有未保存改动」提示。2 处在用（CSS 主题页、样式页）。
+   ⚠ display:none 写在类里是**故意的**：这两个元素由
+   $(...).hide() / .show() / .toggle(hasChanges) 控制显隐。
+   两者都是 <div> 且本类之外无任何规则设它们的 display，所以
+   jQuery 的 getDefaultDisplay() 回退值 block 与自然值一致，不会错版。
+   判定方法与反例见交接文档 §5b「display:none → 状态类」。 */
+.t-set-unsaved-hint {
+    display: none;
+    color: rgb(var(--t-accent-warn-rgb));
+    font-size: 0.8em;
+    margin-bottom: 8px;
+}
+
+/* ── 说明小字 ──
+   2 处在用（续写重试次数、检测模式）。
+   ⚠ 与 settingsWindow.js:446 那个 <p>（font-size 相同但用
+   var(--t-color-text-faint) 且 margin-top:8px）不是一套，刻意不合并。 */
+.t-set-field-hint {
+    font-size: 0.75em;
+    color: var(--t-color-text-disabled);
+    margin-top: 5px;
+}
+
+/* 统计卡片的副标题（"当前拥有自定义剧本: N 个"）。 */
+.t-set-stat-sub {
+    font-size: 0.85em;
+    color: var(--t-color-text-dim);
+    margin-top: 5px;
+}
+
+/* 「恢复所有」按钮的描边。
+   ⚠ 必须用 ID：button.css 的 .t-btn:hover:not(:disabled) 是 (0,3,0) 且设了
+   border-color，任何 (0,1,0) 的类都会在悬停时被它夺走边框色。
+   原先靠内联压过它，现在靠 (1,0,0)。同 5b-7 的 #t-diag-clear。 */
+#btn-restore-presets {
+    border: 1px solid var(--t-color-border-bright);
+}
+
+/* 日志查看器空态。
+   ⚠ 全库第 21 个空态类，且 margin-top:100px 与其余都不同
+   （其它是 50px / padding 30px / 40px / 26px 12px）。
+   合并一定改视觉，归 Phase 6/7，见交接文档 §5b「空态类已有 20+ 个」。 */
+.t-set-log-empty {
+    text-align: center;
+    margin-top: 100px;
+    color: var(--t-color-text-disabled);
+}
+
+/* ============================================================
+   Phase 5b-12：悬浮球配色的两个表单组（30 个属性）
+
+   ── 12 个预设色块 ──
+   原先每个色块的 style 里都重复 5 条静态声明（12 x 5 = 60 条），
+   而第 6 条 background 又与它自己的 data-color 属性重复。
+
+   ⚠ 调色板用 [data-color] 属性选择器承载，与 JS 侧既有写法一致 ——
+   settingsWindow.js 本来就在用 $(`.t-color-preset[data-color="..."]`)
+   做选中定位，data-color 一直是单一取值来源。
+
+   ⚠ 这 12 个颜色刻意**不** token 化：它们是**用户可选调色板**，
+   主题切换时必须保持不变（"天蓝"在任何主题下都得是天蓝）。
+   这与交接文档 §5a「不再造 token」的结论方向一致但理由不同：
+   那边是「同语义的随手取值」，这边是「它本来就不该跟主题变」。
+   ============================================================ */
+
+.t-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+/* 选中态。原先是 JS 用 .css("border-color", "#fff" / "transparent") 直接写内联，
+   本批改成切类 —— 那是纯点击驱动的状态，没有 hover/触屏的行为差异，
+   与 showInteractiveFAB 那种带 hover 的重构不同（见交接文档 §5b）。
+   (0,2,0) 压过 .t-color-swatch 的 border 简写。 */
+.t-color-swatch.is-selected {
+    border-color: var(--t-color-text-strong);
+}
+
+/* ⚠ 下面 12 条预览球的 background **必须保持字面量，不许 token 化**。
+   data-color 是用户挑的那个 hex 本身（settingsWindow.js:235-262 写进
+   border_color / bg_color 设置），预览球的职责就是把那个 hex 画出来。
+   换成 token 后，浅色主题下预览球会显示 token 在浅色下的值，而 title
+   与实际写入设置的仍是原 hex —— 预览说谎，且没有视觉基线时极难发现。
+   （Phase 6b-2 修：其中 5 条已被前几批当成普通底色 token 化，已复原；
+   审计 A24 现在会守住这条。） */
+.t-color-swatch[data-color="#90cdf4"] {
+    background: #90cdf4;
+}
+
+.t-color-swatch[data-color="#a29bfe"] {
+    background: #a29bfe;
+}
+
+.t-color-swatch[data-color="#55efc4"] {
+    background: #55efc4;
+}
+
+.t-color-swatch[data-color="#ffd93d"] {
+    background: #ffd93d;
+}
+
+.t-color-swatch[data-color="#ff6b6b"] {
+    background: #ff6b6b;
+}
+
+.t-color-swatch[data-color="#fd79a8"] {
+    background: #fd79a8;
+}
+
+.t-color-swatch[data-color="#2b2b2b"] {
+    background: #2b2b2b;
+}
+
+.t-color-swatch[data-color="#1a1a2e"] {
+    background: #1a1a2e;
+}
+
+.t-color-swatch[data-color="#16213e"] {
+    background: #16213e;
+}
+
+.t-color-swatch[data-color="#1e272e"] {
+    background: #1e272e;
+}
+
+.t-color-swatch[data-color="#2d132c"] {
+    background: #2d132c;
+}
+
+.t-color-swatch[data-color="#0a3d62"] {
+    background: #0a3d62;
+}
+
+/* ── 两个表单组的其余重复内联 ──
+   下面每个类原先都是「同一串 style 在本文件里出现 2-3 次」，
+   且全库范围内只在 settingsWindow.js 出现，故整文件替换。 */
+
+.t-color-field-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* 一行紧排的小元素。3 处在用：两个色块行 + CSS 代码的按钮行（:500）。
+   ⚠ 频次 3 < 10，按 03-layout/utilities.css 定的准入门槛不进布局层，
+   在 feature 里给语义名。 */
+.t-set-inline-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* 原生取色器。全库无裸 input 规则命中它（已枚举确认）。 */
+.t-color-picker {
+    width: 50px;
+    height: 35px;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+}
+
+/* 十六进制文本框。⚠ 必须用 ID：这两个元素带 .t-input，
+   field.css 的 `.t-root.t-box .t-input` 是 (0,3,0) 且设了 width:100%，
+   (0,1,0) 的类压不过。同 5b-7 的 #t-diag-log-viewer。 */
+#p-border-color-text,
+#p-bg-color-text {
+    width: 100px;
+    font-family: monospace;
+}
+
+.t-opacity-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.t-opacity-label {
+    font-size: 0.85em;
+    color: var(--t-color-text-muted);
+    min-width: 60px;
+}
+
+.t-opacity-value {
+    font-size: 0.85em;
+    color: var(--t-color-brand);
+    min-width: 40px;
+}
+
+/* 表单组末尾的说明小字。3 处在用（:248 :270 :444）。
+   ⚠ 与 5b-10 建的 .t-set-field-hint 不是一套：那个是 0.75em / #555 /
+   margin-top:5px，这个是 0.75em / var(--t-color-text-faint) / margin-top:8px。
+   刻意不合并（合并要改色，属 Phase 6）。 */
+.t-set-note {
+    font-size: 0.75em;
+    color: var(--t-color-text-faint);
+    margin-top: 8px;
+}

@@ -86,531 +86,13 @@ const REWRITE_DEFAULT_SELECTED_PROMPT_SYSTEM = `你是「回声文学编辑」�
 3) 只输出 JSON。`;
 const REWRITE_DEFAULT_SELECTED_PROMPT_USER = "返回 JSON schema：\n{{schema}}\n唯一合法示例：\n{\"task_id\":\"rewrite_selected_x\",\"results\":[{\"segment_id\":\"s_1\",\"rewritten_text\":\"示例文本\"}]}\n\n输入 payload：\n{{payload}}\n\n执行规则：\n1) 用户已手动选择 targets，请逐条改写 original_text。\n2) 改写方向始终是白描：删除心理直述，转为可观察的动作和细节；克制修饰，用名词和动词支撑句子。\n3) 每条 rewritten_text 必须能替换回原位置，并与上下文自然衔接。\n4) 不要输出未选择的句子，不要改变 segment_id。\n5) results 数量必须与 targets 一致。\n6) 只输出 JSON。";
 const REWRITE_DEFAULT_PROMPT_JSON_RULE = "JSON格式指令（谨慎修改）：\n- 只输出 JSON，不输出解释或 markdown\n- 顶层必须包含 task_id 和 results\n- results 每项必须包含 segment_id 和 rewritten_text\n- rewritten_text 必须为整句重写，禁止只做词汇替换\n- rewritten_text 中不能出现该 target 的 matched_keywords 中的词";
-const REWRITE_PANEL_CSS = `
-#titania-rewrite-entry-btn { margin-left: 6px; }
-#titania-rewrite-entry-btn i { color: #90cdf4; }
-#titania-rewrite-entry-btn:hover i { color: #b9def8; }
-#t-rewrite-overlay { z-index: 30060; }
-#t-rewrite-overlay .t-rewrite-window { width: min(1180px, 96vw); max-width: 96vw; max-height: 90vh; height: min(88vh, 920px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
-#t-rewrite-overlay .t-rewrite-head { padding: 14px 18px; background: linear-gradient(180deg, rgba(18, 30, 44, 0.9) 0%, rgba(16, 22, 31, 0.85) 100%); border-bottom: 1px solid rgba(255, 255, 255, 0.09); }
-#t-rewrite-overlay .t-rewrite-settings-btn i { color: #b9d8ee; }
-#t-rewrite-overlay .t-rewrite-settings-btn:hover i { color: #d2e6f7; }
-#t-rewrite-overlay .t-rewrite-head-text-btn { height: 32px; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.14); color: #dbe8f4; font-size: 0.78em; font-weight: 600; letter-spacing: 0.15px; background: linear-gradient(140deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.18); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
-#t-rewrite-overlay .t-rewrite-head-text-btn:hover { transform: translateY(-1px); border-color: rgba(144, 205, 244, 0.5); background: linear-gradient(140deg, rgba(144, 205, 244, 0.22), rgba(255, 255, 255, 0.06)); box-shadow: 0 10px 20px rgba(17, 34, 54, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
-#t-rewrite-overlay .t-rewrite-head-text-btn:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.14); }
-#t-rewrite-overlay .t-rewrite-title { font-size: 1.08em; font-weight: 700; letter-spacing: 0.2px; display: flex; align-items: center; gap: 8px; }
-#t-rewrite-overlay .t-rewrite-title i { color: #90cdf4; }
-#t-rewrite-overlay .t-window-close { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); transition: all 0.18s ease; }
-#t-rewrite-overlay .t-window-close:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(144, 205, 244, 0.45); }
-#t-rewrite-overlay .t-rewrite-body { flex: 1; overflow: hidden; display: grid; grid-template-columns: minmax(340px, 0.92fr) minmax(440px, 1.08fr); gap: 16px; padding: 16px; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
-#t-rewrite-overlay .t-rewrite-left, #t-rewrite-overlay .t-rewrite-right { min-height: 0; display: flex; flex-direction: column; gap: 12px; }
-#t-rewrite-overlay .t-rewrite-section { border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; background: rgba(13, 19, 28, 0.78); padding: 12px; }
-#t-rewrite-overlay .t-rewrite-section-title { font-size: 0.9em; font-weight: 700; color: #b8d8ee; margin-bottom: 10px; }
-#t-rewrite-overlay .t-rewrite-label { display: block; font-size: 0.8em; color: #8da3b6; margin-bottom: 6px; }
-#t-rewrite-overlay #t-rewrite-api-url, #t-rewrite-overlay #t-rewrite-api-key, #t-rewrite-overlay #t-rewrite-model { width: 100%; box-sizing: border-box; background: rgba(10, 15, 22, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #dde9f4; border-radius: 8px; padding: 9px 11px; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease; }
-#t-rewrite-overlay #t-rewrite-api-url:focus, #t-rewrite-overlay #t-rewrite-api-key:focus, #t-rewrite-overlay #t-rewrite-model:focus { border-color: rgba(144, 205, 244, 0.55); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
-#t-rewrite-overlay .t-rewrite-model-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
-#t-rewrite-overlay .t-rewrite-model-col { min-width: 0; }
-#t-rewrite-overlay #t-rewrite-trigger { height: 36px; min-height: 36px; line-height: 1; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.14); color: #dbe8f4; font-weight: 600; transition: all 0.18s ease; white-space: nowrap; letter-spacing: 0.1px; min-width: 164px; padding: 0 16px; background: linear-gradient(135deg, rgba(144, 205, 244, 0.18), rgba(191, 161, 95, 0.16)); border-color: rgba(144, 205, 244, 0.42); justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
-#t-rewrite-overlay #t-rewrite-trigger:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(144, 205, 244, 0.44); }
-#t-rewrite-overlay .t-rewrite-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-#t-rewrite-overlay .t-rewrite-action-hint { font-size: 0.8em; color: #90a9bc; line-height: 1.45; }
-#t-rewrite-overlay .t-rewrite-footer-actions { padding: 10px 16px 14px; border-top: 1px solid rgba(255, 255, 255, 0.1); background: rgba(16, 22, 31, 0.9); }
-#t-rewrite-overlay .t-rewrite-runtime-meta { display: grid; gap: 6px; font-size: 0.82em; color: #a9bfd1; }
-#t-rewrite-overlay .t-rewrite-runtime-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-#t-rewrite-overlay #t-rewrite-runtime-toggle { height: 28px; min-height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.05); color: #d4e4f2; font-size: 0.76em; font-weight: 600; letter-spacing: 0.12px; }
-#t-rewrite-overlay #t-rewrite-runtime-toggle:hover { border-color: rgba(144, 205, 244, 0.45); background: rgba(144, 205, 244, 0.12); }
-#t-rewrite-overlay #t-rewrite-runtime-body.is-collapsed { display: none; }
-#t-rewrite-overlay .t-rewrite-rule-head, #t-rewrite-settings-overlay .t-rewrite-rule-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
-#t-rewrite-overlay .t-rewrite-rule-guide { font-size: 0.78em; color: #8ea5b7; margin-bottom: 8px; }
-#t-rewrite-overlay .t-rewrite-split-options { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.82em; color: #c5d7e5; }
-#t-rewrite-overlay .t-rewrite-split-options label { display: inline-flex; align-items: center; gap: 6px; }
-#t-rewrite-overlay .t-rewrite-rule-row { display: grid; grid-template-columns: auto minmax(120px, 0.45fr) auto minmax(180px, 1fr) minmax(110px, 0.35fr) auto; gap: 8px; align-items: center; }
-#t-rewrite-settings-overlay .t-rewrite-rule-row { display: grid; grid-template-columns: auto minmax(130px, 0.44fr) minmax(220px, 1fr) minmax(110px, 0.32fr) auto; gap: 8px; align-items: center; }
-#t-rewrite-overlay .t-rewrite-rule-and, #t-rewrite-settings-overlay .t-rewrite-rule-and { font-size: 0.8em; color: #9cb2c4; font-weight: 700; letter-spacing: 0.2px; text-align: center; min-width: 18px; }
-#t-rewrite-overlay .t-rewrite-rule-no, #t-rewrite-settings-overlay .t-rewrite-rule-no { min-width: 30px; font-size: 0.78em; color: #89a3b8; }
-#t-rewrite-overlay .t-rewrite-rule-del, #t-rewrite-settings-overlay .t-rewrite-rule-del { width: 34px; min-width: 34px; padding: 0; justify-content: center; }
-#t-rewrite-overlay .t-rewrite-status { font-size: 0.8em; margin-top: 4px; }
-#t-rewrite-overlay .t-rewrite-status.muted { color: #7f95a8; }
-#t-rewrite-overlay .t-rewrite-status.ok { color: #79d9a8; }
-#t-rewrite-overlay .t-rewrite-status.warn { color: #f2c27d; }
-#t-rewrite-overlay .t-rewrite-status.err { color: #f08f8f; }
-#t-rewrite-overlay .t-rewrite-diff-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-#t-rewrite-overlay .t-rewrite-diff-tools { display: flex; gap: 6px; flex-wrap: nowrap; }
-#t-rewrite-overlay .t-rewrite-diff-body { flex: 1; min-height: 0; overflow: auto; display: grid; gap: 8px; padding-right: 2px; }
-#t-rewrite-overlay .t-rewrite-match-row { border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; background: rgba(8, 13, 20, 0.8); padding: 10px; }
-#t-rewrite-overlay .t-rewrite-match-row.hit { border-color: rgba(122, 203, 159, 0.4); background: linear-gradient(180deg, rgba(24, 68, 51, 0.28) 0%, rgba(14, 22, 18, 0.74) 100%); }
-#t-rewrite-overlay .t-rewrite-match-row.miss { border-color: rgba(176, 188, 201, 0.28); }
-#t-rewrite-overlay .t-rewrite-match-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 0.78em; color: #c5d8e8; flex-wrap: wrap; }
-#t-rewrite-overlay .t-rewrite-match-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-#t-rewrite-overlay .t-rewrite-hit-tag { border: 1px solid rgba(122, 203, 159, 0.45); background: rgba(122, 203, 159, 0.12); color: #c2eed9; border-radius: 999px; padding: 2px 8px; font-size: 0.95em; }
-#t-rewrite-overlay .t-rewrite-hit-tag.miss { border-color: rgba(189, 199, 210, 0.35); background: rgba(177, 189, 201, 0.12); color: #c8d3dd; }
-#t-rewrite-overlay .t-rewrite-match-text, #t-rewrite-overlay .t-rewrite-diff-text { font-size: 0.88em; line-height: 1.5; color: #e2edf7; white-space: pre-wrap; word-break: break-word; }
-#t-rewrite-overlay .t-rewrite-hit-summary { font-size: 0.82em; color: #b9d8ee; margin-bottom: 6px; }
-#t-rewrite-overlay .t-rewrite-hit-source { font-size: 0.78em; color: #8da5b8; margin-bottom: 8px; }
-#t-rewrite-overlay .t-rewrite-json-box { margin: 0; padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(7, 11, 18, 0.9); color: #b8d8ee; max-height: 180px; overflow: auto; font-size: 0.76em; line-height: 1.45; }
-#t-rewrite-overlay #t-rewrite-raw-response { max-height: 240px; min-height: 120px; white-space: pre-wrap; word-break: break-word; }
-#t-rewrite-settings-overlay { z-index: 30070; }
-#t-rewrite-live-overlay { z-index: 30075; }
-#t-rewrite-settings-overlay .t-rewrite-settings-window { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; height: min(90vh, 940px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.96); border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
-#t-rewrite-settings-overlay .t-set-body { flex: 1; display: flex; min-height: 0; overflow: hidden; }
-#t-rewrite-settings-overlay .t-set-nav { width: 180px; background: rgba(18, 24, 33, 0.9); border-right: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 0; display: flex; flex-direction: column; overflow-y: auto; }
-#t-rewrite-settings-overlay .t-set-tab-btn { padding: 11px 14px; color: #99adbe; cursor: pointer; transition: all 0.16s ease; font-size: 0.86em; display: flex; align-items: center; gap: 8px; border-left: 3px solid transparent; }
-#t-rewrite-settings-overlay .t-set-tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #d7e7f5; }
-#t-rewrite-settings-overlay .t-set-tab-btn.active { color: #b9d8ee; background: rgba(144, 205, 244, 0.16); border-left-color: rgba(144, 205, 244, 0.86); font-weight: 700; }
-#t-rewrite-settings-overlay .t-set-content { flex: 1; min-width: 0; padding: 14px; overflow-y: auto; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
-#t-rewrite-settings-overlay .t-set-page { display: none; }
-#t-rewrite-settings-overlay .t-set-page.active { display: block; }
-#t-rewrite-settings-overlay .t-form-group { margin-bottom: 14px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.86); }
-#t-rewrite-settings-overlay .t-form-label { display: block; color: #a9bfd1; margin-bottom: 6px; font-size: 0.82em; }
-#t-rewrite-settings-overlay .t-rewrite-settings-footer { padding: 10px 14px; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: flex-end; gap: 8px; background: rgba(16, 22, 31, 0.9); }
-#t-rewrite-live-overlay .t-rewrite-live-window { width: min(980px, 96vw); max-width: 96vw; max-height: 92vh; height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: rgba(19, 22, 30, 0.96); border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 22px 58px rgba(0, 0, 0, 0.56); border-radius: 14px; }
-#t-rewrite-live-overlay .t-rewrite-live-body { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
-#t-rewrite-live-overlay .t-rewrite-live-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-#t-rewrite-live-overlay .t-rewrite-live-meta { font-size: 0.8em; color: #8ea8bc; }
-#t-rewrite-live-overlay .t-rewrite-live-stream-card { border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
-#t-rewrite-live-overlay .t-rewrite-live-stream-title { font-size: 0.84em; font-weight: 700; color: #c5ddee; margin-bottom: 6px; }
-#t-rewrite-live-overlay .t-rewrite-live-history-card { border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2); }
-#t-rewrite-live-overlay .t-rewrite-live-history-title { font-size: 0.84em; font-weight: 700; color: #c5ddee; margin-bottom: 6px; }
-#t-rewrite-live-overlay .t-rewrite-live-history-meta { font-size: 0.76em; color: #8ea8bc; margin-bottom: 8px; }
-#t-rewrite-live-overlay .t-rewrite-live-history-list { max-height: min(28vh, 260px); overflow: auto; display: grid; gap: 8px; padding-right: 2px; }
-#t-rewrite-live-overlay .t-rewrite-live-history-item { border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px; background: rgba(8, 13, 20, 0.82); padding: 8px; cursor: pointer; transition: border-color 0.16s ease, background 0.16s ease; }
-#t-rewrite-live-overlay .t-rewrite-live-history-item:hover { border-color: rgba(144, 205, 244, 0.45); background: rgba(18, 29, 43, 0.72); }
-#t-rewrite-live-overlay .t-rewrite-live-history-item.active { border-color: rgba(122, 203, 159, 0.48); background: linear-gradient(180deg, rgba(24, 68, 51, 0.3) 0%, rgba(14, 22, 18, 0.72) 100%); }
-#t-rewrite-live-overlay .t-rewrite-live-history-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.75em; color: #9cb4c6; margin-bottom: 4px; }
-#t-rewrite-live-overlay .t-rewrite-live-history-preview { font-size: 0.78em; line-height: 1.45; color: #d8e7f4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#t-rewrite-live-overlay .t-rewrite-live-history-empty { border: 1px dashed rgba(255, 255, 255, 0.18); border-radius: 9px; padding: 10px; text-align: center; color: #7f95a8; font-size: 0.78em; background: rgba(255, 255, 255, 0.02); }
-#t-rewrite-live-overlay .t-rewrite-live-prompt-card { border: 1px solid rgba(255, 255, 255, 0.13); border-radius: 12px; padding: 10px; background: linear-gradient(170deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.84); }
-#t-rewrite-live-overlay .t-rewrite-live-prompt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-#t-rewrite-live-overlay .t-rewrite-live-prompt-title { font-size: 0.86em; font-weight: 700; color: #c5ddee; }
-#t-rewrite-live-overlay .t-rewrite-live-prompt-tip { font-size: 0.74em; color: #90a7ba; margin: 4px 0 8px; }
-#t-rewrite-live-overlay .t-rewrite-live-prompt-tip.warn { color: #f2c27d; }
-#t-rewrite-live-overlay .t-rewrite-live-textarea { width: 100%; min-height: 78px; resize: vertical; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(7, 11, 18, 0.9); color: #dce9f4; padding: 8px 10px; font-size: 0.8em; line-height: 1.45; box-sizing: border-box; }
-#t-rewrite-live-overlay #t-rewrite-live-prompt-json { min-height: 92px; }
-#t-rewrite-live-overlay .t-rewrite-live-textarea:focus { outline: none; border-color: rgba(144, 205, 244, 0.55); box-shadow: 0 0 0 2px rgba(144, 205, 244, 0.16); }
-#t-rewrite-live-overlay #t-rewrite-raw-response { max-height: min(34vh, 320px); min-height: 170px; }
-#chat .mes .t-rewrite-auto-badge { position: absolute; right: 10px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #dff0ff; background: rgba(15, 24, 35, 0.88); border: 1px solid rgba(144, 205, 244, 0.45); border-radius: 999px; padding: 3px 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); background-image: linear-gradient(120deg, rgba(144, 205, 244, 0.15) 0%, rgba(191, 161, 95, 0.22) 35%, rgba(122, 203, 159, 0.2) 70%, rgba(144, 205, 244, 0.15) 100%); background-size: 220% 220%; animation: titania-rewrite-badge-flow 1.4s linear infinite; }
-#chat .mes .t-rewrite-auto-badge i { color: #90cdf4; animation: titania-rewrite-badge-icon 0.95s ease-in-out infinite; }
-#chat .mes .t-rewrite-inline-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0 8px; font-size: 12px; }
-#chat .mes .t-rewrite-inline-toolbar button { border: 1px solid rgba(144, 205, 244, 0.38); border-radius: 999px; background: rgba(15, 24, 35, 0.82); color: #dff0ff; padding: 3px 9px; line-height: 1.35; cursor: pointer; }
-#chat .mes .t-rewrite-inline-toolbar button:hover { border-color: rgba(144, 205, 244, 0.65); background: rgba(34, 54, 76, 0.86); }
-#chat .mes .t-rewrite-inline-toolbar button.t-rewrite-inline-confirm { border-color: rgba(122, 203, 159, 0.52); color: #d8f5e4; }
-#chat .mes .t-rewrite-inline-toolbar button:disabled { opacity: 0.5; cursor: not-allowed; }
-#chat .mes .t-rewrite-inline-count { color: #a9bfd1; padding: 2px 4px; }
-#chat .mes .t-rewrite-select-sentence { border-radius: 5px; padding: 0 2px; cursor: pointer; transition: background-color 0.16s ease, box-shadow 0.16s ease; }
-#chat .mes .t-rewrite-select-sentence:hover { background: rgba(144, 205, 244, 0.14); box-shadow: inset 0 0 0 1px rgba(144, 205, 244, 0.32); }
-#chat .mes .t-rewrite-select-sentence.selected { background: rgba(122, 203, 159, 0.22); box-shadow: inset 0 0 0 1px rgba(122, 203, 159, 0.52); }
-#chat .mes .t-rewrite-mark {
-    position: relative;
-    display: inline;
-    border-radius: 5px;
-    padding: 0 2px;
-    margin: 0;
-    border: 1px solid rgba(122, 203, 159, 0.3);
-    background: linear-gradient(180deg, rgba(122, 203, 159, 0.14) 0%, rgba(122, 203, 159, 0.08) 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-    animation: titania-rewrite-mark-fade-in 0.2s ease;
-}
-#chat .mes .t-rewrite-mark::before {
-    content: "↻ 已改写";
-    display: inline-block;
-    margin-right: 4px;
-    padding: 0 4px;
-    border-radius: 999px;
-    border: 1px solid rgba(122, 203, 159, 0.38);
-    background: rgba(122, 203, 159, 0.16);
-    color: #ccefdc;
-    font-size: 10px;
-    line-height: 1.45;
-    letter-spacing: 0.1px;
-    vertical-align: baseline;
-    white-space: nowrap;
-    opacity: 0.88;
-}
-#chat .mes .t-rewrite-mark:hover {
-    border-color: rgba(122, 203, 159, 0.45);
-    background: linear-gradient(180deg, rgba(122, 203, 159, 0.19) 0%, rgba(122, 203, 159, 0.12) 100%);
-}
-@keyframes titania-rewrite-badge-flow { 0% { background-position: 0% 50%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); } 50% { background-position: 100% 50%; box-shadow: 0 6px 22px rgba(100, 168, 214, 0.3); } 100% { background-position: 200% 50%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); } }
-@keyframes titania-rewrite-badge-icon { 0%,100% { transform: scale(1) rotate(0deg); opacity: 0.9; } 50% { transform: scale(1.12) rotate(8deg); opacity: 1; } }
-@keyframes titania-rewrite-mark-fade-in { from { opacity: 0; } to { opacity: 1; } }
-#t-rewrite-settings-overlay .t-rewrite-settings-body { flex: 1; overflow: auto; display: block; padding: 16px; background: radial-gradient(circle at 100% 0%, rgba(144, 205, 244, 0.1) 0%, rgba(144, 205, 244, 0) 36%), radial-gradient(circle at 0% 100%, rgba(191, 161, 95, 0.08) 0%, rgba(191, 161, 95, 0) 32%), #12161d; }
-#t-rewrite-settings-overlay .t-rewrite-settings-grid { display: grid; gap: 14px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
-#t-rewrite-settings-overlay .t-rewrite-settings-card { min-height: 0; border-radius: 0; border: 1px solid rgba(255, 255, 255, 0.14); background: linear-gradient(170deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015) 55%), rgba(10, 15, 22, 0.86); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); }
-#t-rewrite-settings-overlay .t-rewrite-settings-card { position: relative; overflow: hidden; }
-#t-rewrite-settings-overlay .t-rewrite-settings-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, var(--t-rewrite-accent, rgba(144, 205, 244, 0.7)) 0%, rgba(255, 255, 255, 0.05) 100%); }
-#t-rewrite-settings-overlay .t-rewrite-section-title { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px; padding: 4px 10px; border-radius: 999px; font-size: 0.82em; letter-spacing: 0.2px; border: 1px solid var(--t-rewrite-accent-border, rgba(144, 205, 244, 0.45)); color: var(--t-rewrite-accent-text, #d9ecfb); background: linear-gradient(135deg, var(--t-rewrite-accent-bg, rgba(144, 205, 244, 0.22)) 0%, rgba(255, 255, 255, 0.03) 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
-#t-rewrite-settings-overlay .t-rewrite-label { display: block; font-size: 0.8em; color: #8da3b6; margin: 2px 0 6px; }
-#t-rewrite-settings-overlay .t-rewrite-card-api { --t-rewrite-accent: rgba(95, 183, 233, 0.9); }
-#t-rewrite-settings-overlay .t-rewrite-card-stream { --t-rewrite-accent: rgba(125, 204, 161, 0.88); }
-#t-rewrite-settings-overlay .t-rewrite-card-split { --t-rewrite-accent: rgba(215, 179, 95, 0.92); }
-#t-rewrite-settings-overlay .t-rewrite-card-whitelist { --t-rewrite-accent: rgba(177, 149, 238, 0.88); }
-#t-rewrite-settings-overlay .t-rewrite-card-rules { --t-rewrite-accent: rgba(233, 136, 136, 0.9); }
-#t-rewrite-settings-overlay .t-rewrite-card-api { --t-rewrite-accent-bg: rgba(95, 183, 233, 0.18); --t-rewrite-accent-border: rgba(95, 183, 233, 0.5); --t-rewrite-accent-text: #cfe9fb; }
-#t-rewrite-settings-overlay .t-rewrite-card-stream { --t-rewrite-accent-bg: rgba(125, 204, 161, 0.18); --t-rewrite-accent-border: rgba(125, 204, 161, 0.5); --t-rewrite-accent-text: #d3f3e1; }
-#t-rewrite-settings-overlay .t-rewrite-card-split { --t-rewrite-accent-bg: rgba(215, 179, 95, 0.2); --t-rewrite-accent-border: rgba(215, 179, 95, 0.5); --t-rewrite-accent-text: #f4e7c8; }
-#t-rewrite-settings-overlay .t-rewrite-card-whitelist { --t-rewrite-accent-bg: rgba(177, 149, 238, 0.2); --t-rewrite-accent-border: rgba(177, 149, 238, 0.52); --t-rewrite-accent-text: #e7dcff; }
-#t-rewrite-settings-overlay .t-rewrite-card-rules { --t-rewrite-accent-bg: rgba(233, 136, 136, 0.2); --t-rewrite-accent-border: rgba(233, 136, 136, 0.52); --t-rewrite-accent-text: #ffdcdc; }
-#t-rewrite-settings-overlay .t-rewrite-model-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
-#t-rewrite-settings-overlay .t-rewrite-profile-row { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) auto; align-items: center; gap: 8px; }
-#t-rewrite-settings-overlay #t-rewrite-settings-model { width: 100%; }
-#t-rewrite-settings-overlay #t-rewrite-settings-fetch-models { align-self: center; }
-#t-rewrite-settings-overlay #t-rewrite-settings-new-profile { height: 28px; min-height: 28px; padding: 0 9px; font-size: 0.78em; }
-#t-rewrite-settings-overlay .t-rewrite-profile-tip { margin-top: 6px; font-size: 0.74em; color: #8da5b8; }
-#t-rewrite-settings-overlay .t-rewrite-card-api { grid-column: span 8; }
-#t-rewrite-settings-overlay .t-rewrite-card-split, #t-rewrite-settings-overlay .t-rewrite-card-stream { grid-column: span 4; }
-#t-rewrite-settings-overlay .t-rewrite-card-whitelist { grid-column: span 4; }
-#t-rewrite-settings-overlay .t-rewrite-card-rules { grid-column: span 8; }
-#t-rewrite-settings-overlay .t-rewrite-split-options-vertical { flex-direction: column; align-items: flex-start; gap: 8px; }
-#t-rewrite-settings-overlay .t-rewrite-debug-row-block label { display: flex; align-items: flex-start; gap: 8px; }
-#t-rewrite-settings-overlay #t-rewrite-settings-rules-list { max-height: 320px; overflow: auto; padding-right: 2px; }
-#t-rewrite-overlay .t-rewrite-diff-empty, #t-rewrite-overlay .t-rewrite-empty-rule { border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px; text-align: center; color: #6f8698; background: rgba(255, 255, 255, 0.02); }
-#t-rewrite-overlay .t-rewrite-diff-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-#t-rewrite-overlay .t-rewrite-diff-cell { border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px; background: rgba(8, 13, 20, 0.8); }
-#t-rewrite-overlay .t-rewrite-diff-before { border-color: rgba(224, 136, 136, 0.35); background: linear-gradient(180deg, rgba(78, 26, 31, 0.4) 0%, rgba(26, 16, 18, 0.74) 100%); }
-#t-rewrite-overlay .t-rewrite-diff-after { border-color: rgba(122, 203, 159, 0.35); background: linear-gradient(180deg, rgba(24, 68, 51, 0.38) 0%, rgba(14, 22, 18, 0.74) 100%); }
-#t-rewrite-overlay .t-rewrite-test-section,
-#t-rewrite-overlay .t-rewrite-raw-section,
-#t-rewrite-overlay .t-rewrite-right > .t-rewrite-section { min-height: 0; display: flex; flex-direction: column; }
-#t-rewrite-overlay .t-rewrite-test-section { flex: 1.1; }
-#t-rewrite-overlay .t-rewrite-raw-section { flex: 0.95; }
-#t-rewrite-overlay .t-rewrite-right > .t-rewrite-section:last-child { flex: 1.15; }
+// 改写面板样式已迁至 css/04-features/rewrite.css（插件 UI）与
+// css/04-features/st-embedded.css（注入 ST DOM 的部分，依 ADR-02 分家），
+// 随插件 CSS 一同加载，不再需要运行时注入。
 
-    /* === 方案选择器 === */
-    #t-rewrite-settings-overlay .t-rewrite-scheme-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-    #t-rewrite-settings-overlay .t-rewrite-scheme-label { font-size: 0.85em; color: #bccdd8; font-weight: 600; white-space: nowrap; }
-    #t-rewrite-settings-overlay .t-rewrite-scheme-bar select { flex: 1; min-width: 160px; }
-    #t-rewrite-settings-overlay .t-rewrite-scheme-btn { width: 30px; min-width: 30px; height: 30px; padding: 0; justify-content: center; }
 
-    /* === 分类卡片 === */
-    #t-rewrite-settings-overlay .t-rewrite-category-card {
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
-        background: rgba(22, 27, 36, 0.6);
-        margin-bottom: 8px;
-        overflow: hidden;
-        transition: border-color 0.15s;
-    }
-    #t-rewrite-settings-overlay .t-rewrite-category-card.t-rewrite-cat-empty { opacity: 0.7; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-head {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: rgba(28, 34, 44, 0.7);
-        cursor: pointer;
-        user-select: none;
-    }
-    #t-rewrite-settings-overlay .t-rewrite-cat-head:hover { background: rgba(34, 42, 54, 0.7); }
-    #t-rewrite-settings-overlay .t-rewrite-cat-caret {
-        font-size: 0.7em;
-        color: #8899aa;
-        width: 14px;
-        transition: transform 0.2s;
-    }
-    #t-rewrite-settings-overlay .t-rewrite-category-card.collapsed .t-rewrite-cat-caret { transform: rotate(-90deg); }
-    #t-rewrite-settings-overlay .t-rewrite-category-card.collapsed .t-rewrite-cat-body { display: none; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-num { font-size: 0.75em; color: #6a8090; font-weight: 700; min-width: 22px; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-name-display {
-        flex: 1;
-        font-size: 0.88em;
-        font-weight: 600;
-        color: #cddce8;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    #t-rewrite-settings-overlay .t-rewrite-cat-head-status { font-size: 0.75em; white-space: nowrap; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-status-ok { color: #6a9; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-status-warn { color: #e88; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-name-warn { color: #e88; font-size: 0.78em; white-space: nowrap; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-body {
-        padding: 10px 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    #t-rewrite-settings-overlay .t-rewrite-cat-name-row { display: flex; align-items: center; gap: 8px; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-name-row label { font-size: 0.82em; color: #bccdd8; font-weight: 600; white-space: nowrap; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-name-row input { flex: 1; font-size: 0.88em; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-field { display: flex; flex-direction: column; gap: 4px; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-field label { font-size: 0.8em; color: #99aabb; font-weight: 600; }
-    #t-rewrite-settings-overlay .t-rewrite-cat-field textarea { resize: vertical; min-height: 38px; font-size: 0.84em; background: rgba(15, 18, 25, 0.6); }
-    #t-rewrite-settings-overlay .t-rewrite-cat-field-hint { font-size: 0.76em; color: #6a8090; font-weight: 400; }
 
-    /* === 关键词规则 === */
-    #t-rewrite-settings-overlay .t-rewrite-cat-kw-list { display: flex; flex-direction: column; gap: 4px; }
-    #t-rewrite-settings-overlay .t-rewrite-kw-row { display: flex; gap: 4px; align-items: center; }
-    #t-rewrite-settings-overlay .t-rewrite-kw-row input { flex: 1; font-size: 0.82em; min-width: 80px; }
-    #t-rewrite-settings-overlay .t-rewrite-kw-and { font-size: 0.78em; color: #9cb2c4; font-weight: 700; white-space: nowrap; }
-    #t-rewrite-settings-overlay .t-rewrite-kw-del { width: 28px; min-width: 28px; height: 28px; padding: 0; justify-content: center; }
 
-@media (max-width: 1200px) {
-    #t-rewrite-overlay .t-rewrite-window { width: min(1080px, 97vw); }
-    #t-rewrite-overlay .t-rewrite-body { grid-template-columns: 1fr; overflow: auto; }
-    #t-rewrite-overlay .t-rewrite-right { gap: 10px; }
-}
-
-@media (max-width: 980px) {
-    #t-rewrite-settings-overlay .t-rewrite-settings-window { width: 97vw; max-height: 94vh; height: auto; }
-    #t-rewrite-settings-overlay .t-set-nav { width: 156px; }
-    #t-rewrite-settings-overlay .t-rewrite-settings-body { padding: 12px; }
-    #t-rewrite-settings-overlay .t-rewrite-settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    #t-rewrite-settings-overlay .t-rewrite-card-api,
-    #t-rewrite-settings-overlay .t-rewrite-card-rules { grid-column: span 2; }
-    #t-rewrite-settings-overlay .t-rewrite-card-split,
-    #t-rewrite-settings-overlay .t-rewrite-card-stream,
-    #t-rewrite-settings-overlay .t-rewrite-card-whitelist { grid-column: span 1; }
-    #t-rewrite-overlay .t-rewrite-window { width: 97vw; height: auto; max-height: 94vh; }
-    #t-rewrite-overlay .t-rewrite-body { padding: 12px; gap: 12px; }
-}
-
-@media (max-width: 700px) {
-    #t-rewrite-overlay,
-    #t-rewrite-settings-overlay,
-    #t-rewrite-live-overlay {
-        align-items: center;
-        justify-content: center;
-        padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
-    }
-
-    #t-rewrite-overlay .t-rewrite-window,
-    #t-rewrite-settings-overlay .t-rewrite-settings-window,
-    #t-rewrite-live-overlay .t-rewrite-live-window {
-        width: min(96vw, 760px);
-        max-width: min(96vw, 760px);
-        max-height: min(96dvh, 96vh);
-        height: auto;
-        border-radius: 14px;
-        border-left: 1px solid rgba(255, 255, 255, 0.12);
-        border-right: 1px solid rgba(255, 255, 255, 0.12);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    #t-rewrite-overlay .t-rewrite-window {
-        width: min(96vw, 780px);
-        max-width: min(96vw, 780px);
-    }
-
-    #t-rewrite-overlay .t-rewrite-head,
-    #t-rewrite-settings-overlay .t-rewrite-head,
-    #t-rewrite-live-overlay .t-rewrite-head { padding: 12px 14px; }
-    #t-rewrite-overlay .t-rewrite-title,
-    #t-rewrite-settings-overlay .t-rewrite-title,
-    #t-rewrite-live-overlay .t-rewrite-title { font-size: 1em; }
-    #t-rewrite-overlay .t-rewrite-body,
-    #t-rewrite-settings-overlay .t-rewrite-settings-body { padding: 10px; gap: 10px; }
-    #t-rewrite-settings-overlay .t-set-body { flex-direction: column; }
-    #t-rewrite-settings-overlay .t-set-nav {
-        width: 100%;
-        height: 50px;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        padding: 0;
-        gap: 0;
-        border-right: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        overflow-x: auto;
-        overflow-y: hidden;
-        scrollbar-gutter: stable;
-        -webkit-overflow-scrolling: touch;
-    }
-    #t-rewrite-settings-overlay .t-set-tab-btn {
-        border-left: none;
-        border-bottom: 3px solid transparent;
-        border-radius: 0;
-        border-top: none;
-        border-right: none;
-        border-bottom-color: transparent;
-        padding: 0 14px;
-        height: 50px;
-        min-height: 50px;
-        white-space: nowrap;
-        flex: 0 0 auto;
-        min-width: max-content;
-        justify-content: center;
-        background: transparent;
-    }
-    #t-rewrite-settings-overlay .t-set-tab-btn.active {
-        border-bottom-color: rgba(144, 205, 244, 0.8);
-        border-left-color: transparent;
-        background: transparent;
-    }
-    #t-rewrite-settings-overlay .t-set-content { padding: 10px; }
-    #t-rewrite-live-overlay .t-rewrite-live-body { padding: 10px; gap: 10px; }
-    #t-rewrite-settings-overlay .t-rewrite-settings-grid { grid-template-columns: 1fr; gap: 10px; }
-    #t-rewrite-settings-overlay .t-rewrite-card-api,
-    #t-rewrite-settings-overlay .t-rewrite-card-split,
-    #t-rewrite-settings-overlay .t-rewrite-card-stream,
-    #t-rewrite-settings-overlay .t-rewrite-card-whitelist,
-    #t-rewrite-settings-overlay .t-rewrite-card-rules { grid-column: span 1; }
-    #t-rewrite-settings-overlay .t-rewrite-model-row { grid-template-columns: minmax(0, 1fr) auto; }
-    #t-rewrite-settings-overlay .t-rewrite-profile-row { grid-template-columns: 1fr; }
-
-    #t-rewrite-overlay .t-rewrite-actions { flex-direction: column; align-items: stretch; }
-    #t-rewrite-overlay .t-rewrite-action-hint { width: 100%; }
-    #t-rewrite-overlay #t-rewrite-trigger { width: 100%; min-width: 0; }
-    #t-rewrite-overlay .t-rewrite-head-text-btn { height: 30px; min-height: 30px; padding: 0 10px; font-size: 0.75em; }
-    #t-rewrite-overlay .t-rewrite-diff-head { gap: 8px; }
-    #t-rewrite-overlay .t-rewrite-diff-row { grid-template-columns: 1fr; }
-
-    #t-rewrite-overlay .t-rewrite-rule-row { grid-template-columns: minmax(78px, 0.52fr) auto minmax(118px, 1fr) minmax(88px, 0.45fr) auto; gap: 6px; }
-    #t-rewrite-settings-overlay .t-rewrite-rule-row { grid-template-columns: minmax(84px, 0.58fr) minmax(118px, 1fr) minmax(88px, 0.42fr) auto; gap: 6px; }
-    #t-rewrite-overlay .t-rewrite-rule-and,
-    #t-rewrite-settings-overlay .t-rewrite-rule-and { display: block; min-width: 14px; font-size: 0.74em; }
-    #t-rewrite-overlay .t-rewrite-rule-no,
-    #t-rewrite-settings-overlay .t-rewrite-rule-no { display: none; }
-    #t-rewrite-overlay .t-rewrite-rule-del,
-    #t-rewrite-settings-overlay .t-rewrite-rule-del { width: 30px; min-width: 30px; height: 32px; min-height: 32px; }
-#t-rewrite-overlay .t-rewrite-rule-anchor,
-#t-rewrite-settings-overlay .t-rewrite-rule-anchor,
-#t-rewrite-overlay .t-rewrite-rule-extras,
-#t-rewrite-settings-overlay .t-rewrite-rule-extras { padding: 7px 8px; font-size: 0.84em; }
-#t-rewrite-overlay .t-rewrite-rule-action,
-#t-rewrite-settings-overlay .t-rewrite-rule-action { padding: 7px 8px; font-size: 0.84em; }
-}
-
-@media (max-width: 420px) {
-    #t-rewrite-overlay .t-window-close,
-    #t-rewrite-settings-overlay .t-window-close,
-    #t-rewrite-live-overlay .t-window-close { width: 28px; height: 28px; border-radius: 8px; }
-    #t-rewrite-overlay #t-rewrite-trigger { height: 34px; min-height: 34px; font-size: 0.84em; padding: 0 12px; }
-    #t-rewrite-overlay .t-rewrite-json-box { font-size: 0.72em; }
-    #t-rewrite-overlay,
-    #t-rewrite-settings-overlay,
-    #t-rewrite-live-overlay {
-        padding: max(6px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom));
-    }
-    #t-rewrite-overlay .t-rewrite-window,
-    #t-rewrite-settings-overlay .t-rewrite-settings-window,
-    #t-rewrite-live-overlay .t-rewrite-live-window {
-        width: 97vw;
-        max-width: 97vw;
-        max-height: min(97dvh, 97vh);
-        border-radius: 12px;
-    }
-
-    @media (max-width: 600px) {
-        #t-rewrite-settings-overlay .t-rewrite-scheme-bar select { min-width: 100px; }
-    }
-}
-`;
-const REWRITE_SETTINGS_BUTTON_CSS = `
-#t-rewrite-settings-overlay .t-btn,
-#t-rewrite-live-overlay .t-btn {
-    height: 30px;
-    min-height: 30px;
-    padding: 0 10px;
-    border-radius: 9px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: linear-gradient(140deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: #e6f1fb;
-    font-size: 0.8em;
-    font-weight: 600;
-    letter-spacing: 0.15px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
-}
-#t-rewrite-settings-overlay .t-btn:hover,
-#t-rewrite-live-overlay .t-btn:hover {
-    transform: translateY(-1px);
-    border-color: rgba(144, 205, 244, 0.55);
-    background: linear-gradient(140deg, rgba(144, 205, 244, 0.22), rgba(255, 255, 255, 0.06));
-    box-shadow: 0 10px 22px rgba(17, 34, 54, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.26);
-}
-#t-rewrite-settings-overlay .t-btn:active,
-#t-rewrite-live-overlay .t-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-}
-#t-rewrite-live-overlay .t-btn:disabled {
-    opacity: 0.58;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-#t-rewrite-settings-overlay #t-rewrite-settings-fetch-models {
-    min-width: 30px;
-    width: 30px;
-    height: 28px;
-    min-height: 28px;
-    padding: 0;
-    justify-content: center;
-}
-#t-rewrite-settings-overlay #t-rewrite-settings-add-rule {
-    height: 28px;
-    min-height: 28px;
-    padding: 0 9px;
-    font-size: 0.78em;
-}
-#t-rewrite-settings-overlay #t-rewrite-settings-save {
-    min-width: 86px;
-}
-#t-rewrite-settings-overlay #t-rewrite-settings-prompt-reset {
-    min-width: 96px;
-}
-#t-rewrite-live-overlay #t-rewrite-abort {
-    min-width: 86px;
-}
-#t-rewrite-settings-overlay .t-rewrite-settings-textarea {
-    width: 100%;
-    min-height: 92px;
-    resize: vertical;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(7, 11, 18, 0.9);
-    color: #dce9f4;
-    padding: 8px 10px;
-    font-size: 0.82em;
-    line-height: 1.45;
-    box-sizing: border-box;
-}
-#t-rewrite-settings-overlay #t-rewrite-settings-prompt-system {
-    min-height: 84px;
-}
-#t-rewrite-settings-overlay #t-rewrite-settings-prompt-user {
-    min-height: 120px;
-}
-#t-rewrite-settings-overlay #t-rewrite-settings-prompt-json {
-    min-height: 96px;
-}
-#t-rewrite-settings-overlay #t-rewrite-settings-prompt-combined,
-#t-rewrite-settings-overlay #t-rewrite-settings-selected-prompt-combined {
-    min-height: 300px;
-}
-#t-rewrite-settings-overlay .t-window-close {
-    width: 30px;
-    height: 30px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
-}
-#t-rewrite-settings-overlay .t-window-close:hover {
-    border-color: rgba(144, 205, 244, 0.6);
-    background: linear-gradient(145deg, rgba(144, 205, 244, 0.24), rgba(255, 255, 255, 0.07));
-}
-`;
-
-function ensureRewriteCssLoaded() {
-    const cssId = "titania-css-rewrite-panel-inline";
-    let style = document.getElementById(cssId);
-
-    if (!style) {
-        style = document.createElement("style");
-        style.id = cssId;
-        style.type = "text/css";
-        document.head.appendChild(style);
-    }
-
-    style.textContent = `${REWRITE_PANEL_CSS}\n${REWRITE_SETTINGS_BUTTON_CSS}`;
-}
 
 function isEnabled() {
     const data = getExtData();
@@ -2314,14 +1796,14 @@ function renderSchemeCategoriesList(scheme) {
                     <input class="text_pole t-rewrite-kw-anchor" type="text" value="${escapeHtml(r.anchor || "")}" placeholder="主词（逗号分隔，任一命中）">
                     <span class="t-rewrite-kw-and">与</span>
                     <input class="text_pole t-rewrite-kw-extras" type="text" value="${escapeHtml(r.extras || "")}" placeholder="附加词（逗号分隔，任一命中）">
-                    <button class="t-btn t-rewrite-kw-del" type="button" title="删除此关键词规则"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除此关键词规则"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             `).join("")
             : `<div class="t-rewrite-kw-row">
                 <input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="主词（逗号分隔，任一命中）">
                 <span class="t-rewrite-kw-and">与</span>
                 <input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="附加词（逗号分隔，任一命中）">
-                <button class="t-btn t-rewrite-kw-del" type="button" title="删除"><i class="fa-solid fa-xmark"></i></button>
+                <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除"><i class="fa-solid fa-xmark"></i></button>
             </div>`;
 
         const nameMissing = !String(cat.name || "").trim();
@@ -2338,7 +1820,7 @@ function renderSchemeCategoriesList(scheme) {
                     <span class="t-rewrite-cat-num">#${idx + 1}</span>
                     <span class="t-rewrite-cat-name-display">${escapeHtml(cat.name || "未命名分类")}</span>
                     <span class="t-rewrite-cat-head-status">${statusLine}</span>
-                    <button class="t-btn t-rewrite-cat-del" type="button" title="删除此分类"><i class="fa-solid fa-trash"></i></button>
+                    <button class="t-btn t-btn--glass t-rewrite-cat-del" type="button" title="删除此分类"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <div class="t-rewrite-cat-body">
                     <div class="t-rewrite-cat-name-row">
@@ -2361,7 +1843,7 @@ function renderSchemeCategoriesList(scheme) {
                     <div class="t-rewrite-cat-field">
                         <label>关键词规则<span class="t-rewrite-cat-field-hint">（主词 AND 附加词同时命中才生效，命中任一行即归类）</span></label>
                         <div class="t-rewrite-cat-kw-list">${kwRows}</div>
-                        <button class="t-btn t-rewrite-cat-add-kw" type="button"><i class="fa-solid fa-plus"></i> 添加关键词</button>
+                        <button class="t-btn t-btn--glass t-rewrite-cat-add-kw" type="button"><i class="fa-solid fa-plus"></i> 添加关键词</button>
                     </div>
                 </div>
             </div>
@@ -2610,7 +2092,7 @@ function openLivePanel() {
     closeLivePanel();
 
     const html = `
-    <div id="${LIVE_OVERLAY_ID}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${LIVE_OVERLAY_ID}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-rewrite-live-window">
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-wave-square"></i> 实时响应</div>
@@ -2622,7 +2104,7 @@ function openLivePanel() {
                 <div class="t-rewrite-live-stream-card">
                     <div class="t-rewrite-live-tools">
                         <div id="t-rewrite-raw-meta" class="t-rewrite-status muted">${escapeHtml(lastRawMetaText || "等待请求")}</div>
-                        <button id="t-rewrite-abort" class="t-btn" type="button" ${activeRewriteAbortController ? "" : "disabled"}>终止</button>
+                        <button id="t-rewrite-abort" class="t-btn t-btn--glass" type="button" ${activeRewriteAbortController ? "" : "disabled"}>终止</button>
                     </div>
                     <div class="t-rewrite-live-stream-title">模型实时返回</div>
                     <div class="t-rewrite-live-meta">展示最近一次改写请求的实时返回内容（支持流式滚动）。</div>
@@ -2801,7 +2283,7 @@ function bindSettingsPanelEvents(connectionEditor = null) {
     $overlay.on("click", ".t-rewrite-cat-add-kw", (e) => {
         e.preventDefault();
         const $card = $(e.currentTarget).closest(".t-rewrite-category-card");
-        const newRow = $(`<div class="t-rewrite-kw-row"><input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="主词（逗号分隔，任一命中）"><span class="t-rewrite-kw-and">与</span><input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="附加词（逗号分隔，任一命中）"><button class="t-btn t-rewrite-kw-del" type="button" title="删除"><i class="fa-solid fa-xmark"></i></button></div>`);
+        const newRow = $(`<div class="t-rewrite-kw-row"><input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="主词（逗号分隔，任一命中）"><span class="t-rewrite-kw-and">与</span><input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="附加词（逗号分隔，任一命中）"><button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除"><i class="fa-solid fa-xmark"></i></button></div>`);
         $card.find(".t-rewrite-cat-kw-list").append(newRow);
     });
 
@@ -2876,7 +2358,7 @@ function openSettingsPanel() {
     const schemeOptions = schemes.map(s => `<option value="${escapeHtml(s.id)}" ${s.id === (activeScheme?.id || "") ? "selected" : ""}>${escapeHtml(s.name)}</option>`).join("");
 
     const html = `
-    <div id="${SETTINGS_OVERLAY_ID}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${SETTINGS_OVERLAY_ID}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-rewrite-settings-window">
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-sliders"></i> 文本改写设置</div>
@@ -2885,15 +2367,15 @@ function openSettingsPanel() {
                 </div>
             </div>
 
-            <div class="t-set-body">
-                <div class="t-set-nav">
-                    <div class="t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-plug"></i> API 连接</div>
-                    <div class="t-set-tab-btn" data-tab="runtime"><i class="fa-solid fa-sliders"></i> 运行设置</div>
-                    <div class="t-set-tab-btn" data-tab="prompt"><i class="fa-solid fa-file-lines"></i> 提示词管理</div>
-                    <div class="t-set-tab-btn" data-tab="scheme"><i class="fa-solid fa-list-check"></i> 规则方案</div>
+            <div class="t-set-shell-body t-set-glass-body t-set-body">
+                <div class="t-set-shell-nav t-set-glass-nav t-set-nav">
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-plug"></i> API 连接</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="runtime"><i class="fa-solid fa-sliders"></i> 运行设置</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="prompt"><i class="fa-solid fa-file-lines"></i> 提示词管理</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="scheme"><i class="fa-solid fa-list-check"></i> 规则方案</div>
                 </div>
 
-                <div class="t-set-content">
+                <div class="t-set-shell-content t-set-glass-content t-set-content">
                     <div id="t-rewrite-page-api" class="t-set-page active">
                         ${renderApiConnectionEditorHTML({
                             ids: {
@@ -2916,7 +2398,7 @@ function openSettingsPanel() {
                                 input: "text_pole",
                                 select: "text_pole",
                                 profileSelect: "text_pole",
-                                button: "t-btn",
+                                button: "t-btn t-btn--glass",
                             },
                             labels: {
                                 profile: "API 方案",
@@ -2970,7 +2452,7 @@ function openSettingsPanel() {
                         <div class="t-form-group">
                             <div class="t-rewrite-rule-head">
                                 <label class="t-form-label" style="margin-bottom:0;">规则命中提示词</label>
-                                <button id="t-rewrite-settings-prompt-reset" class="t-btn" type="button">恢复默认</button>
+                                <button id="t-rewrite-settings-prompt-reset" class="t-btn t-btn--glass" type="button">恢复默认</button>
                             </div>
 
                             <label class="t-form-label" for="t-rewrite-settings-prompt-combined">规则改写提示词（请保留 [SYS] 和 [USER] 标记）</label>
@@ -2981,7 +2463,7 @@ function openSettingsPanel() {
                         <div class="t-form-group">
                             <div class="t-rewrite-rule-head">
                                 <label class="t-form-label" style="margin-bottom:0;">选句改写提示词</label>
-                                <button id="t-rewrite-settings-selected-prompt-reset" class="t-btn" type="button">恢复默认</button>
+                                <button id="t-rewrite-settings-selected-prompt-reset" class="t-btn t-btn--glass" type="button">恢复默认</button>
                             </div>
 
                             <label class="t-form-label" for="t-rewrite-settings-selected-prompt-combined">楼层内手动选句提示词（请保留 [SYS] 和 [USER] 标记）</label>
@@ -2995,14 +2477,14 @@ function openSettingsPanel() {
                             <div class="t-rewrite-scheme-bar">
                                 <span class="t-rewrite-scheme-label">当前方案</span>
                                 <select id="t-rewrite-scheme-select" class="text_pole">${schemeOptions}</select>
-                                <button id="t-rewrite-scheme-new" class="t-btn t-rewrite-scheme-btn" type="button" title="新建方案"><i class="fa-solid fa-plus"></i></button>
-                                <button id="t-rewrite-scheme-rename" class="t-btn t-rewrite-scheme-btn" type="button" title="重命名"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button id="t-rewrite-scheme-delete" class="t-btn t-rewrite-scheme-btn" type="button" title="删除方案"><i class="fa-solid fa-trash"></i></button>
+                                <button id="t-rewrite-scheme-new" class="t-btn t-btn--glass t-rewrite-scheme-btn" type="button" title="新建方案"><i class="fa-solid fa-plus"></i></button>
+                                <button id="t-rewrite-scheme-rename" class="t-btn t-btn--glass t-rewrite-scheme-btn" type="button" title="重命名"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button id="t-rewrite-scheme-delete" class="t-btn t-btn--glass t-rewrite-scheme-btn" type="button" title="删除方案"><i class="fa-solid fa-trash"></i></button>
                             </div>
                             <div class="t-rewrite-rule-guide" id="t-rewrite-scheme-status" style="margin-top:4px;">${!activeScheme ? '无方案，请新建或选择已有方案' : `激活方案「${escapeHtml(activeScheme.name)}」`}</div>
                         </div>
                         <div class="t-form-group">
-                            <button id="t-rewrite-scheme-add-category" class="t-btn" type="button"><i class="fa-solid fa-plus"></i> 添加分类</button>
+                            <button id="t-rewrite-scheme-add-category" class="t-btn t-btn--glass" type="button"><i class="fa-solid fa-plus"></i> 添加分类</button>
                             <div class="t-rewrite-rule-guide" style="margin: 6px 0 4px;">每个分类包含示例和改写指导，命中句将按分类注入提示词。</div>
                             <div id="t-rewrite-scheme-categories-list"></div>
                         </div>
@@ -3011,7 +2493,7 @@ function openSettingsPanel() {
             </div>
 
             <div class="t-rewrite-settings-footer">
-                <button id="t-rewrite-settings-save" class="t-btn" type="button" title="保存并应用"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
+                <button id="t-rewrite-settings-save" class="t-btn t-btn--glass" type="button" title="保存并应用"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
             </div>
         </div>
     </div>`;
@@ -3053,14 +2535,13 @@ function openSettingsPanel() {
 
 function openPanel() {
     closePanel();
-    ensureRewriteCssLoaded();
 
     const rewriteData = ensureRewriteDataShape();
     const scheme = getActiveScheme();
     const categories = getActiveSchemeCategories();
 
     const html = `
-    <div id="${OVERLAY_ID}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${OVERLAY_ID}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-rewrite-window">
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-highlighter"></i> 文本改写</div>
@@ -3222,7 +2703,6 @@ function bindDomObserver() {
 }
 
 export function initRewriteEntryButton() {
-    ensureRewriteCssLoaded();
     bindGlobalEvents();
     bindDomObserver();
     bindAutoTriggerEvents();

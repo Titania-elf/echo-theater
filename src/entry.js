@@ -15,10 +15,21 @@ import { GlobalState } from "./core/state.js";
 import { loadScripts } from "./core/scriptData.js";
 import { handleGenerate } from "./core/api.js";
 import { restoreContinuationForCurrentChat } from "./core/continuationStore.js";
+import {
+    dryRunFavsMigration,
+    migrateFavsToFiles,
+    isFavsMigrated,
+    describeCurrentFavsFootprint,
+    exportFavsAsLegacyArray,
+    dropLegacyFavs,
+    describeLegacyArtifacts,
+    cleanupLegacyArtifacts,
+    FAVS_INDEX_KEY
+} from "./core/favsStore.js";
 import { initExtensionUpdate } from "./core/extensionUpdate.js";
 import { initSyncListener } from "./core/worldInfoManager.js";
 import { createFloatingButton, destroyFloatingButton, refreshFloatingTuck } from "./ui/floatingBtn.js";
-import { applyCustomCSS, applyFontSettings, applyUIFontScale } from "./ui/settingsWindow.js";
+import { applyCustomCSS, applyFontSettings, applyUIFontScale, applyUITheme } from "./ui/settingsWindow.js";
 import { initOutlineEntryButton } from "./ui/outlineEntryButton.js";
 import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteEntryButton.js";
 import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
@@ -161,6 +172,7 @@ function initCoreFeatures() {
 
     // 应用 UI 字体缩放（不影响内容区）
     applyUIFontScale(extData.appearance?.ui_font_scale);
+    applyUITheme(extData.appearance?.ui_theme);
 
     // 监听生成结束事件（自动演绎）
     eventSource.on(event_types.GENERATION_ENDED, onGenerationEnded);
@@ -348,6 +360,19 @@ function countVectorItems(vectorData) {
 async function createFullBackupPayload(options = {}) {
     const includeVectors = options.includeVectors !== false;
     const extDataSnapshot = JSON.parse(JSON.stringify(getExtData()));
+
+    // 搬家后收藏正文已不在 settings.json 里，快照只剩索引 —— 直接导出会得到
+    // 一份没有正文的空壳备份。所以这里把正文从文件读回来，还原成搬家前的
+    // favs 数组形状，并去掉索引：
+    //   · 备份自成一体，不依赖 user/files 目录（ST 的自动备份不管那个目录）
+    //   · 与旧版插件的备份格式互通，导入后落在「未搬家」状态，再搬一次即可
+    // 任何一条正文读不出来，exportFavsAsLegacyArray 会抛错，备份整体失败 ——
+    // 宁可导不出来，也不能悄悄给出一份缺内容的备份。
+    if (isFavsMigrated()) {
+        extDataSnapshot.favs = await exportFavsAsLegacyArray();
+        delete extDataSnapshot[FAVS_INDEX_KEY];
+    }
+
     const vectorData = includeVectors ? await buildVectorBackupData() : { version: 1, characters: [] };
     return {
         type: "titania_theater_backup",
@@ -436,6 +461,13 @@ function bindDrawerBackupControls() {
             const currentData = getExtData();
             Object.assign(currentData, extDataPayload);
 
+            // 导入的备份若是搬家之前做的，它没有 favs_index。Object.assign 不会删除
+            // 目标上多出来的键，于是旧索引会残留下来，指向的却是上一批收藏的正文文件。
+            // 这里显式清掉，干净地退回「未搬家」状态，由用户重新搬一次。
+            if (!Object.prototype.hasOwnProperty.call(extDataPayload, FAVS_INDEX_KEY)) {
+                delete currentData[FAVS_INDEX_KEY];
+            }
+
             const existingVectorCharacters = await getAllIndexedCharacters();
             for (const charId of existingVectorCharacters) {
                 await clearCharacterVectors(charId);
@@ -464,6 +496,408 @@ function bindDrawerBackupControls() {
             if (window.toastr) toastr.error("导入失败：" + (err?.message || String(err)), "Titania Echo");
         } finally {
             $(this).val("");
+        }
+    });
+
+    bindFavsMigrationDryRun();
+    bindFavsMigrationRun();
+    bindFavsMigrationCleanup();
+    bindFavsArtifactCleanup();
+}
+
+/** 把字节数说成人话 */
+function formatBytes(bytes) {
+    const n = Number(bytes) || 0;
+    if (Math.abs(n) >= 1048576) return `${(n / 1048576).toFixed(2)} MB`;
+    if (Math.abs(n) >= 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${n} B`;
+}
+
+/** 迁移卡片下方的结果栏。两个按钮共用一块，后一次结果覆盖前一次 */
+function showFavsMigrationReport(html, tone) {
+    const reportId = "titania-favs-migrate-report";
+    let $report = $(`#${reportId}`);
+    if ($report.length === 0) {
+        const $card = $("#titania-favs-migrate-dryrun").closest(".titania-panel-card");
+        if ($card.length === 0) return;
+        $report = $(`<div class="titania-backup-desc" id="${reportId}"></div>`);
+        $card.append($report);
+    }
+    $report.html(`<span style="color:${tone};">${html}</span>`);
+}
+
+/**
+ * 「试运行搬家」按钮。
+ * 只写文件 + 校验，不动 settings.json 里的任何数据（见 src/core/favsStore.js 的说明）。
+ */
+function bindFavsMigrationDryRun() {
+    const $btn = $("#titania-favs-migrate-dryrun");
+    if ($btn.length === 0) return;
+
+    const showReport = showFavsMigrationReport;
+
+    $btn.off("click").on("click", async function () {
+        const $self = $(this);
+        const oldHtml = $self.html();
+        $self.prop("disabled", true);
+
+        try {
+            const report = await dryRunFavsMigration({
+                onProgress: (done, total) => {
+                    $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> 写入中 ${done}/${total}`);
+                }
+            });
+
+            const lines = [
+                `收藏 ${report.settings.count} 条（分组 ${report.settings.chainCount} / 普通 ${report.settings.plainCount}），`
+                + `当前在 settings.json 里占 ${formatBytes(report.settings.bytes)}`,
+                `已写出 ${report.written.count} 个正文文件，共 ${formatBytes(report.written.bytesTotal)}，`
+                + `最大单个 ${formatBytes(report.written.bytesMax)}`,
+                `索引大小 ${formatBytes(report.indexBytes)} —— 正式搬家后 settings.json 可减少约 `
+                + `<b>${formatBytes(report.projectedSavingBytes)}</b>`,
+                `落盘校验：${report.verify.checked} 个已确认`
+                + (report.verify.missing.length ? `，<b>缺失 ${report.verify.missing.length} 个</b>` : "，无缺失")
+                + (report.verify.error ? `，校验请求出错：${report.verify.error}` : ""),
+                `抽样回读比对：${report.readback.sampled} 条`
+                + (report.readback.mismatched.length ? `，<b>不一致 ${report.readback.mismatched.length} 条</b>` : "，全部一致"),
+                `耗时 ${(report.durationMs / 1000).toFixed(1)} 秒`
+            ];
+            if (report.failures.length) {
+                lines.push(`<b>写入失败 ${report.failures.length} 条</b>：`
+                    + report.failures.slice(0, 3).map(f => `${f.id}（${f.error}）`).join("；")
+                    + (report.failures.length > 3 ? " …" : ""));
+            }
+
+            const tone = report.ok ? "#55efc4" : "#ff7675";
+            const head = report.ok
+                ? "✅ 试运行通过，未改动任何现有数据"
+                : "⚠️ 试运行发现问题，未改动任何现有数据";
+            showReport(`${head}<br>· ${lines.join("<br>· ")}`, tone);
+
+            console.log("[Titania] 收藏搬家试运行报告", report);
+            if (window.toastr) {
+                if (report.ok) {
+                    toastr.success(`已写出 ${report.written.count} 个文件并全部校验通过，可减少约 ${formatBytes(report.projectedSavingBytes)}`, "Titania Echo");
+                } else {
+                    toastr.warning("试运行发现问题，详情见设置页与控制台", "Titania Echo");
+                }
+            }
+        } catch (e) {
+            console.error("Titania: 收藏搬家试运行失败", e);
+            showReport(`❌ 试运行失败：${e?.message || String(e)}（未改动任何现有数据）`, "#ff7675");
+            if (window.toastr) toastr.error(e?.message || "试运行失败", "Titania Echo");
+        } finally {
+            $self.prop("disabled", false).html(oldHtml);
+        }
+    });
+}
+
+/* 三个迁移按钮的可用状态互相依赖：搬完家收尾才可点，收尾完两个都该锁死。
+ * 原先各自在绑定时算一次，而绑定只发生在页面加载 —— 于是搬家成功后
+ * 收尾按钮仍停留在「请先完成正式搬家」的置灰状态，必须刷新页面才解锁。
+ * 现在统一由这一个函数整体刷新，每步操作结束都调它一次。
+ * 文案也在这里统一给出，避免与 settings.html 里的初始文案漂移。 */
+const FAVS_MIGRATE_RUN_LABEL = '<i class="fa-solid fa-box-archive"></i> 正式搬家（保留原数据）';
+const FAVS_MIGRATE_CLEANUP_LABEL = '<i class="fa-solid fa-broom"></i> 收尾：删除旧数据（不可逆）';
+
+function refreshFavsMigrationButtons() {
+    const migrated = isFavsMigrated();
+    // 刻意不用 describeCurrentFavsFootprint()：它会把 7 MB 的 favs 整体序列化算字节数，
+    // 而这里只需要知道还剩没剩
+    const legacyFavs = getExtData().favs;
+    const legacyLeft = Array.isArray(legacyFavs) && legacyFavs.length > 0;
+
+    const $run = $("#titania-favs-migrate-run");
+    if ($run.length) {
+        if (migrated) {
+            $run.prop("disabled", true).attr("title", "").html('<i class="fa-solid fa-check"></i> 已搬家（原数据仍保留）');
+        } else {
+            $run.prop("disabled", false).attr("title", "").html(FAVS_MIGRATE_RUN_LABEL);
+        }
+    }
+
+    const $cleanup = $("#titania-favs-migrate-cleanup");
+    if ($cleanup.length) {
+        if (!migrated) {
+            $cleanup.prop("disabled", true).attr("title", "请先完成正式搬家").html(FAVS_MIGRATE_CLEANUP_LABEL);
+        } else if (!legacyLeft) {
+            $cleanup.prop("disabled", true).attr("title", "").html('<i class="fa-solid fa-check"></i> 旧数据已清理');
+        } else {
+            $cleanup.prop("disabled", false).attr("title", "").html(FAVS_MIGRATE_CLEANUP_LABEL);
+        }
+    }
+}
+
+/**
+ * 「正式搬家」按钮。
+ *
+ * 顺序：强制下载完整备份 → 写正文文件 → 逐个校验落盘 → 写索引。
+ * **不删 data.favs** —— 搬完之后磁盘与 settings.json 里各有一份完整数据，
+ * 退回上个插件版本就能原样回到搬家前。删除留到下一个提交。
+ */
+function bindFavsMigrationRun() {
+    const $btn = $("#titania-favs-migrate-run");
+    if ($btn.length === 0) return;
+
+    refreshFavsMigrationButtons();
+
+    $btn.off("click").on("click", async function () {
+        const $self = $(this);
+
+        if (isFavsMigrated()) {
+            showFavsMigrationReport("收藏已经搬过家了，无需重复操作。", "#feca57");
+            return;
+        }
+
+        const footprint = describeCurrentFavsFootprint();
+        if (footprint.count === 0) {
+            showFavsMigrationReport("当前没有收藏，无需搬家。", "#feca57");
+            return;
+        }
+
+        const confirmed = confirm(
+            `即将把 ${footprint.count} 条收藏的正文改由独立文件承载。\n\n`
+            + `· 会先下载一份完整备份，请务必保存好\n`
+            + `· settings.json 里的原数据【仍然保留】，随时可退回上个插件版本\n`
+            + `· 收藏夹会改成「列表读索引、点开才取正文」\n\n`
+            + `确定继续吗？`
+        );
+        if (!confirmed) return;
+
+        $self.prop("disabled", true);
+
+        try {
+            // 1. 强制备份。备份失败就不许往下走 —— 这是唯一的人工退路
+            $self.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
+            try {
+                const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+                const filename = `titania_backup_before_favs_migration_${new Date().toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
+                downloadBackupPayload(snapshot, filename);
+            } catch (backupErr) {
+                console.error("Titania: 搬家前备份失败", backupErr);
+                showFavsMigrationReport(
+                    `❌ 搬家前的备份失败，已中止，未改动任何数据：${backupErr?.message || String(backupErr)}`,
+                    "#ff7675"
+                );
+                if (window.toastr) toastr.error("备份失败，搬家已中止", "Titania Echo");
+                return;
+            }
+
+            // 2. 搬家
+            const report = await migrateFavsToFiles({
+                onProgress: (done, total) => {
+                    $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> 搬家中 ${done}/${total}`);
+                }
+            });
+
+            if (!report.ok) {
+                const reason = report.reason || "未知原因";
+                showFavsMigrationReport(
+                    `❌ 搬家已中止，索引未写入，settings.json 未改动：${reason}`
+                    + `<br>· 备份文件已下载，可放心重试<br>· 详情见控制台`,
+                    "#ff7675"
+                );
+                console.error("[Titania] 收藏搬家中止", report);
+                if (window.toastr) toastr.error("搬家已中止，未改动原数据", "Titania Echo");
+                return;
+            }
+
+            showFavsMigrationReport(
+                `✅ 搬家完成，settings.json 里的原数据仍保留（可随时退回）`
+                + `<br>· ${report.written.count} 条正文已落文件，共 ${formatBytes(report.written.bytesTotal)}，`
+                + `最大单个 ${formatBytes(report.written.bytesMax)}`
+                + `<br>· 索引 ${formatBytes(report.indexBytes)}，全部文件校验通过`
+                + `<br>· 耗时 ${(report.durationMs / 1000).toFixed(1)} 秒`
+                + `<br>· <b>下一步请打开收藏夹逐项检查</b>：列表、搜索、筛选、点开看、导出、删除。`
+                + `确认无误后再删掉 settings.json 里那 ${formatBytes(report.pendingRemovalBytes)} 旧数据，`
+                + `<b>卡顿到那一步才会真正改善。</b>`,
+                "#55efc4"
+            );
+            console.log("[Titania] 收藏搬家报告", report);
+            refreshFavsMigrationButtons();
+            if (window.toastr) {
+                toastr.success(`${report.written.count} 条收藏已搬家，原数据仍保留`, "Titania Echo");
+            }
+        } catch (e) {
+            console.error("Titania: 收藏搬家失败", e);
+            showFavsMigrationReport(`❌ 搬家失败：${e?.message || String(e)}`, "#ff7675");
+            if (window.toastr) toastr.error(e?.message || "搬家失败", "Titania Echo");
+        } finally {
+            // 文案与可用状态一律交给 refreshFavsMigrationButtons 统一给出，
+            // 不在这里按 isFavsMigrated() 各判一次（那正是收尾按钮解锁不了的成因）
+            refreshFavsMigrationButtons();
+        }
+    });
+}
+
+/**
+ * 「收尾：删除旧数据」按钮。
+ *
+ * 这是整个搬家里唯一不可逆的一步，也是 settings.json 真正瘦下来、
+ * 保存速度真正变快的那一步。所以门槛设得很高：
+ *   1. 强制下载一份完整备份（此时备份已改为从文件重建正文，自成一体）
+ *   2. 全量核对——不是抽样：每个文件都要在，每条正文都要能读回来，
+ *      且与 settings.json 里的旧数据逐字一致
+ *   3. 只有全部通过才删
+ */
+function bindFavsMigrationCleanup() {
+    const $btn = $("#titania-favs-migrate-cleanup");
+    if ($btn.length === 0) return;
+
+    refreshFavsMigrationButtons();
+
+    $btn.off("click").on("click", async function () {
+        const $self = $(this);
+
+        if (!isFavsMigrated()) {
+            showFavsMigrationReport("请先完成「正式搬家」，再执行收尾。", "#feca57");
+            return;
+        }
+        const footprint = describeCurrentFavsFootprint();
+        if (footprint.count === 0) {
+            showFavsMigrationReport("settings.json 里已经没有旧收藏数据了。", "#feca57");
+            refreshFavsMigrationButtons();
+            return;
+        }
+
+        const confirmed = confirm(
+            `即将从 settings.json 删除 ${footprint.count} 条收藏的旧数据（约 ${formatBytes(footprint.bytes)}）。\n\n`
+            + `· 删除前会全量核对每一条正文，任何一条不一致就中止\n`
+            + `· 会先下载一份完整备份，请务必保存好\n`
+            + `· 【此操作不可逆】删除后正文只存在于 user/files/ 里\n\n`
+            + `确定继续吗？`
+        );
+        if (!confirmed) return;
+
+        $self.prop("disabled", true);
+
+        try {
+            // 1. 强制备份。备份此刻已会把正文从文件读回来重建，能独立还原
+            $self.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
+            try {
+                const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+                const filename = `titania_backup_before_favs_cleanup_${new Date().toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
+                downloadBackupPayload(snapshot, filename);
+            } catch (backupErr) {
+                console.error("Titania: 收尾前备份失败", backupErr);
+                showFavsMigrationReport(
+                    `❌ 收尾前的备份失败，已中止，未删除任何数据：${backupErr?.message || String(backupErr)}`,
+                    "#ff7675"
+                );
+                if (window.toastr) toastr.error("备份失败，收尾已中止", "Titania Echo");
+                return;
+            }
+
+            // 2. 全量核对 + 删除
+            const result = await dropLegacyFavs({
+                onProgress: (done, total) => {
+                    $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> 核对中 ${done}/${total}`);
+                }
+            });
+
+            if (!result.ok) {
+                showFavsMigrationReport(
+                    `❌ 核对未通过，<b>旧数据一个字都没删</b>：`
+                    + `<br>· ${(result.problems || []).join("<br>· ")}`
+                    + `<br>备份文件已下载，可放心排查后重试。`,
+                    "#ff7675"
+                );
+                console.error("[Titania] 收尾核对未通过", result);
+                if (window.toastr) toastr.error("核对未通过，未删除任何数据", "Titania Echo");
+                return;
+            }
+
+            showFavsMigrationReport(
+                `✅ 收尾完成，settings.json 减少 <b>${formatBytes(result.removedBytes)}</b>`
+                + `<br>· 收藏正文现在只存在于 user/files/ 里，新增一条收藏只写它自己那一个文件`
+                + `<br>· 保存设置不再重写收藏，卡顿到这一步才真正改善`
+                + `<br>· 导出备份会自动把正文读回来打包，仍然自成一体`
+                + `<br>· <b>建议刷新页面</b>，确认收藏夹一切正常`,
+                "#55efc4"
+            );
+            console.log("[Titania] 收尾完成", result);
+            refreshFavsMigrationButtons();
+            if (window.toastr) {
+                toastr.success(`旧数据已清理，settings.json 减少 ${formatBytes(result.removedBytes)}`, "Titania Echo");
+            }
+        } catch (e) {
+            console.error("Titania: 收尾失败", e);
+            showFavsMigrationReport(`❌ 收尾失败：${e?.message || String(e)}`, "#ff7675");
+            if (window.toastr) toastr.error(e?.message || "收尾失败", "Titania Echo");
+        } finally {
+            // 同上：文案与可用状态统一由 refreshFavsMigrationButtons 给出，
+            // 否则核对失败时按钮会一直卡在「核对中 176/176」
+            refreshFavsMigrationButtons();
+        }
+    });
+}
+
+/**
+ * 「清理遗留数据」按钮。
+ *
+ * 清的是两类**已确认零引用**的东西：
+ *   · settings.json 里 11 个没有任何代码读写的旧键（含 8 月未完成迁移留下的
+ *     favs_meta / favs_migrated_at，已被 favs_index 取代）
+ *   · user/files 里不再被 favs_index 引用的正文文件
+ *
+ * 不强制备份：这些是死数据，删掉不影响任何功能，而收尾那次备份刚做过不久，
+ * 再读一遍 178 个正文文件只是噪音。确认框会逐项列清楚删什么。
+ */
+function bindFavsArtifactCleanup() {
+    const $btn = $("#titania-favs-cleanup-artifacts");
+    if ($btn.length === 0) return;
+
+    $btn.off("click").on("click", async function () {
+        const $self = $(this);
+        const oldHtml = $self.html();
+        const plan = describeLegacyArtifacts();
+
+        if (plan.keys.length === 0 && plan.orphanFiles.length === 0) {
+            showFavsMigrationReport("没有可清理的遗留数据。", "#feca57");
+            return;
+        }
+
+        const keyList = plan.keys.map(item => `  · ${item.key}（${formatBytes(item.bytes)}）`).join("\n");
+        const fileList = plan.orphanFiles.map(path => `  · ${path}`).join("\n");
+        const confirmed = confirm(
+            `将清理以下已确认零引用的遗留数据：\n\n`
+            + (plan.keys.length ? `settings.json 里的 ${plan.keys.length} 个旧键（共 ${formatBytes(plan.keyBytes)}）：\n${keyList}\n\n` : "")
+            + (plan.orphanFiles.length ? `${plan.orphanFiles.length} 个不再被引用的正文文件：\n${fileList}\n\n` : "")
+            + `这些都是没有任何代码读写的死数据，删除不影响任何功能。\n`
+            + `如需保险，可先点上面的「导出备份」。\n\n确定继续吗？`
+        );
+        if (!confirmed) return;
+
+        $self.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 清理中...');
+
+        try {
+            const report = await cleanupLegacyArtifacts();
+            const lines = [];
+            if (report.removedKeys.length) {
+                lines.push(`已删除 ${report.removedKeys.length} 个旧键，settings.json 减少 <b>${formatBytes(report.removedBytes)}</b>`);
+            }
+            if (report.deletedFiles.length) {
+                lines.push(`已删除 ${report.deletedFiles.length} 个无人引用的正文文件`);
+            }
+            if (report.failedFiles.length) {
+                lines.push(`<b>${report.failedFiles.length} 个文件删除失败</b>，已保留 favs_meta 以便下次重试`);
+            }
+            if (lines.length === 0) lines.push("没有可清理的内容");
+
+            showFavsMigrationReport(
+                `${report.failedFiles.length ? "⚠️ 清理部分完成" : "✅ 清理完成"}<br>· ${lines.join("<br>· ")}`,
+                report.failedFiles.length ? "#feca57" : "#55efc4"
+            );
+            console.log("[Titania] 遗留数据清理报告", report);
+            if (window.toastr) {
+                toastr.success(`遗留数据已清理，settings.json 减少 ${formatBytes(report.removedBytes)}`, "Titania Echo");
+            }
+        } catch (e) {
+            console.error("Titania: 遗留数据清理失败", e);
+            showFavsMigrationReport(`❌ 清理失败：${e?.message || String(e)}`, "#ff7675");
+            if (window.toastr) toastr.error(e?.message || "清理失败", "Titania Echo");
+        } finally {
+            $self.prop("disabled", false).html(oldHtml);
         }
     });
 }

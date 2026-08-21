@@ -1,0 +1,305 @@
+/* ============================================================
+   04-features/queue.css —— 队列生成设置窗口与进度条
+
+   Phase 4f 从 main-window.css 按类名前缀 `.t-queue-` 拆出（纯搬运，声明未改）。
+   ============================================================ */
+
+/* ===== 队列生成设置窗口 ===== */
+.t-queue-settings {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 450px;
+    max-height: 75vh;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: 10px;
+    box-shadow: var(--t-shadow-xl);
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    animation: t-fade-in 0.2s;
+}
+
+/* `.t-queue-header` 的视觉全部由 02-components/panel.css 的 `.t-panel-header` 提供，
+   本文件不再需要任何声明。 */
+.t-queue-body {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.t-queue-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.t-queue-label {
+    font-size: 0.9em;
+    color: var(--t-color-text-secondary);
+    font-weight: bold;
+}
+
+.t-queue-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+/* 模式切换按钮组 */
+.t-queue-mode-toggle {
+    display: flex;
+    gap: 8px;
+}
+
+.t-queue-mode-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--t-color-surface-elevated);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: 8px;
+    color: var(--t-color-text-muted);
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-queue-mode-btn:hover {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-label);
+    border-color: var(--t-color-border-bright);
+}
+
+.t-queue-mode-btn.active {
+    background: var(--t-color-accent-soft);
+    border-color: var(--t-color-focus-ring);
+    color: var(--t-color-accent);
+}
+
+.t-queue-mode-btn i {
+    font-size: 1.1em;
+}
+
+/* 数字控制器 */
+.t-queue-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.t-queue-num-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--t-color-border-strong);
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-label);
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.t-queue-num-btn:hover {
+    background: var(--t-color-surface-high);
+    color: var(--t-color-text-strong);
+    border-color: var(--t-color-text-faint);
+}
+
+.t-queue-num-btn:active {
+    transform: scale(0.95);
+}
+
+.t-queue-num-value {
+    min-width: 30px;
+    text-align: center;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--t-color-accent);
+}
+
+/* 下拉选择框 */
+.t-queue-select {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--t-color-surface-elevated);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: 6px;
+    color: var(--t-color-text-label);
+    font-size: 0.9em;
+    cursor: pointer;
+    outline: none;
+}
+
+.t-queue-select:focus {
+    border-color: var(--t-color-accent);
+}
+
+/* 剧本列表 */
+.t-queue-script-list {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 5px;
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border);
+    border-radius: 6px;
+}
+
+.t-queue-script-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.t-queue-script-list::-webkit-scrollbar-track {
+    background: var(--t-color-surface-sunken);
+}
+
+.t-queue-script-list::-webkit-scrollbar-thumb {
+    background: var(--t-color-border-strong);
+    border-radius: 3px;
+}
+
+.t-queue-script-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--t-color-surface-elevated);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-queue-script-item:hover {
+    background: var(--t-color-surface-raised);
+}
+
+.t-queue-script-item.selected {
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-accent-border-subtle);
+}
+
+.t-queue-script-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.t-queue-script-name {
+    font-size: 0.9em;
+    color: var(--t-color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.t-queue-script-cat {
+    font-size: 0.75em;
+    color: var(--t-color-text-faint);
+}
+
+.t-queue-script-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.t-queue-script-actions .t-btn {
+    flex: 1;
+    padding: 6px 10px;
+}
+
+/* 底部 */
+/* `.t-queue-footer` 的视觉全部由 02-components/panel.css 的 `.t-panel-footer` 提供，
+   本文件不再需要任何声明。 */
+.t-queue-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85em;
+    color: var(--t-color-text-muted);
+}
+
+.t-queue-actions {
+    display: flex;
+    gap: 10px;
+}
+
+@media screen and (max-width: 600px) {
+.t-queue-settings {
+        width: 95%;
+        top: 50px;
+        max-height: 80vh;
+    }
+
+.t-queue-mode-btn {
+        padding: 10px;
+        font-size: 0.85em;
+    }
+
+.t-queue-script-list {
+        max-height: 150px;
+    }
+}
+
+/* ===== 队列进度条 ===== */
+.t-queue-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--t-color-surface-high);
+    z-index: 200;
+    overflow: hidden;
+}
+
+.t-queue-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--t-color-accent), rgb(var(--t-accent-azure-rgb)));
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.t-queue-progress-bar.animated {
+    animation: t-queue-progress-pulse 1.5s ease-in-out infinite;
+}
+
+/* 队列运行时的状态指示 */
+.t-queue-running-indicator {
+    position: absolute;
+    top: 10px;
+    right: 70px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--t-color-accent-soft);
+    border: 1px solid var(--t-color-accent-border-subtle);
+    border-radius: 20px;
+    font-size: 0.8em;
+    color: var(--t-color-accent);
+    z-index: 150;
+    animation: t-fade-in 0.3s;
+}
+
+.t-queue-running-indicator i {
+    animation: fa-spin 1s linear infinite;
+}
+

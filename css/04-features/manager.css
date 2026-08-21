@@ -1,4 +1,4 @@
-/* css/manager.css - 剧本管理 */
+/* css/04-features/manager.css - 剧本管理 */
 
 /* 管理器主窗 */
 #t-mgr-view {
@@ -7,7 +7,7 @@
     max-width: 95vw;
     display: flex;
     flex-direction: column;
-    background: #121212;
+    background: var(--t-color-bg);
     position: relative;
 }
 
@@ -21,8 +21,8 @@
 /* 侧边 */
 .t-mgr-sidebar {
     width: 180px;
-    background: #181818;
-    border-right: 1px solid #333;
+    background: var(--t-color-surface-inset);
+    border-right: 1px solid var(--t-color-border);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -31,7 +31,7 @@
 
 .t-mgr-sb-group {
     padding: 10px 0;
-    border-bottom: 1px solid #222;
+    border-bottom: 1px solid var(--t-color-border-dim);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -45,7 +45,7 @@
 
 .t-mgr-sb-title {
     font-size: 0.8em;
-    color: #666;
+    color: var(--t-color-text-faint);
     padding: 0 15px 5px;
     font-weight: bold;
     text-transform: uppercase;
@@ -54,7 +54,7 @@
 .t-mgr-sb-item {
     padding: 8px 15px;
     cursor: pointer;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 0.9em;
     transition: 0.2s;
     display: flex;
@@ -63,14 +63,14 @@
 }
 
 .t-mgr-sb-item:hover {
-    background: #222;
-    color: #eee;
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text);
 }
 
 .t-mgr-sb-item.active {
-    background: #2a2a2a;
-    color: #bfa15f;
-    border-left: 3px solid #bfa15f;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-brand);
+    border-left: 3px solid var(--t-color-brand);
     font-weight: bold;
 }
 
@@ -79,7 +79,7 @@
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    background: #121212;
+    background: var(--t-color-bg);
     min-width: 0;
     position: relative;
     overflow: hidden;
@@ -87,8 +87,8 @@
 
 .t-mgr-toolbar {
     padding: 10px 15px;
-    background: #1e1e1e;
-    border-bottom: 1px solid #333;
+    background: var(--t-color-surface);
+    border-bottom: 1px solid var(--t-color-border);
     display: flex;
     gap: 10px;
     align-items: center;
@@ -97,9 +97,9 @@
 
 .t-mgr-search {
     flex-grow: 1;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
+    background: var(--t-color-surface-raised);
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text);
     padding: 6px 10px;
     border-radius: 4px;
     font-size: 0.9em;
@@ -107,9 +107,9 @@
 }
 
 .t-mgr-sort {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
+    background: var(--t-color-surface-raised);
+    border: 1px solid var(--t-color-border-strong);
+    color: var(--t-color-text);
     padding: 6px 10px;
     border-radius: 4px;
     font-size: 0.9em;
@@ -118,8 +118,8 @@
 
 .t-mgr-overview {
     padding: 8px 15px;
-    background: #171717;
-    border-bottom: 1px solid #2a2a2a;
+    background: var(--t-color-surface-inset);
+    border-bottom: 1px solid var(--t-color-surface-raised);
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -131,7 +131,7 @@
     flex-wrap: wrap;
     gap: 12px;
     font-size: 0.8em;
-    color: #8b8b8b;
+    color: var(--t-color-text-muted);
 }
 
 .t-mgr-ov-top {
@@ -139,16 +139,16 @@
     align-items: center;
     gap: 6px;
     font-size: 0.8em;
-    color: #9d9d9d;
+    color: var(--t-color-text-secondary);
     flex-wrap: wrap;
 }
 
 .t-mgr-ov-item {
     padding: 2px 6px;
     border-radius: 999px;
-    background: rgba(191, 161, 95, 0.12);
-    border: 1px solid rgba(191, 161, 95, 0.3);
-    color: #d3bf8f;
+    background: var(--t-color-brand-soft);
+    border: 1px solid var(--t-color-brand-border-subtle);
+    color: rgb(var(--t-accent-gold-text-rgb));
     max-width: 160px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -156,7 +156,7 @@
 }
 
 .t-mgr-ov-empty {
-    color: #666;
+    color: var(--t-color-text-faint);
 }
 
 /* 列表 */
@@ -170,13 +170,13 @@
     display: flex;
     align-items: center;
     padding: 10px 15px;
-    border-bottom: 1px solid #222;
+    border-bottom: 1px solid var(--t-color-border-dim);
     transition: 0.2s;
     min-height: 50px;
 }
 
 .t-mgr-item:hover {
-    background: #1a1a1a;
+    background: var(--t-color-surface-sunken);
 }
 
 .t-mgr-item-meta {
@@ -187,7 +187,7 @@
 
 .t-mgr-item-title {
     font-size: 0.95em;
-    color: #eee;
+    color: var(--t-color-text);
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -196,7 +196,7 @@
 
 .t-mgr-item-desc {
     font-size: 0.8em;
-    color: #666;
+    color: var(--t-color-text-faint);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -205,7 +205,7 @@
 
 .t-mgr-item-stats {
     font-size: 0.75em;
-    color: #7a7a7a;
+    color: var(--t-color-text-dim);
     margin-top: 3px;
     white-space: nowrap;
     overflow: hidden;
@@ -216,8 +216,15 @@
     font-size: 0.75em;
     padding: 1px 5px;
     border-radius: 3px;
-    background: #333;
-    color: #aaa;
+    background: var(--t-color-surface-high);
+    color: var(--t-color-text-secondary);
+}
+
+/* 「预设」标签的底色。原为 scriptManager.js:410 的内联 style。
+   ⚠ 与 .t-mgr-tag 同为 (0,1,0) 且都改 background，靠紧随其后取胜，
+   位置不可上移。 */
+.t-mgr-tag--preset {
+    background: var(--t-color-border-strong);
 }
 
 /* 批量管理 */
@@ -240,214 +247,37 @@
 
 .t-mgr-footer-bar {
     height: 50px;
-    background: #2a1a1a;
-    border-top: 1px solid #522;
+    background: rgb(var(--t-accent-mgr-footer-rgb));
+    border-top: 1px solid rgb(var(--t-accent-mgr-footer-border-rgb));
     display: none;
     align-items: center;
     justify-content: space-between;
     padding: 0 15px;
-    color: #ff6b6b;
+    color: var(--t-color-danger);
     flex-shrink: 0;
     z-index: 10;
 }
 
 .t-batch-active .t-mgr-footer-bar {
     display: flex;
-    animation: slideUp 0.2s;
+    animation: t-slide-up 0.2s;
 }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(100%);
-    }
-
-    to {
-        transform: translateY(0);
-    }
-}
-
-/* 剧本选择器面板 */
-.t-selector-panel {
-    position: absolute;
-    top: 80px;
-    left: 20px;
-    right: 20px;
-    bottom: 20px;
-    background: rgba(18, 18, 18, 0.98);
-    backdrop-filter: blur(10px);
-    z-index: 2001;
-    border-radius: 8px;
-    border: 1px solid #444;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-    animation: fadeIn 0.2s;
-}
-
-.t-sel-header {
-    padding: 10px 15px;
-    border-bottom: 1px solid #333;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #1e1e1e;
-    border-radius: 8px 8px 0 0;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-/* 剧本选择器搜索框 */
-.t-sel-search-input {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.85em;
-    width: 150px;
-    transition: 0.2s;
-}
-
-.t-sel-sort-select {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
-    padding: 5px 8px;
-    border-radius: 4px;
-    font-size: 0.85em;
-}
-
-.t-sel-search-input:focus {
-    outline: none;
-    border-color: #bfa15f;
-    width: 180px;
-}
-
-.t-sel-search-input::placeholder {
-    color: #666;
-}
-
-.t-sel-body {
-    display: flex;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-.t-sel-sidebar {
-    width: 160px;
-    background: #181818;
-    border-right: 1px solid #333;
-    padding: 10px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    flex-shrink: 0;
-}
-
-.t-sel-grid {
-    flex-grow: 1;
-    padding: 15px;
-    overflow-y: auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 10px;
-    align-content: start;
-}
-
-.t-sel-cat-btn {
-    padding: 8px 12px;
-    cursor: pointer;
-    color: #888;
-    border-radius: 4px;
-    font-size: 0.9em;
-    transition: 0.2s;
-    text-align: left;
-}
-
-.t-sel-cat-btn:hover {
-    background: #252525;
-    color: #ddd;
-}
-
-.t-sel-cat-btn.active {
-    background: #333;
-    color: #fff;
-    font-weight: bold;
-    border-left: 3px solid #bfa15f;
-}
-
-.t-script-card {
-    background: #252525;
-    border: 1px solid #333;
-    border-radius: 6px;
-    padding: 12px;
-    cursor: pointer;
-    transition: 0.2s;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.t-script-card:hover {
-    transform: translateY(-2px);
-    border-color: #555;
-    background: #2a2a2a;
-}
-
-.t-card-title {
-    font-weight: bold;
-    color: #eee;
-    font-size: 1em;
-}
-
-.t-card-desc {
-    font-size: 0.8em;
-    color: #777;
-    line-height: 1.3;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-}
-
-.t-card-stats {
-    font-size: 0.74em;
-    color: #8e8e8e;
-    margin-top: 2px;
-}
-
-.t-sel-footer {
-    padding: 7px 12px;
-    font-size: 0.78em;
-    color: #7f7f7f;
-    border-top: 1px solid #333;
-    background: #1a1a1a;
-    border-radius: 0 0 8px 8px;
-}
-
-/* 导入 Modal */
+/* 导入 Modal —— 遮罩与表面基础见 02-components/dialog.css
+   （.t-dialog-overlay + .t-dialog-overlay--contained / .t-dialog-panel）。
+   这里只保留业务差异：scrim 深浅、堆叠层级、初始隐藏。 */
 .t-imp-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    --t-dialog-scrim: var(--t-color-dialog-scrim-strong);
     z-index: 2000;
+    /* 初始隐藏；JS 用 .css("display","flex") / .hide() 切换，
+       居中由组件层的 align-items / justify-content 提供。 */
     display: none;
-    justify-content: center;
-    align-items: center;
 }
 
 .t-imp-box {
     width: 400px;
     max-width: 90%;
-    background: #1e1e1e;
-    border: 1px solid #444;
-    border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .t-imp-row {
@@ -456,7 +286,7 @@
 
 .t-imp-label {
     display: block;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     margin-bottom: 5px;
     font-size: 0.9em;
 }
@@ -468,7 +298,7 @@
     max-height: 85vh;
     display: flex;
     flex-direction: column;
-    background: #121212;
+    background: var(--t-color-bg);
 }
 
 #t-editor-view .t-body {
@@ -482,7 +312,7 @@
 
 #t-editor-view .t-body label {
     display: block;
-    color: #aaa;
+    color: var(--t-color-text-secondary);
     font-size: 0.9em;
     margin-bottom: 3px;
 }
@@ -494,12 +324,8 @@
 }
 
 #t-editor-view .t-btn-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
     padding-top: 15px;
-    border-top: 1px solid #333;
-    flex-shrink: 0;
+    border-top: 1px solid var(--t-color-border);
 }
 
 /* 大屏编辑器 */
@@ -516,13 +342,6 @@
     overflow: hidden;
 }
 
-#t-large-edit-view .t-btn-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-    flex-shrink: 0;
-}
-
 /* 移动端分类下拉选择器 - 默认隐藏 */
 .t-mgr-mobile-cat {
     display: none;
@@ -537,7 +356,7 @@
     transform: translateY(-50%);
     background: transparent;
     border: none;
-    color: #888;
+    color: var(--t-color-text-muted);
     padding: 8px 12px;
     cursor: pointer;
     font-size: 0.9em;
@@ -546,20 +365,20 @@
 }
 
 .t-mgr-cat-edit-btn:hover {
-    color: #bfa15f;
+    color: var(--t-color-brand);
 }
 
 .t-mgr-cat-edit-btn:active {
-    color: #fff;
+    color: var(--t-color-text-strong);
 }
 
 .t-mgr-cat-dropdown {
     width: 100%;
     padding: 10px 15px;
-    background: #1e1e1e;
+    background: var(--t-color-surface);
     border: none;
-    border-bottom: 1px solid #333;
-    color: #eee;
+    border-bottom: 1px solid var(--t-color-border);
+    color: var(--t-color-text);
     font-size: 1em;
     cursor: pointer;
     appearance: none;
@@ -571,12 +390,12 @@
 
 .t-mgr-cat-dropdown:focus {
     outline: none;
-    background-color: #252525;
+    background-color: var(--t-color-surface-elevated);
 }
 
 .t-mgr-cat-dropdown option {
-    background: #1e1e1e;
-    color: #eee;
+    background: var(--t-color-surface);
+    color: var(--t-color-text);
     padding: 10px;
 }
 
@@ -587,7 +406,7 @@
 
     /* 移动端隐藏桌面侧边栏，显示下拉选择器 */
     .t-mgr-sidebar {
-        display: none !important;
+        display: none;
     }
 
     .t-mgr-mobile-cat {
@@ -601,11 +420,11 @@
         left: 0;
         right: 0;
         width: 100%;
-        box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.6);
+        box-shadow: 0 -5px 15px var(--t-shadow-ink-60);
     }
 
     .t-batch-active .t-mgr-list {
-        padding-bottom: 60px !important;
+        padding-bottom: 60px;
     }
 
     .t-mgr-overview {
@@ -644,66 +463,13 @@
         height: 80vh;
         max-height: 85vh;
     }
+}
 
-    .t-selector-panel {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
-    }
-
-    .t-sel-body {
-        flex-direction: column;
-    }
-
-    .t-sel-sidebar {
-        width: 100%;
-        max-height: 50px;
-        flex-direction: row;
-        overflow-x: auto;
-        overflow-y: hidden;
-        border-right: none;
-        border-bottom: 1px solid #333;
-        padding: 5px;
-        gap: 8px;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    /* 移动端搜索框适配 */
-    .t-sel-search-input {
-        width: 120px;
-    }
-
-    .t-sel-search-input:focus {
-        width: 140px;
-    }
-
-    .t-sel-sort-select {
-        min-width: 100px;
-        max-width: 120px;
-    }
-
-    .t-sel-cat-btn {
-        text-align: center;
-        border-left: none;
-        padding: 6px 12px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        background: #222;
-        border: 1px solid #333;
-    }
-
-    .t-sel-cat-btn.active {
-        background: #bfa15f;
-        color: #000;
-        border: 1px solid #bfa15f;
-        border-left: 1px solid #bfa15f;
-    }
-
-    .t-sel-grid {
-        grid-template-columns: 1fr;
-        padding: 10px;
-    }
+/* 列表空态（"无数据"）。原为 scriptManager.js:402 的内联 style。
+   ⚠ 与本文件的 .t-mgr-ov-empty 不是一回事（那条只有 color:#666，
+   用在使用统计里），刻意不合并。 */
+.t-mgr-list-empty {
+    text-align: center;
+    color: var(--t-color-text-disabled);
+    margin-top: 50px;
 }

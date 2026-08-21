@@ -1,0 +1,76 @@
+/* ============================================================
+   01-base/scope.css —— 插件 UI 的作用域根 `.t-root`
+
+   `.t-root` 显式标出「插件 UI 的边界」。此前这个边界是隐式的、靠 `t-`
+   类名前缀猜的，导致：
+     - B8：6 个弹窗根没有排版基准，内部 em 相对 ST body(15px) 解析，
+           用户的「UI 缩放」设置在这些弹窗内完全失效
+     - B9：旧 .t-model-dialog-box 曾写死 font-family 绕过用户设置
+           （该弹窗系统确认为死代码，已在 Phase 4 删除）
+   挂载点清单见 plan.md §8.2，由审计 A21 清点。
+
+   ⚠ 注入 ST DOM 的按钮本体（.titania-inject-btn / .titania-recall-btn）
+     **不加** .t-root —— 依 ADR-02 它们要继承 ST 的 .mes_button 观感。
+   ============================================================ */
+
+.t-root {
+    /* 排版基准 —— 修 B8 / B9。
+       ST 的 body 是 font-family: var(--mainFontFamily) / font-size: 15px，
+       插件基准是 12px，两者不一致正是 B8 的成因。 */
+    font-family: var(--t-font-global);
+    font-size: var(--t-font-size-root);
+    /* calc(12px * var(--t-ui-font-scale, 1)) */
+    color: var(--t-color-text);
+    color-scheme: var(--t-color-scheme);
+    /* Phase 6c-3：原先写死 `dark`。改成 token 后随主题翻转 ——
+       浅底上的深色 checkbox / radio / range 是浅色主题最扎眼的一处不协调。
+       ⚠ 作用域外的 ST DOM 不受影响；ST body 的 `color-scheme: only light`
+         里的 `only` 只是禁止 UA 自动反色，不阻止后代自行声明。 */
+    accent-color: var(--t-color-accent);
+    /* Phase 6c-5：原生 checkbox / radio / range 的勾选色。
+       ⚠ 放在 .t-root 上而**不是**放进 form-controls.css 的
+         `.t-root input[type="checkbox"]` 里，是因为后者特异度 (0,2,1) 会盖掉
+         `.t-root .t-choice-input--brand` 等四个变体 (0,2,0)。accent-color 是
+         **继承属性**，从作用域根下发，变体就仍能逐个元素覆盖。 */
+}
+
+/* 盒模型自洽：不依赖宿主。
+   注：ST 已在 style.css:133 设了 `* { box-sizing: border-box }`，
+   所以本条当前是无操作；写出来是为了插件不依赖该宿主行为。 */
+.t-root,
+.t-root *,
+.t-root *::before,
+.t-root *::after {
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   plan.md §8.1 还列出了 line-height，但本阶段刻意不落地，
+   因为它会造成 plan.md §12.2 未评估到的全局行距变化。
+
+   1) line-height: var(--t-line-height-base)  —— 值为 1.5
+      实测 ST 的 body **没有**设置 line-height，故插件 UI 现在继承的是
+      浏览器默认值（normal，多数字体约 1.2）。一旦在 .t-root 上设 1.5，
+      所有未自行声明 line-height 的插件元素行距都会变大 —— 会改变窗口高度、
+      引起文本换行位置变化。全库仅 67 处自行声明了 line-height，
+      也就是说绝大多数元素都会受影响。
+      plan.md §12.2 的「已知视觉变化」清单里没有这一条，属计划遗漏。
+      应作为独立一步实施并单独比对，不与 token 落盘混在一起。
+
+   color-scheme 已在 Phase 3 落地、Phase 6c-3 改为跟随主题（见上方 .t-root）。
+   仍未纳入插件作用域的两处，是刻意的：
+
+   1) ST 扩展设置抽屉（settings.html，根是 #titania-settings-drawer）**没有**
+      .t-root，故其 10 个原生控件继承 ST 的 `only light`、渲染为浅色控件。
+      浅色主题下这正好是对的；深色主题下是「浅控件配深抽屉」，属 Phase 3 之前
+      就有的观感，不是本次引入。给抽屉加 .t-root 会同时改掉字号基准
+      （12px vs ST 的 15px）并重排整个抽屉，远超本步范围。
+   2) openPromptEntryEditor 的 shadow DOM（settingsWindow.js）用
+      `all: initial !important` 完全隔离，其 6.9k 字符样式里有 24 处颜色字面量、
+      **0 处 token 引用** —— 它是一座深色孤岛，两种主题下都是深色。
+      故其内部写死的 `color-scheme: dark` 是**对的**，不该跟随主题：
+      它有 7 个 textarea / 16 个 select，配浅控件会与自身深底冲突。
+      ⚠ 顺带记一条实测结论：`all` 按规范**不重置自定义属性**，所以
+        var(--t-*) 其实能穿过这层隔离。要给这座孤岛做主题化是可行的
+        （不需要 JS 传值），但那是 24 处字面量的迁移，属另一批。
+   ============================================================ */

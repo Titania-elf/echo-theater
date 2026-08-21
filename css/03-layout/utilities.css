@@ -1,0 +1,59 @@
+/* ============================================================
+   03-layout/utilities.css —— 布局基元
+
+   ⚠ 建这个文件是有数据支撑的，不是随手加 utility。交接文档 §5 明令
+   「不要制造几十个一次性 utility」，所以先做了全库盘点（535 个静态 inline
+   style 属性、按单条声明统计）：
+
+     display:flex        93 次      align-items:center   52 次
+     display:none        55 次      cursor:pointer       39 次
+     gap:10px            30 次      flex:1               27 次
+
+   每个都是被用 20-90 次的基元，而非一次性写法。且 535 个属性里 223 个
+   （42%）只含一条声明 —— 其中 flex:1 占 19 个、display:none 占 37 个，
+   一个类就能整条清掉。
+
+   本文件只收「语义中立、纯排列」的声明。带视觉的（颜色/边框/圆角/字号）
+   一律不进这里，走组件层或 feature 层。
+
+   ⚠ 加新 utility 前先重跑那份盘点。频次低于 10 次的不要进来 ——
+   宁可在 feature 文件里写一条带语义名的规则。
+   ============================================================ */
+
+/* flex 子项占满剩余空间。全库 27 次，其中 19 次是「整个 style 属性只有这一条」。 */
+.t-flex-1 {
+    flex: 1;
+}
+
+/* 隐藏。
+   ⚠ 只用于**结构上永久隐藏**的元素（如触发式 file input），
+   不要用于「初始隐藏、之后由 jQuery 显示」的元素 ——
+   jQuery 3 的 showHide() 对「被样式表隐藏」的元素会退回
+   getDefaultDisplay()，给 <div> 设 display:block，需要 flex/grid 的容器
+   会就此错版。判定方法与已知陷阱见交接文档 §5b。 */
+.is-hidden {
+    display: none;
+}
+
+/* 占满父元素宽度。全库 9 次，其中 8 次是「整个 style 属性只有这一条」。
+   ⚠ 带 `.t-input` 的元素本就从 field.css 拿到 width:100%（0,3,0），
+   本类（0,1,0）在那里会落败，但值相同、无视觉差异。 */
+.t-w-full {
+    width: 100%;
+}
+
+/* 不参与 flex 压缩。全库 10 次，其中 7 次是单声明属性。 */
+.t-shrink-0 {
+    flex-shrink: 0;
+}
+
+/* ⚠ 到此为止：按「单条声明」横切已基本到顶。
+   全库剩余的高频声明（display:flex 93 次、align-items:center 52 次、
+   gap:10px 30 次、text-align:center 17 次、flex-direction:column 14 次、
+   overflow:hidden 13 次、justify-content:space-between 13 次）
+   **单声明出现次数全部为 0** —— 它们永远与其它声明同现。
+   为它们建 utility 就必须把多声明属性拆成
+   `class="t-flex t-items-center t-gap-10"`，那是原子化 CSS，
+   与本项目「语义类 + 组件层」的方向冲突。
+   剩下的 196 个单声明属性是长尾（64 种），且多为颜色/字重（视觉，不属本层）
+   与裸像素间距（Phase 7 要归并的噪声）。**继续应回到按组件迁移。** */

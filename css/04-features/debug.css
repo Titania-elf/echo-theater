@@ -1,0 +1,597 @@
+
+
+/* === 📱 移动端适配 (Media Queries) === */
+@media screen and (max-width: 700px) {
+}
+
+/* === Prompt Compose Viewer === */
+
+#t-debug-view {
+    background: var(--t-color-bg);
+    /* 以下四条原为 JS 内联 style（Phase 5b-7 迁出）。(1,0,0) 压过 base.css 的
+       .t-box (0,1,0)：后者给的是 width:95% / max-width:650px / height:auto。
+       ⚠ 原内联还重复声明了 display:flex 与 flex-direction:column，这两条与
+       .t-box 逐字相同，故**刻意不搬**，让它继续从 .t-box 继承。
+       ⚠ .t-box 的 max-height:85vh 仍然生效，且小于此处的 height:92vh ——
+       实际高度一直是 85vh。这是迁移前的既有行为，本批不改。 */
+    max-width: 1400px;
+    width: 95vw;
+    height: 92vh;
+}
+
+#t-debug-view .t-prompt-source-bar {
+    display: flex;
+    align-items: center;
+    min-height: 42px;
+    padding: 6px 16px 0;
+    border-bottom: 1px solid var(--t-color-border-dim);
+    background: var(--t-color-surface-inset);
+}
+
+#t-debug-view .t-prompt-source-tabs {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+#t-debug-view .t-prompt-source-tab,
+#t-debug-view .t-prompt-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 0 11px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--t-color-text-dim);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#t-debug-view .t-prompt-source-tab:hover,
+#t-debug-view .t-prompt-info-btn:hover {
+    color: var(--t-color-text-label);
+    background: var(--t-color-surface);
+}
+
+#t-debug-view .t-prompt-source-tab.active {
+    border-bottom-color: rgb(var(--t-accent-azure-light-rgb));
+    color: var(--t-glass-text-bright);
+}
+
+#t-debug-view .t-prompt-source-tab i {
+    color: rgb(var(--t-accent-azure-light-rgb));
+    font-size: 7px;
+}
+
+#t-debug-view .t-prompt-info-btn {
+    width: 32px;
+    padding: 0;
+    border-bottom: 0;
+    border-radius: 5px;
+}
+
+#t-debug-view .t-prompt-info-btn i {
+    font-size: 12px;
+}
+
+#t-debug-view .t-prompt-info-popover {
+    position: absolute;
+    top: calc(100% + 7px);
+    left: 0;
+    z-index: 8;
+    width: min(360px, calc(100vw - 32px));
+    padding: 13px 14px;
+    border: 1px solid var(--t-color-border-control);
+    border-radius: 8px;
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text-secondary);
+    box-shadow: 0 12px 30px var(--t-shadow-ink-55);
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+#t-debug-view .t-prompt-info-popover[hidden] {
+    display: none;
+}
+
+#t-debug-view .t-prompt-info-popover strong {
+    color: var(--t-color-text);
+    font-size: 12px;
+}
+
+#t-debug-view .t-prompt-info-popover p {
+    margin: 7px 0 10px;
+}
+
+#t-debug-view .t-prompt-info-popover dl,
+#t-debug-view .t-prompt-info-popover dd {
+    margin: 0;
+}
+
+#t-debug-view .t-prompt-info-popover dl > div {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 8px;
+}
+
+#t-debug-view .t-prompt-info-popover dt {
+    color: var(--t-color-text-faint);
+}
+
+#t-debug-view .t-prompt-info-popover dd {
+    overflow: hidden;
+    color: var(--t-color-text-label);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#t-debug-view .t-prompt-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--t-color-border-dim);
+    background: var(--t-color-surface-inset);
+}
+
+#t-debug-view .t-prompt-request {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    color: var(--t-color-text-dim);
+    font-size: 12px;
+}
+
+#t-debug-view .t-prompt-actual {
+    color: rgb(var(--t-accent-azure-light-rgb));
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#t-debug-view .t-prompt-actual i {
+    font-size: 7px;
+    margin-right: 5px;
+}
+
+#t-debug-view #t-prompt-request-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#t-debug-view .t-prompt-summary-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+#t-debug-view .t-prompt-count {
+    color: var(--t-color-text-muted);
+    font-size: 12px;
+    margin-right: 4px;
+    white-space: nowrap;
+}
+
+#t-debug-view .t-prompt-count strong {
+    color: var(--t-glass-text-bright);
+    font-size: 14px;
+}
+
+#t-debug-view .t-prompt-count b {
+    color: var(--t-color-text-label);
+}
+
+#t-debug-view .t-prompt-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: var(--t-color-text-secondary);
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+#t-debug-view .t-prompt-tool-btn:hover {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-label);
+    border-color: var(--t-color-border-strong);
+}
+
+#t-debug-view .t-prompt-tool-btn.active {
+    color: rgb(var(--t-accent-azure-light-rgb));
+    border-color: rgb(var(--t-accent-azure-dim-rgb));
+    background: rgb(var(--t-accent-azure-dim-fill-rgb) / .25);
+}
+
+#t-debug-view .t-prompt-tool-btn i {
+    font-size: 12px;
+}
+
+#t-debug-view .t-prompt-icon-btn {
+    width: 30px;
+    justify-content: center;
+    padding-inline: 0;
+}
+
+#t-debug-view .t-prompt-sections {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 12px 14px 16px;
+}
+
+#t-debug-view .t-prompt-section-card {
+    border-bottom: 1px solid var(--t-color-border-dim);
+    border-left: 2px solid var(--t-color-border);
+    background: var(--t-color-surface-inset);
+}
+
+#t-debug-view .t-prompt-role-system {
+    border-left-color: rgb(var(--t-accent-azure-light-rgb));
+}
+
+#t-debug-view .t-prompt-role-user {
+    border-left-color: var(--t-color-notify);
+}
+
+#t-debug-view .t-prompt-role-assistant {
+    border-left-color: rgb(var(--t-accent-role-assistant-rgb));
+}
+
+#t-debug-view .t-prompt-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+}
+
+#t-debug-view .t-prompt-section-head:hover {
+    background: var(--t-color-surface);
+}
+
+#t-debug-view .t-prompt-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--t-color-text);
+    font-weight: 600;
+    font-size: 13px;
+    min-width: 0;
+}
+
+#t-debug-view .t-prompt-order {
+    width: 22px;
+    color: var(--t-color-text-faint);
+    font-family: var(--t-font-mono);
+    font-size: 11px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+#t-debug-view .t-prompt-role-label {
+    width: 58px;
+    color: var(--t-color-text-muted);
+    font-family: var(--t-font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+#t-debug-view .t-prompt-role-system .t-prompt-role-label { color: rgb(var(--t-accent-azure-light-rgb)); }
+#t-debug-view .t-prompt-role-user .t-prompt-role-label { color: var(--t-color-notify); }
+#t-debug-view .t-prompt-role-assistant .t-prompt-role-label { color: rgb(var(--t-accent-role-assistant-rgb)); }
+
+#t-debug-view .t-prompt-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#t-debug-view .t-prompt-chevron {
+    font-size: 10px;
+    width: 12px;
+    color: var(--t-color-text-disabled);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+#t-debug-view .t-prompt-section-card.expanded .t-prompt-chevron {
+    transform: rotate(90deg);
+    color: rgb(var(--t-accent-azure-light-rgb));
+}
+
+#t-debug-view .t-prompt-section-preview {
+    padding: 0 12px 10px 62px;
+    color: var(--t-color-text-faint);
+    font-size: 11px;
+    font-family: var(--t-font-mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#t-debug-view .t-prompt-section-card.expanded .t-prompt-section-preview {
+    display: none;
+}
+
+#t-debug-view .t-prompt-token-count {
+    font-size: 11px;
+    color: var(--t-color-text-dim);
+    font-family: var(--t-font-mono);
+    flex-shrink: 0;
+}
+
+#t-debug-view .t-prompt-section-content {
+    display: none;
+    margin: 0;
+    padding: 2px 16px 16px 62px;
+    color: var(--t-color-text-label);
+    font-size: 12px;
+    line-height: 1.55;
+    font-family: var(--t-font-mono);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow: auto;
+}
+
+#t-debug-view .t-prompt-section-card.expanded .t-prompt-section-content {
+    display: block;
+}
+
+#t-debug-view .t-prompt-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 220px;
+    color: var(--t-color-text-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+#t-debug-view .t-prompt-empty i {
+    color: var(--t-color-text-disabled);
+    font-size: 26px;
+    margin-bottom: 4px;
+}
+
+#t-debug-view .t-prompt-empty small {
+    color: var(--t-color-text-faint);
+    font-size: 11px;
+}
+
+@media (max-width: 900px) {
+    #t-debug-view {
+        width: 100vw !important; /* override debugWindow.js inline width on mobile */
+        height: 100vh !important; /* override debugWindow.js inline height on mobile */
+        max-width: none !important; /* override debugWindow.js inline max-width on mobile */
+        border-radius: 0 !important; /* override host t-box radius on mobile */
+    }
+
+    #t-debug-view .t-prompt-summary {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    #t-debug-view .t-prompt-source-bar {
+        padding-inline: 10px;
+    }
+
+    #t-debug-view .t-prompt-source-tabs {
+        width: 100%;
+    }
+
+    #t-debug-view .t-prompt-source-tab {
+        flex: 1;
+        min-width: 0;
+        padding-inline: 5px;
+    }
+
+    #t-debug-view .t-prompt-info-popover {
+        left: 0;
+    }
+
+    #t-debug-view .t-prompt-request {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    #t-debug-view #t-prompt-request-meta {
+        max-width: 100%;
+    }
+
+    #t-debug-view .t-prompt-summary-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        justify-content: stretch;
+    }
+
+    #t-debug-view .t-prompt-count {
+        grid-column: 1 / -1;
+        margin-right: 0;
+        white-space: normal;
+    }
+
+    #t-debug-view .t-prompt-tool-btn {
+        justify-content: center;
+        min-height: 36px;
+        padding: 8px 10px;
+    }
+
+    #t-debug-view #t-prompt-expand-all-btn {
+        width: auto;
+        min-width: 0;
+        overflow: visible;
+        color: var(--t-color-text-secondary);
+        gap: 6px;
+    }
+
+    #t-debug-view #t-prompt-expand-all-btn i {
+        color: inherit;
+        flex-shrink: 0;
+    }
+
+    #t-debug-view .t-prompt-expand-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #t-debug-view .t-prompt-icon-btn {
+        width: 34px;
+    }
+
+    #t-debug-view .t-prompt-role-label {
+        width: 50px;
+    }
+
+    #t-debug-view .t-prompt-section-preview,
+    #t-debug-view .t-prompt-section-content {
+        padding-left: 14px;
+    }
+}
+
+/* ============================================================
+   诊断日志窗口（#t-diagnostics-view）
+   Phase 5b-7 从 debugWindow.js 的内联 style 迁出。此前这个窗口在 css/ 里
+   **一条规则都没有**，全靠内联撑着。
+
+   ⚠ 颜色保留原值（#ff9f43 / #feca57 / #555 / rgba(255,159,67,…)），
+   不换 --t-color-warning 等：debug.css 有 97 处颜色字面量、仅 10 处 token，
+   单独换这几处会与全文不一致。整体 token 化归 Phase 6。
+   判据见交接文档 §5b「5b-4 的三条经验」第 2 条。
+
+   ⚠ 遗留问题（本批刻意不动，见交接文档 §5b）：
+     · .t-diagnostics-container 挂在窗口根上，但全库无定义 —— 死类名。
+     · .t-log-box 定义在 settings.css:227，注释写着「诊断日志」，
+       唯一消费者却是 debugWindow.js —— B10 式错位，需独立一批做纯搬运。
+   ============================================================ */
+
+/* 两个窗口的表头标题行共用（#t-debug-view 与 #t-diagnostics-view），
+   但图标颜色各不相同，故颜色按窗口分别限定。 */
+.t-dbg-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#t-debug-view .t-dbg-title-row i {
+    color: rgb(var(--t-accent-azure-light-rgb));
+}
+
+#t-diagnostics-view .t-dbg-title-row i {
+    color: rgb(var(--t-accent-orange-rgb));
+}
+
+/* 顶部说明带与底部操作带。两者的 padding + background 相同，但一个 border-bottom、
+   一个 border-top 且带 flex 排列，刻意写成两个类而不是基类 + 修饰类 ——
+   共同部分只有 2 条声明，抽出来的收益抵不上多一个类名。 */
+.t-diag-notice-band {
+    padding: 15px;
+    background: var(--t-color-surface-inset);
+    border-bottom: 1px solid var(--t-color-border);
+}
+
+.t-diag-actions {
+    padding: 15px;
+    background: var(--t-color-surface-inset);
+    border-top: 1px solid var(--t-color-border);
+    display: flex;
+    gap: 10px;
+}
+
+.t-diag-guide {
+    background: rgb(var(--t-accent-orange-rgb) / .1);
+    border: 1px solid rgb(var(--t-accent-orange-rgb) / .3);
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.t-diag-guide-title {
+    font-weight: bold;
+    color: rgb(var(--t-accent-warn-rgb));
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.t-diag-guide-body {
+    font-size: 0.85em;
+    color: var(--t-color-text-label);
+    line-height: 1.5;
+}
+
+.t-diag-log-section {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+.t-diag-log-title {
+    font-weight: bold;
+    color: var(--t-color-text-secondary);
+    margin-bottom: 10px;
+}
+
+.t-diag-log-hint {
+    font-size: 0.8em;
+    color: var(--t-color-text-faint);
+}
+
+/* ⚠ 必须用 ID：.t-log-box（settings.css:227）设了 height:250px 与
+   overflow-y:auto，(1,0,0) 才能确保 flex:1 主导尺寸。 */
+#t-diag-log-viewer {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* ⚠ 必须用 ID，不能用类：.t-btn:hover:not(:disabled) 是 (0,3,0) 且**设了
+   border-color**，任何 (0,1,0) 的类都会在悬停时丢掉这里的危险色边框。
+   原先靠内联压过它，现在靠 (1,0,0)。这类状态规则验证器查不到，
+   见交接文档 §5b「内联改类时最容易丢的差异」。 */
+#t-diag-clear {
+    color: var(--t-color-danger);
+    border-color: var(--t-color-danger);
+}
+
+#t-diag-export {
+    margin-left: auto;
+}
+
+.t-diag-log-empty {
+    text-align: center;
+    margin-top: 50px;
+    color: var(--t-color-text-disabled);
+}
+
+.t-diag-log-empty i {
+    font-size: 2em;
+    margin-bottom: 10px;
+}

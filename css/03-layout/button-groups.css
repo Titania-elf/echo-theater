@@ -1,0 +1,79 @@
+/* ============================================================
+   03-layout/button-groups.css —— 按钮组布局原语
+
+   这里只定义排列、间距与伸缩，不定义按钮颜色、边框或排版。
+   这些旧容器名会在 Phase 2c 随窗口迁移后再评估是否收敛命名。
+   ============================================================ */
+
+#t-editor-view .t-btn-row,
+#t-large-edit-view .t-btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-shrink: 0;
+}
+
+.t-control-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.t-quick-btns {
+    display: flex;
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.t-hide-quick-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.t-build-index-buttons {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.t-build-index-buttons .t-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.t-build-index-buttons .t-btn-primary {
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .t-mobile-nav-btns {
+        display: flex;
+        gap: 5px;
+    }
+
+    .t-control-buttons {
+        flex-wrap: wrap;
+    }
+
+    .t-quick-btns {
+        margin-left: 0;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+
+    .t-hide-quick-btns {
+        gap: 5px;
+    }
+
+    .t-build-index-buttons {
+        flex-direction: column;
+    }
+
+    .t-build-index-buttons .t-btn {
+        width: 100%;
+    }
+}

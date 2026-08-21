@@ -1,0 +1,153 @@
+/* ============================================================
+   01-base/form-controls.css —— 原生表单控件的作用域内重置
+
+   为什么必须有这个文件
+   --------------------
+   ST 的 style.css 用**元素级选择器**给 input / select / textarea 定了样式。
+   元素选择器特异度只有 (0,0,1)，可插件的组件类只覆盖了其中一部分属性，
+   漏下来的就全跟着 **ST 的主题**走 —— 用户在 ST 里切成浅色，插件的下拉框、
+   文本框、复选框就跟着变浅，插件自己的主题开关反而管不着它们。
+
+   实测穿透面：插件里 213 个原生控件，150 个是"裸元素"（没有任何 t- 类）。
+   checkbox / radio 更彻底 —— 全部 73 个都被穿透，因为 .t-choice-input
+   **只管几何与 accent-color、不管 appearance**，而 ST 用 appearance:none +
+   ::before 自绘整个方框，accent-color 在 appearance:none 下根本无效。
+
+   穿透源清单（public/style.css 行号）
+   ----------------------------------
+     1488  input, select, button    color / font-size / font-family
+     1466  textarea                 background-color / border / color / font-size
+     2922  select                   appearance:none / background-color / border / 箭头图
+     2938  select option            background-color / color
+     3925  input[type=checkbox]     appearance:none + ::before 自绘方框
+     4149  input[type=range]        appearance:none + 自绘轨道
+
+   ⚠ 1488 与 1466 里的 `font-size: var(--mainFontSize)` 是 **B8 同类问题**：
+     它绕过插件 `font-size: calc(12px * var(--t-ui-font-scale))` 的缩放机制，
+     用户调「UI 缩放」时这些控件的字号不跟着变。这也是本文件要修的。
+
+   ★ 特异度策略：`:where(.t-root)` —— 改本文件前必读
+   ------------------------------------------------
+   本文件的规则必须同时满足两条，缺一不可：
+     ① **高于 ST 的元素选择器**，否则白写；
+     ② **低于插件的任何类选择器**，否则会反过来盖掉组件层与 feature 层。
+
+   ② 比想象的严苛得多：本库大量 feature 类是**单类选择器** (0,1,0) ——
+   `.t-ce-textarea`（内容编辑器）、`.t-continuation-context-btn`、
+   button.css 的 `.t-btn` 及 8 个变体全都是。所以哪怕写成 `.t-root textarea`
+   (0,1,1) 都会压过它们：实测会归一掉 .t-btn 一族的 color/font-size、
+   以及 .t-ce-textarea 的三个属性。这不是肉眼数特异度能发现的，是靠
+   机械核对（把两侧规则的 (id,class,type) 三元组算出来逐对比）抓到的。
+
+   解法是用 `:where(.t-root)` 把作用域的特异度贡献**归零**，整条规则退到
+   (0,0,1)：
+     ST      `select`                   (0,0,1)  ← 与本文件平手，靠源码顺序
+     本文件  `:where(.t-root) select`   (0,0,1)     插件 <style> 晚于 ST 样式表
+                                                    注入 head，平手时插件胜
+     插件类  `.t-ce-textarea`           (0,1,0)  ← 稳赢本文件 ✓
+     组件层  `.t-root .t-box .t-input`  (0,3,0)  ← 稳赢本文件 ✓
+
+   平手靠源码顺序取胜是有保障的：插件 CSS 无论打包模式（运行时插 <style>）
+   还是开发模式（运行时插 <link>）都晚于 ST 的静态 <link>。这也正是
+   CLAUDE.md 第 5 条「插件 <style> 注入在 document.head，晚于 ST 样式表」
+   所依赖的同一个事实。
+
+   ⚠ 若浏览器不支持 `:where()`（Chrome <88 / Firefox <78），整条选择器列表
+     会被丢弃、规则不生效 —— 退化成本文件不存在时的行为（即当前的穿透状态），
+     不会造成错误渲染。这个降级特性是刻意选它的理由之一。
+
+   本文件的取值原则
+   ----------------
+   裸控件一律**对齐插件自己的 .t-input**（02-components/field.css），
+   即同样用 --t-color-surface-sunken + --t-color-border-strong。
+   不另发明一套配色 —— 否则插件内部会出现「带类的字段」与「裸字段」两种长相。
+   ============================================================ */
+
+/* ---- 1) 字体与字色回到插件基准（修 ST style.css:1488 / :1466）----
+   font-size: inherit 让控件重新跟随 .t-root 的 em 基准，UI 缩放才生效。
+   color: inherit 让它们取插件的 --t-color-text 而不是 ST 的 body 色。
+   ⚠ 不含 button：ST 那条 `input, select, button` 也管了 button，但插件的
+     .t-btn 一族本就设了这三个属性，交给它们即可；剩下 24 个「无任何 t- 类」
+     的裸 button 由下面单独一条处理。 */
+:where(.t-root) input,
+:where(.t-root) select,
+:where(.t-root) textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+}
+
+:where(.t-root) button {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+}
+
+/* ---- 2) select ----
+   保留 ST 的 appearance:none 与那张箭头图：箭头是 fill="#888888" 的中灰 svg
+   （public/img/down-arrow.svg），两种主题下都看得见，没必要换成原生控件。 */
+:where(.t-root) select {
+    background-color: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
+}
+
+/* 下拉展开后的选项列表。ST 给 option 与 option:not(:checked) 分别上了色
+   （--white50a / --black70a），不覆盖的话浅色主题下会看到深底白字的列表。
+   ⚠ ST 的 `select option:not(:checked)` 是 (0,1,2)，比 `select option` 高一档，
+     所以这里必须把两条都写上，只写前者会被 ST 的后者压回去。 */
+:where(.t-root) select option {
+    background-color: var(--t-color-surface-sunken);
+    color: var(--t-color-text);
+}
+
+:where(.t-root) select option:not(:checked) {
+    background-color: var(--t-color-surface-sunken);
+    color: var(--t-color-text);
+}
+
+/* ---- 3) textarea ---- */
+:where(.t-root) textarea {
+    background-color: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
+}
+
+/* ---- 4) checkbox / radio：还原原生绘制 ----
+   ST 用 appearance:none + ::before 自绘方框，底色取 --SmartThemeBodyColor
+   （ST 的**文字**色），于是 ST 一换主题这些框就跟着反色。还原成 appearance:auto
+   之后它们由浏览器按 .t-root 的 color-scheme 绘制，即跟随**插件**主题
+   （见 01-base/scope.css 的 color-scheme: var(--t-color-scheme)），
+   勾选色则来自 .t-root 继承下发的 accent-color。
+
+   ⚠ 这条规则刻意**不写** width / height / accent-color —— 那三个属性归
+     choice-input.css。本文件所设的 appearance / background-color / border /
+     outline / box-shadow / filter / transform / display 与 .t-choice-input
+     所设的属性**完全不相交**，故两者并存不冲突。 */
+:where(.t-root) input[type="checkbox"],
+:where(.t-root) input[type="radio"] {
+    -webkit-appearance: auto;
+    appearance: auto;
+    /* 逐条撤掉 ST 为「自绘方框」加的装饰，否则会与原生控件叠在一起 */
+    background-color: initial;
+    border: initial;
+    outline: initial;
+    box-shadow: none;
+    filter: none;
+    transform: none;
+    display: inline-block;
+}
+
+/* ST 的 ::before 是自绘方框里的勾。还原原生绘制后它会变成一个多余的方块。 */
+:where(.t-root) input[type="checkbox"]::before,
+:where(.t-root) input[type="radio"]::before {
+    content: none;
+}
+
+/* ---- 5) range ----
+   同样还原原生绘制，让滑块跟随 color-scheme 与 accent-color。
+   ST 的 --SmartThemeBodyColor 轨道底色在浅色主题下会变成深色条。 */
+:where(.t-root) input[type="range"] {
+    -webkit-appearance: auto;
+    appearance: auto;
+    background: initial;
+    box-shadow: none;
+}

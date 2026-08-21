@@ -12,41 +12,42 @@
 import * as esbuild from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from 'fs';
 import path from 'path';
+import { cssFileList } from './css/manifest.js';
 
 // 是否监听模式
 const isWatch = process.argv.includes('--watch');
 
-// 读取所有 CSS 文件并合并
+// 读取所有 CSS 文件并合并。清单来自 css/manifest.js(与 dom.js 共用,修 B1)
 function bundleCSS() {
     const cssDir = './css';
-    const cssFiles = [
-        'base.css',
-        'floating.css',
-        'main-window.css',
-        // 必须晚于 main-window.css：经典布局靠后置覆盖少量冲突规则
-        'main-window-legacy.css',
-        'settings.css',
-        'manager.css',
-        'workshop.css',
-        'favs.css',
-        'debug.css',
-        'lore-review.css',
-        'memory-recall.css',
-        'story-outline.css'
-    ];
+    const cssFiles = cssFileList();
 
     let combinedCSS = '/* Titania Theater - Bundled CSS */\n\n';
+    const missing = [];
 
     for (const file of cssFiles) {
         const filePath = path.join(cssDir, file);
-        if (existsSync(filePath)) {
-            const content = readFileSync(filePath, 'utf-8');
-            combinedCSS += `/* === ${file} === */\n${content}\n\n`;
+        if (!existsSync(filePath)) {
+            missing.push(filePath);
+            continue;
         }
+        const content = readFileSync(filePath, 'utf-8');
+        combinedCSS += `/* === ${file} === */\n${content}\n\n`;
+    }
+
+    // 原先这里是静默 skip。5.2.5 之后的目录重构把 CSS 移进了分层目录,
+    // 而清单仍指向扁平路径 —— 静默 skip 让 bundleCSS() 产出了 0 行 CSS 且不报错。
+    // 缺文件必须让构建立刻失败,不允许产出残缺样式的 index.js。
+    if (missing.length) {
+        console.error(`❌ CSS 清单与磁盘不一致,以下 ${missing.length} 个文件不存在:`);
+        for (const m of missing) console.error(`   - ${m}`);
+        console.error('   请修正 css/manifest.js 或补齐文件后重新构建。');
+        process.exit(1);
     }
 
     return combinedCSS;
 }
+
 
 // esbuild 插件：注入 CSS
 const injectCSSPlugin = {
@@ -60,14 +61,45 @@ const injectCSSPlugin = {
             return {
                 contents: `
 // 内联 CSS 注入（打包时自动合并）
+import { extensionFolderPath } from "../config/defaults.js";
+
+// 与 css/manifest.js 同步生成，供 ensureFeatureCss 解析分层路径
+const CSS_FILES = ${JSON.stringify(cssFileList())};
+
 export function loadCssFiles() {
     const styleId = 'titania-theater-bundled-css';
     if (document.getElementById(styleId)) return;
-    
+
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = \`${escapedCSS}\`;
     document.head.appendChild(style);
+}
+
+/** 由清单路径生成 <link> 的 id（与 src/utils/dom.js 保持一致） */
+export function cssLinkId(file) {
+    return \`titania-css-\${file.replace(/\\.css$/, '').replace(/\\//g, '-')}\`;
+}
+
+/**
+ * 按需确保某个功能 CSS 已加载。打包模式下 CSS 已内联，但此处仍补一个后置 <link>
+ * 以保持与开发模式及 5.2.5 的层叠顺序完全一致（详见 src/utils/dom.js 的说明与 B6）。
+ */
+export function ensureFeatureCss(fileName) {
+    const file = CSS_FILES.find(p => p.endsWith(\`/\${fileName}\`));
+    if (!file) {
+        console.warn(\`[Titania] ensureFeatureCss: \${fileName} 不在 css/manifest.js 清单中\`);
+        return;
+    }
+    const id = cssLinkId(file);
+    if (document.getElementById(id)) return;
+
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = \`\${extensionFolderPath}/css/\${file}\`;
+    document.head.appendChild(link);
 }
 
 /**
@@ -76,7 +108,7 @@ export function loadCssFiles() {
  */
 export function ensureOverlay() {
     if ($("#t-overlay").length === 0) {
-        const overlayHtml = '<div id="t-overlay" class="t-overlay"></div>';
+        const overlayHtml = '<div id="t-overlay" class="t-overlay t-root"></div>';
         $("body").append(overlayHtml);
     }
     return $("#t-overlay");

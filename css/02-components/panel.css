@@ -1,0 +1,41 @@
+/* ============================================================
+   02-components/panel.css —— 窗口内分区面板的头 / 脚
+
+   收口 A13 报告的两组「3 处 8 条完全相同」的重复（都在 main-window.css）：
+
+     .t-wi-header  / .t-queue-header  / .t-ce-header    → .t-panel-header
+     .t-wi-footer  / .t-queue-footer  / .t-ce-footer    → .t-panel-footer
+
+   ── 只做头和脚，不做容器与 body ──
+   三个面板的 body（.t-wi-body / .t-queue-body / .t-ce-body）声明各不相同，
+   A13 也没把它们报成重复组；外层容器同理。为只有一个消费者、又没有重复的
+   样式建抽象是负收益，故这里不碰（见 未完成.md §4.5）。
+
+   ── 与 02-components/window.css 的 .t-header 的区别（勿合并）──
+     .t-header       **窗口**标题栏：底 #242530（偏紫）、描边 #444、无圆角
+     .t-panel-header 窗口**内部**分区面板的头：底 #242424（中性灰）、
+                     描边 #333、上圆角 10px
+   两者底色只差一点（36 37 48 vs 36 36 36），但一个偏紫一个中性，是两套东西。
+   ============================================================ */
+
+.t-panel-header {
+    padding: 12px 15px;
+    background: var(--t-color-panel-header);
+    border-bottom: 1px solid var(--t-color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: var(--t-radius-panel) var(--t-radius-panel) 0 0;
+    flex-shrink: 0;
+}
+
+.t-panel-footer {
+    padding: 12px 15px;
+    background: var(--t-color-surface);
+    border-top: 1px solid var(--t-color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0 0 var(--t-radius-panel) var(--t-radius-panel);
+    flex-shrink: 0;
+}

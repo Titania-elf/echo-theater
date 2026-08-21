@@ -40,10 +40,10 @@ export function renderHtml(viewData) {
     const { defaultCtx } = viewData;
 
     return `
-    <div id="t-overlay" class="t-overlay">
-        <div class="t-box" id="t-main-view">
+    <div id="t-overlay" class="t-overlay t-root">
+        <div class="t-box t-root" id="t-main-view">
 
-            <div class="t-header" style="flex-shrink:0;">
+            <div class="t-header t-shrink-0">
                 <div class="t-title-container" style="display:flex; flex-direction:column; overflow:hidden;">
                     <div class="t-title-main" style="white-space:nowrap;">回声小剧场</div>
                     <div class="t-title-sub" id="t-title-sub">
@@ -59,13 +59,13 @@ export function renderHtml(viewData) {
                 <div class="t-history-group">
                     <div class="t-history-toggle" id="t-history-toggle">
                         <label class="t-toggle-label">
-                            <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? 'checked' : ''}>
+                            <input type="checkbox" id="t-use-history" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.useHistoryAnalysis ? 'checked' : ''}>
                             <span class="t-toggle-text">📜 读取聊天历史</span>
                         </label>
                     </div>
                     <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="只把角色的发言注入剧本生成，跳过你自己的楼层。总结和设定提取不受影响">
                         <label class="t-toggle-label">
-                            <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? 'checked' : ''}>
+                            <input type="checkbox" id="t-history-ai-only" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.historyAiOnly ? 'checked' : ''}>
                             <span class="t-toggle-text">🎭 只要角色发言</span>
                         </label>
                     </div>
@@ -93,7 +93,7 @@ export function renderHtml(viewData) {
                         <i class="fa-solid fa-chevron-down t-chevron"></i>
                     </div>
 
-                    <div class="t-action-group">
+                    <div class="t-trigger-actions">
                         <div class="t-filter-btn" id="t-btn-filter" title="筛选随机范围">
                             <i class="fa-solid fa-filter"></i>
                         </div>

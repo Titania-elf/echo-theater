@@ -135,7 +135,7 @@ export function openWorkshopWindow(source = 'manager') {
         .map(([k, v]) => `<option value="${k}">${v.label}</option>`).join("");
 
     const html = `
-    <div class="t-box" id="t-ws-view">
+    <div class="t-box t-root" id="t-ws-view">
         <div class="t-header">
             <div class="t-title-container">
                 <div class="t-title-main">回声工坊</div>
@@ -315,8 +315,8 @@ export function openWorkshopWindow(source = 'manager') {
     const openPreview = async (item) => {
         const downloads = Number(item.downloads) || 0;
         const previewHtml = `
-        <div id="t-ws-preview-overlay" class="t-ws-preview-overlay">
-            <div class="t-box t-ws-preview-box">
+        <div id="t-ws-preview-overlay" class="t-ws-preview-overlay t-root">
+            <div class="t-box t-root t-ws-preview-box">
                 <div class="t-header">
                     <span class="t-title-main" style="font-size:1.15em;">${esc(item.name)}</span>
                     <div class="t-header-actions">
@@ -355,7 +355,7 @@ export function openWorkshopWindow(source = 'manager') {
                         </div>
                     </section>
                     <div class="t-btn-row">
-                        <button class="t-btn primary" id="t-ws-pv-get" style="flex:1;">下载到本地</button>
+                        <button class="t-btn primary t-flex-1" id="t-ws-pv-get">下载到本地</button>
                     </div>
                 </div>
             </div>
@@ -412,7 +412,7 @@ export function openWorkshopWindow(source = 'manager') {
                         <div class="t-ws-sk-line" style="width:50%;"></div>
                     </div>
                     <div class="t-ws-sk-line" style="width:75%; height:13px;"></div>
-                    <div class="t-ws-sk-line" style="width:100%;"></div>
+                    <div class="t-ws-sk-line t-w-full"></div>
                     <div class="t-ws-sk-line" style="width:60%;"></div>
                 </div>`).join("")
         );
@@ -430,7 +430,7 @@ export function openWorkshopWindow(source = 'manager') {
             $("#t-ws-stats").empty();
             $("#t-ws-list").addClass("t-ws-grid-empty").html(`
                 <div class="t-ws-placeholder">
-                    <i class="fa-solid fa-plug-circle-xmark" style="color:#ff6b6b;"></i>
+                    <i class="fa-solid fa-plug-circle-xmark" style="color:var(--t-color-danger);"></i>
                     <div class="t-ws-ph-title">${esc(e.message)}</div>
                     <div class="t-ws-ph-desc">工坊部署在 Cloudflare，部分网络环境可能无法访问</div>
                     <button class="t-btn t-btn-soft" id="t-ws-retry">重试</button>

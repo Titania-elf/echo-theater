@@ -1,0 +1,144 @@
+/* css/01-base/base.css - 基础组件与工具类 */
+
+/* 原 :root 变量块（5 个颜色 + 2 个字体族 + --t-ui-font-scale）已迁至 00-tokens/：
+     颜色 5 个  → 00-tokens/legacy-aliases.css（改为指向新语义 token，值逐字节相同）
+     字体族 / --t-ui-font-scale / --t-font-size-root → 00-tokens/primitives.css
+   必须迁走而不能两处并存：00-tokens 在 manifest 中排在 01-base **之前**，
+   若此处保留字面量声明，它会覆盖 legacy-aliases.css 的 token 映射，
+   使兼容层变成死代码、主题切换对旧变量名失效。 */
+
+/* 遮罩层 */
+.t-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--t-color-scrim);
+    z-index: 20000;
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    isolation: isolate;
+    /* 插件 UI 基准字号（可通过设置缩放） */
+    font-size: calc(12px * var(--t-ui-font-scale)) !important;
+}
+
+/* 通用窗口容器 */
+.t-box {
+    position: relative;
+    width: 95%;
+    max-width: 650px;
+    height: auto;
+    max-height: 85vh;
+    background: var(--t-bg-dark);
+    border: 1px solid var(--t-color-border-bright);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--t-shadow-xl);
+    color: var(--t-color-text);
+    font-family: var(--t-font-global);
+    font-size: calc(12px * var(--t-ui-font-scale));
+    overflow: hidden;
+}
+
+/* 顶部标题栏 `.t-header` 已迁至 02-components/window.css（Phase 4b）。
+   必须迁走而不能两处并存：main-window.css 的移动端段落里还有一条裸
+   `.t-header { padding: 10px }`，两处裸类定义就是 A12 的冲突项；
+   收口到组件层后那条覆盖也一并搬了过去。 */
+
+.t-title-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    padding-left: 12px;
+}
+
+.t-title-container::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10%;
+    height: 80%;
+    width: 4px;
+    background: var(--t-gradient-brand-bar);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgb(var(--t-accent-rose-rgb) / .6);
+}
+
+.t-title-main {
+    font-size: 1.4em;
+    font-weight: 800;
+    line-height: 1.1;
+    background: var(--t-gradient-title);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+}
+
+.t-title-sub {
+    font-size: 0.55em;
+    color: var(--t-color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    margin-top: 2px;
+    opacity: 0.7;
+    font-weight: 300;
+    background: var(--t-gradient-title-sub);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 按钮 */
+/* 按钮：.t-btn 家族与 .t-icon-btn 已迁至 02-components/（Phase 2）。
+     .t-btn / 变体 / 尺寸        → 02-components/button.css
+     .t-btn.primary / .t-btn-soft → 02-components/_legacy.css（旧类名映射）
+     .t-icon-btn                  → 02-components/icon-button.css（修 B13 热区）
+   下面的 .t-tool-btn 与 .t-close 刻意留在本层未做统一，理由见
+   02-components/_legacy.css 末尾的说明。 */
+
+.t-tool-btn {
+    font-size: 0.75em;
+    padding: 4px 10px;
+    /* ⚠ 用 -recess-deep 而非 --t-color-scrim，尽管两者当前值相同（黑 /.6）：
+       scrim 是「盖住整个页面的遮罩」，这里是「凹陷的控件底」。
+       浅色主题下前者仍要是深色半透明，后者要变成浅灰 —— 共用一个 token 就锁死了。 */
+    background: var(--t-color-surface-recess-deep);
+    border: 1px solid var(--t-color-border-mid);
+    color: var(--t-color-text-label);
+    cursor: pointer;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: 0.2s;
+}
+
+.t-tool-btn:hover {
+    background: var(--t-color-surface-hover-solid);
+    color: var(--t-color-text-strong);
+}
+
+.t-close {
+    cursor: pointer;
+    font-size: 1.8em;
+    line-height: 1;
+    color: var(--t-color-text-muted);
+    transition: 0.2s;
+    padding: 0 5px;
+    margin-left: 15px;
+}
+
+.t-close:hover {
+    color: var(--t-color-text-strong);
+    transform: rotate(90deg);
+}
+
+/* 滚动条：已迁至 01-base/scrollbar.css 并加作用域（规则 R7）。
+   原先是无作用域的 `::-webkit-scrollbar`，重写了整个 SillyTavern 的滚动条（修 B2）。 */
+
+/* 动画:全部 @keyframes 已集中到 01-base/keyframes.css(规则 R6)。
+   原 `fadeIn` 因无前缀会与 ST 及其它扩展撞名,已改名为 `t-fade-in`(修 B3)。 */

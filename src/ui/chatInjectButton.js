@@ -173,7 +173,7 @@ export function openInjectPickerWindow(mesid) {
     const floorLabel = Number.isFinite(mesid) ? `第 ${mesid} 楼` : "当前楼层";
 
     const html = `
-    <div id="${OVERLAY_ID}" class="t-overlay" aria-modal="true" role="dialog">
+    <div id="${OVERLAY_ID}" class="t-overlay t-root" aria-modal="true" role="dialog">
         <div class="t-window t-chat-inject-window">
             <div class="t-window-header">
                 <div class="t-window-title">

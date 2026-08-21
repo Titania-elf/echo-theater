@@ -1,0 +1,66 @@
+/* css/04-features/outline-entry-menu.css —— 大纲入口菜单
+   ============================================================
+   原先由 src/ui/outlineEntryButton.js 的 ensureMenuStyle() 在运行时
+   createElement('style') 注入 document.head。
+
+   ── 为什么搬出来 ──
+   运行时注入的 <style> 晚于插件打包 CSS 进入 head，层叠上无条件取胜，
+   完全绕过 00-tokens → 02-components → 04-features 的分层架构。
+   只要它还在 JS 里，里面的颜色就永远无法被 token 化，
+   也就永远无法跟随主题切换。
+
+   原模板用 `#${MENU_ID}` 插值，MENU_ID 是常量 "titania-outline-entry-menu"，
+   已替换为字面量。
+
+   ── token 化（注入样式解耦 4/4）──
+   8 处颜色字面量已全部换成语义 token。仅颜色 / 阴影，
+   尺寸与 z-index 属 Phase 7 归并范围，本步不动。
+   ============================================================ */
+
+/* 本菜单属「冷调玻璃」一系（见 theme-dark.css 的 --t-glass-*）。
+   在菜单根上把文本角色重绑到冷调阶，内部规则即可只写标准语义名。
+   将来若决定整个插件的文本都转冷调，删掉本块即可，无需改下面任何一条。 */
+#titania-outline-entry-menu {
+    --t-color-text: var(--t-glass-text);
+    --t-color-text-muted: var(--t-glass-text-muted);
+}
+
+#titania-outline-entry-menu {
+    position: fixed;
+    /* z-index 散值，Phase 7 统一收口到 var(--t-z-*) */
+    z-index: 30050;
+    min-width: 170px;
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--t-color-border-cool);
+    background: var(--t-glass-window);
+    box-shadow: var(--t-shadow-lg);
+}
+
+#titania-outline-entry-menu .t-outline-entry-item {
+    border: 1px solid var(--t-color-border-cool);
+    border-radius: 8px;
+    background: var(--t-glass-row);
+    color: var(--t-color-text);
+    text-align: left;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+#titania-outline-entry-menu .t-outline-entry-item:hover:not(:disabled) {
+    background: var(--t-color-accent-soft);
+}
+
+#titania-outline-entry-menu .t-outline-entry-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+#titania-outline-entry-menu .t-outline-entry-tip {
+    color: var(--t-color-text-muted);
+    font-size: 11px;
+    line-height: 1.35;
+    padding: 0 2px;
+}

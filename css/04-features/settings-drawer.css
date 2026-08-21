@@ -1,0 +1,413 @@
+/* css/04-features/settings-drawer.css - ST 扩展设置抽屉
+ *
+ * 作用域：`#extensions_settings2` 内由 settings.html 注入的抽屉，以及更新弹窗。
+ * 这些元素注入进 ST 自己的 DOM，依 ADR-02 **不加 `.t-root`**、也不进组件体系
+ * （plan.md:659：`.titania-mini-btn` 需与 ST 抽屉观感一致）。
+ *
+ * 本文件合并了原先分居两处的同一组件（缺陷 B10）：
+ *   - 上半部分来自 settings.css 的前 273 行（更新卡片 / 更新弹窗）；
+ *   - 下半部分来自 settings.html 内联 `<style>`（抽屉外壳 / 开关行 / .titania-mini-btn）。
+ *
+ * ⚠ 两部分的先后顺序不可对调。`.titania-update-check` 与 `.titania-mini-btn`
+ *   都是 (0,1,0) 且同时命中检查按钮，二者的 `padding` 冲突（`0` vs `0 10px`）
+ *   原先靠「body 内联 style 晚于 head」由后者胜出。合并后改由本文件内的顺序决定，
+ *   故 settings.css 块必须在前、settings.html 块必须在后。
+ *
+ * 位置无关性：本文件的全部选择器（.titania-update-* / .titania-mini-btn /
+ * .titania-panel-* / .titania-switch-* / .titania-backup-* / .titania-card-title /
+ * .titania-version-badge / #titania-settings-drawer）在 css/ 中仅此一处定义，
+ * 宿主 ST 与其余 6 个第三方扩展均无同名类，故本文件在清单中的位置不影响层叠。
+ */
+
+.titania-update-card {
+    border-color: rgb(var(--t-accent-update-rgb) / .28);
+    background: linear-gradient(135deg, rgb(var(--t-accent-update-rgb) / .08), var(--t-color-surface-veil));
+}
+
+.titania-update-card[data-state="available"] {
+    border-color: rgb(var(--t-accent-update-rgb) / .65);
+    box-shadow: inset 3px 0 0 rgb(var(--t-accent-update-rgb));
+}
+
+.titania-update-card[data-state="error"] {
+    border-color: rgb(var(--t-accent-red-soft-rgb) / .4);
+}
+
+.titania-update-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.titania-update-card-copy {
+    min-width: 0;
+}
+
+.titania-update-card .titania-card-title {
+    margin-bottom: 4px;
+}
+
+.titania-update-status {
+    color: var(--t-glass-text-secondary);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.titania-update-card[data-state="available"] .titania-update-status {
+    color: rgb(var(--t-accent-update-text-rgb));
+    font-weight: 700;
+}
+
+.titania-update-check {
+    width: 32px;
+    min-width: 32px;
+    padding: 0;
+    justify-content: center;
+}
+
+.titania-update-summary {
+    display: flex;
+    gap: 8px 16px;
+    flex-wrap: wrap;
+    margin-top: 9px;
+    color: var(--t-glass-text-muted);
+    font-size: 11px;
+}
+
+.titania-update-summary strong {
+    color: var(--t-glass-text);
+    font-weight: 700;
+}
+
+.titania-update-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.titania-update-actions[hidden],
+.titania-update-inline-error[hidden],
+#titania-update-latest-row[hidden] {
+    display: none;
+}
+
+.titania-mini-btn.is-update {
+    color: rgb(var(--t-accent-update-text-on-rgb));
+    background: rgb(var(--t-accent-update-rgb));
+    border-color: rgb(var(--t-accent-update-rgb));
+}
+
+.titania-mini-btn.is-update:hover:not(:disabled) {
+    background: rgb(var(--t-accent-update-hover-rgb));
+}
+
+.titania-update-inline-error {
+    margin-top: 9px;
+    padding: 8px 10px;
+    color: rgb(var(--t-accent-error-pale-rgb));
+    background: rgb(var(--t-accent-error-fill-rgb) / .12);
+    border: 1px solid rgb(var(--t-accent-error-border-rgb) / .28);
+    border-radius: 7px;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.titania-version-badge.has-update {
+    color: rgb(var(--t-accent-update-text-on-rgb));
+    background: rgb(var(--t-accent-update-rgb));
+    font-weight: 700;
+}
+
+.titania-update-overlay {
+    position: fixed;
+    inset: 0;
+    /* 移动端浏览器地址栏会让 100vh 大于可视高度，用 dvh 贴合实际视口 */
+    height: 100vh;
+    height: 100dvh;
+    z-index: 100000;
+    display: flex;
+    padding: 18px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--t-glass-card);
+    backdrop-filter: blur(5px);
+}
+
+.titania-update-dialog {
+    width: min(560px, 100%);
+    /* margin:auto 居中：内容超高时向下溢出并可滚动，不会把顶部顶出屏幕 */
+    margin: auto;
+    max-height: min(720px, 90vh);
+    max-height: min(720px, 90dvh);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--t-color-text-soft);
+    background: var(--t-glass-body);
+    border: 1px solid rgb(var(--t-accent-update-rgb) / .35);
+    border-radius: 14px;
+    box-shadow: 0 24px 70px var(--t-shadow-ink-55);
+}
+
+.titania-update-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid var(--t-color-border-faint);
+}
+
+.titania-update-kicker {
+    color: rgb(var(--t-accent-update-rgb));
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+}
+
+.titania-update-header h2 {
+    margin: 4px 0 0;
+    color: var(--t-color-text);
+    font-size: 20px;
+}
+
+.titania-update-close {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    color: var(--t-glass-text-faint);
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.titania-update-close:hover {
+    color: var(--t-color-text-strong);
+    background: var(--t-color-surface-hover);
+}
+
+.titania-update-body {
+    min-height: 0;
+    padding: 8px 22px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.titania-update-entry {
+    padding: 16px 0;
+    color: var(--t-glass-text-soft);
+    border-bottom: 1px solid var(--t-color-border-faint);
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.titania-update-entry:last-child {
+    border-bottom: 0;
+}
+
+.titania-update-entry h3 {
+    margin: 0 0 8px;
+    color: rgb(var(--t-accent-update-rgb));
+    font-size: 14px;
+}
+
+.titania-update-entry code {
+    padding: 1px 5px;
+    color: rgb(var(--t-accent-update-code-rgb));
+    background: rgb(var(--t-accent-update-rgb) / .1);
+    border-radius: 4px;
+}
+
+.titania-update-error {
+    margin: 0 22px 12px;
+    padding: 10px 12px;
+    color: rgb(var(--t-accent-error-pale-rgb));
+    background: rgb(var(--t-accent-error-fill-rgb) / .12);
+    border: 1px solid rgb(var(--t-accent-error-border-rgb) / .3);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.titania-update-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 22px 18px;
+    border-top: 1px solid var(--t-color-border-faint);
+}
+
+#titania-update-now {
+    color: rgb(var(--t-accent-update-text-on-rgb));
+    background: rgb(var(--t-accent-update-rgb));
+    border-color: rgb(var(--t-accent-update-rgb));
+    font-weight: 700;
+}
+
+#titania-update-now:hover:not(:disabled) {
+    background: rgb(var(--t-accent-update-hover-rgb));
+}
+
+.titania-update-close:disabled,
+.titania-update-footer button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+@media (max-width: 600px) {
+    .titania-update-overlay {
+        padding: 12px;
+    }
+
+    .titania-update-dialog {
+        max-height: calc(100vh - 24px);
+        max-height: calc(100dvh - 24px);
+    }
+
+    .titania-update-header {
+        padding: 16px 16px 12px;
+    }
+
+    .titania-update-header h2 {
+        font-size: 17px;
+    }
+
+    .titania-update-body {
+        padding: 4px 16px;
+    }
+
+    .titania-update-error {
+        margin: 0 16px 10px;
+    }
+
+    .titania-update-footer {
+        padding: 12px 16px 14px;
+    }
+}
+
+/* ===== 以下迁自 settings.html 的内联 <style>（修 B10）===== */
+
+#titania-settings-drawer .inline-drawer-content {
+    padding-top: 10px;
+}
+
+.titania-header-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.titania-panel-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.titania-panel-card {
+    padding: 10px;
+    border: 1px solid var(--t-color-border-subtle);
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--t-color-surface-veil), var(--t-color-surface-veil));
+}
+
+.titania-card-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--t-glass-text-bright);
+}
+
+.titania-switch-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.titania-switch-row:last-child {
+    margin-bottom: 0;
+}
+
+.titania-switch-text {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.titania-switch-main {
+    color: var(--t-glass-text-bright);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.titania-switch-text small {
+    color: var(--t-glass-text-faint);
+    line-height: 1.4;
+    font-size: 11px;
+}
+
+.titania-version-badge {
+    background: rgb(var(--t-surface-mid-rgb) / .3);
+    color: var(--t-color-text-muted);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.titania-backup-desc {
+    color: var(--t-glass-text-faint);
+    line-height: 1.45;
+    font-size: 11px;
+    margin-bottom: 8px;
+}
+
+.titania-backup-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.titania-mini-btn {
+    border: 1px solid var(--t-color-border-glass);
+    background: var(--t-color-surface-veil);
+    color: var(--t-glass-text-bright);
+    border-radius: 8px;
+    min-height: 30px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.titania-mini-btn.is-export {
+    border-color: rgb(var(--t-accent-mint-rgb) / .65);
+    color: rgb(var(--t-accent-update-text-rgb));
+}
+
+.titania-mini-btn.is-import {
+    border-color: var(--t-color-accent-active);
+    color: rgb(var(--t-accent-import-rgb));
+}
+
+.titania-mini-btn:hover:not(:disabled) {
+    filter: brightness(1.06);
+}
+
+.titania-mini-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

@@ -1,0 +1,101 @@
+/* ============================================================
+   04-features/content-editor.css —— 内容编辑器
+
+   Phase 4f 从 main-window.css 按类名前缀 `.t-ce-` 拆出（纯搬运，声明未改）。
+   ============================================================ */
+
+/* `.t-ce-header` 的视觉全部由 02-components/panel.css 的 `.t-panel-header` 提供，
+   本文件不再需要任何声明。 */
+.t-ce-body {
+    flex-grow: 1;
+    padding: 10px;
+    overflow: hidden;
+    display: flex;
+    min-height: 0;
+}
+
+/* 续写操作台用的变体：内容纵向堆叠且自身可滚。Phase 5b-1 从 mainWindow.js 的
+   inline style 迁入 —— 原内联同时重复了基础规则的 `display:flex`（已省去）
+   并把 `overflow` 从 hidden 覆盖成 auto。修饰类放在拥有 `.t-ce-*` 的本文件里，
+   避免 continuation.css 反向引用别人的类名（那会推高 A6，见交接文档 §2.7）。 */
+.t-ce-body--stack {
+    flex-direction: column;
+    gap: 10px;
+    overflow: auto;
+}
+
+.t-ce-textarea {
+    width: 100%;
+    height: 100%;
+    background: var(--t-color-surface-well);
+    border: 1px solid var(--t-color-border);
+    border-radius: 6px;
+    color: var(--t-color-text-soft);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 12px;
+    resize: none;
+    outline: none;
+    overflow-y: auto;
+}
+
+.t-ce-textarea:focus {
+    border-color: var(--t-color-brand);
+}
+
+/* 续写操作台用的变体：不吃满高度，改为按内容伸缩并参与 flex 分配。
+   Phase 5b-1 从 mainWindow.js 的 inline style 迁入，三条声明值不变。
+   ⚠ 必须排在 `.t-ce-textarea` 之后：两者同为 (0,1,0)，靠源序覆盖 `height`。 */
+.t-ce-textarea--grow {
+    height: auto;
+    min-height: 160px;
+    flex: 1;
+}
+
+/* 编辑器滚动条美化 */
+.t-ce-textarea::-webkit-scrollbar {
+    width: 8px;
+}
+
+.t-ce-textarea::-webkit-scrollbar-track {
+    background: var(--t-color-surface-sunken);
+    border-radius: 4px;
+}
+
+.t-ce-textarea::-webkit-scrollbar-thumb {
+    background: var(--t-color-border-strong);
+    border-radius: 4px;
+}
+
+.t-ce-textarea::-webkit-scrollbar-thumb:hover {
+    background: var(--t-color-surface-highest);
+}
+
+/* `.t-ce-footer` 的视觉全部由 02-components/panel.css 的 `.t-panel-footer` 提供，
+   本文件不再需要任何声明。 */
+.t-ce-stats {
+    color: var(--t-color-text-faint);
+    font-size: 0.85em;
+}
+
+.t-ce-actions {
+    display: flex;
+    gap: 10px;
+}
+
+@media screen and (max-width: 600px) {
+.t-ce-textarea {
+        font-size: 12px;
+    }
+
+.t-ce-actions {
+        gap: 6px;
+    }
+
+.t-ce-actions .t-btn {
+        padding: 8px 12px;
+        --t-btn-font-size: 0.85em;
+    }
+}
+

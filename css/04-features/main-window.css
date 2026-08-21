@@ -1,0 +1,1559 @@
+/* css/04-features/main-window.css - 主演绎窗口 */
+
+#t-main-view {
+    width: 950px;
+    max-width: 95vw;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--t-color-bg);
+    position: relative;
+    /* 确保主窗口在遮罩层之上 */
+    z-index: 20001;
+}
+
+/* 标题栏右侧图标组（工坊 / 收藏夹 / 更多 / 关闭）
+   base.css 的 .t-icon-btn 是 1.2em 裸图标 + margin-left，点击热区只有字形本身，
+   在标题栏里既显小又难点。这里统一改成带内边距的方形热区，间距交给 gap。 */
+#t-main-view .t-header .t-header-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+#t-main-view .t-header .t-header-actions .t-icon-btn {
+    /* 热区/居中/无 margin 已由 02-components/icon-button.css 提供（修 B13）。
+       这里只保留本视图自己的排版决定：字形大小。 */
+    --t-icon-btn-font-size: 1.5em;
+}
+
+#t-main-view .t-header .t-header-actions .t-close {
+    margin-left: 0;
+}
+
+/* Zen Mode (沉浸模式) */
+#t-main-view.t-zen-mode .t-header,
+#t-main-view.t-zen-mode .t-top-bar,
+#t-main-view.t-zen-mode .t-bottom-bar,
+#t-main-view.t-zen-mode .t-toolbox-panel,
+#t-main-view.t-zen-mode .t-toolbox-backdrop {
+    display: none !important; /* override later control display rules while Zen mode is active */
+}
+
+#t-main-view.t-zen-mode .t-content-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    background-color: var(--t-color-surface-well);
+    background-image: none;
+}
+
+/* 内容容器 */
+.t-content-wrapper {
+    flex-grow: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--t-color-surface-well);
+    background-image: linear-gradient(var(--t-color-surface-well) 1px, transparent 1px), linear-gradient(90deg, var(--t-color-surface-well) 1px, transparent 1px);
+    background-size: 20px 20px;
+    transform: translateZ(0);
+    min-height: 0;
+}
+
+.t-content-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 生成内容约束 */
+#t-output-content {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+#t-output-content>div {
+    flex-grow: 1;
+    margin: 0 !important; /* override fallback generated HTML root inline margin */
+    width: 100% !important; /* override fallback generated HTML root inline width */
+    max-width: 100% !important; /* override fallback generated HTML root inline max-width */
+    border-radius: 0 !important; /* override fallback generated HTML root inline radius */
+    border: none !important; /* override fallback generated HTML root inline border */
+    min-height: 100%;
+    box-sizing: border-box !important; /* override fallback generated HTML root inline box sizing */
+    overflow-x: hidden !important; /* override fallback generated HTML root inline overflow */
+}
+
+#t-output-content img {
+    max-width: 100% !important; /* override fallback generated image inline width constraints */
+    height: auto !important; /* override fallback generated image inline height */
+}
+
+/* iframe 内容样式 - 移除多余滚动条 */
+#t-output-content .t-content-iframe {
+    width: 100%;
+    border: none;
+    background: transparent;
+    display: block;
+    /* 高度由 JS 动态设置 */
+}
+
+
+/* 顶部操作区 */
+.t-top-bar {
+    padding: 12px 20px;
+    background: var(--t-color-surface);
+    border-bottom: 1px solid var(--t-color-border);
+    display: flex;
+    gap: 15px;
+    align-items: stretch;
+    height: 75px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    z-index: 20;
+}
+
+/* === [修复] PC端布局核心 === */
+.t-mobile-row {
+    display: flex;
+    flex-grow: 1;
+    /* 填满剩余空间 */
+    gap: 15px;
+    /* 元素间距 */
+    height: 100%;
+    min-width: 0;
+    /* 防止 flex 子项溢出 */
+}
+
+/* 历史开关 + 子开关的分组容器。
+   桌面端沿用顶栏的 15px gap，视觉与两者各自作为顶栏直接子项时完全一致；
+   存在的意义在窄屏：让这两个开关共占一行，而不是各占一行 */
+.t-history-group {
+    display: flex;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+/* 历史开关 */
+.t-history-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    background: var(--t-color-surface-sunken);
+    border-radius: 6px;
+    padding: 0 12px;
+    border: 1px solid var(--t-color-border);
+    flex-shrink: 0;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.t-history-toggle:hover {
+    background: var(--t-color-surface-elevated);
+    border-color: var(--t-color-border-strong);
+}
+
+.t-history-toggle.active {
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-accent-border-subtle);
+}
+
+.t-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.t-toggle-text {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: var(--t-color-text-muted);
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+
+.t-history-toggle.active .t-toggle-text {
+    color: var(--t-color-accent);
+}
+
+.t-history-toggle:hover .t-toggle-text {
+    color: var(--t-color-text-label);
+}
+
+.t-history-toggle.active:hover .t-toggle-text {
+    color: rgb(var(--t-sky-text-2-rgb));
+}
+
+/* 「只要角色发言」：历史开关的子项，窄一点以免顶栏被两个同宽开关挤满 */
+.t-subtoggle {
+    min-width: 150px;
+}
+
+/* 不读历史时置灰。仍保留 pointer-events，好让 title 提示能说明为什么不可用 */
+.t-subtoggle.disabled {
+    opacity: 0.45;
+}
+
+.t-subtoggle.disabled,
+.t-subtoggle.disabled .t-toggle-label {
+    cursor: not-allowed;
+}
+
+.t-subtoggle.disabled:hover {
+    background: var(--t-color-surface-sunken);
+    border-color: var(--t-color-border);
+}
+
+.t-subtoggle.disabled:hover .t-toggle-text {
+    color: var(--t-color-text-muted);
+}
+
+/* 生成模式切换 */
+.t-mode-toggle {
+    display: flex;
+    align-items: center;
+    background: var(--t-color-surface-sunken);
+    border-radius: 6px;
+    border: 1px solid var(--t-color-border);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.t-mode-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    height: 100%;
+    cursor: pointer;
+    color: var(--t-color-text-faint);
+    font-size: 0.85em;
+    font-weight: bold;
+    transition: all 0.2s;
+    white-space: nowrap;
+    border-right: 1px solid var(--t-color-border);
+}
+
+.t-mode-btn:last-child {
+    border-right: none;
+}
+
+.t-mode-btn:hover {
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text-secondary);
+}
+
+.t-mode-btn.active {
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-brand);
+}
+
+.t-mode-btn.active:hover {
+    background: var(--t-color-brand-soft-strong);
+}
+
+/* Trigger Card */
+.t-trigger-card {
+    flex-grow: 1;
+    background: var(--t-color-surface-elevated);
+    border: 1px solid var(--t-color-border);
+    border-radius: 6px;
+    padding: 0 15px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: 0.2s;
+    position: relative;
+    min-width: 0;
+}
+
+.t-trigger-card:hover {
+    background: var(--t-color-surface-raised);
+    border-color: var(--t-color-border-bright);
+}
+
+.t-trigger-main {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--t-color-text);
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.t-trigger-sub {
+    font-size: 0.8em;
+    color: var(--t-color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.t-cat-tag {
+    background: var(--t-color-surface-high);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--t-color-text-secondary);
+    font-size: 0.9em;
+    flex-shrink: 0;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.t-chevron {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--t-color-text-disabled);
+    font-size: 1.2em;
+}
+
+/* Filter & Dice —— `.t-trigger-card` 的同级动作簇，同属 `.t-mobile-row`。
+   原名 `.t-action-group` 与 lore-review.css 的同名类撞车（A12）：那边是
+   带 h4 标题的表单分区（配 `.t-action-item`），和这里的横向按钮簇不是同一
+   组件，故按 `.t-trigger-*` 家族的既有命名重命名本侧，不做合并。
+
+   ⚠ 改名同时去掉了一处反向泄漏：lore-review.css 排在本文件**之后**、
+     特异度同为 (0,1,0)，它的 `margin-bottom: 15px` 原先会落到这个簇上。
+     `.t-mobile-row` 是 flex 且 align-items 取默认 stretch，那 15px 让
+     筛选/骰子按钮比旁边的 `.t-trigger-card` 矮 15px、下方留出空隙。
+     现已与 trigger card 齐高（Phase 4b-2 确认的预期外观）。 */
+.t-trigger-actions {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.t-filter-btn,
+.t-dice-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: var(--t-color-surface-elevated);
+    border: 1px solid var(--t-color-border);
+    border-radius: 6px;
+    transition: 0.2s;
+}
+
+.t-filter-btn {
+    width: 40px;
+    font-size: 1.1em;
+    color: var(--t-color-text-faint);
+}
+
+.t-filter-btn:hover {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-secondary);
+}
+
+.t-filter-btn.active-filter {
+    color: var(--t-color-brand);
+    border-color: var(--t-color-brand-border-subtle);
+    background: var(--t-color-brand-veil);
+}
+
+.t-dice-btn {
+    width: 50px;
+    font-size: 1.5em;
+    color: var(--t-color-text-muted);
+}
+
+.t-dice-btn:hover {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-strong);
+}
+
+/* 内容区右上角垂直图标栏 */
+.t-tools-rail {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 100;
+}
+
+.t-tools-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--t-color-surface-recess-strong);
+    backdrop-filter: blur(4px);
+    color: var(--t-color-text-faint);
+    border: 1px solid var(--t-color-surface-veil);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.4;
+}
+
+.t-tools-icon:hover {
+    opacity: 1;
+    background: rgb(var(--t-surface-high-rgb) / .8);
+    color: var(--t-color-text-strong);
+    transform: scale(1.08);
+}
+
+.t-tools-icon.active {
+    opacity: 1;
+    background: var(--t-color-brand);
+    color: var(--t-color-text-on-accent);
+}
+
+.t-tools-icon.is-faved {
+    opacity: 0.95;
+    border-color: var(--t-color-danger-border);
+}
+
+#t-main-view.t-zen-mode .t-tools-icon {
+    background: transparent;
+}
+
+/* 核心操作栏 */
+.t-bottom-bar {
+    min-height: 70px;
+    padding: 10px 14px;
+    background: var(--t-color-surface-inset);
+    border-top: 1px solid var(--t-color-border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 50;
+    box-sizing: border-box;
+}
+
+
+.t-shortcut-btn {
+    padding: 4px 11px;
+    flex: 0 0 auto;
+    border: 1px solid var(--t-color-border-control);
+    border-radius: 999px;
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text-secondary);
+    font: inherit;
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .18s, border-color .18s, color .18s;
+}
+
+.t-shortcut-btn:hover {
+    border-color: var(--t-color-brand-border-soft);
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-soft);
+}
+
+.t-shortcut-btn.t-shortcut-compose {
+    margin-left: auto;
+    color: var(--t-color-brand);
+}
+
+.t-shortcut-btn.t-shortcut-compose i {
+    margin-right: 3px;
+    font-size: 10px;
+}
+
+
+/* 工具箱抽屉 */
+.t-toolbox-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 106;
+    visibility: hidden;
+    background: var(--t-color-surface-recess-strong);
+    opacity: 0;
+    transition: opacity .2s, visibility .2s;
+}
+
+.t-toolbox-panel {
+    position: absolute;
+    z-index: 107;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    background: var(--t-color-surface-sunken);
+    border-left: 1px solid var(--t-color-border-strong);
+    box-shadow: -14px 0 34px var(--t-shadow-ink-50);
+    transform: translateX(102%);
+    transition: transform .24s ease;
+}
+
+.t-toolbox-open .t-toolbox-backdrop {
+    visibility: visible;
+    opacity: 1;
+}
+
+.t-toolbox-open .t-toolbox-panel {
+    transform: translateX(0);
+}
+
+.t-toolbox-header {
+    min-height: 62px;
+    padding: 13px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--t-color-border);
+    box-sizing: border-box;
+}
+
+.t-toolbox-header div {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.t-toolbox-header strong {
+    color: var(--t-color-text);
+    font-size: 15px;
+}
+
+.t-toolbox-header span,
+.t-toolbox-section-title {
+    color: var(--t-color-text-dim);
+    font-size: 11px;
+}
+
+.t-toolbox-close {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 6px;
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-secondary);
+    cursor: pointer;
+}
+
+.t-toolbox-body {
+    flex: 1;
+    min-height: 0;
+    padding: 12px;
+    overflow-y: auto;
+}
+
+.t-toolbox-section + .t-toolbox-section {
+    margin-top: 16px;
+}
+
+.t-toolbox-section-title {
+    margin: 0 0 7px 2px;
+}
+
+.t-toolbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.t-toolbox-action {
+    min-width: 0;
+    min-height: 54px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--t-color-border-control);
+    border-radius: 6px;
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text-label);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: background .18s, border-color .18s, color .18s;
+}
+
+.t-toolbox-action i {
+    width: 19px;
+    flex: 0 0 19px;
+    color: var(--t-color-text-muted);
+    text-align: center;
+}
+
+.t-toolbox-action:hover {
+    background: var(--t-color-surface-raised);
+    border-color: var(--t-color-border-bright);
+    color: var(--t-color-text-strong);
+}
+
+.t-toolbox-action.active,
+#t-btn-queue-settings.active {
+    border-color: var(--t-color-accent-border-strong);
+    background: var(--t-color-accent-soft);
+    color: rgb(var(--t-sky-text-1-rgb));
+}
+
+.t-toolbox-action.inactive {
+    color: var(--t-color-text-dim);
+}
+
+.t-toolbox-action-wide {
+    grid-column: 1 / -1;
+}
+
+.t-toolbox-stop {
+    display: none;
+    min-height: 44px;
+    margin: 0 12px 12px;
+    border: 1px solid rgb(var(--t-accent-danger-rgb) / .45);
+    border-radius: 6px;
+    background: rgb(var(--t-accent-danger-rgb) / .1);
+    color: rgb(var(--t-accent-danger-text-rgb));
+    font: inherit;
+    cursor: pointer;
+}
+
+.t-toolbox-stop.is-active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* 筛选弹出菜单 */
+.t-filter-popover {
+    position: absolute;
+    z-index: 20001;
+    background: var(--t-color-surface);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: 6px;
+    box-shadow: 0 5px 15px var(--t-shadow-ink-50);
+    padding: 5px;
+    width: 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: t-fade-in 0.15s;
+    /* 固定最大高度：约容纳5个分类项，超出时显示滚动条 */
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* 筛选弹出菜单滚动条美化 */
+.t-filter-popover::-webkit-scrollbar {
+    width: 6px;
+}
+
+.t-filter-popover::-webkit-scrollbar-track {
+    background: var(--t-color-surface-sunken);
+    border-radius: 3px;
+}
+
+.t-filter-popover::-webkit-scrollbar-thumb {
+    background: var(--t-color-border-strong);
+    border-radius: 3px;
+}
+
+.t-filter-popover::-webkit-scrollbar-thumb:hover {
+    background: var(--t-color-surface-highest);
+}
+
+.t-filter-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--t-color-text-secondary);
+    border-radius: 4px;
+    font-size: 0.9em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.t-filter-item:hover {
+    background: var(--t-color-surface-raised);
+    color: var(--t-color-text-strong);
+}
+
+.t-filter-item.active {
+    background: var(--t-color-brand);
+    color: var(--t-color-text-on-accent);
+    font-weight: bold;
+}
+
+.t-filter-check {
+    opacity: 0;
+    font-size: 0.8em;
+}
+
+.t-filter-item.active .t-filter-check {
+    opacity: 1;
+}
+
+/* === 「更多」菜单里的图钉：把该项提升到标题栏 === */
+
+/* 手机上没有右键、长按又会跟滚动手势打架，所以用常驻可见的按钮 */
+.t-more-pin {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    margin-left: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--t-color-text-faint);
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.t-more-pin:hover:not(:disabled) {
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-brand);
+}
+
+.t-more-pin:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+/* 
+   === 移动端适配 ===
+   注意：只有屏幕宽度小于 600px 时，这些样式才会生效。
+   在“桌面版网站”模式下，屏幕宽度通常被模拟为 980px 或更高，
+   所以下面的代码不会执行，会使用上面的 PC 布局。
+*/
+/* css/main-window.css - 移动端适配部分 */
+
+
+@media screen and (max-width: 600px) {
+    #t-main-view {
+        width: 100%;
+        height: 95vh;
+        max-width: 100vw;
+        border-radius: 10px 10px 0 0;
+    }
+
+    /* 顶部栏紧凑化：裸 `.t-header { padding: 10px }` 已迁至
+       02-components/window.css（Phase 4b，修 A12）。它无作用域、对全部窗口
+       生效，本就不属于 main-window 私有样式。 */
+
+    /* 图标间距收窄：桌面下的 8px gap 在窄屏会把标题挤到截断
+       （.t-title-container 是 overflow:hidden） */
+    #t-main-view .t-header .t-header-actions {
+        gap: 4px;
+    }
+
+    #t-main-view .t-header .t-header-actions .t-icon-btn {
+        /* 只收字形不收热区：30px 已是触屏点击的下限，再小会难点。
+           图标最多 5 个时 1.3em 几乎顶满方块，显得拥挤，缩到 1.15em 留出呼吸感。 */
+        --t-icon-btn-font-size: 1.15em;
+        --t-icon-btn-size: 30px;
+    }
+
+    /* 关闭键的 1.8em 在窄屏比功能图标大出一圈，一起收一点保持视觉齐平 */
+    #t-main-view .t-header .t-header-actions .t-close {
+        font-size: 1.5em;
+        padding: 0 3px;
+    }
+
+    .t-top-bar {
+        height: auto;
+        flex-direction: column;
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .t-history-toggle {
+        width: 100%;
+        height: 40px;
+        min-width: unset;
+        justify-content: center;
+    }
+
+    /* 两个开关平分一行：各占一行会让顶栏在窄屏多吃 48px */
+    .t-history-group {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .t-history-group .t-history-toggle {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        /* 极端组合（320px 屏 + 130% 字号缩放）下文字要折成两行，
+           固定 40px 会裁掉第二行，所以改成下限 */
+        height: auto;
+        min-height: 40px;
+        padding: 0 6px;
+    }
+
+    /* 半格宽度容不下 0.9em 的 7 个汉字。收到 0.8em，与同排的 .t-mode-btn 一致 */
+    .t-history-group .t-toggle-text {
+        font-size: 0.8em;
+        /* 基准字号可被用户放大到 130%，那时半格仍会不够。
+           解除全局的 nowrap 让它折行 —— 比截断成省略号不丢信息 */
+        white-space: normal;
+        line-height: 1.25;
+        text-align: center;
+    }
+
+    .t-history-group .t-toggle-label {
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .t-mode-toggle {
+        width: 100%;
+        height: 40px;
+    }
+
+    .t-mode-btn {
+        flex: 1;
+        font-size: 0.8em;
+        padding: 0 10px;
+    }
+
+    .t-mobile-row {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        height: 50px;
+    }
+
+    .t-trigger-card {
+        height: 100%;
+    }
+
+    .t-trigger-actions {
+        height: 100%;
+    }
+
+    .t-dice-btn {
+        height: 100%;
+        width: 50px;
+    }
+
+    .t-filter-btn {
+        height: 100%;
+        width: 40px;
+    }
+
+    .t-content-area {
+        padding: 15px;
+    }
+
+    /* 移动端核心操作栏 */
+    .t-bottom-bar {
+        height: auto;
+        min-height: 62px;
+        padding: 8px;
+        display: block;
+    }
+
+    
+
+    
+
+    .t-shortcut-btn {
+        padding: 3px 10px;
+    }
+
+    .t-shortcut-btn.t-shortcut-compose span,
+    .t-shortcut-btn.t-shortcut-compose {
+        margin-left: 0;
+    }
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    /* 工具入口已经并进快捷指令行，这里只需要让它跟其他胶囊一样高 */
+    .t-shortcut-toolbox {
+        padding: 3px 10px;
+    }
+
+    
+
+    .t-toolbox-backdrop {
+        position: fixed;
+        inset: 0;
+    }
+
+    .t-toolbox-panel {
+        position: fixed;
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-height: min(76dvh, 620px);
+        border-top: 1px solid var(--t-color-border-bright);
+        border-left: 0;
+        border-radius: 12px 12px 0 0;
+        transform: translateY(102%);
+    }
+
+    .t-toolbox-open .t-toolbox-panel {
+        transform: translateY(0);
+    }
+
+    .t-toolbox-close i {
+        transform: rotate(90deg);
+    }
+
+    /* 面板高度由 max-height 收口，body 必须可收缩才会出现滚动条 */
+    .t-toolbox-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .t-toolbox-header {
+        min-height: 52px;
+        padding: 9px 12px;
+        flex-shrink: 0;
+    }
+
+    .t-toolbox-section + .t-toolbox-section {
+        margin-top: 12px;
+    }
+
+    .t-toolbox-action {
+        min-height: 44px;
+        padding: 7px;
+    }
+
+    .t-toolbox-action i {
+        width: 16px;
+        flex: 0 0 16px;
+    }
+
+    .t-toolbox-stop {
+        min-height: 42px;
+        margin: 0 10px 10px;
+        flex-shrink: 0;
+    }
+}
+
+/* 移动端适配 */
+
+@media screen and (max-width: 600px) {
+}
+
+
+/* ===== 内容统计 HUD (紧凑水平条) ===== */
+
+.t-stats-hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+
+    /* 透明毛玻璃效果 */
+    background: rgb(var(--t-scrim-panel-rgb) / .5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+
+    /* 边框和圆角 */
+    border: 1px solid var(--t-color-surface-hover-subtle);
+    border-radius: 4px;
+
+    /* 内边距 - 更紧凑 */
+    padding: 4px 8px;
+
+    /* 水平排列 */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    /* 字体设置 - 最小可读字号 */
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 10px;
+    line-height: 1;
+
+    /* 不阻挡鼠标事件 */
+    pointer-events: none;
+
+    /* 动画 */
+    animation: t-stats-fade-in 0.3s ease;
+}
+
+.t-stats-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+}
+
+.t-stats-sep {
+    color: rgb(var(--t-text-white-rgb) / .15);
+    font-size: 9px;
+}
+
+.t-stats-label {
+    color: rgb(var(--t-text-white-rgb) / .4);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.t-stats-value {
+    color: var(--t-color-notify);
+    font-weight: bold;
+    font-size: 10px;
+}
+
+/* 模型名称使用不同颜色 */
+#t-stat-model {
+    color: var(--t-color-accent);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 生成时间使用不同颜色 */
+#t-stat-time {
+    color: rgb(var(--t-accent-stat-time-rgb));
+}
+
+/* Zen 模式下隐藏统计 HUD */
+#t-main-view.t-zen-mode .t-stats-hud {
+    display: none !important; /* override updateContentStatsDisplay() jQuery inline display */
+}
+
+/* 移动端适配 */
+
+@media screen and (max-width: 600px) {
+    .t-stats-hud {
+        top: 8px;
+        left: 8px;
+        padding: 3px 6px;
+        font-size: 9px;
+        gap: 4px;
+    }
+
+    .t-stats-label {
+        font-size: 8px;
+    }
+
+    .t-stats-value {
+        font-size: 9px;
+    }
+
+    #t-stat-model {
+        max-width: 80px;
+    }
+}
+
+
+/* Shadow DOM 宿主样式 */
+.t-shadow-host {
+    display: block;
+    width: 100%;
+    min-height: 100%;
+}
+
+/* ===== 剧场历史翻页按钮（简洁版） ===== */
+
+/* 翻页按钮 - 位于内容区左右两侧 */
+.t-page-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 150;
+    width: 28px;
+    height: 50px;
+    border: none;
+    background: var(--t-color-surface-recess-strong);
+    color: rgb(var(--t-text-white-rgb) / .5);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.4;
+}
+
+.t-page-nav:hover:not(:disabled) {
+    opacity: 1;
+    background: var(--t-color-brand-border-subtle);
+    color: var(--t-color-brand);
+}
+
+.t-page-nav:active:not(:disabled) {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.t-page-nav:disabled {
+    opacity: 0.15;
+    cursor: not-allowed;
+}
+
+/* 左侧按钮 */
+.t-page-prev {
+    left: 0;
+    border-radius: 0 4px 4px 0;
+}
+
+/* 右侧按钮 */
+.t-page-next {
+    right: 0;
+    border-radius: 4px 0 0 4px;
+}
+
+/* 页码指示器 - 右下角小字 */
+.t-page-indicator {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    z-index: 150;
+    font-size: 10px;
+    color: rgb(var(--t-text-white-rgb) / .3);
+    font-family: 'Consolas', 'Monaco', monospace;
+    pointer-events: none;
+}
+
+
+/* Zen 模式下隐藏翻页按钮 */
+#t-main-view.t-zen-mode .t-page-nav,
+#t-main-view.t-zen-mode .t-page-indicator,
+#t-main-view.t-zen-mode .t-cont-inline-actions {
+    display: none !important; /* override history navigation jQuery inline display in Zen mode */
+}
+
+/* 移动端适配 */
+
+@media screen and (max-width: 600px) {
+    .t-page-nav {
+        width: 24px;
+        height: 40px;
+        font-size: 14px;
+    }
+
+    .t-page-indicator {
+        font-size: 9px;
+    }
+}
+
+
+/* 移动端适配 */
+
+
+/* ===== 内容编辑器 ===== */
+
+.t-content-editor {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95%;
+    max-width: 800px;
+    height: calc(100% - 80px);
+    max-height: 600px;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: 10px;
+    box-shadow: var(--t-shadow-xl);
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    animation: t-fade-in 0.2s;
+}
+
+
+/* 移动端适配 */
+
+@media screen and (max-width: 600px) {
+    .t-content-editor {
+        width: 98%;
+        top: 50px;
+        max-height: none;
+        height: calc(100% - 60px);
+    }
+}
+
+
+/* ===== 新内容生成中指示器 ===== */
+
+.t-new-content-indicator {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--t-glass-window);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--t-color-accent-border-subtle);
+    border-radius: 25px;
+    box-shadow: 0 4px 20px var(--t-shadow-ink-50);
+    animation: t-indicator-slide-up 0.3s ease;
+}
+
+.t-new-content-indicator i {
+    color: var(--t-color-accent);
+    font-size: 1em;
+}
+
+.t-new-content-indicator span {
+    color: var(--t-color-text-label);
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.t-goto-live-btn {
+    padding: 5px 12px;
+    background: linear-gradient(90deg, rgb(var(--t-accent-azure-rgb)), rgb(var(--t-accent-azure-pale-rgb)));
+    border: none;
+    border-radius: 15px;
+    color: var(--t-color-text-strong);
+    font-size: 0.85em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-goto-live-btn:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 2px 10px rgb(var(--t-accent-azure-rgb) / .4);
+}
+
+.t-goto-live-btn:active {
+    transform: scale(0.95);
+}
+
+/* ===== 生成完成通知 ===== */
+
+.t-generation-complete-notification {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: rgb(var(--t-accent-success-fill-rgb) / .95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgb(var(--t-accent-mint-rgb) / .3);
+    border-radius: 25px;
+    box-shadow: 0 4px 20px var(--t-shadow-ink-50);
+    animation: t-indicator-slide-up 0.3s ease;
+}
+
+.t-gcn-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.t-gcn-content i {
+    color: var(--t-color-notify);
+    font-size: 1.1em;
+}
+
+.t-gcn-content span {
+    color: var(--t-color-text-label);
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.t-gcn-view-btn {
+    padding: 6px 14px;
+    background: linear-gradient(90deg, var(--t-color-notify), rgb(var(--t-accent-emerald-rgb)));
+    border: none;
+    border-radius: 15px;
+    color: var(--t-color-text-on-accent);
+    font-size: 0.85em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-gcn-view-btn:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 2px 10px rgb(var(--t-accent-mint-rgb) / .4);
+}
+
+.t-gcn-view-btn:active {
+    transform: scale(0.95);
+}
+
+.t-gcn-close-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--t-color-text-faint);
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.t-gcn-close-btn:hover {
+    background: var(--t-color-surface-hover);
+    color: var(--t-color-text-strong);
+}
+
+/* 移动端适配 */
+
+@media screen and (max-width: 600px) {
+    .t-new-content-indicator,
+    .t-generation-complete-notification {
+        bottom: 10px;
+        padding: 8px 14px;
+        gap: 8px;
+    }
+
+    .t-new-content-indicator span,
+    .t-gcn-content span {
+        font-size: 0.85em;
+    }
+
+    .t-goto-live-btn,
+    .t-gcn-view-btn {
+        padding: 5px 10px;
+        font-size: 0.8em;
+    }
+}
+
+
+/* ============================================================
+   小剧场注入聊天：气泡按钮 + 内容选择弹窗
+   ============================================================ */
+
+/* 挂在 ST 的 .extraMesButtons 里，继承 .mes_button 的尺寸与交互，只改配色 */
+#chat .titania-inject-btn {
+    color: var(--t-theme, var(--t-color-brand));
+}
+
+#chat .titania-inject-btn:hover {
+    color: var(--t-color-accent);
+}
+
+.t-chat-inject-window {
+    width: 520px;
+    max-width: 94vw;
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--t-color-dialog-surface);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--t-color-border-subtle);
+    border-radius: 12px;
+    box-shadow: var(--t-shadow-dialog);
+    overflow: hidden;
+    color: var(--t-color-text-cool);
+}
+
+.t-chat-inject-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 18px 18px;
+    overflow: hidden;
+}
+
+.t-chat-inject-target {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--t-color-accent-veil);
+    border-left: 3px solid var(--t-color-accent);
+    color: var(--t-color-dialog-label);
+    flex-shrink: 0;
+}
+
+.t-chat-inject-target b {
+    color: var(--t-color-accent);
+}
+
+.t-chat-inject-visible {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: var(--t-color-surface-veil);
+    border: 1px solid var(--t-color-border-faint);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.t-chat-inject-visible input {
+    margin-top: 2px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.t-chat-inject-visible-main {
+    display: block;
+    color: var(--t-color-text-cool);
+    font-weight: 600;
+}
+
+.t-chat-inject-visible small {
+    display: block;
+    margin-top: 3px;
+    color: var(--t-glass-text-faint);
+    line-height: 1.5;
+}
+
+.t-chat-inject-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 60px;
+}
+
+.t-chat-inject-item {
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: var(--t-color-surface-veil);
+    border: 1px solid var(--t-color-border-faint);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.t-chat-inject-item:hover {
+    background: var(--t-color-brand-soft);
+    border-color: var(--t-theme, var(--t-color-brand));
+    transform: translateX(2px);
+}
+
+.t-chat-inject-item-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.t-chat-inject-item-name {
+    color: var(--t-theme, var(--t-color-brand));
+    font-weight: 600;
+}
+
+.t-chat-inject-item-time {
+    color: rgb(var(--t-glass-text-dim-cool-rgb));
+    font-size: 0.9em;
+    flex-shrink: 0;
+}
+
+.t-chat-inject-item-preview {
+    color: var(--t-glass-text-tertiary);
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.t-chat-inject-empty {
+    text-align: center;
+    padding: 32px 20px;
+    color: var(--t-glass-text-faint);
+}
+
+.t-chat-inject-empty > i {
+    font-size: 2.2em;
+    color: rgb(var(--t-glass-text-faintest-rgb));
+    margin-bottom: 12px;
+    display: block;
+}
+
+.t-chat-inject-empty-title {
+    color: var(--t-color-dialog-label);
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.t-chat-inject-empty-hint {
+    line-height: 1.6;
+    max-width: 340px;
+    margin: 0 auto;
+}
+
+/* ============================================================
+   剧本预览区的占位符（"请选择剧本，开始演绎..."）
+   Phase 5b-8 从 mainWindow.js:944 的内联 style 迁出。
+
+   ⚠ 这段是直接 innerHTML 写进 #t-output-content 的**光 DOM**
+   （见 mainWindow.js:964 的注释「无内容时显示占位符，不需要 Shadow DOM」），
+   所以插件 CSS 能命中。真正的生成内容才走 Shadow DOM（helpers.js 的
+   .t-shadow-host），那里的样式**不能**这样迁 —— document.head 的 CSS
+   穿不进 shadow root。迁移前务必确认目标节点在光 DOM。
+
+   ⚠ 上方 #t-output-content>div 那条规则也命中占位符外层，但它只管
+   margin / width / border / box-sizing / overflow-x（一串 !important，
+   用于中和生成 HTML 根节点的内联样式），与这里的属性不重叠。
+   ============================================================ */
+
+.t-output-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--t-color-text-disabled);
+}
+
+.t-output-placeholder i {
+    font-size: 3em;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.t-output-placeholder-text {
+    font-size: 1.1em;
+}

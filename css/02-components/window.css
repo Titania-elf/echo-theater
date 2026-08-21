@@ -1,0 +1,45 @@
+/* ============================================================
+   02-components/window.css —— 窗口外壳组件
+
+   目前只接管 `.t-header`（窗口标题栏）。它原先在 01-base/base.css，
+   同时 04-features/main-window.css 的移动端段落里还有一条裸 `.t-header`
+   覆盖 —— 两处构成 A12 的跨文件裸类冲突，本文件是收口点。
+
+   ── 仍留在 01-base/base.css 的窗口外壳类（尚未迁移，勿以为遗漏）──
+     .t-overlay          插件 UI 的挂载根，带 font-size !important 基准，
+                         语义上更接近「作用域根」而不是组件，迁移前要先想清楚
+                         它与 01-base/scope.css 的 .t-root 是什么关系。
+     .t-box              通用窗口容器。含 4 处颜色字面量与 var(--t-bg-dark)
+                         旧变量，迁进组件层前必须先补语义 token（R3a/R3b）。
+     .t-title-container  ::before 装饰条是 linear-gradient(#ff9a9e, #fad0c4)
+     .t-title-main       linear-gradient(#e0c3fc, #ff9a9e) + background-clip:text
+     .t-title-sub        linear-gradient(#ff9a9e, #e0c3fc) + background-clip:text
+                         这三个共 4 个渐变色字面量，需要一组 gradient token
+                         才能进组件层，属 Phase 6「补齐 gradient token」的范围。
+     .t-close            base.css:106 的注释明确说它与 .t-tool-btn 刻意留在
+     .t-tool-btn         本层未统一，理由见 02-components/_legacy.css 末尾。
+   ============================================================ */
+
+.t-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--t-color-border-strong);
+    background: var(--t-color-window-header);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* 窄屏收紧内边距。
+   这条原本是 04-features/main-window.css 移动端段落里的裸 `.t-header` 规则
+   （原注释写「顶部栏紧凑化」），但选择器没有作用域，实际对全部 9 个窗口的
+   标题栏都生效。迁到组件层只是把这个既有事实显式化，行为逐字节不变。
+
+   ⚠ 不要「顺手」改成 `#t-main-view .t-header` 来消除冲突：那会让
+     debug / favs / lore-review / memory-recall / settings / workshop /
+     scriptManager 等窗口在窄屏失去这处收紧，是跨 9 个窗口的行为变更。 */
+@media screen and (max-width: 600px) {
+    .t-header {
+        padding: 10px;
+    }
+}
