@@ -21152,6 +21152,14 @@ function writeFavsIndex(entries, migratedAt) {
   };
   saveExtData();
 }
+function bootstrapEmptyFavsIndex() {
+  if (isFavsMigrated()) return false;
+  const favs = getExtData().favs;
+  if (Array.isArray(favs) && favs.length > 0) return false;
+  writeFavsIndex([], Date.now());
+  TitaniaLogger.info("\u6536\u85CF\u4E3A\u96F6\uFF0C\u5DF2\u76F4\u63A5\u5EFA\u7ACB\u7A7A\u7D22\u5F15\uFF08\u65B0\u589E\u6536\u85CF\u5C06\u76F4\u63A5\u843D\u6587\u4EF6\u5B58\u50A8\uFF09");
+  return true;
+}
 function toUiEntry(entry) {
   return {
     id: entry.id,
@@ -46251,11 +46259,13 @@ function describeFavsStorageState() {
   const legacyCount = Array.isArray(legacyFavs) ? legacyFavs.length : 0;
   const artifacts = migrated ? describeLegacyArtifacts() : { keys: [], keyBytes: 0, orphanFiles: [] };
   const artifactCount = artifacts.keys.length + artifacts.orphanFiles.length;
+  const footprint = describeFavsStorageFootprint();
   let state;
   if (!migrated) state = legacyCount > 0 ? "needs-migration" : "empty";
   else if (legacyCount > 0) state = "needs-cleanup";
-  else state = artifactCount > 0 ? "has-artifacts" : "done";
-  return { state, migrated, legacyCount, artifacts, artifactCount, footprint: describeFavsStorageFootprint() };
+  else if (artifactCount > 0) state = "has-artifacts";
+  else state = footprint?.count > 0 ? "done" : "empty";
+  return { state, migrated, legacyCount, artifacts, artifactCount, footprint };
 }
 function favsStorageStatusLine(footprint) {
   if (!footprint) return "";
@@ -46581,8 +46591,12 @@ async function runStorageCheck($btn) {
 }
 async function loadExtensionSettings() {
   extension_settings2[extensionName] = extension_settings2[extensionName] || {};
-  if (Object.keys(extension_settings2[extensionName]).length === 0) {
+  const settingsWereEmpty = Object.keys(extension_settings2[extensionName]).length === 0;
+  if (settingsWereEmpty) {
     Object.assign(extension_settings2[extensionName], defaultSettings);
+  }
+  if (!settingsWereEmpty) {
+    bootstrapEmptyFavsIndex();
   }
   $("#titania-version-badge").text(`v${CURRENT_VERSION}`);
   initCoreFeatures();

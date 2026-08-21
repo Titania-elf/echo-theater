@@ -407,6 +407,32 @@ function writeFavsIndex(entries, migratedAt) {
     saveExtData();
 }
 
+/**
+ * 全新安装（或收藏为零）时直接建一个空索引，让它天生就在文件存储上。
+ *
+ * 为什么需要：src/ui/favsWindow.js 的 putFav 在未搬家时走 legacy 分支，
+ * 把收藏写进 settings.json。也就是说新装用户会从零开始重新积累同一个卡顿，
+ * 直到自己注意到设置页那张卡片并点一次搬家。而 0 条收藏时建索引
+ * 没有任何要校验或要删的东西，不存在不可逆动作，代价只是一次 saveExtData()。
+ *
+ * data.favs 刻意**不删**：defaultSettings.favs = []（src/config/defaults.js）
+ * 会把它加回来，删了是白折腾。getLegacyFavs() 已经把「空数组 + 已搬家」
+ * 判定成伪空、返回 null，写入路径因此自动走文件分支。
+ *
+ * @returns {boolean} 是否真的建了索引
+ */
+export function bootstrapEmptyFavsIndex() {
+    if (isFavsMigrated()) return false;
+
+    const favs = getExtData().favs;
+    // 有收藏就不能走这条路：那属于真正的搬家，必须过备份 + 校验 + 人工确认
+    if (Array.isArray(favs) && favs.length > 0) return false;
+
+    writeFavsIndex([], Date.now());
+    TitaniaLogger.info("收藏为零，已直接建立空索引（新增收藏将直接落文件存储）");
+    return true;
+}
+
 /* ------------------------------------------------------------------ *
  * 供收藏夹使用的条目
  *

@@ -18,6 +18,7 @@ import { restoreContinuationForCurrentChat } from "./core/continuationStore.js";
 import {
     migrateFavsToFiles,
     isFavsMigrated,
+    bootstrapEmptyFavsIndex,
     getFavsIndex,
     verifyFavFiles,
     describeCurrentFavsFootprint,
@@ -546,8 +547,8 @@ function showFavsMigrationReport(html, tone) {
  *   needs-migration  未搬家、有收藏      → 一键搬家
  *   needs-cleanup    已搬家、旧数据还在  → 完成收尾
  *   has-artifacts    已搬家、只剩遗留    → 清理遗留 + 检查
- *   done             全部完成            → 只有状态行 + 检查
- *   empty            未搬家、零收藏      → 整卡隐藏
+ *   done             全部完成、有收藏    → 状态行 + 检查
+ *   empty            没什么可说的        → 整卡隐藏
  */
 function describeFavsStorageState() {
     const migrated = isFavsMigrated();
@@ -560,13 +561,17 @@ function describeFavsStorageState() {
     // 未搬家时不查遗留：findOrphanFavFiles 要拿新索引去比对才知道谁是孤儿
     const artifacts = migrated ? describeLegacyArtifacts() : { keys: [], keyBytes: 0, orphanFiles: [] };
     const artifactCount = artifacts.keys.length + artifacts.orphanFiles.length;
+    const footprint = describeFavsStorageFootprint();
 
     let state;
     if (!migrated) state = legacyCount > 0 ? "needs-migration" : "empty";
     else if (legacyCount > 0) state = "needs-cleanup";
-    else state = artifactCount > 0 ? "has-artifacts" : "done";
+    else if (artifactCount > 0) state = "has-artifacts";
+    // 一条收藏都没有的人（多半是刚装上）不需要看见「收藏 0 条 · 正文 0 B」这种噪音。
+    // 等他存下第一条，卡片自己会出现
+    else state = footprint?.count > 0 ? "done" : "empty";
 
-    return { state, migrated, legacyCount, artifacts, artifactCount, footprint: describeFavsStorageFootprint() };
+    return { state, migrated, legacyCount, artifacts, artifactCount, footprint };
 }
 
 /** 状态行：搬完家之后正文和索引各在哪、各占多少 */
@@ -998,8 +1003,19 @@ async function runStorageCheck($btn) {
 async function loadExtensionSettings() {
     // 确保配置对象存在
     extension_settings[extensionName] = extension_settings[extensionName] || {};
-    if (Object.keys(extension_settings[extensionName]).length === 0) {
+    const settingsWereEmpty = Object.keys(extension_settings[extensionName]).length === 0;
+    if (settingsWereEmpty) {
         Object.assign(extension_settings[extensionName], defaultSettings);
+    }
+
+    // 收藏为零时直接建空索引，让新装用户天生就在文件存储上，
+    // 不必先把收藏攒进 settings.json 再自己去点搬家。
+    //
+    // settingsWereEmpty 时跳过：设置对象是空的，是「ST 还没把 settings.json 读进来」
+    // 的特征，往一个随后可能被整体替换的对象里写索引，就是丢数据的路径。
+    // 真·新用户因此要晚一次刷新才建上索引，代价可接受。
+    if (!settingsWereEmpty) {
+        bootstrapEmptyFavsIndex();
     }
 
     // 设置版本号显示
