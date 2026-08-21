@@ -15,7 +15,13 @@ import { GlobalState } from "./core/state.js";
 import { loadScripts } from "./core/scriptData.js";
 import { handleGenerate } from "./core/api.js";
 import { restoreContinuationForCurrentChat } from "./core/continuationStore.js";
-import { dryRunFavsMigration } from "./core/favsStore.js";
+import {
+    dryRunFavsMigration,
+    migrateFavsToFiles,
+    isFavsMigrated,
+    describeCurrentFavsFootprint,
+    FAVS_INDEX_KEY
+} from "./core/favsStore.js";
 import { initExtensionUpdate } from "./core/extensionUpdate.js";
 import { initSyncListener } from "./core/worldInfoManager.js";
 import { createFloatingButton, destroyFloatingButton, refreshFloatingTuck } from "./ui/floatingBtn.js";
@@ -438,6 +444,13 @@ function bindDrawerBackupControls() {
             const currentData = getExtData();
             Object.assign(currentData, extDataPayload);
 
+            // 导入的备份若是搬家之前做的，它没有 favs_index。Object.assign 不会删除
+            // 目标上多出来的键，于是旧索引会残留下来，指向的却是上一批收藏的正文文件。
+            // 这里显式清掉，干净地退回「未搬家」状态，由用户重新搬一次。
+            if (!Object.prototype.hasOwnProperty.call(extDataPayload, FAVS_INDEX_KEY)) {
+                delete currentData[FAVS_INDEX_KEY];
+            }
+
             const existingVectorCharacters = await getAllIndexedCharacters();
             for (const charId of existingVectorCharacters) {
                 await clearCharacterVectors(charId);
@@ -470,6 +483,7 @@ function bindDrawerBackupControls() {
     });
 
     bindFavsMigrationDryRun();
+    bindFavsMigrationRun();
 }
 
 /** 把字节数说成人话 */
@@ -480,6 +494,19 @@ function formatBytes(bytes) {
     return `${n} B`;
 }
 
+/** 迁移卡片下方的结果栏。两个按钮共用一块，后一次结果覆盖前一次 */
+function showFavsMigrationReport(html, tone) {
+    const reportId = "titania-favs-migrate-report";
+    let $report = $(`#${reportId}`);
+    if ($report.length === 0) {
+        const $card = $("#titania-favs-migrate-dryrun").closest(".titania-panel-card");
+        if ($card.length === 0) return;
+        $report = $(`<div class="titania-backup-desc" id="${reportId}"></div>`);
+        $card.append($report);
+    }
+    $report.html(`<span style="color:${tone};">${html}</span>`);
+}
+
 /**
  * 「试运行搬家」按钮。
  * 只写文件 + 校验，不动 settings.json 里的任何数据（见 src/core/favsStore.js 的说明）。
@@ -488,15 +515,7 @@ function bindFavsMigrationDryRun() {
     const $btn = $("#titania-favs-migrate-dryrun");
     if ($btn.length === 0) return;
 
-    const reportId = "titania-favs-migrate-report";
-    const showReport = (html, tone) => {
-        let $report = $(`#${reportId}`);
-        if ($report.length === 0) {
-            $report = $(`<div class="titania-backup-desc" id="${reportId}"></div>`);
-            $btn.closest(".titania-panel-card").append($report);
-        }
-        $report.html(`<span style="color:${tone};">${html}</span>`);
-    };
+    const showReport = showFavsMigrationReport;
 
     $btn.off("click").on("click", async function () {
         const $self = $(this);
@@ -550,6 +569,112 @@ function bindFavsMigrationDryRun() {
             if (window.toastr) toastr.error(e?.message || "试运行失败", "Titania Echo");
         } finally {
             $self.prop("disabled", false).html(oldHtml);
+        }
+    });
+}
+
+/**
+ * 「正式搬家」按钮。
+ *
+ * 顺序：强制下载完整备份 → 写正文文件 → 逐个校验落盘 → 写索引。
+ * **不删 data.favs** —— 搬完之后磁盘与 settings.json 里各有一份完整数据，
+ * 退回上个插件版本就能原样回到搬家前。删除留到下一个提交。
+ */
+function bindFavsMigrationRun() {
+    const $btn = $("#titania-favs-migrate-run");
+    if ($btn.length === 0) return;
+
+    const refreshButtonState = () => {
+        if (isFavsMigrated()) {
+            $btn.prop("disabled", true).html('<i class="fa-solid fa-check"></i> 已搬家（原数据仍保留）');
+        }
+    };
+    refreshButtonState();
+
+    $btn.off("click").on("click", async function () {
+        const $self = $(this);
+        const oldHtml = $self.html();
+
+        if (isFavsMigrated()) {
+            showFavsMigrationReport("收藏已经搬过家了，无需重复操作。", "#feca57");
+            return;
+        }
+
+        const footprint = describeCurrentFavsFootprint();
+        if (footprint.count === 0) {
+            showFavsMigrationReport("当前没有收藏，无需搬家。", "#feca57");
+            return;
+        }
+
+        const confirmed = confirm(
+            `即将把 ${footprint.count} 条收藏的正文改由独立文件承载。\n\n`
+            + `· 会先下载一份完整备份，请务必保存好\n`
+            + `· settings.json 里的原数据【仍然保留】，随时可退回上个插件版本\n`
+            + `· 收藏夹会改成「列表读索引、点开才取正文」\n\n`
+            + `确定继续吗？`
+        );
+        if (!confirmed) return;
+
+        $self.prop("disabled", true);
+
+        try {
+            // 1. 强制备份。备份失败就不许往下走 —— 这是唯一的人工退路
+            $self.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
+            try {
+                const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+                const filename = `titania_backup_before_favs_migration_${new Date().toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
+                downloadBackupPayload(snapshot, filename);
+            } catch (backupErr) {
+                console.error("Titania: 搬家前备份失败", backupErr);
+                showFavsMigrationReport(
+                    `❌ 搬家前的备份失败，已中止，未改动任何数据：${backupErr?.message || String(backupErr)}`,
+                    "#ff7675"
+                );
+                if (window.toastr) toastr.error("备份失败，搬家已中止", "Titania Echo");
+                return;
+            }
+
+            // 2. 搬家
+            const report = await migrateFavsToFiles({
+                onProgress: (done, total) => {
+                    $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> 搬家中 ${done}/${total}`);
+                }
+            });
+
+            if (!report.ok) {
+                const reason = report.reason || "未知原因";
+                showFavsMigrationReport(
+                    `❌ 搬家已中止，索引未写入，settings.json 未改动：${reason}`
+                    + `<br>· 备份文件已下载，可放心重试<br>· 详情见控制台`,
+                    "#ff7675"
+                );
+                console.error("[Titania] 收藏搬家中止", report);
+                if (window.toastr) toastr.error("搬家已中止，未改动原数据", "Titania Echo");
+                return;
+            }
+
+            showFavsMigrationReport(
+                `✅ 搬家完成，settings.json 里的原数据仍保留（可随时退回）`
+                + `<br>· ${report.written.count} 条正文已落文件，共 ${formatBytes(report.written.bytesTotal)}，`
+                + `最大单个 ${formatBytes(report.written.bytesMax)}`
+                + `<br>· 索引 ${formatBytes(report.indexBytes)}，全部文件校验通过`
+                + `<br>· 耗时 ${(report.durationMs / 1000).toFixed(1)} 秒`
+                + `<br>· <b>下一步请打开收藏夹逐项检查</b>：列表、搜索、筛选、点开看、导出、删除。`
+                + `确认无误后再删掉 settings.json 里那 ${formatBytes(report.pendingRemovalBytes)} 旧数据，`
+                + `<b>卡顿到那一步才会真正改善。</b>`,
+                "#55efc4"
+            );
+            console.log("[Titania] 收藏搬家报告", report);
+            refreshButtonState();
+            if (window.toastr) {
+                toastr.success(`${report.written.count} 条收藏已搬家，原数据仍保留`, "Titania Echo");
+            }
+        } catch (e) {
+            console.error("Titania: 收藏搬家失败", e);
+            showFavsMigrationReport(`❌ 搬家失败：${e?.message || String(e)}`, "#ff7675");
+            if (window.toastr) toastr.error(e?.message || "搬家失败", "Titania Echo");
+        } finally {
+            if (!isFavsMigrated()) $self.prop("disabled", false).html(oldHtml);
         }
     });
 }

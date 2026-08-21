@@ -20954,6 +20954,441 @@ var init_apiProfileRegistry = __esm({
   }
 });
 
+// src/core/favsStore.js
+import { getRequestHeaders } from "../../../../script.js";
+function utf8ToBase64(text) {
+  const bytes = new TextEncoder().encode(String(text ?? ""));
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += BASE64_CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + BASE64_CHUNK));
+  }
+  return btoa(binary);
+}
+function utf8ByteLength(text) {
+  return new TextEncoder().encode(String(text ?? "")).length;
+}
+function favFileName(id3) {
+  const safeId = String(id3 ?? "").replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!safeId) throw new Error(`\u6536\u85CF ID \u975E\u6CD5\uFF0C\u65E0\u6CD5\u751F\u6210\u6587\u4EF6\u540D\uFF1A${JSON.stringify(id3)}`);
+  return `${FAV_FILE_PREFIX}${safeId}.json`;
+}
+async function uploadTextFile(fileName, text) {
+  const response = await fetch("/api/files/upload", {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name: fileName, data: utf8ToBase64(text) })
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`\u4E0A\u4F20 ${fileName} \u5931\u8D25\uFF08${response.status}\uFF09${detail ? `\uFF1A${detail}` : ""}`);
+  }
+  const payload = await response.json();
+  const filePath = String(payload?.path || "").trim();
+  if (!filePath) throw new Error(`\u4E0A\u4F20 ${fileName} \u540E\u670D\u52A1\u7AEF\u672A\u8FD4\u56DE\u8DEF\u5F84`);
+  return filePath;
+}
+async function fetchTextFile(filePath, rev = 0) {
+  const url = rev > 0 ? `${filePath}?rev=${encodeURIComponent(rev)}` : filePath;
+  const response = await fetch(url, {
+    method: "GET",
+    cache: "no-cache",
+    headers: getRequestHeaders()
+  });
+  if (!response.ok) {
+    throw new Error(`\u8BFB\u53D6 ${filePath} \u5931\u8D25\uFF08${response.status}\uFF09`);
+  }
+  return response.text();
+}
+async function deleteFavFile(filePath) {
+  const target = String(filePath || "").trim();
+  if (!target) return false;
+  const response = await fetch("/api/files/delete", {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ path: target })
+  });
+  if (response.status === 404) return true;
+  if (!response.ok) {
+    TitaniaLogger.warn(`\u5220\u9664\u6536\u85CF\u6587\u4EF6\u5931\u8D25\uFF08${response.status}\uFF09\uFF1A${target}`);
+    return false;
+  }
+  return true;
+}
+async function verifyFavFiles(filePaths) {
+  const urls = (Array.isArray(filePaths) ? filePaths : []).map((p) => String(p || "")).filter(Boolean);
+  if (urls.length === 0) return {};
+  const response = await fetch("/api/files/verify", {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ urls })
+  });
+  if (!response.ok) {
+    throw new Error(`\u6821\u9A8C\u6536\u85CF\u6587\u4EF6\u5931\u8D25\uFF08${response.status}\uFF09`);
+  }
+  return await response.json();
+}
+function buildFavBody(fav) {
+  const type = fav?.type === "chain" ? "chain" : "plain";
+  const body = { v: FAV_BODY_VERSION, id: fav?.id, type };
+  if (type === "chain") {
+    const items = Array.isArray(fav?.items) ? fav.items : [];
+    const rebuildable = items.length > 0 && items.every((seg) => String(seg?.html || "").trim());
+    body.items = items;
+    if (!rebuildable) body.html = String(fav?.html || "");
+  } else {
+    body.html = String(fav?.html || "");
+  }
+  return body;
+}
+function resolveFavMeta(fav) {
+  if (fav?.charName) {
+    const title = String(fav?.title || "");
+    return {
+      char: String(fav.charName),
+      script: String(fav.scriptName || title.split(" - ")[0] || title)
+    };
+  }
+  return parseMeta(String(fav?.title || ""));
+}
+function stripVoidResourceTags(html) {
+  return String(html || "").replace(VOID_RESOURCE_TAG_RE, "");
+}
+function computeSnippetText(fav) {
+  const isChain = fav?.type === "chain";
+  const items = Array.isArray(fav?.items) ? fav.items : [];
+  const chainSource = isChain ? items.map((seg) => String(seg?.html || "").trim()).filter(Boolean).join("\n") : "";
+  const source = isChain ? chainSource || String(fav?.html || "") : String(fav?.html || "");
+  return getSnippet(stripVoidResourceTags(source));
+}
+function computeInstructionText(fav) {
+  if (fav?.type !== "chain" || !Array.isArray(fav?.items)) return "";
+  return fav.items.map((seg) => String(seg?.instruction || "").trim()).filter(Boolean).join(" ");
+}
+function buildFavIndexEntry(fav, pointer = {}) {
+  const meta = resolveFavMeta(fav);
+  return {
+    id: fav?.id,
+    type: fav?.type === "chain" ? "chain" : "plain",
+    title: String(fav?.title || ""),
+    charName: meta.char,
+    scriptName: meta.script,
+    scriptId: String(fav?.scriptId || ""),
+    date: String(fav?.date || ""),
+    avatar: String(fav?.avatar || ""),
+    branchKey: String(fav?.branchKey || ""),
+    chainSignature: String(fav?.chainSignature || ""),
+    itemCount: Array.isArray(fav?.items) ? fav.items.length : 0,
+    snippetText: computeSnippetText(fav),
+    instructionText: computeInstructionText(fav),
+    file: String(pointer.file || ""),
+    rev: Number(pointer.rev) || 1,
+    bytes: Number(pointer.bytes) || 0
+  };
+}
+async function writeFavBody(fav, rev = 1) {
+  const body = buildFavBody(fav);
+  const text = JSON.stringify(body);
+  const file = await uploadTextFile(favFileName(fav?.id), text);
+  return { file, bytes: utf8ByteLength(text), rev: Number(rev) || 1, text };
+}
+async function readFavBody(indexEntry) {
+  const filePath = String(indexEntry?.file || "").trim();
+  if (!filePath) throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u7D22\u5F15\u91CC\u6CA1\u6709\u6587\u4EF6\u8DEF\u5F84`);
+  const raw = await fetchTextFile(filePath, Number(indexEntry?.rev) || 0);
+  let body;
+  try {
+    body = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u6B63\u6587\u6587\u4EF6\u4E0D\u662F\u5408\u6CD5 JSON\uFF1A${filePath}`);
+  }
+  if (Number(body?.v) !== FAV_BODY_VERSION) {
+    throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u6B63\u6587\u7248\u672C\u4E0D\u53D7\u652F\u6301\uFF1A${body?.v}`);
+  }
+  if (String(body?.id) !== String(indexEntry?.id)) {
+    throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u6B63\u6587\u6587\u4EF6 id \u4E0D\u5339\u914D\uFF08\u6587\u4EF6\u91CC\u662F ${body?.id}\uFF09`);
+  }
+  return body;
+}
+function describeCurrentFavsFootprint() {
+  const data = getExtData();
+  const favs = Array.isArray(data.favs) ? data.favs : [];
+  const bytes = utf8ByteLength(JSON.stringify(favs));
+  const chainCount = favs.filter((f) => f?.type === "chain").length;
+  return {
+    count: favs.length,
+    chainCount,
+    plainCount: favs.length - chainCount,
+    bytes
+  };
+}
+function pickReadbackSample(records) {
+  if (records.length === 0) return [];
+  const byBytes = [...records].sort((a, b) => a.written.bytes - b.written.bytes);
+  const chains = records.filter((r) => r.fav?.type === "chain").slice(0, 3);
+  const picked = /* @__PURE__ */ new Map();
+  const take = (record) => {
+    if (record) picked.set(String(record.fav?.id), record);
+  };
+  take(byBytes[byBytes.length - 1]);
+  take(byBytes[0]);
+  take(records[0]);
+  take(records[records.length - 1]);
+  chains.forEach(take);
+  return [...picked.values()];
+}
+async function dryRunFavsMigration(options = {}) {
+  const startedAt = Date.now();
+  const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+  const data = getExtData();
+  const favs = Array.isArray(data.favs) ? data.favs : [];
+  const footprint = describeCurrentFavsFootprint();
+  const records = [];
+  const failures = [];
+  for (let i = 0; i < favs.length; i++) {
+    const fav = favs[i];
+    try {
+      const written = await writeFavBody(fav, 1);
+      records.push({ fav, written });
+    } catch (e) {
+      failures.push({ id: fav?.id, title: String(fav?.title || ""), error: e?.message || String(e) });
+      TitaniaLogger.error(`\u8BD5\u8FD0\u884C\uFF1A\u6536\u85CF ${fav?.id} \u5199\u5165\u5931\u8D25`, e);
+    }
+    if (onProgress) onProgress(i + 1, favs.length);
+  }
+  const index = records.map(({ fav, written }) => buildFavIndexEntry(fav, {
+    file: written.file,
+    rev: written.rev,
+    bytes: written.bytes
+  }));
+  let verifyResult = {};
+  let verifyError = null;
+  try {
+    verifyResult = await verifyFavFiles(index.map((entry) => entry.file));
+  } catch (e) {
+    verifyError = e?.message || String(e);
+    TitaniaLogger.error("\u8BD5\u8FD0\u884C\uFF1A\u6587\u4EF6\u6821\u9A8C\u8BF7\u6C42\u5931\u8D25", e);
+  }
+  const missing = Object.entries(verifyResult).filter(([, exists]) => !exists).map(([path]) => path);
+  const sample = pickReadbackSample(records);
+  const mismatched = [];
+  for (const record of sample) {
+    const entry = index.find((item) => String(item.id) === String(record.fav?.id));
+    try {
+      const body = await readFavBody(entry);
+      if (JSON.stringify(body) !== record.written.text) {
+        mismatched.push({ id: record.fav?.id, reason: "\u8BFB\u56DE\u7684\u5185\u5BB9\u4E0E\u5199\u51FA\u7684\u4E0D\u4E00\u81F4" });
+      }
+    } catch (e) {
+      mismatched.push({ id: record.fav?.id, reason: e?.message || String(e) });
+    }
+  }
+  const bytesList = records.map((r) => r.written.bytes);
+  const report = {
+    ok: failures.length === 0 && missing.length === 0 && mismatched.length === 0 && !verifyError,
+    durationMs: Date.now() - startedAt,
+    settings: footprint,
+    written: {
+      count: records.length,
+      bytesTotal: bytesList.reduce((sum, n) => sum + n, 0),
+      bytesMax: bytesList.length ? Math.max(...bytesList) : 0
+    },
+    indexBytes: utf8ByteLength(JSON.stringify(index)),
+    failures,
+    verify: { checked: Object.keys(verifyResult).length, missing, error: verifyError },
+    readback: { sampled: sample.length, mismatched },
+    // 迁移后 settings.json 里收藏一段的净变化：索引留下，正文搬走
+    projectedSavingBytes: footprint.bytes - utf8ByteLength(JSON.stringify(index))
+  };
+  TitaniaLogger.info("\u6536\u85CF\u642C\u5BB6\u8BD5\u8FD0\u884C\u5B8C\u6210", report);
+  return report;
+}
+function getFavsIndex() {
+  const store = getExtData()[FAVS_INDEX_KEY];
+  if (!store || typeof store !== "object" || !Array.isArray(store.entries)) return null;
+  if (Number(store.version) !== FAVS_INDEX_VERSION) {
+    TitaniaLogger.warn(`\u6536\u85CF\u7D22\u5F15\u7248\u672C\u4E0D\u53D7\u652F\u6301\uFF1A${store.version}\uFF0C\u6309\u672A\u642C\u5BB6\u5904\u7406`);
+    return null;
+  }
+  return store;
+}
+function isFavsMigrated() {
+  return getFavsIndex() !== null;
+}
+function writeFavsIndex(entries, migratedAt) {
+  const data = getExtData();
+  const previous = data[FAVS_INDEX_KEY];
+  data[FAVS_INDEX_KEY] = {
+    version: FAVS_INDEX_VERSION,
+    migratedAt: Number(migratedAt) || Number(previous?.migratedAt) || Date.now(),
+    entries
+  };
+  saveExtData();
+}
+function toUiEntry(entry) {
+  return {
+    id: entry.id,
+    type: entry.type === "chain" ? "chain" : "plain",
+    title: String(entry.title || ""),
+    charName: String(entry.charName || ""),
+    scriptName: String(entry.scriptName || ""),
+    scriptId: String(entry.scriptId || ""),
+    date: String(entry.date || ""),
+    avatar: String(entry.avatar || ""),
+    branchKey: String(entry.branchKey || ""),
+    chainSignature: String(entry.chainSignature || ""),
+    itemCount: Number(entry.itemCount) || 0,
+    // 预填这两个 memo 字段，列表与搜索就不必读正文
+    _snippetText: String(entry.snippetText || ""),
+    _instructionText: String(entry.instructionText || ""),
+    // 正文指针；html / items 由 ensureFavBody 按需补齐
+    _file: String(entry.file || ""),
+    _rev: Number(entry.rev) || 1,
+    _bytes: Number(entry.bytes) || 0,
+    _bodyLoaded: false
+  };
+}
+function listFavsForUi() {
+  const store = getFavsIndex();
+  if (!store) return null;
+  return store.entries.map(toUiEntry);
+}
+async function ensureFavBody(uiEntry) {
+  if (!uiEntry) return uiEntry;
+  if (uiEntry._bodyLoaded) return uiEntry;
+  if (!uiEntry._file) return uiEntry;
+  const body = await readFavBody({ id: uiEntry.id, file: uiEntry._file, rev: uiEntry._rev });
+  if (body.type === "chain") {
+    uiEntry.items = Array.isArray(body.items) ? body.items : [];
+    if (typeof body.html === "string") uiEntry.html = body.html;
+  } else {
+    uiEntry.html = String(body.html || "");
+  }
+  uiEntry._bodyLoaded = true;
+  return uiEntry;
+}
+async function upsertFav(fav) {
+  const store = getFavsIndex();
+  if (!store) throw new Error("\u5C1A\u672A\u642C\u5BB6\uFF0CupsertFav \u4E0D\u53EF\u7528");
+  const existingAt = store.entries.findIndex((entry2) => String(entry2.id) === String(fav?.id));
+  const nextRev = existingAt >= 0 ? (Number(store.entries[existingAt].rev) || 1) + 1 : 1;
+  const written = await writeFavBody(fav, nextRev);
+  const entry = buildFavIndexEntry(fav, { file: written.file, rev: written.rev, bytes: written.bytes });
+  const entries = [...store.entries];
+  if (existingAt >= 0) entries[existingAt] = entry;
+  else entries.unshift(entry);
+  writeFavsIndex(entries, store.migratedAt);
+  return entry;
+}
+function patchFavIndexEntry(id3, patch = {}) {
+  const store = getFavsIndex();
+  if (!store) return null;
+  const at = store.entries.findIndex((entry) => String(entry.id) === String(id3));
+  if (at < 0) return null;
+  const { file, rev, bytes, id: _ignoredId, ...safePatch } = patch;
+  const entries = [...store.entries];
+  entries[at] = { ...entries[at], ...safePatch };
+  writeFavsIndex(entries, store.migratedAt);
+  return entries[at];
+}
+async function removeFavsByIds(ids) {
+  const store = getFavsIndex();
+  if (!store) throw new Error("\u5C1A\u672A\u642C\u5BB6\uFF0CremoveFavsByIds \u4E0D\u53EF\u7528");
+  const targets = new Set((Array.isArray(ids) ? ids : []).map((id3) => String(id3)));
+  if (targets.size === 0) return { removed: 0, fileDeleteFailed: 0 };
+  const removedEntries = store.entries.filter((entry) => targets.has(String(entry.id)));
+  const keptEntries = store.entries.filter((entry) => !targets.has(String(entry.id)));
+  writeFavsIndex(keptEntries, store.migratedAt);
+  let fileDeleteFailed = 0;
+  for (const entry of removedEntries) {
+    const ok = await deleteFavFile(entry.file);
+    if (!ok) fileDeleteFailed++;
+  }
+  return { removed: removedEntries.length, fileDeleteFailed };
+}
+async function migrateFavsToFiles(options = {}) {
+  const startedAt = Date.now();
+  const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+  if (isFavsMigrated()) {
+    return { ok: false, alreadyMigrated: true, reason: "\u6536\u85CF\u5DF2\u7ECF\u642C\u8FC7\u5BB6\u4E86" };
+  }
+  const data = getExtData();
+  const favs = Array.isArray(data.favs) ? data.favs : [];
+  const footprint = describeCurrentFavsFootprint();
+  const records = [];
+  const failures = [];
+  for (let i = 0; i < favs.length; i++) {
+    const fav = favs[i];
+    try {
+      records.push({ fav, written: await writeFavBody(fav, 1) });
+    } catch (e) {
+      failures.push({ id: fav?.id, title: String(fav?.title || ""), error: e?.message || String(e) });
+      TitaniaLogger.error(`\u642C\u5BB6\uFF1A\u6536\u85CF ${fav?.id} \u5199\u5165\u5931\u8D25`, e);
+    }
+    if (onProgress) onProgress(i + 1, favs.length);
+  }
+  const entries = records.map(({ fav, written }) => buildFavIndexEntry(fav, {
+    file: written.file,
+    rev: written.rev,
+    bytes: written.bytes
+  }));
+  let missing = [];
+  let verifyError = null;
+  try {
+    const verifyResult = await verifyFavFiles(entries.map((entry) => entry.file));
+    missing = Object.entries(verifyResult).filter(([, exists]) => !exists).map(([path]) => path);
+  } catch (e) {
+    verifyError = e?.message || String(e);
+    TitaniaLogger.error("\u642C\u5BB6\uFF1A\u6587\u4EF6\u6821\u9A8C\u8BF7\u6C42\u5931\u8D25", e);
+  }
+  const blockers = [];
+  if (failures.length) blockers.push(`${failures.length} \u6761\u6B63\u6587\u5199\u5165\u5931\u8D25`);
+  if (missing.length) blockers.push(`${missing.length} \u4E2A\u6587\u4EF6\u6821\u9A8C\u65F6\u4E0D\u5B58\u5728`);
+  if (verifyError) blockers.push(`\u6821\u9A8C\u8BF7\u6C42\u51FA\u9519\uFF08${verifyError}\uFF09`);
+  if (blockers.length) {
+    TitaniaLogger.error("\u642C\u5BB6\u4E2D\u6B62\uFF0C\u672A\u5199\u5165\u7D22\u5F15", { failures, missing, verifyError });
+    return {
+      ok: false,
+      aborted: true,
+      reason: blockers.join("\uFF1B"),
+      settings: footprint,
+      failures,
+      missing,
+      verifyError,
+      durationMs: Date.now() - startedAt
+    };
+  }
+  writeFavsIndex(entries, Date.now());
+  const bytesList = records.map((r) => r.written.bytes);
+  const report = {
+    ok: true,
+    settings: footprint,
+    written: {
+      count: entries.length,
+      bytesTotal: bytesList.reduce((sum, n) => sum + n, 0),
+      bytesMax: bytesList.length ? Math.max(...bytesList) : 0
+    },
+    indexBytes: utf8ByteLength(JSON.stringify(entries)),
+    pendingRemovalBytes: footprint.bytes,
+    durationMs: Date.now() - startedAt
+  };
+  TitaniaLogger.info("\u6536\u85CF\u642C\u5BB6\u5B8C\u6210\uFF08\u65E7\u6570\u636E\u4ECD\u4FDD\u7559\uFF09", report);
+  return report;
+}
+var FAV_FILE_PREFIX, FAV_BODY_VERSION, FAVS_INDEX_KEY, BASE64_CHUNK, VOID_RESOURCE_TAG_RE, FAVS_INDEX_VERSION;
+var init_favsStore = __esm({
+  "src/core/favsStore.js"() {
+    init_helpers();
+    init_storage();
+    init_logger();
+    FAV_FILE_PREFIX = "titania_fav_";
+    FAV_BODY_VERSION = 1;
+    FAVS_INDEX_KEY = "favs_index";
+    BASE64_CHUNK = 32768;
+    VOID_RESOURCE_TAG_RE = /<(?:img|link|input|source|track|embed|base)\b(?:"[^"]*"|'[^']*'|[^>])*>/gi;
+    FAVS_INDEX_VERSION = 1;
+  }
+});
+
 // src/ui/favsWindow.js
 var favsWindow_exports = {};
 __export(favsWindow_exports, {
@@ -20963,6 +21398,42 @@ __export(favsWindow_exports, {
   saveFavorite: () => saveFavorite,
   unsaveFavorite: () => unsaveFavorite
 });
+async function mirrorFavsToStore(ids) {
+  if (!isFavsMigrated()) return;
+  const data = getExtData();
+  const wanted = new Set((Array.isArray(ids) ? ids : [ids]).map((id3) => String(id3)));
+  for (const id3 of wanted) {
+    const fav = (data.favs || []).find((x) => String(x.id) === id3);
+    try {
+      if (fav) await upsertFav(fav);
+      else await removeFavsByIds([id3]);
+    } catch (e) {
+      TitaniaLogger.error(`\u6536\u85CF ${id3} \u540C\u6B65\u5230\u6587\u4EF6\u5B58\u50A8\u5931\u8D25\uFF08data.favs \u4ECD\u662F\u6700\u65B0\u7684\uFF09`, e);
+      if (window.toastr) toastr.warning("\u6536\u85CF\u5DF2\u4FDD\u5B58\uFF0C\u4F46\u6587\u4EF6\u5B58\u50A8\u540C\u6B65\u5931\u8D25\uFF0C\u8BE6\u89C1\u63A7\u5236\u53F0", "Titania");
+    }
+  }
+}
+async function mirrorFavRemovalToStore(ids) {
+  if (!isFavsMigrated()) return;
+  try {
+    await removeFavsByIds(Array.isArray(ids) ? ids : [ids]);
+  } catch (e) {
+    TitaniaLogger.error("\u5220\u9664\u540C\u6B65\u5230\u6587\u4EF6\u5B58\u50A8\u5931\u8D25\uFF08data.favs \u5DF2\u5220\u9664\u6210\u529F\uFF09", e);
+    if (window.toastr) toastr.warning("\u6536\u85CF\u5DF2\u5220\u9664\uFF0C\u4F46\u6587\u4EF6\u5B58\u50A8\u540C\u6B65\u5931\u8D25\uFF0C\u8BE6\u89C1\u63A7\u5236\u53F0", "Titania");
+  }
+}
+function resolveFavsForWindow(data) {
+  const legacy = Array.isArray(data.favs) ? data.favs : [];
+  const indexed = listFavsForUi();
+  if (!indexed) return legacy;
+  if (indexed.length !== legacy.length) {
+    TitaniaLogger.warn(
+      `\u6536\u85CF\u7D22\u5F15\u4E0E data.favs \u6761\u6570\u4E0D\u4E00\u81F4\uFF08\u7D22\u5F15 ${indexed.length} / \u5B9E\u9645 ${legacy.length}\uFF09\uFF0C\u672C\u6B21\u9000\u56DE\u8BFB data.favs`
+    );
+    return legacy;
+  }
+  return indexed;
+}
 function getCurrentAvatarSrc() {
   let avatarSrc = null;
   const lastCharImg = $(".mes[is_user='false'] .message_avatar_img").last();
@@ -21284,6 +21755,7 @@ async function saveContinuationChainFavorite() {
     existingChain.chainSignature = chainSignature;
     existingChain.items = items;
     saveExtData();
+    await mirrorFavsToStore([existingChain.id]);
     GlobalState.lastFavId = existingChain.id;
     syncFavIdToCurrentHistory(existingChain.id);
     updateFavButtonUI();
@@ -21306,13 +21778,14 @@ async function saveContinuationChainFavorite() {
   };
   data.favs.unshift(entry);
   saveExtData();
+  await mirrorFavsToStore([entry.id]);
   GlobalState.lastFavId = entry.id;
   syncFavIdToCurrentHistory(entry.id);
   updateFavButtonUI();
   if (window.toastr) toastr.success(`\u5DF2\u6536\u85CF\u5F53\u524D\u5267\u573A\u5206\u7EC4\uFF08\u5171 ${items.length} \u6BB5\uFF09`);
   return true;
 }
-function unsaveFavorite() {
+async function unsaveFavorite() {
   if (!GlobalState.lastFavId) {
     if (window.toastr) toastr.warning("\u5F53\u524D\u5185\u5BB9\u672A\u6536\u85CF");
     return false;
@@ -21327,6 +21800,7 @@ function unsaveFavorite() {
   data.favs = data.favs.filter((f) => String(f?.id) !== targetFavId);
   if (data.favs.length < originalLength) {
     saveExtData();
+    await mirrorFavRemovalToStore([targetFavId]);
     GlobalState.lastFavId = null;
     syncFavIdToCurrentHistory(null);
     updateFavButtonUI();
@@ -21343,7 +21817,7 @@ function openFavsWindow() {
   setFavsWindowOpen(true);
   $("#t-main-view").hide();
   const data = getExtData();
-  const favs = data.favs || [];
+  const favs = resolveFavsForWindow(data);
   let currentFilteredList = [];
   let currentIndex = -1;
   let currentFavId = null;
@@ -21385,15 +21859,26 @@ function openFavsWindow() {
   let compactCardWidth = 260;
   const COMPACT_BUFFER_ROWS = 2;
   const charIndex = /* @__PURE__ */ new Set();
-  favs.forEach((f) => {
+  const applyFavMeta = (f) => {
     if (f.charName) {
       f._meta = {
         char: f.charName,
-        script: f.scriptName || f.title.split(" - ")[0] || f.title
+        script: f.scriptName || String(f.title || "").split(" - ")[0] || f.title
       };
     } else {
       f._meta = parseMeta(f.title || "");
     }
+    return f;
+  };
+  const resyncLocalFavs = () => {
+    const next = resolveFavsForWindow(getExtData()).map(applyFavMeta);
+    favs.splice(0, favs.length, ...next);
+    charIndex.clear();
+    favs.forEach((f) => charIndex.add(f._meta.char));
+    return favs;
+  };
+  favs.forEach((f) => {
+    applyFavMeta(f);
     charIndex.add(f._meta.char);
   });
   const charList = ["\u5168\u90E8\u89D2\u8272", ...[...charIndex].sort()];
@@ -21754,7 +22239,7 @@ function openFavsWindow() {
     const useLite = options.lite === true;
     const isChain = item?.type === "chain";
     const chainItems = Array.isArray(item?.items) ? item.items : [];
-    const chainCount = chainItems.length;
+    const chainCount = chainItems.length || (Number(item?.itemCount) || 0);
     const snippet = useLite ? "\u5185\u5BB9\u9884\u89C8\u52A0\u8F7D\u4E2D..." : getCachedSnippet(item);
     const charName = item._meta.char;
     let bgUrl = "";
@@ -22013,11 +22498,19 @@ function openFavsWindow() {
   };
   let currentViewingHtml = "";
   let currentViewingTitle = "";
-  const loadReaderItem = (index) => {
+  const loadReaderItem = async (index) => {
     if (index < 0 || index >= currentFilteredList.length) return;
     currentIndex = index;
     const item = currentFilteredList[index];
     currentFavId = item.id;
+    try {
+      await ensureFavBody(item);
+    } catch (e) {
+      TitaniaLogger.error(`\u6536\u85CF ${item?.id} \u7684\u6B63\u6587\u8BFB\u53D6\u5931\u8D25`, e);
+      if (window.toastr) toastr.error(`\u6B63\u6587\u8BFB\u53D6\u5931\u8D25\uFF1A${e?.message || String(e)}`, "Titania");
+      return;
+    }
+    if (currentIndex !== index) return;
     if (item?.type === "chain") {
       currentViewingHtml = getChainDisplayHtml(item);
       const chainItems = Array.isArray(item.items) ? item.items : [];
@@ -22215,7 +22708,7 @@ function openFavsWindow() {
       updateSelectionCount();
       return;
     }
-    loadReaderItem(itemIndex);
+    void loadReaderItem(itemIndex);
   });
   $("#t-btn-edit-mode").on("click", () => toggleEditMode(true));
   $("#t-btn-exit-edit").on("click", () => toggleEditMode(false));
@@ -22231,26 +22724,16 @@ function openFavsWindow() {
     $(".t-fav-card-checkbox i").removeClass("fa-solid fa-square-check").addClass("fa-regular fa-square");
     updateSelectionCount();
   });
-  $("#t-btn-delete-selected").on("click", () => {
+  $("#t-btn-delete-selected").on("click", async () => {
     const count = selectedIds.size;
     if (count === 0) return;
     if (confirm(`\u786E\u5B9A\u5220\u9664\u9009\u4E2D\u7684 ${count} \u6761\u6536\u85CF\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\u3002`)) {
+      const removedIds = [...selectedIds];
       const d = getExtData();
       d.favs = d.favs.filter((x) => !selectedIds.has(x.id));
       saveExtData();
-      favs.splice(0, favs.length, ...d.favs);
-      charIndex.clear();
-      favs.forEach((f) => {
-        if (f.charName) {
-          f._meta = {
-            char: f.charName,
-            script: f.scriptName || f.title.split(" - ")[0] || f.title
-          };
-        } else {
-          f._meta = parseMeta(f.title || "");
-        }
-        charIndex.add(f._meta.char);
-      });
+      await mirrorFavRemovalToStore(removedIds);
+      resyncLocalFavs();
       selectedIds.clear();
       updateSelectionCount();
       scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
@@ -22274,9 +22757,9 @@ function openFavsWindow() {
     const diffY = touchEndY - touchStartY;
     if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 2) {
       if (diffX > 0) {
-        if (currentIndex > 0) loadReaderItem(currentIndex - 1);
+        if (currentIndex > 0) void loadReaderItem(currentIndex - 1);
       } else {
-        if (currentIndex < currentFilteredList.length - 1) loadReaderItem(currentIndex + 1);
+        if (currentIndex < currentFilteredList.length - 1) void loadReaderItem(currentIndex + 1);
       }
     }
   });
@@ -22446,6 +22929,7 @@ function openFavsWindow() {
     if (targetFav) {
       targetFav.title = trimmedTitle;
       saveExtData();
+      patchFavIndexEntry(currentFavId, { title: trimmedTitle });
       const localFav = favs.find((x) => x.id === currentFavId);
       if (localFav) {
         localFav.title = trimmedTitle;
@@ -22457,19 +22941,21 @@ function openFavsWindow() {
       if (window.toastr) toastr.success("\u6807\u9898\u5DF2\u66F4\u65B0");
     }
   });
-  $("#t-read-del-one").on("click", () => {
+  $("#t-read-del-one").on("click", async () => {
     if (confirm("\u786E\u5B9A\u5220\u9664\u6B64\u6761\u6536\u85CF\uFF1F")) {
+      const removedId = currentFavId;
       const d = getExtData();
-      d.favs = d.favs.filter((x) => x.id !== currentFavId);
+      d.favs = d.favs.filter((x) => x.id !== removedId);
       saveExtData();
-      favs.splice(0, favs.length, ...d.favs);
+      await mirrorFavRemovalToStore([removedId]);
+      resyncLocalFavs();
       scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
       if (currentFilteredList.length === 0) {
         $("#t-fav-reader").removeClass("show");
       } else {
         let newIdx = currentIndex;
         if (newIdx >= currentFilteredList.length) newIdx = currentFilteredList.length - 1;
-        loadReaderItem(newIdx);
+        void loadReaderItem(newIdx);
       }
     }
   });
@@ -22507,7 +22993,7 @@ function openFavsWindow() {
     });
     syncToggleMetaButton(shouldOpen);
   });
-  $("#t-read-del-segment").on("click", () => {
+  $("#t-read-del-segment").on("click", async () => {
     if (!currentFavId) return;
     const currentItem = currentFilteredList[currentIndex];
     if (!currentItem || currentItem.type !== "chain") return;
@@ -22542,25 +23028,31 @@ ${segmentTip}`);
     if (targetFav.items.length === 0) {
       d.favs = d.favs.filter((x) => x.id !== currentFavId);
       saveExtData();
-      favs.splice(0, favs.length, ...d.favs);
+      await mirrorFavRemovalToStore([currentFavId]);
+      resyncLocalFavs();
       scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
       if (currentFilteredList.length === 0) {
         $("#t-fav-reader").removeClass("show");
       } else {
         const newIdx = Math.min(currentIndex, currentFilteredList.length - 1);
-        loadReaderItem(newIdx);
+        void loadReaderItem(newIdx);
       }
       if (window.toastr) toastr.success("\u5DF2\u5220\u9664\u8BE5\u6BB5\uFF0C\u5206\u7EC4\u5DF2\u6E05\u7A7A\u5E76\u79FB\u9664");
       return;
     }
     targetFav.html = buildChainMergedHtml(targetFav.items, { withStyles: true });
     saveExtData();
+    await mirrorFavsToStore([currentFavId]);
     const localFav = favs.find((x) => x.id === currentFavId);
     if (localFav) {
       localFav.items = targetFav.items;
       localFav.html = targetFav.html;
+      localFav.itemCount = targetFav.items.length;
+      localFav._bodyLoaded = true;
+      delete localFav._snippetText;
+      delete localFav._instructionText;
     }
-    loadReaderItem(currentIndex);
+    void loadReaderItem(currentIndex);
     scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
     if (window.toastr) toastr.success(`\u5DF2\u5220\u9664\u7B2C ${removeRound} \u6BB5`);
   });
@@ -22751,6 +23243,8 @@ var init_favsWindow = __esm({
     init_helpers();
     init_mainWindow();
     init_api();
+    init_favsStore();
+    init_logger();
     CHAIN_SEGMENT_STYLE_ID = "t-chain-segment-style";
     CHAIN_SEGMENT_STYLES = `
 <style data-t-style="${CHAIN_SEGMENT_STYLE_ID}">
@@ -44706,249 +45200,9 @@ init_state();
 init_scriptData();
 init_api();
 init_continuationStore();
+init_favsStore();
 import { extension_settings as extension_settings2 } from "../../../extensions.js";
 import { saveSettingsDebounced as saveSettingsDebounced2, eventSource as eventSource5, event_types as event_types5 } from "../../../../script.js";
-
-// src/core/favsStore.js
-init_helpers();
-init_storage();
-init_logger();
-import { getRequestHeaders } from "../../../../script.js";
-var FAV_FILE_PREFIX = "titania_fav_";
-var FAV_BODY_VERSION = 1;
-var BASE64_CHUNK = 32768;
-function utf8ToBase64(text) {
-  const bytes = new TextEncoder().encode(String(text ?? ""));
-  let binary = "";
-  for (let offset = 0; offset < bytes.length; offset += BASE64_CHUNK) {
-    binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + BASE64_CHUNK));
-  }
-  return btoa(binary);
-}
-function utf8ByteLength(text) {
-  return new TextEncoder().encode(String(text ?? "")).length;
-}
-function favFileName(id3) {
-  const safeId = String(id3 ?? "").replace(/[^a-zA-Z0-9_-]/g, "");
-  if (!safeId) throw new Error(`\u6536\u85CF ID \u975E\u6CD5\uFF0C\u65E0\u6CD5\u751F\u6210\u6587\u4EF6\u540D\uFF1A${JSON.stringify(id3)}`);
-  return `${FAV_FILE_PREFIX}${safeId}.json`;
-}
-async function uploadTextFile(fileName, text) {
-  const response = await fetch("/api/files/upload", {
-    method: "POST",
-    headers: getRequestHeaders(),
-    body: JSON.stringify({ name: fileName, data: utf8ToBase64(text) })
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(`\u4E0A\u4F20 ${fileName} \u5931\u8D25\uFF08${response.status}\uFF09${detail ? `\uFF1A${detail}` : ""}`);
-  }
-  const payload = await response.json();
-  const filePath = String(payload?.path || "").trim();
-  if (!filePath) throw new Error(`\u4E0A\u4F20 ${fileName} \u540E\u670D\u52A1\u7AEF\u672A\u8FD4\u56DE\u8DEF\u5F84`);
-  return filePath;
-}
-async function fetchTextFile(filePath, rev = 0) {
-  const url = rev > 0 ? `${filePath}?rev=${encodeURIComponent(rev)}` : filePath;
-  const response = await fetch(url, {
-    method: "GET",
-    cache: "no-cache",
-    headers: getRequestHeaders()
-  });
-  if (!response.ok) {
-    throw new Error(`\u8BFB\u53D6 ${filePath} \u5931\u8D25\uFF08${response.status}\uFF09`);
-  }
-  return response.text();
-}
-async function verifyFavFiles(filePaths) {
-  const urls = (Array.isArray(filePaths) ? filePaths : []).map((p) => String(p || "")).filter(Boolean);
-  if (urls.length === 0) return {};
-  const response = await fetch("/api/files/verify", {
-    method: "POST",
-    headers: getRequestHeaders(),
-    body: JSON.stringify({ urls })
-  });
-  if (!response.ok) {
-    throw new Error(`\u6821\u9A8C\u6536\u85CF\u6587\u4EF6\u5931\u8D25\uFF08${response.status}\uFF09`);
-  }
-  return await response.json();
-}
-function buildFavBody(fav) {
-  const type = fav?.type === "chain" ? "chain" : "plain";
-  const body = { v: FAV_BODY_VERSION, id: fav?.id, type };
-  if (type === "chain") {
-    const items = Array.isArray(fav?.items) ? fav.items : [];
-    const rebuildable = items.length > 0 && items.every((seg) => String(seg?.html || "").trim());
-    body.items = items;
-    if (!rebuildable) body.html = String(fav?.html || "");
-  } else {
-    body.html = String(fav?.html || "");
-  }
-  return body;
-}
-function resolveFavMeta(fav) {
-  if (fav?.charName) {
-    const title = String(fav?.title || "");
-    return {
-      char: String(fav.charName),
-      script: String(fav.scriptName || title.split(" - ")[0] || title)
-    };
-  }
-  return parseMeta(String(fav?.title || ""));
-}
-var VOID_RESOURCE_TAG_RE = /<(?:img|link|input|source|track|embed|base)\b(?:"[^"]*"|'[^']*'|[^>])*>/gi;
-function stripVoidResourceTags(html) {
-  return String(html || "").replace(VOID_RESOURCE_TAG_RE, "");
-}
-function computeSnippetText(fav) {
-  const isChain = fav?.type === "chain";
-  const items = Array.isArray(fav?.items) ? fav.items : [];
-  const chainSource = isChain ? items.map((seg) => String(seg?.html || "").trim()).filter(Boolean).join("\n") : "";
-  const source = isChain ? chainSource || String(fav?.html || "") : String(fav?.html || "");
-  return getSnippet(stripVoidResourceTags(source));
-}
-function computeInstructionText(fav) {
-  if (fav?.type !== "chain" || !Array.isArray(fav?.items)) return "";
-  return fav.items.map((seg) => String(seg?.instruction || "").trim()).filter(Boolean).join(" ");
-}
-function buildFavIndexEntry(fav, pointer = {}) {
-  const meta = resolveFavMeta(fav);
-  return {
-    id: fav?.id,
-    type: fav?.type === "chain" ? "chain" : "plain",
-    title: String(fav?.title || ""),
-    charName: meta.char,
-    scriptName: meta.script,
-    scriptId: String(fav?.scriptId || ""),
-    date: String(fav?.date || ""),
-    avatar: String(fav?.avatar || ""),
-    branchKey: String(fav?.branchKey || ""),
-    chainSignature: String(fav?.chainSignature || ""),
-    itemCount: Array.isArray(fav?.items) ? fav.items.length : 0,
-    snippetText: computeSnippetText(fav),
-    instructionText: computeInstructionText(fav),
-    file: String(pointer.file || ""),
-    rev: Number(pointer.rev) || 1,
-    bytes: Number(pointer.bytes) || 0
-  };
-}
-async function writeFavBody(fav, rev = 1) {
-  const body = buildFavBody(fav);
-  const text = JSON.stringify(body);
-  const file = await uploadTextFile(favFileName(fav?.id), text);
-  return { file, bytes: utf8ByteLength(text), rev: Number(rev) || 1, text };
-}
-async function readFavBody(indexEntry) {
-  const filePath = String(indexEntry?.file || "").trim();
-  if (!filePath) throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u7D22\u5F15\u91CC\u6CA1\u6709\u6587\u4EF6\u8DEF\u5F84`);
-  const raw = await fetchTextFile(filePath, Number(indexEntry?.rev) || 0);
-  let body;
-  try {
-    body = JSON.parse(raw);
-  } catch (e) {
-    throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u6B63\u6587\u6587\u4EF6\u4E0D\u662F\u5408\u6CD5 JSON\uFF1A${filePath}`);
-  }
-  if (Number(body?.v) !== FAV_BODY_VERSION) {
-    throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u6B63\u6587\u7248\u672C\u4E0D\u53D7\u652F\u6301\uFF1A${body?.v}`);
-  }
-  if (String(body?.id) !== String(indexEntry?.id)) {
-    throw new Error(`\u6536\u85CF ${indexEntry?.id} \u7684\u6B63\u6587\u6587\u4EF6 id \u4E0D\u5339\u914D\uFF08\u6587\u4EF6\u91CC\u662F ${body?.id}\uFF09`);
-  }
-  return body;
-}
-function describeCurrentFavsFootprint() {
-  const data = getExtData();
-  const favs = Array.isArray(data.favs) ? data.favs : [];
-  const bytes = utf8ByteLength(JSON.stringify(favs));
-  const chainCount = favs.filter((f) => f?.type === "chain").length;
-  return {
-    count: favs.length,
-    chainCount,
-    plainCount: favs.length - chainCount,
-    bytes
-  };
-}
-function pickReadbackSample(records) {
-  if (records.length === 0) return [];
-  const byBytes = [...records].sort((a, b) => a.written.bytes - b.written.bytes);
-  const chains = records.filter((r) => r.fav?.type === "chain").slice(0, 3);
-  const picked = /* @__PURE__ */ new Map();
-  const take = (record) => {
-    if (record) picked.set(String(record.fav?.id), record);
-  };
-  take(byBytes[byBytes.length - 1]);
-  take(byBytes[0]);
-  take(records[0]);
-  take(records[records.length - 1]);
-  chains.forEach(take);
-  return [...picked.values()];
-}
-async function dryRunFavsMigration(options = {}) {
-  const startedAt = Date.now();
-  const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
-  const data = getExtData();
-  const favs = Array.isArray(data.favs) ? data.favs : [];
-  const footprint = describeCurrentFavsFootprint();
-  const records = [];
-  const failures = [];
-  for (let i = 0; i < favs.length; i++) {
-    const fav = favs[i];
-    try {
-      const written = await writeFavBody(fav, 1);
-      records.push({ fav, written });
-    } catch (e) {
-      failures.push({ id: fav?.id, title: String(fav?.title || ""), error: e?.message || String(e) });
-      TitaniaLogger.error(`\u8BD5\u8FD0\u884C\uFF1A\u6536\u85CF ${fav?.id} \u5199\u5165\u5931\u8D25`, e);
-    }
-    if (onProgress) onProgress(i + 1, favs.length);
-  }
-  const index = records.map(({ fav, written }) => buildFavIndexEntry(fav, {
-    file: written.file,
-    rev: written.rev,
-    bytes: written.bytes
-  }));
-  let verifyResult = {};
-  let verifyError = null;
-  try {
-    verifyResult = await verifyFavFiles(index.map((entry) => entry.file));
-  } catch (e) {
-    verifyError = e?.message || String(e);
-    TitaniaLogger.error("\u8BD5\u8FD0\u884C\uFF1A\u6587\u4EF6\u6821\u9A8C\u8BF7\u6C42\u5931\u8D25", e);
-  }
-  const missing = Object.entries(verifyResult).filter(([, exists]) => !exists).map(([path]) => path);
-  const sample = pickReadbackSample(records);
-  const mismatched = [];
-  for (const record of sample) {
-    const entry = index.find((item) => String(item.id) === String(record.fav?.id));
-    try {
-      const body = await readFavBody(entry);
-      if (JSON.stringify(body) !== record.written.text) {
-        mismatched.push({ id: record.fav?.id, reason: "\u8BFB\u56DE\u7684\u5185\u5BB9\u4E0E\u5199\u51FA\u7684\u4E0D\u4E00\u81F4" });
-      }
-    } catch (e) {
-      mismatched.push({ id: record.fav?.id, reason: e?.message || String(e) });
-    }
-  }
-  const bytesList = records.map((r) => r.written.bytes);
-  const report = {
-    ok: failures.length === 0 && missing.length === 0 && mismatched.length === 0 && !verifyError,
-    durationMs: Date.now() - startedAt,
-    settings: footprint,
-    written: {
-      count: records.length,
-      bytesTotal: bytesList.reduce((sum, n) => sum + n, 0),
-      bytesMax: bytesList.length ? Math.max(...bytesList) : 0
-    },
-    indexBytes: utf8ByteLength(JSON.stringify(index)),
-    failures,
-    verify: { checked: Object.keys(verifyResult).length, missing, error: verifyError },
-    readback: { sampled: sample.length, mismatched },
-    // 迁移后 settings.json 里收藏一段的净变化：索引留下，正文搬走
-    projectedSavingBytes: footprint.bytes - utf8ByteLength(JSON.stringify(index))
-  };
-  TitaniaLogger.info("\u6536\u85CF\u642C\u5BB6\u8BD5\u8FD0\u884C\u5B8C\u6210", report);
-  return report;
-}
 
 // src/core/extensionUpdate.js
 init_defaults();
@@ -45814,6 +46068,9 @@ function bindDrawerBackupControls() {
       }
       const currentData = getExtData();
       Object.assign(currentData, extDataPayload);
+      if (!Object.prototype.hasOwnProperty.call(extDataPayload, FAVS_INDEX_KEY)) {
+        delete currentData[FAVS_INDEX_KEY];
+      }
       const existingVectorCharacters = await getAllIndexedCharacters();
       for (const charId of existingVectorCharacters) {
         await clearCharacterVectors(charId);
@@ -45842,6 +46099,7 @@ function bindDrawerBackupControls() {
     }
   });
   bindFavsMigrationDryRun();
+  bindFavsMigrationRun();
 }
 function formatBytes(bytes) {
   const n = Number(bytes) || 0;
@@ -45849,18 +46107,21 @@ function formatBytes(bytes) {
   if (Math.abs(n) >= 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${n} B`;
 }
+function showFavsMigrationReport(html, tone) {
+  const reportId = "titania-favs-migrate-report";
+  let $report = $(`#${reportId}`);
+  if ($report.length === 0) {
+    const $card = $("#titania-favs-migrate-dryrun").closest(".titania-panel-card");
+    if ($card.length === 0) return;
+    $report = $(`<div class="titania-backup-desc" id="${reportId}"></div>`);
+    $card.append($report);
+  }
+  $report.html(`<span style="color:${tone};">${html}</span>`);
+}
 function bindFavsMigrationDryRun() {
   const $btn = $("#titania-favs-migrate-dryrun");
   if ($btn.length === 0) return;
-  const reportId = "titania-favs-migrate-report";
-  const showReport = (html, tone) => {
-    let $report = $(`#${reportId}`);
-    if ($report.length === 0) {
-      $report = $(`<div class="titania-backup-desc" id="${reportId}"></div>`);
-      $btn.closest(".titania-panel-card").append($report);
-    }
-    $report.html(`<span style="color:${tone};">${html}</span>`);
-  };
+  const showReport = showFavsMigrationReport;
   $btn.off("click").on("click", async function() {
     const $self = $(this);
     const oldHtml = $self.html();
@@ -45899,6 +46160,86 @@ function bindFavsMigrationDryRun() {
       if (window.toastr) toastr.error(e?.message || "\u8BD5\u8FD0\u884C\u5931\u8D25", "Titania Echo");
     } finally {
       $self.prop("disabled", false).html(oldHtml);
+    }
+  });
+}
+function bindFavsMigrationRun() {
+  const $btn = $("#titania-favs-migrate-run");
+  if ($btn.length === 0) return;
+  const refreshButtonState = () => {
+    if (isFavsMigrated()) {
+      $btn.prop("disabled", true).html('<i class="fa-solid fa-check"></i> \u5DF2\u642C\u5BB6\uFF08\u539F\u6570\u636E\u4ECD\u4FDD\u7559\uFF09');
+    }
+  };
+  refreshButtonState();
+  $btn.off("click").on("click", async function() {
+    const $self = $(this);
+    const oldHtml = $self.html();
+    if (isFavsMigrated()) {
+      showFavsMigrationReport("\u6536\u85CF\u5DF2\u7ECF\u642C\u8FC7\u5BB6\u4E86\uFF0C\u65E0\u9700\u91CD\u590D\u64CD\u4F5C\u3002", "#feca57");
+      return;
+    }
+    const footprint = describeCurrentFavsFootprint();
+    if (footprint.count === 0) {
+      showFavsMigrationReport("\u5F53\u524D\u6CA1\u6709\u6536\u85CF\uFF0C\u65E0\u9700\u642C\u5BB6\u3002", "#feca57");
+      return;
+    }
+    const confirmed = confirm(
+      `\u5373\u5C06\u628A ${footprint.count} \u6761\u6536\u85CF\u7684\u6B63\u6587\u6539\u7531\u72EC\u7ACB\u6587\u4EF6\u627F\u8F7D\u3002
+
+\xB7 \u4F1A\u5148\u4E0B\u8F7D\u4E00\u4EFD\u5B8C\u6574\u5907\u4EFD\uFF0C\u8BF7\u52A1\u5FC5\u4FDD\u5B58\u597D
+\xB7 settings.json \u91CC\u7684\u539F\u6570\u636E\u3010\u4ECD\u7136\u4FDD\u7559\u3011\uFF0C\u968F\u65F6\u53EF\u9000\u56DE\u4E0A\u4E2A\u63D2\u4EF6\u7248\u672C
+\xB7 \u6536\u85CF\u5939\u4F1A\u6539\u6210\u300C\u5217\u8868\u8BFB\u7D22\u5F15\u3001\u70B9\u5F00\u624D\u53D6\u6B63\u6587\u300D
+
+\u786E\u5B9A\u7EE7\u7EED\u5417\uFF1F`
+    );
+    if (!confirmed) return;
+    $self.prop("disabled", true);
+    try {
+      $self.html('<i class="fa-solid fa-spinner fa-spin"></i> \u6B63\u5728\u5907\u4EFD...');
+      try {
+        const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+        const filename = `titania_backup_before_favs_migration_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
+        downloadBackupPayload(snapshot, filename);
+      } catch (backupErr) {
+        console.error("Titania: \u642C\u5BB6\u524D\u5907\u4EFD\u5931\u8D25", backupErr);
+        showFavsMigrationReport(
+          `\u274C \u642C\u5BB6\u524D\u7684\u5907\u4EFD\u5931\u8D25\uFF0C\u5DF2\u4E2D\u6B62\uFF0C\u672A\u6539\u52A8\u4EFB\u4F55\u6570\u636E\uFF1A${backupErr?.message || String(backupErr)}`,
+          "#ff7675"
+        );
+        if (window.toastr) toastr.error("\u5907\u4EFD\u5931\u8D25\uFF0C\u642C\u5BB6\u5DF2\u4E2D\u6B62", "Titania Echo");
+        return;
+      }
+      const report = await migrateFavsToFiles({
+        onProgress: (done, total) => {
+          $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> \u642C\u5BB6\u4E2D ${done}/${total}`);
+        }
+      });
+      if (!report.ok) {
+        const reason = report.reason || "\u672A\u77E5\u539F\u56E0";
+        showFavsMigrationReport(
+          `\u274C \u642C\u5BB6\u5DF2\u4E2D\u6B62\uFF0C\u7D22\u5F15\u672A\u5199\u5165\uFF0Csettings.json \u672A\u6539\u52A8\uFF1A${reason}<br>\xB7 \u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\uFF0C\u53EF\u653E\u5FC3\u91CD\u8BD5<br>\xB7 \u8BE6\u60C5\u89C1\u63A7\u5236\u53F0`,
+          "#ff7675"
+        );
+        console.error("[Titania] \u6536\u85CF\u642C\u5BB6\u4E2D\u6B62", report);
+        if (window.toastr) toastr.error("\u642C\u5BB6\u5DF2\u4E2D\u6B62\uFF0C\u672A\u6539\u52A8\u539F\u6570\u636E", "Titania Echo");
+        return;
+      }
+      showFavsMigrationReport(
+        `\u2705 \u642C\u5BB6\u5B8C\u6210\uFF0Csettings.json \u91CC\u7684\u539F\u6570\u636E\u4ECD\u4FDD\u7559\uFF08\u53EF\u968F\u65F6\u9000\u56DE\uFF09<br>\xB7 ${report.written.count} \u6761\u6B63\u6587\u5DF2\u843D\u6587\u4EF6\uFF0C\u5171 ${formatBytes(report.written.bytesTotal)}\uFF0C\u6700\u5927\u5355\u4E2A ${formatBytes(report.written.bytesMax)}<br>\xB7 \u7D22\u5F15 ${formatBytes(report.indexBytes)}\uFF0C\u5168\u90E8\u6587\u4EF6\u6821\u9A8C\u901A\u8FC7<br>\xB7 \u8017\u65F6 ${(report.durationMs / 1e3).toFixed(1)} \u79D2<br>\xB7 <b>\u4E0B\u4E00\u6B65\u8BF7\u6253\u5F00\u6536\u85CF\u5939\u9010\u9879\u68C0\u67E5</b>\uFF1A\u5217\u8868\u3001\u641C\u7D22\u3001\u7B5B\u9009\u3001\u70B9\u5F00\u770B\u3001\u5BFC\u51FA\u3001\u5220\u9664\u3002\u786E\u8BA4\u65E0\u8BEF\u540E\u518D\u5220\u6389 settings.json \u91CC\u90A3 ${formatBytes(report.pendingRemovalBytes)} \u65E7\u6570\u636E\uFF0C<b>\u5361\u987F\u5230\u90A3\u4E00\u6B65\u624D\u4F1A\u771F\u6B63\u6539\u5584\u3002</b>`,
+        "#55efc4"
+      );
+      console.log("[Titania] \u6536\u85CF\u642C\u5BB6\u62A5\u544A", report);
+      refreshButtonState();
+      if (window.toastr) {
+        toastr.success(`${report.written.count} \u6761\u6536\u85CF\u5DF2\u642C\u5BB6\uFF0C\u539F\u6570\u636E\u4ECD\u4FDD\u7559`, "Titania Echo");
+      }
+    } catch (e) {
+      console.error("Titania: \u6536\u85CF\u642C\u5BB6\u5931\u8D25", e);
+      showFavsMigrationReport(`\u274C \u642C\u5BB6\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
+      if (window.toastr) toastr.error(e?.message || "\u642C\u5BB6\u5931\u8D25", "Titania Echo");
+    } finally {
+      if (!isFavsMigrated()) $self.prop("disabled", false).html(oldHtml);
     }
   });
 }

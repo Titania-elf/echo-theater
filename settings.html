@@ -136,14 +136,16 @@
             </section>
 
             <section class="titania-panel-card">
-                <div class="titania-card-title"><i class="fa-solid fa-flask"></i> 收藏存储迁移（试运行）</div>
+                <div class="titania-card-title"><i class="fa-solid fa-flask"></i> 收藏存储迁移</div>
                 <div class="titania-backup-desc">
                     收藏正文目前全挤在 SillyTavern 的 settings.json 里，导致改任何一个设置都要连带重写全部收藏。
-                    试运行会把正文按「一条收藏一个文件」写进 user/files/ 并逐个校验落盘、抽样读回比对，
-                    <br><span style="color:#55efc4;">✅ 不改动你现有的任何数据</span>，插件仍照旧从 settings.json 读取，随时可退回。
+                    <br><b>试运行</b>只写文件并校验，什么都不改。<b>正式搬家</b>会把正文改由独立文件承载，
+                    但<b>仍然保留</b> settings.json 里的原数据 —— 所以随时可以退回上个插件版本。
+                    <br><span style="color:#feca57;">⚠️ 正式搬家前会强制下载一份完整备份，请保存好该文件。</span>
                 </div>
                 <div class="titania-backup-actions">
                     <button id="titania-favs-migrate-dryrun" class="titania-mini-btn"><i class="fa-solid fa-flask"></i> 试运行搬家（不动原数据）</button>
+                    <button id="titania-favs-migrate-run" class="titania-mini-btn is-import"><i class="fa-solid fa-box-archive"></i> 正式搬家（保留原数据）</button>
                 </div>
             </section>
         </div>

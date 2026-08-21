@@ -22,7 +22,7 @@
 
 import { getRequestHeaders } from "../../../../script.js";
 import { getSnippet, parseMeta } from "../utils/helpers.js";
-import { getExtData } from "../utils/storage.js";
+import { getExtData, saveExtData } from "../utils/storage.js";
 import { TitaniaLogger } from "./logger.js";
 
 /** 正文文件名前缀。与 8 月遗留的同名文件保持一致，便于对照校验 */
@@ -470,5 +470,296 @@ export async function dryRunFavsMigration(options = {}) {
     };
 
     TitaniaLogger.info("收藏搬家试运行完成", report);
+    return report;
+}
+
+/* ------------------------------------------------------------------ *
+ * 索引：住在 settings.json 里，是列表 / 搜索 / 筛选的唯一数据源
+ *
+ * 结构刻意用对象而非裸数组：键存在与否要能区分「还没搬家」和
+ * 「搬完了但一条收藏都没有」。裸数组做不到这个区分。
+ * ------------------------------------------------------------------ */
+
+const FAVS_INDEX_VERSION = 1;
+
+/** @returns {{version:number, migratedAt:number, entries:object[]}|null} 未搬家返回 null */
+export function getFavsIndex() {
+    const store = getExtData()[FAVS_INDEX_KEY];
+    if (!store || typeof store !== "object" || !Array.isArray(store.entries)) return null;
+    if (Number(store.version) !== FAVS_INDEX_VERSION) {
+        TitaniaLogger.warn(`收藏索引版本不受支持：${store.version}，按未搬家处理`);
+        return null;
+    }
+    return store;
+}
+
+/** 是否已经搬过家（收藏正文是否已在独立文件里） */
+export function isFavsMigrated() {
+    return getFavsIndex() !== null;
+}
+
+function writeFavsIndex(entries, migratedAt) {
+    const data = getExtData();
+    const previous = data[FAVS_INDEX_KEY];
+    data[FAVS_INDEX_KEY] = {
+        version: FAVS_INDEX_VERSION,
+        migratedAt: Number(migratedAt) || Number(previous?.migratedAt) || Date.now(),
+        entries
+    };
+    saveExtData();
+}
+
+/* ------------------------------------------------------------------ *
+ * 供收藏夹使用的条目
+ *
+ * 关键设计：返回的对象**形状与旧的 fav 对象一致**，只是 html / items 先不填。
+ * 这样收藏夹里所有同步读取 item.html 的既有代码在「补齐正文」之后
+ * 一行都不用改，需要改的只有那几个消费正文的入口 —— 在读之前先 await 一下。
+ *
+ * _snippetText / _instructionText 直接用索引里的值预填：
+ * favsWindow 的 getCachedSnippet / getChainInstructionText 一见到这两个字段
+ * 是字符串就直接返回，于是列表和搜索全程不会碰正文。
+ * ------------------------------------------------------------------ */
+
+/**
+ * 把索引条目摊成收藏夹能直接用的对象。
+ * @param {object} entry
+ * @returns {object}
+ */
+function toUiEntry(entry) {
+    return {
+        id: entry.id,
+        type: entry.type === "chain" ? "chain" : "plain",
+        title: String(entry.title || ""),
+        charName: String(entry.charName || ""),
+        scriptName: String(entry.scriptName || ""),
+        scriptId: String(entry.scriptId || ""),
+        date: String(entry.date || ""),
+        avatar: String(entry.avatar || ""),
+        branchKey: String(entry.branchKey || ""),
+        chainSignature: String(entry.chainSignature || ""),
+        itemCount: Number(entry.itemCount) || 0,
+        // 预填这两个 memo 字段，列表与搜索就不必读正文
+        _snippetText: String(entry.snippetText || ""),
+        _instructionText: String(entry.instructionText || ""),
+        // 正文指针；html / items 由 ensureFavBody 按需补齐
+        _file: String(entry.file || ""),
+        _rev: Number(entry.rev) || 1,
+        _bytes: Number(entry.bytes) || 0,
+        _bodyLoaded: false
+    };
+}
+
+/**
+ * 列出收藏夹要展示的条目。
+ * @returns {object[]|null} 未搬家时返回 null，调用方应退回读 data.favs
+ */
+export function listFavsForUi() {
+    const store = getFavsIndex();
+    if (!store) return null;
+    return store.entries.map(toUiEntry);
+}
+
+/**
+ * 按需把正文补进条目。已补过或本来就带正文的直接返回。
+ *
+ * 读失败要抛错，不能静默当空内容 —— 否则用户会看到一个空白的收藏
+ * 却以为内容真的丢了，进而去删掉它。
+ *
+ * @param {object} uiEntry
+ * @returns {Promise<object>} 同一个对象（已就地补齐）
+ */
+export async function ensureFavBody(uiEntry) {
+    if (!uiEntry) return uiEntry;
+    if (uiEntry._bodyLoaded) return uiEntry;
+    // 没有文件指针说明这是搬家前的旧对象，正文本来就在它自己身上（哪怕是空的）。
+    // 这里不能抛错：历史上有过 html/items 都缺失的坏数据，以前是渲染成空白，
+    // 突然改成报错会让本来还能打开的收藏打不开。
+    if (!uiEntry._file) return uiEntry;
+
+    const body = await readFavBody({ id: uiEntry.id, file: uiEntry._file, rev: uiEntry._rev });
+    if (body.type === "chain") {
+        uiEntry.items = Array.isArray(body.items) ? body.items : [];
+        // 正文文件里通常不存合并后的 html（getChainDisplayHtml 会按 items 重建），
+        // 只有 items 不完整的历史数据才带 html 兜底
+        if (typeof body.html === "string") uiEntry.html = body.html;
+    } else {
+        uiEntry.html = String(body.html || "");
+    }
+    uiEntry._bodyLoaded = true;
+    return uiEntry;
+}
+
+/**
+ * 写入 / 更新一条收藏：正文落文件，元数据进索引。
+ * rev 每次自增，读取时用它破缓存。
+ *
+ * @param {object} fav 完整的收藏对象（含 html / items）
+ * @returns {Promise<object>} 新的索引条目
+ */
+export async function upsertFav(fav) {
+    const store = getFavsIndex();
+    if (!store) throw new Error("尚未搬家，upsertFav 不可用");
+
+    const existingAt = store.entries.findIndex(entry => String(entry.id) === String(fav?.id));
+    const nextRev = existingAt >= 0 ? (Number(store.entries[existingAt].rev) || 1) + 1 : 1;
+
+    const written = await writeFavBody(fav, nextRev);
+    const entry = buildFavIndexEntry(fav, { file: written.file, rev: written.rev, bytes: written.bytes });
+
+    const entries = [...store.entries];
+    if (existingAt >= 0) entries[existingAt] = entry;
+    else entries.unshift(entry);   // 与 data.favs.unshift 一致：最新的在最前
+
+    writeFavsIndex(entries, store.migratedAt);
+    return entry;
+}
+
+/**
+ * 只改索引里的元数据字段，不动正文文件（例如重命名标题）。
+ * @param {string|number} id
+ * @param {object} patch
+ * @returns {object|null} 更新后的索引条目
+ */
+export function patchFavIndexEntry(id, patch = {}) {
+    const store = getFavsIndex();
+    if (!store) return null;
+
+    const at = store.entries.findIndex(entry => String(entry.id) === String(id));
+    if (at < 0) return null;
+
+    // file / rev / bytes 是正文指针，只能由 upsertFav 改
+    const { file, rev, bytes, id: _ignoredId, ...safePatch } = patch;
+    const entries = [...store.entries];
+    entries[at] = { ...entries[at], ...safePatch };
+    writeFavsIndex(entries, store.migratedAt);
+    return entries[at];
+}
+
+/**
+ * 删除若干条收藏：先从索引摘掉再删文件。
+ *
+ * 顺序是刻意的 —— 索引先落盘，即使随后删文件失败，最坏结果是磁盘上留几个
+ * 没人引用的孤儿文件（占点空间，不影响使用）。反过来先删文件的话，
+ * 一旦索引没保存成功，索引就会指向已经不存在的文件，收藏夹直接报错。
+ *
+ * @param {Array<string|number>} ids
+ * @returns {Promise<{removed:number, fileDeleteFailed:number}>}
+ */
+export async function removeFavsByIds(ids) {
+    const store = getFavsIndex();
+    if (!store) throw new Error("尚未搬家，removeFavsByIds 不可用");
+
+    const targets = new Set((Array.isArray(ids) ? ids : []).map(id => String(id)));
+    if (targets.size === 0) return { removed: 0, fileDeleteFailed: 0 };
+
+    const removedEntries = store.entries.filter(entry => targets.has(String(entry.id)));
+    const keptEntries = store.entries.filter(entry => !targets.has(String(entry.id)));
+
+    writeFavsIndex(keptEntries, store.migratedAt);
+
+    let fileDeleteFailed = 0;
+    for (const entry of removedEntries) {
+        const ok = await deleteFavFile(entry.file);
+        if (!ok) fileDeleteFailed++;
+    }
+
+    return { removed: removedEntries.length, fileDeleteFailed };
+}
+
+/* ------------------------------------------------------------------ *
+ * 正式搬家
+ * ------------------------------------------------------------------ */
+
+/**
+ * 正式搬家：写正文文件 → 逐个校验落盘 → 写索引。
+ *
+ * **刻意不删 data.favs。** 这一步做完，磁盘和 settings.json 里各有一份完整数据，
+ * 退回上个插件版本就能原样回到搬家前的状态。删除留到下一个提交，
+ * 由用户确认收藏夹一切正常之后再做。
+ *
+ * 任何一条正文写失败、或校验发现缺文件，就整体放弃写索引 —— 宁可什么都没变，
+ * 也不要留下一个指向缺失文件的半截索引。
+ *
+ * @param {{onProgress?: (done:number, total:number) => void}} [options]
+ * @returns {Promise<object>} 搬家报告
+ */
+export async function migrateFavsToFiles(options = {}) {
+    const startedAt = Date.now();
+    const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+
+    if (isFavsMigrated()) {
+        return { ok: false, alreadyMigrated: true, reason: "收藏已经搬过家了" };
+    }
+
+    const data = getExtData();
+    const favs = Array.isArray(data.favs) ? data.favs : [];
+    const footprint = describeCurrentFavsFootprint();
+
+    const records = [];
+    const failures = [];
+
+    for (let i = 0; i < favs.length; i++) {
+        const fav = favs[i];
+        try {
+            records.push({ fav, written: await writeFavBody(fav, 1) });
+        } catch (e) {
+            failures.push({ id: fav?.id, title: String(fav?.title || ""), error: e?.message || String(e) });
+            TitaniaLogger.error(`搬家：收藏 ${fav?.id} 写入失败`, e);
+        }
+        if (onProgress) onProgress(i + 1, favs.length);
+    }
+
+    const entries = records.map(({ fav, written }) => buildFavIndexEntry(fav, {
+        file: written.file,
+        rev: written.rev,
+        bytes: written.bytes
+    }));
+
+    let missing = [];
+    let verifyError = null;
+    try {
+        const verifyResult = await verifyFavFiles(entries.map(entry => entry.file));
+        missing = Object.entries(verifyResult).filter(([, exists]) => !exists).map(([path]) => path);
+    } catch (e) {
+        verifyError = e?.message || String(e);
+        TitaniaLogger.error("搬家：文件校验请求失败", e);
+    }
+
+    const blockers = [];
+    if (failures.length) blockers.push(`${failures.length} 条正文写入失败`);
+    if (missing.length) blockers.push(`${missing.length} 个文件校验时不存在`);
+    if (verifyError) blockers.push(`校验请求出错（${verifyError}）`);
+
+    if (blockers.length) {
+        TitaniaLogger.error("搬家中止，未写入索引", { failures, missing, verifyError });
+        return {
+            ok: false,
+            aborted: true,
+            reason: blockers.join("；"),
+            settings: footprint,
+            failures,
+            missing,
+            verifyError,
+            durationMs: Date.now() - startedAt
+        };
+    }
+
+    writeFavsIndex(entries, Date.now());
+
+    const bytesList = records.map(r => r.written.bytes);
+    const report = {
+        ok: true,
+        settings: footprint,
+        written: {
+            count: entries.length,
+            bytesTotal: bytesList.reduce((sum, n) => sum + n, 0),
+            bytesMax: bytesList.length ? Math.max(...bytesList) : 0
+        },
+        indexBytes: utf8ByteLength(JSON.stringify(entries)),
+        pendingRemovalBytes: footprint.bytes,
+        durationMs: Date.now() - startedAt
+    };
+    TitaniaLogger.info("收藏搬家完成（旧数据仍保留）", report);
     return report;
 }
