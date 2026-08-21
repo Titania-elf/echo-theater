@@ -3229,7 +3229,7 @@ function loadCssFiles() {
      \u8981\u8C03\u6574\u5C31\u6539\u751F\u6210\u5668\u91CC\u7684\u89C4\u5219\u6216 EXCEPTIONS \u8868\uFF0C\u7136\u540E\u91CD\u8DD1\u3002
      \u624B\u6539\u4F1A\u5728\u4E0B\u6B21\u91CD\u8DD1\u65F6\u88AB\u8986\u76D6\uFF0C\u800C\u4E14\u4F1A\u8BA9\u300C\u89C4\u5219\u300D\u4E0E\u300C\u7ED3\u679C\u300D\u4E0D\u4E00\u81F4\u3001\u65E0\u6CD5\u590D\u6838\u3002
 
-   \u4E3A\u4EC0\u4E48\u7528\u751F\u6210\u5668\uFF1A\u6D45\u8272\u4E3B\u9898\u8981\u51B3\u5B9A 253 \u4E2A\u91CF\u3002\u624B\u5199\u4F1A\u505A\u6210\u4E00\u5806\u4E92\u4E0D\u76F8\u5173\u7684\u62CD\u8111\u888B\u503C\uFF0C
+   \u4E3A\u4EC0\u4E48\u7528\u751F\u6210\u5668\uFF1A\u6D45\u8272\u4E3B\u9898\u8981\u51B3\u5B9A 228 \u4E2A\u91CF\u3002\u624B\u5199\u4F1A\u505A\u6210\u4E00\u5806\u4E92\u4E0D\u76F8\u5173\u7684\u62CD\u8111\u888B\u503C\uFF0C
    \u6CA1\u4EBA\u80FD\u590D\u6838\uFF0C\u4E5F\u56DE\u7B54\u4E0D\u4E86\u300C\u4E3A\u4EC0\u4E48\u8FD9\u4E2A\u662F\u8FD9\u6837\u300D\u3002\u5199\u6210\u89C4\u5219\u5219\uFF1A\u89C4\u5219\u672C\u8EAB\u53EF\u590D\u6838\u3001
    \u6DF1\u8272\u4E3B\u9898\u65E5\u540E\u52A0 token \u91CD\u8DD1\u5C31\u8DDF\u4E0A\u3001\u51FA\u95EE\u9898\u6539\u7684\u662F\u4E00\u6761\u89C4\u5219\u800C\u4E0D\u662F\u51E0\u5341\u4E2A\u503C\u3002
 
@@ -3254,7 +3254,7 @@ function loadCssFiles() {
        \u5B8C\u5168\u5931\u6548\uFF0C\u53EA\u80FD\u62FF\u300C\u540C\u65CF\u76F8\u5BF9\u5173\u7CFB\u300D\u5F53\u4E0D\u53D8\u91CF\u3002R-B \u7684\u4E24\u6B21 bug \u90FD\u662F\u5B83\u6293\u51FA\u6765\u7684\u3002
      \xB7 \u5BF9\u6BD4\u5EA6\u68C0\u67E5 \u2014\u2014 \u6587\u5B57\u7C7B token \u5BF9\u6D45\u8272\u7A97\u53E3\u5E95\u82E5\u4E0D\u8DB3 4.5:1 \u5C31\u5217\u51FA\u6765\uFF0C
        \u4F46**\u4E0D\u81EA\u52A8\u538B\u6697**\uFF1A\u538B\u4E86\u4F1A\u7834\u574F\u5B83\u4E0E\u540C\u65CF\u5144\u5F1F\u7684\u5173\u7CFB\uFF0C\u5C5E\u8BBE\u8BA1\u53D6\u820D\uFF0C
-       \u4E0D\u8BE5\u7531\u811A\u672C\u66FF\u4EBA\u505A\u3002\u5F53\u524D\u6709 26 \u4E2A\u504F\u4F4E\uFF0C\u591A\u6570\u662F\u6696\u8272\u7CFB\uFF08Lab \u7684 L \u4E0E WCAG \u4EAE\u5EA6
+       \u4E0D\u8BE5\u7531\u811A\u672C\u66FF\u4EBA\u505A\u3002\u5F53\u524D\u6709 23 \u4E2A\u504F\u4F4E\uFF0C\u591A\u6570\u662F\u6696\u8272\u7CFB\uFF08Lab \u7684 L \u4E0E WCAG \u4EAE\u5EA6
        \u4E0D\u662F\u4E00\u56DE\u4E8B\uFF0C\u540C\u4E00\u4E2A L \u4E0A\u9EC4\u7EA2\u7CFB\u7684\u5B9E\u9645\u5BF9\u6BD4\u5EA6\u66F4\u4F4E\uFF09\u3002
        \u26A0 \u8FD9\u4E2A\u6570\u5B57\u7531\u751F\u6210\u5668\u5B9E\u65F6\u4EE3\u5165\uFF0C\u4E0D\u662F\u5199\u6B7B\u7684 \u2014\u2014 \u5B83\u4F9D\u8D56 04-features \u91CC\u5404 token
          \u7684**\u5B9E\u9645\u6D88\u8D39\u89D2\u8272**\u7EDF\u8BA1\uFF0C6b \u7684\u6BCF\u4E00\u6279\u6539\u8272\u90FD\u4F1A\u8BA9\u5B83\u53D8\uFF08\u66FE\u7ECF\u5199\u6B7B 25\uFF0C
@@ -3337,8 +3337,8 @@ function loadCssFiles() {
     --t-color-set-nav-surface: rgb(231 231 231);   /* \u6DF1\u8272: rgb(24 24 24) */
     --t-color-dialog-surface: rgb(222 222 229 / .98);   /* \u6DF1\u8272: rgb(30 30 35 / .98) */
 
-    /* ---- \u89C4\u5219 R-B ---- */
-    --t-glass-panel: rgb(12 17 22 / .74);   /* \u6DF1\u8272: rgb(12 17 22 / .74) */
+    /* ---- \u89C4\u5219 R-F ---- */
+    --t-glass-panel: rgb(237 242 248 / .74);   /* \u6DF1\u8272: rgb(12 17 22 / .74) */
 
     /* ---- \u89C4\u5219 R-A ---- */
     --t-glass-text-bright: rgb(13 27 37);   /* \u6DF1\u8272: rgb(215 231 245) */
@@ -3348,51 +3348,34 @@ function loadCssFiles() {
     --t-glass-tab-text-hover: rgb(13 27 37);   /* \u6DF1\u8272: rgb(215 231 245) */
     --t-glass-tab-text-active: rgb(5 41 58);   /* \u6DF1\u8272: rgb(185 216 238) */
     --t-color-text-soft: rgb(31 31 31);   /* \u6DF1\u8272: rgb(221 221 221) */
-    --t-color-text-dim: rgb(119 119 119);   /* \u6DF1\u8272: rgb(119 119 119) */
     --t-color-text-disabled: rgb(155 155 155);   /* \u6DF1\u8272: rgb(85 85 85) */
 
     /* ---- \u89C4\u5219 R-B ---- */
-    --t-color-border-bright: rgb(85 85 85);   /* \u6DF1\u8272: rgb(85 85 85) */
     --t-accent-azure-rgb: 0 127 220;   /* \u6DF1\u8272: 74 158 255 */
     --t-accent-azure-light-rgb: 17 116 180;   /* \u6DF1\u8272: 116 185 255 */
     --t-accent-azure-pale-rgb: 20 119 193;   /* \u6DF1\u8272: 106 176 255 */
     --t-accent-azure-hover-rgb: 3 121 192;   /* \u6DF1\u8272: 90 175 255 */
     --t-accent-azure-hover-pale-rgb: 9 113 170;   /* \u6DF1\u8272: 122 192 255 */
     --t-accent-azure-mid-rgb: 37 135 206;   /* \u6DF1\u8272: 66 153 225 */
-    --t-accent-azure-deep-rgb: 45 127 211;   /* \u6DF1\u8272: 45 127 211 */
-    --t-accent-azure-dim-rgb: 47 95 138;   /* \u6DF1\u8272: 47 95 138 */
     --t-accent-sky-rgb: 37 107 142;   /* \u6DF1\u8272: 144 205 244 */
     --t-accent-sky-glow-rgb: 54 129 172;   /* \u6DF1\u8272: 100 168 214 */
-    --t-accent-indigo-rgb: 102 126 234;   /* \u6DF1\u8272: 102 126 234 */
-    --t-accent-indigo-deep-rgb: 108 92 231;   /* \u6DF1\u8272: 108 92 231 */
     --t-accent-violet-rgb: 111 108 201;   /* \u6DF1\u8272: 162 155 254 */
     --t-accent-danger-rgb: 219 75 79;   /* \u6DF1\u8272: 255 107 107 */
     --t-accent-danger-text-rgb: 189 80 84;   /* \u6DF1\u8272: 255 138 138 */
-    --t-accent-danger-fill-rgb: 217 87 87;   /* \u6DF1\u8272: 217 87 87 */
-    --t-accent-danger-fill-hover-rgb: 232 104 104;   /* \u6DF1\u8272: 232 104 104 */
-    --t-accent-danger-deep-rgb: 238 90 90;   /* \u6DF1\u8272: 238 90 90 */
-    --t-accent-danger-vivid-rgb: 255 71 87;   /* \u6DF1\u8272: 255 71 87 */
     --t-accent-danger-plan-rgb: 170 81 84;   /* \u6DF1\u8272: 255 157 157 */
     --t-accent-danger-bulk-border-rgb: 212 81 84;   /* \u6DF1\u8272: 248 113 113 */
-    --t-accent-danger-bulk-fill-rgb: 185 28 28;   /* \u6DF1\u8272: 185 28 28 */
-    --t-accent-danger-icon-rgb: 221 102 102;   /* \u6DF1\u8272: 221 102 102 */
-    --t-accent-danger-menu-fill-rgb: 220 60 60;   /* \u6DF1\u8272: 220 60 60 */
     --t-accent-danger-menu-hover-rgb: 146 81 83;   /* \u6DF1\u8272: 255 180 180 */
-    --t-accent-error-rgb: 231 76 60;   /* \u6DF1\u8272: 231 76 60 */
     --t-accent-error-soft-rgb: 222 81 84;   /* \u6DF1\u8272: 245 101 101 */
     --t-accent-error-text-rgb: 197 81 85;   /* \u6DF1\u8272: 252 129 129 */
     --t-accent-error-pale-rgb: 142 81 83;   /* \u6DF1\u8272: 255 184 184 */
-    --t-accent-error-fill-rgb: 220 70 70;   /* \u6DF1\u8272: 220 70 70 */
     --t-accent-error-border-rgb: 225 73 77;   /* \u6DF1\u8272: 255 100 100 */
     --t-accent-warn-red-rgb: 186 90 92;   /* \u6DF1\u8272: 238 136 136 */
     --t-accent-red-soft-rgb: 209 77 80;   /* \u6DF1\u8272: 255 118 117 */
     --t-accent-red-pale-rgb: 179 90 92;   /* \u6DF1\u8272: 239 143 143 */
     --t-accent-diff-before-rgb: 181 98 99;   /* \u6DF1\u8272: 224 136 136 */
     --t-accent-mature-rgb: 158 81 90;   /* \u6DF1\u8272: 255 168 176 */
-    --t-accent-mature-border-rgb: 126 56 71;   /* \u6DF1\u8272: 126 56 71 */
     --t-accent-fav-gold-rgb: 116 94 41;   /* \u6DF1\u8272: 231 202 143 */
     --t-accent-fav-gold-focus-rgb: 121 97 25;   /* \u6DF1\u8272: 228 196 120 */
-    --t-accent-fav-gold-dim-rgb: 156 143 111;   /* \u6DF1\u8272: 156 143 111 */
     --t-accent-brand-rgb: 143 116 53;   /* \u6DF1\u8272: 191 161 95 */
     --t-accent-tan-rgb: 147 106 60;   /* \u6DF1\u8272: 212 165 116 */
     --t-accent-gold-hover-rgb: 128 106 46;   /* \u6DF1\u8272: 208 181 117 */
@@ -3403,7 +3386,6 @@ function loadCssFiles() {
     --t-accent-gold-text-warm-rgb: 119 100 50;   /* \u6DF1\u8272: 217 193 138 */
     --t-accent-parchment-rgb: 119 106 68;   /* \u6DF1\u8272: 201 185 143 */
     --t-accent-parchment-dim-rgb: 128 115 85;   /* \u6DF1\u8272: 183 169 137 */
-    --t-accent-parchment-faint-rgb: 154 138 99;   /* \u6DF1\u8272: 154 138 99 */
     --t-accent-orange-rgb: 166 91 1;   /* \u6DF1\u8272: 255 159 67 */
     --t-accent-amber-rgb: 158 100 2;   /* \u6DF1\u8272: 245 158 11 */
     --t-accent-amber-soft-rgb: 152 93 0;   /* \u6DF1\u8272: 246 173 85 */
@@ -3418,9 +3400,6 @@ function loadCssFiles() {
     --t-accent-outline-btn-rgb: 7 142 149;   /* \u6DF1\u8272: 48 166 173 */
     --t-accent-outline-btn-pale-rgb: 2 122 98;   /* \u6DF1\u8272: 74 206 172 */
     --t-accent-outline-btn-border-rgb: 7 107 95;   /* \u6DF1\u8272: 114 228 209 */
-    --t-accent-outline-btn-glow-rgb: 44 150 152;   /* \u6DF1\u8272: 44 150 152 */
-    --t-accent-outline-fab-glow-rgb: 26 116 120;   /* \u6DF1\u8272: 26 116 120 */
-    --t-accent-hub-btn-rgb: 52 148 172;   /* \u6DF1\u8272: 52 148 172 */
     --t-accent-hub-btn-pale-rgb: 2 129 112;   /* \u6DF1\u8272: 84 192 172 */
     --t-accent-hub-btn-border-rgb: 3 100 89;   /* \u6DF1\u8272: 133 238 220 */
     --t-accent-mint-rgb: 5 104 82;   /* \u6DF1\u8272: 85 239 196 */
@@ -3442,25 +3421,33 @@ function loadCssFiles() {
     --t-accent-warn-log-rgb: 120 97 3;   /* \u6DF1\u8272: 241 196 15 */
     --t-accent-stat-time-rgb: 93 81 21;   /* \u6DF1\u8272: 255 234 167 */
     --t-accent-role-assistant-rgb: 147 97 181;   /* \u6DF1\u8272: 199 146 234 */
-    --t-accent-recall-rgb: 118 75 162;   /* \u6DF1\u8272: 118 75 162 */
-    --t-accent-lore-item-rgb: 159 122 234;   /* \u6DF1\u8272: 159 122 234 */
-    --t-accent-diff-after-fill-rgb: 24 68 51;   /* \u6DF1\u8272: 24 68 51 */
-    --t-accent-diff-before-fill-rgb: 78 26 31;   /* \u6DF1\u8272: 78 26 31 */
-    --t-accent-fav-fill-rgb: 84 64 38;   /* \u6DF1\u8272: 84 64 38 */
-    --t-accent-fav-fill-soft-rgb: 96 73 41;   /* \u6DF1\u8272: 96 73 41 */
-    --t-accent-fav-fill-warm-rgb: 106 77 43;   /* \u6DF1\u8272: 106 77 43 */
-    --t-accent-fav-edit-border-rgb: 58 90 58;   /* \u6DF1\u8272: 58 90 58 */
-    --t-accent-mature-fill-rgb: 74 37 48;   /* \u6DF1\u8272: 74 37 48 */
-    --t-accent-mgr-footer-border-rgb: 85 34 34;   /* \u6DF1\u8272: 85 34 34 */
-    --t-accent-recall-ok-fill-rgb: 42 74 58;   /* \u6DF1\u8272: 42 74 58 */
-    --t-accent-recall-bad-fill-rgb: 74 42 42;   /* \u6DF1\u8272: 74 42 42 */
-    --t-accent-azure-dim-fill-rgb: 35 73 108;   /* \u6DF1\u8272: 35 73 108 */
-    --t-accent-slot-hover-rgb: 34 48 64;   /* \u6DF1\u8272: 34 48 64 */
+
+    /* ---- \u89C4\u5219 R-F ---- */
+    --t-accent-diff-after-fill-rgb: 146 194 172;   /* \u6DF1\u8272: 24 68 51 */
+    --t-accent-diff-before-fill-rgb: 254 188 189;   /* \u6DF1\u8272: 78 26 31 */
+    --t-accent-fav-fill-rgb: 197 171 140;   /* \u6DF1\u8272: 84 64 38 */
+    --t-accent-fav-fill-soft-rgb: 188 159 123;   /* \u6DF1\u8272: 96 73 41 */
+    --t-accent-fav-fill-warm-rgb: 187 151 114;   /* \u6DF1\u8272: 106 77 43 */
+    --t-accent-mature-fill-rgb: 234 186 198;   /* \u6DF1\u8272: 74 37 48 */
+    --t-accent-recall-ok-fill-rgb: 147 183 164;   /* \u6DF1\u8272: 42 74 58 */
+    --t-accent-recall-bad-fill-rgb: 227 185 184;   /* \u6DF1\u8272: 74 42 42 */
+    --t-accent-azure-dim-fill-rgb: 141 174 215;   /* \u6DF1\u8272: 35 73 108 */
+    --t-accent-slot-hover-rgb: 187 202 222;   /* \u6DF1\u8272: 34 48 64 */
+
+    /* ---- \u89C4\u5219 R-B ---- */
     --t-accent-danger-bulk-text-rgb: 112 78 79;   /* \u6DF1\u8272: 255 214 214 */
-    --t-accent-diff-before-deep-rgb: 26 16 18;   /* \u6DF1\u8272: 26 16 18 */
-    --t-accent-mgr-footer-rgb: 42 26 26;   /* \u6DF1\u8272: 42 26 26 */
+
+    /* ---- \u89C4\u5219 R-F ---- */
+    --t-accent-diff-before-deep-rgb: 249 235 238;   /* \u6DF1\u8272: 26 16 18 */
+    --t-accent-mgr-footer-rgb: 241 217 217;   /* \u6DF1\u8272: 42 26 26 */
+
+    /* ---- \u89C4\u5219 R-B ---- */
     --t-accent-import-rgb: 46 105 138;   /* \u6DF1\u8272: 154 207 245 */
-    --t-accent-update-text-on-rgb: 8 37 30;   /* \u6DF1\u8272: 8 37 30 */
+
+    /* ---- \u89C4\u5219 R-F ---- */
+    --t-accent-update-text-on-rgb: 193 227 216;   /* \u6DF1\u8272: 8 37 30 */
+
+    /* ---- \u89C4\u5219 R-B ---- */
     --t-accent-diff-after-tag-rgb: 53 92 75;   /* \u6DF1\u8272: 194 238 217 */
 
     /* ---- \u89C4\u5219 R-A ---- */
@@ -3508,10 +3495,14 @@ function loadCssFiles() {
 
     /* ---- \u89C4\u5219 R-B ---- */
     --t-accent-settings-rgb: 95 108 115;   /* \u6DF1\u8272: 176 190 197 */
-    --t-accent-diff-after-fill-deep-rgb: 14 22 18;   /* \u6DF1\u8272: 14 22 18 */
-    --t-accent-fav-edit-fill-rgb: 26 42 26;   /* \u6DF1\u8272: 26 42 26 */
-    --t-accent-success-fill-rgb: 25 35 25;   /* \u6DF1\u8272: 25 35 25 */
-    --t-accent-outline-btn-alt-rgb: 30 45 58;   /* \u6DF1\u8272: 30 45 58 */
+
+    /* ---- \u89C4\u5219 R-F ---- */
+    --t-accent-diff-after-fill-deep-rgb: 229 239 234;   /* \u6DF1\u8272: 14 22 18 */
+    --t-accent-fav-edit-fill-rgb: 197 217 196;   /* \u6DF1\u8272: 26 42 26 */
+    --t-accent-success-fill-rgb: 210 223 209;   /* \u6DF1\u8272: 25 35 25 */
+    --t-accent-outline-btn-alt-rgb: 190 207 224;   /* \u6DF1\u8272: 30 45 58 */
+
+    /* ---- \u89C4\u5219 R-B ---- */
     --t-accent-fav-checkbox-rgb: 91 78 49;   /* \u6DF1\u8272: 255 236 201 */
 
     /* ---- \u89C4\u5219 R-A ---- */

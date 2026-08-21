@@ -45,6 +45,7 @@ R-E 白色内高光（--t-shadow-inset-*）：保持白，alpha × 0.7。
 没有可推导性，只能列在这里。
 """
 import io
+import math
 import os
 import re
 import sys
@@ -138,6 +139,119 @@ def darken_accent(rgb):
     return lab_to_rgb(nL, a, b)
 
 
+# ── R-F：暗色调底必须翻转（Phase 6c-4）──────────────────────────────
+#
+# 为什么需要这条：R-B 原先写着「L<=60 的本来就够暗，保持不动」，理由记的是
+# 「大纲按钮、各种暗底」。但**「各种暗底」恰恰是浅色主题里必须翻的东西** ——
+# 那句话把 20 个暗色调底（diff 行底、收藏填充、管理器页脚、召回结果底、
+# --t-glass-panel 的 15 个消费点…）静默留在了深色，浅底上就是一块块暗斑。
+# 用户实测报出「下拉列表/输入框/复选框仍是深色」，根因就在这里。
+#
+# 失败之所以静默：darken_accent 对 L<=60 是**原值返回**，既不报错也不留痕，
+# 而「深色侧计算值不变」那套自证只看深色侧，压根不检查浅色侧算出了什么。
+#
+# 判别是两维的：先按明度分档，再按**彩度** C* = sqrt(a²+b²) 分角色。
+#   · L < 50（暗色）：靠彩度分「该翻的暗色调底」与「该留的饱和身份色」——
+#       danger-bulk-fill C* 72.8（红按钮，翻成淡粉就毁了）vs mature-fill C* 19.0
+#       （暗红色调底，不翻就是暗斑），两组之间有 32.4→54.1 的空档，阈值取 40。
+#   · L > 60（亮色）：一律压暗。**不能镜像** —— 镜像会过冲（L 70 → 30，
+#       而压缩只到 48.75）。亮色里那些「该镜像的近中性文字」由调用方的
+#       MIRROR_NAME_HINTS 先截走，不进这里。
+#   · 50 <= L <= 60：保持，已在 R-B 目标带内。
+#
+# 曾试过把上面几档合并成「只按 C* 一刀切」，两次都是 38 处误伤：
+#   阈值 6  -> 6 个冷调文字（C* 7.2~15.2）落进压暗，浅底上从近黑变中灰；
+#   阈值 40 -> 34 个亮色强调（C* 6.2~39.7）落进镜像，被过冲压成近黑。
+# 两组在 C* 上**重叠**（亮中性文字 ≤15.2，亮彩色强调 ≥6.2）、L 也都 >= 62，
+# 单一阈值切不开。这就是下面那张名字白名单还留着的原因。
+CHROMA_TINT_MAX = 40.0
+# 兜底分支「镜像 vs 压暗」的名字白名单。**这是历史机制，本批刻意原样保留。**
+#
+# 它确实不好（名字子串猜语义），但换掉它是一件独立的事，而且实测换不动：
+#   · 改成「按角色+彩度」：--t-sky-text-0..3 一族的 C* 是 11.1/15.6/21.2/23.8，
+#     任何单一阈值都会把这个家族劈成「两个镜像 + 两个压暗」，破坏族内明度单调。
+#   · 改成「按名字列亮中性文字」：那还是名字子串，只是换了张名单 ——
+#     第一版就漏了 --t-color-text-soft，把中性正文字从近黑(31)改成了中灰(88)。
+# 本批的目标是修「暗色调底静默留深色」，不是重新设计文字的推导。故这里保持不动，
+# 只让**没命中白名单的**颜色去走 light_of（R-F 就在那条路上）。
+MIRROR_NAME_HINTS = ('text', 'surface', 'header', 'field', 'nav', 'dialog-surface')
+
+
+def token_roles():
+    """每个 token 的**主导消费角色**：surface / border / text / shadow。
+
+    ⚠ 必须按实际消费角色判，不能按名字猜 —— 这是 text_role_tokens() 已经立过的
+      规矩（--t-c-neutral-2-rgb 名字里没有 surface 却是表面色）。这里同理：
+      --t-accent-diff-after-fill-rgb 名字里写着 accent，它其实是底色。
+    语义 token 的角色会**传导给它引用的原语**（迭代 3 轮，够覆盖本库的嵌套深度）。
+    """
+    defs = ct.token_defs()
+    cnt = {}
+    for d in ('css/01-base', 'css/02-components', 'css/03-layout', 'css/04-features'):
+        if not os.path.isdir(d):
+            continue
+        for fn in sorted(os.listdir(d)):
+            if not fn.endswith('.css'):
+                continue
+            raw = ct.COMMENT_RE.sub(' ', open(os.path.join(d, fn),
+                                              encoding='utf-8').read())
+            for dm in ct.DECL_RE.finditer(raw):
+                r = ct.role_of(dm.group(2))
+                if r == 'other':
+                    continue
+                for m in re.finditer(r'var\((--t-[\w-]+)', dm.group(3)):
+                    cnt.setdefault(m.group(1), {})
+                    cnt[m.group(1)][r] = cnt[m.group(1)].get(r, 0) + 1
+    for _ in range(3):
+        for tok, v in list(defs.items()):
+            if tok not in cnt:
+                continue
+            for m in re.finditer(r'var\((--t-[\w-]+)\)', v):
+                dst = cnt.setdefault(m.group(1), {})
+                for r, n in cnt[tok].items():
+                    dst[r] = dst.get(r, 0) + n
+    return {t: max(rc, key=rc.get) for t, rc in cnt.items() if rc}
+
+
+ROLES = {}
+
+
+def light_of(rgb, role):
+    """一个颜色在浅色主题下该变成什么。返回 (新值 or None, 规则名 or 跳过理由)。
+
+      ① 描边 / 投影            -> 保持深（浅底上镜像会淡到看不见）
+      ② L < 50 且 C* < 40      -> R-F 镜像（暗色调底 -> 浅色调底）★ 本批新增
+      ③ L < 50 且 C* >= 40     -> 保持（饱和红按钮、靛蓝渐变端点，镜像会毁身份）
+      ④ L > 60                 -> R-B 压暗（保色相与彩度）
+      ⑤ 50 <= L <= 60          -> 保持（已在 R-B 目标带内，压它会引发同族塌陷）
+
+    ⚠ 这里**不处理**「亮近中性文字该镜像」那类 —— 它们由调用方的
+      MIRROR_NAME_HINTS 先截走。试过把两者合成一个彩度阈值，各误伤 38 处：
+      阈值 6 时 6 个冷调文字（C* 7.2~15.2）落进压暗、浅底上从近黑变中灰；
+      阈值 40 时 34 个亮色强调（C* 6.2~39.7）落进镜像、被过冲压成近黑。
+      两组在 C* 上**重叠**、L 也都 >= 62，单一阈值切不开。
+    """
+    L, a, b = ct._lab(rgb)
+    C = math.hypot(a, b)
+    if role in ('border', 'shadow'):
+        # 描边与投影在浅底上必须**保持深**才看得见。镜像会让它们淡到消失 ——
+        # 深色主题里「比底色更亮」才醒目，浅色主题里恰好相反。
+        return (None, '描边/投影：浅底上需保持深才可见，镜像会淡到消失') \
+            if L < 60 else (darken_accent(rgb), 'R-B')
+    if L < 50:
+        if C < CHROMA_TINT_MAX:
+            new, why = flip_or_skip(rgb)
+            return (new, 'R-F') if new else (None, why)
+        return None, '暗且高彩度的饱和身份色（红按钮/渐变端点）：镜像会毁掉身份'
+    if L > 60:
+        return darken_accent(rgb), 'R-B'
+    # L 50~60 的饱和强调色已落在 R-B 的目标带 [30,55] 附近。
+    # ⚠ 不要为了「统一压到 55」而动它们：那是「瞄准固定目标 = 收敛器」的老坑
+    #   （R-B 前两版就是这么把同族兄弟压成一个值的），实测这一档里
+    #   danger-deep/danger-fill-hover/danger-icon/danger-vivid 会一起塌到 L55。
+    return None, 'L 50~60 的饱和强调色：已在目标带内，压暗会引发同族塌陷'
+
+
 # ── 分类：token 名 -> 规则 ────────────────────────────────────────────
 LADDER = re.compile(r'^--t-(c-neutral|c-cool|cream|warm-surface)-\d+-rgb$')
 ACCENT_TRIPLE = re.compile(r'^--t-(accent|sky-text|glass|surface|c)-[\w-]*rgb$')
@@ -181,20 +295,44 @@ def emit_rgb(t):
     return '%d %d %d' % t
 
 
+def flip_or_skip(rgb):
+    """R-A 明度镜像；若镜像后与原值相同则返回跳过理由。
+
+    ⚠ L*≈50 的颜色天然是镜像的不动点（100−50 还是 50）。不特判 token 名 ——
+      任何落在 L*≈50 的中性色都会遇到，写成通用护栏才不会下次再撞。
+      本库当前只有 --t-color-text-dim (119,119,119, L*=50.0) 一个，
+      而它在两种主题下都能当中灰次要文字用，保持不变是对的。
+    """
+    new = flip_L(rgb)
+    if new == rgb:
+        return None, 'L*≈50 是明度镜像的不动点（中灰，两主题下都可用）'
+    return new, 'R-A'
+
+
 def transform_value(name, val):
-    """把一条深色主题的值转成浅色主题的值；返回 None 表示无需覆盖。"""
+    """把一条深色主题的值转成浅色主题的值。
+
+    返回 (新值, 规则名) 或 (None, 跳过理由)。**跳过必须带理由** ——
+    main() 会断言「没有无理由的跳过」，也断言「emit 出来的值必须与深色不同」。
+    这两条不变量是 Phase 6c-4 补的：在此之前 darken_accent 对 L<=60 原值返回，
+    于是 43 条覆盖是 no-op、其中 20 条是本该翻的暗色调底，全都静默通过。
+    """
+    role = ROLES.get(name, 'surface')
     triple = re.match(r'^(\d+)\s+(\d+)\s+(\d+)$', val)
     if triple:
         rgb = tuple(int(x) for x in triple.groups())
         if LADDER.match(name):
-            return emit_rgb(flip_L(rgb)), 'R-A'
+            new, why = flip_or_skip(rgb)
+            return (emit_rgb(new), why) if new else (None, why)
         if name.startswith('--t-scrim-'):
-            return None, None                     # R-C：黑蒙层不动
+            return None, 'R-C：黑蒙层两主题下都是压暗'
         if name == '--t-text-white-rgb':
             return emit_rgb((0, 0, 0)), 'R-C'     # 白字叠加 -> 黑字叠加
         if re.match(r'^--t-surface-\w*-?rgb$', name) or name.startswith('--t-glass-'):
-            return emit_rgb(flip_L(rgb)), 'R-A'
-        return emit_rgb(darken_accent(rgb)), 'R-B'
+            new, why = flip_or_skip(rgb)
+            return (emit_rgb(new), why) if new else (None, why)
+        new, why = light_of(rgb, role)
+        return (emit_rgb(new), why) if new else (None, why)
 
     if SHADOW.match(name):
         # R-E（白色高光，× 0.7）与 R-D（黑投影，× 0.55）的分派。
@@ -209,24 +347,41 @@ def transform_value(name, val):
         return re.sub(r'/\s*([\d.]+)', f, val), ('R-E' if hi else 'R-D')
 
     if KEEP_BLACK.match(name):
-        return None, None
+        return None, 'R-C：压暗叠加，白底上黑色低透明度就是浅灰'
 
-    # 其余：把值里的每个颜色字面量按「阶梯」处理（这些是窗口底/面板底/文字等）
-    out, last, rule = [], 0, None
+    # 其余：把值里的每个颜色字面量交给 light_of 按角色 + 彩度判。
+    # ⚠ 这里原先是按**名字子串**白名单（text|surface|header|field|nav|dialog-surface）
+    #   决定镜像还是压暗 —— 'panel' 不在名单里，于是 --t-glass-panel（15 个消费点）
+    #   落到 darken_accent、被原值返回，静默留在深色。名字子串是错的机制。
+    # ⚠ 也不要在这里再写一份彩度判断：第一版这么做了（阈值 6.0 vs light_of 的 40），
+    #   两份阈值立刻漂移、误伤 6 个冷调文字。判断只许有一处。
+    out, last, rule, skips, n_changed = [], 0, None, [], 0
     for m in ct.COLOR_RE.finditer(val):
         k = ct.canon(m.group(0))
         if not k:
             continue
-        rgb = flip_L(k[:3]) if 'text' in name or 'surface' in name or 'header' in name \
-            or 'field' in name or 'nav' in name or 'dialog-surface' in name \
-            else darken_accent(k[:3])
-        rule = 'R-A' if rgb != darken_accent(k[:3]) or 'text' in name else 'R-B'
+        if any(h in name for h in MIRROR_NAME_HINTS):
+            rgb, r = flip_or_skip(k[:3])
+        else:
+            rgb, r = light_of(k[:3], role)
+        if rgb is None:
+            # 这个止点刻意不变，但**仍按统一写法回写**，不把原字面量留在那儿 ——
+            # 否则生成物里会混着 `rgb(0 127 220)` 与 `#667eea` 两种记法
+            # （--t-gradient-accent 就出现过），读起来像是漏改了。
+            skips.append(r)
+            rgb = k[:3]
+        else:
+            n_changed += 1
+            rule = r
         out.append(val[last:m.start()])
         out.append('rgb(%s%s)' % (emit_rgb(rgb),
                                   '' if k[3] >= 0.999 else ' / %s' % ct.fmt_a(k[3])))
         last = m.end()
-    if not out:
-        return None, None
+    # ⚠ 一个颜色都没变 -> 必须返回「刻意不变」而不是回写一条恒等覆盖。
+    #   单色值最容易踩：--t-color-text-dim 只有一个颜色且落在 L*≈50 不动点上，
+    #   上面那句「跳过也回写」曾让它产出一条与深色逐字相同的覆盖，被不变量①拦下。
+    if n_changed == 0:
+        return None, (skips[0] if skips else '值里没有可识别的颜色')
     out.append(val[last:])
     return ''.join(out), rule
 
@@ -278,6 +433,8 @@ HEADER = '''/* ============================================================
 
 
 def main():
+    global ROLES
+    ROLES = token_roles()
     prim = parse_decls(os.path.join(TOK, 'primitives.css'))
     dark = parse_decls(os.path.join(TOK, 'theme-dark.css'))
     rows, skipped, by_rule = [], [], {}
@@ -294,8 +451,17 @@ def main():
             continue                       # 不是颜色（圆角/时长/字体等）
         new, rule = transform_value(name, val)
         if new is None:
-            skipped.append(name)
+            skipped.append((name, val, rule or '⚠ 无理由（规则漏网）'))
             continue
+        # ── 不变量①：emit 出来的覆盖必须与深色值不同 ──────────────────
+        # 一条「浅色 == 深色」的覆盖是无意义的：若本就不该变，它该进「刻意跳过」
+        # 并带理由（可复核），而不是伪装成一条覆盖。Phase 6c-4 之前有 43 条这种
+        # no-op，其中 20 条是本该翻的暗色调底 —— 全都静默通过了所有自检。
+        if ' '.join(new.split()) == ' '.join(val.split()):
+            raise SystemExit(
+                '不变量①失败：%s 的浅色值与深色值相同（%s）。\n'
+                '  规则 %s 对它是 no-op。要么修规则，要么让它走「刻意跳过」并写明理由。'
+                % (name, val, rule))
         rows.append((name, new, rule, val))
         by_rule[rule] = by_rule.get(rule, 0) + 1
 
@@ -322,8 +488,21 @@ def main():
     print('  覆盖 %d 条（含 %d 条例外）' % (len(rows) + len(EXCEPTIONS), len(EXCEPTIONS)))
     for r, n in sorted(by_rule.items()):
         print('    %-4s %3d 条' % (r, n))
-    print('  按 R-C 保持不变、不输出：%d 条（%s）'
-          % (len(skipped), ' '.join(skipped[:6]) + (' …' if len(skipped) > 6 else '')))
+    # ── 不变量②：每一条「刻意不变」都必须有理由 ──────────────────────
+    print('  刻意不变、不输出覆盖：%d 条，按理由分组' % len(skipped))
+    groups = {}
+    for name, val, why in skipped:
+        groups.setdefault(why, []).append(name)
+    for why, names in sorted(groups.items(), key=lambda x: -len(x[1])):
+        print('    %2d 条  %s' % (len(names), why))
+        for n in names[:4]:
+            print('             %s' % n)
+        if len(names) > 4:
+            print('             …另 %d 条' % (len(names) - 4))
+    orphan = groups.get('⚠ 无理由（规则漏网）', [])
+    if orphan:
+        raise SystemExit('不变量②失败：%d 条跳过没有理由 —— %s'
+                         % (len(orphan), ' '.join(orphan[:8])))
     check_collapse(rows)
     check_contrast(low)
 
