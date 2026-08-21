@@ -26,6 +26,12 @@
        浅底上的深色 checkbox / radio / range 是浅色主题最扎眼的一处不协调。
        ⚠ 作用域外的 ST DOM 不受影响；ST body 的 `color-scheme: only light`
          里的 `only` 只是禁止 UA 自动反色，不阻止后代自行声明。 */
+    accent-color: var(--t-color-accent);
+    /* Phase 6c-5：原生 checkbox / radio / range 的勾选色。
+       ⚠ 放在 .t-root 上而**不是**放进 form-controls.css 的
+         `.t-root input[type="checkbox"]` 里，是因为后者特异度 (0,2,1) 会盖掉
+         `.t-root .t-choice-input--brand` 等四个变体 (0,2,0)。accent-color 是
+         **继承属性**，从作用域根下发，变体就仍能逐个元素覆盖。 */
 }
 
 /* 盒模型自洽：不依赖宿主。

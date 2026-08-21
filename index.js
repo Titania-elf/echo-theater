@@ -3658,6 +3658,12 @@ function loadCssFiles() {
        \u6D45\u5E95\u4E0A\u7684\u6DF1\u8272 checkbox / radio / range \u662F\u6D45\u8272\u4E3B\u9898\u6700\u624E\u773C\u7684\u4E00\u5904\u4E0D\u534F\u8C03\u3002
        \u26A0 \u4F5C\u7528\u57DF\u5916\u7684 ST DOM \u4E0D\u53D7\u5F71\u54CD\uFF1BST body \u7684 \`color-scheme: only light\`
          \u91CC\u7684 \`only\` \u53EA\u662F\u7981\u6B62 UA \u81EA\u52A8\u53CD\u8272\uFF0C\u4E0D\u963B\u6B62\u540E\u4EE3\u81EA\u884C\u58F0\u660E\u3002 */
+    accent-color: var(--t-color-accent);
+    /* Phase 6c-5\uFF1A\u539F\u751F checkbox / radio / range \u7684\u52FE\u9009\u8272\u3002
+       \u26A0 \u653E\u5728 .t-root \u4E0A\u800C**\u4E0D\u662F**\u653E\u8FDB form-controls.css \u7684
+         \`.t-root input[type="checkbox"]\` \u91CC\uFF0C\u662F\u56E0\u4E3A\u540E\u8005\u7279\u5F02\u5EA6 (0,2,1) \u4F1A\u76D6\u6389
+         \`.t-root .t-choice-input--brand\` \u7B49\u56DB\u4E2A\u53D8\u4F53 (0,2,0)\u3002accent-color \u662F
+         **\u7EE7\u627F\u5C5E\u6027**\uFF0C\u4ECE\u4F5C\u7528\u57DF\u6839\u4E0B\u53D1\uFF0C\u53D8\u4F53\u5C31\u4ECD\u80FD\u9010\u4E2A\u5143\u7D20\u8986\u76D6\u3002 */
 }
 
 /* \u76D2\u6A21\u578B\u81EA\u6D3D\uFF1A\u4E0D\u4F9D\u8D56\u5BBF\u4E3B\u3002
@@ -3946,6 +3952,162 @@ function loadCssFiles() {
 [id^="t-"] ::-webkit-scrollbar-thumb:hover,
 [id^="titania-"] ::-webkit-scrollbar-thumb:hover {
     background: var(--t-color-scrollbar-thumb-hover);
+}
+
+
+/* === 01-base/form-controls.css === */
+/* ============================================================
+   01-base/form-controls.css \u2014\u2014 \u539F\u751F\u8868\u5355\u63A7\u4EF6\u7684\u4F5C\u7528\u57DF\u5185\u91CD\u7F6E
+
+   \u4E3A\u4EC0\u4E48\u5FC5\u987B\u6709\u8FD9\u4E2A\u6587\u4EF6
+   --------------------
+   ST \u7684 style.css \u7528**\u5143\u7D20\u7EA7\u9009\u62E9\u5668**\u7ED9 input / select / textarea \u5B9A\u4E86\u6837\u5F0F\u3002
+   \u5143\u7D20\u9009\u62E9\u5668\u7279\u5F02\u5EA6\u53EA\u6709 (0,0,1)\uFF0C\u53EF\u63D2\u4EF6\u7684\u7EC4\u4EF6\u7C7B\u53EA\u8986\u76D6\u4E86\u5176\u4E2D\u4E00\u90E8\u5206\u5C5E\u6027\uFF0C
+   \u6F0F\u4E0B\u6765\u7684\u5C31\u5168\u8DDF\u7740 **ST \u7684\u4E3B\u9898**\u8D70 \u2014\u2014 \u7528\u6237\u5728 ST \u91CC\u5207\u6210\u6D45\u8272\uFF0C\u63D2\u4EF6\u7684\u4E0B\u62C9\u6846\u3001
+   \u6587\u672C\u6846\u3001\u590D\u9009\u6846\u5C31\u8DDF\u7740\u53D8\u6D45\uFF0C\u63D2\u4EF6\u81EA\u5DF1\u7684\u4E3B\u9898\u5F00\u5173\u53CD\u800C\u7BA1\u4E0D\u7740\u5B83\u4EEC\u3002
+
+   \u5B9E\u6D4B\u7A7F\u900F\u9762\uFF1A\u63D2\u4EF6\u91CC 213 \u4E2A\u539F\u751F\u63A7\u4EF6\uFF0C150 \u4E2A\u662F"\u88F8\u5143\u7D20"\uFF08\u6CA1\u6709\u4EFB\u4F55 t- \u7C7B\uFF09\u3002
+   checkbox / radio \u66F4\u5F7B\u5E95 \u2014\u2014 \u5168\u90E8 73 \u4E2A\u90FD\u88AB\u7A7F\u900F\uFF0C\u56E0\u4E3A .t-choice-input
+   **\u53EA\u7BA1\u51E0\u4F55\u4E0E accent-color\u3001\u4E0D\u7BA1 appearance**\uFF0C\u800C ST \u7528 appearance:none +
+   ::before \u81EA\u7ED8\u6574\u4E2A\u65B9\u6846\uFF0Caccent-color \u5728 appearance:none \u4E0B\u6839\u672C\u65E0\u6548\u3002
+
+   \u7A7F\u900F\u6E90\u6E05\u5355\uFF08public/style.css \u884C\u53F7\uFF09
+   ----------------------------------
+     1488  input, select, button    color / font-size / font-family
+     1466  textarea                 background-color / border / color / font-size
+     2922  select                   appearance:none / background-color / border / \u7BAD\u5934\u56FE
+     2938  select option            background-color / color
+     3925  input[type=checkbox]     appearance:none + ::before \u81EA\u7ED8\u65B9\u6846
+     4149  input[type=range]        appearance:none + \u81EA\u7ED8\u8F68\u9053
+
+   \u26A0 1488 \u4E0E 1466 \u91CC\u7684 \`font-size: var(--mainFontSize)\` \u662F **B8 \u540C\u7C7B\u95EE\u9898**\uFF1A
+     \u5B83\u7ED5\u8FC7\u63D2\u4EF6 \`font-size: calc(12px * var(--t-ui-font-scale))\` \u7684\u7F29\u653E\u673A\u5236\uFF0C
+     \u7528\u6237\u8C03\u300CUI \u7F29\u653E\u300D\u65F6\u8FD9\u4E9B\u63A7\u4EF6\u7684\u5B57\u53F7\u4E0D\u8DDF\u7740\u53D8\u3002\u8FD9\u4E5F\u662F\u672C\u6587\u4EF6\u8981\u4FEE\u7684\u3002
+
+   \u2605 \u7279\u5F02\u5EA6\u7B56\u7565\uFF1A\`:where(.t-root)\` \u2014\u2014 \u6539\u672C\u6587\u4EF6\u524D\u5FC5\u8BFB
+   ------------------------------------------------
+   \u672C\u6587\u4EF6\u7684\u89C4\u5219\u5FC5\u987B\u540C\u65F6\u6EE1\u8DB3\u4E24\u6761\uFF0C\u7F3A\u4E00\u4E0D\u53EF\uFF1A
+     \u2460 **\u9AD8\u4E8E ST \u7684\u5143\u7D20\u9009\u62E9\u5668**\uFF0C\u5426\u5219\u767D\u5199\uFF1B
+     \u2461 **\u4F4E\u4E8E\u63D2\u4EF6\u7684\u4EFB\u4F55\u7C7B\u9009\u62E9\u5668**\uFF0C\u5426\u5219\u4F1A\u53CD\u8FC7\u6765\u76D6\u6389\u7EC4\u4EF6\u5C42\u4E0E feature \u5C42\u3002
+
+   \u2461 \u6BD4\u60F3\u8C61\u7684\u4E25\u82DB\u5F97\u591A\uFF1A\u672C\u5E93\u5927\u91CF feature \u7C7B\u662F**\u5355\u7C7B\u9009\u62E9\u5668** (0,1,0) \u2014\u2014
+   \`.t-ce-textarea\`\uFF08\u5185\u5BB9\u7F16\u8F91\u5668\uFF09\u3001\`.t-continuation-context-btn\`\u3001
+   button.css \u7684 \`.t-btn\` \u53CA 8 \u4E2A\u53D8\u4F53\u5168\u90FD\u662F\u3002\u6240\u4EE5\u54EA\u6015\u5199\u6210 \`.t-root textarea\`
+   (0,1,1) \u90FD\u4F1A\u538B\u8FC7\u5B83\u4EEC\uFF1A\u5B9E\u6D4B\u4F1A\u5F52\u4E00\u6389 .t-btn \u4E00\u65CF\u7684 color/font-size\u3001
+   \u4EE5\u53CA .t-ce-textarea \u7684\u4E09\u4E2A\u5C5E\u6027\u3002\u8FD9\u4E0D\u662F\u8089\u773C\u6570\u7279\u5F02\u5EA6\u80FD\u53D1\u73B0\u7684\uFF0C\u662F\u9760
+   \u673A\u68B0\u6838\u5BF9\uFF08\u628A\u4E24\u4FA7\u89C4\u5219\u7684 (id,class,type) \u4E09\u5143\u7EC4\u7B97\u51FA\u6765\u9010\u5BF9\u6BD4\uFF09\u6293\u5230\u7684\u3002
+
+   \u89E3\u6CD5\u662F\u7528 \`:where(.t-root)\` \u628A\u4F5C\u7528\u57DF\u7684\u7279\u5F02\u5EA6\u8D21\u732E**\u5F52\u96F6**\uFF0C\u6574\u6761\u89C4\u5219\u9000\u5230
+   (0,0,1)\uFF1A
+     ST      \`select\`                   (0,0,1)  \u2190 \u4E0E\u672C\u6587\u4EF6\u5E73\u624B\uFF0C\u9760\u6E90\u7801\u987A\u5E8F
+     \u672C\u6587\u4EF6  \`:where(.t-root) select\`   (0,0,1)     \u63D2\u4EF6 <style> \u665A\u4E8E ST \u6837\u5F0F\u8868
+                                                    \u6CE8\u5165 head\uFF0C\u5E73\u624B\u65F6\u63D2\u4EF6\u80DC
+     \u63D2\u4EF6\u7C7B  \`.t-ce-textarea\`           (0,1,0)  \u2190 \u7A33\u8D62\u672C\u6587\u4EF6 \u2713
+     \u7EC4\u4EF6\u5C42  \`.t-root .t-box .t-input\`  (0,3,0)  \u2190 \u7A33\u8D62\u672C\u6587\u4EF6 \u2713
+
+   \u5E73\u624B\u9760\u6E90\u7801\u987A\u5E8F\u53D6\u80DC\u662F\u6709\u4FDD\u969C\u7684\uFF1A\u63D2\u4EF6 CSS \u65E0\u8BBA\u6253\u5305\u6A21\u5F0F\uFF08\u8FD0\u884C\u65F6\u63D2 <style>\uFF09
+   \u8FD8\u662F\u5F00\u53D1\u6A21\u5F0F\uFF08\u8FD0\u884C\u65F6\u63D2 <link>\uFF09\u90FD\u665A\u4E8E ST \u7684\u9759\u6001 <link>\u3002\u8FD9\u4E5F\u6B63\u662F
+   CLAUDE.md \u7B2C 5 \u6761\u300C\u63D2\u4EF6 <style> \u6CE8\u5165\u5728 document.head\uFF0C\u665A\u4E8E ST \u6837\u5F0F\u8868\u300D
+   \u6240\u4F9D\u8D56\u7684\u540C\u4E00\u4E2A\u4E8B\u5B9E\u3002
+
+   \u26A0 \u82E5\u6D4F\u89C8\u5668\u4E0D\u652F\u6301 \`:where()\`\uFF08Chrome <88 / Firefox <78\uFF09\uFF0C\u6574\u6761\u9009\u62E9\u5668\u5217\u8868
+     \u4F1A\u88AB\u4E22\u5F03\u3001\u89C4\u5219\u4E0D\u751F\u6548 \u2014\u2014 \u9000\u5316\u6210\u672C\u6587\u4EF6\u4E0D\u5B58\u5728\u65F6\u7684\u884C\u4E3A\uFF08\u5373\u5F53\u524D\u7684\u7A7F\u900F\u72B6\u6001\uFF09\uFF0C
+     \u4E0D\u4F1A\u9020\u6210\u9519\u8BEF\u6E32\u67D3\u3002\u8FD9\u4E2A\u964D\u7EA7\u7279\u6027\u662F\u523B\u610F\u9009\u5B83\u7684\u7406\u7531\u4E4B\u4E00\u3002
+
+   \u672C\u6587\u4EF6\u7684\u53D6\u503C\u539F\u5219
+   ----------------
+   \u88F8\u63A7\u4EF6\u4E00\u5F8B**\u5BF9\u9F50\u63D2\u4EF6\u81EA\u5DF1\u7684 .t-input**\uFF0802-components/field.css\uFF09\uFF0C
+   \u5373\u540C\u6837\u7528 --t-color-surface-sunken + --t-color-border-strong\u3002
+   \u4E0D\u53E6\u53D1\u660E\u4E00\u5957\u914D\u8272 \u2014\u2014 \u5426\u5219\u63D2\u4EF6\u5185\u90E8\u4F1A\u51FA\u73B0\u300C\u5E26\u7C7B\u7684\u5B57\u6BB5\u300D\u4E0E\u300C\u88F8\u5B57\u6BB5\u300D\u4E24\u79CD\u957F\u76F8\u3002
+   ============================================================ */
+
+/* ---- 1) \u5B57\u4F53\u4E0E\u5B57\u8272\u56DE\u5230\u63D2\u4EF6\u57FA\u51C6\uFF08\u4FEE ST style.css:1488 / :1466\uFF09----
+   font-size: inherit \u8BA9\u63A7\u4EF6\u91CD\u65B0\u8DDF\u968F .t-root \u7684 em \u57FA\u51C6\uFF0CUI \u7F29\u653E\u624D\u751F\u6548\u3002
+   color: inherit \u8BA9\u5B83\u4EEC\u53D6\u63D2\u4EF6\u7684 --t-color-text \u800C\u4E0D\u662F ST \u7684 body \u8272\u3002
+   \u26A0 \u4E0D\u542B button\uFF1AST \u90A3\u6761 \`input, select, button\` \u4E5F\u7BA1\u4E86 button\uFF0C\u4F46\u63D2\u4EF6\u7684
+     .t-btn \u4E00\u65CF\u672C\u5C31\u8BBE\u4E86\u8FD9\u4E09\u4E2A\u5C5E\u6027\uFF0C\u4EA4\u7ED9\u5B83\u4EEC\u5373\u53EF\uFF1B\u5269\u4E0B 24 \u4E2A\u300C\u65E0\u4EFB\u4F55 t- \u7C7B\u300D
+     \u7684\u88F8 button \u7531\u4E0B\u9762\u5355\u72EC\u4E00\u6761\u5904\u7406\u3002 */
+:where(.t-root) input,
+:where(.t-root) select,
+:where(.t-root) textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+}
+
+:where(.t-root) button {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+}
+
+/* ---- 2) select ----
+   \u4FDD\u7559 ST \u7684 appearance:none \u4E0E\u90A3\u5F20\u7BAD\u5934\u56FE\uFF1A\u7BAD\u5934\u662F fill="#888888" \u7684\u4E2D\u7070 svg
+   \uFF08public/img/down-arrow.svg\uFF09\uFF0C\u4E24\u79CD\u4E3B\u9898\u4E0B\u90FD\u770B\u5F97\u89C1\uFF0C\u6CA1\u5FC5\u8981\u6362\u6210\u539F\u751F\u63A7\u4EF6\u3002 */
+:where(.t-root) select {
+    background-color: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
+}
+
+/* \u4E0B\u62C9\u5C55\u5F00\u540E\u7684\u9009\u9879\u5217\u8868\u3002ST \u7ED9 option \u4E0E option:not(:checked) \u5206\u522B\u4E0A\u4E86\u8272
+   \uFF08--white50a / --black70a\uFF09\uFF0C\u4E0D\u8986\u76D6\u7684\u8BDD\u6D45\u8272\u4E3B\u9898\u4E0B\u4F1A\u770B\u5230\u6DF1\u5E95\u767D\u5B57\u7684\u5217\u8868\u3002
+   \u26A0 ST \u7684 \`select option:not(:checked)\` \u662F (0,1,2)\uFF0C\u6BD4 \`select option\` \u9AD8\u4E00\u6863\uFF0C
+     \u6240\u4EE5\u8FD9\u91CC\u5FC5\u987B\u628A\u4E24\u6761\u90FD\u5199\u4E0A\uFF0C\u53EA\u5199\u524D\u8005\u4F1A\u88AB ST \u7684\u540E\u8005\u538B\u56DE\u53BB\u3002 */
+:where(.t-root) select option {
+    background-color: var(--t-color-surface-sunken);
+    color: var(--t-color-text);
+}
+
+:where(.t-root) select option:not(:checked) {
+    background-color: var(--t-color-surface-sunken);
+    color: var(--t-color-text);
+}
+
+/* ---- 3) textarea ---- */
+:where(.t-root) textarea {
+    background-color: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border-strong);
+}
+
+/* ---- 4) checkbox / radio\uFF1A\u8FD8\u539F\u539F\u751F\u7ED8\u5236 ----
+   ST \u7528 appearance:none + ::before \u81EA\u7ED8\u65B9\u6846\uFF0C\u5E95\u8272\u53D6 --SmartThemeBodyColor
+   \uFF08ST \u7684**\u6587\u5B57**\u8272\uFF09\uFF0C\u4E8E\u662F ST \u4E00\u6362\u4E3B\u9898\u8FD9\u4E9B\u6846\u5C31\u8DDF\u7740\u53CD\u8272\u3002\u8FD8\u539F\u6210 appearance:auto
+   \u4E4B\u540E\u5B83\u4EEC\u7531\u6D4F\u89C8\u5668\u6309 .t-root \u7684 color-scheme \u7ED8\u5236\uFF0C\u5373\u8DDF\u968F**\u63D2\u4EF6**\u4E3B\u9898
+   \uFF08\u89C1 01-base/scope.css \u7684 color-scheme: var(--t-color-scheme)\uFF09\uFF0C
+   \u52FE\u9009\u8272\u5219\u6765\u81EA .t-root \u7EE7\u627F\u4E0B\u53D1\u7684 accent-color\u3002
+
+   \u26A0 \u8FD9\u6761\u89C4\u5219\u523B\u610F**\u4E0D\u5199** width / height / accent-color \u2014\u2014 \u90A3\u4E09\u4E2A\u5C5E\u6027\u5F52
+     choice-input.css\u3002\u672C\u6587\u4EF6\u6240\u8BBE\u7684 appearance / background-color / border /
+     outline / box-shadow / filter / transform / display \u4E0E .t-choice-input
+     \u6240\u8BBE\u7684\u5C5E\u6027**\u5B8C\u5168\u4E0D\u76F8\u4EA4**\uFF0C\u6545\u4E24\u8005\u5E76\u5B58\u4E0D\u51B2\u7A81\u3002 */
+:where(.t-root) input[type="checkbox"],
+:where(.t-root) input[type="radio"] {
+    -webkit-appearance: auto;
+    appearance: auto;
+    /* \u9010\u6761\u64A4\u6389 ST \u4E3A\u300C\u81EA\u7ED8\u65B9\u6846\u300D\u52A0\u7684\u88C5\u9970\uFF0C\u5426\u5219\u4F1A\u4E0E\u539F\u751F\u63A7\u4EF6\u53E0\u5728\u4E00\u8D77 */
+    background-color: initial;
+    border: initial;
+    outline: initial;
+    box-shadow: none;
+    filter: none;
+    transform: none;
+    display: inline-block;
+}
+
+/* ST \u7684 ::before \u662F\u81EA\u7ED8\u65B9\u6846\u91CC\u7684\u52FE\u3002\u8FD8\u539F\u539F\u751F\u7ED8\u5236\u540E\u5B83\u4F1A\u53D8\u6210\u4E00\u4E2A\u591A\u4F59\u7684\u65B9\u5757\u3002 */
+:where(.t-root) input[type="checkbox"]::before,
+:where(.t-root) input[type="radio"]::before {
+    content: none;
+}
+
+/* ---- 5) range ----
+   \u540C\u6837\u8FD8\u539F\u539F\u751F\u7ED8\u5236\uFF0C\u8BA9\u6ED1\u5757\u8DDF\u968F color-scheme \u4E0E accent-color\u3002
+   ST \u7684 --SmartThemeBodyColor \u8F68\u9053\u5E95\u8272\u5728\u6D45\u8272\u4E3B\u9898\u4E0B\u4F1A\u53D8\u6210\u6DF1\u8272\u6761\u3002 */
+:where(.t-root) input[type="range"] {
+    -webkit-appearance: auto;
+    appearance: auto;
+    background: initial;
+    box-shadow: none;
 }
 
 
@@ -19402,7 +19564,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/theme-light.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "03-layout/utilities.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/wi-selector.css", "04-features/continuation.css", "04-features/queue.css", "04-features/content-editor.css", "04-features/settings-drawer.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/confirm-dialog.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/theme-light.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/form-controls.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "03-layout/utilities.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/wi-selector.css", "04-features/continuation.css", "04-features/queue.css", "04-features/content-editor.css", "04-features/settings-drawer.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/lore-review.css", "04-features/memory-recall.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/cleaning-preview.css", "04-features/rewrite.css", "04-features/confirm-dialog.css", "04-features/st-embedded.css"];
   }
 });
 

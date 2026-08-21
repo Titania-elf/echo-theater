@@ -31,6 +31,11 @@ export const CSS_LAYERS = [
             'scope.css',       // ★ .t-root：插件 UI 的作用域根（修 B8/B9）
             'base.css',
             'scrollbar.css',   // 带作用域的滚动条外观（修 B2）
+            // 原生表单控件的作用域内重置（Phase 6c-5）。与 scrollbar.css 同类：
+            // 都是「ST 用元素级选择器定了样式、插件必须在自己作用域内夺回」。
+            // ⚠ 必须排在 02-components/ **之前**：本文件用 (0,1,1) 级选择器，
+            //   靠层叠顺序之外的特异度差让组件类继续胜出，顺序前置只是双保险。
+            'form-controls.css',
             'keyframes.css',   // 全库唯一的 @keyframes 声明处（规则 R6）
         ]
     },
