@@ -763,3 +763,161 @@ export async function migrateFavsToFiles(options = {}) {
     TitaniaLogger.info("收藏搬家完成（旧数据仍保留）", report);
     return report;
 }
+
+/* ------------------------------------------------------------------ *
+ * 完整对象读取：写入路径与备份导出需要「索引条目 + 正文」拼回来的完整 fav
+ * ------------------------------------------------------------------ */
+
+/** 索引条目 + 正文 → 与搬家前形状一致的完整 fav 对象 */
+function assembleFav(entry, body) {
+    const fav = {
+        id: entry.id,
+        type: entry.type,
+        title: String(entry.title || ""),
+        charName: String(entry.charName || ""),
+        scriptName: String(entry.scriptName || ""),
+        scriptId: String(entry.scriptId || ""),
+        date: String(entry.date || ""),
+        avatar: String(entry.avatar || "")
+    };
+    if (entry.type === "chain") {
+        fav.branchKey = String(entry.branchKey || "");
+        fav.chainSignature = String(entry.chainSignature || "");
+        fav.items = Array.isArray(body?.items) ? body.items : [];
+        // 搬家前 chain 也存一份合并 html。只有 items 不完整的历史数据才留了它；
+        // items 完整时由 favsWindow 的 getChainDisplayHtml 实时重建，不必回填。
+        if (typeof body?.html === "string") fav.html = body.html;
+    } else {
+        fav.html = String(body?.html || "");
+    }
+    return fav;
+}
+
+/**
+ * 按 id 取完整收藏（含正文）。写入路径要先拿到完整对象才能改。
+ * @param {string|number} id
+ * @returns {Promise<object|null>}
+ */
+export async function getFullFavById(id) {
+    const store = getFavsIndex();
+    if (!store) return null;
+    const entry = store.entries.find(item => String(item.id) === String(id));
+    if (!entry) return null;
+    return assembleFav(entry, await readFavBody(entry));
+}
+
+/**
+ * 把全部收藏拼回搬家前的数组形状，供备份导出使用。
+ *
+ * 任何一条正文读不出来就整体抛错 —— 备份宁可失败，也绝不能悄悄导出一份缺内容的。
+ * @param {{onProgress?: (done:number, total:number) => void}} [options]
+ * @returns {Promise<object[]>}
+ */
+export async function exportFavsAsLegacyArray(options = {}) {
+    const store = getFavsIndex();
+    if (!store) throw new Error("尚未搬家，无需从文件重建收藏数组");
+
+    const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+    const total = store.entries.length;
+    const result = [];
+
+    for (let i = 0; i < total; i++) {
+        const entry = store.entries[i];
+        try {
+            result.push(assembleFav(entry, await readFavBody(entry)));
+        } catch (e) {
+            throw new Error(`收藏「${entry.title || entry.id}」的正文读取失败，备份已中止：${e?.message || String(e)}`);
+        }
+        if (onProgress) onProgress(i + 1, total);
+    }
+    return result;
+}
+
+/* ------------------------------------------------------------------ *
+ * 收尾：删掉 settings.json 里的旧收藏数据
+ * ------------------------------------------------------------------ */
+
+/**
+ * 全量核对：文件是否都在、正文能不能读回来、读回来的内容与 data.favs 是否逐字一致。
+ *
+ * 这里刻意做**全量**而非抽样。删除是不可逆的，抽样只能证明「抽到的那几条没问题」。
+ * 代价是 N 次请求，但这是一次性操作。
+ *
+ * @param {{onProgress?: (done:number, total:number) => void}} [options]
+ * @returns {Promise<{ok:boolean, checked:number, problems:string[]}>}
+ */
+async function verifyMigrationAgainstLegacy(options = {}) {
+    const store = getFavsIndex();
+    if (!store) return { ok: false, checked: 0, problems: ["尚未搬家，没有可核对的索引"] };
+
+    const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+    const legacy = Array.isArray(getExtData().favs) ? getExtData().favs : [];
+    const problems = [];
+
+    if (legacy.length === 0) {
+        return { ok: false, checked: 0, problems: ["settings.json 里已经没有旧收藏数据了"] };
+    }
+    if (legacy.length !== store.entries.length) {
+        problems.push(`条数不一致：索引 ${store.entries.length} 条，settings.json 里 ${legacy.length} 条`);
+    }
+
+    // 先一次性确认文件都在，省掉逐条试读的往返
+    try {
+        const verifyResult = await verifyFavFiles(store.entries.map(entry => entry.file));
+        const missing = Object.entries(verifyResult).filter(([, exists]) => !exists).map(([path]) => path);
+        if (missing.length) problems.push(`${missing.length} 个正文文件不存在：${missing.slice(0, 3).join("、")}${missing.length > 3 ? " …" : ""}`);
+    } catch (e) {
+        problems.push(`文件校验请求失败：${e?.message || String(e)}`);
+    }
+
+    // 文件层面就有问题时不必再逐条读，直接判失败
+    if (problems.length) return { ok: false, checked: 0, problems };
+
+    const legacyById = new Map(legacy.map(fav => [String(fav?.id), fav]));
+    let checked = 0;
+
+    for (const entry of store.entries) {
+        const original = legacyById.get(String(entry.id));
+        if (!original) {
+            problems.push(`索引里的 ${entry.id} 在 settings.json 里找不到对应收藏`);
+            continue;
+        }
+        try {
+            const body = await readFavBody(entry);
+            // 与写入时同一套推导，所以这里比对的是「重新写一遍会得到什么」
+            const expected = JSON.stringify(buildFavBody(original));
+            if (JSON.stringify(body) !== expected) {
+                problems.push(`收藏「${entry.title || entry.id}」的正文与 settings.json 里的不一致`);
+            }
+        } catch (e) {
+            problems.push(`收藏「${entry.title || entry.id}」正文读取失败：${e?.message || String(e)}`);
+        }
+        checked++;
+        if (onProgress) onProgress(checked, store.entries.length);
+        // 问题太多就不必继续刷了，足以判定失败
+        if (problems.length >= 10) break;
+    }
+
+    return { ok: problems.length === 0, checked, problems };
+}
+
+/**
+ * 删掉 settings.json 里的旧收藏数据。**必须先通过全量核对。**
+ * 这是整个搬家里唯一不可逆的一步，也是 settings.json 真正瘦下来的那一步。
+ *
+ * @returns {Promise<{ok:boolean, removedBytes:number, problems?:string[]}>}
+ */
+export async function dropLegacyFavs(options = {}) {
+    const verification = await verifyMigrationAgainstLegacy(options);
+    if (!verification.ok) {
+        return { ok: false, removedBytes: 0, problems: verification.problems };
+    }
+
+    const data = getExtData();
+    const removedBytes = utf8ByteLength(JSON.stringify(data.favs || []));
+    delete data.favs;
+    saveExtData();
+
+    TitaniaLogger.info(`旧收藏数据已删除，settings.json 减少约 ${removedBytes} 字节`);
+    return { ok: true, removedBytes };
+}

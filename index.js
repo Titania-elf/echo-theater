@@ -21374,6 +21374,106 @@ async function migrateFavsToFiles(options = {}) {
   TitaniaLogger.info("\u6536\u85CF\u642C\u5BB6\u5B8C\u6210\uFF08\u65E7\u6570\u636E\u4ECD\u4FDD\u7559\uFF09", report);
   return report;
 }
+function assembleFav(entry, body) {
+  const fav = {
+    id: entry.id,
+    type: entry.type,
+    title: String(entry.title || ""),
+    charName: String(entry.charName || ""),
+    scriptName: String(entry.scriptName || ""),
+    scriptId: String(entry.scriptId || ""),
+    date: String(entry.date || ""),
+    avatar: String(entry.avatar || "")
+  };
+  if (entry.type === "chain") {
+    fav.branchKey = String(entry.branchKey || "");
+    fav.chainSignature = String(entry.chainSignature || "");
+    fav.items = Array.isArray(body?.items) ? body.items : [];
+    if (typeof body?.html === "string") fav.html = body.html;
+  } else {
+    fav.html = String(body?.html || "");
+  }
+  return fav;
+}
+async function getFullFavById(id3) {
+  const store = getFavsIndex();
+  if (!store) return null;
+  const entry = store.entries.find((item) => String(item.id) === String(id3));
+  if (!entry) return null;
+  return assembleFav(entry, await readFavBody(entry));
+}
+async function exportFavsAsLegacyArray(options = {}) {
+  const store = getFavsIndex();
+  if (!store) throw new Error("\u5C1A\u672A\u642C\u5BB6\uFF0C\u65E0\u9700\u4ECE\u6587\u4EF6\u91CD\u5EFA\u6536\u85CF\u6570\u7EC4");
+  const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+  const total = store.entries.length;
+  const result = [];
+  for (let i = 0; i < total; i++) {
+    const entry = store.entries[i];
+    try {
+      result.push(assembleFav(entry, await readFavBody(entry)));
+    } catch (e) {
+      throw new Error(`\u6536\u85CF\u300C${entry.title || entry.id}\u300D\u7684\u6B63\u6587\u8BFB\u53D6\u5931\u8D25\uFF0C\u5907\u4EFD\u5DF2\u4E2D\u6B62\uFF1A${e?.message || String(e)}`);
+    }
+    if (onProgress) onProgress(i + 1, total);
+  }
+  return result;
+}
+async function verifyMigrationAgainstLegacy(options = {}) {
+  const store = getFavsIndex();
+  if (!store) return { ok: false, checked: 0, problems: ["\u5C1A\u672A\u642C\u5BB6\uFF0C\u6CA1\u6709\u53EF\u6838\u5BF9\u7684\u7D22\u5F15"] };
+  const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+  const legacy = Array.isArray(getExtData().favs) ? getExtData().favs : [];
+  const problems = [];
+  if (legacy.length === 0) {
+    return { ok: false, checked: 0, problems: ["settings.json \u91CC\u5DF2\u7ECF\u6CA1\u6709\u65E7\u6536\u85CF\u6570\u636E\u4E86"] };
+  }
+  if (legacy.length !== store.entries.length) {
+    problems.push(`\u6761\u6570\u4E0D\u4E00\u81F4\uFF1A\u7D22\u5F15 ${store.entries.length} \u6761\uFF0Csettings.json \u91CC ${legacy.length} \u6761`);
+  }
+  try {
+    const verifyResult = await verifyFavFiles(store.entries.map((entry) => entry.file));
+    const missing = Object.entries(verifyResult).filter(([, exists]) => !exists).map(([path]) => path);
+    if (missing.length) problems.push(`${missing.length} \u4E2A\u6B63\u6587\u6587\u4EF6\u4E0D\u5B58\u5728\uFF1A${missing.slice(0, 3).join("\u3001")}${missing.length > 3 ? " \u2026" : ""}`);
+  } catch (e) {
+    problems.push(`\u6587\u4EF6\u6821\u9A8C\u8BF7\u6C42\u5931\u8D25\uFF1A${e?.message || String(e)}`);
+  }
+  if (problems.length) return { ok: false, checked: 0, problems };
+  const legacyById = new Map(legacy.map((fav) => [String(fav?.id), fav]));
+  let checked = 0;
+  for (const entry of store.entries) {
+    const original = legacyById.get(String(entry.id));
+    if (!original) {
+      problems.push(`\u7D22\u5F15\u91CC\u7684 ${entry.id} \u5728 settings.json \u91CC\u627E\u4E0D\u5230\u5BF9\u5E94\u6536\u85CF`);
+      continue;
+    }
+    try {
+      const body = await readFavBody(entry);
+      const expected = JSON.stringify(buildFavBody(original));
+      if (JSON.stringify(body) !== expected) {
+        problems.push(`\u6536\u85CF\u300C${entry.title || entry.id}\u300D\u7684\u6B63\u6587\u4E0E settings.json \u91CC\u7684\u4E0D\u4E00\u81F4`);
+      }
+    } catch (e) {
+      problems.push(`\u6536\u85CF\u300C${entry.title || entry.id}\u300D\u6B63\u6587\u8BFB\u53D6\u5931\u8D25\uFF1A${e?.message || String(e)}`);
+    }
+    checked++;
+    if (onProgress) onProgress(checked, store.entries.length);
+    if (problems.length >= 10) break;
+  }
+  return { ok: problems.length === 0, checked, problems };
+}
+async function dropLegacyFavs(options = {}) {
+  const verification = await verifyMigrationAgainstLegacy(options);
+  if (!verification.ok) {
+    return { ok: false, removedBytes: 0, problems: verification.problems };
+  }
+  const data = getExtData();
+  const removedBytes = utf8ByteLength(JSON.stringify(data.favs || []));
+  delete data.favs;
+  saveExtData();
+  TitaniaLogger.info(`\u65E7\u6536\u85CF\u6570\u636E\u5DF2\u5220\u9664\uFF0Csettings.json \u51CF\u5C11\u7EA6 ${removedBytes} \u5B57\u8282`);
+  return { ok: true, removedBytes };
+}
 var FAV_FILE_PREFIX, FAV_BODY_VERSION, FAVS_INDEX_KEY, BASE64_CHUNK, VOID_RESOURCE_TAG_RE, FAVS_INDEX_VERSION;
 var init_favsStore = __esm({
   "src/core/favsStore.js"() {
@@ -21398,34 +21498,66 @@ __export(favsWindow_exports, {
   saveFavorite: () => saveFavorite,
   unsaveFavorite: () => unsaveFavorite
 });
-async function mirrorFavsToStore(ids) {
-  if (!isFavsMigrated()) return;
+function getLegacyFavs() {
   const data = getExtData();
-  const wanted = new Set((Array.isArray(ids) ? ids : [ids]).map((id3) => String(id3)));
-  for (const id3 of wanted) {
-    const fav = (data.favs || []).find((x) => String(x.id) === id3);
+  if (!Array.isArray(data.favs)) return null;
+  if (data.favs.length === 0 && isFavsMigrated()) return null;
+  return data.favs;
+}
+async function putFav(fav) {
+  const legacy = getLegacyFavs();
+  if (legacy) {
+    const at = legacy.findIndex((x) => String(x?.id) === String(fav.id));
+    if (at >= 0) legacy[at] = fav;
+    else legacy.unshift(fav);
+    saveExtData();
+  }
+  if (isFavsMigrated()) {
     try {
-      if (fav) await upsertFav(fav);
-      else await removeFavsByIds([id3]);
+      await upsertFav(fav);
     } catch (e) {
-      TitaniaLogger.error(`\u6536\u85CF ${id3} \u540C\u6B65\u5230\u6587\u4EF6\u5B58\u50A8\u5931\u8D25\uFF08data.favs \u4ECD\u662F\u6700\u65B0\u7684\uFF09`, e);
-      if (window.toastr) toastr.warning("\u6536\u85CF\u5DF2\u4FDD\u5B58\uFF0C\u4F46\u6587\u4EF6\u5B58\u50A8\u540C\u6B65\u5931\u8D25\uFF0C\u8BE6\u89C1\u63A7\u5236\u53F0", "Titania");
+      TitaniaLogger.error(`\u6536\u85CF ${fav?.id} \u5199\u5165\u6587\u4EF6\u5B58\u50A8\u5931\u8D25`, e);
+      const fatal = !legacy;
+      if (window.toastr) {
+        if (fatal) toastr.error(`\u6536\u85CF\u4FDD\u5B58\u5931\u8D25\uFF1A${e?.message || String(e)}`, "Titania");
+        else toastr.warning("\u6536\u85CF\u5DF2\u4FDD\u5B58\uFF0C\u4F46\u6587\u4EF6\u5B58\u50A8\u540C\u6B65\u5931\u8D25\uFF0C\u8BE6\u89C1\u63A7\u5236\u53F0", "Titania");
+      }
+      if (fatal) throw e;
     }
   }
 }
-async function mirrorFavRemovalToStore(ids) {
-  if (!isFavsMigrated()) return;
-  try {
-    await removeFavsByIds(Array.isArray(ids) ? ids : [ids]);
-  } catch (e) {
-    TitaniaLogger.error("\u5220\u9664\u540C\u6B65\u5230\u6587\u4EF6\u5B58\u50A8\u5931\u8D25\uFF08data.favs \u5DF2\u5220\u9664\u6210\u529F\uFF09", e);
-    if (window.toastr) toastr.warning("\u6536\u85CF\u5DF2\u5220\u9664\uFF0C\u4F46\u6587\u4EF6\u5B58\u50A8\u540C\u6B65\u5931\u8D25\uFF0C\u8BE6\u89C1\u63A7\u5236\u53F0", "Titania");
+async function deleteFavs(ids) {
+  const wanted = new Set((Array.isArray(ids) ? ids : [ids]).map((id3) => String(id3)));
+  if (wanted.size === 0) return;
+  const data = getExtData();
+  const legacy = getLegacyFavs();
+  if (legacy) {
+    const before = legacy.length;
+    data.favs = legacy.filter((f) => !wanted.has(String(f?.id)));
+    if (data.favs.length !== before) saveExtData();
+  }
+  if (isFavsMigrated()) {
+    try {
+      await removeFavsByIds([...wanted]);
+    } catch (e) {
+      TitaniaLogger.error("\u5220\u9664\u540C\u6B65\u5230\u6587\u4EF6\u5B58\u50A8\u5931\u8D25", e);
+      if (window.toastr) toastr.warning("\u5220\u9664\u672A\u80FD\u540C\u6B65\u5230\u6587\u4EF6\u5B58\u50A8\uFF0C\u8BE6\u89C1\u63A7\u5236\u53F0", "Titania");
+    }
   }
 }
-function resolveFavsForWindow(data) {
-  const legacy = Array.isArray(data.favs) ? data.favs : [];
+async function loadFavForWrite(id3) {
+  const legacy = getLegacyFavs();
+  if (legacy) return legacy.find((x) => String(x?.id) === String(id3)) || null;
+  return await getFullFavById(id3);
+}
+function listFavMetaForDedup() {
+  return getLegacyFavs() || listFavsForUi() || [];
+}
+function resolveFavsForWindow() {
+  const legacy = getLegacyFavs();
   const indexed = listFavsForUi();
-  if (!indexed) return legacy;
+  if (!indexed) return legacy || [];
+  if (!legacy) return indexed;
   if (indexed.length !== legacy.length) {
     TitaniaLogger.warn(
       `\u6536\u85CF\u7D22\u5F15\u4E0E data.favs \u6761\u6570\u4E0D\u4E00\u81F4\uFF08\u7D22\u5F15 ${indexed.length} / \u5B9E\u9645 ${legacy.length}\uFF09\uFF0C\u672C\u6B21\u9000\u56DE\u8BFB data.favs`
@@ -21669,15 +21801,24 @@ function isSameChainSessionByBaseHtml(favEntry, scriptId, currentItems) {
   if (!favBase || !currentBase) return false;
   return favBase === currentBase;
 }
-function isSameChainSession(favEntry, scriptId, branchKey, currentItems) {
-  if (!favEntry || favEntry.type !== "chain") return false;
-  if (String(favEntry.scriptId || "") !== String(scriptId || "")) return false;
+async function findSameChainSession(favMeta, scriptId, branchKey, currentItems) {
   const normalizedBranchKey = String(branchKey || "").trim();
-  const favBranchKey = String(favEntry.branchKey || "").trim();
-  if (normalizedBranchKey && favBranchKey) {
-    return normalizedBranchKey === favBranchKey;
+  const sameScript = favMeta.filter((f) => f?.type === "chain" && String(f.scriptId || "") === String(scriptId || ""));
+  if (normalizedBranchKey) {
+    const byBranch = sameScript.find((f) => String(f.branchKey || "").trim() === normalizedBranchKey);
+    if (byBranch) return byBranch;
   }
-  return isSameChainSessionByBaseHtml(favEntry, scriptId, currentItems);
+  const needsBody = sameScript.filter((f) => !String(f.branchKey || "").trim());
+  for (const candidate of needsBody) {
+    try {
+      await ensureFavBody(candidate);
+    } catch (e) {
+      TitaniaLogger.warn(`\u53BB\u91CD\u6BD4\u5BF9\u65F6\u8BFB\u4E0D\u51FA\u6536\u85CF ${candidate?.id} \u7684\u6B63\u6587\uFF0C\u8DF3\u8FC7\u8BE5\u5019\u9009`);
+      continue;
+    }
+    if (isSameChainSessionByBaseHtml(candidate, scriptId, currentItems)) return candidate;
+  }
+  return null;
 }
 async function saveContinuationChainFavorite() {
   const currentResult = getCurrentGenerationResult();
@@ -21724,8 +21865,9 @@ async function saveContinuationChainFavorite() {
   const avatarSrc = getCurrentAvatarSrc();
   const chainSignature = buildChainSignature(scriptId, normalizedRounds);
   const data = getExtData();
-  if (!Array.isArray(data.favs)) data.favs = [];
-  const duplicated = data.favs.find((f) => f?.type === "chain" && f?.chainSignature === chainSignature);
+  if (!Array.isArray(data.favs) && !isFavsMigrated()) data.favs = [];
+  const favMeta = listFavMetaForDedup();
+  const duplicated = favMeta.find((f) => f?.type === "chain" && f?.chainSignature === chainSignature);
   if (duplicated) {
     GlobalState.lastFavId = duplicated.id;
     syncFavIdToCurrentHistory(duplicated.id);
@@ -21736,31 +21878,33 @@ async function saveContinuationChainFavorite() {
   const mergedHtml = buildChainMergedHtml(items, { withStyles: true });
   const now = Date.now();
   const activeFavId = Number(GlobalState.lastFavId) || null;
-  let existingChain = null;
+  let existingMeta = null;
   if (activeFavId) {
-    existingChain = data.favs.find((f) => f?.type === "chain" && Number(f?.id) === activeFavId) || null;
+    existingMeta = favMeta.find((f) => f?.type === "chain" && Number(f?.id) === activeFavId) || null;
   }
-  if (!existingChain) {
-    existingChain = data.favs.find((f) => isSameChainSession(f, scriptId, branchKey, items)) || null;
+  if (!existingMeta) {
+    existingMeta = await findSameChainSession(favMeta, scriptId, branchKey, items);
   }
-  if (existingChain) {
-    existingChain.title = `${scriptName} - ${ctx.charName}`;
-    existingChain.charName = ctx.charName;
-    existingChain.scriptName = scriptName;
-    existingChain.scriptId = scriptId;
-    existingChain.date = new Date(now).toLocaleString();
-    existingChain.html = mergedHtml;
-    existingChain.avatar = avatarSrc;
-    existingChain.branchKey = branchKey;
-    existingChain.chainSignature = chainSignature;
-    existingChain.items = items;
-    saveExtData();
-    await mirrorFavsToStore([existingChain.id]);
-    GlobalState.lastFavId = existingChain.id;
-    syncFavIdToCurrentHistory(existingChain.id);
-    updateFavButtonUI();
-    if (window.toastr) toastr.success(`\u5DF2\u66F4\u65B0\u5F53\u524D\u5267\u573A\u5206\u7EC4\u6536\u85CF\uFF08\u5171 ${items.length} \u6BB5\uFF09`);
-    return true;
+  if (existingMeta) {
+    const existingChain = await loadFavForWrite(existingMeta.id);
+    if (existingChain) {
+      existingChain.title = `${scriptName} - ${ctx.charName}`;
+      existingChain.charName = ctx.charName;
+      existingChain.scriptName = scriptName;
+      existingChain.scriptId = scriptId;
+      existingChain.date = new Date(now).toLocaleString();
+      existingChain.html = mergedHtml;
+      existingChain.avatar = avatarSrc;
+      existingChain.branchKey = branchKey;
+      existingChain.chainSignature = chainSignature;
+      existingChain.items = items;
+      await putFav(existingChain);
+      GlobalState.lastFavId = existingChain.id;
+      syncFavIdToCurrentHistory(existingChain.id);
+      updateFavButtonUI();
+      if (window.toastr) toastr.success(`\u5DF2\u66F4\u65B0\u5F53\u524D\u5267\u573A\u5206\u7EC4\u6536\u85CF\uFF08\u5171 ${items.length} \u6BB5\uFF09`);
+      return true;
+    }
   }
   const entry = {
     id: now,
@@ -21776,9 +21920,7 @@ async function saveContinuationChainFavorite() {
     chainSignature,
     items
   };
-  data.favs.unshift(entry);
-  saveExtData();
-  await mirrorFavsToStore([entry.id]);
+  await putFav(entry);
   GlobalState.lastFavId = entry.id;
   syncFavIdToCurrentHistory(entry.id);
   updateFavButtonUI();
@@ -21790,17 +21932,10 @@ async function unsaveFavorite() {
     if (window.toastr) toastr.warning("\u5F53\u524D\u5185\u5BB9\u672A\u6536\u85CF");
     return false;
   }
-  const data = getExtData();
-  if (!data.favs) {
-    GlobalState.lastFavId = null;
-    return false;
-  }
   const targetFavId = String(GlobalState.lastFavId);
-  const originalLength = data.favs.length;
-  data.favs = data.favs.filter((f) => String(f?.id) !== targetFavId);
-  if (data.favs.length < originalLength) {
-    saveExtData();
-    await mirrorFavRemovalToStore([targetFavId]);
+  const existed = listFavMetaForDedup().some((f) => String(f?.id) === targetFavId);
+  if (existed) {
+    await deleteFavs([targetFavId]);
     GlobalState.lastFavId = null;
     syncFavIdToCurrentHistory(null);
     updateFavButtonUI();
@@ -21817,7 +21952,7 @@ function openFavsWindow() {
   setFavsWindowOpen(true);
   $("#t-main-view").hide();
   const data = getExtData();
-  const favs = resolveFavsForWindow(data);
+  const favs = resolveFavsForWindow();
   let currentFilteredList = [];
   let currentIndex = -1;
   let currentFavId = null;
@@ -21871,7 +22006,7 @@ function openFavsWindow() {
     return f;
   };
   const resyncLocalFavs = () => {
-    const next = resolveFavsForWindow(getExtData()).map(applyFavMeta);
+    const next = resolveFavsForWindow().map(applyFavMeta);
     favs.splice(0, favs.length, ...next);
     charIndex.clear();
     favs.forEach((f) => charIndex.add(f._meta.char));
@@ -22729,10 +22864,7 @@ function openFavsWindow() {
     if (count === 0) return;
     if (confirm(`\u786E\u5B9A\u5220\u9664\u9009\u4E2D\u7684 ${count} \u6761\u6536\u85CF\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\u3002`)) {
       const removedIds = [...selectedIds];
-      const d = getExtData();
-      d.favs = d.favs.filter((x) => !selectedIds.has(x.id));
-      saveExtData();
-      await mirrorFavRemovalToStore(removedIds);
+      await deleteFavs(removedIds);
       resyncLocalFavs();
       selectedIds.clear();
       updateSelectionCount();
@@ -22925,11 +23057,13 @@ function openFavsWindow() {
     if (newTitle === null || newTitle.trim() === "") return;
     const trimmedTitle = newTitle.trim();
     const d = getExtData();
-    const targetFav = d.favs.find((x) => x.id === currentFavId);
+    const targetFav = Array.isArray(d.favs) ? d.favs.find((x) => x.id === currentFavId) : null;
+    const indexEntry = isFavsMigrated() ? patchFavIndexEntry(currentFavId, { title: trimmedTitle }) : null;
     if (targetFav) {
       targetFav.title = trimmedTitle;
       saveExtData();
-      patchFavIndexEntry(currentFavId, { title: trimmedTitle });
+    }
+    if (targetFav || indexEntry) {
       const localFav = favs.find((x) => x.id === currentFavId);
       if (localFav) {
         localFav.title = trimmedTitle;
@@ -22944,10 +23078,7 @@ function openFavsWindow() {
   $("#t-read-del-one").on("click", async () => {
     if (confirm("\u786E\u5B9A\u5220\u9664\u6B64\u6761\u6536\u85CF\uFF1F")) {
       const removedId = currentFavId;
-      const d = getExtData();
-      d.favs = d.favs.filter((x) => x.id !== removedId);
-      saveExtData();
-      await mirrorFavRemovalToStore([removedId]);
+      await deleteFavs([removedId]);
       resyncLocalFavs();
       scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
       if (currentFilteredList.length === 0) {
@@ -23020,15 +23151,12 @@ ${segmentTip}`);
     const target = chainItems[removeIndex];
     const removeRound = Number(target?.round) || removeIndex + 1;
     if (!confirm(`\u786E\u5B9A\u5220\u9664\u7B2C ${removeRound} \u6BB5\u5417\uFF1F`)) return;
-    const d = getExtData();
-    const targetFav = d.favs.find((x) => x.id === currentFavId);
+    const targetFav = await loadFavForWrite(currentFavId);
     if (!targetFav || targetFav.type !== "chain") return;
     if (!Array.isArray(targetFav.items)) targetFav.items = [];
     targetFav.items.splice(removeIndex, 1);
     if (targetFav.items.length === 0) {
-      d.favs = d.favs.filter((x) => x.id !== currentFavId);
-      saveExtData();
-      await mirrorFavRemovalToStore([currentFavId]);
+      await deleteFavs([currentFavId]);
       resyncLocalFavs();
       scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
       if (currentFilteredList.length === 0) {
@@ -23041,8 +23169,7 @@ ${segmentTip}`);
       return;
     }
     targetFav.html = buildChainMergedHtml(targetFav.items, { withStyles: true });
-    saveExtData();
-    await mirrorFavsToStore([currentFavId]);
+    await putFav(targetFav);
     const localFav = favs.find((x) => x.id === currentFavId);
     if (localFav) {
       localFav.items = targetFav.items;
@@ -23098,7 +23225,7 @@ ${segmentTip}`);
 function openCharImageManager(onCloseCallback) {
   const data = getExtData();
   if (!data.character_map) data.character_map = {};
-  const favs = data.favs || [];
+  const favs = listFavMetaForDedup();
   const charNames = /* @__PURE__ */ new Set();
   favs.forEach((f) => {
     if (f.charName) {
@@ -45991,6 +46118,10 @@ function countVectorItems(vectorData) {
 async function createFullBackupPayload(options = {}) {
   const includeVectors = options.includeVectors !== false;
   const extDataSnapshot = JSON.parse(JSON.stringify(getExtData()));
+  if (isFavsMigrated()) {
+    extDataSnapshot.favs = await exportFavsAsLegacyArray();
+    delete extDataSnapshot[FAVS_INDEX_KEY];
+  }
   const vectorData = includeVectors ? await buildVectorBackupData() : { version: 1, characters: [] };
   return {
     type: "titania_theater_backup",
@@ -46100,6 +46231,7 @@ function bindDrawerBackupControls() {
   });
   bindFavsMigrationDryRun();
   bindFavsMigrationRun();
+  bindFavsMigrationCleanup();
 }
 function formatBytes(bytes) {
   const n = Number(bytes) || 0;
@@ -46240,6 +46372,93 @@ function bindFavsMigrationRun() {
       if (window.toastr) toastr.error(e?.message || "\u642C\u5BB6\u5931\u8D25", "Titania Echo");
     } finally {
       if (!isFavsMigrated()) $self.prop("disabled", false).html(oldHtml);
+    }
+  });
+}
+function bindFavsMigrationCleanup() {
+  const $btn = $("#titania-favs-migrate-cleanup");
+  if ($btn.length === 0) return;
+  const refreshButtonState = () => {
+    const migrated = isFavsMigrated();
+    const legacyLeft = Array.isArray(getExtData().favs) && getExtData().favs.length > 0;
+    if (!migrated) {
+      $btn.prop("disabled", true).attr("title", "\u8BF7\u5148\u5B8C\u6210\u6B63\u5F0F\u642C\u5BB6");
+    } else if (!legacyLeft) {
+      $btn.prop("disabled", true).html('<i class="fa-solid fa-check"></i> \u65E7\u6570\u636E\u5DF2\u6E05\u7406');
+    } else {
+      $btn.prop("disabled", false).attr("title", "");
+    }
+  };
+  refreshButtonState();
+  $btn.off("click").on("click", async function() {
+    const $self = $(this);
+    const oldHtml = $self.html();
+    if (!isFavsMigrated()) {
+      showFavsMigrationReport("\u8BF7\u5148\u5B8C\u6210\u300C\u6B63\u5F0F\u642C\u5BB6\u300D\uFF0C\u518D\u6267\u884C\u6536\u5C3E\u3002", "#feca57");
+      return;
+    }
+    const footprint = describeCurrentFavsFootprint();
+    if (footprint.count === 0) {
+      showFavsMigrationReport("settings.json \u91CC\u5DF2\u7ECF\u6CA1\u6709\u65E7\u6536\u85CF\u6570\u636E\u4E86\u3002", "#feca57");
+      refreshButtonState();
+      return;
+    }
+    const confirmed = confirm(
+      `\u5373\u5C06\u4ECE settings.json \u5220\u9664 ${footprint.count} \u6761\u6536\u85CF\u7684\u65E7\u6570\u636E\uFF08\u7EA6 ${formatBytes(footprint.bytes)}\uFF09\u3002
+
+\xB7 \u5220\u9664\u524D\u4F1A\u5168\u91CF\u6838\u5BF9\u6BCF\u4E00\u6761\u6B63\u6587\uFF0C\u4EFB\u4F55\u4E00\u6761\u4E0D\u4E00\u81F4\u5C31\u4E2D\u6B62
+\xB7 \u4F1A\u5148\u4E0B\u8F7D\u4E00\u4EFD\u5B8C\u6574\u5907\u4EFD\uFF0C\u8BF7\u52A1\u5FC5\u4FDD\u5B58\u597D
+\xB7 \u3010\u6B64\u64CD\u4F5C\u4E0D\u53EF\u9006\u3011\u5220\u9664\u540E\u6B63\u6587\u53EA\u5B58\u5728\u4E8E user/files/ \u91CC
+
+\u786E\u5B9A\u7EE7\u7EED\u5417\uFF1F`
+    );
+    if (!confirmed) return;
+    $self.prop("disabled", true);
+    try {
+      $self.html('<i class="fa-solid fa-spinner fa-spin"></i> \u6B63\u5728\u5907\u4EFD...');
+      try {
+        const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+        const filename = `titania_backup_before_favs_cleanup_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
+        downloadBackupPayload(snapshot, filename);
+      } catch (backupErr) {
+        console.error("Titania: \u6536\u5C3E\u524D\u5907\u4EFD\u5931\u8D25", backupErr);
+        showFavsMigrationReport(
+          `\u274C \u6536\u5C3E\u524D\u7684\u5907\u4EFD\u5931\u8D25\uFF0C\u5DF2\u4E2D\u6B62\uFF0C\u672A\u5220\u9664\u4EFB\u4F55\u6570\u636E\uFF1A${backupErr?.message || String(backupErr)}`,
+          "#ff7675"
+        );
+        if (window.toastr) toastr.error("\u5907\u4EFD\u5931\u8D25\uFF0C\u6536\u5C3E\u5DF2\u4E2D\u6B62", "Titania Echo");
+        return;
+      }
+      const result = await dropLegacyFavs({
+        onProgress: (done, total) => {
+          $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> \u6838\u5BF9\u4E2D ${done}/${total}`);
+        }
+      });
+      if (!result.ok) {
+        showFavsMigrationReport(
+          `\u274C \u6838\u5BF9\u672A\u901A\u8FC7\uFF0C<b>\u65E7\u6570\u636E\u4E00\u4E2A\u5B57\u90FD\u6CA1\u5220</b>\uFF1A<br>\xB7 ${(result.problems || []).join("<br>\xB7 ")}<br>\u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\uFF0C\u53EF\u653E\u5FC3\u6392\u67E5\u540E\u91CD\u8BD5\u3002`,
+          "#ff7675"
+        );
+        console.error("[Titania] \u6536\u5C3E\u6838\u5BF9\u672A\u901A\u8FC7", result);
+        if (window.toastr) toastr.error("\u6838\u5BF9\u672A\u901A\u8FC7\uFF0C\u672A\u5220\u9664\u4EFB\u4F55\u6570\u636E", "Titania Echo");
+        return;
+      }
+      showFavsMigrationReport(
+        `\u2705 \u6536\u5C3E\u5B8C\u6210\uFF0Csettings.json \u51CF\u5C11 <b>${formatBytes(result.removedBytes)}</b><br>\xB7 \u6536\u85CF\u6B63\u6587\u73B0\u5728\u53EA\u5B58\u5728\u4E8E user/files/ \u91CC\uFF0C\u65B0\u589E\u4E00\u6761\u6536\u85CF\u53EA\u5199\u5B83\u81EA\u5DF1\u90A3\u4E00\u4E2A\u6587\u4EF6<br>\xB7 \u4FDD\u5B58\u8BBE\u7F6E\u4E0D\u518D\u91CD\u5199\u6536\u85CF\uFF0C\u5361\u987F\u5230\u8FD9\u4E00\u6B65\u624D\u771F\u6B63\u6539\u5584<br>\xB7 \u5BFC\u51FA\u5907\u4EFD\u4F1A\u81EA\u52A8\u628A\u6B63\u6587\u8BFB\u56DE\u6765\u6253\u5305\uFF0C\u4ECD\u7136\u81EA\u6210\u4E00\u4F53<br>\xB7 <b>\u5EFA\u8BAE\u5237\u65B0\u9875\u9762</b>\uFF0C\u786E\u8BA4\u6536\u85CF\u5939\u4E00\u5207\u6B63\u5E38`,
+        "#55efc4"
+      );
+      console.log("[Titania] \u6536\u5C3E\u5B8C\u6210", result);
+      refreshButtonState();
+      if (window.toastr) {
+        toastr.success(`\u65E7\u6570\u636E\u5DF2\u6E05\u7406\uFF0Csettings.json \u51CF\u5C11 ${formatBytes(result.removedBytes)}`, "Titania Echo");
+      }
+    } catch (e) {
+      console.error("Titania: \u6536\u5C3E\u5931\u8D25", e);
+      showFavsMigrationReport(`\u274C \u6536\u5C3E\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
+      if (window.toastr) toastr.error(e?.message || "\u6536\u5C3E\u5931\u8D25", "Titania Echo");
+    } finally {
+      $self.html(oldHtml);
+      refreshButtonState();
     }
   });
 }

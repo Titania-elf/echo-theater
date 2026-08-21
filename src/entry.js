@@ -20,6 +20,8 @@ import {
     migrateFavsToFiles,
     isFavsMigrated,
     describeCurrentFavsFootprint,
+    exportFavsAsLegacyArray,
+    dropLegacyFavs,
     FAVS_INDEX_KEY
 } from "./core/favsStore.js";
 import { initExtensionUpdate } from "./core/extensionUpdate.js";
@@ -356,6 +358,19 @@ function countVectorItems(vectorData) {
 async function createFullBackupPayload(options = {}) {
     const includeVectors = options.includeVectors !== false;
     const extDataSnapshot = JSON.parse(JSON.stringify(getExtData()));
+
+    // 搬家后收藏正文已不在 settings.json 里，快照只剩索引 —— 直接导出会得到
+    // 一份没有正文的空壳备份。所以这里把正文从文件读回来，还原成搬家前的
+    // favs 数组形状，并去掉索引：
+    //   · 备份自成一体，不依赖 user/files 目录（ST 的自动备份不管那个目录）
+    //   · 与旧版插件的备份格式互通，导入后落在「未搬家」状态，再搬一次即可
+    // 任何一条正文读不出来，exportFavsAsLegacyArray 会抛错，备份整体失败 ——
+    // 宁可导不出来，也不能悄悄给出一份缺内容的备份。
+    if (isFavsMigrated()) {
+        extDataSnapshot.favs = await exportFavsAsLegacyArray();
+        delete extDataSnapshot[FAVS_INDEX_KEY];
+    }
+
     const vectorData = includeVectors ? await buildVectorBackupData() : { version: 1, characters: [] };
     return {
         type: "titania_theater_backup",
@@ -484,6 +499,7 @@ function bindDrawerBackupControls() {
 
     bindFavsMigrationDryRun();
     bindFavsMigrationRun();
+    bindFavsMigrationCleanup();
 }
 
 /** 把字节数说成人话 */
@@ -679,8 +695,128 @@ function bindFavsMigrationRun() {
     });
 }
 
-async function loadExtensionSettings() {
-    // 确保配置对象存在
+/**
+ * 「收尾：删除旧数据」按钮。
+ *
+ * 这是整个搬家里唯一不可逆的一步，也是 settings.json 真正瘦下来、
+ * 保存速度真正变快的那一步。所以门槛设得很高：
+ *   1. 强制下载一份完整备份（此时备份已改为从文件重建正文，自成一体）
+ *   2. 全量核对——不是抽样：每个文件都要在，每条正文都要能读回来，
+ *      且与 settings.json 里的旧数据逐字一致
+ *   3. 只有全部通过才删
+ */
+function bindFavsMigrationCleanup() {
+    const $btn = $("#titania-favs-migrate-cleanup");
+    if ($btn.length === 0) return;
+
+    const refreshButtonState = () => {
+        const migrated = isFavsMigrated();
+        const legacyLeft = Array.isArray(getExtData().favs) && getExtData().favs.length > 0;
+        if (!migrated) {
+            $btn.prop("disabled", true).attr("title", "请先完成正式搬家");
+        } else if (!legacyLeft) {
+            $btn.prop("disabled", true).html('<i class="fa-solid fa-check"></i> 旧数据已清理');
+        } else {
+            $btn.prop("disabled", false).attr("title", "");
+        }
+    };
+    refreshButtonState();
+
+    $btn.off("click").on("click", async function () {
+        const $self = $(this);
+        const oldHtml = $self.html();
+
+        if (!isFavsMigrated()) {
+            showFavsMigrationReport("请先完成「正式搬家」，再执行收尾。", "#feca57");
+            return;
+        }
+        const footprint = describeCurrentFavsFootprint();
+        if (footprint.count === 0) {
+            showFavsMigrationReport("settings.json 里已经没有旧收藏数据了。", "#feca57");
+            refreshButtonState();
+            return;
+        }
+
+        const confirmed = confirm(
+            `即将从 settings.json 删除 ${footprint.count} 条收藏的旧数据（约 ${formatBytes(footprint.bytes)}）。
+
+`
+            + `· 删除前会全量核对每一条正文，任何一条不一致就中止
+`
+            + `· 会先下载一份完整备份，请务必保存好
+`
+            + `· 【此操作不可逆】删除后正文只存在于 user/files/ 里
+
+`
+            + `确定继续吗？`
+        );
+        if (!confirmed) return;
+
+        $self.prop("disabled", true);
+
+        try {
+            // 1. 强制备份。备份此刻已会把正文从文件读回来重建，能独立还原
+            $self.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
+            try {
+                const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+                const filename = `titania_backup_before_favs_cleanup_${new Date().toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
+                downloadBackupPayload(snapshot, filename);
+            } catch (backupErr) {
+                console.error("Titania: 收尾前备份失败", backupErr);
+                showFavsMigrationReport(
+                    `❌ 收尾前的备份失败，已中止，未删除任何数据：${backupErr?.message || String(backupErr)}`,
+                    "#ff7675"
+                );
+                if (window.toastr) toastr.error("备份失败，收尾已中止", "Titania Echo");
+                return;
+            }
+
+            // 2. 全量核对 + 删除
+            const result = await dropLegacyFavs({
+                onProgress: (done, total) => {
+                    $self.html(`<i class="fa-solid fa-spinner fa-spin"></i> 核对中 ${done}/${total}`);
+                }
+            });
+
+            if (!result.ok) {
+                showFavsMigrationReport(
+                    `❌ 核对未通过，<b>旧数据一个字都没删</b>：`
+                    + `<br>· ${(result.problems || []).join("<br>· ")}`
+                    + `<br>备份文件已下载，可放心排查后重试。`,
+                    "#ff7675"
+                );
+                console.error("[Titania] 收尾核对未通过", result);
+                if (window.toastr) toastr.error("核对未通过，未删除任何数据", "Titania Echo");
+                return;
+            }
+
+            showFavsMigrationReport(
+                `✅ 收尾完成，settings.json 减少 <b>${formatBytes(result.removedBytes)}</b>`
+                + `<br>· 收藏正文现在只存在于 user/files/ 里，新增一条收藏只写它自己那一个文件`
+                + `<br>· 保存设置不再重写收藏，卡顿到这一步才真正改善`
+                + `<br>· 导出备份会自动把正文读回来打包，仍然自成一体`
+                + `<br>· <b>建议刷新页面</b>，确认收藏夹一切正常`,
+                "#55efc4"
+            );
+            console.log("[Titania] 收尾完成", result);
+            refreshButtonState();
+            if (window.toastr) {
+                toastr.success(`旧数据已清理，settings.json 减少 ${formatBytes(result.removedBytes)}`, "Titania Echo");
+            }
+        } catch (e) {
+            console.error("Titania: 收尾失败", e);
+            showFavsMigrationReport(`❌ 收尾失败：${e?.message || String(e)}`, "#ff7675");
+            if (window.toastr) toastr.error(e?.message || "收尾失败", "Titania Echo");
+        } finally {
+            // 先无条件还原文案，再让 refreshButtonState 按最终状态覆盖
+            // （否则核对失败时按钮会一直卡在「核对中 176/176」）
+            $self.html(oldHtml);
+            refreshButtonState();
+        }
+    });
+}
+
+async function loadExtensionSettings() {    // 确保配置对象存在
     extension_settings[extensionName] = extension_settings[extensionName] || {};
     if (Object.keys(extension_settings[extensionName]).length === 0) {
         Object.assign(extension_settings[extensionName], defaultSettings);

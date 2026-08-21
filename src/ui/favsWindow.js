@@ -12,60 +12,109 @@ import {
     ensureFavBody,
     upsertFav,
     patchFavIndexEntry,
-    removeFavsByIds
+    removeFavsByIds,
+    getFullFavById
 } from "../core/favsStore.js";
 import { TitaniaLogger } from "../core/logger.js";
 
 /* ------------------------------------------------------------------ *
- * 与文件存储的桥接（搬家过渡期）
+ * 收藏读写的统一入口
  *
- * 过渡期的分工：data.favs 仍是**权威源**，写入照旧走它；
- * 索引只承担「读」——列表 / 搜索 / 筛选 / 卡片。
- * 每个写入点在原有逻辑之后追加一次同步，把改动镜像进索引与正文文件。
- *
- * 这样安排是为了让这一步可以零成本退回：万一索引侧有问题，
- * 退回上个插件版本就能拿到完整且最新的 data.favs，不会丢任何东西。
- * 下一个提交才把 data.favs 删掉、双写收成单写。
+ * 三个阶段用的是同一份代码，靠两个条件自然分流：
+ *   搬家前     —— data.favs 存在、索引不存在 → 只动 data.favs（与老行为完全一致）
+ *   搬家后未收尾 —— 两者都存在              → 双写，data.favs 仍是权威源
+ *   收尾后     —— data.favs 已删、索引存在   → 只动文件存储
+ * 所以不需要在调用点区分模式，也不会留下「等收尾时再删一遍」的过渡代码。
  * ------------------------------------------------------------------ */
 
-/** 把某几条收藏的当前状态镜像进文件存储；失败只告警，不打断用户操作 */
-async function mirrorFavsToStore(ids) {
-    if (!isFavsMigrated()) return;
+/**
+ * 取 data.favs，并把「已搬家 + favs 是空数组」当作不存在。
+ *
+ * 为什么需要这个判断：defaultSettings 里仍有 `favs: []`，收尾把该键删掉之后，
+ * 任何一次「把默认值合并回来」的操作都会让它复活成空数组。若把那个空数组当真，
+ * 去重会失效、写入会往它里面塞、列表会显示为空。
+ *
+ * 代价（明确记录）：搬家后若用户把收藏全删光再新增，这一轮不会写进 data.favs，
+ * 此时退回旧版插件会丢掉新增的那几条。取舍理由是反面更糟 ——
+ * 误信伪空数组会让 176 条收藏在界面上直接消失。
+ *
+ * @returns {object[]|null}
+ */
+function getLegacyFavs() {
     const data = getExtData();
-    const wanted = new Set((Array.isArray(ids) ? ids : [ids]).map(id => String(id)));
+    if (!Array.isArray(data.favs)) return null;
+    if (data.favs.length === 0 && isFavsMigrated()) return null;
+    return data.favs;
+}
 
-    for (const id of wanted) {
-        const fav = (data.favs || []).find(x => String(x.id) === id);
+/** 写入 / 更新一条收藏 */
+async function putFav(fav) {
+    const legacy = getLegacyFavs();
+    if (legacy) {
+        const at = legacy.findIndex(x => String(x?.id) === String(fav.id));
+        if (at >= 0) legacy[at] = fav;
+        else legacy.unshift(fav);
+        saveExtData();
+    }
+    if (isFavsMigrated()) {
         try {
-            if (fav) await upsertFav(fav);
-            else await removeFavsByIds([id]);
+            await upsertFav(fav);
         } catch (e) {
-            TitaniaLogger.error(`收藏 ${id} 同步到文件存储失败（data.favs 仍是最新的）`, e);
-            if (window.toastr) toastr.warning("收藏已保存，但文件存储同步失败，详见控制台", "Titania");
+            TitaniaLogger.error(`收藏 ${fav?.id} 写入文件存储失败`, e);
+            // 收尾后文件存储就是唯一的家，失败必须让用户知道内容没保存住
+            const fatal = !legacy;
+            if (window.toastr) {
+                if (fatal) toastr.error(`收藏保存失败：${e?.message || String(e)}`, "Titania");
+                else toastr.warning("收藏已保存，但文件存储同步失败，详见控制台", "Titania");
+            }
+            if (fatal) throw e;
         }
     }
 }
 
-/** 镜像删除；同上，失败只告警 */
-async function mirrorFavRemovalToStore(ids) {
-    if (!isFavsMigrated()) return;
-    try {
-        await removeFavsByIds(Array.isArray(ids) ? ids : [ids]);
-    } catch (e) {
-        TitaniaLogger.error("删除同步到文件存储失败（data.favs 已删除成功）", e);
-        if (window.toastr) toastr.warning("收藏已删除，但文件存储同步失败，详见控制台", "Titania");
+/** 删除若干条收藏 */
+async function deleteFavs(ids) {
+    const wanted = new Set((Array.isArray(ids) ? ids : [ids]).map(id => String(id)));
+    if (wanted.size === 0) return;
+
+    const data = getExtData();
+    const legacy = getLegacyFavs();
+    if (legacy) {
+        const before = legacy.length;
+        data.favs = legacy.filter(f => !wanted.has(String(f?.id)));
+        if (data.favs.length !== before) saveExtData();
+    }
+    if (isFavsMigrated()) {
+        try {
+            await removeFavsByIds([...wanted]);
+        } catch (e) {
+            TitaniaLogger.error("删除同步到文件存储失败", e);
+            if (window.toastr) toastr.warning("删除未能同步到文件存储，详见控制台", "Titania");
+        }
     }
 }
 
+/** 取一条完整收藏（含正文），供写入路径修改后再存回 */
+async function loadFavForWrite(id) {
+    const legacy = getLegacyFavs();
+    if (legacy) return legacy.find(x => String(x?.id) === String(id)) || null;
+    return await getFullFavById(id);
+}
+
+/** 列出全部收藏的元数据，供去重判断（不含正文） */
+function listFavMetaForDedup() {
+    return getLegacyFavs() || listFavsForUi() || [];
+}
+
 /**
- * 取收藏夹要用的列表。
- * 已搬家就读索引（不含正文），否则退回 data.favs。
- * 索引与 data.favs 条数不一致说明双写漂移过，此时退回 data.favs 保证看到的是真数据。
+ * 取收藏夹要用的列表。已搬家就读索引（不含正文），否则退回 data.favs。
+ * 双写期间两边条数不一致说明漂移过，此时退回 data.favs 保证看到的是真数据。
  */
-function resolveFavsForWindow(data) {
-    const legacy = Array.isArray(data.favs) ? data.favs : [];
+function resolveFavsForWindow() {
+    const legacy = getLegacyFavs();
     const indexed = listFavsForUi();
-    if (!indexed) return legacy;
+    if (!indexed) return legacy || [];
+    if (!legacy) return indexed;
 
     if (indexed.length !== legacy.length) {
         TitaniaLogger.warn(
@@ -495,6 +544,44 @@ function isSameChainSession(favEntry, scriptId, branchKey, currentItems) {
 }
 
 /**
+ * 在候选里找同一个剧场会话。
+ *
+ * 快路径只看 branchKey，索引里就有，不必读正文。只有两边 branchKey 缺失时
+ * 才退回比对首段正文 —— 那需要正文，所以先用「同 scriptId + 是 chain +
+ * branchKey 缺失」把候选缩到通常个位数，再逐个补齐正文，不会退化成全量加载。
+ *
+ * @param {object[]} favMeta 全部收藏的元数据
+ * @param {string} scriptId
+ * @param {string} branchKey
+ * @param {object[]} currentItems
+ * @returns {Promise<object|null>}
+ */
+async function findSameChainSession(favMeta, scriptId, branchKey, currentItems) {
+    const normalizedBranchKey = String(branchKey || "").trim();
+    const sameScript = favMeta.filter(f =>
+        f?.type === "chain" && String(f.scriptId || "") === String(scriptId || ""));
+
+    // 快路径：两边都有 branchKey
+    if (normalizedBranchKey) {
+        const byBranch = sameScript.find(f => String(f.branchKey || "").trim() === normalizedBranchKey);
+        if (byBranch) return byBranch;
+    }
+
+    // 慢路径：只有 branchKey 缺失的候选才需要读正文
+    const needsBody = sameScript.filter(f => !String(f.branchKey || "").trim());
+    for (const candidate of needsBody) {
+        try {
+            await ensureFavBody(candidate);
+        } catch (e) {
+            TitaniaLogger.warn(`去重比对时读不出收藏 ${candidate?.id} 的正文，跳过该候选`);
+            continue;
+        }
+        if (isSameChainSessionByBaseHtml(candidate, scriptId, currentItems)) return candidate;
+    }
+    return null;
+}
+
+/**
  * 保存当前剧本会话为分组收藏（首次生成 + 全部续写）
  */
 export async function saveContinuationChainFavorite() {
@@ -560,9 +647,13 @@ export async function saveContinuationChainFavorite() {
     const chainSignature = buildChainSignature(scriptId, normalizedRounds);
 
     const data = getExtData();
-    if (!Array.isArray(data.favs)) data.favs = [];
+    // 搬家前需要保证数组存在；收尾后 data.favs 已删除，此时由文件存储承载，不再重建它
+    if (!Array.isArray(data.favs) && !isFavsMigrated()) data.favs = [];
 
-    const duplicated = data.favs.find(f => f?.type === "chain" && f?.chainSignature === chainSignature);
+    // 去重只看元数据，不必把 176 条正文全读回来
+    const favMeta = listFavMetaForDedup();
+
+    const duplicated = favMeta.find(f => f?.type === "chain" && f?.chainSignature === chainSignature);
     if (duplicated) {
         GlobalState.lastFavId = duplicated.id;
         syncFavIdToCurrentHistory(duplicated.id);
@@ -576,33 +667,36 @@ export async function saveContinuationChainFavorite() {
     const now = Date.now();
 
     const activeFavId = Number(GlobalState.lastFavId) || null;
-    let existingChain = null;
+    let existingMeta = null;
     if (activeFavId) {
-        existingChain = data.favs.find(f => f?.type === "chain" && Number(f?.id) === activeFavId) || null;
+        existingMeta = favMeta.find(f => f?.type === "chain" && Number(f?.id) === activeFavId) || null;
     }
-    if (!existingChain) {
-        existingChain = data.favs.find(f => isSameChainSession(f, scriptId, branchKey, items)) || null;
+    if (!existingMeta) {
+        existingMeta = await findSameChainSession(favMeta, scriptId, branchKey, items);
     }
 
-    if (existingChain) {
-        existingChain.title = `${scriptName} - ${ctx.charName}`;
-        existingChain.charName = ctx.charName;
-        existingChain.scriptName = scriptName;
-        existingChain.scriptId = scriptId;
-        existingChain.date = new Date(now).toLocaleString();
-        existingChain.html = mergedHtml;
-        existingChain.avatar = avatarSrc;
-        existingChain.branchKey = branchKey;
-        existingChain.chainSignature = chainSignature;
-        existingChain.items = items;
+    if (existingMeta) {
+        // 收尾后元数据里没有正文，要先把完整对象取回来再改
+        const existingChain = await loadFavForWrite(existingMeta.id);
+        if (existingChain) {
+            existingChain.title = `${scriptName} - ${ctx.charName}`;
+            existingChain.charName = ctx.charName;
+            existingChain.scriptName = scriptName;
+            existingChain.scriptId = scriptId;
+            existingChain.date = new Date(now).toLocaleString();
+            existingChain.html = mergedHtml;
+            existingChain.avatar = avatarSrc;
+            existingChain.branchKey = branchKey;
+            existingChain.chainSignature = chainSignature;
+            existingChain.items = items;
 
-        saveExtData();
-        await mirrorFavsToStore([existingChain.id]);
-        GlobalState.lastFavId = existingChain.id;
-        syncFavIdToCurrentHistory(existingChain.id);
-        updateFavButtonUI();
-        if (window.toastr) toastr.success(`已更新当前剧场分组收藏（共 ${items.length} 段）`);
-        return true;
+            await putFav(existingChain);
+            GlobalState.lastFavId = existingChain.id;
+            syncFavIdToCurrentHistory(existingChain.id);
+            updateFavButtonUI();
+            if (window.toastr) toastr.success(`已更新当前剧场分组收藏（共 ${items.length} 段）`);
+            return true;
+        }
     }
 
     const entry = {
@@ -620,9 +714,7 @@ export async function saveContinuationChainFavorite() {
         items
     };
 
-    data.favs.unshift(entry);
-    saveExtData();
-    await mirrorFavsToStore([entry.id]);
+    await putFav(entry);
 
     GlobalState.lastFavId = entry.id;
     syncFavIdToCurrentHistory(entry.id);
@@ -642,21 +734,11 @@ export async function unsaveFavorite() {
         return false;
     }
 
-    const data = getExtData();
-    if (!data.favs) {
-        GlobalState.lastFavId = null;
-        return false;
-    }
-
     const targetFavId = String(GlobalState.lastFavId);
+    const existed = listFavMetaForDedup().some(f => String(f?.id) === targetFavId);
 
-    // 从收藏列表中删除（兼容 number/string id）
-    const originalLength = data.favs.length;
-    data.favs = data.favs.filter(f => String(f?.id) !== targetFavId);
-
-    if (data.favs.length < originalLength) {
-        saveExtData();
-        await mirrorFavRemovalToStore([targetFavId]);
+    if (existed) {
+        await deleteFavs([targetFavId]);
         GlobalState.lastFavId = null;
 
         // 同步收藏 ID 到当前查看的历史记录项
@@ -684,7 +766,7 @@ export function openFavsWindow() {
     setFavsWindowOpen(true);
     $("#t-main-view").hide();
     const data = getExtData();
-    const favs = resolveFavsForWindow(data);
+    const favs = resolveFavsForWindow();
 
     let currentFilteredList = [];
     let currentIndex = -1;
@@ -759,7 +841,7 @@ export function openFavsWindow() {
      * 所以统一走这个函数，并顺带重建角色下拉的候选集。
      */
     const resyncLocalFavs = () => {
-        const next = resolveFavsForWindow(getExtData()).map(applyFavMeta);
+        const next = resolveFavsForWindow().map(applyFavMeta);
         favs.splice(0, favs.length, ...next);
         charIndex.clear();
         favs.forEach(f => charIndex.add(f._meta.char));
@@ -1781,12 +1863,7 @@ export function openFavsWindow() {
 
         if (confirm(`确定删除选中的 ${count} 条收藏？此操作不可撤销。`)) {
             const removedIds = [...selectedIds];
-            const d = getExtData();
-            d.favs = d.favs.filter(x => !selectedIds.has(x.id));
-            saveExtData();
-
-            // 镜像到文件存储（data.favs 已经删成功了，这里失败只告警）
-            await mirrorFavRemovalToStore(removedIds);
+            await deleteFavs(removedIds);
 
             // 同步更新本地 favs 数组并重建角色索引
             resyncLocalFavs();
@@ -2031,17 +2108,17 @@ export function openFavsWindow() {
 
         const trimmedTitle = newTitle.trim();
 
-        // 更新存储
+        // 更新存储。改名只动元数据，正文文件不必重写
         const d = getExtData();
-        const targetFav = d.favs.find(x => x.id === currentFavId);
+        const targetFav = Array.isArray(d.favs) ? d.favs.find(x => x.id === currentFavId) : null;
+        const indexEntry = isFavsMigrated() ? patchFavIndexEntry(currentFavId, { title: trimmedTitle }) : null;
         if (targetFav) {
             targetFav.title = trimmedTitle;
             // 注意：不修改 charName 和 scriptName，保持角色筛选功能正常
             saveExtData();
+        }
 
-            // 改名只动元数据，正文文件不用重写
-            patchFavIndexEntry(currentFavId, { title: trimmedTitle });
-
+        if (targetFav || indexEntry) {
             // 同步更新本地 favs 数组中的对应项
             const localFav = favs.find(x => x.id === currentFavId);
             if (localFav) {
@@ -2066,10 +2143,7 @@ export function openFavsWindow() {
     $("#t-read-del-one").on("click", async () => {
         if (confirm("确定删除此条收藏？")) {
             const removedId = currentFavId;
-            const d = getExtData();
-            d.favs = d.favs.filter(x => x.id !== removedId);
-            saveExtData();
-            await mirrorFavRemovalToStore([removedId]);
+            await deleteFavs([removedId]);
             resyncLocalFavs();
             scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
             if (currentFilteredList.length === 0) {
@@ -2156,17 +2230,14 @@ export function openFavsWindow() {
         const removeRound = Number(target?.round) || (removeIndex + 1);
         if (!confirm(`确定删除第 ${removeRound} 段吗？`)) return;
 
-        const d = getExtData();
-        const targetFav = d.favs.find(x => x.id === currentFavId);
+        const targetFav = await loadFavForWrite(currentFavId);
         if (!targetFav || targetFav.type !== "chain") return;
 
         if (!Array.isArray(targetFav.items)) targetFav.items = [];
         targetFav.items.splice(removeIndex, 1);
 
         if (targetFav.items.length === 0) {
-            d.favs = d.favs.filter(x => x.id !== currentFavId);
-            saveExtData();
-            await mirrorFavRemovalToStore([currentFavId]);
+            await deleteFavs([currentFavId]);
             resyncLocalFavs();
             scheduleGridRender({ preserveEditPage: true, liteEditPage: true, hydrateEditPage: true });
 
@@ -2181,18 +2252,17 @@ export function openFavsWindow() {
             return;
         }
 
-        targetFav.html = buildChainMergedHtml(targetFav.items, { withStyles: true });
-        saveExtData();
-
         // 正文变了，要重写正文文件并更新索引（摘要 / 段数都会跟着变）
-        await mirrorFavsToStore([currentFavId]);
+        targetFav.html = buildChainMergedHtml(targetFav.items, { withStyles: true });
+        await putFav(targetFav);
 
         const localFav = favs.find(x => x.id === currentFavId);
         if (localFav) {
             localFav.items = targetFav.items;
             localFav.html = targetFav.html;
             localFav.itemCount = targetFav.items.length;
-            // 正文已就地更新，别让 ensureFavBody 再去文件里拉一份旧的盖掉
+            // 正文已就地更新，别让 ensureFavBody 再去文件里拉一份旧的盖掉。
+            // upsertFav 刚把 rev 加了 1，本地的 _rev 已经过期，留着会读到旧版本。
             localFav._bodyLoaded = true;
             // 摘要要按新正文重算，清掉 memo
             delete localFav._snippetText;
@@ -2256,7 +2326,8 @@ export function openCharImageManager(onCloseCallback) {
     if (!data.character_map) data.character_map = {};
 
     // 1. 提取所有收藏中出现过的角色名（优先使用独立字段）
-    const favs = data.favs || [];
+    // 走统一入口：收尾后 data.favs 已不存在，角色名要从索引里取
+    const favs = listFavMetaForDedup();
     const charNames = new Set();
     favs.forEach(f => {
         if (f.charName) {
