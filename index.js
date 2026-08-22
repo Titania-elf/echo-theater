@@ -6173,14 +6173,16 @@ textarea.t-input {
 }
 
 /* \u5F00/\u5173\u5FC5\u987B\u80FD\u4E0D\u9760\u8272\u76F8\u5206\u8FA8\uFF08WCAG 1.4.1\uFF09\u3002\u8FD9\u91CC\u540C\u65F6\u52A8\u4E09\u4E2A\u901A\u9053\uFF1A
-   \u5E95\u8272\u6709\u65E0\u3001\u63CF\u8FB9\u989C\u8272\u3001\u56FE\u6807\u4E0D\u900F\u660E\u5EA6\u3002
-   \u5F53\u524D\u56FE\u6807\u662F emoji \u2014\u2014 color \u5BF9\u5F69\u8272\u5B57\u5F62\u65E0\u6548\uFF0C\u6240\u4EE5\u4E0D\u900F\u660E\u5EA6\u8FD9\u4E00\u6863\u662F\u5FC5\u9700\u7684\uFF0C
-   \u4E0D\u662F\u9526\u4E0A\u6DFB\u82B1\u3002 */
+   \u5E95\u8272\u6709\u65E0\u3001\u63CF\u8FB9\u989C\u8272\u3001\u56FE\u6807\u989C\u8272\u7684\u660E\u5EA6\u5DEE\uFF08faint -> accent\uFF09\u3002
+
+   \u26A0 \u56FE\u6807\u6539\u6210 FontAwesome \u5B57\u5F62\u4E4B\u540E color \u624D\u5F00\u59CB\u751F\u6548 \u2014\u2014 emoji \u662F\u5F69\u8272\u5B57\u5F62\uFF0C
+     color \u5BF9\u5B83\u65E0\u6548\uFF0C\u90A3\u4E00\u7248\u53EA\u80FD\u9760\u4E0D\u900F\u660E\u5EA6\u505A\u660E\u5EA6\u5DEE\u3002\u73B0\u5728\u6709\u4E86\u771F\u6B63\u7684 color \u901A\u9053\uFF0C
+     \u4E0D\u900F\u660E\u5EA6\u90A3\u4E00\u6863\u5C31\u64A4\u6389\u4E86\uFF0C\u56FE\u6807\u5728\u5173\u6001\u4E5F\u4FDD\u6301\u6E05\u6670\u3001\u53EA\u662F\u53D8\u6697\u3002 */
 .t-topbar-toggle-icon {
     font-size: 1.05em;
     line-height: 1;
-    opacity: .5;
-    transition: opacity var(--t-duration-base) var(--t-ease-standard);
+    color: var(--t-color-text-faint);
+    transition: var(--t-transition-hover);
 }
 
 .t-topbar-toggle:hover {
@@ -6189,7 +6191,7 @@ textarea.t-input {
 }
 
 .t-topbar-toggle:hover .t-topbar-toggle-icon {
-    opacity: .75;
+    color: var(--t-color-text-secondary);
 }
 
 .t-topbar-toggle.is-on {
@@ -6198,7 +6200,7 @@ textarea.t-input {
 }
 
 .t-topbar-toggle.is-on .t-topbar-toggle-icon {
-    opacity: 1;
+    color: var(--t-color-accent);
 }
 
 /* \u952E\u76D8\u7126\u70B9\u73AF\u3002checkbox \u89C6\u89C9\u9690\u85CF\u540E :focus-visible \u6253\u5728\u770B\u4E0D\u89C1\u7684\u5143\u7D20\u4E0A\uFF0C
@@ -6765,6 +6767,15 @@ textarea.t-input {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+/* \u83DC\u5355\u6761\u76EE\u5DE6\u4FA7\u7684\u56FE\u6807\u3002\u5B9A\u5BBD\u8BA9\u6587\u5B57\u5DE6\u8FB9\u7F18\u5BF9\u9F50 \u2014\u2014 fa-book-open \u4E0E
+   fa-clipboard-list \u7684\u5B57\u5F62\u5BBD\u5EA6\u4E0D\u540C\uFF0C\u4E0D\u5B9A\u5BBD\u4E09\u884C\u6587\u5B57\u4F1A\u5404\u81EA\u9519\u5F00\u4E00\u70B9\u3002 */
+.t-filter-item-icon {
+    display: inline-block;
+    width: 1.2em;
+    margin-right: 6px;
+    text-align: center;
 }
 
 /* \u83DC\u5355\u91CC\u7684\u5206\u9694\u7EBF\u3002\u539F\u5148\u662F renderFilterMenu \u5185\u8054\u5199\u7684
@@ -38983,7 +38994,7 @@ function renderTopBarHtml() {
   const mode = getGenerationModeMeta(GlobalState.generationMode);
   return `<div class="t-top-bar">
                 <button type="button" class="t-mode-chip" id="t-mode-toggle" title="\u751F\u6210\u6A21\u5F0F\uFF1A${mode.label}" aria-haspopup="menu" aria-expanded="false">
-                    <span class="t-mode-chip-icon" id="t-mode-icon">${mode.icon}</span>
+                    <i class="fa-solid ${mode.icon} t-mode-chip-icon" id="t-mode-icon"></i>
                     <span class="t-mode-chip-label" id="t-mode-label">${mode.label}</span>
                     <i class="fa-solid fa-chevron-down t-mode-chip-caret"></i>
                 </button>
@@ -38998,12 +39009,12 @@ function renderTopBarHtml() {
                 <div class="t-history-group">
                     <label class="t-topbar-toggle" id="t-history-toggle" title="\u8BFB\u53D6\u804A\u5929\u5386\u53F2">
                         <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
-                        <span class="t-topbar-toggle-icon">\u{1F4DC}</span>
+                        <i class="fa-solid fa-scroll t-topbar-toggle-icon"></i>
                         <span class="t-topbar-toggle-text">\u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
                     </label>
                     <label class="t-topbar-toggle t-subtoggle" id="t-ai-only-toggle" title="${HISTORY_AI_ONLY_HINT}">
                         <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? "checked" : ""}>
-                        <span class="t-topbar-toggle-icon">\u{1F3AD}</span>
+                        <i class="fa-solid fa-masks-theater t-topbar-toggle-icon"></i>
                         <span class="t-topbar-toggle-text">\u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
                     </label>
                 </div>
@@ -39012,7 +39023,9 @@ function renderTopBarHtml() {
                     <div class="t-filter-btn" id="t-btn-filter" title="\u7B5B\u9009\u968F\u673A\u8303\u56F4">
                         <i class="fa-solid fa-filter"></i>
                     </div>
-                    <div class="t-dice-btn" id="t-btn-dice" title="\u968F\u673A\u5267\u672C">\u{1F3B2}</div>
+                    <div class="t-dice-btn" id="t-btn-dice" title="\u968F\u673A\u5267\u672C">
+                        <i class="fa-solid fa-dice"></i>
+                    </div>
                 </div>
             </div>`;
 }
@@ -39021,9 +39034,9 @@ var init_topBar = __esm({
   "src/ui/mainWindow/topBar.js"() {
     init_state();
     GENERATION_MODES = [
-      { id: "narrative", icon: "\u{1F4D6}", label: "\u5185\u5BB9\u4F18\u5148", hint: "" },
-      { id: "visual", icon: "\u{1F3A8}", label: "\u6C1B\u56F4\u7F8E\u5316", hint: "" },
-      { id: "preset", icon: "\u{1F4CB}", label: "\u9009\u7528\u9884\u8BBE", hint: "\u4F7F\u7528\u8BBE\u7F6E\u9875\u4E2D\u9009\u5B9A\u7684\u7528\u6237\u9884\u8BBE" }
+      { id: "narrative", icon: "fa-book-open", label: "\u5185\u5BB9\u4F18\u5148", hint: "" },
+      { id: "visual", icon: "fa-palette", label: "\u6C1B\u56F4\u7F8E\u5316", hint: "" },
+      { id: "preset", icon: "fa-clipboard-list", label: "\u9009\u7528\u9884\u8BBE", hint: "\u4F7F\u7528\u8BBE\u7F6E\u9875\u4E2D\u9009\u5B9A\u7684\u7528\u6237\u9884\u8BBE" }
     ];
     HISTORY_AI_ONLY_HINT = "\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD";
   }
@@ -39652,7 +39665,7 @@ function updateHistoryToggleUI() {
 }
 function updateModeToggleUI() {
   const meta = getGenerationModeMeta(GlobalState.generationMode);
-  $("#t-mode-icon").text(meta.icon);
+  $("#t-mode-icon").attr("class", `fa-solid ${meta.icon} t-mode-chip-icon`);
   $("#t-mode-label").text(meta.label);
   $("#t-mode-toggle").attr("title", meta.hint ? `\u751F\u6210\u6A21\u5F0F\uFF1A${meta.label} \u2014\u2014 ${meta.hint}` : `\u751F\u6210\u6A21\u5F0F\uFF1A${meta.label}`);
 }
@@ -40383,7 +40396,8 @@ async function openMainWindow() {
       current: GlobalState.generationMode,
       items: GENERATION_MODES.map((item) => ({
         value: item.id,
-        label: `${item.icon} ${item.label}`,
+        label: item.label,
+        icon: item.icon,
         title: item.hint
       })),
       onSelect: applyGenerationMode
@@ -41478,7 +41492,7 @@ function renderAnchoredMenu({ id: id3, items, $anchor, current, onSelect, width 
     <div id="${id3}" class="t-filter-popover">
         ${items.map((item) => `
             <div class="t-filter-item ${current === item.value ? "active" : ""}" data-val="${escapeHtmlText2(item.value)}"${item.title ? ` title="${escapeHtmlText2(item.title)}"` : ""}>
-                <span>${escapeHtmlText2(item.label)}</span>
+                <span>${item.icon ? `<i class="fa-solid ${escapeHtmlText2(item.icon)} t-filter-item-icon"></i>` : ""}${escapeHtmlText2(item.label)}</span>
                 <i class="fa-solid fa-check t-filter-check"></i>
             </div>${item.separatorAfter ? '<div class="t-filter-sep"></div>' : ""}
         `).join("")}
@@ -41514,7 +41528,7 @@ function renderFilterMenu(currentFilter, $targetBtn, onSelect) {
     $anchor: $targetBtn,
     current: currentFilter,
     items: [
-      { value: "ALL", label: "\u{1F504} \u5168\u90E8", separatorAfter: true },
+      { value: "ALL", label: "\u5168\u90E8", icon: "fa-border-all", separatorAfter: true },
       ...cats.map((c) => ({ value: c, label: c }))
     ],
     onSelect

@@ -26,13 +26,16 @@ import { GlobalState } from "../../core/state.js";
  * ⚠ id 同时用于 DOM（data-mode）与持久化（data.config.generation_mode），
  *   改 id 等于破坏用户已存配置。
  *
- * hint 只有 preset 有：那是改版前挂在「📋 选用预设」上的原文，
+ * icon 是 FontAwesome 类名（不含 fa-solid 前缀），与同排的筛选/chevron
+ * 同一套字形。改版前这里是 emoji，与 FA 图标在一行里基线和字重都不齐。
+ *
+ * hint 只有 preset 有：那是改版前挂在「选用预设」上的原文，
  * 另两个模式改版前也没有说明文字，这里不替它们编造。
  */
 export const GENERATION_MODES = [
-    { id: "narrative", icon: "📖", label: "内容优先", hint: "" },
-    { id: "visual", icon: "🎨", label: "氛围美化", hint: "" },
-    { id: "preset", icon: "📋", label: "选用预设", hint: "使用设置页中选定的用户预设" }
+    { id: "narrative", icon: "fa-book-open", label: "内容优先", hint: "" },
+    { id: "visual", icon: "fa-palette", label: "氛围美化", hint: "" },
+    { id: "preset", icon: "fa-clipboard-list", label: "选用预设", hint: "使用设置页中选定的用户预设" }
 ];
 
 /** 取模式元信息；id 不认识时退回第一个（narrative），与改版前默认值一致 */
@@ -62,7 +65,7 @@ export function renderTopBarHtml() {
 
     return `<div class="t-top-bar">
                 <button type="button" class="t-mode-chip" id="t-mode-toggle" title="生成模式：${mode.label}" aria-haspopup="menu" aria-expanded="false">
-                    <span class="t-mode-chip-icon" id="t-mode-icon">${mode.icon}</span>
+                    <i class="fa-solid ${mode.icon} t-mode-chip-icon" id="t-mode-icon"></i>
                     <span class="t-mode-chip-label" id="t-mode-label">${mode.label}</span>
                     <i class="fa-solid fa-chevron-down t-mode-chip-caret"></i>
                 </button>
@@ -77,12 +80,12 @@ export function renderTopBarHtml() {
                 <div class="t-history-group">
                     <label class="t-topbar-toggle" id="t-history-toggle" title="读取聊天历史">
                         <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? 'checked' : ''}>
-                        <span class="t-topbar-toggle-icon">📜</span>
+                        <i class="fa-solid fa-scroll t-topbar-toggle-icon"></i>
                         <span class="t-topbar-toggle-text">读取聊天历史</span>
                     </label>
                     <label class="t-topbar-toggle t-subtoggle" id="t-ai-only-toggle" title="${HISTORY_AI_ONLY_HINT}">
                         <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? 'checked' : ''}>
-                        <span class="t-topbar-toggle-icon">🎭</span>
+                        <i class="fa-solid fa-masks-theater t-topbar-toggle-icon"></i>
                         <span class="t-topbar-toggle-text">只要角色发言</span>
                     </label>
                 </div>
@@ -91,7 +94,9 @@ export function renderTopBarHtml() {
                     <div class="t-filter-btn" id="t-btn-filter" title="筛选随机范围">
                         <i class="fa-solid fa-filter"></i>
                     </div>
-                    <div class="t-dice-btn" id="t-btn-dice" title="随机剧本">🎲</div>
+                    <div class="t-dice-btn" id="t-btn-dice" title="随机剧本">
+                        <i class="fa-solid fa-dice"></i>
+                    </div>
                 </div>
             </div>`;
 }

@@ -151,7 +151,8 @@ export function updateHistoryToggleUI() {
 /** 更新生成模式 UI —— 胶囊上只显示当前模式，三选一在点开的菜单里 */
 export function updateModeToggleUI() {
     const meta = getGenerationModeMeta(GlobalState.generationMode);
-    $("#t-mode-icon").text(meta.icon);
+    // 图标是 FontAwesome 字形，整条 class 重写而不是 .text()
+    $("#t-mode-icon").attr("class", `fa-solid ${meta.icon} t-mode-chip-icon`);
     $("#t-mode-label").text(meta.label);
     $("#t-mode-toggle").attr("title", meta.hint
         ? `生成模式：${meta.label} —— ${meta.hint}`
@@ -1066,7 +1067,8 @@ export async function openMainWindow() {
             current: GlobalState.generationMode,
             items: GENERATION_MODES.map(item => ({
                 value: item.id,
-                label: `${item.icon} ${item.label}`,
+                label: item.label,
+                icon: item.icon,
                 title: item.hint
             })),
             onSelect: applyGenerationMode
@@ -2520,7 +2522,8 @@ async function openWorldInfoSelector() {
  *
  * @param {object}   opts
  * @param {string}   opts.id          弹层 DOM id，同时用作「已开则关」的判定与事件命名空间
- * @param {Array}    opts.items       [{ value, label, title?, separatorAfter? }]
+ * @param {Array}    opts.items       [{ value, label, icon?, title?, separatorAfter? }]
+ *                                    icon 是 FontAwesome 类名（不含 fa-solid 前缀）
  * @param {object}   opts.$anchor     jQuery 锚点元素
  * @param {string}   opts.current     当前选中的 value
  * @param {Function} opts.onSelect    选中回调，收到 value（字符串）
@@ -2547,11 +2550,12 @@ function renderAnchoredMenu({ id, items, $anchor, current, onSelect, width = 150
     // 分类名是用户可编辑的自由文本，必须转义后再进 HTML。
     // 改版前这里直接内插（`data-val="${c}"` / `<span>${c}</span>`），
     // 分类名里有引号就会把属性截断。
+    // icon 走 escapeHtmlText 只是防御性的：它来自代码里的常量表，不是用户输入。
     const html = `
     <div id="${id}" class="t-filter-popover">
         ${items.map(item => `
             <div class="t-filter-item ${current === item.value ? 'active' : ''}" data-val="${escapeHtmlText(item.value)}"${item.title ? ` title="${escapeHtmlText(item.title)}"` : ''}>
-                <span>${escapeHtmlText(item.label)}</span>
+                <span>${item.icon ? `<i class="fa-solid ${escapeHtmlText(item.icon)} t-filter-item-icon"></i>` : ''}${escapeHtmlText(item.label)}</span>
                 <i class="fa-solid fa-check t-filter-check"></i>
             </div>${item.separatorAfter ? '<div class="t-filter-sep"></div>' : ''}
         `).join('')}
@@ -2606,7 +2610,7 @@ function renderFilterMenu(currentFilter, $targetBtn, onSelect) {
         $anchor: $targetBtn,
         current: currentFilter,
         items: [
-            { value: "ALL", label: "🔄 全部", separatorAfter: true },
+            { value: "ALL", label: "全部", icon: "fa-border-all", separatorAfter: true },
             ...cats.map(c => ({ value: c, label: c }))
         ],
         onSelect

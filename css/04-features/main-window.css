@@ -182,14 +182,16 @@
 }
 
 /* 开/关必须能不靠色相分辨（WCAG 1.4.1）。这里同时动三个通道：
-   底色有无、描边颜色、图标不透明度。
-   当前图标是 emoji —— color 对彩色字形无效，所以不透明度这一档是必需的，
-   不是锦上添花。 */
+   底色有无、描边颜色、图标颜色的明度差（faint -> accent）。
+
+   ⚠ 图标改成 FontAwesome 字形之后 color 才开始生效 —— emoji 是彩色字形，
+     color 对它无效，那一版只能靠不透明度做明度差。现在有了真正的 color 通道，
+     不透明度那一档就撤掉了，图标在关态也保持清晰、只是变暗。 */
 .t-topbar-toggle-icon {
     font-size: 1.05em;
     line-height: 1;
-    opacity: .5;
-    transition: opacity var(--t-duration-base) var(--t-ease-standard);
+    color: var(--t-color-text-faint);
+    transition: var(--t-transition-hover);
 }
 
 .t-topbar-toggle:hover {
@@ -198,7 +200,7 @@
 }
 
 .t-topbar-toggle:hover .t-topbar-toggle-icon {
-    opacity: .75;
+    color: var(--t-color-text-secondary);
 }
 
 .t-topbar-toggle.is-on {
@@ -207,7 +209,7 @@
 }
 
 .t-topbar-toggle.is-on .t-topbar-toggle-icon {
-    opacity: 1;
+    color: var(--t-color-accent);
 }
 
 /* 键盘焦点环。checkbox 视觉隐藏后 :focus-visible 打在看不见的元素上，
@@ -774,6 +776,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+/* 菜单条目左侧的图标。定宽让文字左边缘对齐 —— fa-book-open 与
+   fa-clipboard-list 的字形宽度不同，不定宽三行文字会各自错开一点。 */
+.t-filter-item-icon {
+    display: inline-block;
+    width: 1.2em;
+    margin-right: 6px;
+    text-align: center;
 }
 
 /* 菜单里的分隔线。原先是 renderFilterMenu 内联写的
