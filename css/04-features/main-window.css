@@ -331,6 +331,33 @@
     transition: all 0.2s;
 }
 
+/* 分类标签的两个着色状态。
+   原先由 mainWindow.js 三处 `.css({ color: "#bfa15f", ... })` 直接写内联样式
+   （applyScriptSelection / updateScriptTitleDisplay 的正常态与已删除态）。
+   那两个 hex 不会随主题翻转，浅色主题下标签会留在深色主题的配色上。
+
+   ⚠ 审计抓不到这类问题：A16/A17 只扫 JS 里的 `style="..."` 字面量，
+     完全看不见 jQuery `.css({})`。所以这三处一直是「审计干净、外观是错的」。
+
+   深色主题下逐值相同，alpha 也保持原样不动，故本次替换 ΔE 全为 0：
+     #bfa15f            = --t-c-gold-rgb      (191 161 95)
+     #888               = --t-c-neutral-9-rgb (136 136 136)
+   色相走 token、alpha 留在这里，是 theme-dark.css「强调色相三元组」段
+   规定的写法 —— alpha 本来就不随主题变，编进 token 名对换主题零贡献。
+   （引用 --t-c-* 原语在 feature 层是允许的，R3b 只约束 02-components。）*/
+.t-cat-tag.is-category {
+    color: var(--t-color-brand);
+    background: rgb(var(--t-c-gold-rgb) / .15);
+    border-color: rgb(var(--t-c-gold-rgb) / .33);
+}
+
+/* 剧本已被删除：退成中性灰，与「这个分类真实存在」区分开 */
+.t-cat-tag.is-missing {
+    color: var(--t-color-text-muted);
+    background: rgb(var(--t-c-neutral-9-rgb) / .15);
+    border-color: rgb(var(--t-c-neutral-9-rgb) / .33);
+}
+
 .t-chevron {
     position: absolute;
     right: 15px;

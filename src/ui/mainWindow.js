@@ -157,7 +157,10 @@ export function handleRandom() {
     if (allScripts.length === 0) {
         if (window.toastr) toastr.warning("暂无可用剧本。", "Titania");
         $("#t-lbl-name").text("暂无剧本");
-        $("#t-lbl-cat").text("无分类");
+        // 占位态：清掉两个着色状态，退回 .t-cat-tag 的中性底。
+        // 原先这里只改文字、不动内联样式，于是标签会留着上一个剧本的金色
+        // ——「无分类」被画成一个真实分类，且到底什么颜色取决于之前点过什么
+        $("#t-lbl-cat").text("无分类").removeClass("is-category is-missing");
         $("#t-lbl-desc-mini").text("请创建或导入剧本");
         return;
     }
@@ -895,12 +898,7 @@ export function applyScriptSelection(id, options = {}) {
     // 2. 分类标签 (不再区分模式)
     const $catTag = $("#t-lbl-cat");
     const category = s.category || (s._type === 'preset' ? "官方预设" : "未分类");
-    $catTag.text(category);
-    $catTag.css({
-        "color": "#bfa15f",
-        "background": "rgba(191, 161, 95, 0.15)",
-        "border": "1px solid rgba(191, 161, 95, 0.33)"
-    });
+    $catTag.text(category).removeClass("is-missing").addClass("is-category");
 
     // 3. 更新描述
     $("#t-lbl-desc-mini").text(s.desc || "无简介");
@@ -1471,7 +1469,8 @@ export async function openMainWindow() {
     if (GlobalState.runtimeScripts.length === 0) {
         // 没有加载到任何剧本，显示错误提示
         $("#t-lbl-name").text("无可用剧本");
-        $("#t-lbl-cat").text("⚠️ 错误");
+        // 同上：错误态也退回中性底，别顶着上一个剧本的金色
+        $("#t-lbl-cat").text("⚠️ 错误").removeClass("is-category is-missing");
         $("#t-lbl-desc-mini").text("剧本数据未加载，请检查插件安装");
         console.error("Titania: runtimeScripts 为空，剧本未加载");
     } else if (initialScriptId) {
@@ -1620,11 +1619,7 @@ export function updateScriptTitleDisplay() {
     if (!script) {
         // 剧本不存在（可能已被删除），显示占位信息
         $("#t-lbl-name").text("未知剧本");
-        $("#t-lbl-cat").text("已删除").css({
-            "color": "#888",
-            "background": "rgba(136, 136, 136, 0.15)",
-            "border": "1px solid rgba(136, 136, 136, 0.33)"
-        });
+        $("#t-lbl-cat").text("已删除").removeClass("is-category").addClass("is-missing");
         $("#t-lbl-desc-mini").text("该剧本可能已被删除");
         return;
     }
@@ -1634,11 +1629,7 @@ export function updateScriptTitleDisplay() {
 
     // 更新分类标签
     const category = script.category || (script._type === 'preset' ? "官方预设" : "未分类");
-    $("#t-lbl-cat").text(category).css({
-        "color": "#bfa15f",
-        "background": "rgba(191, 161, 95, 0.15)",
-        "border": "1px solid rgba(191, 161, 95, 0.33)"
-    });
+    $("#t-lbl-cat").text(category).removeClass("is-missing").addClass("is-category");
 
     // 更新描述
     $("#t-lbl-desc-mini").text(script.desc || "无简介");

@@ -6322,6 +6322,33 @@ textarea.t-input {
     transition: all 0.2s;
 }
 
+/* \u5206\u7C7B\u6807\u7B7E\u7684\u4E24\u4E2A\u7740\u8272\u72B6\u6001\u3002
+   \u539F\u5148\u7531 mainWindow.js \u4E09\u5904 \`.css({ color: "#bfa15f", ... })\` \u76F4\u63A5\u5199\u5185\u8054\u6837\u5F0F
+   \uFF08applyScriptSelection / updateScriptTitleDisplay \u7684\u6B63\u5E38\u6001\u4E0E\u5DF2\u5220\u9664\u6001\uFF09\u3002
+   \u90A3\u4E24\u4E2A hex \u4E0D\u4F1A\u968F\u4E3B\u9898\u7FFB\u8F6C\uFF0C\u6D45\u8272\u4E3B\u9898\u4E0B\u6807\u7B7E\u4F1A\u7559\u5728\u6DF1\u8272\u4E3B\u9898\u7684\u914D\u8272\u4E0A\u3002
+
+   \u26A0 \u5BA1\u8BA1\u6293\u4E0D\u5230\u8FD9\u7C7B\u95EE\u9898\uFF1AA16/A17 \u53EA\u626B JS \u91CC\u7684 \`style="..."\` \u5B57\u9762\u91CF\uFF0C
+     \u5B8C\u5168\u770B\u4E0D\u89C1 jQuery \`.css({})\`\u3002\u6240\u4EE5\u8FD9\u4E09\u5904\u4E00\u76F4\u662F\u300C\u5BA1\u8BA1\u5E72\u51C0\u3001\u5916\u89C2\u662F\u9519\u7684\u300D\u3002
+
+   \u6DF1\u8272\u4E3B\u9898\u4E0B\u9010\u503C\u76F8\u540C\uFF0Calpha \u4E5F\u4FDD\u6301\u539F\u6837\u4E0D\u52A8\uFF0C\u6545\u672C\u6B21\u66FF\u6362 \u0394E \u5168\u4E3A 0\uFF1A
+     #bfa15f            = --t-c-gold-rgb      (191 161 95)
+     #888               = --t-c-neutral-9-rgb (136 136 136)
+   \u8272\u76F8\u8D70 token\u3001alpha \u7559\u5728\u8FD9\u91CC\uFF0C\u662F theme-dark.css\u300C\u5F3A\u8C03\u8272\u76F8\u4E09\u5143\u7EC4\u300D\u6BB5
+   \u89C4\u5B9A\u7684\u5199\u6CD5 \u2014\u2014 alpha \u672C\u6765\u5C31\u4E0D\u968F\u4E3B\u9898\u53D8\uFF0C\u7F16\u8FDB token \u540D\u5BF9\u6362\u4E3B\u9898\u96F6\u8D21\u732E\u3002
+   \uFF08\u5F15\u7528 --t-c-* \u539F\u8BED\u5728 feature \u5C42\u662F\u5141\u8BB8\u7684\uFF0CR3b \u53EA\u7EA6\u675F 02-components\u3002\uFF09*/
+.t-cat-tag.is-category {
+    color: var(--t-color-brand);
+    background: rgb(var(--t-c-gold-rgb) / .15);
+    border-color: rgb(var(--t-c-gold-rgb) / .33);
+}
+
+/* \u5267\u672C\u5DF2\u88AB\u5220\u9664\uFF1A\u9000\u6210\u4E2D\u6027\u7070\uFF0C\u4E0E\u300C\u8FD9\u4E2A\u5206\u7C7B\u771F\u5B9E\u5B58\u5728\u300D\u533A\u5206\u5F00 */
+.t-cat-tag.is-missing {
+    color: var(--t-color-text-muted);
+    background: rgb(var(--t-c-neutral-9-rgb) / .15);
+    border-color: rgb(var(--t-c-neutral-9-rgb) / .33);
+}
+
 .t-chevron {
     position: absolute;
     right: 15px;
@@ -39616,7 +39643,7 @@ function handleRandom() {
   if (allScripts.length === 0) {
     if (window.toastr) toastr.warning("\u6682\u65E0\u53EF\u7528\u5267\u672C\u3002", "Titania");
     $("#t-lbl-name").text("\u6682\u65E0\u5267\u672C");
-    $("#t-lbl-cat").text("\u65E0\u5206\u7C7B");
+    $("#t-lbl-cat").text("\u65E0\u5206\u7C7B").removeClass("is-category is-missing");
     $("#t-lbl-desc-mini").text("\u8BF7\u521B\u5EFA\u6216\u5BFC\u5165\u5267\u672C");
     return;
   }
@@ -40240,12 +40267,7 @@ function applyScriptSelection(id3, options = {}) {
   $("#t-lbl-name").text(s.name);
   const $catTag = $("#t-lbl-cat");
   const category = s.category || (s._type === "preset" ? "\u5B98\u65B9\u9884\u8BBE" : "\u672A\u5206\u7C7B");
-  $catTag.text(category);
-  $catTag.css({
-    "color": "#bfa15f",
-    "background": "rgba(191, 161, 95, 0.15)",
-    "border": "1px solid rgba(191, 161, 95, 0.33)"
-  });
+  $catTag.text(category).removeClass("is-missing").addClass("is-category");
   $("#t-lbl-desc-mini").text(s.desc || "\u65E0\u7B80\u4ECB");
   $("#t-txt-desc").val(s.desc);
 }
@@ -40651,7 +40673,7 @@ async function openMainWindow() {
   updateFilterUI();
   if (GlobalState.runtimeScripts.length === 0) {
     $("#t-lbl-name").text("\u65E0\u53EF\u7528\u5267\u672C");
-    $("#t-lbl-cat").text("\u26A0\uFE0F \u9519\u8BEF");
+    $("#t-lbl-cat").text("\u26A0\uFE0F \u9519\u8BEF").removeClass("is-category is-missing");
     $("#t-lbl-desc-mini").text("\u5267\u672C\u6570\u636E\u672A\u52A0\u8F7D\uFF0C\u8BF7\u68C0\u67E5\u63D2\u4EF6\u5B89\u88C5");
     console.error("Titania: runtimeScripts \u4E3A\u7A7A\uFF0C\u5267\u672C\u672A\u52A0\u8F7D");
   } else if (initialScriptId) {
@@ -40743,21 +40765,13 @@ function updateScriptTitleDisplay() {
   const script = GlobalState.runtimeScripts.find((s) => s.id === scriptId);
   if (!script) {
     $("#t-lbl-name").text("\u672A\u77E5\u5267\u672C");
-    $("#t-lbl-cat").text("\u5DF2\u5220\u9664").css({
-      "color": "#888",
-      "background": "rgba(136, 136, 136, 0.15)",
-      "border": "1px solid rgba(136, 136, 136, 0.33)"
-    });
+    $("#t-lbl-cat").text("\u5DF2\u5220\u9664").removeClass("is-category").addClass("is-missing");
     $("#t-lbl-desc-mini").text("\u8BE5\u5267\u672C\u53EF\u80FD\u5DF2\u88AB\u5220\u9664");
     return;
   }
   $("#t-lbl-name").text(script.name);
   const category = script.category || (script._type === "preset" ? "\u5B98\u65B9\u9884\u8BBE" : "\u672A\u5206\u7C7B");
-  $("#t-lbl-cat").text(category).css({
-    "color": "#bfa15f",
-    "background": "rgba(191, 161, 95, 0.15)",
-    "border": "1px solid rgba(191, 161, 95, 0.33)"
-  });
+  $("#t-lbl-cat").text(category).removeClass("is-missing").addClass("is-category");
   $("#t-lbl-desc-mini").text(script.desc || "\u65E0\u7B80\u4ECB");
 }
 function updateSceneHistoryNav() {
