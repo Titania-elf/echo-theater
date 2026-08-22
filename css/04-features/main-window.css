@@ -276,7 +276,12 @@
     background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
-    padding: 0 15px;
+    /* 右侧要给 .t-chevron 让位。它是 position:absolute + right:15px，
+       右边缘正好落在本卡的内容框右边缘上、然后向左伸进内容框 ——
+       原来两侧都是 15px 时，长剧本名的省略号就压在箭头底下。
+       腾出的量 = 箭头的 right 偏移(15px) + 字形宽(1.2em) + 呼吸间距，
+       字形部分必须用 em：基准字号可被用户放大到 130%，写死 px 在那时又会压上。 */
+    padding: 0 calc(15px + 1.8em) 0 15px;
     cursor: pointer;
     display: flex;
     flex-direction: column;
