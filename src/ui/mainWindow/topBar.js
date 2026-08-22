@@ -11,66 +11,87 @@
 // 剧本选择器、筛选、骰子）全部留在 mainWindow.js 统一绑定，
 // 这里只负责「有哪些控件、怎么排、渲染成什么」，避免布局 → 主窗口的循环依赖。
 // 这与同目录 headerActions.js 的分工一致。
+//
+// ── 为什么是「单行胶囊条」──
+// 按 950px 窗口实测，改版前这一栏的空间分配是反的：两个几乎不动的布尔开关
+// 写死 min-width 160px / 150px 拿走 36%，而界面唯一的主角（当前是哪个剧本）
+// 只剩 188px —— 减掉内边距与分类标签，简介实际只能显示约 10 个字，
+// 等于渲染了但没传达信息。现在剧本卡拿到约 620px。
 
 import { GlobalState } from "../../core/state.js";
 
 /**
+ * 生成模式注册表 —— 模式的单一事实来源。
+ *
+ * ⚠ id 同时用于 DOM（data-mode）与持久化（data.config.generation_mode），
+ *   改 id 等于破坏用户已存配置。
+ *
+ * hint 只有 preset 有：那是改版前挂在「📋 选用预设」上的原文，
+ * 另两个模式改版前也没有说明文字，这里不替它们编造。
+ */
+export const GENERATION_MODES = [
+    { id: "narrative", icon: "📖", label: "内容优先", hint: "" },
+    { id: "visual", icon: "🎨", label: "氛围美化", hint: "" },
+    { id: "preset", icon: "📋", label: "选用预设", hint: "使用设置页中选定的用户预设" }
+];
+
+/** 取模式元信息；id 不认识时退回第一个（narrative），与改版前默认值一致 */
+export function getGenerationModeMeta(id) {
+    return GENERATION_MODES.find(item => item.id === String(id || "")) || GENERATION_MODES[0];
+}
+
+/** 「只要角色发言」的说明。图标化之后 title 是唯一的解释渠道，不能丢 */
+export const HISTORY_AI_ONLY_HINT =
+    "只把角色的发言注入剧本生成，跳过你自己的楼层。总结和设定提取不受影响";
+
+/**
  * 产出 `.t-top-bar` 的完整 DOM 骨架（含最外层 `<div class="t-top-bar">`）。
  *
- * ⚠ 下面模板里的缩进**刻意与本文件的缩进层级不符**：16/20/24/28 空格是这段
+ * 桌面端四个直接子项从左到右：模式胶囊 → 剧本卡（吃掉全部余量）→
+ * 历史开关组 → 筛选/骰子。窄屏靠 order + flex-wrap 把剧本卡换到第二行，
+ * 三个控件簇共占第一行（改版前是三行）。
+ *
+ * ⚠ 下面模板里的缩进**刻意与本文件的缩进层级不符**：16/20/24 空格是这段
  *   HTML 在 layout 模板里的绝对缩进。调用点写成 `            ${renderTopBarHtml()}`，
- *   首行的 12 个空格由 layout 提供，其余各行的缩进必须由本字符串自带 ——
- *   这样产出的 HTML 与抽出前逐字节相同。
- *   **不要「顺手」把它对齐到本函数的缩进**：那会改掉产出字符串（虽然 HTML
- *   语义不变，但也就此失去了「这次重构外观零变化」的机械自证能力）。
+ *   首行的 12 个空格由 layout 提供，其余各行的缩进必须由本字符串自带。
  *
  * @returns {string}
  */
 export function renderTopBarHtml() {
-    return `<div class="t-top-bar">
-                <div class="t-history-group">
-                    <div class="t-history-toggle" id="t-history-toggle">
-                        <label class="t-toggle-label">
-                            <input type="checkbox" id="t-use-history" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.useHistoryAnalysis ? 'checked' : ''}>
-                            <span class="t-toggle-text">📜 读取聊天历史</span>
-                        </label>
-                    </div>
-                    <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="只把角色的发言注入剧本生成，跳过你自己的楼层。总结和设定提取不受影响">
-                        <label class="t-toggle-label">
-                            <input type="checkbox" id="t-history-ai-only" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.historyAiOnly ? 'checked' : ''}>
-                            <span class="t-toggle-text">🎭 只要角色发言</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="t-mode-toggle" id="t-mode-toggle">
-                    <div class="t-mode-btn ${GlobalState.generationMode === 'narrative' ? 'active' : ''}" data-mode="narrative">
-                        <span>📖 内容优先</span>
-                    </div>
-                    <div class="t-mode-btn ${GlobalState.generationMode === 'visual' ? 'active' : ''}" data-mode="visual">
-                        <span>🎨 氛围美化</span>
-                    </div>
-                    <div class="t-mode-btn ${GlobalState.generationMode === 'preset' ? 'active' : ''}" data-mode="preset" title="使用设置页中选定的用户预设">
-                        <span>📋 选用预设</span>
-                    </div>
-                </div>
-                <div class="t-mobile-row">
-                    <div class="t-trigger-card" id="t-trigger-btn" title="点击切换剧本">
-                        <div class="t-trigger-main">
-                            <span id="t-lbl-name" style="overflow:hidden; text-overflow:ellipsis;">加载中...</span>
-                        </div>
-                        <div class="t-trigger-sub">
-                            <span class="t-cat-tag" id="t-lbl-cat">分类</span>
-                            <span id="t-lbl-desc-mini">...</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-down t-chevron"></i>
-                    </div>
+    const mode = getGenerationModeMeta(GlobalState.generationMode);
 
-                    <div class="t-trigger-actions">
-                        <div class="t-filter-btn" id="t-btn-filter" title="筛选随机范围">
-                            <i class="fa-solid fa-filter"></i>
-                        </div>
-                        <div class="t-dice-btn" id="t-btn-dice" title="随机剧本">🎲</div>
+    return `<div class="t-top-bar">
+                <button type="button" class="t-mode-chip" id="t-mode-toggle" title="生成模式：${mode.label}" aria-haspopup="menu" aria-expanded="false">
+                    <span class="t-mode-chip-icon" id="t-mode-icon">${mode.icon}</span>
+                    <span class="t-mode-chip-label" id="t-mode-label">${mode.label}</span>
+                    <i class="fa-solid fa-chevron-down t-mode-chip-caret"></i>
+                </button>
+
+                <div class="t-trigger-card" id="t-trigger-btn" title="点击切换剧本">
+                    <span class="t-trigger-name" id="t-lbl-name">加载中...</span>
+                    <span class="t-cat-tag" id="t-lbl-cat">分类</span>
+                    <span class="t-trigger-desc" id="t-lbl-desc-mini">...</span>
+                    <i class="fa-solid fa-chevron-down t-chevron"></i>
+                </div>
+
+                <div class="t-history-group">
+                    <label class="t-topbar-toggle" id="t-history-toggle" title="读取聊天历史">
+                        <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? 'checked' : ''}>
+                        <span class="t-topbar-toggle-icon">📜</span>
+                        <span class="t-topbar-toggle-text">读取聊天历史</span>
+                    </label>
+                    <label class="t-topbar-toggle t-subtoggle" id="t-ai-only-toggle" title="${HISTORY_AI_ONLY_HINT}">
+                        <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? 'checked' : ''}>
+                        <span class="t-topbar-toggle-icon">🎭</span>
+                        <span class="t-topbar-toggle-text">只要角色发言</span>
+                    </label>
+                </div>
+
+                <div class="t-trigger-actions">
+                    <div class="t-filter-btn" id="t-btn-filter" title="筛选随机范围">
+                        <i class="fa-solid fa-filter"></i>
                     </div>
+                    <div class="t-dice-btn" id="t-btn-dice" title="随机剧本">🎲</div>
                 </div>
             </div>`;
 }

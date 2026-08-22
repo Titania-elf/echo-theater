@@ -114,165 +114,193 @@
 }
 
 
-/* 顶部操作区 */
+/* 顶部操作区 —— 单行胶囊条。
+   四个直接子项，桌面端从左到右：模式胶囊 / 剧本卡（吃掉全部余量）/
+   历史开关组 / 筛选·骰子。
+
+   改版前这里的空间分配是反的（950px 窗口实测）：两个几乎不动的布尔开关
+   写死 min-width 160px+150px 拿走 36%，剧本卡只剩 188px、简介实际只显示
+   约 10 个字。现在剧本卡约 620px。
+
+   高度 75px -> 52px：改版前剧本卡要竖排两行（名字一行、分类+简介一行），
+   现在三者在一行里横排，用不着那么高。 */
 .t-top-bar {
-    padding: 12px 20px;
+    padding: 8px 20px;
     background: var(--t-color-surface);
     border-bottom: 1px solid var(--t-color-border);
     display: flex;
-    gap: 15px;
+    gap: 10px;
     align-items: stretch;
-    height: 75px;
+    height: 52px;
     box-sizing: border-box;
     flex-shrink: 0;
     z-index: 20;
 }
 
-/* === [修复] PC端布局核心 === */
-.t-mobile-row {
-    display: flex;
-    flex-grow: 1;
-    /* 填满剩余空间 */
-    gap: 15px;
-    /* 元素间距 */
-    height: 100%;
-    min-width: 0;
-    /* 防止 flex 子项溢出 */
-}
-
-/* 历史开关 + 子开关的分组容器。
-   桌面端沿用顶栏的 15px gap，视觉与两者各自作为顶栏直接子项时完全一致；
-   存在的意义在窄屏：让这两个开关共占一行，而不是各占一行 */
+/* 历史开关组 */
 .t-history-group {
     display: flex;
-    gap: 15px;
+    align-items: stretch;
+    gap: 4px;
     flex-shrink: 0;
 }
 
-/* 历史开关 */
-.t-history-toggle {
+/* 图标开关本体（📜 读历史 / 🎭 只要角色发言）。
+
+   仍然是 <label> 包一个真 <input type="checkbox">，只把原生控件视觉隐藏 ——
+   键盘可达性、change 事件、读屏软件拿到的选中态三样都不变。
+   换成 <div role="switch"> 会把它们一起丢掉，那是这个改动最容易犯的错。 */
+.t-topbar-toggle {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 160px;
-    background: var(--t-color-surface-sunken);
-    border-radius: 6px;
-    padding: 0 12px;
-    border: 1px solid var(--t-color-border);
+    width: 36px;
     flex-shrink: 0;
-    transition: all 0.3s;
+    box-sizing: border-box;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border);
+    border-radius: var(--t-radius-control);
     cursor: pointer;
+    user-select: none;
+    transition: var(--t-transition-hover);
 }
 
-.t-history-toggle:hover {
+/* 原生 checkbox 与文字标签都只是**视觉**隐藏。
+   ⚠ 不能用 display:none / visibility:hidden：那会把 checkbox 从 Tab 序里摘掉，
+     也会让文字不再充当 <input> 的可及名称 —— 图标化之后就没有别的名称来源了。 */
+.t-topbar-toggle input,
+.t-topbar-toggle-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* 开/关必须能不靠色相分辨（WCAG 1.4.1）。这里同时动三个通道：
+   底色有无、描边颜色、图标不透明度。
+   当前图标是 emoji —— color 对彩色字形无效，所以不透明度这一档是必需的，
+   不是锦上添花。 */
+.t-topbar-toggle-icon {
+    font-size: 1.05em;
+    line-height: 1;
+    opacity: .5;
+    transition: opacity var(--t-duration-base) var(--t-ease-standard);
+}
+
+.t-topbar-toggle:hover {
     background: var(--t-color-surface-elevated);
     border-color: var(--t-color-border-strong);
 }
 
-.t-history-toggle.active {
+.t-topbar-toggle:hover .t-topbar-toggle-icon {
+    opacity: .75;
+}
+
+.t-topbar-toggle.is-on {
     background: var(--t-color-accent-veil);
     border-color: var(--t-color-accent-border-subtle);
 }
 
-.t-toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
+.t-topbar-toggle.is-on .t-topbar-toggle-icon {
+    opacity: 1;
 }
 
-.t-toggle-text {
-    font-size: 0.9em;
-    font-weight: bold;
-    color: var(--t-color-text-muted);
-    transition: color 0.2s;
-    white-space: nowrap;
+/* 键盘焦点环。checkbox 视觉隐藏后 :focus-visible 打在看不见的元素上，
+   所以用兄弟选择器把焦点环转到图标上（input 在 DOM 里排在图标之前）。
+   刻意不用 :has() —— 兄弟选择器在所有目标浏览器上都成立。 */
+.t-topbar-toggle input:focus-visible ~ .t-topbar-toggle-icon {
+    border-radius: var(--t-radius-inline);
+    box-shadow: var(--t-shadow-focus);
 }
 
-.t-history-toggle.active .t-toggle-text {
-    color: var(--t-color-accent);
-}
-
-.t-history-toggle:hover .t-toggle-text {
-    color: var(--t-color-text-label);
-}
-
-.t-history-toggle.active:hover .t-toggle-text {
-    color: rgb(var(--t-sky-text-2-rgb));
-}
-
-/* 「只要角色发言」：历史开关的子项，窄一点以免顶栏被两个同宽开关挤满 */
+/* 「只要角色发言」是「读取聊天历史」的子项：不读历史时它没有意义。
+   改版前的做法是 opacity:.45 置灰、但那 150px 一直占着；
+   现在整个收起。收起之后没有可悬停的目标，也就不再需要
+   「为什么不可用」的 title 解释 —— 子项跟着父项一起消失本身就说明了原因。 */
 .t-subtoggle {
-    min-width: 150px;
-}
-
-/* 不读历史时置灰。仍保留 pointer-events，好让 title 提示能说明为什么不可用 */
-.t-subtoggle.disabled {
-    opacity: 0.45;
-}
-
-.t-subtoggle.disabled,
-.t-subtoggle.disabled .t-toggle-label {
-    cursor: not-allowed;
-}
-
-.t-subtoggle.disabled:hover {
-    background: var(--t-color-surface-sunken);
-    border-color: var(--t-color-border);
-}
-
-.t-subtoggle.disabled:hover .t-toggle-text {
-    color: var(--t-color-text-muted);
-}
-
-/* 生成模式切换 */
-.t-mode-toggle {
-    display: flex;
-    align-items: center;
-    background: var(--t-color-surface-sunken);
-    border-radius: 6px;
-    border: 1px solid var(--t-color-border);
     overflow: hidden;
-    flex-shrink: 0;
+    transition: var(--t-transition-hover),
+        max-width var(--t-duration-base) var(--t-ease-standard),
+        opacity var(--t-duration-base) var(--t-ease-standard);
+    max-width: 36px;
 }
 
-.t-mode-btn {
+.t-subtoggle.is-collapsed {
+    max-width: 0;
+    opacity: 0;
+    border-width: 0;
+    pointer-events: none;
+}
+
+/* 生成模式胶囊。改版前是三个并排按钮（约 257px），只为显示一个三选一；
+   现在只显示当前模式，点开才列出三项，省下的宽度归剧本卡。 */
+.t-mode-chip {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 14px;
-    height: 100%;
-    cursor: pointer;
-    color: var(--t-color-text-faint);
+    gap: 6px;
+    flex-shrink: 0;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0 12px;
+    margin: 0;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border);
+    border-radius: var(--t-radius-control);
+    color: var(--t-color-brand);
     font-size: 0.85em;
     font-weight: bold;
-    transition: all 0.2s;
     white-space: nowrap;
-    border-right: 1px solid var(--t-color-border);
+    cursor: pointer;
+    transition: var(--t-transition-hover);
 }
 
-.t-mode-btn:last-child {
-    border-right: none;
-}
-
-.t-mode-btn:hover {
+.t-mode-chip:hover {
     background: var(--t-color-surface-elevated);
-    color: var(--t-color-text-secondary);
+    border-color: var(--t-color-border-strong);
 }
 
-.t-mode-btn.active {
+.t-mode-chip[aria-expanded="true"] {
     background: var(--t-color-brand-soft);
-    color: var(--t-color-brand);
+    border-color: var(--t-color-brand-border-subtle);
 }
 
-.t-mode-btn.active:hover {
-    background: var(--t-color-brand-soft-strong);
+.t-mode-chip:focus-visible {
+    outline: none;
+    box-shadow: var(--t-shadow-focus);
 }
 
-/* Trigger Card */
+.t-mode-chip-icon {
+    flex-shrink: 0;
+    font-size: 1.1em;
+    line-height: 1;
+}
+
+/* min-width:0 是省略号真正生效的前提：flex 子项默认 min-width:auto，
+   不加就不会缩到内容宽度以下，text-overflow 永远没有机会触发。
+   窄屏下模式胶囊是 flex:1 1 auto，靠这里兜住 320px + 130% 字号的极端组合。 */
+.t-mode-chip-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.t-mode-chip-caret {
+    flex-shrink: 0;
+    font-size: 0.8em;
+    color: var(--t-color-text-faint);
+}
+
+/* Trigger Card —— 这一栏的主角，吃掉模式胶囊/开关/动作簇之外的全部余量。
+   改版前是竖排两行（名字一行，分类+简介一行）挤在 188px 里；
+   现在名字·分类·简介横排一行，约 620px。 */
 .t-trigger-card {
-    flex-grow: 1;
+    flex: 1 1 auto;
     background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
@@ -284,9 +312,10 @@
     padding: 0 calc(15px + 1.8em) 0 15px;
     cursor: pointer;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    transition: 0.2s;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    transition: var(--t-transition-hover);
     position: relative;
     min-width: 0;
 }
@@ -296,39 +325,46 @@
     border-color: var(--t-color-border-bright);
 }
 
-.t-trigger-main {
-    font-size: 1.1em;
+/* 剧本名。挤不下时也会省略，但优先级高于简介：
+   本项 flex-basis:auto（按内容取宽），简介是 flex-basis:0（只吃剩下的），
+   所以余量先给简介、不够时才轮到名字缩。min-width 保底避免被压成一个字。 */
+.t-trigger-name {
+    flex: 0 1 auto;
+    min-width: 4em;
+    font-size: 1.05em;
     font-weight: bold;
     color: var(--t-color-text);
-    margin-bottom: 3px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
-.t-trigger-sub {
-    font-size: 0.8em;
+/* 简介。改版前挤在 188px 卡片的第二行、与分类标签抢宽度，实际只能显示
+   约 10 个字 —— 渲染了但没传达信息。现在它是横排里吸收余量的那一项。 */
+.t-trigger-desc {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 0.85em;
     color: var(--t-color-text-muted);
-    display: flex;
-    align-items: center;
-    gap: 8px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
+
+/* ── 已删除：.t-trigger-main / .t-trigger-sub ──
+   改版前剧本卡竖排两行时的行容器。名字/分类/简介现在是 .t-trigger-card 的
+   直接 flex 子项（.t-trigger-name / .t-cat-tag / .t-trigger-desc），
+   不再需要包一层。留这条注释是为了让看过旧截图的人不误以为是漏改。 */
 
 .t-cat-tag {
     background: var(--t-color-surface-high);
     padding: 1px 6px;
     border-radius: 3px;
     color: var(--t-color-text-secondary);
-    font-size: 0.9em;
+    font-size: 0.8em;
     flex-shrink: 0;
     border: 1px solid transparent;
-    transition: all 0.2s;
+    transition: var(--t-transition-hover);
 }
 
 /* 分类标签的两个着色状态。
@@ -367,19 +403,19 @@
     font-size: 1.2em;
 }
 
-/* Filter & Dice —— `.t-trigger-card` 的同级动作簇，同属 `.t-mobile-row`。
+/* Filter & Dice —— `.t-trigger-card` 的同级动作簇，与它同为 `.t-top-bar` 的直接子项。
    原名 `.t-action-group` 与 lore-review.css 的同名类撞车（A12）：那边是
    带 h4 标题的表单分区（配 `.t-action-item`），和这里的横向按钮簇不是同一
    组件，故按 `.t-trigger-*` 家族的既有命名重命名本侧，不做合并。
 
    ⚠ 改名同时去掉了一处反向泄漏：lore-review.css 排在本文件**之后**、
-     特异度同为 (0,1,0)，它的 `margin-bottom: 15px` 原先会落到这个簇上。
-     `.t-mobile-row` 是 flex 且 align-items 取默认 stretch，那 15px 让
-     筛选/骰子按钮比旁边的 `.t-trigger-card` 矮 15px、下方留出空隙。
-     现已与 trigger card 齐高（Phase 4b-2 确认的预期外观）。 */
+     特异度同为 (0,1,0)，它的 `margin-bottom: 15px` 原先会落到这个簇上，
+     让筛选/骰子按钮比旁边的剧本卡矮 15px、下方留出空隙。
+     现已与剧本卡齐高（Phase 4b-2 确认的预期外观）。 */
 .t-trigger-actions {
     display: flex;
-    gap: 5px;
+    align-items: stretch;
+    gap: 4px;
     flex-shrink: 0;
 }
 
@@ -388,15 +424,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
     cursor: pointer;
     background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
-    border-radius: 6px;
-    transition: 0.2s;
+    border-radius: var(--t-radius-control);
+    transition: var(--t-transition-hover);
 }
 
 .t-filter-btn {
-    width: 40px;
+    width: 36px;
     font-size: 1.1em;
     color: var(--t-color-text-faint);
 }
@@ -413,9 +450,18 @@
 }
 
 .t-dice-btn {
-    width: 50px;
-    font-size: 1.5em;
+    width: 44px;
+    font-size: 1.3em;
     color: var(--t-color-text-muted);
+    /* 骰子的随机旋转由 handleRandom() 直接写 transform 实现，「转过去」的动画
+       效果来自这里的过渡。
+       ⚠ 改版前 .t-filter-btn/.t-dice-btn 共用的 `transition: 0.2s` 是简写：
+         只给了时间，transition-property 取初始值 **all**，于是那一条同时管着
+         hover 变色和这个旋转。换成 --t-transition-hover（只列 background-color /
+         border-color / color）会让骰子瞬间跳到新角度而不是转过去，
+         所以必须把 transform 单独补回来。时长与改版前一致（--t-duration-base 也是 .2s）。 */
+    transition: var(--t-transition-hover),
+        transform var(--t-duration-base) var(--t-ease-standard);
 }
 
 .t-dice-btn:hover {
@@ -730,6 +776,15 @@
     align-items: center;
 }
 
+/* 菜单里的分隔线。原先是 renderFilterMenu 内联写的
+   `style="height:1px; background:var(--t-color-border); margin:2px 0;"`，
+   泛化成 renderAnchoredMenu 时顺手收进样式表（少一个 A16 内联）。 */
+.t-filter-sep {
+    height: 1px;
+    background: var(--t-color-border);
+    margin: 2px 0;
+}
+
 .t-filter-item:hover {
     background: var(--t-color-surface-raised);
     color: var(--t-color-text-strong);
@@ -818,86 +873,50 @@
         padding: 0 3px;
     }
 
+    /* 窄屏：两行。
+       第一行 = 模式胶囊 + 两个图标开关 + 筛选/骰子；第二行 = 剧本卡通栏。
+       改版前是三行（开关组 40px、模式三连 40px、剧本卡 50px + 间距 ≈ 155px），
+       在手机上顶栏和底栏合起来能吃掉三分之一屏。
+
+       用 flex-wrap + order 而不是加一层包装 div：桌面端要的顺序是
+       模式 → 剧本卡 → 开关 → 动作簇，窄屏要的是剧本卡换到最后单独一行，
+       DOM 顺序只能满足一个，所以窄屏靠 order 重排。
+       （order/flex 是布局属性，A5/R4 允许 feature 层调整。） */
     .t-top-bar {
         height: auto;
-        flex-direction: column;
-        padding: 10px;
+        flex-wrap: wrap;
+        padding: 8px 10px;
         gap: 8px;
     }
 
-    .t-history-toggle {
-        width: 100%;
-        height: 40px;
-        min-width: unset;
-        justify-content: center;
+    .t-mode-chip {
+        /* 吸收第一行的余量，并允许在 320px + 130% 字号下被压缩、
+           由 .t-mode-chip-label 的省略号兜底，而不是把整行挤爆 */
+        order: 1;
+        flex: 1 1 auto;
+        height: 36px;
     }
 
-    /* 两个开关平分一行：各占一行会让顶栏在窄屏多吃 48px */
     .t-history-group {
-        width: 100%;
-        gap: 8px;
-    }
-
-    .t-history-group .t-history-toggle {
-        flex: 1;
-        width: auto;
-        min-width: 0;
-        /* 极端组合（320px 屏 + 130% 字号缩放）下文字要折成两行，
-           固定 40px 会裁掉第二行，所以改成下限 */
-        height: auto;
-        min-height: 40px;
-        padding: 0 6px;
-    }
-
-    /* 半格宽度容不下 0.9em 的 7 个汉字。收到 0.8em，与同排的 .t-mode-btn 一致 */
-    .t-history-group .t-toggle-text {
-        font-size: 0.8em;
-        /* 基准字号可被用户放大到 130%，那时半格仍会不够。
-           解除全局的 nowrap 让它折行 —— 比截断成省略号不丢信息 */
-        white-space: normal;
-        line-height: 1.25;
-        text-align: center;
-    }
-
-    .t-history-group .t-toggle-label {
-        gap: 6px;
-        min-width: 0;
-    }
-
-    .t-mode-toggle {
-        width: 100%;
-        height: 40px;
-    }
-
-    .t-mode-btn {
-        flex: 1;
-        font-size: 0.8em;
-        padding: 0 10px;
-    }
-
-    .t-mobile-row {
-        display: flex;
-        gap: 8px;
-        width: 100%;
-        height: 50px;
-    }
-
-    .t-trigger-card {
-        height: 100%;
+        order: 2;
+        flex: 0 0 auto;
     }
 
     .t-trigger-actions {
-        height: 100%;
+        order: 3;
+        flex: 0 0 auto;
+        height: 36px;
     }
 
-    .t-dice-btn {
-        height: 100%;
-        width: 50px;
+    /* flex-basis:100% 让它必定换到第二行 */
+    .t-trigger-card {
+        order: 4;
+        flex: 1 0 100%;
+        height: 44px;
     }
 
-    .t-filter-btn {
-        height: 100%;
-        width: 40px;
+    .t-topbar-toggle {
+        height: 36px;
     }
 
     .t-content-area {

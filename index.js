@@ -6105,165 +6105,193 @@ textarea.t-input {
 }
 
 
-/* \u9876\u90E8\u64CD\u4F5C\u533A */
+/* \u9876\u90E8\u64CD\u4F5C\u533A \u2014\u2014 \u5355\u884C\u80F6\u56CA\u6761\u3002
+   \u56DB\u4E2A\u76F4\u63A5\u5B50\u9879\uFF0C\u684C\u9762\u7AEF\u4ECE\u5DE6\u5230\u53F3\uFF1A\u6A21\u5F0F\u80F6\u56CA / \u5267\u672C\u5361\uFF08\u5403\u6389\u5168\u90E8\u4F59\u91CF\uFF09/
+   \u5386\u53F2\u5F00\u5173\u7EC4 / \u7B5B\u9009\xB7\u9AB0\u5B50\u3002
+
+   \u6539\u7248\u524D\u8FD9\u91CC\u7684\u7A7A\u95F4\u5206\u914D\u662F\u53CD\u7684\uFF08950px \u7A97\u53E3\u5B9E\u6D4B\uFF09\uFF1A\u4E24\u4E2A\u51E0\u4E4E\u4E0D\u52A8\u7684\u5E03\u5C14\u5F00\u5173
+   \u5199\u6B7B min-width 160px+150px \u62FF\u8D70 36%\uFF0C\u5267\u672C\u5361\u53EA\u5269 188px\u3001\u7B80\u4ECB\u5B9E\u9645\u53EA\u663E\u793A
+   \u7EA6 10 \u4E2A\u5B57\u3002\u73B0\u5728\u5267\u672C\u5361\u7EA6 620px\u3002
+
+   \u9AD8\u5EA6 75px -> 52px\uFF1A\u6539\u7248\u524D\u5267\u672C\u5361\u8981\u7AD6\u6392\u4E24\u884C\uFF08\u540D\u5B57\u4E00\u884C\u3001\u5206\u7C7B+\u7B80\u4ECB\u4E00\u884C\uFF09\uFF0C
+   \u73B0\u5728\u4E09\u8005\u5728\u4E00\u884C\u91CC\u6A2A\u6392\uFF0C\u7528\u4E0D\u7740\u90A3\u4E48\u9AD8\u3002 */
 .t-top-bar {
-    padding: 12px 20px;
+    padding: 8px 20px;
     background: var(--t-color-surface);
     border-bottom: 1px solid var(--t-color-border);
     display: flex;
-    gap: 15px;
+    gap: 10px;
     align-items: stretch;
-    height: 75px;
+    height: 52px;
     box-sizing: border-box;
     flex-shrink: 0;
     z-index: 20;
 }
 
-/* === [\u4FEE\u590D] PC\u7AEF\u5E03\u5C40\u6838\u5FC3 === */
-.t-mobile-row {
-    display: flex;
-    flex-grow: 1;
-    /* \u586B\u6EE1\u5269\u4F59\u7A7A\u95F4 */
-    gap: 15px;
-    /* \u5143\u7D20\u95F4\u8DDD */
-    height: 100%;
-    min-width: 0;
-    /* \u9632\u6B62 flex \u5B50\u9879\u6EA2\u51FA */
-}
-
-/* \u5386\u53F2\u5F00\u5173 + \u5B50\u5F00\u5173\u7684\u5206\u7EC4\u5BB9\u5668\u3002
-   \u684C\u9762\u7AEF\u6CBF\u7528\u9876\u680F\u7684 15px gap\uFF0C\u89C6\u89C9\u4E0E\u4E24\u8005\u5404\u81EA\u4F5C\u4E3A\u9876\u680F\u76F4\u63A5\u5B50\u9879\u65F6\u5B8C\u5168\u4E00\u81F4\uFF1B
-   \u5B58\u5728\u7684\u610F\u4E49\u5728\u7A84\u5C4F\uFF1A\u8BA9\u8FD9\u4E24\u4E2A\u5F00\u5173\u5171\u5360\u4E00\u884C\uFF0C\u800C\u4E0D\u662F\u5404\u5360\u4E00\u884C */
+/* \u5386\u53F2\u5F00\u5173\u7EC4 */
 .t-history-group {
     display: flex;
-    gap: 15px;
+    align-items: stretch;
+    gap: 4px;
     flex-shrink: 0;
 }
 
-/* \u5386\u53F2\u5F00\u5173 */
-.t-history-toggle {
+/* \u56FE\u6807\u5F00\u5173\u672C\u4F53\uFF08\u{1F4DC} \u8BFB\u5386\u53F2 / \u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00\uFF09\u3002
+
+   \u4ECD\u7136\u662F <label> \u5305\u4E00\u4E2A\u771F <input type="checkbox">\uFF0C\u53EA\u628A\u539F\u751F\u63A7\u4EF6\u89C6\u89C9\u9690\u85CF \u2014\u2014
+   \u952E\u76D8\u53EF\u8FBE\u6027\u3001change \u4E8B\u4EF6\u3001\u8BFB\u5C4F\u8F6F\u4EF6\u62FF\u5230\u7684\u9009\u4E2D\u6001\u4E09\u6837\u90FD\u4E0D\u53D8\u3002
+   \u6362\u6210 <div role="switch"> \u4F1A\u628A\u5B83\u4EEC\u4E00\u8D77\u4E22\u6389\uFF0C\u90A3\u662F\u8FD9\u4E2A\u6539\u52A8\u6700\u5BB9\u6613\u72AF\u7684\u9519\u3002 */
+.t-topbar-toggle {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 160px;
-    background: var(--t-color-surface-sunken);
-    border-radius: 6px;
-    padding: 0 12px;
-    border: 1px solid var(--t-color-border);
+    width: 36px;
     flex-shrink: 0;
-    transition: all 0.3s;
+    box-sizing: border-box;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border);
+    border-radius: var(--t-radius-control);
     cursor: pointer;
+    user-select: none;
+    transition: var(--t-transition-hover);
 }
 
-.t-history-toggle:hover {
+/* \u539F\u751F checkbox \u4E0E\u6587\u5B57\u6807\u7B7E\u90FD\u53EA\u662F**\u89C6\u89C9**\u9690\u85CF\u3002
+   \u26A0 \u4E0D\u80FD\u7528 display:none / visibility:hidden\uFF1A\u90A3\u4F1A\u628A checkbox \u4ECE Tab \u5E8F\u91CC\u6458\u6389\uFF0C
+     \u4E5F\u4F1A\u8BA9\u6587\u5B57\u4E0D\u518D\u5145\u5F53 <input> \u7684\u53EF\u53CA\u540D\u79F0 \u2014\u2014 \u56FE\u6807\u5316\u4E4B\u540E\u5C31\u6CA1\u6709\u522B\u7684\u540D\u79F0\u6765\u6E90\u4E86\u3002 */
+.t-topbar-toggle input,
+.t-topbar-toggle-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* \u5F00/\u5173\u5FC5\u987B\u80FD\u4E0D\u9760\u8272\u76F8\u5206\u8FA8\uFF08WCAG 1.4.1\uFF09\u3002\u8FD9\u91CC\u540C\u65F6\u52A8\u4E09\u4E2A\u901A\u9053\uFF1A
+   \u5E95\u8272\u6709\u65E0\u3001\u63CF\u8FB9\u989C\u8272\u3001\u56FE\u6807\u4E0D\u900F\u660E\u5EA6\u3002
+   \u5F53\u524D\u56FE\u6807\u662F emoji \u2014\u2014 color \u5BF9\u5F69\u8272\u5B57\u5F62\u65E0\u6548\uFF0C\u6240\u4EE5\u4E0D\u900F\u660E\u5EA6\u8FD9\u4E00\u6863\u662F\u5FC5\u9700\u7684\uFF0C
+   \u4E0D\u662F\u9526\u4E0A\u6DFB\u82B1\u3002 */
+.t-topbar-toggle-icon {
+    font-size: 1.05em;
+    line-height: 1;
+    opacity: .5;
+    transition: opacity var(--t-duration-base) var(--t-ease-standard);
+}
+
+.t-topbar-toggle:hover {
     background: var(--t-color-surface-elevated);
     border-color: var(--t-color-border-strong);
 }
 
-.t-history-toggle.active {
+.t-topbar-toggle:hover .t-topbar-toggle-icon {
+    opacity: .75;
+}
+
+.t-topbar-toggle.is-on {
     background: var(--t-color-accent-veil);
     border-color: var(--t-color-accent-border-subtle);
 }
 
-.t-toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
+.t-topbar-toggle.is-on .t-topbar-toggle-icon {
+    opacity: 1;
 }
 
-.t-toggle-text {
-    font-size: 0.9em;
-    font-weight: bold;
-    color: var(--t-color-text-muted);
-    transition: color 0.2s;
-    white-space: nowrap;
+/* \u952E\u76D8\u7126\u70B9\u73AF\u3002checkbox \u89C6\u89C9\u9690\u85CF\u540E :focus-visible \u6253\u5728\u770B\u4E0D\u89C1\u7684\u5143\u7D20\u4E0A\uFF0C
+   \u6240\u4EE5\u7528\u5144\u5F1F\u9009\u62E9\u5668\u628A\u7126\u70B9\u73AF\u8F6C\u5230\u56FE\u6807\u4E0A\uFF08input \u5728 DOM \u91CC\u6392\u5728\u56FE\u6807\u4E4B\u524D\uFF09\u3002
+   \u523B\u610F\u4E0D\u7528 :has() \u2014\u2014 \u5144\u5F1F\u9009\u62E9\u5668\u5728\u6240\u6709\u76EE\u6807\u6D4F\u89C8\u5668\u4E0A\u90FD\u6210\u7ACB\u3002 */
+.t-topbar-toggle input:focus-visible ~ .t-topbar-toggle-icon {
+    border-radius: var(--t-radius-inline);
+    box-shadow: var(--t-shadow-focus);
 }
 
-.t-history-toggle.active .t-toggle-text {
-    color: var(--t-color-accent);
-}
-
-.t-history-toggle:hover .t-toggle-text {
-    color: var(--t-color-text-label);
-}
-
-.t-history-toggle.active:hover .t-toggle-text {
-    color: rgb(var(--t-sky-text-2-rgb));
-}
-
-/* \u300C\u53EA\u8981\u89D2\u8272\u53D1\u8A00\u300D\uFF1A\u5386\u53F2\u5F00\u5173\u7684\u5B50\u9879\uFF0C\u7A84\u4E00\u70B9\u4EE5\u514D\u9876\u680F\u88AB\u4E24\u4E2A\u540C\u5BBD\u5F00\u5173\u6324\u6EE1 */
+/* \u300C\u53EA\u8981\u89D2\u8272\u53D1\u8A00\u300D\u662F\u300C\u8BFB\u53D6\u804A\u5929\u5386\u53F2\u300D\u7684\u5B50\u9879\uFF1A\u4E0D\u8BFB\u5386\u53F2\u65F6\u5B83\u6CA1\u6709\u610F\u4E49\u3002
+   \u6539\u7248\u524D\u7684\u505A\u6CD5\u662F opacity:.45 \u7F6E\u7070\u3001\u4F46\u90A3 150px \u4E00\u76F4\u5360\u7740\uFF1B
+   \u73B0\u5728\u6574\u4E2A\u6536\u8D77\u3002\u6536\u8D77\u4E4B\u540E\u6CA1\u6709\u53EF\u60AC\u505C\u7684\u76EE\u6807\uFF0C\u4E5F\u5C31\u4E0D\u518D\u9700\u8981
+   \u300C\u4E3A\u4EC0\u4E48\u4E0D\u53EF\u7528\u300D\u7684 title \u89E3\u91CA \u2014\u2014 \u5B50\u9879\u8DDF\u7740\u7236\u9879\u4E00\u8D77\u6D88\u5931\u672C\u8EAB\u5C31\u8BF4\u660E\u4E86\u539F\u56E0\u3002 */
 .t-subtoggle {
-    min-width: 150px;
-}
-
-/* \u4E0D\u8BFB\u5386\u53F2\u65F6\u7F6E\u7070\u3002\u4ECD\u4FDD\u7559 pointer-events\uFF0C\u597D\u8BA9 title \u63D0\u793A\u80FD\u8BF4\u660E\u4E3A\u4EC0\u4E48\u4E0D\u53EF\u7528 */
-.t-subtoggle.disabled {
-    opacity: 0.45;
-}
-
-.t-subtoggle.disabled,
-.t-subtoggle.disabled .t-toggle-label {
-    cursor: not-allowed;
-}
-
-.t-subtoggle.disabled:hover {
-    background: var(--t-color-surface-sunken);
-    border-color: var(--t-color-border);
-}
-
-.t-subtoggle.disabled:hover .t-toggle-text {
-    color: var(--t-color-text-muted);
-}
-
-/* \u751F\u6210\u6A21\u5F0F\u5207\u6362 */
-.t-mode-toggle {
-    display: flex;
-    align-items: center;
-    background: var(--t-color-surface-sunken);
-    border-radius: 6px;
-    border: 1px solid var(--t-color-border);
     overflow: hidden;
-    flex-shrink: 0;
+    transition: var(--t-transition-hover),
+        max-width var(--t-duration-base) var(--t-ease-standard),
+        opacity var(--t-duration-base) var(--t-ease-standard);
+    max-width: 36px;
 }
 
-.t-mode-btn {
+.t-subtoggle.is-collapsed {
+    max-width: 0;
+    opacity: 0;
+    border-width: 0;
+    pointer-events: none;
+}
+
+/* \u751F\u6210\u6A21\u5F0F\u80F6\u56CA\u3002\u6539\u7248\u524D\u662F\u4E09\u4E2A\u5E76\u6392\u6309\u94AE\uFF08\u7EA6 257px\uFF09\uFF0C\u53EA\u4E3A\u663E\u793A\u4E00\u4E2A\u4E09\u9009\u4E00\uFF1B
+   \u73B0\u5728\u53EA\u663E\u793A\u5F53\u524D\u6A21\u5F0F\uFF0C\u70B9\u5F00\u624D\u5217\u51FA\u4E09\u9879\uFF0C\u7701\u4E0B\u7684\u5BBD\u5EA6\u5F52\u5267\u672C\u5361\u3002 */
+.t-mode-chip {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 14px;
-    height: 100%;
-    cursor: pointer;
-    color: var(--t-color-text-faint);
+    gap: 6px;
+    flex-shrink: 0;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0 12px;
+    margin: 0;
+    background: var(--t-color-surface-sunken);
+    border: 1px solid var(--t-color-border);
+    border-radius: var(--t-radius-control);
+    color: var(--t-color-brand);
     font-size: 0.85em;
     font-weight: bold;
-    transition: all 0.2s;
     white-space: nowrap;
-    border-right: 1px solid var(--t-color-border);
+    cursor: pointer;
+    transition: var(--t-transition-hover);
 }
 
-.t-mode-btn:last-child {
-    border-right: none;
-}
-
-.t-mode-btn:hover {
+.t-mode-chip:hover {
     background: var(--t-color-surface-elevated);
-    color: var(--t-color-text-secondary);
+    border-color: var(--t-color-border-strong);
 }
 
-.t-mode-btn.active {
+.t-mode-chip[aria-expanded="true"] {
     background: var(--t-color-brand-soft);
-    color: var(--t-color-brand);
+    border-color: var(--t-color-brand-border-subtle);
 }
 
-.t-mode-btn.active:hover {
-    background: var(--t-color-brand-soft-strong);
+.t-mode-chip:focus-visible {
+    outline: none;
+    box-shadow: var(--t-shadow-focus);
 }
 
-/* Trigger Card */
+.t-mode-chip-icon {
+    flex-shrink: 0;
+    font-size: 1.1em;
+    line-height: 1;
+}
+
+/* min-width:0 \u662F\u7701\u7565\u53F7\u771F\u6B63\u751F\u6548\u7684\u524D\u63D0\uFF1Aflex \u5B50\u9879\u9ED8\u8BA4 min-width:auto\uFF0C
+   \u4E0D\u52A0\u5C31\u4E0D\u4F1A\u7F29\u5230\u5185\u5BB9\u5BBD\u5EA6\u4EE5\u4E0B\uFF0Ctext-overflow \u6C38\u8FDC\u6CA1\u6709\u673A\u4F1A\u89E6\u53D1\u3002
+   \u7A84\u5C4F\u4E0B\u6A21\u5F0F\u80F6\u56CA\u662F flex:1 1 auto\uFF0C\u9760\u8FD9\u91CC\u515C\u4F4F 320px + 130% \u5B57\u53F7\u7684\u6781\u7AEF\u7EC4\u5408\u3002 */
+.t-mode-chip-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.t-mode-chip-caret {
+    flex-shrink: 0;
+    font-size: 0.8em;
+    color: var(--t-color-text-faint);
+}
+
+/* Trigger Card \u2014\u2014 \u8FD9\u4E00\u680F\u7684\u4E3B\u89D2\uFF0C\u5403\u6389\u6A21\u5F0F\u80F6\u56CA/\u5F00\u5173/\u52A8\u4F5C\u7C07\u4E4B\u5916\u7684\u5168\u90E8\u4F59\u91CF\u3002
+   \u6539\u7248\u524D\u662F\u7AD6\u6392\u4E24\u884C\uFF08\u540D\u5B57\u4E00\u884C\uFF0C\u5206\u7C7B+\u7B80\u4ECB\u4E00\u884C\uFF09\u6324\u5728 188px \u91CC\uFF1B
+   \u73B0\u5728\u540D\u5B57\xB7\u5206\u7C7B\xB7\u7B80\u4ECB\u6A2A\u6392\u4E00\u884C\uFF0C\u7EA6 620px\u3002 */
 .t-trigger-card {
-    flex-grow: 1;
+    flex: 1 1 auto;
     background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
     border-radius: 6px;
@@ -6275,9 +6303,10 @@ textarea.t-input {
     padding: 0 calc(15px + 1.8em) 0 15px;
     cursor: pointer;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    transition: 0.2s;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    transition: var(--t-transition-hover);
     position: relative;
     min-width: 0;
 }
@@ -6287,39 +6316,46 @@ textarea.t-input {
     border-color: var(--t-color-border-bright);
 }
 
-.t-trigger-main {
-    font-size: 1.1em;
+/* \u5267\u672C\u540D\u3002\u6324\u4E0D\u4E0B\u65F6\u4E5F\u4F1A\u7701\u7565\uFF0C\u4F46\u4F18\u5148\u7EA7\u9AD8\u4E8E\u7B80\u4ECB\uFF1A
+   \u672C\u9879 flex-basis:auto\uFF08\u6309\u5185\u5BB9\u53D6\u5BBD\uFF09\uFF0C\u7B80\u4ECB\u662F flex-basis:0\uFF08\u53EA\u5403\u5269\u4E0B\u7684\uFF09\uFF0C
+   \u6240\u4EE5\u4F59\u91CF\u5148\u7ED9\u7B80\u4ECB\u3001\u4E0D\u591F\u65F6\u624D\u8F6E\u5230\u540D\u5B57\u7F29\u3002min-width \u4FDD\u5E95\u907F\u514D\u88AB\u538B\u6210\u4E00\u4E2A\u5B57\u3002 */
+.t-trigger-name {
+    flex: 0 1 auto;
+    min-width: 4em;
+    font-size: 1.05em;
     font-weight: bold;
     color: var(--t-color-text);
-    margin-bottom: 3px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
-.t-trigger-sub {
-    font-size: 0.8em;
+/* \u7B80\u4ECB\u3002\u6539\u7248\u524D\u6324\u5728 188px \u5361\u7247\u7684\u7B2C\u4E8C\u884C\u3001\u4E0E\u5206\u7C7B\u6807\u7B7E\u62A2\u5BBD\u5EA6\uFF0C\u5B9E\u9645\u53EA\u80FD\u663E\u793A
+   \u7EA6 10 \u4E2A\u5B57 \u2014\u2014 \u6E32\u67D3\u4E86\u4F46\u6CA1\u4F20\u8FBE\u4FE1\u606F\u3002\u73B0\u5728\u5B83\u662F\u6A2A\u6392\u91CC\u5438\u6536\u4F59\u91CF\u7684\u90A3\u4E00\u9879\u3002 */
+.t-trigger-desc {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 0.85em;
     color: var(--t-color-text-muted);
-    display: flex;
-    align-items: center;
-    gap: 8px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
+
+/* \u2500\u2500 \u5DF2\u5220\u9664\uFF1A.t-trigger-main / .t-trigger-sub \u2500\u2500
+   \u6539\u7248\u524D\u5267\u672C\u5361\u7AD6\u6392\u4E24\u884C\u65F6\u7684\u884C\u5BB9\u5668\u3002\u540D\u5B57/\u5206\u7C7B/\u7B80\u4ECB\u73B0\u5728\u662F .t-trigger-card \u7684
+   \u76F4\u63A5 flex \u5B50\u9879\uFF08.t-trigger-name / .t-cat-tag / .t-trigger-desc\uFF09\uFF0C
+   \u4E0D\u518D\u9700\u8981\u5305\u4E00\u5C42\u3002\u7559\u8FD9\u6761\u6CE8\u91CA\u662F\u4E3A\u4E86\u8BA9\u770B\u8FC7\u65E7\u622A\u56FE\u7684\u4EBA\u4E0D\u8BEF\u4EE5\u4E3A\u662F\u6F0F\u6539\u3002 */
 
 .t-cat-tag {
     background: var(--t-color-surface-high);
     padding: 1px 6px;
     border-radius: 3px;
     color: var(--t-color-text-secondary);
-    font-size: 0.9em;
+    font-size: 0.8em;
     flex-shrink: 0;
     border: 1px solid transparent;
-    transition: all 0.2s;
+    transition: var(--t-transition-hover);
 }
 
 /* \u5206\u7C7B\u6807\u7B7E\u7684\u4E24\u4E2A\u7740\u8272\u72B6\u6001\u3002
@@ -6358,19 +6394,19 @@ textarea.t-input {
     font-size: 1.2em;
 }
 
-/* Filter & Dice \u2014\u2014 \`.t-trigger-card\` \u7684\u540C\u7EA7\u52A8\u4F5C\u7C07\uFF0C\u540C\u5C5E \`.t-mobile-row\`\u3002
+/* Filter & Dice \u2014\u2014 \`.t-trigger-card\` \u7684\u540C\u7EA7\u52A8\u4F5C\u7C07\uFF0C\u4E0E\u5B83\u540C\u4E3A \`.t-top-bar\` \u7684\u76F4\u63A5\u5B50\u9879\u3002
    \u539F\u540D \`.t-action-group\` \u4E0E lore-review.css \u7684\u540C\u540D\u7C7B\u649E\u8F66\uFF08A12\uFF09\uFF1A\u90A3\u8FB9\u662F
    \u5E26 h4 \u6807\u9898\u7684\u8868\u5355\u5206\u533A\uFF08\u914D \`.t-action-item\`\uFF09\uFF0C\u548C\u8FD9\u91CC\u7684\u6A2A\u5411\u6309\u94AE\u7C07\u4E0D\u662F\u540C\u4E00
    \u7EC4\u4EF6\uFF0C\u6545\u6309 \`.t-trigger-*\` \u5BB6\u65CF\u7684\u65E2\u6709\u547D\u540D\u91CD\u547D\u540D\u672C\u4FA7\uFF0C\u4E0D\u505A\u5408\u5E76\u3002
 
    \u26A0 \u6539\u540D\u540C\u65F6\u53BB\u6389\u4E86\u4E00\u5904\u53CD\u5411\u6CC4\u6F0F\uFF1Alore-review.css \u6392\u5728\u672C\u6587\u4EF6**\u4E4B\u540E**\u3001
-     \u7279\u5F02\u5EA6\u540C\u4E3A (0,1,0)\uFF0C\u5B83\u7684 \`margin-bottom: 15px\` \u539F\u5148\u4F1A\u843D\u5230\u8FD9\u4E2A\u7C07\u4E0A\u3002
-     \`.t-mobile-row\` \u662F flex \u4E14 align-items \u53D6\u9ED8\u8BA4 stretch\uFF0C\u90A3 15px \u8BA9
-     \u7B5B\u9009/\u9AB0\u5B50\u6309\u94AE\u6BD4\u65C1\u8FB9\u7684 \`.t-trigger-card\` \u77EE 15px\u3001\u4E0B\u65B9\u7559\u51FA\u7A7A\u9699\u3002
-     \u73B0\u5DF2\u4E0E trigger card \u9F50\u9AD8\uFF08Phase 4b-2 \u786E\u8BA4\u7684\u9884\u671F\u5916\u89C2\uFF09\u3002 */
+     \u7279\u5F02\u5EA6\u540C\u4E3A (0,1,0)\uFF0C\u5B83\u7684 \`margin-bottom: 15px\` \u539F\u5148\u4F1A\u843D\u5230\u8FD9\u4E2A\u7C07\u4E0A\uFF0C
+     \u8BA9\u7B5B\u9009/\u9AB0\u5B50\u6309\u94AE\u6BD4\u65C1\u8FB9\u7684\u5267\u672C\u5361\u77EE 15px\u3001\u4E0B\u65B9\u7559\u51FA\u7A7A\u9699\u3002
+     \u73B0\u5DF2\u4E0E\u5267\u672C\u5361\u9F50\u9AD8\uFF08Phase 4b-2 \u786E\u8BA4\u7684\u9884\u671F\u5916\u89C2\uFF09\u3002 */
 .t-trigger-actions {
     display: flex;
-    gap: 5px;
+    align-items: stretch;
+    gap: 4px;
     flex-shrink: 0;
 }
 
@@ -6379,15 +6415,16 @@ textarea.t-input {
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
     cursor: pointer;
     background: var(--t-color-surface-elevated);
     border: 1px solid var(--t-color-border);
-    border-radius: 6px;
-    transition: 0.2s;
+    border-radius: var(--t-radius-control);
+    transition: var(--t-transition-hover);
 }
 
 .t-filter-btn {
-    width: 40px;
+    width: 36px;
     font-size: 1.1em;
     color: var(--t-color-text-faint);
 }
@@ -6404,9 +6441,18 @@ textarea.t-input {
 }
 
 .t-dice-btn {
-    width: 50px;
-    font-size: 1.5em;
+    width: 44px;
+    font-size: 1.3em;
     color: var(--t-color-text-muted);
+    /* \u9AB0\u5B50\u7684\u968F\u673A\u65CB\u8F6C\u7531 handleRandom() \u76F4\u63A5\u5199 transform \u5B9E\u73B0\uFF0C\u300C\u8F6C\u8FC7\u53BB\u300D\u7684\u52A8\u753B
+       \u6548\u679C\u6765\u81EA\u8FD9\u91CC\u7684\u8FC7\u6E21\u3002
+       \u26A0 \u6539\u7248\u524D .t-filter-btn/.t-dice-btn \u5171\u7528\u7684 \`transition: 0.2s\` \u662F\u7B80\u5199\uFF1A
+         \u53EA\u7ED9\u4E86\u65F6\u95F4\uFF0Ctransition-property \u53D6\u521D\u59CB\u503C **all**\uFF0C\u4E8E\u662F\u90A3\u4E00\u6761\u540C\u65F6\u7BA1\u7740
+         hover \u53D8\u8272\u548C\u8FD9\u4E2A\u65CB\u8F6C\u3002\u6362\u6210 --t-transition-hover\uFF08\u53EA\u5217 background-color /
+         border-color / color\uFF09\u4F1A\u8BA9\u9AB0\u5B50\u77AC\u95F4\u8DF3\u5230\u65B0\u89D2\u5EA6\u800C\u4E0D\u662F\u8F6C\u8FC7\u53BB\uFF0C
+         \u6240\u4EE5\u5FC5\u987B\u628A transform \u5355\u72EC\u8865\u56DE\u6765\u3002\u65F6\u957F\u4E0E\u6539\u7248\u524D\u4E00\u81F4\uFF08--t-duration-base \u4E5F\u662F .2s\uFF09\u3002 */
+    transition: var(--t-transition-hover),
+        transform var(--t-duration-base) var(--t-ease-standard);
 }
 
 .t-dice-btn:hover {
@@ -6721,6 +6767,15 @@ textarea.t-input {
     align-items: center;
 }
 
+/* \u83DC\u5355\u91CC\u7684\u5206\u9694\u7EBF\u3002\u539F\u5148\u662F renderFilterMenu \u5185\u8054\u5199\u7684
+   \`style="height:1px; background:var(--t-color-border); margin:2px 0;"\`\uFF0C
+   \u6CDB\u5316\u6210 renderAnchoredMenu \u65F6\u987A\u624B\u6536\u8FDB\u6837\u5F0F\u8868\uFF08\u5C11\u4E00\u4E2A A16 \u5185\u8054\uFF09\u3002 */
+.t-filter-sep {
+    height: 1px;
+    background: var(--t-color-border);
+    margin: 2px 0;
+}
+
 .t-filter-item:hover {
     background: var(--t-color-surface-raised);
     color: var(--t-color-text-strong);
@@ -6809,86 +6864,50 @@ textarea.t-input {
         padding: 0 3px;
     }
 
+    /* \u7A84\u5C4F\uFF1A\u4E24\u884C\u3002
+       \u7B2C\u4E00\u884C = \u6A21\u5F0F\u80F6\u56CA + \u4E24\u4E2A\u56FE\u6807\u5F00\u5173 + \u7B5B\u9009/\u9AB0\u5B50\uFF1B\u7B2C\u4E8C\u884C = \u5267\u672C\u5361\u901A\u680F\u3002
+       \u6539\u7248\u524D\u662F\u4E09\u884C\uFF08\u5F00\u5173\u7EC4 40px\u3001\u6A21\u5F0F\u4E09\u8FDE 40px\u3001\u5267\u672C\u5361 50px + \u95F4\u8DDD \u2248 155px\uFF09\uFF0C
+       \u5728\u624B\u673A\u4E0A\u9876\u680F\u548C\u5E95\u680F\u5408\u8D77\u6765\u80FD\u5403\u6389\u4E09\u5206\u4E4B\u4E00\u5C4F\u3002
+
+       \u7528 flex-wrap + order \u800C\u4E0D\u662F\u52A0\u4E00\u5C42\u5305\u88C5 div\uFF1A\u684C\u9762\u7AEF\u8981\u7684\u987A\u5E8F\u662F
+       \u6A21\u5F0F \u2192 \u5267\u672C\u5361 \u2192 \u5F00\u5173 \u2192 \u52A8\u4F5C\u7C07\uFF0C\u7A84\u5C4F\u8981\u7684\u662F\u5267\u672C\u5361\u6362\u5230\u6700\u540E\u5355\u72EC\u4E00\u884C\uFF0C
+       DOM \u987A\u5E8F\u53EA\u80FD\u6EE1\u8DB3\u4E00\u4E2A\uFF0C\u6240\u4EE5\u7A84\u5C4F\u9760 order \u91CD\u6392\u3002
+       \uFF08order/flex \u662F\u5E03\u5C40\u5C5E\u6027\uFF0CA5/R4 \u5141\u8BB8 feature \u5C42\u8C03\u6574\u3002\uFF09 */
     .t-top-bar {
         height: auto;
-        flex-direction: column;
-        padding: 10px;
+        flex-wrap: wrap;
+        padding: 8px 10px;
         gap: 8px;
     }
 
-    .t-history-toggle {
-        width: 100%;
-        height: 40px;
-        min-width: unset;
-        justify-content: center;
+    .t-mode-chip {
+        /* \u5438\u6536\u7B2C\u4E00\u884C\u7684\u4F59\u91CF\uFF0C\u5E76\u5141\u8BB8\u5728 320px + 130% \u5B57\u53F7\u4E0B\u88AB\u538B\u7F29\u3001
+           \u7531 .t-mode-chip-label \u7684\u7701\u7565\u53F7\u515C\u5E95\uFF0C\u800C\u4E0D\u662F\u628A\u6574\u884C\u6324\u7206 */
+        order: 1;
+        flex: 1 1 auto;
+        height: 36px;
     }
 
-    /* \u4E24\u4E2A\u5F00\u5173\u5E73\u5206\u4E00\u884C\uFF1A\u5404\u5360\u4E00\u884C\u4F1A\u8BA9\u9876\u680F\u5728\u7A84\u5C4F\u591A\u5403 48px */
     .t-history-group {
-        width: 100%;
-        gap: 8px;
-    }
-
-    .t-history-group .t-history-toggle {
-        flex: 1;
-        width: auto;
-        min-width: 0;
-        /* \u6781\u7AEF\u7EC4\u5408\uFF08320px \u5C4F + 130% \u5B57\u53F7\u7F29\u653E\uFF09\u4E0B\u6587\u5B57\u8981\u6298\u6210\u4E24\u884C\uFF0C
-           \u56FA\u5B9A 40px \u4F1A\u88C1\u6389\u7B2C\u4E8C\u884C\uFF0C\u6240\u4EE5\u6539\u6210\u4E0B\u9650 */
-        height: auto;
-        min-height: 40px;
-        padding: 0 6px;
-    }
-
-    /* \u534A\u683C\u5BBD\u5EA6\u5BB9\u4E0D\u4E0B 0.9em \u7684 7 \u4E2A\u6C49\u5B57\u3002\u6536\u5230 0.8em\uFF0C\u4E0E\u540C\u6392\u7684 .t-mode-btn \u4E00\u81F4 */
-    .t-history-group .t-toggle-text {
-        font-size: 0.8em;
-        /* \u57FA\u51C6\u5B57\u53F7\u53EF\u88AB\u7528\u6237\u653E\u5927\u5230 130%\uFF0C\u90A3\u65F6\u534A\u683C\u4ECD\u4F1A\u4E0D\u591F\u3002
-           \u89E3\u9664\u5168\u5C40\u7684 nowrap \u8BA9\u5B83\u6298\u884C \u2014\u2014 \u6BD4\u622A\u65AD\u6210\u7701\u7565\u53F7\u4E0D\u4E22\u4FE1\u606F */
-        white-space: normal;
-        line-height: 1.25;
-        text-align: center;
-    }
-
-    .t-history-group .t-toggle-label {
-        gap: 6px;
-        min-width: 0;
-    }
-
-    .t-mode-toggle {
-        width: 100%;
-        height: 40px;
-    }
-
-    .t-mode-btn {
-        flex: 1;
-        font-size: 0.8em;
-        padding: 0 10px;
-    }
-
-    .t-mobile-row {
-        display: flex;
-        gap: 8px;
-        width: 100%;
-        height: 50px;
-    }
-
-    .t-trigger-card {
-        height: 100%;
+        order: 2;
+        flex: 0 0 auto;
     }
 
     .t-trigger-actions {
-        height: 100%;
+        order: 3;
+        flex: 0 0 auto;
+        height: 36px;
     }
 
-    .t-dice-btn {
-        height: 100%;
-        width: 50px;
+    /* flex-basis:100% \u8BA9\u5B83\u5FC5\u5B9A\u6362\u5230\u7B2C\u4E8C\u884C */
+    .t-trigger-card {
+        order: 4;
+        flex: 1 0 100%;
+        height: 44px;
     }
 
-    .t-filter-btn {
-        height: 100%;
-        width: 40px;
+    .t-topbar-toggle {
+        height: 36px;
     }
 
     .t-content-area {
@@ -38957,57 +38976,56 @@ var init_viewState = __esm({
 });
 
 // src/ui/mainWindow/topBar.js
+function getGenerationModeMeta(id3) {
+  return GENERATION_MODES.find((item) => item.id === String(id3 || "")) || GENERATION_MODES[0];
+}
 function renderTopBarHtml() {
+  const mode = getGenerationModeMeta(GlobalState.generationMode);
   return `<div class="t-top-bar">
-                <div class="t-history-group">
-                    <div class="t-history-toggle" id="t-history-toggle">
-                        <label class="t-toggle-label">
-                            <input type="checkbox" id="t-use-history" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
-                            <span class="t-toggle-text">\u{1F4DC} \u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
-                        </label>
-                    </div>
-                    <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD">
-                        <label class="t-toggle-label">
-                            <input type="checkbox" id="t-history-ai-only" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.historyAiOnly ? "checked" : ""}>
-                            <span class="t-toggle-text">\u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="t-mode-toggle" id="t-mode-toggle">
-                    <div class="t-mode-btn ${GlobalState.generationMode === "narrative" ? "active" : ""}" data-mode="narrative">
-                        <span>\u{1F4D6} \u5185\u5BB9\u4F18\u5148</span>
-                    </div>
-                    <div class="t-mode-btn ${GlobalState.generationMode === "visual" ? "active" : ""}" data-mode="visual">
-                        <span>\u{1F3A8} \u6C1B\u56F4\u7F8E\u5316</span>
-                    </div>
-                    <div class="t-mode-btn ${GlobalState.generationMode === "preset" ? "active" : ""}" data-mode="preset" title="\u4F7F\u7528\u8BBE\u7F6E\u9875\u4E2D\u9009\u5B9A\u7684\u7528\u6237\u9884\u8BBE">
-                        <span>\u{1F4CB} \u9009\u7528\u9884\u8BBE</span>
-                    </div>
-                </div>
-                <div class="t-mobile-row">
-                    <div class="t-trigger-card" id="t-trigger-btn" title="\u70B9\u51FB\u5207\u6362\u5267\u672C">
-                        <div class="t-trigger-main">
-                            <span id="t-lbl-name" style="overflow:hidden; text-overflow:ellipsis;">\u52A0\u8F7D\u4E2D...</span>
-                        </div>
-                        <div class="t-trigger-sub">
-                            <span class="t-cat-tag" id="t-lbl-cat">\u5206\u7C7B</span>
-                            <span id="t-lbl-desc-mini">...</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-down t-chevron"></i>
-                    </div>
+                <button type="button" class="t-mode-chip" id="t-mode-toggle" title="\u751F\u6210\u6A21\u5F0F\uFF1A${mode.label}" aria-haspopup="menu" aria-expanded="false">
+                    <span class="t-mode-chip-icon" id="t-mode-icon">${mode.icon}</span>
+                    <span class="t-mode-chip-label" id="t-mode-label">${mode.label}</span>
+                    <i class="fa-solid fa-chevron-down t-mode-chip-caret"></i>
+                </button>
 
-                    <div class="t-trigger-actions">
-                        <div class="t-filter-btn" id="t-btn-filter" title="\u7B5B\u9009\u968F\u673A\u8303\u56F4">
-                            <i class="fa-solid fa-filter"></i>
-                        </div>
-                        <div class="t-dice-btn" id="t-btn-dice" title="\u968F\u673A\u5267\u672C">\u{1F3B2}</div>
+                <div class="t-trigger-card" id="t-trigger-btn" title="\u70B9\u51FB\u5207\u6362\u5267\u672C">
+                    <span class="t-trigger-name" id="t-lbl-name">\u52A0\u8F7D\u4E2D...</span>
+                    <span class="t-cat-tag" id="t-lbl-cat">\u5206\u7C7B</span>
+                    <span class="t-trigger-desc" id="t-lbl-desc-mini">...</span>
+                    <i class="fa-solid fa-chevron-down t-chevron"></i>
+                </div>
+
+                <div class="t-history-group">
+                    <label class="t-topbar-toggle" id="t-history-toggle" title="\u8BFB\u53D6\u804A\u5929\u5386\u53F2">
+                        <input type="checkbox" id="t-use-history" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
+                        <span class="t-topbar-toggle-icon">\u{1F4DC}</span>
+                        <span class="t-topbar-toggle-text">\u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
+                    </label>
+                    <label class="t-topbar-toggle t-subtoggle" id="t-ai-only-toggle" title="${HISTORY_AI_ONLY_HINT}">
+                        <input type="checkbox" id="t-history-ai-only" ${GlobalState.historyAiOnly ? "checked" : ""}>
+                        <span class="t-topbar-toggle-icon">\u{1F3AD}</span>
+                        <span class="t-topbar-toggle-text">\u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
+                    </label>
+                </div>
+
+                <div class="t-trigger-actions">
+                    <div class="t-filter-btn" id="t-btn-filter" title="\u7B5B\u9009\u968F\u673A\u8303\u56F4">
+                        <i class="fa-solid fa-filter"></i>
                     </div>
+                    <div class="t-dice-btn" id="t-btn-dice" title="\u968F\u673A\u5267\u672C">\u{1F3B2}</div>
                 </div>
             </div>`;
 }
+var GENERATION_MODES, HISTORY_AI_ONLY_HINT;
 var init_topBar = __esm({
   "src/ui/mainWindow/topBar.js"() {
     init_state();
+    GENERATION_MODES = [
+      { id: "narrative", icon: "\u{1F4D6}", label: "\u5185\u5BB9\u4F18\u5148", hint: "" },
+      { id: "visual", icon: "\u{1F3A8}", label: "\u6C1B\u56F4\u7F8E\u5316", hint: "" },
+      { id: "preset", icon: "\u{1F4CB}", label: "\u9009\u7528\u9884\u8BBE", hint: "\u4F7F\u7528\u8BBE\u7F6E\u9875\u4E2D\u9009\u5B9A\u7684\u7528\u6237\u9884\u8BBE" }
+    ];
+    HISTORY_AI_ONLY_HINT = "\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD";
   }
 });
 
@@ -39621,22 +39639,51 @@ function updateFilterUI() {
 function updateHistoryToggleUI() {
   const $toggle = $("#t-history-toggle");
   const $checkbox = $("#t-use-history");
-  if (GlobalState.useHistoryAnalysis) {
-    $toggle.addClass("active");
-  } else {
-    $toggle.removeClass("active");
-  }
+  $toggle.toggleClass("is-on", GlobalState.useHistoryAnalysis);
   $checkbox.prop("checked", GlobalState.useHistoryAnalysis);
+  $toggle.attr("title", GlobalState.useHistoryAnalysis ? "\u8BFB\u53D6\u804A\u5929\u5386\u53F2\uFF08\u5F00\uFF09" : "\u8BFB\u53D6\u804A\u5929\u5386\u53F2\uFF08\u5173\uFF09");
   const $aiOnly = $("#t-ai-only-toggle");
   const $aiOnlyBox = $("#t-history-ai-only");
-  $aiOnly.toggleClass("disabled", !GlobalState.useHistoryAnalysis);
-  $aiOnly.toggleClass("active", GlobalState.useHistoryAnalysis && GlobalState.historyAiOnly);
+  $aiOnly.toggleClass("is-collapsed", !GlobalState.useHistoryAnalysis);
+  $aiOnly.toggleClass("is-on", GlobalState.useHistoryAnalysis && GlobalState.historyAiOnly);
   $aiOnlyBox.prop("disabled", !GlobalState.useHistoryAnalysis);
   $aiOnlyBox.prop("checked", GlobalState.historyAiOnly);
+  $aiOnly.attr("title", `${HISTORY_AI_ONLY_HINT}\uFF08${GlobalState.historyAiOnly ? "\u5F00" : "\u5173"}\uFF09`);
 }
 function updateModeToggleUI() {
-  $(".t-mode-btn").removeClass("active");
-  $(`.t-mode-btn[data-mode="${GlobalState.generationMode}"]`).addClass("active");
+  const meta = getGenerationModeMeta(GlobalState.generationMode);
+  $("#t-mode-icon").text(meta.icon);
+  $("#t-mode-label").text(meta.label);
+  $("#t-mode-toggle").attr("title", meta.hint ? `\u751F\u6210\u6A21\u5F0F\uFF1A${meta.label} \u2014\u2014 ${meta.hint}` : `\u751F\u6210\u6A21\u5F0F\uFF1A${meta.label}`);
+}
+function applyGenerationMode(newMode) {
+  if (newMode === GlobalState.generationMode) return;
+  GlobalState.generationMode = newMode;
+  updateModeToggleUI();
+  const d = getExtData();
+  if (!d.config) d.config = {};
+  if (newMode === "preset") {
+    const manager = d.prompt_manager || {};
+    const activePreset = manager.presets?.find((p) => p.id === manager.active_preset_id);
+    if (!activePreset) {
+      GlobalState.generationMode = "narrative";
+      updateModeToggleUI();
+      if (window.toastr) toastr.warning("\u8BF7\u5148\u5728\u8BBE\u7F6E\u7684\u63D0\u793A\u8BCD\u7BA1\u7406\u4E2D\u5BFC\u5165\u5E76\u9009\u62E9\u9884\u8BBE", "Titania");
+      return;
+    }
+  }
+  d.config.generation_mode = newMode;
+  saveExtData();
+  if (window.toastr) {
+    if (newMode === "narrative") {
+      toastr.info("\u{1F4D6} \u5DF2\u5207\u6362\u81F3\u5185\u5BB9\u4F18\u5148\u6A21\u5F0F", "Titania");
+    } else if (newMode === "visual") {
+      toastr.info("\u{1F3A8} \u5DF2\u5207\u6362\u81F3\u6C1B\u56F4\u7F8E\u5316\u6A21\u5F0F", "Titania");
+    } else {
+      const preset = d.prompt_manager?.presets?.find((p) => p.id === d.prompt_manager?.active_preset_id);
+      toastr.info(`\u{1F4CB} \u5DF2\u5207\u6362\u81F3\u9884\u8BBE\uFF1A${preset?.name || "\u7528\u6237\u9884\u8BBE"}`, "Titania");
+    }
+  }
 }
 function handleRandom() {
   const allScripts = GlobalState.runtimeScripts;
@@ -40328,35 +40375,19 @@ async function openMainWindow() {
       }
     }
   });
-  $(".t-mode-btn").on("click", function() {
-    const newMode = $(this).data("mode");
-    if (newMode === GlobalState.generationMode) return;
-    GlobalState.generationMode = newMode;
-    updateModeToggleUI();
-    const d = getExtData();
-    if (!d.config) d.config = {};
-    if (newMode === "preset") {
-      const manager = d.prompt_manager || {};
-      const activePreset = manager.presets?.find((p) => p.id === manager.active_preset_id);
-      if (!activePreset) {
-        GlobalState.generationMode = "narrative";
-        updateModeToggleUI();
-        if (window.toastr) toastr.warning("\u8BF7\u5148\u5728\u8BBE\u7F6E\u7684\u63D0\u793A\u8BCD\u7BA1\u7406\u4E2D\u5BFC\u5165\u5E76\u9009\u62E9\u9884\u8BBE", "Titania");
-        return;
-      }
-    }
-    d.config.generation_mode = newMode;
-    saveExtData();
-    if (window.toastr) {
-      if (newMode === "narrative") {
-        toastr.info("\u{1F4D6} \u5DF2\u5207\u6362\u81F3\u5185\u5BB9\u4F18\u5148\u6A21\u5F0F", "Titania");
-      } else if (newMode === "visual") {
-        toastr.info("\u{1F3A8} \u5DF2\u5207\u6362\u81F3\u6C1B\u56F4\u7F8E\u5316\u6A21\u5F0F", "Titania");
-      } else {
-        const preset = d.prompt_manager?.presets?.find((p) => p.id === d.prompt_manager?.active_preset_id);
-        toastr.info(`\u{1F4CB} \u5DF2\u5207\u6362\u81F3\u9884\u8BBE\uFF1A${preset?.name || "\u7528\u6237\u9884\u8BBE"}`, "Titania");
-      }
-    }
+  $("#t-mode-toggle").on("click", function(e) {
+    e.stopPropagation();
+    renderAnchoredMenu({
+      id: "t-mode-popover",
+      $anchor: $(this),
+      current: GlobalState.generationMode,
+      items: GENERATION_MODES.map((item) => ({
+        value: item.id,
+        label: `${item.icon} ${item.label}`,
+        title: item.hint
+      })),
+      onSelect: applyGenerationMode
+    });
   });
   $("#t-trigger-btn").on("click", () => showScriptSelector(GlobalState.currentCategoryFilter));
   $("#t-btn-filter").on("click", function(e) {
@@ -41432,49 +41463,62 @@ async function openWorldInfoSelector() {
     updateStat();
   }
 }
-function renderFilterMenu(currentFilter, $targetBtn, onSelect) {
-  if ($("#t-filter-popover").length) {
-    $("#t-filter-popover").remove();
+function renderAnchoredMenu({ id: id3, items, $anchor, current, onSelect, width = 150 }) {
+  const setExpanded = (open) => {
+    if ($anchor.is("[aria-expanded]")) $anchor.attr("aria-expanded", String(open));
+  };
+  const $existing = $(`#${id3}`);
+  if ($existing.length) {
+    $existing.remove();
+    $(document).off(`click.${id3}`);
+    setExpanded(false);
     return;
   }
-  const baseList = GlobalState.runtimeScripts;
-  let currentSortMode = getScriptSortMode();
-  const getSortedList = () => sortScripts(baseList, currentSortMode);
-  let list = getSortedList();
-  const cats = [...new Set(list.map((s) => s.category || (s._type === "preset" ? "\u5B98\u65B9\u9884\u8BBE" : "\u672A\u5206\u7C7B")))].sort();
   const html = `
-    <div id="t-filter-popover" class="t-filter-popover">
-        <div class="t-filter-item ${currentFilter === "ALL" ? "active" : ""}" data-val="ALL">
-            <span>\u{1F504} \u5168\u90E8</span>
-            <i class="fa-solid fa-check t-filter-check"></i>
-        </div>
-        <div style="height:1px; background:var(--t-color-border); margin:2px 0;"></div>
-        ${cats.map((c) => `
-            <div class="t-filter-item ${currentFilter === c ? "active" : ""}" data-val="${c}">
-                <span>${c}</span>
+    <div id="${id3}" class="t-filter-popover">
+        ${items.map((item) => `
+            <div class="t-filter-item ${current === item.value ? "active" : ""}" data-val="${escapeHtmlText2(item.value)}"${item.title ? ` title="${escapeHtmlText2(item.title)}"` : ""}>
+                <span>${escapeHtmlText2(item.label)}</span>
                 <i class="fa-solid fa-check t-filter-check"></i>
-            </div>
+            </div>${item.separatorAfter ? '<div class="t-filter-sep"></div>' : ""}
         `).join("")}
     </div>`;
   $("body").append(html);
-  const pop = $("#t-filter-popover");
-  const rect = $targetBtn[0].getBoundingClientRect();
-  const left = rect.left + 150 > window.innerWidth ? rect.right - 150 : rect.left;
+  const pop = $(`#${id3}`);
+  setExpanded(true);
+  const rect = $anchor[0].getBoundingClientRect();
+  const left = rect.left + width > window.innerWidth ? rect.right - width : rect.left;
   pop.css({ top: rect.bottom + 5, left });
-  $(".t-filter-item").on("click", function() {
-    const val = $(this).data("val");
-    onSelect(val);
+  const close = () => {
     pop.remove();
-    $(document).off("click.closefilter");
+    $(document).off(`click.${id3}`);
+    setExpanded(false);
+  };
+  pop.on("click", ".t-filter-item", function() {
+    const val = String($(this).attr("data-val") || "");
+    close();
+    onSelect(val);
   });
   setTimeout(() => {
-    $(document).on("click.closefilter", (e) => {
-      if (!$(e.target).closest("#t-filter-popover, .t-filter-btn").length) {
-        pop.remove();
-        $(document).off("click.closefilter");
-      }
+    $(document).on(`click.${id3}`, (e) => {
+      if (!$(e.target).closest(pop).length && !$(e.target).closest($anchor).length) close();
     });
   }, 10);
+}
+function renderFilterMenu(currentFilter, $targetBtn, onSelect) {
+  const cats = [...new Set(
+    GlobalState.runtimeScripts.map((s) => s.category || (s._type === "preset" ? "\u5B98\u65B9\u9884\u8BBE" : "\u672A\u5206\u7C7B"))
+  )].sort();
+  renderAnchoredMenu({
+    id: "t-filter-popover",
+    $anchor: $targetBtn,
+    current: currentFilter,
+    items: [
+      { value: "ALL", label: "\u{1F504} \u5168\u90E8", separatorAfter: true },
+      ...cats.map((c) => ({ value: c, label: c }))
+    ],
+    onSelect
+  });
 }
 function showScriptSelector(initialFilter = "ALL") {
   if ($("#t-selector-panel").length) return;
@@ -42026,6 +42070,7 @@ var init_mainWindow = __esm({
     init_modern();
     init_legacy();
     init_headerActions();
+    init_topBar();
     SORT_MODE_LABELS2 = {
       default: "\u9ED8\u8BA4\u987A\u5E8F",
       smart: "\u667A\u80FD\u6392\u5E8F",

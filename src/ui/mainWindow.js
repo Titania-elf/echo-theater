@@ -58,6 +58,11 @@ import {
     getOverflowActions,
     renderHeaderActionsHtml
 } from "./mainWindow/headerActions.js";
+import {
+    GENERATION_MODES,
+    getGenerationModeMeta,
+    HISTORY_AI_ONLY_HINT
+} from "./mainWindow/topBar.js";
 
 const SORT_MODE_LABELS = {
     default: "默认顺序",
@@ -126,27 +131,73 @@ export function updateHistoryToggleUI() {
     const $toggle = $("#t-history-toggle");
     const $checkbox = $("#t-use-history");
 
-    if (GlobalState.useHistoryAnalysis) {
-        $toggle.addClass("active");
-    } else {
-        $toggle.removeClass("active");
-    }
+    $toggle.toggleClass("is-on", GlobalState.useHistoryAnalysis);
     $checkbox.prop("checked", GlobalState.useHistoryAnalysis);
+    // 开关已图标化，没有可见文字了。title 是鼠标用户唯一的解释渠道，
+    // 所以开/关状态也得写进去（读屏软件走 checkbox 自身的 checked 态）
+    $toggle.attr("title", GlobalState.useHistoryAnalysis ? "读取聊天历史（开）" : "读取聊天历史（关）");
 
-    // 「只要角色发言」是历史开关的子项：不读历史时它没有意义，置灰并禁用。
+    // 「只要角色发言」是历史开关的子项：不读历史时它没有意义，整个收起。
     // 这里只改可用状态，不动 GlobalState.historyAiOnly —— 重新开启历史后要恢复用户原来的选择
     const $aiOnly = $("#t-ai-only-toggle");
     const $aiOnlyBox = $("#t-history-ai-only");
-    $aiOnly.toggleClass("disabled", !GlobalState.useHistoryAnalysis);
-    $aiOnly.toggleClass("active", GlobalState.useHistoryAnalysis && GlobalState.historyAiOnly);
+    $aiOnly.toggleClass("is-collapsed", !GlobalState.useHistoryAnalysis);
+    $aiOnly.toggleClass("is-on", GlobalState.useHistoryAnalysis && GlobalState.historyAiOnly);
     $aiOnlyBox.prop("disabled", !GlobalState.useHistoryAnalysis);
     $aiOnlyBox.prop("checked", GlobalState.historyAiOnly);
+    $aiOnly.attr("title", `${HISTORY_AI_ONLY_HINT}（${GlobalState.historyAiOnly ? "开" : "关"}）`);
 }
 
-/** 更新生成模式 UI */
+/** 更新生成模式 UI —— 胶囊上只显示当前模式，三选一在点开的菜单里 */
 export function updateModeToggleUI() {
-    $(".t-mode-btn").removeClass("active");
-    $(`.t-mode-btn[data-mode="${GlobalState.generationMode}"]`).addClass("active");
+    const meta = getGenerationModeMeta(GlobalState.generationMode);
+    $("#t-mode-icon").text(meta.icon);
+    $("#t-mode-label").text(meta.label);
+    $("#t-mode-toggle").attr("title", meta.hint
+        ? `生成模式：${meta.label} —— ${meta.hint}`
+        : `生成模式：${meta.label}`);
+}
+
+/**
+ * 切到某个生成模式并落盘。
+ *
+ * 从模式菜单的选中回调进来。逻辑与改版前挂在 `.t-mode-btn` 上的那段一致 ——
+ * 包括 preset 的前置校验：没在设置里选好预设就回退到 narrative 并提示，
+ * 这一步刻意在写 d.config.generation_mode **之前**，免得把选不动的模式存下去。
+ */
+function applyGenerationMode(newMode) {
+    if (newMode === GlobalState.generationMode) return;
+
+    GlobalState.generationMode = newMode;
+    updateModeToggleUI();
+
+    // 保存偏好
+    const d = getExtData();
+    if (!d.config) d.config = {};
+    if (newMode === "preset") {
+        const manager = d.prompt_manager || {};
+        const activePreset = manager.presets?.find(p => p.id === manager.active_preset_id);
+        if (!activePreset) {
+            GlobalState.generationMode = "narrative";
+            updateModeToggleUI();
+            if (window.toastr) toastr.warning("请先在设置的提示词管理中导入并选择预设", "Titania");
+            return;
+        }
+    }
+    d.config.generation_mode = newMode;
+    saveExtData();
+
+    // 视觉反馈
+    if (window.toastr) {
+        if (newMode === "narrative") {
+            toastr.info("📖 已切换至内容优先模式", "Titania");
+        } else if (newMode === "visual") {
+            toastr.info("🎨 已切换至氛围美化模式", "Titania");
+        } else {
+            const preset = d.prompt_manager?.presets?.find(p => p.id === d.prompt_manager?.active_preset_id);
+            toastr.info(`📋 已切换至预设：${preset?.name || "用户预设"}`, "Titania");
+        }
+    }
 }
 
 /** 随机抽取逻辑（不再按模式过滤） */
@@ -1004,41 +1055,22 @@ export async function openMainWindow() {
         }
     });
 
-    // 生成模式切换事件
-    $(".t-mode-btn").on("click", function () {
-        const newMode = $(this).data("mode");
-        if (newMode === GlobalState.generationMode) return;
-
-        GlobalState.generationMode = newMode;
-        updateModeToggleUI();
-
-        // 保存偏好
-        const d = getExtData();
-        if (!d.config) d.config = {};
-        if (newMode === "preset") {
-            const manager = d.prompt_manager || {};
-            const activePreset = manager.presets?.find(p => p.id === manager.active_preset_id);
-            if (!activePreset) {
-                GlobalState.generationMode = "narrative";
-                updateModeToggleUI();
-                if (window.toastr) toastr.warning("请先在设置的提示词管理中导入并选择预设", "Titania");
-                return;
-            }
-        }
-        d.config.generation_mode = newMode;
-        saveExtData();
-
-        // 视觉反馈
-        if (window.toastr) {
-            if (newMode === "narrative") {
-                toastr.info("📖 已切换至内容优先模式", "Titania");
-            } else if (newMode === "visual") {
-                toastr.info("🎨 已切换至氛围美化模式", "Titania");
-            } else {
-                const preset = d.prompt_manager?.presets?.find(p => p.id === d.prompt_manager?.active_preset_id);
-                toastr.info(`📋 已切换至预设：${preset?.name || "用户预设"}`, "Titania");
-            }
-        }
+    // 生成模式切换：胶囊只显示当前模式，点开才列出三项。
+    // 改版前是三个并排按钮（约 257px）只为呈现一个三选一，
+    // 那点宽度对剧本卡（原本只剩 188px）比对模式切换更值。
+    $("#t-mode-toggle").on("click", function (e) {
+        e.stopPropagation();
+        renderAnchoredMenu({
+            id: "t-mode-popover",
+            $anchor: $(this),
+            current: GlobalState.generationMode,
+            items: GENERATION_MODES.map(item => ({
+                value: item.id,
+                label: `${item.icon} ${item.label}`,
+                title: item.hint
+            })),
+            onSelect: applyGenerationMode
+        });
     });
 
     $("#t-trigger-btn").on("click", () => showScriptSelector(GlobalState.currentCategoryFilter));
@@ -2478,58 +2510,107 @@ async function openWorldInfoSelector() {
 /**
  * 渲染分类筛选菜单（不再按模式过滤）
  */
-function renderFilterMenu(currentFilter, $targetBtn, onSelect) {
-    if ($("#t-filter-popover").length) { $("#t-filter-popover").remove(); return; }
+/**
+ * 贴着某个按钮弹出的单选菜单。
+ *
+ * 原本是 renderFilterMenu 里内联的一段、只服务分类筛选。生成模式胶囊需要
+ * 一模一样的「贴按钮弹出 + 勾出当前项 + 点外部关闭 + 再点锚点收起」行为，
+ * 故泛化出来。样式沿用 .t-filter-popover / .t-filter-item ——
+ * 同一个 feature 文件内复用，不构成跨 feature 引用（R5/A6）。
+ *
+ * @param {object}   opts
+ * @param {string}   opts.id          弹层 DOM id，同时用作「已开则关」的判定与事件命名空间
+ * @param {Array}    opts.items       [{ value, label, title?, separatorAfter? }]
+ * @param {object}   opts.$anchor     jQuery 锚点元素
+ * @param {string}   opts.current     当前选中的 value
+ * @param {Function} opts.onSelect    选中回调，收到 value（字符串）
+ * @param {number}   [opts.width=150] 弹层宽度；须与 .t-filter-popover 的 width 一致，
+ *                                    右侧空间不足时的右对齐算法依赖它
+ */
+function renderAnchoredMenu({ id, items, $anchor, current, onSelect, width = 150 }) {
+    // aria-expanded 只写给「HTML 里本来就声明了它」的锚点。
+    // 模式胶囊是真 <button>，写上是对的；分类筛选按钮是个裸 <div>、没有 role，
+    // 给它加 aria-expanded 属于无效 ARIA，反而会误导读屏软件。
+    const setExpanded = (open) => {
+        if ($anchor.is("[aria-expanded]")) $anchor.attr("aria-expanded", String(open));
+    };
 
-    const baseList = GlobalState.runtimeScripts;
-    let currentSortMode = getScriptSortMode();
-    const getSortedList = () => sortScripts(baseList, currentSortMode);
-    let list = getSortedList();
+    const $existing = $(`#${id}`);
+    // 再点一次锚点 = 收起
+    if ($existing.length) {
+        $existing.remove();
+        $(document).off(`click.${id}`);
+        setExpanded(false);
+        return;
+    }
 
-    // 提取分类
-    const cats = [...new Set(list.map(s => s.category || (s._type === 'preset' ? '官方预设' : '未分类')))].sort();
-
-    // 样式见 css/main-window.css
+    // 分类名是用户可编辑的自由文本，必须转义后再进 HTML。
+    // 改版前这里直接内插（`data-val="${c}"` / `<span>${c}</span>`），
+    // 分类名里有引号就会把属性截断。
     const html = `
-    <div id="t-filter-popover" class="t-filter-popover">
-        <div class="t-filter-item ${currentFilter === 'ALL' ? 'active' : ''}" data-val="ALL">
-            <span>🔄 全部</span>
-            <i class="fa-solid fa-check t-filter-check"></i>
-        </div>
-        <div style="height:1px; background:var(--t-color-border); margin:2px 0;"></div>
-        ${cats.map(c => `
-            <div class="t-filter-item ${currentFilter === c ? 'active' : ''}" data-val="${c}">
-                <span>${c}</span>
+    <div id="${id}" class="t-filter-popover">
+        ${items.map(item => `
+            <div class="t-filter-item ${current === item.value ? 'active' : ''}" data-val="${escapeHtmlText(item.value)}"${item.title ? ` title="${escapeHtmlText(item.title)}"` : ''}>
+                <span>${escapeHtmlText(item.label)}</span>
                 <i class="fa-solid fa-check t-filter-check"></i>
-            </div>
+            </div>${item.separatorAfter ? '<div class="t-filter-sep"></div>' : ''}
         `).join('')}
     </div>`;
 
     $("body").append(html);
-    const pop = $("#t-filter-popover");
+    const pop = $(`#${id}`);
+    setExpanded(true);
 
-    // 定位逻辑 (相对于按钮)
-    const rect = $targetBtn[0].getBoundingClientRect();
-    const left = (rect.left + 150 > window.innerWidth) ? (rect.right - 150) : rect.left;
-    pop.css({ top: rect.bottom + 5, left: left });
+    // 定位（相对于锚点）：右侧放不下就改成右对齐
+    const rect = $anchor[0].getBoundingClientRect();
+    const left = (rect.left + width > window.innerWidth) ? (rect.right - width) : rect.left;
+    pop.css({ top: rect.bottom + 5, left });
 
-    // 点击事件
-    $(".t-filter-item").on("click", function () {
-        const val = $(this).data("val");
-        onSelect(val);
+    const close = () => {
         pop.remove();
-        $(document).off("click.closefilter");
+        $(document).off(`click.${id}`);
+        setExpanded(false);
+    };
+
+    // 事件绑在弹层上而不是全局 .t-filter-item：后者会连带命中
+    // 另一个同时打开的弹层里的条目
+    pop.on("click", ".t-filter-item", function () {
+        // 用 .attr() 而非 .data()：.data() 会把「123」这类纯数字分类名
+        // 强转成 number，之后与字符串分类名的比较就不成立了
+        const val = String($(this).attr("data-val") || "");
+        close();
+        onSelect(val);
     });
 
-    // 点击外部关闭
+    // 延一帧再挂 document 监听，否则触发本次打开的那下 click 冒泡上来会立刻关掉
     setTimeout(() => {
-        $(document).on("click.closefilter", (e) => {
-            if (!$(e.target).closest("#t-filter-popover, .t-filter-btn").length) {
-                pop.remove();
-                $(document).off("click.closefilter");
-            }
+        $(document).on(`click.${id}`, (e) => {
+            if (!$(e.target).closest(pop).length && !$(e.target).closest($anchor).length) close();
         });
     }, 10);
+}
+
+/**
+ * 渲染分类筛选菜单（不再按模式过滤）
+ */
+function renderFilterMenu(currentFilter, $targetBtn, onSelect) {
+    // 只取分类集合，不需要排序：sortScripts 只重排、从不过滤，
+    // 而分类集合下面还要再 .sort() 一遍，排过的和没排过的结果相同。
+    // （改版前这里调了 getScriptSortMode + sortScripts，产物只用于取分类，是死代码。）
+    const cats = [...new Set(
+        GlobalState.runtimeScripts.map(s => s.category || (s._type === 'preset' ? '官方预设' : '未分类'))
+    )].sort();
+
+    renderAnchoredMenu({
+        id: "t-filter-popover",
+        $anchor: $targetBtn,
+        current: currentFilter,
+        items: [
+            { value: "ALL", label: "🔄 全部", separatorAfter: true },
+            ...cats.map(c => ({ value: c, label: c }))
+        ],
+        onSelect
+    });
 }
 
 /**
