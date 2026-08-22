@@ -307,6 +307,17 @@ export function setCurrentGenerationResult(result = {}) {
     return GlobalState.currentGenerationResult;
 }
 
+/**
+ * 当前「可操作的结果」—— 收藏、续写、工坊反馈都读这里。
+ *
+ * ⚠ 分支顺序必须与 getCurrentDisplayContent 保持一致，两者是同一份东西的两个视角：
+ *   一个回答「屏幕上是什么」，一个回答「按钮作用在什么上」。口径一旦分叉，
+ *   就会出现「内容渲染正常、点收藏却说没有可收藏内容」这种自相矛盾的现象 ——
+ *   历史上就是这么错的：显示认 lockedContent，而这里只认 currentViewIndex >= 0，
+ *   于是 lockDisplayToContent（把 currentViewIndex 置为 -1）那条路径上，
+ *   显示拿到了续写轮次、收藏却往下走兜底链，要么返回上一次生成的内容（静默存错），
+ *   要么什么都没有（直接拒绝收藏）。
+ */
 export function getCurrentGenerationResult() {
     const display = GlobalState.displayState;
     if (display.isViewingHistory && display.currentViewIndex >= 0) {
@@ -325,6 +336,22 @@ export function getCurrentGenerationResult() {
                 timestamp: Number(item.timestamp) || 0
             };
         }
+    }
+    // 锁定到不在场景历史队列里的持久化内容（lockDisplayToContent，currentViewIndex 为 -1）。
+    // 状态给 "legacy"：与下面 lastGeneratedContent 的兜底同一口径 —— 可收藏、可续写，
+    // 但没有本次运行时的状态信息（这些内容是从存档里读回来的）。
+    if (display.isViewingHistory && display.currentViewIndex < 0 && display.lockedContent) {
+        return {
+            generationId: String(display.lockedGenerationId || ""),
+            content: String(display.lockedContent),
+            scriptId: String(display.lockedScriptId || ""),
+            scriptName: String(display.lockedScriptName || "场景"),
+            status: "legacy",
+            canFavorite: true,
+            canContinue: true,
+            error: null,
+            timestamp: 0
+        };
     }
     if (GlobalState.streamingCache.isActive) {
         return {

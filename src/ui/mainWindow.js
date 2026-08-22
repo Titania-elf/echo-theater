@@ -592,8 +592,15 @@ function showContinuationRoundInMain(chatId, scriptId, branchKey, roundKey) {
     const scriptName = target.session.scriptName || GlobalState.runtimeScripts.find(s => s.id === scriptId)?.name || "场景";
     lockDisplayToContent(target.round.content, scriptId, scriptName, target.round.generationId);
     renderGeneratedContent(target.round.content, scriptName);
+    // 续写轮次存在另一套存储里，不像场景历史那样每项自带 favId，所以无从得知它是否已被收藏 ——
+    // 置空表示「未收藏」，点红心新建一条。不能沿用上一条内容留下的 lastFavId：
+    // 那会让红心显示成已收藏，而点下去取消的是别的条目。
+    GlobalState.lastFavId = null;
     updateSceneHistoryNav();
     if (typeof window.updateRunButtonsState === "function") window.updateRunButtonsState();
+    // 红心的可用状态与实心/空心只在这里重画。updateSceneHistoryNav 只管翻页控件，
+    // 不碰收藏按钮 —— 少了这一句，红心会一直停在上一条内容的样子。
+    updateFavButtonUI();
     $(document).off("keydown.tcontinuationhistory");
     $("#t-continuation-history").remove();
     return true;

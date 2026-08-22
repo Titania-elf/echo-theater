@@ -19780,6 +19780,19 @@ function getCurrentGenerationResult() {
       };
     }
   }
+  if (display.isViewingHistory && display.currentViewIndex < 0 && display.lockedContent) {
+    return {
+      generationId: String(display.lockedGenerationId || ""),
+      content: String(display.lockedContent),
+      scriptId: String(display.lockedScriptId || ""),
+      scriptName: String(display.lockedScriptName || "\u573A\u666F"),
+      status: "legacy",
+      canFavorite: true,
+      canContinue: true,
+      error: null,
+      timestamp: 0
+    };
+  }
   if (GlobalState.streamingCache.isActive) {
     return {
       generationId: "",
@@ -40037,8 +40050,10 @@ function showContinuationRoundInMain(chatId, scriptId, branchKey, roundKey) {
   const scriptName = target.session.scriptName || GlobalState.runtimeScripts.find((s) => s.id === scriptId)?.name || "\u573A\u666F";
   lockDisplayToContent(target.round.content, scriptId, scriptName, target.round.generationId);
   renderGeneratedContent(target.round.content, scriptName);
+  GlobalState.lastFavId = null;
   updateSceneHistoryNav();
   if (typeof window.updateRunButtonsState === "function") window.updateRunButtonsState();
+  updateFavButtonUI();
   $(document).off("keydown.tcontinuationhistory");
   $("#t-continuation-history").remove();
   return true;
