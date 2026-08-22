@@ -63,6 +63,7 @@ import {
     getGenerationModeMeta,
     HISTORY_AI_ONLY_HINT
 } from "./mainWindow/topBar.js";
+import { toggleUITheme } from "./theme.js";
 
 const SORT_MODE_LABELS = {
     default: "默认顺序",
@@ -2746,12 +2747,17 @@ function showScriptSelector(initialFilter = "ALL") {
 /**
  * 执行一个标题栏动作。
  * 顶栏图标和「更多」菜单共用这里，保证同一功能在两处行为一致。
- * @param {string} id 注册表里的动作 id，"__more__" 表示打开溢出菜单
+ * @param {string} id 注册表里的动作 id；"__more__" 打开溢出菜单，"__theme__" 切深/浅主题
  * @param {JQuery} $anchor 触发元素，供需要定位弹层的动作当锚点
  */
 async function runHeaderAction(id, $anchor) {
     if (id === "__more__") {
         renderMoreMenu($anchor);
+        return;
+    }
+    // 主题切换即时落盘，不打开任何窗口（见 ui/theme.js 的 toggleUITheme）
+    if (id === "__theme__") {
+        toggleUITheme();
         return;
     }
     if (id === "favs") {

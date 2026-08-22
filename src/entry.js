@@ -32,7 +32,8 @@ import {
 import { initExtensionUpdate } from "./core/extensionUpdate.js";
 import { initSyncListener } from "./core/worldInfoManager.js";
 import { createFloatingButton, destroyFloatingButton, refreshFloatingTuck } from "./ui/floatingBtn.js";
-import { applyCustomCSS, applyFontSettings, applyUIFontScale, applyUITheme } from "./ui/settingsWindow.js";
+import { applyCustomCSS, applyFontSettings, applyUIFontScale } from "./ui/settingsWindow.js";
+import { applyUITheme } from "./ui/theme.js";
 import { initOutlineEntryButton } from "./ui/outlineEntryButton.js";
 import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteEntryButton.js";
 import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
@@ -567,7 +568,7 @@ function describeFavsStorageState() {
     if (!migrated) state = legacyCount > 0 ? "needs-migration" : "empty";
     else if (legacyCount > 0) state = "needs-cleanup";
     else if (artifactCount > 0) state = "has-artifacts";
-    // 一条收藏都没有的人（多半是刚装上）不需要看见「收藏 0 条 · 正文 0 B」这种噪音。
+    // 一条收藏都没有的人（多半是刚装上）不需要看见「收藏 0 条 · 内容 0 B」这种噪音。
     // 等他存下第一条，卡片自己会出现
     else state = footprint?.count > 0 ? "done" : "empty";
 
@@ -577,8 +578,8 @@ function describeFavsStorageState() {
 /** 状态行：搬完家之后正文和索引各在哪、各占多少 */
 function favsStorageStatusLine(footprint) {
     if (!footprint) return "";
-    return `收藏 <b>${footprint.count}</b> 条 · 正文 <b>${formatBytes(footprint.bodyBytes)}</b> 在 `
-        + `<code>user/files/</code> · 索引 <b>${formatBytes(footprint.indexBytes)}</b> 在 settings.json`;
+    return `收藏 <b>${footprint.count}</b> 条 · 内容 <b>${formatBytes(footprint.bodyBytes)}</b> 存在 `
+        + `<code>user/files/</code> · 目录 <b>${formatBytes(footprint.indexBytes)}</b> 存在设置里`;
 }
 
 /**
@@ -607,12 +608,9 @@ function renderFavsStorageCard() {
 
     if (info.state === "needs-migration") {
         $desc.html(
-            `收藏正文现在全挤在 SillyTavern 的 settings.json 里，`
-            + `于是你改任何一个设置都要连带重写全部收藏 —— 收藏越多越卡。`
-            + `<br>搬家会把正文改由 <code>user/files/</code> 下的独立文件承载，settings.json 里只留一份轻量索引。`
-            + `<br>一次点完：<b>下载备份 → 写文件 → 校验 → 建索引 → 全量逐字核对 → 删旧数据</b>。`
-            + `删之前会再问你一次。`
-            + `<br><span style="color:#feca57;">⚠️ 过程中会强制下载一份完整备份，请保存好该文件。</span>`
+            `收藏内容现在和设置存在一起，收藏越多，改设置就越慢。`
+            + `<br>搬家会把收藏挪出去单独存放，一条都不会少，之后改设置就快了。`
+            + `<br><span style="color:#feca57;">⚠️ 搬家前会自动下载一份备份，请保存好这个文件。</span>`
         );
         $actions.html(
             `<button class="titania-mini-btn is-import" data-act="migrate">`
@@ -620,10 +618,9 @@ function renderFavsStorageCard() {
         );
     } else if (info.state === "needs-cleanup") {
         $desc.html(
-            `正文已经搬到 <code>user/files/</code> 了，但 settings.json 里的旧数据还在，`
-            + `所以保存速度<b>还没有变快</b>。`
-            + `<br>收尾会全量逐字核对每一条正文，通过之后才删旧数据。`
-            + `<br><span style="color:#feca57;">⚠️ 这是唯一不可逆的一步，执行前会强制下载一份完整备份。</span>`
+            `收藏已经搬好了，但设置里的旧数据还没删，所以速度<b>还没变快</b>。`
+            + `<br>点下面的按钮，核对无误后会把旧数据删掉。`
+            + `<br><span style="color:#feca57;">⚠️ 这一步删了就找不回来，执行前会自动下载一份备份。</span>`
         );
         $actions.html(
             `<button class="titania-mini-btn is-export" data-act="finish">`
@@ -631,15 +628,15 @@ function renderFavsStorageCard() {
         );
     } else if (info.state === "has-artifacts") {
         const keyText = info.artifacts.keys.length
-            ? `${info.artifacts.keys.length} 个零引用旧键（${formatBytes(info.artifacts.keyBytes)}）`
+            ? `${info.artifacts.keys.length} 项没用的旧数据（${formatBytes(info.artifacts.keyBytes)}）`
             : "";
         const fileText = info.artifacts.orphanFiles.length
-            ? `${info.artifacts.orphanFiles.length} 个无人引用的正文文件`
+            ? `${info.artifacts.orphanFiles.length} 个没人用的文件`
             : "";
         $desc.html(
             favsStorageStatusLine(info.footprint)
-            + `<br>还剩一点历史遗留可以清掉：${[keyText, fileText].filter(Boolean).join("、")}。`
-            + `都是当前代码里没有任何地方读写的死数据，删除不影响任何功能。`
+            + `<br>还剩一点垃圾可以清掉：${[keyText, fileText].filter(Boolean).join("、")}。`
+            + `删了不影响任何功能。`
         );
         $actions.html(
             `<button class="titania-mini-btn" data-act="artifacts">`
@@ -648,8 +645,8 @@ function renderFavsStorageCard() {
     } else {
         $desc.html(
             favsStorageStatusLine(info.footprint)
-            + `<br>新增一条收藏只写它自己那一个文件，保存设置不再重写收藏。`
-            + `导出备份会自动把正文读回来打包，仍然自成一体。`
+            + `<br>收藏已经各存各的了，改设置不会再被收藏拖慢。`
+            + `导出备份时会自动把收藏内容一起打包，不用另外操作。`
         );
         $actions.html(CHECK_BTN);
     }

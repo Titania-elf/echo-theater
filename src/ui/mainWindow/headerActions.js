@@ -5,10 +5,14 @@
 // 顶栏图标由用户自选（最多 5 个），没上栏的自动收进「更多」弹层。
 // 两套布局共用本模块产出的 HTML，改一处即可两处生效。
 //
+// 例外：深/浅主题切换图标是**固定槽位**，不进下面的注册表，也不占 5 个名额 ——
+// 与关闭按钮同一思路（见 renderHeaderActionsHtml）。它的字形与文案由 ui/theme.js 决定。
+//
 // 本模块刻意不 import mainWindow.js：动作实现留在 mainWindow.js，
 // 这里只负责“有哪些项、怎么排、渲染成什么”，避免布局 → 主窗口的循环依赖。
 
 import { getExtData, saveExtData } from "../../utils/storage.js";
+import { renderThemeToggleHtml } from "../theme.js";
 
 /**
  * 可上栏的功能项。新增功能时只改这里，顶栏和「更多」菜单会自动同步。
@@ -77,7 +81,10 @@ export function getOverflowActions() {
 
 /**
  * 产出 .t-header-actions 的内部 HTML。
- * 顺序：用户选中的图标 → 「更多」（仅在有溢出项时）→ 关闭（永远最右，不可自定义）。
+ *
+ * 顺序：用户选中的图标 → 主题切换 → 「更多」（仅在有溢出项时）→ 关闭（永远最右）。
+ * 主题切换和关闭一样是固定槽位：不可取消、不可排序、不占用户的 5 个名额。
+ * 主题是全插件的界面开关（不是某个功能的入口），收进「更多」就失去了「一键」的意义。
  */
 export function renderHeaderActionsHtml() {
     const iconsHtml = getHeaderActions().map(id => {
@@ -90,5 +97,5 @@ export function renderHeaderActionsHtml() {
         ? `<i class="fa-solid fa-ellipsis t-icon-btn" id="t-btn-more" data-header-action="__more__" title="更多" role="button" tabindex="0" aria-label="更多"></i>`
         : "";
 
-    return `${iconsHtml}${moreHtml}<span class="t-close" id="t-btn-close">&times;</span>`;
+    return `${iconsHtml}${renderThemeToggleHtml()}${moreHtml}<span class="t-close" id="t-btn-close">&times;</span>`;
 }

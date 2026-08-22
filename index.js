@@ -34901,6 +34901,47 @@ var init_outlineEntryButton = __esm({
   }
 });
 
+// src/ui/theme.js
+function getUITheme() {
+  return getExtData()?.appearance?.ui_theme === "light" ? "light" : "dark";
+}
+function applyUITheme(theme = "dark") {
+  const root = document.documentElement;
+  if (theme === "light") root.dataset.tTheme = "light";
+  else delete root.dataset.tTheme;
+}
+function themeToggleMeta(theme) {
+  return theme === "light" ? { glyph: "fa-sun", label: "\u5F53\u524D\u6D45\u8272\u4E3B\u9898\uFF0C\u70B9\u51FB\u5207\u6362\u6DF1\u8272" } : { glyph: "fa-moon", label: "\u5F53\u524D\u6DF1\u8272\u4E3B\u9898\uFF0C\u70B9\u51FB\u5207\u6362\u6D45\u8272" };
+}
+function renderThemeToggleHtml() {
+  const meta = themeToggleMeta(getUITheme());
+  return `<i class="fa-solid ${meta.glyph} t-icon-btn" id="${THEME_TOGGLE_ID}" data-header-action="${THEME_TOGGLE_ACTION}" title="${meta.label}" role="button" tabindex="0" aria-label="${meta.label}"></i>`;
+}
+function updateThemeToggleUI() {
+  const $icon = $(`#${THEME_TOGGLE_ID}`);
+  if ($icon.length === 0) return;
+  const meta = themeToggleMeta(getUITheme());
+  $icon.attr("class", `fa-solid ${meta.glyph} t-icon-btn`).attr({ title: meta.label, "aria-label": meta.label });
+}
+function toggleUITheme() {
+  const next = getUITheme() === "light" ? "dark" : "light";
+  const data = getExtData();
+  if (!data.appearance) data.appearance = {};
+  data.appearance.ui_theme = next;
+  saveExtData();
+  applyUITheme(next);
+  updateThemeToggleUI();
+  return next;
+}
+var THEME_TOGGLE_ID, THEME_TOGGLE_ACTION;
+var init_theme = __esm({
+  "src/ui/theme.js"() {
+    init_storage();
+    THEME_TOGGLE_ID = "t-btn-theme";
+    THEME_TOGGLE_ACTION = "__theme__";
+  }
+});
+
 // src/ui/mainWindow/headerActions.js
 function getHeaderActionMeta(id3) {
   return HEADER_ACTION_REGISTRY.find((item) => item.id === String(id3 || "")) || null;
@@ -34942,12 +34983,13 @@ function renderHeaderActionsHtml() {
     return `<i class="fa-solid ${meta.icon} t-icon-btn" id="t-btn-${meta.id}" data-header-action="${meta.id}" title="${meta.label}" role="button" tabindex="0" aria-label="${meta.label}"></i>`;
   }).join("");
   const moreHtml = getOverflowActions().length ? `<i class="fa-solid fa-ellipsis t-icon-btn" id="t-btn-more" data-header-action="__more__" title="\u66F4\u591A" role="button" tabindex="0" aria-label="\u66F4\u591A"></i>` : "";
-  return `${iconsHtml}${moreHtml}<span class="t-close" id="t-btn-close">&times;</span>`;
+  return `${iconsHtml}${renderThemeToggleHtml()}${moreHtml}<span class="t-close" id="t-btn-close">&times;</span>`;
 }
 var HEADER_ACTION_REGISTRY, HEADER_ACTION_MAX, HEADER_ACTION_DEFAULT;
 var init_headerActions = __esm({
   "src/ui/mainWindow/headerActions.js"() {
     init_storage();
+    init_theme();
     HEADER_ACTION_REGISTRY = [
       { id: "workshop", icon: "fa-store", label: "\u56DE\u58F0\u5DE5\u574A" },
       { id: "favs", icon: "fa-book-bookmark", label: "\u56DE\u58F0\u6536\u85CF\u5939" },
@@ -35057,7 +35099,6 @@ function openSettingsWindow() {
   if (tempApp.border_opacity === void 0) tempApp.border_opacity = 100;
   if (tempApp.bg_opacity === void 0) tempApp.bg_opacity = 100;
   if (tempApp.ui_font_scale === void 0) tempApp.ui_font_scale = 100;
-  if (tempApp.ui_theme !== "light") tempApp.ui_theme = "dark";
   const isTempAppImageData = typeof tempApp.content === "string" && tempApp.content.trim().toLowerCase().startsWith("data:image/");
   if (isTempAppImageData) {
     tempApp.type = "image";
@@ -35170,15 +35211,6 @@ function openSettingsWindow() {
                         <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>UI \u5B57\u4F53\u5927\u5C0F</span><span id="p-ui-font-scale-val" style="color:var(--t-color-brand);">${tempApp.ui_font_scale}%</span></div>
                         <input class="t-w-full" type="range" id="p-ui-font-scale" min="80" max="130" step="5" value="${tempApp.ui_font_scale}">
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">\u5F71\u54CD\u63D2\u4EF6\u5168\u90E8\u754C\u9762\u5B57\u4F53\uFF08\u4E0D\u5F71\u54CD\u5185\u5BB9\u533A\u6E32\u67D3\u6587\u672C\uFF09\u3002</p>
-                    </div>
-
-                    <div class="t-form-group">
-                        <label class="t-form-label">\u754C\u9762\u4E3B\u9898</label>
-                        <div style="display:flex; gap:20px;">
-                            <label><input type="radio" name="p-ui-theme" value="dark" ${tempApp.ui_theme !== "light" ? "checked" : ""}> \u6DF1\u8272</label>
-                            <label><input type="radio" name="p-ui-theme" value="light" ${tempApp.ui_theme === "light" ? "checked" : ""}> \u6D45\u8272</label>
-                        </div>
-                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">\u53EA\u5F71\u54CD\u63D2\u4EF6\u81EA\u5DF1\u7684\u754C\u9762\uFF0C\u4E0D\u6539 SillyTavern \u4E3B\u9898\u3002\u5207\u6362\u540E\u7ACB\u5373\u751F\u6548\u3002</p>
                     </div>
 
                     <div class="t-form-group">
@@ -35813,10 +35845,6 @@ function openSettingsWindow() {
   $("#p-ui-font-scale").on("input", function() {
     tempApp.ui_font_scale = parseInt($(this).val()) || 100;
     $("#p-ui-font-scale-val").text(tempApp.ui_font_scale + "%");
-  });
-  $("input[name='p-ui-theme']").on("change", function() {
-    tempApp.ui_theme = $(this).val() === "light" ? "light" : "dark";
-    applyUITheme(tempApp.ui_theme);
   });
   $("#p-emoji-input").on("input", function() {
     tempApp.content = $(this).val();
@@ -36853,7 +36881,6 @@ ${JSON.stringify(l.details, null, 2)}`;
     openScriptManager();
   });
   $("#t-set-close").on("click", () => {
-    applyUITheme(getExtData()?.appearance?.ui_theme);
     document.getElementById("t-prompt-editor-modal")?.remove();
     $("#t-settings-view").remove();
     const $mainView2 = $("#t-main-view");
@@ -36894,7 +36921,13 @@ ${JSON.stringify(l.details, null, 2)}`;
       //   在这份白名单里出现一次。漏掉的字段会在保存时被静默丢弃 ——
       //   Phase 6c-1 的 ui_theme 就是这么丢的：切换立即生效、一保存就翻回
       //   深色，因为下面 applyUITheme(d.appearance?.ui_theme) 读到 undefined。
-      ui_theme: tempApp.ui_theme === "light" ? "light" : "dark",
+      //
+      //   ui_theme 现在由标题栏图标即时落盘（ui/theme.js 的 toggleUITheme），
+      //   本窗口不再有它的控件。字段仍必须写在这里（否则被整体替换吃掉），
+      //   但值要读**当前已存**的，不能读 tempApp —— tempApp 是开窗那一刻的
+      //   快照，拿它覆盖等于把用户点图标切好的主题按快照翻回去，
+      //   那就是同一个 bug 换了条路径。
+      ui_theme: getUITheme(),
       border_color: tempApp.border_color || "#90cdf4",
       bg_color: tempApp.bg_color || "#2b2b2b",
       border_opacity: tempApp.border_opacity !== void 0 ? tempApp.border_opacity : 100,
@@ -37002,11 +37035,6 @@ function applyUIFontScale(scalePercent = 100) {
   const clamped = Number.isFinite(n) ? Math.max(80, Math.min(130, n)) : 100;
   document.documentElement.style.setProperty("--t-ui-font-scale", (clamped / 100).toFixed(2));
 }
-function applyUITheme(theme = "dark") {
-  const root = document.documentElement;
-  if (theme === "light") root.dataset.tTheme = "light";
-  else delete root.dataset.tTheme;
-}
 var init_settingsWindow = __esm({
   "src/ui/settingsWindow.js"() {
     init_storage();
@@ -37024,6 +37052,7 @@ var init_settingsWindow = __esm({
     init_apiConnectionEditor();
     init_promptManager();
     init_headerActions();
+    init_theme();
   }
 });
 
@@ -41635,6 +41664,10 @@ async function runHeaderAction(id3, $anchor) {
     renderMoreMenu($anchor);
     return;
   }
+  if (id3 === "__theme__") {
+    toggleUITheme();
+    return;
+  }
   if (id3 === "favs") {
     openFavsWindow();
   } else if (id3 === "workshop") {
@@ -42085,6 +42118,7 @@ var init_mainWindow = __esm({
     init_legacy();
     init_headerActions();
     init_topBar();
+    init_theme();
     SORT_MODE_LABELS2 = {
       default: "\u9ED8\u8BA4\u987A\u5E8F",
       smart: "\u667A\u80FD\u6392\u5E8F",
@@ -45597,6 +45631,7 @@ async function initExtensionUpdate() {
 init_worldInfoManager();
 init_floatingBtn();
 init_settingsWindow();
+init_theme();
 init_outlineEntryButton();
 init_rewriteEntryButton();
 
@@ -46314,7 +46349,7 @@ function describeFavsStorageState() {
 }
 function favsStorageStatusLine(footprint) {
   if (!footprint) return "";
-  return `\u6536\u85CF <b>${footprint.count}</b> \u6761 \xB7 \u6B63\u6587 <b>${formatBytes(footprint.bodyBytes)}</b> \u5728 <code>user/files/</code> \xB7 \u7D22\u5F15 <b>${formatBytes(footprint.indexBytes)}</b> \u5728 settings.json`;
+  return `\u6536\u85CF <b>${footprint.count}</b> \u6761 \xB7 \u5185\u5BB9 <b>${formatBytes(footprint.bodyBytes)}</b> \u5B58\u5728 <code>user/files/</code> \xB7 \u76EE\u5F55 <b>${formatBytes(footprint.indexBytes)}</b> \u5B58\u5728\u8BBE\u7F6E\u91CC`;
 }
 function renderFavsStorageCard() {
   const $card = $("#titania-favs-storage-card");
@@ -46330,30 +46365,30 @@ function renderFavsStorageCard() {
   const CHECK_BTN = `<button class="titania-mini-btn" data-act="check"><i class="fa-solid fa-stethoscope"></i> \u68C0\u67E5\u5B58\u50A8\u5B8C\u6574\u6027</button>`;
   if (info.state === "needs-migration") {
     $desc.html(
-      `\u6536\u85CF\u6B63\u6587\u73B0\u5728\u5168\u6324\u5728 SillyTavern \u7684 settings.json \u91CC\uFF0C\u4E8E\u662F\u4F60\u6539\u4EFB\u4F55\u4E00\u4E2A\u8BBE\u7F6E\u90FD\u8981\u8FDE\u5E26\u91CD\u5199\u5168\u90E8\u6536\u85CF \u2014\u2014 \u6536\u85CF\u8D8A\u591A\u8D8A\u5361\u3002<br>\u642C\u5BB6\u4F1A\u628A\u6B63\u6587\u6539\u7531 <code>user/files/</code> \u4E0B\u7684\u72EC\u7ACB\u6587\u4EF6\u627F\u8F7D\uFF0Csettings.json \u91CC\u53EA\u7559\u4E00\u4EFD\u8F7B\u91CF\u7D22\u5F15\u3002<br>\u4E00\u6B21\u70B9\u5B8C\uFF1A<b>\u4E0B\u8F7D\u5907\u4EFD \u2192 \u5199\u6587\u4EF6 \u2192 \u6821\u9A8C \u2192 \u5EFA\u7D22\u5F15 \u2192 \u5168\u91CF\u9010\u5B57\u6838\u5BF9 \u2192 \u5220\u65E7\u6570\u636E</b>\u3002\u5220\u4E4B\u524D\u4F1A\u518D\u95EE\u4F60\u4E00\u6B21\u3002<br><span style="color:#feca57;">\u26A0\uFE0F \u8FC7\u7A0B\u4E2D\u4F1A\u5F3A\u5236\u4E0B\u8F7D\u4E00\u4EFD\u5B8C\u6574\u5907\u4EFD\uFF0C\u8BF7\u4FDD\u5B58\u597D\u8BE5\u6587\u4EF6\u3002</span>`
+      `\u6536\u85CF\u5185\u5BB9\u73B0\u5728\u548C\u8BBE\u7F6E\u5B58\u5728\u4E00\u8D77\uFF0C\u6536\u85CF\u8D8A\u591A\uFF0C\u6539\u8BBE\u7F6E\u5C31\u8D8A\u6162\u3002<br>\u642C\u5BB6\u4F1A\u628A\u6536\u85CF\u632A\u51FA\u53BB\u5355\u72EC\u5B58\u653E\uFF0C\u4E00\u6761\u90FD\u4E0D\u4F1A\u5C11\uFF0C\u4E4B\u540E\u6539\u8BBE\u7F6E\u5C31\u5FEB\u4E86\u3002<br><span style="color:#feca57;">\u26A0\uFE0F \u642C\u5BB6\u524D\u4F1A\u81EA\u52A8\u4E0B\u8F7D\u4E00\u4EFD\u5907\u4EFD\uFF0C\u8BF7\u4FDD\u5B58\u597D\u8FD9\u4E2A\u6587\u4EF6\u3002</span>`
     );
     $actions.html(
       `<button class="titania-mini-btn is-import" data-act="migrate"><i class="fa-solid fa-box-archive"></i> \u4E00\u952E\u642C\u5BB6\uFF08\u81EA\u52A8\u5907\u4EFD\uFF09</button>`
     );
   } else if (info.state === "needs-cleanup") {
     $desc.html(
-      `\u6B63\u6587\u5DF2\u7ECF\u642C\u5230 <code>user/files/</code> \u4E86\uFF0C\u4F46 settings.json \u91CC\u7684\u65E7\u6570\u636E\u8FD8\u5728\uFF0C\u6240\u4EE5\u4FDD\u5B58\u901F\u5EA6<b>\u8FD8\u6CA1\u6709\u53D8\u5FEB</b>\u3002<br>\u6536\u5C3E\u4F1A\u5168\u91CF\u9010\u5B57\u6838\u5BF9\u6BCF\u4E00\u6761\u6B63\u6587\uFF0C\u901A\u8FC7\u4E4B\u540E\u624D\u5220\u65E7\u6570\u636E\u3002<br><span style="color:#feca57;">\u26A0\uFE0F \u8FD9\u662F\u552F\u4E00\u4E0D\u53EF\u9006\u7684\u4E00\u6B65\uFF0C\u6267\u884C\u524D\u4F1A\u5F3A\u5236\u4E0B\u8F7D\u4E00\u4EFD\u5B8C\u6574\u5907\u4EFD\u3002</span>`
+      `\u6536\u85CF\u5DF2\u7ECF\u642C\u597D\u4E86\uFF0C\u4F46\u8BBE\u7F6E\u91CC\u7684\u65E7\u6570\u636E\u8FD8\u6CA1\u5220\uFF0C\u6240\u4EE5\u901F\u5EA6<b>\u8FD8\u6CA1\u53D8\u5FEB</b>\u3002<br>\u70B9\u4E0B\u9762\u7684\u6309\u94AE\uFF0C\u6838\u5BF9\u65E0\u8BEF\u540E\u4F1A\u628A\u65E7\u6570\u636E\u5220\u6389\u3002<br><span style="color:#feca57;">\u26A0\uFE0F \u8FD9\u4E00\u6B65\u5220\u4E86\u5C31\u627E\u4E0D\u56DE\u6765\uFF0C\u6267\u884C\u524D\u4F1A\u81EA\u52A8\u4E0B\u8F7D\u4E00\u4EFD\u5907\u4EFD\u3002</span>`
     );
     $actions.html(
       `<button class="titania-mini-btn is-export" data-act="finish"><i class="fa-solid fa-broom"></i> \u5B8C\u6210\u6536\u5C3E\uFF08\u5220\u9664\u65E7\u6570\u636E\uFF09</button>`
     );
   } else if (info.state === "has-artifacts") {
-    const keyText = info.artifacts.keys.length ? `${info.artifacts.keys.length} \u4E2A\u96F6\u5F15\u7528\u65E7\u952E\uFF08${formatBytes(info.artifacts.keyBytes)}\uFF09` : "";
-    const fileText = info.artifacts.orphanFiles.length ? `${info.artifacts.orphanFiles.length} \u4E2A\u65E0\u4EBA\u5F15\u7528\u7684\u6B63\u6587\u6587\u4EF6` : "";
+    const keyText = info.artifacts.keys.length ? `${info.artifacts.keys.length} \u9879\u6CA1\u7528\u7684\u65E7\u6570\u636E\uFF08${formatBytes(info.artifacts.keyBytes)}\uFF09` : "";
+    const fileText = info.artifacts.orphanFiles.length ? `${info.artifacts.orphanFiles.length} \u4E2A\u6CA1\u4EBA\u7528\u7684\u6587\u4EF6` : "";
     $desc.html(
-      favsStorageStatusLine(info.footprint) + `<br>\u8FD8\u5269\u4E00\u70B9\u5386\u53F2\u9057\u7559\u53EF\u4EE5\u6E05\u6389\uFF1A${[keyText, fileText].filter(Boolean).join("\u3001")}\u3002\u90FD\u662F\u5F53\u524D\u4EE3\u7801\u91CC\u6CA1\u6709\u4EFB\u4F55\u5730\u65B9\u8BFB\u5199\u7684\u6B7B\u6570\u636E\uFF0C\u5220\u9664\u4E0D\u5F71\u54CD\u4EFB\u4F55\u529F\u80FD\u3002`
+      favsStorageStatusLine(info.footprint) + `<br>\u8FD8\u5269\u4E00\u70B9\u5783\u573E\u53EF\u4EE5\u6E05\u6389\uFF1A${[keyText, fileText].filter(Boolean).join("\u3001")}\u3002\u5220\u4E86\u4E0D\u5F71\u54CD\u4EFB\u4F55\u529F\u80FD\u3002`
     );
     $actions.html(
       `<button class="titania-mini-btn" data-act="artifacts"><i class="fa-solid fa-trash-can"></i> \u6E05\u7406\u9057\u7559\u6570\u636E</button>${CHECK_BTN}`
     );
   } else {
     $desc.html(
-      favsStorageStatusLine(info.footprint) + `<br>\u65B0\u589E\u4E00\u6761\u6536\u85CF\u53EA\u5199\u5B83\u81EA\u5DF1\u90A3\u4E00\u4E2A\u6587\u4EF6\uFF0C\u4FDD\u5B58\u8BBE\u7F6E\u4E0D\u518D\u91CD\u5199\u6536\u85CF\u3002\u5BFC\u51FA\u5907\u4EFD\u4F1A\u81EA\u52A8\u628A\u6B63\u6587\u8BFB\u56DE\u6765\u6253\u5305\uFF0C\u4ECD\u7136\u81EA\u6210\u4E00\u4F53\u3002`
+      favsStorageStatusLine(info.footprint) + `<br>\u6536\u85CF\u5DF2\u7ECF\u5404\u5B58\u5404\u7684\u4E86\uFF0C\u6539\u8BBE\u7F6E\u4E0D\u4F1A\u518D\u88AB\u6536\u85CF\u62D6\u6162\u3002\u5BFC\u51FA\u5907\u4EFD\u65F6\u4F1A\u81EA\u52A8\u628A\u6536\u85CF\u5185\u5BB9\u4E00\u8D77\u6253\u5305\uFF0C\u4E0D\u7528\u53E6\u5916\u64CD\u4F5C\u3002`
     );
     $actions.html(CHECK_BTN);
   }

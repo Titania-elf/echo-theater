@@ -20,6 +20,7 @@ import {
     getHeaderActions,
     saveHeaderActions
 } from "./mainWindow/headerActions.js";
+import { applyUITheme, getUITheme } from "./theme.js";
 
 /**
  * 应用自定义 CSS 样式
@@ -155,7 +156,8 @@ export function openSettingsWindow() {
     if (tempApp.border_opacity === undefined) tempApp.border_opacity = 100;
     if (tempApp.bg_opacity === undefined) tempApp.bg_opacity = 100;
     if (tempApp.ui_font_scale === undefined) tempApp.ui_font_scale = 100;
-    if (tempApp.ui_theme !== "light") tempApp.ui_theme = "dark";
+    // ui_theme 刻意不进 tempApp：主题由标题栏图标即时切换并落盘（见 ui/theme.js），
+    // 这里不该再持有一份会过期的快照。保存时从 getUITheme() 读当前值。
 
     // 旧配置兼容：内容是图片 data URI 时，自动纠正为 image 类型
     const isTempAppImageData = typeof tempApp.content === 'string' && tempApp.content.trim().toLowerCase().startsWith("data:image/");
@@ -281,15 +283,6 @@ export function openSettingsWindow() {
                         <div class="t-form-label" style="display:flex; justify-content:space-between;"><span>UI 字体大小</span><span id="p-ui-font-scale-val" style="color:var(--t-color-brand);">${tempApp.ui_font_scale}%</span></div>
                         <input class="t-w-full" type="range" id="p-ui-font-scale" min="80" max="130" step="5" value="${tempApp.ui_font_scale}">
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">影响插件全部界面字体（不影响内容区渲染文本）。</p>
-                    </div>
-
-                    <div class="t-form-group">
-                        <label class="t-form-label">界面主题</label>
-                        <div style="display:flex; gap:20px;">
-                            <label><input type="radio" name="p-ui-theme" value="dark" ${tempApp.ui_theme !== 'light' ? 'checked' : ''}> 深色</label>
-                            <label><input type="radio" name="p-ui-theme" value="light" ${tempApp.ui_theme === 'light' ? 'checked' : ''}> 浅色</label>
-                        </div>
-                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">只影响插件自己的界面，不改 SillyTavern 主题。切换后立即生效。</p>
                     </div>
 
                     <div class="t-form-group">
@@ -952,12 +945,6 @@ export function openSettingsWindow() {
     $("#p-ui-font-scale").on("input", function () {
         tempApp.ui_font_scale = parseInt($(this).val()) || 100;
         $("#p-ui-font-scale-val").text(tempApp.ui_font_scale + "%");
-    });
-    // 主题立即生效（不等「保存」）：切主题要看的就是整个界面的观感，
-    // 只有当场看到才能判断要不要留。若用户最后取消，下面的清理会还原。
-    $("input[name='p-ui-theme']").on("change", function () {
-        tempApp.ui_theme = $(this).val() === 'light' ? 'light' : 'dark';
-        applyUITheme(tempApp.ui_theme);
     });
     $("#p-emoji-input").on("input", function () {
         tempApp.content = $(this).val();
@@ -2200,9 +2187,6 @@ export function openSettingsWindow() {
         openScriptManager();
     });
     $("#t-set-close").on("click", () => {
-        // 主题是「立即生效」的（见 p-ui-theme 的 change 处理），关窗等于放弃修改，
-        // 所以必须还原成**已保存**的值，否则未保存的主题会留在界面上。
-        applyUITheme(getExtData()?.appearance?.ui_theme);
         document.getElementById("t-prompt-editor-modal")?.remove();
         $("#t-settings-view").remove();
         // 如果主窗口存在则显示它，否则关闭整个 overlay
@@ -2244,7 +2228,13 @@ export function openSettingsWindow() {
             //   在这份白名单里出现一次。漏掉的字段会在保存时被静默丢弃 ——
             //   Phase 6c-1 的 ui_theme 就是这么丢的：切换立即生效、一保存就翻回
             //   深色，因为下面 applyUITheme(d.appearance?.ui_theme) 读到 undefined。
-            ui_theme: tempApp.ui_theme === "light" ? "light" : "dark",
+            //
+            //   ui_theme 现在由标题栏图标即时落盘（ui/theme.js 的 toggleUITheme），
+            //   本窗口不再有它的控件。字段仍必须写在这里（否则被整体替换吃掉），
+            //   但值要读**当前已存**的，不能读 tempApp —— tempApp 是开窗那一刻的
+            //   快照，拿它覆盖等于把用户点图标切好的主题按快照翻回去，
+            //   那就是同一个 bug 换了条路径。
+            ui_theme: getUITheme(),
             border_color: tempApp.border_color || "#90cdf4",
             bg_color: tempApp.bg_color || "#2b2b2b",
             border_opacity: tempApp.border_opacity !== undefined ? tempApp.border_opacity : 100,
@@ -2392,21 +2382,4 @@ export function applyUIFontScale(scalePercent = 100) {
     const n = Number(scalePercent);
     const clamped = Number.isFinite(n) ? Math.max(80, Math.min(130, n)) : 100;
     document.documentElement.style.setProperty('--t-ui-font-scale', (clamped / 100).toFixed(2));
-}
-
-/**
- * 应用插件 UI 的深/浅主题。
- *
- * 写在 documentElement 上而非 .t-root 上：token 定义在 `:root`，而 .t-root 有
- * 49 个挂载点（各窗口/弹窗/悬浮球各自一个），挨个加属性既漏又难维护。
- * 浅色覆盖用 `:root[data-t-theme="light"]`，一处属性就能覆盖全部挂载点。
- *
- * ⚠ 'dark' 走的是**移除属性**而不是设成 "dark"：深色是 theme-dark.css 里
- *   `:root` 的无条件声明，属性存在与否只决定 theme-light.css 那层是否命中。
- *   设成 data-t-theme="dark" 也能工作，但会让人以为存在第三种状态。
- */
-export function applyUITheme(theme = 'dark') {
-    const root = document.documentElement;
-    if (theme === 'light') root.dataset.tTheme = 'light';
-    else delete root.dataset.tTheme;
 }
