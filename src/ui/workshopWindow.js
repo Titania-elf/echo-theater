@@ -2,8 +2,8 @@
 //
 // 回声工坊浏览窗。只做「看 + 下载」，投稿和编辑去网页端。
 
-import { fetchList, fetchScript, fetchComments, countDownload, WORKSHOP_ORIGIN } from "../core/workshopApi.js";
-import { saveUserScript } from "../core/scriptData.js";
+import { fetchList, fetchScript, fetchComments, countDownload, countDownloads, WORKSHOP_ORIGIN } from "../core/workshopApi.js";
+import { saveUserScript, saveUserScripts } from "../core/scriptData.js";
 import { GlobalState } from "../core/state.js";
 import { refreshScriptList } from "./mainWindow.js";
 import { showMature, toggleMature, filterByRating } from "../core/workshopRating.js";
@@ -17,6 +17,18 @@ function esc(text) {
 
 /** 热度阈值：到这个下载量就点亮金色徽章 */
 const HOT_THRESHOLD = 50;
+
+/**
+ * 批量下载的并发上限。
+ *
+ * /api/script/{id} 没有批量版本，一条一个请求。串行太慢 —— 单条最坏要等满
+ * workshopApi 的 15s 超时，20 条能拖到 5 分钟；但全并发对部署在 Cloudflare 上的
+ * 工坊不礼貌，也容易被判成异常流量。3 是折中。
+ */
+const BATCH_CONCURRENCY = 3;
+
+/** 超过这个条数才弹确认：批量下载不是破坏性操作，小批量不值得打断 */
+const BATCH_CONFIRM_THRESHOLD = 10;
 
 /** 头像色板。按作者 ID 取模，同一作者永远同一个颜色 */
 const AVATAR_COLORS = [
@@ -119,6 +131,11 @@ const SORT_MODES = {
 export function openWorkshopWindow(source = 'manager') {
     let allItems = [];
     let currentFilter = { category: "全部", search: "", sort: "newest" };
+    // 批量模式：勾选多条一次下载。卡片上的复选框只在这个模式下渲染
+    let batchMode = false;
+    // 批量下载进行中的取消标志。见 batchDownload 里对「取消不打断飞行中请求」的说明
+    let batchCancelled = false;
+    let batchRunning = false;
 
     // 兜底：来源传错就按实际打开的窗口纠正。
     // #t-overlay 是 flex 容器，漏隐藏上一层窗口会变成两个窗口并排。
@@ -153,9 +170,19 @@ export function openWorkshopWindow(source = 'manager') {
                 <input type="text" id="t-ws-search" class="t-ws-search" placeholder="🔍 搜索标题、简介、作者、标签...">
                 <select id="t-ws-cat" class="t-ws-select"></select>
                 <select id="t-ws-sort" class="t-ws-select">${sortOptions}</select>
+                <button type="button" id="t-ws-batch-toggle" class="t-ws-batch-toggle" title="批量下载" aria-pressed="false">
+                    <i class="fa-solid fa-list-check"></i> 批量
+                </button>
             </div>
             <div class="t-ws-stats" id="t-ws-stats"></div>
             <div class="t-ws-grid" id="t-ws-list"></div>
+            <div class="t-ws-bulk-bar" id="t-ws-bulk-bar" hidden>
+                <span class="t-ws-bulk-count" id="t-ws-bulk-count">已选 0 条</span>
+                <button type="button" class="t-btn t-btn-soft" id="t-ws-bulk-all"></button>
+                <button type="button" class="t-btn primary" id="t-ws-bulk-get" disabled>
+                    <i class="fa-solid fa-download"></i> 下载所选
+                </button>
+            </div>
         </div>
     </div>`;
 
@@ -254,6 +281,9 @@ export function openWorkshopWindow(source = 'manager') {
             const $card = $(`
                 <div class="t-ws-card${dup ? " is-dup" : ""}" style="--card-accent:${pickAvatarColor(item.anonymous ? null : item.author?.id)};">
                     ${dup ? `<div class="t-ws-dup-flag" title="本地已有同名剧本"><i class="fa-solid fa-check"></i></div>` : ""}
+                    ${batchMode ? `<label class="t-ws-select-wrap" title="${dup ? "本地已有同名剧本，批量下载会跳过" : "选中以批量下载"}">
+                        <input type="checkbox" class="t-ws-select t-choice-input t-choice-input--accent t-choice-input--subdued-disabled" data-ws-id="${esc(item.id)}" ${dup ? "disabled" : ""} aria-label="选择《${esc(item.name)}》">
+                    </label>` : ""}
                     <div class="t-ws-card-head">
                         ${renderAvatar(item.author, item.anonymous)}
                         <span class="t-ws-author-name">${esc(item.author?.name || "未知作者")}</span>
@@ -281,9 +311,65 @@ export function openWorkshopWindow(source = 'manager') {
             $card.find(".t-ws-get").on("click", function () {
                 downloadScript(item, $(this));
             });
+            if (batchMode) {
+                $card.find(".t-ws-select").on("change", updateBulkBar);
+                // 批量模式下预览/下载按钮已隐藏，整张卡除了那个小复选框没别的可点。
+                // 点卡面直接切换勾选，否则用户得去瞄准复选框。
+                // 复选框和它的 label 自己会处理点击，再冒泡上来就会切两次，所以排除掉。
+                $card.on("click", function (e) {
+                    if ($(e.target).closest(".t-ws-select-wrap").length) return;
+                    const $box = $card.find(".t-ws-select:not(:disabled)");
+                    if (!$box.length) return;
+                    $box.prop("checked", !$box.prop("checked"));
+                    updateBulkBar();
+                });
+            }
             $list.append($card);
         });
+        if (batchMode) updateBulkBar();
     };
+
+    /** 当前筛选下可勾选的复选框（已在本地的那些是 disabled，不算） */
+    const selectableChecks = () => $("#t-ws-list .t-ws-select:not(:disabled)");
+
+    /**
+     * 重画批量条：选中计数、全选按钮的文案、下载按钮的可用状态。
+     *
+     * 全选只作用于**当前筛选可见**的卡，所以有筛选时按钮文案要带范围后缀 ——
+     * 否则「全选」看起来像是选中了工坊全部投稿。同 mainWindow 世界书选择器的做法。
+     */
+    const updateBulkBar = () => {
+        const $all = selectableChecks();
+        const $checked = $all.filter(":checked");
+        const scoped = currentFilter.search || currentFilter.category !== "全部";
+        const suffix = scoped ? "（当前筛选）" : "";
+        const allChecked = $all.length > 0 && $checked.length === $all.length;
+
+        // 选中态的高亮。放在这里统一同步：单个勾选和「全选」都会经过本函数，
+        // 各自去 toggleClass 就会漏。用类而不是 CSS 的 :has()，本项目不依赖 :has()
+        $("#t-ws-list .t-ws-select").each(function () {
+            $(this).closest(".t-ws-card").toggleClass("is-selected", $(this).prop("checked"));
+        });
+
+        $("#t-ws-bulk-count").text(`已选 ${$checked.length} 条`);
+        $("#t-ws-bulk-all")
+            .prop("disabled", $all.length === 0)
+            .html(allChecked
+                ? `<i class="fa-solid fa-circle-xmark"></i> 取消全选${suffix}`
+                : `<i class="fa-solid fa-check-double"></i> 全选${suffix}`);
+        $("#t-ws-bulk-get").prop("disabled", $checked.length === 0);
+    };
+
+    /** 把工坊详情转成本地用户剧本。单条与批量共用，保证两条路径存下来的东西一致 */
+    const toUserScript = (item, detail) => ({
+        id: "ws_" + item.id + "_" + Date.now(),
+        name: detail.name,
+        desc: detail.desc || "",
+        prompt: detail.prompt,
+        category: detail.category || "工坊下载",
+        workshop_source_id: item.id,
+        workshop_author_id: item.author?.id || null
+    });
 
     /** 下载 = 拉详情 -> 存成用户剧本 -> 上报计数 */
     const downloadScript = async (item, $btn) => {
@@ -291,15 +377,7 @@ export function openWorkshopWindow(source = 'manager') {
         $btn.prop("disabled", true).text("下载中...");
         try {
             const detail = await fetchScript(item.id);
-            saveUserScript({
-                id: "ws_" + item.id + "_" + Date.now(),
-                name: detail.name,
-                desc: detail.desc || "",
-                prompt: detail.prompt,
-                category: detail.category || "工坊下载",
-                workshop_source_id: item.id,
-                workshop_author_id: item.author?.id || null
-            });
+            saveUserScript(toUserScript(item, detail));
             countDownload(item.id);
             $btn.text("✓ 已下载");
             if (window.toastr) toastr.success(`已保存「${detail.name}」`);
@@ -309,6 +387,103 @@ export function openWorkshopWindow(source = 'manager') {
             $btn.prop("disabled", false).text(originalText);
             if (window.toastr) toastr.error(e.message);
             else alert(e.message);
+        }
+    };
+
+    /**
+     * 批量下载选中的投稿。
+     *
+     * 与单条下载的关键差别在收尾：详情要一条条拉（/api/script/{id} 没有批量版本），
+     * 但**存盘只做一次**（saveUserScripts）、**下载量上报也只发一个请求**
+     * （countDownloads —— 接口本来就是批量的，见 workshopApi 里的注释）。
+     * 逐条调 saveUserScript 会重建 runtimeScripts N 次，逐条上报会浪费 N 倍配额。
+     *
+     * 单条失败不中断整批：网络抖一下不该让已经拉到的十几条白费。失败项收集起来最后汇报。
+     *
+     * ⚠ 取消的局限：workshopApi 的 req() 自己内部 new AbortController，没有外部 signal
+     *   入口，所以这里的取消只能在**下一条开始前**生效，已经在飞行中的最多 3 条会跑完。
+     *   要做到即时中断得给 req() 加 signal 参数，那是独立一件事。
+     */
+    const batchDownload = async (items) => {
+        if (items.length === 0) return;
+        if (items.length > BATCH_CONFIRM_THRESHOLD
+            && !confirm(`即将下载 ${items.length} 条剧本，要逐条向工坊请求详情，可能需要一会儿。\n\n确定继续吗？`)) {
+            return;
+        }
+
+        batchRunning = true;
+        batchCancelled = false;
+        const saved = [];
+        const failed = [];
+        let done = 0;
+
+        const $count = $("#t-ws-bulk-count");
+        const $getBtn = $("#t-ws-bulk-get");
+        const $allBtn = $("#t-ws-bulk-all");
+        const paintProgress = () => $count.text(`下载中 ${done}/${items.length}`);
+
+        $allBtn.prop("disabled", true);
+        $getBtn.html('<i class="fa-solid fa-xmark"></i> 取消').prop("disabled", false);
+        $getBtn.off("click.bulkrun").on("click.bulkrun", () => {
+            batchCancelled = true;
+            $getBtn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 正在停止');
+        });
+        // 批量期间禁掉会重画列表的表单控件，否则渲染会把正在跑的这一批的复选框状态冲掉。
+        // 一个 const 供禁用/恢复共用，两处各写一份必然漂移。
+        // #t-ws-refresh 刻意不在这里：它是 <i> 元素，disabled 对它无效，
+        // 改由它自己的 click 处理器判断 batchRunning。
+        const $frozen = $("#t-ws-search, #t-ws-cat, #t-ws-sort, #t-ws-batch-toggle, #t-ws-rating-toggle");
+        $frozen.prop("disabled", true);
+        paintProgress();
+
+        // 并发池：BATCH_CONCURRENCY 个 worker 共享同一个游标，各自取下一条
+        let cursor = 0;
+        const worker = async () => {
+            while (true) {
+                if (batchCancelled) return;
+                const index = cursor++;
+                if (index >= items.length) return;
+                const item = items[index];
+                try {
+                    const detail = await fetchScript(item.id);
+                    saved.push({ item, script: toUserScript(item, detail) });
+                } catch (e) {
+                    failed.push({ name: item.name, message: e?.message || "未知错误" });
+                }
+                done++;
+                paintProgress();
+            }
+        };
+        await Promise.all(Array.from({ length: Math.min(BATCH_CONCURRENCY, items.length) }, worker));
+
+        // 已经拉到的一律入库 —— 取消或部分失败都不回滚，那些请求已经花出去了
+        saveUserScripts(saved.map(entry => entry.script));
+        countDownloads(saved.map(entry => entry.item.id));
+
+        batchRunning = false;
+        $getBtn.off("click.bulkrun");
+        $frozen.prop("disabled", false);
+        $getBtn.html('<i class="fa-solid fa-download"></i> 下载所选');
+
+        renderList();
+
+        if (window.toastr) {
+            const parts = [`成功 ${saved.length} 条`];
+            if (failed.length) parts.push(`失败 ${failed.length} 条`);
+            const skipped = items.length - saved.length - failed.length;
+            if (skipped > 0) parts.push(`未开始 ${skipped} 条`);
+            const summary = parts.join(" · ");
+            if (failed.length) {
+                // 用了 escapeHtml:false 才能让 <br> 生效，所以剧本名必须自己过 esc() ——
+                // 名字是工坊来的不可控内容（见文件顶部 esc 的说明）
+                const names = failed.slice(0, 5).map(f => `「${esc(f.name)}」`).join("、");
+                const more = failed.length > 5 ? ` 等 ${failed.length} 条` : "";
+                toastr.warning(`${summary}<br>失败：${names}${more}`, "批量下载", { escapeHtml: false });
+            } else if (batchCancelled) {
+                toastr.info(summary, "批量下载已停止");
+            } else {
+                toastr.success(summary, "批量下载完成");
+            }
         }
     };
 
@@ -441,7 +616,13 @@ export function openWorkshopWindow(source = 'manager') {
     };
 
     $("#t-ws-close").on("click", closeWindow);
-    $("#t-ws-refresh").on("click", () => load({ force: true }));
+    // 批量下载期间挡掉所有会重画列表的入口。
+    // 刷新和分级切换必须在这里显式判断，不能只靠上面 batchDownload 里的 prop("disabled")：
+    // #t-ws-refresh 是 <i> 元素，disabled 属性对它无效，点了照样会走 load() 把列表清空
+    $("#t-ws-refresh").on("click", () => {
+        if (batchRunning) return;
+        load({ force: true });
+    });
     $("#t-ws-open-site").on("click", () => window.open(WORKSHOP_ORIGIN, "_blank"));
     const paintRatingToggle = () => {
         const mature = showMature();
@@ -452,22 +633,63 @@ export function openWorkshopWindow(source = 'manager') {
             .html(`<i class="fa-solid fa-shield-halved"></i> ${mature ? "包含成人向" : "全年龄"}`);
     };
     $("#t-ws-rating-toggle").on("click", () => {
+        if (batchRunning) return;
         toggleMature();
         paintRatingToggle();
         renderCategories();
         renderList();
     });
     $("#t-ws-search").on("input", function () {
+        if (batchRunning) return;
         currentFilter.search = $(this).val().trim();
         renderList();
     });
     $("#t-ws-cat").on("change", function () {
+        if (batchRunning) return;
         currentFilter.category = $(this).val();
         renderList();
     });
     $("#t-ws-sort").val(currentFilter.sort).on("change", function () {
+        if (batchRunning) return;
         currentFilter.sort = $(this).val();
         renderList();
+    });
+
+    // ── 批量下载 ──────────────────────────────────────────────
+    // 状态类挂在 #t-ws-view 上，复选框的显隐与卡片按钮的隐藏都由 CSS 按它决定。
+    // 刻意不学 scriptManager 那样用 jQuery .css() 写死配色 —— 那样浅色主题下是错的，
+    // 而且 css-audit 的 A16/A17 只扫 style="..." 字面量，看不见 .css({})。
+    $("#t-ws-batch-toggle").on("click", function () {
+        if (batchRunning) return;
+        batchMode = !batchMode;
+        $("#t-ws-view").toggleClass("is-batch", batchMode);
+        $(this)
+            .toggleClass("is-active", batchMode)
+            .attr("aria-pressed", String(batchMode))
+            .attr("title", batchMode ? "退出批量下载" : "批量下载")
+            .html(batchMode
+                ? '<i class="fa-solid fa-xmark"></i> 退出批量'
+                : '<i class="fa-solid fa-list-check"></i> 批量');
+        $("#t-ws-bulk-bar").prop("hidden", !batchMode);
+        // 重画卡片以增删复选框。进入时无选中项、退出时本就该清空，没有要保留的状态
+        renderList();
+    });
+
+    $("#t-ws-bulk-all").on("click", () => {
+        const $all = selectableChecks();
+        if (!$all.length) return;
+        const allChecked = $all.filter(":checked").length === $all.length;
+        $all.prop("checked", !allChecked);
+        updateBulkBar();
+    });
+
+    $("#t-ws-bulk-get").on("click", () => {
+        if (batchRunning) return;
+        // 从 DOM 取选中 id，再回 allItems 找完整条目 —— 卡片上只存了 id
+        const ids = new Set(selectableChecks().filter(":checked").map(function () {
+            return String($(this).data("ws-id"));
+        }).get());
+        batchDownload(allItems.filter(item => ids.has(String(item.id))));
     });
 
     paintRatingToggle();

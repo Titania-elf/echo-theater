@@ -12982,6 +12982,118 @@ textarea.t-input {
     }
 }
 
+/* ============================================================
+   \u6279\u91CF\u4E0B\u8F7D\u6A21\u5F0F
+
+   \u72B6\u6001\u7C7B .is-batch \u6302\u5728 #t-ws-view \u4E0A\uFF08\u89C1 workshopWindow.js \u7684 #t-ws-batch-toggle\uFF09\u3002
+   \u590D\u9009\u6846\u672C\u8EAB\u7531 JS \u6761\u4EF6\u6E32\u67D3\uFF0C\u8FD9\u91CC\u53EA\u7BA1\u5B9A\u4F4D\u4E0E\u300C\u6279\u91CF\u6001\u4E0B\u5361\u7247\u957F\u4EC0\u4E48\u6837\u300D\u3002
+
+   \u9009\u4E2D\u6001\u7528 JS \u7ED9\u5361\u7247\u52A0 .is-selected\uFF0C\u523B\u610F\u4E0D\u7528 :has(.t-ws-select:checked) \u2014\u2014
+   \u4E0E main-window.css \u91CC\u7126\u70B9\u73AF\u8D70\u5144\u5F1F\u9009\u62E9\u5668\u540C\u4E00\u4E2A\u7406\u7531\uFF0C\u672C\u9879\u76EE\u4E0D\u4F9D\u8D56 :has()\u3002
+   ============================================================ */
+
+#t-ws-batch-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--t-color-border-control);
+    border-radius: 8px;
+    background: var(--t-color-surface-sunken);
+    color: var(--t-color-text-label);
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: 0.8em;
+    flex-shrink: 0;
+}
+
+#t-ws-batch-toggle:hover:not(:disabled) {
+    border-color: var(--t-color-brand-border);
+    color: var(--t-color-text-strong);
+}
+
+#t-ws-batch-toggle:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* \u5F00\u542F\u6001\uFF1A\u5E95\u8272 + \u63CF\u8FB9 + \u6587\u5B57\u4E09\u4E2A\u901A\u9053\u4E00\u8D77\u53D8\uFF0C\u4E0D\u5355\u9760\u8272\u76F8\uFF08WCAG 1.4.1\uFF09 */
+#t-ws-batch-toggle.is-active {
+    border-color: var(--t-color-accent-border-subtle);
+    background: var(--t-color-accent-veil);
+    color: var(--t-color-accent);
+}
+
+.t-ws-select-wrap {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    /* \u70ED\u533A\u505A\u5927\u4E00\u70B9\uFF1A\u5361\u7247\u672C\u8EAB\u4E5F\u80FD\u70B9\u9009\uFF0C\u4F46\u8FD9\u91CC\u662F\u660E\u786E\u7684\u90A3\u4E2A\u9776\u5B50 */
+    padding: 4px;
+    display: inline-flex;
+    cursor: pointer;
+    z-index: var(--t-z-raised);
+}
+
+/* \u590D\u9009\u6846\u5360\u4E86\u5DE6\u4E0A\u89D2\uFF0C\u628A\u9996\u884C\u6574\u4F53\u8BA9\u5F00\uFF0C\u907F\u514D\u538B\u4F4F\u5934\u50CF */
+#t-ws-view.is-batch .t-ws-card-head {
+    padding-left: 24px;
+}
+
+/* \u6279\u91CF\u6001\u4E0B\u5355\u5361\u7684\u9884\u89C8/\u4E0B\u8F7D\u6309\u94AE\u6536\u8D77\uFF1A\u540C\u4E00\u5F20\u5361\u4E0A\u4E24\u5957\u64CD\u4F5C\u4F1A\u6253\u67B6 */
+#t-ws-view.is-batch .t-ws-card-actions {
+    display: none;
+}
+
+#t-ws-view.is-batch .t-ws-card {
+    cursor: pointer;
+}
+
+/* \u5DF2\u5728\u672C\u5730\u7684\u5361\u7247\u5728\u6279\u91CF\u6001\u4E0B\u4E0D\u53EF\u9009\uFF0C\u5149\u6807\u8981\u5982\u5B9E\u53CD\u6620 */
+#t-ws-view.is-batch .t-ws-card.is-dup {
+    cursor: default;
+}
+
+#t-ws-view.is-batch .t-ws-card.is-selected {
+    border-color: var(--t-color-accent-border-subtle);
+    background: var(--t-color-accent-veil);
+}
+
+/* \u2500\u2500 \u5E95\u90E8\u6279\u91CF\u6761 \u2500\u2500 */
+.t-ws-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    border-top: 1px solid var(--t-color-border);
+    background: var(--t-color-surface-inset);
+    flex-shrink: 0;
+}
+
+.t-ws-bulk-count {
+    color: var(--t-color-text-secondary);
+    font-size: 0.8em;
+    /* \u8BA1\u6570\u4E0E\u300C\u4E0B\u8F7D\u4E2D 3/12\u300D\u4EA4\u66FF\u663E\u793A\uFF0C\u7ED9\u4E2A\u4E0B\u9650\u907F\u514D\u6309\u94AE\u5DE6\u53F3\u8DF3 */
+    min-width: 88px;
+}
+
+/* \u4E0B\u8F7D\u6309\u94AE\u63A8\u5230\u6700\u53F3\uFF0C\u5168\u9009\u7559\u5728\u8BA1\u6570\u65C1\u8FB9 */
+.t-ws-bulk-bar #t-ws-bulk-get {
+    margin-left: auto;
+}
+
+@media screen and (max-width: 600px) {
+    .t-ws-bulk-bar {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+
+    .t-ws-bulk-count {
+        min-width: 0;
+    }
+}
+
 
 /* === 04-features/favs.css === */
 /* css/04-features/favs.css - \u6536\u85CF\u4E0E\u56FE\u9274 */
@@ -20425,19 +20537,31 @@ function loadScripts() {
     }
   });
 }
-function saveUserScript(s) {
-  const data = getExtData();
-  ensureStatsStore(data);
-  let u = data.user_scripts || [];
-  const existing = u.find((x) => x.id === s.id);
+function mergeUserScript(list, s) {
+  const existing = list.find((x) => x.id === s.id);
   const createdAt = Number(existing?.created_at) || Number(s.created_at) || (existing ? 0 : Date.now());
   const script = { ...s };
   if (createdAt) script.created_at = createdAt;
-  u = u.filter((x) => x.id !== s.id);
-  u.push(script);
+  return [...list.filter((x) => x.id !== s.id), script];
+}
+function saveUserScript(s) {
+  const data = getExtData();
+  ensureStatsStore(data);
+  data.user_scripts = mergeUserScript(data.user_scripts || [], s);
+  saveExtData();
+  loadScripts();
+}
+function saveUserScripts(scripts) {
+  const list = Array.isArray(scripts) ? scripts.filter(Boolean) : [];
+  if (list.length === 0) return 0;
+  const data = getExtData();
+  ensureStatsStore(data);
+  let u = data.user_scripts || [];
+  for (const s of list) u = mergeUserScript(u, s);
   data.user_scripts = u;
   saveExtData();
   loadScripts();
+  return list.length;
 }
 function deleteUserScript(id3) {
   const data = getExtData();
@@ -37111,12 +37235,17 @@ function fetchScript(id3) {
 function fetchComments(id3) {
   return req(`/api/script/${encodeURIComponent(id3)}/comments`);
 }
-function countDownload(id3) {
+function countDownloads(ids) {
+  const list = (Array.isArray(ids) ? ids : []).filter(Boolean);
+  if (list.length === 0) return Promise.resolve();
   return req("/api/downloads", {
     method: "POST",
-    body: JSON.stringify({ ids: [id3] })
+    body: JSON.stringify({ ids: list })
   }).catch(() => {
   });
+}
+function countDownload(id3) {
+  return countDownloads([id3]);
 }
 var WORKSHOP_ORIGIN, LIST_TTL, TIMEOUT, cache;
 var init_workshopApi = __esm({
@@ -37231,6 +37360,9 @@ function formatRelativeTime(ts) {
 function openWorkshopWindow(source = "manager") {
   let allItems = [];
   let currentFilter = { category: "\u5168\u90E8", search: "", sort: "newest" };
+  let batchMode = false;
+  let batchCancelled = false;
+  let batchRunning = false;
   if (source === "manager" && !$("#t-mgr-view").length) source = "main";
   if (source === "main" && !$("#t-main-view").length && $("#t-mgr-view").length) source = "manager";
   if (source === "manager") {
@@ -37258,9 +37390,19 @@ function openWorkshopWindow(source = "manager") {
                 <input type="text" id="t-ws-search" class="t-ws-search" placeholder="\u{1F50D} \u641C\u7D22\u6807\u9898\u3001\u7B80\u4ECB\u3001\u4F5C\u8005\u3001\u6807\u7B7E...">
                 <select id="t-ws-cat" class="t-ws-select"></select>
                 <select id="t-ws-sort" class="t-ws-select">${sortOptions}</select>
+                <button type="button" id="t-ws-batch-toggle" class="t-ws-batch-toggle" title="\u6279\u91CF\u4E0B\u8F7D" aria-pressed="false">
+                    <i class="fa-solid fa-list-check"></i> \u6279\u91CF
+                </button>
             </div>
             <div class="t-ws-stats" id="t-ws-stats"></div>
             <div class="t-ws-grid" id="t-ws-list"></div>
+            <div class="t-ws-bulk-bar" id="t-ws-bulk-bar" hidden>
+                <span class="t-ws-bulk-count" id="t-ws-bulk-count">\u5DF2\u9009 0 \u6761</span>
+                <button type="button" class="t-btn t-btn-soft" id="t-ws-bulk-all"></button>
+                <button type="button" class="t-btn primary" id="t-ws-bulk-get" disabled>
+                    <i class="fa-solid fa-download"></i> \u4E0B\u8F7D\u6240\u9009
+                </button>
+            </div>
         </div>
     </div>`;
   $("#t-overlay").append(html);
@@ -37345,6 +37487,9 @@ function openWorkshopWindow(source = "manager") {
       const $card = $(`
                 <div class="t-ws-card${dup ? " is-dup" : ""}" style="--card-accent:${pickAvatarColor(item.anonymous ? null : item.author?.id)};">
                     ${dup ? `<div class="t-ws-dup-flag" title="\u672C\u5730\u5DF2\u6709\u540C\u540D\u5267\u672C"><i class="fa-solid fa-check"></i></div>` : ""}
+                    ${batchMode ? `<label class="t-ws-select-wrap" title="${dup ? "\u672C\u5730\u5DF2\u6709\u540C\u540D\u5267\u672C\uFF0C\u6279\u91CF\u4E0B\u8F7D\u4F1A\u8DF3\u8FC7" : "\u9009\u4E2D\u4EE5\u6279\u91CF\u4E0B\u8F7D"}">
+                        <input type="checkbox" class="t-ws-select t-choice-input t-choice-input--accent t-choice-input--subdued-disabled" data-ws-id="${esc(item.id)}" ${dup ? "disabled" : ""} aria-label="\u9009\u62E9\u300A${esc(item.name)}\u300B">
+                    </label>` : ""}
                     <div class="t-ws-card-head">
                         ${renderAvatar(item.author, item.anonymous)}
                         <span class="t-ws-author-name">${esc(item.author?.name || "\u672A\u77E5\u4F5C\u8005")}</span>
@@ -37371,23 +37516,49 @@ function openWorkshopWindow(source = "manager") {
       $card.find(".t-ws-get").on("click", function() {
         downloadScript(item, $(this));
       });
+      if (batchMode) {
+        $card.find(".t-ws-select").on("change", updateBulkBar);
+        $card.on("click", function(e) {
+          if ($(e.target).closest(".t-ws-select-wrap").length) return;
+          const $box = $card.find(".t-ws-select:not(:disabled)");
+          if (!$box.length) return;
+          $box.prop("checked", !$box.prop("checked"));
+          updateBulkBar();
+        });
+      }
       $list.append($card);
     });
+    if (batchMode) updateBulkBar();
   };
+  const selectableChecks = () => $("#t-ws-list .t-ws-select:not(:disabled)");
+  const updateBulkBar = () => {
+    const $all = selectableChecks();
+    const $checked = $all.filter(":checked");
+    const scoped = currentFilter.search || currentFilter.category !== "\u5168\u90E8";
+    const suffix = scoped ? "\uFF08\u5F53\u524D\u7B5B\u9009\uFF09" : "";
+    const allChecked = $all.length > 0 && $checked.length === $all.length;
+    $("#t-ws-list .t-ws-select").each(function() {
+      $(this).closest(".t-ws-card").toggleClass("is-selected", $(this).prop("checked"));
+    });
+    $("#t-ws-bulk-count").text(`\u5DF2\u9009 ${$checked.length} \u6761`);
+    $("#t-ws-bulk-all").prop("disabled", $all.length === 0).html(allChecked ? `<i class="fa-solid fa-circle-xmark"></i> \u53D6\u6D88\u5168\u9009${suffix}` : `<i class="fa-solid fa-check-double"></i> \u5168\u9009${suffix}`);
+    $("#t-ws-bulk-get").prop("disabled", $checked.length === 0);
+  };
+  const toUserScript = (item, detail) => ({
+    id: "ws_" + item.id + "_" + Date.now(),
+    name: detail.name,
+    desc: detail.desc || "",
+    prompt: detail.prompt,
+    category: detail.category || "\u5DE5\u574A\u4E0B\u8F7D",
+    workshop_source_id: item.id,
+    workshop_author_id: item.author?.id || null
+  });
   const downloadScript = async (item, $btn) => {
     const originalText = $btn.text();
     $btn.prop("disabled", true).text("\u4E0B\u8F7D\u4E2D...");
     try {
       const detail = await fetchScript(item.id);
-      saveUserScript({
-        id: "ws_" + item.id + "_" + Date.now(),
-        name: detail.name,
-        desc: detail.desc || "",
-        prompt: detail.prompt,
-        category: detail.category || "\u5DE5\u574A\u4E0B\u8F7D",
-        workshop_source_id: item.id,
-        workshop_author_id: item.author?.id || null
-      });
+      saveUserScript(toUserScript(item, detail));
       countDownload(item.id);
       $btn.text("\u2713 \u5DF2\u4E0B\u8F7D");
       if (window.toastr) toastr.success(`\u5DF2\u4FDD\u5B58\u300C${detail.name}\u300D`);
@@ -37396,6 +37567,73 @@ function openWorkshopWindow(source = "manager") {
       $btn.prop("disabled", false).text(originalText);
       if (window.toastr) toastr.error(e.message);
       else alert(e.message);
+    }
+  };
+  const batchDownload = async (items) => {
+    if (items.length === 0) return;
+    if (items.length > BATCH_CONFIRM_THRESHOLD && !confirm(`\u5373\u5C06\u4E0B\u8F7D ${items.length} \u6761\u5267\u672C\uFF0C\u8981\u9010\u6761\u5411\u5DE5\u574A\u8BF7\u6C42\u8BE6\u60C5\uFF0C\u53EF\u80FD\u9700\u8981\u4E00\u4F1A\u513F\u3002
+
+\u786E\u5B9A\u7EE7\u7EED\u5417\uFF1F`)) {
+      return;
+    }
+    batchRunning = true;
+    batchCancelled = false;
+    const saved = [];
+    const failed = [];
+    let done = 0;
+    const $count = $("#t-ws-bulk-count");
+    const $getBtn = $("#t-ws-bulk-get");
+    const $allBtn = $("#t-ws-bulk-all");
+    const paintProgress = () => $count.text(`\u4E0B\u8F7D\u4E2D ${done}/${items.length}`);
+    $allBtn.prop("disabled", true);
+    $getBtn.html('<i class="fa-solid fa-xmark"></i> \u53D6\u6D88').prop("disabled", false);
+    $getBtn.off("click.bulkrun").on("click.bulkrun", () => {
+      batchCancelled = true;
+      $getBtn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> \u6B63\u5728\u505C\u6B62');
+    });
+    const $frozen = $("#t-ws-search, #t-ws-cat, #t-ws-sort, #t-ws-batch-toggle, #t-ws-rating-toggle");
+    $frozen.prop("disabled", true);
+    paintProgress();
+    let cursor = 0;
+    const worker = async () => {
+      while (true) {
+        if (batchCancelled) return;
+        const index = cursor++;
+        if (index >= items.length) return;
+        const item = items[index];
+        try {
+          const detail = await fetchScript(item.id);
+          saved.push({ item, script: toUserScript(item, detail) });
+        } catch (e) {
+          failed.push({ name: item.name, message: e?.message || "\u672A\u77E5\u9519\u8BEF" });
+        }
+        done++;
+        paintProgress();
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(BATCH_CONCURRENCY, items.length) }, worker));
+    saveUserScripts(saved.map((entry) => entry.script));
+    countDownloads(saved.map((entry) => entry.item.id));
+    batchRunning = false;
+    $getBtn.off("click.bulkrun");
+    $frozen.prop("disabled", false);
+    $getBtn.html('<i class="fa-solid fa-download"></i> \u4E0B\u8F7D\u6240\u9009');
+    renderList();
+    if (window.toastr) {
+      const parts = [`\u6210\u529F ${saved.length} \u6761`];
+      if (failed.length) parts.push(`\u5931\u8D25 ${failed.length} \u6761`);
+      const skipped = items.length - saved.length - failed.length;
+      if (skipped > 0) parts.push(`\u672A\u5F00\u59CB ${skipped} \u6761`);
+      const summary = parts.join(" \xB7 ");
+      if (failed.length) {
+        const names = failed.slice(0, 5).map((f) => `\u300C${esc(f.name)}\u300D`).join("\u3001");
+        const more = failed.length > 5 ? ` \u7B49 ${failed.length} \u6761` : "";
+        toastr.warning(`${summary}<br>\u5931\u8D25\uFF1A${names}${more}`, "\u6279\u91CF\u4E0B\u8F7D", { escapeHtml: false });
+      } else if (batchCancelled) {
+        toastr.info(summary, "\u6279\u91CF\u4E0B\u8F7D\u5DF2\u505C\u6B62");
+      } else {
+        toastr.success(summary, "\u6279\u91CF\u4E0B\u8F7D\u5B8C\u6210");
+      }
     }
   };
   const openPreview = async (item) => {
@@ -37521,34 +37759,63 @@ function openWorkshopWindow(source = "manager") {
     }
   };
   $("#t-ws-close").on("click", closeWindow2);
-  $("#t-ws-refresh").on("click", () => load({ force: true }));
+  $("#t-ws-refresh").on("click", () => {
+    if (batchRunning) return;
+    load({ force: true });
+  });
   $("#t-ws-open-site").on("click", () => window.open(WORKSHOP_ORIGIN, "_blank"));
   const paintRatingToggle = () => {
     const mature = showMature();
     $("#t-ws-rating-toggle").toggleClass("is-mature", mature).attr("aria-pressed", String(mature)).attr("title", mature ? "\u70B9\u51FB\u9690\u85CF\u6210\u4EBA\u5411\u5185\u5BB9" : "\u70B9\u51FB\u663E\u793A\u6210\u4EBA\u5411\u5185\u5BB9").html(`<i class="fa-solid fa-shield-halved"></i> ${mature ? "\u5305\u542B\u6210\u4EBA\u5411" : "\u5168\u5E74\u9F84"}`);
   };
   $("#t-ws-rating-toggle").on("click", () => {
+    if (batchRunning) return;
     toggleMature();
     paintRatingToggle();
     renderCategories();
     renderList();
   });
   $("#t-ws-search").on("input", function() {
+    if (batchRunning) return;
     currentFilter.search = $(this).val().trim();
     renderList();
   });
   $("#t-ws-cat").on("change", function() {
+    if (batchRunning) return;
     currentFilter.category = $(this).val();
     renderList();
   });
   $("#t-ws-sort").val(currentFilter.sort).on("change", function() {
+    if (batchRunning) return;
     currentFilter.sort = $(this).val();
     renderList();
+  });
+  $("#t-ws-batch-toggle").on("click", function() {
+    if (batchRunning) return;
+    batchMode = !batchMode;
+    $("#t-ws-view").toggleClass("is-batch", batchMode);
+    $(this).toggleClass("is-active", batchMode).attr("aria-pressed", String(batchMode)).attr("title", batchMode ? "\u9000\u51FA\u6279\u91CF\u4E0B\u8F7D" : "\u6279\u91CF\u4E0B\u8F7D").html(batchMode ? '<i class="fa-solid fa-xmark"></i> \u9000\u51FA\u6279\u91CF' : '<i class="fa-solid fa-list-check"></i> \u6279\u91CF');
+    $("#t-ws-bulk-bar").prop("hidden", !batchMode);
+    renderList();
+  });
+  $("#t-ws-bulk-all").on("click", () => {
+    const $all = selectableChecks();
+    if (!$all.length) return;
+    const allChecked = $all.filter(":checked").length === $all.length;
+    $all.prop("checked", !allChecked);
+    updateBulkBar();
+  });
+  $("#t-ws-bulk-get").on("click", () => {
+    if (batchRunning) return;
+    const ids = new Set(selectableChecks().filter(":checked").map(function() {
+      return String($(this).data("ws-id"));
+    }).get());
+    batchDownload(allItems.filter((item) => ids.has(String(item.id))));
   });
   paintRatingToggle();
   load();
 }
-var HOT_THRESHOLD, AVATAR_COLORS, ANON_COLOR, SORT_MODES;
+var HOT_THRESHOLD, BATCH_CONCURRENCY, BATCH_CONFIRM_THRESHOLD, AVATAR_COLORS, ANON_COLOR, SORT_MODES;
 var init_workshopWindow = __esm({
   "src/ui/workshopWindow.js"() {
     init_workshopApi();
@@ -37557,6 +37824,8 @@ var init_workshopWindow = __esm({
     init_mainWindow();
     init_workshopRating();
     HOT_THRESHOLD = 50;
+    BATCH_CONCURRENCY = 3;
+    BATCH_CONFIRM_THRESHOLD = 10;
     AVATAR_COLORS = [
       "linear-gradient(135deg, #bfa15f, #8a7038)",
       "linear-gradient(135deg, #90cdf4, #4a7fb5)",

@@ -677,3 +677,115 @@
         padding: 5px 2px;
     }
 }
+
+/* ============================================================
+   批量下载模式
+
+   状态类 .is-batch 挂在 #t-ws-view 上（见 workshopWindow.js 的 #t-ws-batch-toggle）。
+   复选框本身由 JS 条件渲染，这里只管定位与「批量态下卡片长什么样」。
+
+   选中态用 JS 给卡片加 .is-selected，刻意不用 :has(.t-ws-select:checked) ——
+   与 main-window.css 里焦点环走兄弟选择器同一个理由，本项目不依赖 :has()。
+   ============================================================ */
+
+#t-ws-batch-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--t-color-border-control);
+    border-radius: 8px;
+    background: var(--t-color-surface-sunken);
+    color: var(--t-color-text-label);
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: 0.8em;
+    flex-shrink: 0;
+}
+
+#t-ws-batch-toggle:hover:not(:disabled) {
+    border-color: var(--t-color-brand-border);
+    color: var(--t-color-text-strong);
+}
+
+#t-ws-batch-toggle:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* 开启态：底色 + 描边 + 文字三个通道一起变，不单靠色相（WCAG 1.4.1） */
+#t-ws-batch-toggle.is-active {
+    border-color: var(--t-color-accent-border-subtle);
+    background: var(--t-color-accent-veil);
+    color: var(--t-color-accent);
+}
+
+.t-ws-select-wrap {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    /* 热区做大一点：卡片本身也能点选，但这里是明确的那个靶子 */
+    padding: 4px;
+    display: inline-flex;
+    cursor: pointer;
+    z-index: var(--t-z-raised);
+}
+
+/* 复选框占了左上角，把首行整体让开，避免压住头像 */
+#t-ws-view.is-batch .t-ws-card-head {
+    padding-left: 24px;
+}
+
+/* 批量态下单卡的预览/下载按钮收起：同一张卡上两套操作会打架 */
+#t-ws-view.is-batch .t-ws-card-actions {
+    display: none;
+}
+
+#t-ws-view.is-batch .t-ws-card {
+    cursor: pointer;
+}
+
+/* 已在本地的卡片在批量态下不可选，光标要如实反映 */
+#t-ws-view.is-batch .t-ws-card.is-dup {
+    cursor: default;
+}
+
+#t-ws-view.is-batch .t-ws-card.is-selected {
+    border-color: var(--t-color-accent-border-subtle);
+    background: var(--t-color-accent-veil);
+}
+
+/* ── 底部批量条 ── */
+.t-ws-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    border-top: 1px solid var(--t-color-border);
+    background: var(--t-color-surface-inset);
+    flex-shrink: 0;
+}
+
+.t-ws-bulk-count {
+    color: var(--t-color-text-secondary);
+    font-size: 0.8em;
+    /* 计数与「下载中 3/12」交替显示，给个下限避免按钮左右跳 */
+    min-width: 88px;
+}
+
+/* 下载按钮推到最右，全选留在计数旁边 */
+.t-ws-bulk-bar #t-ws-bulk-get {
+    margin-left: auto;
+}
+
+@media screen and (max-width: 600px) {
+    .t-ws-bulk-bar {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+
+    .t-ws-bulk-count {
+        min-width: 0;
+    }
+}

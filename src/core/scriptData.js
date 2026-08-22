@@ -354,21 +354,53 @@ export function loadScripts() {
 }
 
 /**
+ * 把一条剧本并入 user_scripts 数组并返回新数组（纯函数，不落盘）。
+ *
+ * 单条保存与批量保存共用同一份合并语义 —— 写两份必然漂移。
+ * created_at 的规则：已存在就继承旧值（改内容不算重新创建），
+ * 传入带了就用传入的（导入/备份恢复要保留原始时间），都没有才用当下时间。
+ */
+function mergeUserScript(list, s) {
+    const existing = list.find(x => x.id === s.id);
+    const createdAt = Number(existing?.created_at) || Number(s.created_at) || (existing ? 0 : Date.now());
+    const script = { ...s };
+    if (createdAt) script.created_at = createdAt;
+    return [...list.filter(x => x.id !== s.id), script];
+}
+
+/**
  * 保存/更新用户剧本
  */
 export function saveUserScript(s) {
     const data = getExtData();
     ensureStatsStore(data);
-    let u = data.user_scripts || [];
-    const existing = u.find(x => x.id === s.id);
-    const createdAt = Number(existing?.created_at) || Number(s.created_at) || (existing ? 0 : Date.now());
-    const script = { ...s };
-    if (createdAt) script.created_at = createdAt;
-    u = u.filter(x => x.id !== s.id); // 移除旧的
-    u.push(script); // 加入新的
-    data.user_scripts = u;
+    data.user_scripts = mergeUserScript(data.user_scripts || [], s);
     saveExtData();
     loadScripts(); // 重新加载到运行时
+}
+
+/**
+ * 批量保存/更新用户剧本。
+ *
+ * 与逐条调用 saveUserScript 的差别只在收尾：saveExtData 和 loadScripts 各只做一次。
+ * loadScripts 会整表重建 GlobalState.runtimeScripts，一批 20 条逐条调就是重建 20 次；
+ * saveExtData 虽然是 debounced、实际落盘会被合并，但 loadScripts 是同步的，省不掉。
+ *
+ * @param {object[]} scripts 待写入的剧本；空数组直接返回，不触发任何落盘
+ * @returns {number} 实际写入条数
+ */
+export function saveUserScripts(scripts) {
+    const list = Array.isArray(scripts) ? scripts.filter(Boolean) : [];
+    if (list.length === 0) return 0;
+
+    const data = getExtData();
+    ensureStatsStore(data);
+    let u = data.user_scripts || [];
+    for (const s of list) u = mergeUserScript(u, s);
+    data.user_scripts = u;
+    saveExtData();
+    loadScripts();
+    return list.length;
 }
 
 /**

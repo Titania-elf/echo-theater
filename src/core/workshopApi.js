@@ -70,10 +70,25 @@ export function fetchComments(id) {
     return req(`/api/script/${encodeURIComponent(id)}/comments`);
 }
 
-/** 上报下载量。失败无所谓，计数不是关键路径 */
-export function countDownload(id) {
+/**
+ * 批量上报下载量。失败无所谓，计数不是关键路径。
+ *
+ * 接口刻意做成批量的（见 workshop/functions/api/downloads.js 的注释：
+ * 一次点击一个请求会最先撞穿 Workers 的 10 万/天配额），所以批量下载
+ * 必须把整批 id 合成一个请求，不要循环调 countDownload。
+ *
+ * @param {string[]} ids
+ */
+export function countDownloads(ids) {
+    const list = (Array.isArray(ids) ? ids : []).filter(Boolean);
+    if (list.length === 0) return Promise.resolve();
     return req("/api/downloads", {
         method: "POST",
-        body: JSON.stringify({ ids: [id] })
+        body: JSON.stringify({ ids: list })
     }).catch(() => { });
+}
+
+/** 上报单条下载量 */
+export function countDownload(id) {
+    return countDownloads([id]);
 }
