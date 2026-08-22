@@ -37210,24 +37210,30 @@ function fetchComments(id3) {
   return req(`/api/script/${encodeURIComponent(id3)}/comments`);
 }
 function countDownloads(ids) {
-  const list = (Array.isArray(ids) ? ids : []).filter(Boolean);
+  const list = [...new Set((Array.isArray(ids) ? ids : []).filter(Boolean))];
   if (list.length === 0) return Promise.resolve();
-  return req("/api/downloads", {
+  const chunks = [];
+  for (let i = 0; i < list.length; i += DOWNLOAD_REPORT_CHUNK) {
+    chunks.push(list.slice(i, i + DOWNLOAD_REPORT_CHUNK));
+  }
+  return Promise.all(chunks.map((chunk) => req("/api/downloads", {
     method: "POST",
-    body: JSON.stringify({ ids: list })
+    body: JSON.stringify({ ids: chunk })
   }).catch(() => {
+  }))).then(() => {
   });
 }
 function countDownload(id3) {
   return countDownloads([id3]);
 }
-var WORKSHOP_ORIGIN, LIST_TTL, TIMEOUT, cache;
+var WORKSHOP_ORIGIN, LIST_TTL, TIMEOUT, cache, DOWNLOAD_REPORT_CHUNK;
 var init_workshopApi = __esm({
   "src/core/workshopApi.js"() {
     WORKSHOP_ORIGIN = "https://echo-workshop.pages.dev";
     LIST_TTL = 6e4;
     TIMEOUT = 15e3;
     cache = { list: null, at: 0 };
+    DOWNLOAD_REPORT_CHUNK = 50;
   }
 });
 
