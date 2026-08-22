@@ -4,7 +4,7 @@ export const extensionName = "Titania_Theater_Echo";
 export const extensionFolderPath = `scripts/extensions/third-party/titania-theater`;
 
 // 当前版本号 (每次更新时修改这里)
-export const CURRENT_VERSION = "5.2.5";
+export const CURRENT_VERSION = "5.2.6";
 
 // 旧版 Key (用于迁移检测)
 export const LEGACY_KEYS = {
