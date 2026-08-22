@@ -38924,33 +38924,9 @@ var init_viewState = __esm({
   }
 });
 
-// src/ui/mainWindow/layouts/modern.js
-var modern_exports = {};
-__export(modern_exports, {
-  bindEvents: () => bindEvents3,
-  id: () => id,
-  renderHtml: () => renderHtml,
-  syncRunButtons: () => syncRunButtons
-});
-function renderHtml(viewData) {
-  const { defaultCtx } = viewData;
-  return `
-    <div id="t-overlay" class="t-overlay t-root">
-        <div class="t-box t-root" id="t-main-view">
-
-            <div class="t-header t-shrink-0">
-                <div class="t-title-container" style="display:flex; flex-direction:column; overflow:hidden;">
-                    <div class="t-title-main" style="white-space:nowrap;">\u56DE\u58F0\u5C0F\u5267\u573A</div>
-                    <div class="t-title-sub" id="t-title-sub">
-                        \u2728 \u4E3B\u6F14: <span id="t-char-name">${defaultCtx.charName}</span>
-                    </div>
-                </div>
-                <div class="t-header-actions">
-                    ${renderHeaderActionsHtml()}
-                </div>
-            </div>
-
-            <div class="t-top-bar">
+// src/ui/mainWindow/topBar.js
+function renderTopBarHtml() {
+  return `<div class="t-top-bar">
                 <div class="t-history-group">
                     <div class="t-history-toggle" id="t-history-toggle">
                         <label class="t-toggle-label">
@@ -38995,7 +38971,41 @@ function renderHtml(viewData) {
                         <div class="t-dice-btn" id="t-btn-dice" title="\u968F\u673A\u5267\u672C">\u{1F3B2}</div>
                     </div>
                 </div>
+            </div>`;
+}
+var init_topBar = __esm({
+  "src/ui/mainWindow/topBar.js"() {
+    init_state();
+  }
+});
+
+// src/ui/mainWindow/layouts/modern.js
+var modern_exports = {};
+__export(modern_exports, {
+  bindEvents: () => bindEvents3,
+  id: () => id,
+  renderHtml: () => renderHtml,
+  syncRunButtons: () => syncRunButtons
+});
+function renderHtml(viewData) {
+  const { defaultCtx } = viewData;
+  return `
+    <div id="t-overlay" class="t-overlay t-root">
+        <div class="t-box t-root" id="t-main-view">
+
+            <div class="t-header t-shrink-0">
+                <div class="t-title-container" style="display:flex; flex-direction:column; overflow:hidden;">
+                    <div class="t-title-main" style="white-space:nowrap;">\u56DE\u58F0\u5C0F\u5267\u573A</div>
+                    <div class="t-title-sub" id="t-title-sub">
+                        \u2728 \u4E3B\u6F14: <span id="t-char-name">${defaultCtx.charName}</span>
+                    </div>
+                </div>
+                <div class="t-header-actions">
+                    ${renderHeaderActionsHtml()}
+                </div>
             </div>
+
+            ${renderTopBarHtml()}
 
             <div class="t-content-wrapper">
                 <div class="t-stats-hud" id="t-stats-hud" style="display:none;">
@@ -39327,6 +39337,7 @@ var init_modern = __esm({
     init_continuationStore();
     init_viewState();
     init_headerActions();
+    init_topBar();
     id = "modern";
   }
 });
@@ -39357,52 +39368,7 @@ function renderHtml2(viewData) {
                 </div>
             </div>
 
-            <div class="t-top-bar">
-                <div class="t-history-group">
-                    <div class="t-history-toggle" id="t-history-toggle">
-                        <label class="t-toggle-label">
-                            <input type="checkbox" id="t-use-history" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
-                            <span class="t-toggle-text">\u{1F4DC} \u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
-                        </label>
-                    </div>
-                    <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="\u53EA\u628A\u89D2\u8272\u7684\u53D1\u8A00\u6CE8\u5165\u5267\u672C\u751F\u6210\uFF0C\u8DF3\u8FC7\u4F60\u81EA\u5DF1\u7684\u697C\u5C42\u3002\u603B\u7ED3\u548C\u8BBE\u5B9A\u63D0\u53D6\u4E0D\u53D7\u5F71\u54CD">
-                        <label class="t-toggle-label">
-                            <input type="checkbox" id="t-history-ai-only" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.historyAiOnly ? "checked" : ""}>
-                            <span class="t-toggle-text">\u{1F3AD} \u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="t-mode-toggle" id="t-mode-toggle">
-                    <div class="t-mode-btn ${GlobalState.generationMode === "narrative" ? "active" : ""}" data-mode="narrative">
-                        <span>\u{1F4D6} \u5185\u5BB9\u4F18\u5148</span>
-                    </div>
-                    <div class="t-mode-btn ${GlobalState.generationMode === "visual" ? "active" : ""}" data-mode="visual">
-                        <span>\u{1F3A8} \u6C1B\u56F4\u7F8E\u5316</span>
-                    </div>
-                    <div class="t-mode-btn ${GlobalState.generationMode === "preset" ? "active" : ""}" data-mode="preset" title="\u4F7F\u7528\u8BBE\u7F6E\u9875\u4E2D\u9009\u5B9A\u7684\u7528\u6237\u9884\u8BBE">
-                        <span>\u{1F4CB} \u9009\u7528\u9884\u8BBE</span>
-                    </div>
-                </div>
-                <div class="t-mobile-row">
-                    <div class="t-trigger-card" id="t-trigger-btn" title="\u70B9\u51FB\u5207\u6362\u5267\u672C">
-                        <div class="t-trigger-main">
-                            <span id="t-lbl-name" style="overflow:hidden; text-overflow:ellipsis;">\u52A0\u8F7D\u4E2D...</span>
-                        </div>
-                        <div class="t-trigger-sub">
-                            <span class="t-cat-tag" id="t-lbl-cat">\u5206\u7C7B</span>
-                            <span id="t-lbl-desc-mini">...</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-down t-chevron"></i>
-                    </div>
-
-                    <div class="t-trigger-actions">
-                        <div class="t-filter-btn" id="t-btn-filter" title="\u7B5B\u9009\u968F\u673A\u8303\u56F4">
-                            <i class="fa-solid fa-filter"></i>
-                        </div>
-                        <div class="t-dice-btn" id="t-btn-dice" title="\u968F\u673A\u5267\u672C">\u{1F3B2}</div>
-                    </div>
-                </div>
-            </div>
+            ${renderTopBarHtml()}
 
             <div class="t-content-wrapper">
                 <div class="t-stats-hud" id="t-stats-hud" style="display:none;">
@@ -39559,6 +39525,7 @@ var init_legacy = __esm({
     init_state();
     init_api();
     init_headerActions();
+    init_topBar();
     id2 = "legacy";
   }
 });

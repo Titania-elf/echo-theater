@@ -10,6 +10,7 @@
 import { GlobalState } from "../../../core/state.js";
 import { handleGenerate } from "../../../core/api.js";
 import { renderHeaderActionsHtml } from "../headerActions.js";
+import { renderTopBarHtml } from "../topBar.js";
 
 export const id = "legacy";
 
@@ -36,52 +37,7 @@ export function renderHtml(viewData) {
                 </div>
             </div>
 
-            <div class="t-top-bar">
-                <div class="t-history-group">
-                    <div class="t-history-toggle" id="t-history-toggle">
-                        <label class="t-toggle-label">
-                            <input type="checkbox" id="t-use-history" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.useHistoryAnalysis ? 'checked' : ''}>
-                            <span class="t-toggle-text">📜 读取聊天历史</span>
-                        </label>
-                    </div>
-                    <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="只把角色的发言注入剧本生成，跳过你自己的楼层。总结和设定提取不受影响">
-                        <label class="t-toggle-label">
-                            <input type="checkbox" id="t-history-ai-only" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.historyAiOnly ? 'checked' : ''}>
-                            <span class="t-toggle-text">🎭 只要角色发言</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="t-mode-toggle" id="t-mode-toggle">
-                    <div class="t-mode-btn ${GlobalState.generationMode === 'narrative' ? 'active' : ''}" data-mode="narrative">
-                        <span>📖 内容优先</span>
-                    </div>
-                    <div class="t-mode-btn ${GlobalState.generationMode === 'visual' ? 'active' : ''}" data-mode="visual">
-                        <span>🎨 氛围美化</span>
-                    </div>
-                    <div class="t-mode-btn ${GlobalState.generationMode === 'preset' ? 'active' : ''}" data-mode="preset" title="使用设置页中选定的用户预设">
-                        <span>📋 选用预设</span>
-                    </div>
-                </div>
-                <div class="t-mobile-row">
-                    <div class="t-trigger-card" id="t-trigger-btn" title="点击切换剧本">
-                        <div class="t-trigger-main">
-                            <span id="t-lbl-name" style="overflow:hidden; text-overflow:ellipsis;">加载中...</span>
-                        </div>
-                        <div class="t-trigger-sub">
-                            <span class="t-cat-tag" id="t-lbl-cat">分类</span>
-                            <span id="t-lbl-desc-mini">...</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-down t-chevron"></i>
-                    </div>
-
-                    <div class="t-trigger-actions">
-                        <div class="t-filter-btn" id="t-btn-filter" title="筛选随机范围">
-                            <i class="fa-solid fa-filter"></i>
-                        </div>
-                        <div class="t-dice-btn" id="t-btn-dice" title="随机剧本">🎲</div>
-                    </div>
-                </div>
-            </div>
+            ${renderTopBarHtml()}
 
             <div class="t-content-wrapper">
                 <div class="t-stats-hud" id="t-stats-hud" style="display:none;">
