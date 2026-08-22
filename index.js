@@ -36979,7 +36979,9 @@ ${JSON.stringify(l.details, null, 2)}`;
       detection_mode: $("#cfg-continue-mode").val() || "html",
       show_indicator: $("#cfg-continue-indicator").is(":checked")
     };
+    const prevHistoryExtraction = d.history_extraction || {};
     d.history_extraction = {
+      ...prevHistoryExtraction,
       whitelist: $("#cfg-history-whitelist").val().trim(),
       blacklist: $("#cfg-history-blacklist").val().trim()
     };

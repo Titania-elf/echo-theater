@@ -2313,7 +2313,15 @@ export function openSettingsWindow() {
         };
 
         // 保存聊天历史提取白名单配置
+        // ⚠ 这里是**整体替换**。history_extraction 底下还有一个 ai_only
+        //   （主界面第二栏「只要角色发言」开关，见 mainWindow.js 的 #t-history-ai-only），
+        //   本窗口没有它的控件。此前没带上它，于是每次「保存所有配置」都会把它静默删掉 ——
+        //   用户开了这个开关，只要之后动过一次设置就会被清成关闭，看起来像「开关记不住」。
+        //   与 Phase 6c-1 的 ui_theme 是同一类事故（见上面 d.appearance 处的长注释）。
+        //   用展开而不是逐字段列举：将来这个对象再加兄弟字段也不会重犯同样的错。
+        const prevHistoryExtraction = d.history_extraction || {};
         d.history_extraction = {
+            ...prevHistoryExtraction,
             whitelist: $("#cfg-history-whitelist").val().trim(),
             blacklist: $("#cfg-history-blacklist").val().trim()
         };
