@@ -190,6 +190,9 @@
     overflow: hidden;
     transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
     animation: t-fade-in 0.25s;
+    /* 整张卡可点：普通态点进预览、批量态切换勾选。
+       卡面原先有「预览」「下载」两个按钮，撤掉之后可点性只剩光标和 :hover 抬升来表达 */
+    cursor: pointer;
 }
 
 /* 左侧强调条：颜色按作者取，同一作者的投稿看起来是一组 */
@@ -314,22 +317,6 @@
     color: var(--t-theme);
 }
 .t-ws-tag-mature { background: rgb(var(--t-accent-mature-fill-rgb)); color: rgb(var(--t-accent-mature-rgb)); }
-
-/* 底部操作 */
-.t-ws-card-actions {
-    display: flex;
-    gap: 6px;
-    padding-top: 8px;
-    border-top: 1px solid var(--t-color-border-dim);
-    margin-top: auto;
-}
-
-.t-ws-card-actions .t-btn {
-    flex: 1;
-    padding: 5px 4px;
-    --t-btn-font-size: 0.78em;
-    white-space: nowrap;
-}
 
 /* 头像：色块打底，图片盖在上层。
    Discord CDN 连不上时 JS 会摘掉 img，自然露出底下的首字 */
@@ -666,16 +653,6 @@
     .t-ws-card-tags {
         max-height: 16px;
     }
-
-    .t-ws-card-actions {
-        gap: 5px;
-        padding-top: 7px;
-    }
-
-    .t-ws-card-actions .t-btn {
-        --t-btn-font-size: 0.72em;
-        padding: 5px 2px;
-    }
 }
 
 /* ============================================================
@@ -737,16 +714,7 @@
     padding-left: 24px;
 }
 
-/* 批量态下单卡的预览/下载按钮收起：同一张卡上两套操作会打架 */
-#t-ws-view.is-batch .t-ws-card-actions {
-    display: none;
-}
-
-#t-ws-view.is-batch .t-ws-card {
-    cursor: pointer;
-}
-
-/* 已在本地的卡片在批量态下不可选，光标要如实反映 */
+/* 批量态下卡面点击改为切换勾选（普通态是进预览），已在本地的不可选 */
 #t-ws-view.is-batch .t-ws-card.is-dup {
     cursor: default;
 }
@@ -757,14 +725,20 @@
 }
 
 /* ── 底部批量条 ── */
+/* 默认收起。用状态类而不是 hidden 属性：本规则的 display 是类选择器，
+   优先级高过默认样式表的 [hidden]{display:none}，两者并存时 hidden 会失效。 */
 .t-ws-bulk-bar {
-    display: flex;
+    display: none;
     align-items: center;
     gap: 10px;
     padding: 10px 15px;
     border-top: 1px solid var(--t-color-border);
     background: var(--t-color-surface-inset);
     flex-shrink: 0;
+}
+
+#t-ws-view.is-batch .t-ws-bulk-bar {
+    display: flex;
 }
 
 .t-ws-bulk-count {

@@ -12494,6 +12494,9 @@ textarea.t-input {
     overflow: hidden;
     transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
     animation: t-fade-in 0.25s;
+    /* \u6574\u5F20\u5361\u53EF\u70B9\uFF1A\u666E\u901A\u6001\u70B9\u8FDB\u9884\u89C8\u3001\u6279\u91CF\u6001\u5207\u6362\u52FE\u9009\u3002
+       \u5361\u9762\u539F\u5148\u6709\u300C\u9884\u89C8\u300D\u300C\u4E0B\u8F7D\u300D\u4E24\u4E2A\u6309\u94AE\uFF0C\u64A4\u6389\u4E4B\u540E\u53EF\u70B9\u6027\u53EA\u5269\u5149\u6807\u548C :hover \u62AC\u5347\u6765\u8868\u8FBE */
+    cursor: pointer;
 }
 
 /* \u5DE6\u4FA7\u5F3A\u8C03\u6761\uFF1A\u989C\u8272\u6309\u4F5C\u8005\u53D6\uFF0C\u540C\u4E00\u4F5C\u8005\u7684\u6295\u7A3F\u770B\u8D77\u6765\u662F\u4E00\u7EC4 */
@@ -12618,22 +12621,6 @@ textarea.t-input {
     color: var(--t-theme);
 }
 .t-ws-tag-mature { background: rgb(var(--t-accent-mature-fill-rgb)); color: rgb(var(--t-accent-mature-rgb)); }
-
-/* \u5E95\u90E8\u64CD\u4F5C */
-.t-ws-card-actions {
-    display: flex;
-    gap: 6px;
-    padding-top: 8px;
-    border-top: 1px solid var(--t-color-border-dim);
-    margin-top: auto;
-}
-
-.t-ws-card-actions .t-btn {
-    flex: 1;
-    padding: 5px 4px;
-    --t-btn-font-size: 0.78em;
-    white-space: nowrap;
-}
 
 /* \u5934\u50CF\uFF1A\u8272\u5757\u6253\u5E95\uFF0C\u56FE\u7247\u76D6\u5728\u4E0A\u5C42\u3002
    Discord CDN \u8FDE\u4E0D\u4E0A\u65F6 JS \u4F1A\u6458\u6389 img\uFF0C\u81EA\u7136\u9732\u51FA\u5E95\u4E0B\u7684\u9996\u5B57 */
@@ -12970,16 +12957,6 @@ textarea.t-input {
     .t-ws-card-tags {
         max-height: 16px;
     }
-
-    .t-ws-card-actions {
-        gap: 5px;
-        padding-top: 7px;
-    }
-
-    .t-ws-card-actions .t-btn {
-        --t-btn-font-size: 0.72em;
-        padding: 5px 2px;
-    }
 }
 
 /* ============================================================
@@ -13041,16 +13018,7 @@ textarea.t-input {
     padding-left: 24px;
 }
 
-/* \u6279\u91CF\u6001\u4E0B\u5355\u5361\u7684\u9884\u89C8/\u4E0B\u8F7D\u6309\u94AE\u6536\u8D77\uFF1A\u540C\u4E00\u5F20\u5361\u4E0A\u4E24\u5957\u64CD\u4F5C\u4F1A\u6253\u67B6 */
-#t-ws-view.is-batch .t-ws-card-actions {
-    display: none;
-}
-
-#t-ws-view.is-batch .t-ws-card {
-    cursor: pointer;
-}
-
-/* \u5DF2\u5728\u672C\u5730\u7684\u5361\u7247\u5728\u6279\u91CF\u6001\u4E0B\u4E0D\u53EF\u9009\uFF0C\u5149\u6807\u8981\u5982\u5B9E\u53CD\u6620 */
+/* \u6279\u91CF\u6001\u4E0B\u5361\u9762\u70B9\u51FB\u6539\u4E3A\u5207\u6362\u52FE\u9009\uFF08\u666E\u901A\u6001\u662F\u8FDB\u9884\u89C8\uFF09\uFF0C\u5DF2\u5728\u672C\u5730\u7684\u4E0D\u53EF\u9009 */
 #t-ws-view.is-batch .t-ws-card.is-dup {
     cursor: default;
 }
@@ -13061,14 +13029,20 @@ textarea.t-input {
 }
 
 /* \u2500\u2500 \u5E95\u90E8\u6279\u91CF\u6761 \u2500\u2500 */
+/* \u9ED8\u8BA4\u6536\u8D77\u3002\u7528\u72B6\u6001\u7C7B\u800C\u4E0D\u662F hidden \u5C5E\u6027\uFF1A\u672C\u89C4\u5219\u7684 display \u662F\u7C7B\u9009\u62E9\u5668\uFF0C
+   \u4F18\u5148\u7EA7\u9AD8\u8FC7\u9ED8\u8BA4\u6837\u5F0F\u8868\u7684 [hidden]{display:none}\uFF0C\u4E24\u8005\u5E76\u5B58\u65F6 hidden \u4F1A\u5931\u6548\u3002 */
 .t-ws-bulk-bar {
-    display: flex;
+    display: none;
     align-items: center;
     gap: 10px;
     padding: 10px 15px;
     border-top: 1px solid var(--t-color-border);
     background: var(--t-color-surface-inset);
     flex-shrink: 0;
+}
+
+#t-ws-view.is-batch .t-ws-bulk-bar {
+    display: flex;
 }
 
 .t-ws-bulk-count {
@@ -37396,7 +37370,7 @@ function openWorkshopWindow(source = "manager") {
             </div>
             <div class="t-ws-stats" id="t-ws-stats"></div>
             <div class="t-ws-grid" id="t-ws-list"></div>
-            <div class="t-ws-bulk-bar" id="t-ws-bulk-bar" hidden>
+            <div class="t-ws-bulk-bar" id="t-ws-bulk-bar">
                 <span class="t-ws-bulk-count" id="t-ws-bulk-count">\u5DF2\u9009 0 \u6761</span>
                 <button type="button" class="t-btn t-btn-soft" id="t-ws-bulk-all"></button>
                 <button type="button" class="t-btn primary" id="t-ws-bulk-get" disabled>
@@ -37505,17 +37479,9 @@ function openWorkshopWindow(source = "manager") {
                         ${tags}
                         <span class="t-ws-tag">v${Number(item.version) || 1}</span>
                     </div>
-                    <div class="t-ws-card-actions">
-                        <button class="t-btn t-btn-soft t-ws-preview">\u9884\u89C8</button>
-                        <button class="t-btn primary t-ws-get">\u4E0B\u8F7D</button>
-                    </div>
                 </div>
             `);
       bindAvatarFallback($card);
-      $card.find(".t-ws-preview").on("click", () => openPreview(item));
-      $card.find(".t-ws-get").on("click", function() {
-        downloadScript(item, $(this));
-      });
       if (batchMode) {
         $card.find(".t-ws-select").on("change", updateBulkBar);
         $card.on("click", function(e) {
@@ -37525,6 +37491,8 @@ function openWorkshopWindow(source = "manager") {
           $box.prop("checked", !$box.prop("checked"));
           updateBulkBar();
         });
+      } else {
+        $card.on("click", () => openPreview(item));
       }
       $list.append($card);
     });
@@ -37795,7 +37763,6 @@ function openWorkshopWindow(source = "manager") {
     batchMode = !batchMode;
     $("#t-ws-view").toggleClass("is-batch", batchMode);
     $(this).toggleClass("is-active", batchMode).attr("aria-pressed", String(batchMode)).attr("title", batchMode ? "\u9000\u51FA\u6279\u91CF\u4E0B\u8F7D" : "\u6279\u91CF\u4E0B\u8F7D").html(batchMode ? '<i class="fa-solid fa-xmark"></i> \u9000\u51FA\u6279\u91CF' : '<i class="fa-solid fa-list-check"></i> \u6279\u91CF');
-    $("#t-ws-bulk-bar").prop("hidden", !batchMode);
     renderList();
   });
   $("#t-ws-bulk-all").on("click", () => {

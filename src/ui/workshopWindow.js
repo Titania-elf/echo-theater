@@ -176,7 +176,7 @@ export function openWorkshopWindow(source = 'manager') {
             </div>
             <div class="t-ws-stats" id="t-ws-stats"></div>
             <div class="t-ws-grid" id="t-ws-list"></div>
-            <div class="t-ws-bulk-bar" id="t-ws-bulk-bar" hidden>
+            <div class="t-ws-bulk-bar" id="t-ws-bulk-bar">
                 <span class="t-ws-bulk-count" id="t-ws-bulk-count">已选 0 条</span>
                 <button type="button" class="t-btn t-btn-soft" id="t-ws-bulk-all"></button>
                 <button type="button" class="t-btn primary" id="t-ws-bulk-get" disabled>
@@ -299,22 +299,13 @@ export function openWorkshopWindow(source = 'manager') {
                         ${tags}
                         <span class="t-ws-tag">v${Number(item.version) || 1}</span>
                     </div>
-                    <div class="t-ws-card-actions">
-                        <button class="t-btn t-btn-soft t-ws-preview">预览</button>
-                        <button class="t-btn primary t-ws-get">下载</button>
-                    </div>
                 </div>
             `);
 
             bindAvatarFallback($card);
-            $card.find(".t-ws-preview").on("click", () => openPreview(item));
-            $card.find(".t-ws-get").on("click", function () {
-                downloadScript(item, $(this));
-            });
             if (batchMode) {
                 $card.find(".t-ws-select").on("change", updateBulkBar);
-                // 批量模式下预览/下载按钮已隐藏，整张卡除了那个小复选框没别的可点。
-                // 点卡面直接切换勾选，否则用户得去瞄准复选框。
+                // 点卡面直接切换勾选，否则用户得去瞄准左上角那个小复选框。
                 // 复选框和它的 label 自己会处理点击，再冒泡上来就会切两次，所以排除掉。
                 $card.on("click", function (e) {
                     if ($(e.target).closest(".t-ws-select-wrap").length) return;
@@ -323,6 +314,11 @@ export function openWorkshopWindow(source = 'manager') {
                     $box.prop("checked", !$box.prop("checked"));
                     updateBulkBar();
                 });
+            } else {
+                // 卡片上原先有「预览」「下载」两个按钮。预览页里本来就有「下载到本地」，
+                // 于是卡面按钮撤掉、整张卡点进预览 —— 少一层按钮，卡片也让出一行给简介。
+                // 可点性靠 cursor:pointer 与 hover 抬升表达（见 workshop.css）。
+                $card.on("click", () => openPreview(item));
             }
             $list.append($card);
         });
@@ -670,8 +666,10 @@ export function openWorkshopWindow(source = 'manager') {
             .html(batchMode
                 ? '<i class="fa-solid fa-xmark"></i> 退出批量'
                 : '<i class="fa-solid fa-list-check"></i> 批量');
-        $("#t-ws-bulk-bar").prop("hidden", !batchMode);
-        // 重画卡片以增删复选框。进入时无选中项、退出时本就该清空，没有要保留的状态
+        // 批量条的显隐完全由上面那个 .is-batch 决定（CSS 里 display:none -> flex）。
+        // 刻意不再用 hidden 属性：.t-ws-bulk-bar 的 display:flex 是类选择器，
+        // 优先级高过浏览器默认样式表的 [hidden]{display:none}，两者并存时 hidden 无效
+        // —— 这正是它此前一直显示的原因。
         renderList();
     });
 
