@@ -1,6 +1,12 @@
 // src/core/scriptData.js
+//
+// ⚠ 剧本数组不再直接读写 data.user_scripts —— 一律经 scriptStore 的
+//   getScripts() / setScripts()。搬家后前者读文件缓存、后者落文件；
+//   未搬家时两者自动回退到 data.user_scripts，所以本文件的函数签名不变。
+//   直接碰 data.user_scripts 会绕开文件存储，搬家后就是「改了但没保存」。
 
 import { getExtData, saveExtData } from "../utils/storage.js";
+import { getScripts, setScripts } from "./scriptStore.js";
 import { GlobalState } from "./state.js";
 import { DEFAULT_PRESETS } from "../config/presets.js";
 
@@ -213,7 +219,7 @@ export function cleanupOrphanScriptStats() {
 
     const activeIds = new Set();
     DEFAULT_PRESETS.forEach(p => activeIds.add(p.id));
-    (data.user_scripts || []).forEach(s => activeIds.add(s.id));
+    (getScripts()).forEach(s => activeIds.add(s.id));
 
     let removed = 0;
     Object.keys(data.script_stats).forEach(scriptId => {
@@ -333,7 +339,7 @@ export function buildScriptStatsOverview(runtimeScripts, options = {}) {
 export function loadScripts() {
     const data = getExtData();
     ensureStatsStore(data);
-    const userScripts = data.user_scripts || [];
+    const userScripts = getScripts();
     const disabledIDs = data.disabled_presets || [];
 
     // 加载预设 (过滤掉在黑名单里的)
@@ -374,7 +380,11 @@ function mergeUserScript(list, s) {
 export function saveUserScript(s) {
     const data = getExtData();
     ensureStatsStore(data);
-    data.user_scripts = mergeUserScript(data.user_scripts || [], s);
+    setScripts(mergeUserScript(getScripts(), s));
+    // ⚠ 这一句是为 ensureStatsStore 落盘的，不是为剧本 —— 剧本由 setScripts 自己
+    //   负责（搬家后写文件）。ensureStatsStore 可能刚创建了 script_stats /
+    //   script_stats_meta / ui_prefs，那些仍住在 settings 里。
+    //   收尾关掉双写后 setScripts 不再碰 settings，少了这句就没人保存它们了。
     saveExtData();
     loadScripts(); // 重新加载到运行时
 }
@@ -382,9 +392,11 @@ export function saveUserScript(s) {
 /**
  * 批量保存/更新用户剧本。
  *
- * 与逐条调用 saveUserScript 的差别只在收尾：saveExtData 和 loadScripts 各只做一次。
- * loadScripts 会整表重建 GlobalState.runtimeScripts，一批 20 条逐条调就是重建 20 次；
- * saveExtData 虽然是 debounced、实际落盘会被合并，但 loadScripts 是同步的，省不掉。
+ * 与逐条调用 saveUserScript 的差别只在收尾：落盘与 loadScripts 各只做一次。
+ * loadScripts 会整表重建 GlobalState.runtimeScripts，一批 20 条逐条调就是重建 20 次。
+ *
+ * ⚠ 搬家后落盘也被合并：scriptStore 的 pump 保证「至多一个在途 + 尾随补写」，
+ *   所以逐条调也只会产生 2 次文件写入 —— 但 loadScripts 是同步的，仍然省不掉。
  *
  * @param {object[]} scripts 待写入的剧本；空数组直接返回，不触发任何落盘
  * @returns {number} 实际写入条数
@@ -395,10 +407,10 @@ export function saveUserScripts(scripts) {
 
     const data = getExtData();
     ensureStatsStore(data);
-    let u = data.user_scripts || [];
+    let u = getScripts();
     for (const s of list) u = mergeUserScript(u, s);
-    data.user_scripts = u;
-    saveExtData();
+    setScripts(u);
+    saveExtData(); // 同 saveUserScript：为 ensureStatsStore 落盘，不是为剧本
     loadScripts();
     return list.length;
 }
@@ -409,9 +421,7 @@ export function saveUserScripts(scripts) {
 export function deleteUserScript(id) {
     const data = getExtData();
     ensureStatsStore(data);
-    let u = data.user_scripts || [];
-    u = u.filter(x => x.id !== id);
-    data.user_scripts = u;
+    setScripts(getScripts().filter(x => x.id !== id));
     delete data.script_stats[id];
     saveExtData();
     loadScripts(); // 重新加载到运行时

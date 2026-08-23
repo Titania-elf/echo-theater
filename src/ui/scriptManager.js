@@ -13,6 +13,7 @@ import {
     buildScriptStatsOverview,
     cleanupOrphanScriptStats
 } from "../core/scriptData.js";
+import { getScripts, setScripts } from "../core/scriptStore.js";
 import { refreshScriptList } from "./mainWindow.js";
 import { openSettingsWindow } from "./settingsWindow.js";
 import { openWorkshopWindow } from "./workshopWindow.js";
@@ -322,12 +323,17 @@ export function openScriptManager() {
         const data = getExtData();
         let updatedCount = 0;
 
-        (data.user_scripts || []).forEach(s => {
+        // ⚠ 这里原先是「原地改 s.category 再靠 saveExtData() 落盘」。搬家后剧本存在
+        //   独立文件里，原地改只会动内存缓存、永远不触发文件写入 —— 改动会在下次
+        //   刷新时消失。所以必须产出新数组并交给 setScripts()。
+        const renamedScripts = getScripts().map(s => {
             if (s.category === oldName) {
-                s.category = newName;
                 updatedCount++;
+                return { ...s, category: newName };
             }
+            return s;
         });
+        if (updatedCount > 0) setScripts(renamedScripts);
 
         // 更新分类排序列表中的名称
         if (data.category_order) {
@@ -767,8 +773,7 @@ export function openScriptManager() {
         });
 
         // 使用 saveUserScript 逐个更新，确保数据一致性
-        const data = getExtData();
-        const scriptsToMove = (data.user_scripts || []).filter(s => selectedIds.includes(s.id));
+        const scriptsToMove = getScripts().filter(s => selectedIds.includes(s.id));
 
         scriptsToMove.forEach(s => {
             saveUserScript({ ...s, category: targetCat });

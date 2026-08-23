@@ -33,9 +33,23 @@ import {
     utf8ByteLength,
     uploadTextFile,
     fetchTextFile,
-    deleteUserFile
+    deleteUserFile,
+    verifyUserFiles
 } from "../utils/userFiles.js";
 import { TitaniaLogger } from "./logger.js";
+
+/**
+ * 双写开关。
+ *
+ * 搬家后的一段时间里，写入同时落**文件**与旧的 data.user_scripts：
+ * 文件是读取来源，旧数组是安全网 —— 万一文件侧出问题，settings.json 里那份
+ * 仍然是最新的，把指针删掉就能原地退回搬家前的状态，不需要翻备份。
+ *
+ * 代价是这期间 settings.json 并没有变小（旧数组还在）。所以它是**临时**状态：
+ * 「完成收尾（删除旧数据）」会把 data.user_scripts 删掉并把这个常量翻成 false。
+ * ⚠ 翻成 false 之前必须确认文件侧已经跑过一段时间且没有落盘失败告警。
+ */
+const DUAL_WRITE = true;
 
 /** 剧本整表文件名。固定单文件，不带 id */
 export const SCRIPTS_FILE_NAME = "titania_scripts.json";
@@ -311,6 +325,15 @@ export function setScripts(list) {
 
     cache = next;
     void pump();
+
+    // 安全网：搬家后的过渡期同时维护旧数组，见 DUAL_WRITE 的注释。
+    // ⚠ 顺序很重要 —— 先改 cache 再写旧数组。反过来的话，若 saveExtData
+    //   触发的序列化中途抛错，cache 与旧数组会停在不同的版本上。
+    if (DUAL_WRITE) {
+        const data = getExtData();
+        data.user_scripts = next;
+        saveExtData();
+    }
 }
 
 /* ------------------------------------------------------------------ *
@@ -423,4 +446,168 @@ export async function dryRunScriptsMigration() {
         cleanupError,
         durationMs: Date.now() - startedAt
     };
+}
+
+/* ------------------------------------------------------------------ *
+ * 搬家
+ * ------------------------------------------------------------------ */
+
+/**
+ * 全新安装（或一条自定义剧本都没有）时直接建空存储，让它天生就在文件上。
+ *
+ * 为什么需要：未搬家时 setScripts 走 legacy 分支，把剧本写进 settings.json。
+ * 也就是说新装用户会从零开始重新积累同一个卡顿，直到自己注意到设置页那张卡片
+ * 并点一次搬家。而 0 条剧本时建存储没有任何要校验或要删的东西，
+ * 不存在不可逆动作，代价只是一次上传 + 一次 saveExtData()。
+ * 理由与 favsStore.js 的 bootstrapEmptyFavsIndex() 完全相同。
+ *
+ * data.user_scripts 刻意**不删**：defaultSettings.user_scripts = []
+ * （src/config/defaults.js）会把它加回来，删了是白折腾。
+ *
+ * @returns {Promise<boolean>} 是否真的建了
+ */
+export async function bootstrapEmptyScriptsStore() {
+    if (isScriptsMigrated()) return false;
+
+    const scripts = getExtData().user_scripts;
+    // 有剧本就不能走这条路：那属于真正的搬家，必须过备份 + 校验 + 人工确认
+    if (Array.isArray(scripts) && scripts.length > 0) return false;
+
+    try {
+        const written = await writeScriptsFile([], 1);
+        writePointer({ rev: written.rev, count: 0, bytes: written.bytes, migratedAt: Date.now() });
+        cache = [];
+        hydrated = true;
+        hydrationError = null;
+        TitaniaLogger.info("剧本为零，已直接建立文件存储（新增剧本将直接落文件）");
+        return true;
+    } catch (e) {
+        // 建不上就安静退回未搬家状态：此时一条剧本都没有，什么都没丢，
+        // 用户下次刷新会再试一次。刻意不弹 toast —— 全新安装第一次进来就
+        // 看见一条存储错误，只会造成困惑。
+        TitaniaLogger.warn("建立空剧本存储失败，本次仍走设置存储", e);
+        return false;
+    }
+}
+
+/**
+ * 正式搬家：把 data.user_scripts 写成文件，校验文件确实落盘，然后写指针。
+ *
+ * 顺序是刻意的 —— 指针**最后**写。指针一写上，读取路径就改从文件走了；
+ * 在校验通过之前写指针，等于在还不确定文件存在时就把读取切过去。
+ * 任何一步失败都不写指针，于是失败即「什么都没发生」，可以直接重试。
+ *
+ * 旧的 data.user_scripts 本次**不删** —— 删除是独立的一步（见 DUAL_WRITE）。
+ *
+ * @returns {Promise<object>} 报告
+ */
+export async function migrateScriptsToFiles() {
+    const startedAt = Date.now();
+
+    if (isScriptsMigrated()) {
+        return { ok: false, alreadyMigrated: true, reason: "剧本已经搬过家了" };
+    }
+
+    const data = getExtData();
+    const list = Array.isArray(data.user_scripts) ? data.user_scripts.filter(Boolean) : [];
+    const footprint = describeCurrentScriptsFootprint();
+
+    let written;
+    try {
+        written = await writeScriptsFile(list, 1);
+    } catch (e) {
+        TitaniaLogger.error("搬家：剧本写入失败，未写指针", e);
+        return {
+            ok: false,
+            aborted: true,
+            reason: `写入失败：${e?.message || String(e)}`,
+            settings: footprint,
+            durationMs: Date.now() - startedAt
+        };
+    }
+
+    // 上传接口返回 200 只说明请求被接受了，这里回头确认文件真的在磁盘上
+    try {
+        const verifyResult = await verifyUserFiles([written.file], { label: "剧本文件" });
+        if (verifyResult[written.file] === false) {
+            TitaniaLogger.error("搬家：剧本文件校验时不存在，未写指针", { file: written.file });
+            return {
+                ok: false,
+                aborted: true,
+                reason: "文件写入后校验时不存在，已中止（未改动任何数据）",
+                settings: footprint,
+                durationMs: Date.now() - startedAt
+            };
+        }
+    } catch (e) {
+        TitaniaLogger.error("搬家：剧本文件校验请求失败，未写指针", e);
+        return {
+            ok: false,
+            aborted: true,
+            reason: `校验请求出错（${e?.message || String(e)}），已中止（未改动任何数据）`,
+            settings: footprint,
+            durationMs: Date.now() - startedAt
+        };
+    }
+
+    // 再读回来逐条比对一次 —— 与试运行同样的口径。搬家只做一次，多花一个请求换
+    // 「切换读取路径之前确认内容无误」是值得的。
+    try {
+        const parsed = await readScriptsFile(written.file, 1);
+        if (parsed.scripts.length !== list.length) {
+            return {
+                ok: false,
+                aborted: true,
+                reason: `读回条数不一致（源 ${list.length}，读回 ${parsed.scripts.length}），已中止`,
+                settings: footprint,
+                durationMs: Date.now() - startedAt
+            };
+        }
+        cache = parsed.scripts.filter(Boolean);
+    } catch (e) {
+        return {
+            ok: false,
+            aborted: true,
+            reason: `读回校验失败（${e?.message || String(e)}），已中止（未改动任何数据）`,
+            settings: footprint,
+            durationMs: Date.now() - startedAt
+        };
+    }
+
+    writePointer({ rev: written.rev, count: written.count, bytes: written.bytes, migratedAt: Date.now() });
+    hydrated = true;
+    hydrationError = null;
+
+    const report = {
+        ok: true,
+        settings: footprint,
+        written: { count: written.count, bytes: written.bytes },
+        pointerBytes: utf8ByteLength(JSON.stringify(getScriptsPointer())),
+        pendingRemovalBytes: footprint.bytes,
+        durationMs: Date.now() - startedAt
+    };
+    TitaniaLogger.info("剧本搬家完成（旧数据仍保留）", report);
+    return report;
+}
+
+/**
+ * 供备份导出用：把整表还成搬家前的 user_scripts 数组形状。
+ *
+ * 与 favsStore 的 exportFavsAsLegacyArray() 同样的取向 ——
+ * 备份要自成一体、不依赖 user/files 目录（ST 的自动备份不管那个目录），
+ * 并且与旧版插件的备份格式互通，导入后落在「未搬家」状态、再搬一次即可。
+ * 读不出来就抛错，宁可导不出备份，也不能悄悄给出一份没有剧本的空壳。
+ *
+ * @returns {object[]}
+ */
+export function exportScriptsAsLegacyArray() {
+    assertUsable();
+    if (!isScriptsMigrated()) {
+        const scripts = getExtData().user_scripts;
+        return Array.isArray(scripts) ? scripts : [];
+    }
+    if (!Array.isArray(cache)) {
+        throw new Error("剧本尚未载入，无法导出备份。请刷新页面后重试。");
+    }
+    return cache;
 }

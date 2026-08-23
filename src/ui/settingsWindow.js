@@ -7,6 +7,7 @@ import { defaultSettings } from "../config/defaults.js";
 import { fileToBase64 } from "../utils/helpers.js";
 import { createFloatingButton } from "./floatingBtn.js";
 import { loadScripts } from "../core/scriptData.js";
+import { getScripts } from "../core/scriptStore.js";
 import { openScriptManager } from "./scriptManager.js";
 import { ensureOverlay } from "../utils/dom.js";
 import { refreshOutlineEntryButton } from "./outlineEntryButton.js";
@@ -782,7 +783,7 @@ export function openSettingsWindow() {
                         <div style="background:var(--t-color-surface-inset); border:1px solid var(--t-color-border); padding:20px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
                             <div>
                                 <div style="font-size:1.1em; color:var(--t-color-text); font-weight:bold;"><i class="fa-solid fa-scroll" style="color:var(--t-color-brand); margin-right:8px;"></i>剧本管理器</div>
-                                <div class="t-set-stat-sub">当前拥有自定义剧本: ${(data.user_scripts || []).length} 个</div>
+                                <div class="t-set-stat-sub">当前拥有自定义剧本: ${getScripts().length} 个</div>
                             </div>
                             <button id="btn-open-mgr" class="t-btn primary" style="padding: 8px 20px;"><i class="fa-solid fa-list-check"></i> 打开管理</button>
                         </div>

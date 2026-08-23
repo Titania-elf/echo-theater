@@ -20698,6 +20698,549 @@ var init_state = __esm({
   }
 });
 
+// src/core/logger.js
+var TitaniaLogger;
+var init_logger = __esm({
+  "src/core/logger.js"() {
+    init_storage();
+    init_defaults();
+    init_state();
+    TitaniaLogger = {
+      logs: [],
+      maxLogs: 50,
+      // 内存中最多保留50条，刷新即清空
+      add: function(type, message, details = null) {
+        const entry = {
+          timestamp: (/* @__PURE__ */ new Date()).toLocaleString(),
+          type,
+          // 'INFO', 'WARN', 'ERROR'
+          message,
+          details,
+          // 记录基础环境上下文，从 GlobalState 获取
+          context: {
+            scriptId: GlobalState.lastUsedScriptId || "none",
+            isGenerating: GlobalState.isGenerating
+          }
+        };
+        this.logs.unshift(entry);
+        if (this.logs.length > this.maxLogs) this.logs.pop();
+        if (type === "ERROR") console.error("[Titania Debug]", message, details);
+      },
+      info: function(msg, details) {
+        this.add("INFO", msg, details);
+      },
+      warn: function(msg, details) {
+        this.add("WARN", msg, details);
+      },
+      // 专门用于记录报错，支持传入上下文对象
+      error: function(msg, errObj, contextData = {}) {
+        let stack = "Unknown";
+        let errMsg = "Unknown Error";
+        if (errObj) {
+          if (typeof errObj === "string") {
+            errMsg = errObj;
+          } else {
+            errMsg = errObj.message || "Error Object";
+            stack = errObj.stack || JSON.stringify(errObj);
+          }
+        }
+        if (contextData && contextData.network && contextData.network.status) {
+          msg += ` [HTTP ${contextData.network.status}]`;
+        }
+        this.add("ERROR", msg, {
+          error_message: errMsg,
+          stack_trace: stack,
+          diagnostics: contextData
+        });
+      },
+      // 导出并下载日志
+      downloadReport: function() {
+        const data = getExtData();
+        const configSnapshot = JSON.parse(JSON.stringify(data.config || {}));
+        if (configSnapshot.profiles && Array.isArray(configSnapshot.profiles)) {
+          configSnapshot.profiles.forEach((p) => {
+            if (p.key && p.key.length > 5) {
+              p.key = p.key.substring(0, 3) + "***(HIDDEN)";
+            } else if (p.key) {
+              p.key = "***(HIDDEN)";
+            }
+          });
+        }
+        if (configSnapshot.key) configSnapshot.key = "***(HIDDEN)";
+        let stVersion = "Unknown";
+        try {
+          if (typeof SillyTavern !== "undefined" && SillyTavern.version) stVersion = SillyTavern.version;
+          else if (window.SillyTavernVersion) stVersion = window.SillyTavernVersion;
+        } catch (e) {
+        }
+        const reportObj = {
+          meta: {
+            extension: extensionName,
+            extension_version: `v${CURRENT_VERSION}`,
+            st_version: stVersion,
+            userAgent: navigator.userAgent,
+            screen_res: `${window.screen.width}x${window.screen.height}`,
+            viewport: `${window.innerWidth}x${window.innerHeight}`,
+            time: (/* @__PURE__ */ new Date()).toLocaleString(),
+            timestamp: Date.now()
+          },
+          config: configSnapshot,
+          logs: this.logs
+        };
+        const content = JSON.stringify(reportObj, null, 2);
+        const blob = new Blob([content], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Titania_Debug_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10).replace(/-/g, "")}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    };
+  }
+});
+
+// src/utils/userFiles.js
+import { getRequestHeaders } from "../../../../script.js";
+function utf8ToBase64(text) {
+  const bytes = new TextEncoder().encode(String(text ?? ""));
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += BASE64_CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + BASE64_CHUNK));
+  }
+  return btoa(binary);
+}
+function utf8ByteLength(text) {
+  return new TextEncoder().encode(String(text ?? "")).length;
+}
+async function uploadTextFile(fileName, text) {
+  const response = await fetch("/api/files/upload", {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name: fileName, data: utf8ToBase64(text) })
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`\u4E0A\u4F20 ${fileName} \u5931\u8D25\uFF08${response.status}\uFF09${detail ? `\uFF1A${detail}` : ""}`);
+  }
+  const payload = await response.json();
+  const filePath = String(payload?.path || "").trim();
+  if (!filePath) throw new Error(`\u4E0A\u4F20 ${fileName} \u540E\u670D\u52A1\u7AEF\u672A\u8FD4\u56DE\u8DEF\u5F84`);
+  return filePath;
+}
+async function fetchTextFile(filePath, rev = 0) {
+  const url = rev > 0 ? `${filePath}?rev=${encodeURIComponent(rev)}` : filePath;
+  const response = await fetch(url, {
+    method: "GET",
+    cache: "no-cache",
+    headers: getRequestHeaders()
+  });
+  if (!response.ok) {
+    throw new Error(`\u8BFB\u53D6 ${filePath} \u5931\u8D25\uFF08${response.status}\uFF09`);
+  }
+  return response.text();
+}
+async function deleteUserFile(filePath, options = {}) {
+  const label = options.label || "\u6587\u4EF6";
+  const target = String(filePath || "").trim();
+  if (!target) return false;
+  const response = await fetch("/api/files/delete", {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ path: target })
+  });
+  if (response.status === 404) return true;
+  if (!response.ok) {
+    TitaniaLogger.warn(`\u5220\u9664${label}\u5931\u8D25\uFF08${response.status}\uFF09\uFF1A${target}`);
+    return false;
+  }
+  return true;
+}
+async function verifyUserFiles(filePaths, options = {}) {
+  const label = options.label || "\u6587\u4EF6";
+  const urls = (Array.isArray(filePaths) ? filePaths : []).map((p) => String(p || "")).filter(Boolean);
+  if (urls.length === 0) return {};
+  const response = await fetch("/api/files/verify", {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ urls })
+  });
+  if (!response.ok) {
+    throw new Error(`\u6821\u9A8C${label}\u5931\u8D25\uFF08${response.status}\uFF09`);
+  }
+  return await response.json();
+}
+var BASE64_CHUNK;
+var init_userFiles = __esm({
+  "src/utils/userFiles.js"() {
+    init_logger();
+    BASE64_CHUNK = 32768;
+  }
+});
+
+// src/core/scriptStore.js
+function getScriptsPointer() {
+  const store = getExtData()[SCRIPTS_STORE_KEY];
+  if (!store || typeof store !== "object") return null;
+  if (Number(store.version) !== SCRIPTS_STORE_VERSION) {
+    TitaniaLogger.warn(`\u5267\u672C\u5B58\u50A8\u6307\u9488\u7248\u672C\u4E0D\u53D7\u652F\u6301\uFF1A${store.version}\uFF0C\u6309\u672A\u642C\u5BB6\u5904\u7406`);
+    return null;
+  }
+  return store;
+}
+function isScriptsMigrated() {
+  return getScriptsPointer() !== null;
+}
+function writePointer({ rev, count, bytes, migratedAt }) {
+  const data = getExtData();
+  const previous = data[SCRIPTS_STORE_KEY];
+  data[SCRIPTS_STORE_KEY] = {
+    version: SCRIPTS_STORE_VERSION,
+    migratedAt: Number(migratedAt) || Number(previous?.migratedAt) || Date.now(),
+    file: `/user/files/${SCRIPTS_FILE_NAME}`,
+    rev: Number(rev) || 1,
+    count: Number(count) || 0,
+    bytes: Number(bytes) || 0
+  };
+  saveExtData();
+}
+function buildScriptsFile(scripts, rev) {
+  return {
+    version: SCRIPTS_FILE_VERSION,
+    rev: Number(rev) || 1,
+    savedAt: Date.now(),
+    scripts: Array.isArray(scripts) ? scripts : []
+  };
+}
+async function writeScriptsFile(scripts, rev, fileName = SCRIPTS_FILE_NAME) {
+  const text = JSON.stringify(buildScriptsFile(scripts, rev));
+  const file = await uploadTextFile(fileName, text);
+  return { file, bytes: utf8ByteLength(text), rev: Number(rev) || 1, count: scripts.length };
+}
+async function readScriptsFile(filePath, rev = 0) {
+  const raw = await fetchTextFile(filePath, rev);
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(`\u5267\u672C\u6587\u4EF6\u4E0D\u662F\u5408\u6CD5 JSON\uFF08${filePath}\uFF09\uFF1A${e?.message || e}`);
+  }
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error(`\u5267\u672C\u6587\u4EF6\u7ED3\u6784\u5F02\u5E38\uFF08${filePath}\uFF09`);
+  }
+  if (Number(parsed.version) !== SCRIPTS_FILE_VERSION) {
+    throw new Error(`\u5267\u672C\u6587\u4EF6\u7248\u672C\u4E0D\u53D7\u652F\u6301\uFF1A${parsed.version}\uFF08${filePath}\uFF09`);
+  }
+  if (!Array.isArray(parsed.scripts)) {
+    throw new Error(`\u5267\u672C\u6587\u4EF6\u7F3A\u5C11 scripts \u6570\u7EC4\uFF08${filePath}\uFF09`);
+  }
+  return parsed;
+}
+function pump() {
+  if (writing) {
+    dirty = true;
+    return currentPump;
+  }
+  writing = true;
+  currentPump = (async () => {
+    try {
+      do {
+        dirty = false;
+        const pointer = getScriptsPointer();
+        const nextRev = (Number(pointer?.rev) || 0) + 1;
+        const written = await writeScriptsFile(cache, nextRev);
+        writePointer({ rev: written.rev, count: written.count, bytes: written.bytes });
+        lastWriteError = null;
+      } while (dirty);
+    } catch (e) {
+      lastWriteError = e?.message || String(e);
+      TitaniaLogger.error("\u5267\u672C\u843D\u76D8\u5931\u8D25", e);
+      if (window.toastr) {
+        toastr.error(`\u5267\u672C\u4FDD\u5B58\u5931\u8D25\uFF1A${lastWriteError}`, "Titania Echo", { timeOut: 1e4 });
+      }
+    } finally {
+      writing = false;
+    }
+  })();
+  return currentPump;
+}
+async function flushScriptsNow() {
+  if (!isScriptsMigrated()) return true;
+  assertUsable();
+  await pump();
+  return lastWriteError === null;
+}
+function getLastWriteError() {
+  return lastWriteError;
+}
+async function hydrateScripts() {
+  const pointer = getScriptsPointer();
+  if (!pointer) {
+    hydrated = true;
+    hydrationError = null;
+    cache = null;
+    return { ok: true, migrated: false, count: 0, error: null };
+  }
+  try {
+    const parsed = await readScriptsFile(pointer.file, Number(pointer.rev) || 0);
+    cache = parsed.scripts.filter(Boolean);
+    hydrated = true;
+    hydrationError = null;
+    TitaniaLogger.info(`\u5267\u672C\u5DF2\u4ECE\u6587\u4EF6\u8F7D\u5165\uFF1A${cache.length} \u6761`);
+    return { ok: true, migrated: true, count: cache.length, error: null };
+  } catch (e) {
+    cache = null;
+    hydrated = true;
+    hydrationError = e?.message || String(e);
+    TitaniaLogger.error("\u5267\u672C\u8F7D\u5165\u5931\u8D25\uFF0C\u5DF2\u8FDB\u5165\u53EA\u8BFB\u4FDD\u62A4\u72B6\u6001", e);
+    return { ok: false, migrated: true, count: 0, error: hydrationError };
+  }
+}
+function assertUsable() {
+  if (hydrationError) {
+    throw new Error(
+      `\u5267\u672C\u6570\u636E\u672A\u80FD\u8F7D\u5165\uFF08${hydrationError}\uFF09\u3002\u4E3A\u907F\u514D\u8986\u76D6\u78C1\u76D8\u4E0A\u7684\u6587\u4EF6\uFF0C\u6240\u6709\u5267\u672C\u8BFB\u5199\u5DF2\u6682\u505C\u3002\u8BF7\u5237\u65B0\u91CD\u8BD5\uFF0C\u6216\u4ECE\u5907\u4EFD\u6062\u590D\u3002`
+    );
+  }
+}
+function getHydrationError() {
+  return hydrationError;
+}
+function getScripts() {
+  assertUsable();
+  if (!isScriptsMigrated()) {
+    const data = getExtData();
+    return Array.isArray(data.user_scripts) ? data.user_scripts : [];
+  }
+  return Array.isArray(cache) ? cache : [];
+}
+function setScripts(list) {
+  assertUsable();
+  const next = Array.isArray(list) ? list.filter(Boolean) : [];
+  if (!isScriptsMigrated()) {
+    const data = getExtData();
+    data.user_scripts = next;
+    saveExtData();
+    return;
+  }
+  cache = next;
+  void pump();
+  if (DUAL_WRITE) {
+    const data = getExtData();
+    data.user_scripts = next;
+    saveExtData();
+  }
+}
+function describeCurrentScriptsFootprint() {
+  const scripts = getExtData().user_scripts;
+  const list = Array.isArray(scripts) ? scripts : [];
+  const promptBytes = list.reduce((sum, s) => sum + utf8ByteLength(String(s?.prompt || "")), 0);
+  return {
+    count: list.length,
+    bytes: utf8ByteLength(JSON.stringify(list)),
+    promptBytes
+  };
+}
+function describeScriptsStorageFootprint() {
+  const pointer = getScriptsPointer();
+  if (!pointer) return null;
+  return {
+    count: Number(pointer.count) || 0,
+    fileBytes: Number(pointer.bytes) || 0,
+    pointerBytes: utf8ByteLength(JSON.stringify(pointer)),
+    file: String(pointer.file || ""),
+    rev: Number(pointer.rev) || 0,
+    migratedAt: Number(pointer.migratedAt) || 0
+  };
+}
+async function dryRunScriptsMigration() {
+  const startedAt = Date.now();
+  const source = getExtData().user_scripts;
+  const list = Array.isArray(source) ? source : [];
+  const footprint = describeCurrentScriptsFootprint();
+  if (list.length === 0) {
+    return {
+      ok: true,
+      empty: true,
+      reason: "\u5F53\u524D\u6CA1\u6709\u81EA\u5B9A\u4E49\u5267\u672C\uFF0C\u65E0\u9700\u642C\u5BB6",
+      settings: footprint,
+      durationMs: Date.now() - startedAt
+    };
+  }
+  let written = null;
+  let readBack = null;
+  let cleanupError = null;
+  try {
+    written = await writeScriptsFile(list, 1, SCRIPTS_DRYRUN_FILE_NAME);
+    readBack = await readScriptsFile(written.file, 1);
+  } catch (e) {
+    return {
+      ok: false,
+      reason: e?.message || String(e),
+      settings: footprint,
+      durationMs: Date.now() - startedAt
+    };
+  } finally {
+    if (written) {
+      try {
+        await deleteUserFile(written.file, { label: "\u5267\u672C\u8BD5\u8FD0\u884C\u6587\u4EF6" });
+      } catch (e) {
+        cleanupError = e?.message || String(e);
+      }
+    }
+  }
+  const mismatches = [];
+  const back = readBack.scripts;
+  if (back.length !== list.length) {
+    mismatches.push(`\u6761\u6570\u4E0D\u4E00\u81F4\uFF1A\u6E90 ${list.length}\uFF0C\u8BFB\u56DE ${back.length}`);
+  }
+  const limit = Math.min(back.length, list.length);
+  for (let i = 0; i < limit; i++) {
+    if (JSON.stringify(back[i]) !== JSON.stringify(list[i])) {
+      mismatches.push(`\u7B2C ${i + 1} \u6761\uFF08id=${list[i]?.id}\uFF09\u5185\u5BB9\u4E0D\u4E00\u81F4`);
+      if (mismatches.length >= 5) break;
+    }
+  }
+  return {
+    ok: mismatches.length === 0,
+    identical: mismatches.length === 0,
+    mismatches,
+    settings: footprint,
+    written: { count: written.count, bytes: written.bytes },
+    cleanupError,
+    durationMs: Date.now() - startedAt
+  };
+}
+async function bootstrapEmptyScriptsStore() {
+  if (isScriptsMigrated()) return false;
+  const scripts = getExtData().user_scripts;
+  if (Array.isArray(scripts) && scripts.length > 0) return false;
+  try {
+    const written = await writeScriptsFile([], 1);
+    writePointer({ rev: written.rev, count: 0, bytes: written.bytes, migratedAt: Date.now() });
+    cache = [];
+    hydrated = true;
+    hydrationError = null;
+    TitaniaLogger.info("\u5267\u672C\u4E3A\u96F6\uFF0C\u5DF2\u76F4\u63A5\u5EFA\u7ACB\u6587\u4EF6\u5B58\u50A8\uFF08\u65B0\u589E\u5267\u672C\u5C06\u76F4\u63A5\u843D\u6587\u4EF6\uFF09");
+    return true;
+  } catch (e) {
+    TitaniaLogger.warn("\u5EFA\u7ACB\u7A7A\u5267\u672C\u5B58\u50A8\u5931\u8D25\uFF0C\u672C\u6B21\u4ECD\u8D70\u8BBE\u7F6E\u5B58\u50A8", e);
+    return false;
+  }
+}
+async function migrateScriptsToFiles() {
+  const startedAt = Date.now();
+  if (isScriptsMigrated()) {
+    return { ok: false, alreadyMigrated: true, reason: "\u5267\u672C\u5DF2\u7ECF\u642C\u8FC7\u5BB6\u4E86" };
+  }
+  const data = getExtData();
+  const list = Array.isArray(data.user_scripts) ? data.user_scripts.filter(Boolean) : [];
+  const footprint = describeCurrentScriptsFootprint();
+  let written;
+  try {
+    written = await writeScriptsFile(list, 1);
+  } catch (e) {
+    TitaniaLogger.error("\u642C\u5BB6\uFF1A\u5267\u672C\u5199\u5165\u5931\u8D25\uFF0C\u672A\u5199\u6307\u9488", e);
+    return {
+      ok: false,
+      aborted: true,
+      reason: `\u5199\u5165\u5931\u8D25\uFF1A${e?.message || String(e)}`,
+      settings: footprint,
+      durationMs: Date.now() - startedAt
+    };
+  }
+  try {
+    const verifyResult = await verifyUserFiles([written.file], { label: "\u5267\u672C\u6587\u4EF6" });
+    if (verifyResult[written.file] === false) {
+      TitaniaLogger.error("\u642C\u5BB6\uFF1A\u5267\u672C\u6587\u4EF6\u6821\u9A8C\u65F6\u4E0D\u5B58\u5728\uFF0C\u672A\u5199\u6307\u9488", { file: written.file });
+      return {
+        ok: false,
+        aborted: true,
+        reason: "\u6587\u4EF6\u5199\u5165\u540E\u6821\u9A8C\u65F6\u4E0D\u5B58\u5728\uFF0C\u5DF2\u4E2D\u6B62\uFF08\u672A\u6539\u52A8\u4EFB\u4F55\u6570\u636E\uFF09",
+        settings: footprint,
+        durationMs: Date.now() - startedAt
+      };
+    }
+  } catch (e) {
+    TitaniaLogger.error("\u642C\u5BB6\uFF1A\u5267\u672C\u6587\u4EF6\u6821\u9A8C\u8BF7\u6C42\u5931\u8D25\uFF0C\u672A\u5199\u6307\u9488", e);
+    return {
+      ok: false,
+      aborted: true,
+      reason: `\u6821\u9A8C\u8BF7\u6C42\u51FA\u9519\uFF08${e?.message || String(e)}\uFF09\uFF0C\u5DF2\u4E2D\u6B62\uFF08\u672A\u6539\u52A8\u4EFB\u4F55\u6570\u636E\uFF09`,
+      settings: footprint,
+      durationMs: Date.now() - startedAt
+    };
+  }
+  try {
+    const parsed = await readScriptsFile(written.file, 1);
+    if (parsed.scripts.length !== list.length) {
+      return {
+        ok: false,
+        aborted: true,
+        reason: `\u8BFB\u56DE\u6761\u6570\u4E0D\u4E00\u81F4\uFF08\u6E90 ${list.length}\uFF0C\u8BFB\u56DE ${parsed.scripts.length}\uFF09\uFF0C\u5DF2\u4E2D\u6B62`,
+        settings: footprint,
+        durationMs: Date.now() - startedAt
+      };
+    }
+    cache = parsed.scripts.filter(Boolean);
+  } catch (e) {
+    return {
+      ok: false,
+      aborted: true,
+      reason: `\u8BFB\u56DE\u6821\u9A8C\u5931\u8D25\uFF08${e?.message || String(e)}\uFF09\uFF0C\u5DF2\u4E2D\u6B62\uFF08\u672A\u6539\u52A8\u4EFB\u4F55\u6570\u636E\uFF09`,
+      settings: footprint,
+      durationMs: Date.now() - startedAt
+    };
+  }
+  writePointer({ rev: written.rev, count: written.count, bytes: written.bytes, migratedAt: Date.now() });
+  hydrated = true;
+  hydrationError = null;
+  const report = {
+    ok: true,
+    settings: footprint,
+    written: { count: written.count, bytes: written.bytes },
+    pointerBytes: utf8ByteLength(JSON.stringify(getScriptsPointer())),
+    pendingRemovalBytes: footprint.bytes,
+    durationMs: Date.now() - startedAt
+  };
+  TitaniaLogger.info("\u5267\u672C\u642C\u5BB6\u5B8C\u6210\uFF08\u65E7\u6570\u636E\u4ECD\u4FDD\u7559\uFF09", report);
+  return report;
+}
+function exportScriptsAsLegacyArray() {
+  assertUsable();
+  if (!isScriptsMigrated()) {
+    const scripts = getExtData().user_scripts;
+    return Array.isArray(scripts) ? scripts : [];
+  }
+  if (!Array.isArray(cache)) {
+    throw new Error("\u5267\u672C\u5C1A\u672A\u8F7D\u5165\uFF0C\u65E0\u6CD5\u5BFC\u51FA\u5907\u4EFD\u3002\u8BF7\u5237\u65B0\u9875\u9762\u540E\u91CD\u8BD5\u3002");
+  }
+  return cache;
+}
+var DUAL_WRITE, SCRIPTS_FILE_NAME, SCRIPTS_DRYRUN_FILE_NAME, SCRIPTS_FILE_VERSION, SCRIPTS_STORE_KEY, SCRIPTS_STORE_VERSION, cache, hydrated, hydrationError, writing, dirty, currentPump, lastWriteError;
+var init_scriptStore = __esm({
+  "src/core/scriptStore.js"() {
+    init_storage();
+    init_userFiles();
+    init_logger();
+    DUAL_WRITE = true;
+    SCRIPTS_FILE_NAME = "titania_scripts.json";
+    SCRIPTS_DRYRUN_FILE_NAME = "titania_scripts_dryrun.json";
+    SCRIPTS_FILE_VERSION = 1;
+    SCRIPTS_STORE_KEY = "scripts_store";
+    SCRIPTS_STORE_VERSION = 1;
+    cache = null;
+    hydrated = false;
+    hydrationError = null;
+    writing = false;
+    dirty = false;
+    currentPump = null;
+    lastWriteError = null;
+  }
+});
+
 // src/config/presets.js
 var DEFAULT_PRESETS;
 var init_presets = __esm({
@@ -20889,7 +21432,7 @@ function cleanupOrphanScriptStats() {
   ensureStatsStore(data);
   const activeIds = /* @__PURE__ */ new Set();
   DEFAULT_PRESETS.forEach((p) => activeIds.add(p.id));
-  (data.user_scripts || []).forEach((s) => activeIds.add(s.id));
+  getScripts().forEach((s) => activeIds.add(s.id));
   let removed = 0;
   Object.keys(data.script_stats).forEach((scriptId) => {
     if (!activeIds.has(scriptId)) {
@@ -20977,7 +21520,7 @@ function buildScriptStatsOverview(runtimeScripts, options = {}) {
 function loadScripts() {
   const data = getExtData();
   ensureStatsStore(data);
-  const userScripts = data.user_scripts || [];
+  const userScripts = getScripts();
   const disabledIDs = data.disabled_presets || [];
   GlobalState.runtimeScripts = DEFAULT_PRESETS.filter((p) => !disabledIDs.includes(p.id)).map((p) => ({ ...p, _type: "preset" }));
   userScripts.forEach((s) => {
@@ -20999,7 +21542,7 @@ function mergeUserScript(list, s) {
 function saveUserScript(s) {
   const data = getExtData();
   ensureStatsStore(data);
-  data.user_scripts = mergeUserScript(data.user_scripts || [], s);
+  setScripts(mergeUserScript(getScripts(), s));
   saveExtData();
   loadScripts();
 }
@@ -21008,9 +21551,9 @@ function saveUserScripts(scripts) {
   if (list.length === 0) return 0;
   const data = getExtData();
   ensureStatsStore(data);
-  let u = data.user_scripts || [];
+  let u = getScripts();
   for (const s of list) u = mergeUserScript(u, s);
-  data.user_scripts = u;
+  setScripts(u);
   saveExtData();
   loadScripts();
   return list.length;
@@ -21018,9 +21561,7 @@ function saveUserScripts(scripts) {
 function deleteUserScript(id3) {
   const data = getExtData();
   ensureStatsStore(data);
-  let u = data.user_scripts || [];
-  u = u.filter((x) => x.id !== id3);
-  data.user_scripts = u;
+  setScripts(getScripts().filter((x) => x.id !== id3));
   delete data.script_stats[id3];
   saveExtData();
   loadScripts();
@@ -21029,6 +21570,7 @@ var SCRIPT_SORT_MODES;
 var init_scriptData = __esm({
   "src/core/scriptData.js"() {
     init_storage();
+    init_scriptStore();
     init_state();
     init_presets();
     SCRIPT_SORT_MODES = /* @__PURE__ */ new Set([
@@ -21040,110 +21582,6 @@ var init_scriptData = __esm({
       "most_used",
       "smart"
     ]);
-  }
-});
-
-// src/core/logger.js
-var TitaniaLogger;
-var init_logger = __esm({
-  "src/core/logger.js"() {
-    init_storage();
-    init_defaults();
-    init_state();
-    TitaniaLogger = {
-      logs: [],
-      maxLogs: 50,
-      // 内存中最多保留50条，刷新即清空
-      add: function(type, message, details = null) {
-        const entry = {
-          timestamp: (/* @__PURE__ */ new Date()).toLocaleString(),
-          type,
-          // 'INFO', 'WARN', 'ERROR'
-          message,
-          details,
-          // 记录基础环境上下文，从 GlobalState 获取
-          context: {
-            scriptId: GlobalState.lastUsedScriptId || "none",
-            isGenerating: GlobalState.isGenerating
-          }
-        };
-        this.logs.unshift(entry);
-        if (this.logs.length > this.maxLogs) this.logs.pop();
-        if (type === "ERROR") console.error("[Titania Debug]", message, details);
-      },
-      info: function(msg, details) {
-        this.add("INFO", msg, details);
-      },
-      warn: function(msg, details) {
-        this.add("WARN", msg, details);
-      },
-      // 专门用于记录报错，支持传入上下文对象
-      error: function(msg, errObj, contextData = {}) {
-        let stack = "Unknown";
-        let errMsg = "Unknown Error";
-        if (errObj) {
-          if (typeof errObj === "string") {
-            errMsg = errObj;
-          } else {
-            errMsg = errObj.message || "Error Object";
-            stack = errObj.stack || JSON.stringify(errObj);
-          }
-        }
-        if (contextData && contextData.network && contextData.network.status) {
-          msg += ` [HTTP ${contextData.network.status}]`;
-        }
-        this.add("ERROR", msg, {
-          error_message: errMsg,
-          stack_trace: stack,
-          diagnostics: contextData
-        });
-      },
-      // 导出并下载日志
-      downloadReport: function() {
-        const data = getExtData();
-        const configSnapshot = JSON.parse(JSON.stringify(data.config || {}));
-        if (configSnapshot.profiles && Array.isArray(configSnapshot.profiles)) {
-          configSnapshot.profiles.forEach((p) => {
-            if (p.key && p.key.length > 5) {
-              p.key = p.key.substring(0, 3) + "***(HIDDEN)";
-            } else if (p.key) {
-              p.key = "***(HIDDEN)";
-            }
-          });
-        }
-        if (configSnapshot.key) configSnapshot.key = "***(HIDDEN)";
-        let stVersion = "Unknown";
-        try {
-          if (typeof SillyTavern !== "undefined" && SillyTavern.version) stVersion = SillyTavern.version;
-          else if (window.SillyTavernVersion) stVersion = window.SillyTavernVersion;
-        } catch (e) {
-        }
-        const reportObj = {
-          meta: {
-            extension: extensionName,
-            extension_version: `v${CURRENT_VERSION}`,
-            st_version: stVersion,
-            userAgent: navigator.userAgent,
-            screen_res: `${window.screen.width}x${window.screen.height}`,
-            viewport: `${window.innerWidth}x${window.innerHeight}`,
-            time: (/* @__PURE__ */ new Date()).toLocaleString(),
-            timestamp: Date.now()
-          },
-          config: configSnapshot,
-          logs: this.logs
-        };
-        const content = JSON.stringify(reportObj, null, 2);
-        const blob = new Blob([content], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Titania_Debug_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10).replace(/-/g, "")}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    };
   }
 });
 
@@ -21602,84 +22040,6 @@ function getStPresetProfiles() {
 }
 var init_apiProfileRegistry = __esm({
   "src/core/apiProfileRegistry.js"() {
-  }
-});
-
-// src/utils/userFiles.js
-import { getRequestHeaders } from "../../../../script.js";
-function utf8ToBase64(text) {
-  const bytes = new TextEncoder().encode(String(text ?? ""));
-  let binary = "";
-  for (let offset = 0; offset < bytes.length; offset += BASE64_CHUNK) {
-    binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + BASE64_CHUNK));
-  }
-  return btoa(binary);
-}
-function utf8ByteLength(text) {
-  return new TextEncoder().encode(String(text ?? "")).length;
-}
-async function uploadTextFile(fileName, text) {
-  const response = await fetch("/api/files/upload", {
-    method: "POST",
-    headers: getRequestHeaders(),
-    body: JSON.stringify({ name: fileName, data: utf8ToBase64(text) })
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(`\u4E0A\u4F20 ${fileName} \u5931\u8D25\uFF08${response.status}\uFF09${detail ? `\uFF1A${detail}` : ""}`);
-  }
-  const payload = await response.json();
-  const filePath = String(payload?.path || "").trim();
-  if (!filePath) throw new Error(`\u4E0A\u4F20 ${fileName} \u540E\u670D\u52A1\u7AEF\u672A\u8FD4\u56DE\u8DEF\u5F84`);
-  return filePath;
-}
-async function fetchTextFile(filePath, rev = 0) {
-  const url = rev > 0 ? `${filePath}?rev=${encodeURIComponent(rev)}` : filePath;
-  const response = await fetch(url, {
-    method: "GET",
-    cache: "no-cache",
-    headers: getRequestHeaders()
-  });
-  if (!response.ok) {
-    throw new Error(`\u8BFB\u53D6 ${filePath} \u5931\u8D25\uFF08${response.status}\uFF09`);
-  }
-  return response.text();
-}
-async function deleteUserFile(filePath, options = {}) {
-  const label = options.label || "\u6587\u4EF6";
-  const target = String(filePath || "").trim();
-  if (!target) return false;
-  const response = await fetch("/api/files/delete", {
-    method: "POST",
-    headers: getRequestHeaders(),
-    body: JSON.stringify({ path: target })
-  });
-  if (response.status === 404) return true;
-  if (!response.ok) {
-    TitaniaLogger.warn(`\u5220\u9664${label}\u5931\u8D25\uFF08${response.status}\uFF09\uFF1A${target}`);
-    return false;
-  }
-  return true;
-}
-async function verifyUserFiles(filePaths, options = {}) {
-  const label = options.label || "\u6587\u4EF6";
-  const urls = (Array.isArray(filePaths) ? filePaths : []).map((p) => String(p || "")).filter(Boolean);
-  if (urls.length === 0) return {};
-  const response = await fetch("/api/files/verify", {
-    method: "POST",
-    headers: getRequestHeaders(),
-    body: JSON.stringify({ urls })
-  });
-  if (!response.ok) {
-    throw new Error(`\u6821\u9A8C${label}\u5931\u8D25\uFF08${response.status}\uFF09`);
-  }
-  return await response.json();
-}
-var BASE64_CHUNK;
-var init_userFiles = __esm({
-  "src/utils/userFiles.js"() {
-    init_logger();
-    BASE64_CHUNK = 32768;
   }
 });
 
@@ -36316,7 +36676,7 @@ function openSettingsWindow() {
                         <div style="background:var(--t-color-surface-inset); border:1px solid var(--t-color-border); padding:20px; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">
                             <div>
                                 <div style="font-size:1.1em; color:var(--t-color-text); font-weight:bold;"><i class="fa-solid fa-scroll" style="color:var(--t-color-brand); margin-right:8px;"></i>\u5267\u672C\u7BA1\u7406\u5668</div>
-                                <div class="t-set-stat-sub">\u5F53\u524D\u62E5\u6709\u81EA\u5B9A\u4E49\u5267\u672C: ${(data.user_scripts || []).length} \u4E2A</div>
+                                <div class="t-set-stat-sub">\u5F53\u524D\u62E5\u6709\u81EA\u5B9A\u4E49\u5267\u672C: ${getScripts().length} \u4E2A</div>
                             </div>
                             <button id="btn-open-mgr" class="t-btn primary" style="padding: 8px 20px;"><i class="fa-solid fa-list-check"></i> \u6253\u5F00\u7BA1\u7406</button>
                         </div>
@@ -37652,6 +38012,7 @@ var init_settingsWindow = __esm({
     init_helpers();
     init_floatingBtn();
     init_scriptData();
+    init_scriptStore();
     init_scriptManager();
     init_dom();
     init_outlineEntryButton();
@@ -37692,10 +38053,10 @@ async function req(path, options = {}) {
   return data;
 }
 async function fetchList({ force = false } = {}) {
-  if (!force && cache.list && Date.now() - cache.at < LIST_TTL) return cache.list;
+  if (!force && cache2.list && Date.now() - cache2.at < LIST_TTL) return cache2.list;
   const data = await req("/api/list");
-  cache.list = data;
-  cache.at = Date.now();
+  cache2.list = data;
+  cache2.at = Date.now();
   return data;
 }
 function fetchScript(id3) {
@@ -37721,13 +38082,13 @@ function countDownloads(ids) {
 function countDownload(id3) {
   return countDownloads([id3]);
 }
-var WORKSHOP_ORIGIN, LIST_TTL, TIMEOUT, cache, DOWNLOAD_REPORT_CHUNK;
+var WORKSHOP_ORIGIN, LIST_TTL, TIMEOUT, cache2, DOWNLOAD_REPORT_CHUNK;
 var init_workshopApi = __esm({
   "src/core/workshopApi.js"() {
     WORKSHOP_ORIGIN = "https://echo-workshop.pages.dev";
     LIST_TTL = 6e4;
     TIMEOUT = 15e3;
-    cache = { list: null, at: 0 };
+    cache2 = { list: null, at: 0 };
     DOWNLOAD_REPORT_CHUNK = 50;
   }
 });
@@ -38569,12 +38930,14 @@ function openScriptManager() {
     }
     const data = getExtData();
     let updatedCount = 0;
-    (data.user_scripts || []).forEach((s) => {
+    const renamedScripts = getScripts().map((s) => {
       if (s.category === oldName) {
-        s.category = newName;
         updatedCount++;
+        return { ...s, category: newName };
       }
+      return s;
     });
+    if (updatedCount > 0) setScripts(renamedScripts);
     if (data.category_order) {
       const idx = data.category_order.indexOf(oldName);
       if (idx !== -1) {
@@ -38947,8 +39310,7 @@ ${s.prompt}`;
         selectedIds.push($(this).data("id"));
       }
     });
-    const data = getExtData();
-    const scriptsToMove = (data.user_scripts || []).filter((s) => selectedIds.includes(s.id));
+    const scriptsToMove = getScripts().filter((s) => selectedIds.includes(s.id));
     scriptsToMove.forEach((s) => {
       saveUserScript({ ...s, category: targetCat });
     });
@@ -39121,6 +39483,7 @@ var init_scriptManager = __esm({
     init_storage();
     init_state();
     init_scriptData();
+    init_scriptStore();
     init_mainWindow();
     init_settingsWindow();
     init_workshopWindow();
@@ -46225,146 +46588,9 @@ init_scriptData();
 init_api();
 init_continuationStore();
 init_favsStore();
+init_scriptStore();
 import { extension_settings as extension_settings2 } from "../../../extensions.js";
 import { saveSettingsDebounced as saveSettingsDebounced2, eventSource as eventSource5, event_types as event_types5 } from "../../../../script.js";
-
-// src/core/scriptStore.js
-init_storage();
-init_userFiles();
-init_logger();
-var SCRIPTS_FILE_NAME = "titania_scripts.json";
-var SCRIPTS_DRYRUN_FILE_NAME = "titania_scripts_dryrun.json";
-var SCRIPTS_FILE_VERSION = 1;
-var SCRIPTS_STORE_KEY = "scripts_store";
-var SCRIPTS_STORE_VERSION = 1;
-var hydrationError = null;
-function getScriptsPointer() {
-  const store = getExtData()[SCRIPTS_STORE_KEY];
-  if (!store || typeof store !== "object") return null;
-  if (Number(store.version) !== SCRIPTS_STORE_VERSION) {
-    TitaniaLogger.warn(`\u5267\u672C\u5B58\u50A8\u6307\u9488\u7248\u672C\u4E0D\u53D7\u652F\u6301\uFF1A${store.version}\uFF0C\u6309\u672A\u642C\u5BB6\u5904\u7406`);
-    return null;
-  }
-  return store;
-}
-function isScriptsMigrated() {
-  return getScriptsPointer() !== null;
-}
-function buildScriptsFile(scripts, rev) {
-  return {
-    version: SCRIPTS_FILE_VERSION,
-    rev: Number(rev) || 1,
-    savedAt: Date.now(),
-    scripts: Array.isArray(scripts) ? scripts : []
-  };
-}
-async function writeScriptsFile(scripts, rev, fileName = SCRIPTS_FILE_NAME) {
-  const text = JSON.stringify(buildScriptsFile(scripts, rev));
-  const file = await uploadTextFile(fileName, text);
-  return { file, bytes: utf8ByteLength(text), rev: Number(rev) || 1, count: scripts.length };
-}
-async function readScriptsFile(filePath, rev = 0) {
-  const raw = await fetchTextFile(filePath, rev);
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (e) {
-    throw new Error(`\u5267\u672C\u6587\u4EF6\u4E0D\u662F\u5408\u6CD5 JSON\uFF08${filePath}\uFF09\uFF1A${e?.message || e}`);
-  }
-  if (!parsed || typeof parsed !== "object") {
-    throw new Error(`\u5267\u672C\u6587\u4EF6\u7ED3\u6784\u5F02\u5E38\uFF08${filePath}\uFF09`);
-  }
-  if (Number(parsed.version) !== SCRIPTS_FILE_VERSION) {
-    throw new Error(`\u5267\u672C\u6587\u4EF6\u7248\u672C\u4E0D\u53D7\u652F\u6301\uFF1A${parsed.version}\uFF08${filePath}\uFF09`);
-  }
-  if (!Array.isArray(parsed.scripts)) {
-    throw new Error(`\u5267\u672C\u6587\u4EF6\u7F3A\u5C11 scripts \u6570\u7EC4\uFF08${filePath}\uFF09`);
-  }
-  return parsed;
-}
-function getHydrationError() {
-  return hydrationError;
-}
-function describeCurrentScriptsFootprint() {
-  const scripts = getExtData().user_scripts;
-  const list = Array.isArray(scripts) ? scripts : [];
-  const promptBytes = list.reduce((sum, s) => sum + utf8ByteLength(String(s?.prompt || "")), 0);
-  return {
-    count: list.length,
-    bytes: utf8ByteLength(JSON.stringify(list)),
-    promptBytes
-  };
-}
-function describeScriptsStorageFootprint() {
-  const pointer = getScriptsPointer();
-  if (!pointer) return null;
-  return {
-    count: Number(pointer.count) || 0,
-    fileBytes: Number(pointer.bytes) || 0,
-    pointerBytes: utf8ByteLength(JSON.stringify(pointer)),
-    file: String(pointer.file || ""),
-    rev: Number(pointer.rev) || 0,
-    migratedAt: Number(pointer.migratedAt) || 0
-  };
-}
-async function dryRunScriptsMigration() {
-  const startedAt = Date.now();
-  const source = getExtData().user_scripts;
-  const list = Array.isArray(source) ? source : [];
-  const footprint = describeCurrentScriptsFootprint();
-  if (list.length === 0) {
-    return {
-      ok: true,
-      empty: true,
-      reason: "\u5F53\u524D\u6CA1\u6709\u81EA\u5B9A\u4E49\u5267\u672C\uFF0C\u65E0\u9700\u642C\u5BB6",
-      settings: footprint,
-      durationMs: Date.now() - startedAt
-    };
-  }
-  let written = null;
-  let readBack = null;
-  let cleanupError = null;
-  try {
-    written = await writeScriptsFile(list, 1, SCRIPTS_DRYRUN_FILE_NAME);
-    readBack = await readScriptsFile(written.file, 1);
-  } catch (e) {
-    return {
-      ok: false,
-      reason: e?.message || String(e),
-      settings: footprint,
-      durationMs: Date.now() - startedAt
-    };
-  } finally {
-    if (written) {
-      try {
-        await deleteUserFile(written.file, { label: "\u5267\u672C\u8BD5\u8FD0\u884C\u6587\u4EF6" });
-      } catch (e) {
-        cleanupError = e?.message || String(e);
-      }
-    }
-  }
-  const mismatches = [];
-  const back = readBack.scripts;
-  if (back.length !== list.length) {
-    mismatches.push(`\u6761\u6570\u4E0D\u4E00\u81F4\uFF1A\u6E90 ${list.length}\uFF0C\u8BFB\u56DE ${back.length}`);
-  }
-  const limit = Math.min(back.length, list.length);
-  for (let i = 0; i < limit; i++) {
-    if (JSON.stringify(back[i]) !== JSON.stringify(list[i])) {
-      mismatches.push(`\u7B2C ${i + 1} \u6761\uFF08id=${list[i]?.id}\uFF09\u5185\u5BB9\u4E0D\u4E00\u81F4`);
-      if (mismatches.length >= 5) break;
-    }
-  }
-  return {
-    ok: mismatches.length === 0,
-    identical: mismatches.length === 0,
-    mismatches,
-    settings: footprint,
-    written: { count: written.count, bytes: written.bytes },
-    cleanupError,
-    durationMs: Date.now() - startedAt
-  };
-}
 
 // src/core/extensionUpdate.js
 init_defaults();
@@ -47015,7 +47241,7 @@ function initCoreFeatures() {
         migrated = true;
       }
       if (oldScripts) {
-        extData.user_scripts = oldScripts;
+        setScripts(oldScripts);
         migrated = true;
       }
       if (oldFavs) {
@@ -47153,10 +47379,18 @@ function countVectorItems(vectorData) {
 }
 async function createFullBackupPayload(options = {}) {
   const includeVectors = options.includeVectors !== false;
+  if (isScriptsMigrated()) {
+    const flushed = await flushScriptsNow();
+    if (!flushed) throw new Error("\u5267\u672C\u5C1A\u672A\u6210\u529F\u843D\u76D8\uFF0C\u5DF2\u4E2D\u6B62\u5907\u4EFD\u5BFC\u51FA\u3002\u8BF7\u5148\u89E3\u51B3\u4FDD\u5B58\u5931\u8D25\u7684\u95EE\u9898\u3002");
+  }
   const extDataSnapshot = JSON.parse(JSON.stringify(getExtData()));
   if (isFavsMigrated()) {
     extDataSnapshot.favs = await exportFavsAsLegacyArray();
     delete extDataSnapshot[FAVS_INDEX_KEY];
+  }
+  if (isScriptsMigrated()) {
+    extDataSnapshot.user_scripts = exportScriptsAsLegacyArray();
+    delete extDataSnapshot[SCRIPTS_STORE_KEY];
   }
   const vectorData = includeVectors ? await buildVectorBackupData() : { version: 1, characters: [] };
   return {
@@ -47237,6 +47471,9 @@ function bindDrawerBackupControls() {
       Object.assign(currentData, extDataPayload);
       if (!Object.prototype.hasOwnProperty.call(extDataPayload, FAVS_INDEX_KEY)) {
         delete currentData[FAVS_INDEX_KEY];
+      }
+      if (!Object.prototype.hasOwnProperty.call(extDataPayload, SCRIPTS_STORE_KEY)) {
+        delete currentData[SCRIPTS_STORE_KEY];
       }
       const existingVectorCharacters = await getAllIndexedCharacters();
       for (const charId of existingVectorCharacters) {
@@ -47659,17 +47896,25 @@ function renderScriptsStorageCard() {
   $card.removeAttr("hidden");
   if (migrated) {
     const store = describeScriptsStorageFootprint();
-    $desc.html(
-      `\u5267\u672C <b>${store.count}</b> \u6761 \xB7 <b>${formatBytes(store.fileBytes)}</b> \u5B58\u5728 <code>user/files/${SCRIPTS_FILE_NAME}</code> \xB7 \u8BBE\u7F6E\u91CC\u53EA\u5269 <b>${formatBytes(store.pointerBytes)}</b> \u7684\u6307\u9488`
-    );
+    const legacy = getExtData().user_scripts;
+    const legacyCount = Array.isArray(legacy) ? legacy.length : 0;
+    const writeError = getLastWriteError();
+    let html = `\u5267\u672C <b>${store.count}</b> \u6761 \xB7 <b>${formatBytes(store.fileBytes)}</b> \u5B58\u5728 <code>user/files/${SCRIPTS_FILE_NAME}</code> \xB7 \u8BBE\u7F6E\u91CC\u7684\u6307\u9488\u53EA\u5360 <b>${formatBytes(store.pointerBytes)}</b>`;
+    if (writeError) {
+      html += `<br><span style="color:#ff7675;">\u26A0\uFE0F \u6700\u8FD1\u4E00\u6B21\u4FDD\u5B58\u5931\u8D25\uFF1A${writeError}<br>\u6539\u52A8\u53EF\u80FD\u6CA1\u6709\u5199\u8FDB\u6587\u4EF6\u3002\u8BF7\u68C0\u67E5 ST \u670D\u52A1\u7AEF\u662F\u5426\u6B63\u5E38\uFF0C\u7136\u540E\u91CD\u65B0\u7F16\u8F91\u4E00\u6B21\u89E6\u53D1\u4FDD\u5B58\u3002</span>`;
+    }
+    if (legacyCount > 0) {
+      html += `<br><span style="color:#feca57;">\u65E7\u6570\u636E\u4ECD\u4F5C\u4E3A\u5B89\u5168\u7F51\u4FDD\u7559\u5728\u8BBE\u7F6E\u91CC\uFF08${legacyCount} \u6761\uFF0C${formatBytes(footprint.bytes)}\uFF09\uFF0C\u6240\u4EE5\u8BBE\u7F6E\u6587\u4EF6<b>\u8FD8\u6CA1\u53D8\u5C0F</b>\u3002<br>\u5148\u6B63\u5E38\u7528\u4E00\u6BB5\u65F6\u95F4\uFF0C\u786E\u8BA4\u5267\u672C\u8BFB\u5199\u90FD\u6CA1\u95EE\u9898\uFF0C\u518D\u6267\u884C\u6536\u5C3E\u5220\u9664\u3002</span>`;
+    }
+    $desc.html(html);
     $actions.empty();
     return;
   }
   $desc.html(
-    `\u5267\u672C\u6307\u4EE4\u73B0\u5728\u548C\u8BBE\u7F6E\u5B58\u5728\u4E00\u8D77\u3002ST \u6BCF\u6B21\u4FDD\u5B58\u8BBE\u7F6E\u90FD\u4F1A\u628A\u6574\u4E2A\u8BBE\u7F6E\u6587\u4EF6\u91CD\u5199\u4E00\u904D\uFF0C\u6240\u4EE5\u5267\u672C\u8D8A\u591A\uFF0C\u6539\u4EFB\u4F55\u4E00\u4E2A\u5F00\u5173\u5C31\u8D8A\u6162\u3002<br>\u5F53\u524D <b>${footprint.count}</b> \u6761\uFF0C\u5360 <b>${formatBytes(footprint.bytes)}</b>\uFF08\u5176\u4E2D\u6307\u4EE4\u6B63\u6587 <b>${formatBytes(footprint.promptBytes)}</b>\uFF09\u3002<br>\u5148\u8DD1\u4E00\u6B21\u8BD5\u8FD0\u884C\uFF1A\u5B83\u4F1A\u628A\u5267\u672C\u5199\u6210\u6587\u4EF6\u518D\u8BFB\u56DE\u6765\u9010\u6761\u6BD4\u5BF9\uFF0C<b>\u4E0D\u6539\u52A8\u4EFB\u4F55\u73B0\u6709\u6570\u636E</b>\uFF0C\u53EA\u544A\u8BC9\u4F60\u642C\u5BB6\u662F\u5426\u5B89\u5168\u3002`
+    `\u5267\u672C\u6307\u4EE4\u73B0\u5728\u548C\u8BBE\u7F6E\u5B58\u5728\u4E00\u8D77\u3002ST \u6BCF\u6B21\u4FDD\u5B58\u8BBE\u7F6E\u90FD\u4F1A\u628A\u6574\u4E2A\u8BBE\u7F6E\u6587\u4EF6\u91CD\u5199\u4E00\u904D\uFF0C\u6240\u4EE5\u5267\u672C\u8D8A\u591A\uFF0C\u6539\u4EFB\u4F55\u4E00\u4E2A\u5F00\u5173\u5C31\u8D8A\u6162\u3002<br>\u5F53\u524D <b>${footprint.count}</b> \u6761\uFF0C\u5360 <b>${formatBytes(footprint.bytes)}</b>\uFF08\u5176\u4E2D\u6307\u4EE4\u6B63\u6587 <b>${formatBytes(footprint.promptBytes)}</b>\uFF09\u3002<br>\u5148\u8DD1\u4E00\u6B21\u8BD5\u8FD0\u884C\uFF1A\u5B83\u4F1A\u628A\u5267\u672C\u5199\u6210\u6587\u4EF6\u518D\u8BFB\u56DE\u6765\u9010\u6761\u6BD4\u5BF9\uFF0C<b>\u4E0D\u6539\u52A8\u4EFB\u4F55\u73B0\u6709\u6570\u636E</b>\uFF0C\u53EA\u544A\u8BC9\u4F60\u642C\u5BB6\u662F\u5426\u5B89\u5168\u3002<br><span style="color:#feca57;">\u26A0\uFE0F \u642C\u5BB6\u524D\u4F1A\u81EA\u52A8\u4E0B\u8F7D\u4E00\u4EFD\u5907\u4EFD\uFF0C\u8BF7\u4FDD\u5B58\u597D\u8FD9\u4E2A\u6587\u4EF6\u3002\u642C\u5BB6\u540E\u65E7\u6570\u636E\u4ECD\u4F1A\u4FDD\u7559\u4E00\u6BB5\u65F6\u95F4\u4F5C\u4E3A\u5B89\u5168\u7F51\uFF0C\u6240\u4EE5\u8BBE\u7F6E\u6587\u4EF6\u8981\u7B49\u300C\u5B8C\u6210\u6536\u5C3E\u300D\u624D\u4F1A\u53D8\u5C0F\u3002</span>`
   );
   $actions.html(
-    `<button class="titania-mini-btn" data-act="dryrun"><i class="fa-solid fa-vial"></i> \u8BD5\u8FD0\u884C\u642C\u5BB6\uFF08\u4E0D\u6539\u6570\u636E\uFF09</button>`
+    `<button class="titania-mini-btn" data-act="dryrun"><i class="fa-solid fa-vial"></i> \u8BD5\u8FD0\u884C\u642C\u5BB6\uFF08\u4E0D\u6539\u6570\u636E\uFF09</button><button class="titania-mini-btn is-import" data-act="migrate"><i class="fa-solid fa-box-archive"></i> \u4E00\u952E\u642C\u5BB6\uFF08\u81EA\u52A8\u5907\u4EFD\uFF09</button>`
   );
 }
 function bindScriptsStorageCard() {
@@ -47677,39 +47922,81 @@ function bindScriptsStorageCard() {
   if ($card.length === 0) return;
   $card.off("click", "[data-act]").on("click", "[data-act]", async function() {
     const act = $(this).attr("data-act");
-    if (act !== "dryrun") return;
-    const $btn = $(this);
-    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> \u8BD5\u8FD0\u884C\u4E2D...');
-    try {
-      const report = await dryRunScriptsMigration();
-      if (report.empty) {
-        showScriptsStorageReport(`\u5F53\u524D\u6CA1\u6709\u81EA\u5B9A\u4E49\u5267\u672C\uFF0C\u65E0\u9700\u642C\u5BB6\u3002`, "#feca57");
-      } else if (report.ok) {
-        showScriptsStorageReport(
-          `\u2705 <b>\u8BD5\u8FD0\u884C\u901A\u8FC7</b>\uFF1A${report.settings.count} \u6761\u5267\u672C\u5199\u5165\u6587\u4EF6\u540E\u8BFB\u56DE\uFF0C\u9010\u6761\u6DF1\u6BD4\u5BF9<b>\u5B8C\u5168\u4E00\u81F4</b>\u3002<br>\u6587\u4EF6 ${formatBytes(report.written.bytes)}\uFF0C\u642C\u5BB6\u540E\u53EF\u4ECE\u8BBE\u7F6E\u91CC\u817E\u51FA ${formatBytes(report.settings.bytes)}\u3002<br>\u8017\u65F6 ${report.durationMs} ms\u3002\u8BD5\u8FD0\u884C\u6587\u4EF6\u5DF2\u5220\u9664\uFF0C\u73B0\u6709\u6570\u636E\u672A\u6539\u52A8\u3002` + (report.cleanupError ? `<br>\u26A0\uFE0F \u8BD5\u8FD0\u884C\u6587\u4EF6\u6E05\u7406\u5931\u8D25\uFF1A${report.cleanupError}` : ""),
-          "#55efc4"
-        );
-        if (window.toastr) toastr.success("\u8BD5\u8FD0\u884C\u901A\u8FC7\uFF0C\u6570\u636E\u53EF\u5B89\u5168\u642C\u5BB6", "Titania Echo");
-      } else if (report.mismatches?.length) {
-        showScriptsStorageReport(
-          `\u274C <b>\u5F80\u8FD4\u6BD4\u5BF9\u4E0D\u4E00\u81F4\uFF0C\u8BF7\u52FF\u642C\u5BB6</b><br>\xB7 ${report.mismatches.join("<br>\xB7 ")}<br>\u5B8C\u6574\u4FE1\u606F\u89C1\u63A7\u5236\u53F0\u3002`,
-          "#ff7675"
-        );
-        console.error("[Titania] \u5267\u672C\u8BD5\u8FD0\u884C\u6BD4\u5BF9\u4E0D\u4E00\u81F4", report);
-        if (window.toastr) toastr.error("\u8BD5\u8FD0\u884C\u6BD4\u5BF9\u4E0D\u4E00\u81F4", "Titania Echo");
-      } else {
-        showScriptsStorageReport(`\u274C \u8BD5\u8FD0\u884C\u5931\u8D25\uFF1A${report.reason}`, "#ff7675");
-        if (window.toastr) toastr.error(report.reason || "\u8BD5\u8FD0\u884C\u5931\u8D25", "Titania Echo");
-      }
-    } catch (e) {
-      console.error("Titania: \u5267\u672C\u8BD5\u8FD0\u884C\u5931\u8D25", e);
-      showScriptsStorageReport(`\u274C \u8BD5\u8FD0\u884C\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
-      if (window.toastr) toastr.error(e?.message || "\u8BD5\u8FD0\u884C\u5931\u8D25", "Titania Echo");
-    } finally {
-      renderScriptsStorageCard();
-    }
+    if (act === "dryrun") return void handleScriptsDryRun($(this));
+    if (act === "migrate") return void handleScriptsMigrate($(this));
   });
   renderScriptsStorageCard();
+}
+async function handleScriptsDryRun($btn) {
+  $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> \u8BD5\u8FD0\u884C\u4E2D...');
+  try {
+    const report = await dryRunScriptsMigration();
+    if (report.empty) {
+      showScriptsStorageReport(`\u5F53\u524D\u6CA1\u6709\u81EA\u5B9A\u4E49\u5267\u672C\uFF0C\u65E0\u9700\u642C\u5BB6\u3002`, "#feca57");
+    } else if (report.ok) {
+      showScriptsStorageReport(
+        `\u2705 <b>\u8BD5\u8FD0\u884C\u901A\u8FC7</b>\uFF1A${report.settings.count} \u6761\u5267\u672C\u5199\u5165\u6587\u4EF6\u540E\u8BFB\u56DE\uFF0C\u9010\u6761\u6DF1\u6BD4\u5BF9<b>\u5B8C\u5168\u4E00\u81F4</b>\u3002<br>\u6587\u4EF6 ${formatBytes(report.written.bytes)}\uFF0C\u642C\u5BB6\u540E\u53EF\u4ECE\u8BBE\u7F6E\u91CC\u817E\u51FA ${formatBytes(report.settings.bytes)}\u3002<br>\u8017\u65F6 ${report.durationMs} ms\u3002\u8BD5\u8FD0\u884C\u6587\u4EF6\u5DF2\u5220\u9664\uFF0C\u73B0\u6709\u6570\u636E\u672A\u6539\u52A8\u3002` + (report.cleanupError ? `<br>\u26A0\uFE0F \u8BD5\u8FD0\u884C\u6587\u4EF6\u6E05\u7406\u5931\u8D25\uFF1A${report.cleanupError}` : ""),
+        "#55efc4"
+      );
+      if (window.toastr) toastr.success("\u8BD5\u8FD0\u884C\u901A\u8FC7\uFF0C\u6570\u636E\u53EF\u5B89\u5168\u642C\u5BB6", "Titania Echo");
+    } else if (report.mismatches?.length) {
+      showScriptsStorageReport(
+        `\u274C <b>\u5F80\u8FD4\u6BD4\u5BF9\u4E0D\u4E00\u81F4\uFF0C\u8BF7\u52FF\u642C\u5BB6</b><br>\xB7 ${report.mismatches.join("<br>\xB7 ")}<br>\u5B8C\u6574\u4FE1\u606F\u89C1\u63A7\u5236\u53F0\u3002`,
+        "#ff7675"
+      );
+      console.error("[Titania] \u5267\u672C\u8BD5\u8FD0\u884C\u6BD4\u5BF9\u4E0D\u4E00\u81F4", report);
+      if (window.toastr) toastr.error("\u8BD5\u8FD0\u884C\u6BD4\u5BF9\u4E0D\u4E00\u81F4", "Titania Echo");
+    } else {
+      showScriptsStorageReport(`\u274C \u8BD5\u8FD0\u884C\u5931\u8D25\uFF1A${report.reason}`, "#ff7675");
+      if (window.toastr) toastr.error(report.reason || "\u8BD5\u8FD0\u884C\u5931\u8D25", "Titania Echo");
+    }
+  } catch (e) {
+    console.error("Titania: \u5267\u672C\u8BD5\u8FD0\u884C\u5931\u8D25", e);
+    showScriptsStorageReport(`\u274C \u8BD5\u8FD0\u884C\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
+    if (window.toastr) toastr.error(e?.message || "\u8BD5\u8FD0\u884C\u5931\u8D25", "Titania Echo");
+  } finally {
+    renderScriptsStorageCard();
+  }
+}
+async function handleScriptsMigrate($btn) {
+  $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> \u642C\u5BB6\u4E2D...');
+  try {
+    try {
+      const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+      downloadBackupPayload(snapshot, backupFileName("before_scripts_migration"));
+      if (window.toastr) toastr.info("\u5DF2\u4E0B\u8F7D\u642C\u5BB6\u524D\u5907\u4EFD\uFF0C\u8BF7\u4FDD\u5B58\u8FD9\u4E2A\u6587\u4EF6", "Titania Echo");
+    } catch (backupErr) {
+      console.warn("Titania: \u642C\u5BB6\u524D\u5907\u4EFD\u5931\u8D25", backupErr);
+      if (!confirm("\u26A0\uFE0F \u642C\u5BB6\u524D\u81EA\u52A8\u5907\u4EFD\u5931\u8D25\uFF01\u662F\u5426\u4ECD\u8981\u7EE7\u7EED\uFF1F\n\n\u5EFA\u8BAE\u5148\u89E3\u51B3\u5907\u4EFD\u95EE\u9898\u518D\u642C\u5BB6\u3002")) {
+        return;
+      }
+    }
+    const report = await migrateScriptsToFiles();
+    if (report.alreadyMigrated) {
+      showScriptsStorageReport(`\u5267\u672C\u5DF2\u7ECF\u642C\u8FC7\u5BB6\u4E86\u3002`, "#feca57");
+      return;
+    }
+    if (!report.ok) {
+      showScriptsStorageReport(
+        `\u274C <b>\u642C\u5BB6\u5DF2\u4E2D\u6B62\uFF0C\u672A\u6539\u52A8\u4EFB\u4F55\u6570\u636E</b><br>${report.reason}<br>\u6307\u9488\u6CA1\u6709\u5199\u5165\uFF0C\u5267\u672C\u4ECD\u4ECE\u8BBE\u7F6E\u91CC\u8BFB\u53D6\uFF0C\u53EF\u4EE5\u76F4\u63A5\u91CD\u8BD5\u3002`,
+        "#ff7675"
+      );
+      if (window.toastr) toastr.error("\u642C\u5BB6\u5DF2\u4E2D\u6B62\uFF0C\u6570\u636E\u672A\u6539\u52A8", "Titania Echo");
+      return;
+    }
+    showScriptsStorageReport(
+      `\u2705 <b>\u642C\u5BB6\u5B8C\u6210</b>\uFF1A${report.written.count} \u6761\u5267\u672C\u5DF2\u5199\u5165 <code>user/files/${SCRIPTS_FILE_NAME}</code>\uFF08${formatBytes(report.written.bytes)}\uFF09\u3002<br>\u8BBE\u7F6E\u91CC\u7684\u6307\u9488\u53EA\u5360 ${formatBytes(report.pointerBytes)}\u3002\u8017\u65F6 ${report.durationMs} ms\u3002<br>\u65E7\u6570\u636E\u4ECD\u4FDD\u7559\u4F5C\u5B89\u5168\u7F51\uFF0C\u7B49\u4F60\u786E\u8BA4\u65E0\u8BEF\u540E\u518D\u6267\u884C\u6536\u5C3E\u5220\u9664\uFF0C\u5C4A\u65F6\u53EF\u4ECE\u8BBE\u7F6E\u91CC\u817E\u51FA ${formatBytes(report.pendingRemovalBytes)}\u3002`,
+      "#55efc4"
+    );
+    if (window.toastr) toastr.success(`${report.written.count} \u6761\u5267\u672C\u5DF2\u642C\u5230\u6587\u4EF6\u5B58\u50A8`, "Titania Echo");
+    loadScripts();
+  } catch (e) {
+    console.error("Titania: \u5267\u672C\u642C\u5BB6\u5931\u8D25", e);
+    showScriptsStorageReport(`\u274C \u642C\u5BB6\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
+    if (window.toastr) toastr.error(e?.message || "\u642C\u5BB6\u5931\u8D25", "Titania Echo");
+  } finally {
+    renderScriptsStorageCard();
+  }
 }
 async function loadExtensionSettings() {
   extension_settings2[extensionName] = extension_settings2[extensionName] || {};
@@ -47719,6 +48006,19 @@ async function loadExtensionSettings() {
   }
   if (!settingsWereEmpty) {
     bootstrapEmptyFavsIndex();
+    await bootstrapEmptyScriptsStore();
+  }
+  const hydration = await hydrateScripts();
+  if (!hydration.ok) {
+    console.error("Titania: \u5267\u672C\u8F7D\u5165\u5931\u8D25", hydration.error);
+    if (window.toastr) {
+      toastr.error(
+        `\u5267\u672C\u6570\u636E\u672A\u80FD\u8F7D\u5165\uFF0C\u5267\u672C\u8BFB\u5199\u5DF2\u6682\u505C\u3002\u8BF7\u5237\u65B0\u91CD\u8BD5\u6216\u4ECE\u5907\u4EFD\u6062\u590D\u3002
+${hydration.error}`,
+        "Titania Echo",
+        { timeOut: 15e3 }
+      );
+    }
   }
   $("#titania-version-badge").text(`v${CURRENT_VERSION}`);
   initCoreFeatures();

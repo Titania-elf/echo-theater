@@ -31,11 +31,19 @@ import {
 } from "./core/favsStore.js";
 import {
     isScriptsMigrated,
+    hydrateScripts,
+    bootstrapEmptyScriptsStore,
+    migrateScriptsToFiles,
     dryRunScriptsMigration,
+    exportScriptsAsLegacyArray,
+    flushScriptsNow,
+    setScripts,
     describeCurrentScriptsFootprint,
     describeScriptsStorageFootprint,
     getHydrationError as getScriptsHydrationError,
-    SCRIPTS_FILE_NAME
+    getLastWriteError as getScriptsLastWriteError,
+    SCRIPTS_FILE_NAME,
+    SCRIPTS_STORE_KEY
 } from "./core/scriptStore.js";
 import { initExtensionUpdate } from "./core/extensionUpdate.js";
 import { initSyncListener } from "./core/worldInfoManager.js";
@@ -156,7 +164,13 @@ function initCoreFeatures() {
 
             let migrated = false;
             if (oldCfg) { extData.config = oldCfg; migrated = true; }
-            if (oldScripts) { extData.user_scripts = oldScripts; migrated = true; }
+            // ⚠ 剧本必须走 setScripts()，不能直接写 extData.user_scripts。
+            //   顺序上 loadExtensionSettings() 已经先跑过 bootstrapEmptyScriptsStore()：
+            //   一个 v3 老安装此刻 user_scripts 是空的，于是空文件存储已经建好、
+            //   读取来源已切到文件缓存。这时候直接写 extData.user_scripts，
+            //   剧本会被写进 settings 却永远读不出来（缓存是空数组）。
+            //   setScripts() 会落到当前真正的存储上，搬没搬家都对。
+            if (oldScripts) { setScripts(oldScripts); migrated = true; }
             if (oldFavs) { extData.favs = oldFavs; migrated = true; }
 
             if (migrated) {
@@ -371,6 +385,15 @@ function countVectorItems(vectorData) {
 
 async function createFullBackupPayload(options = {}) {
     const includeVectors = options.includeVectors !== false;
+
+    // 剧本搬家后可能有改动还在落盘队列里。快照是从内存对象拷的，
+    // 但先把队列清空能保证「备份里的内容 = 磁盘上的内容」，
+    // 排查问题时少一个变量。落盘失败会抛错，宁可导不出备份也不给一份来源不明的。
+    if (isScriptsMigrated()) {
+        const flushed = await flushScriptsNow();
+        if (!flushed) throw new Error("剧本尚未成功落盘，已中止备份导出。请先解决保存失败的问题。");
+    }
+
     const extDataSnapshot = JSON.parse(JSON.stringify(getExtData()));
 
     // 搬家后收藏正文已不在 settings.json 里，快照只剩索引 —— 直接导出会得到
@@ -383,6 +406,13 @@ async function createFullBackupPayload(options = {}) {
     if (isFavsMigrated()) {
         extDataSnapshot.favs = await exportFavsAsLegacyArray();
         delete extDataSnapshot[FAVS_INDEX_KEY];
+    }
+
+    // 剧本同理。搬家后 settings 里只剩指针，快照里的 user_scripts 在
+    // 「收尾删除旧数据」之后会是空的 —— 必须从文件回填成旧数组形状。
+    if (isScriptsMigrated()) {
+        extDataSnapshot.user_scripts = exportScriptsAsLegacyArray();
+        delete extDataSnapshot[SCRIPTS_STORE_KEY];
     }
 
     const vectorData = includeVectors ? await buildVectorBackupData() : { version: 1, characters: [] };
@@ -478,6 +508,13 @@ function bindDrawerBackupControls() {
             // 这里显式清掉，干净地退回「未搬家」状态，由用户重新搬一次。
             if (!Object.prototype.hasOwnProperty.call(extDataPayload, FAVS_INDEX_KEY)) {
                 delete currentData[FAVS_INDEX_KEY];
+            }
+
+            // 剧本同理，而且更要紧：指针残留会让插件继续从**上一批**剧本的文件里读，
+            // 而 user_scripts 已经被导入的备份覆盖 —— 用户会看到「导入成功但剧本没变」。
+            // 清掉指针后干净退回「未搬家」状态，剧本从 user_scripts 读，再搬一次即可。
+            if (!Object.prototype.hasOwnProperty.call(extDataPayload, SCRIPTS_STORE_KEY)) {
+                delete currentData[SCRIPTS_STORE_KEY];
             }
 
             const existingVectorCharacters = await getAllIndexedCharacters();
@@ -1067,11 +1104,26 @@ function renderScriptsStorageCard() {
 
     if (migrated) {
         const store = describeScriptsStorageFootprint();
-        $desc.html(
-            `剧本 <b>${store.count}</b> 条 · <b>${formatBytes(store.fileBytes)}</b> 存在 `
+        const legacy = getExtData().user_scripts;
+        const legacyCount = Array.isArray(legacy) ? legacy.length : 0;
+        const writeError = getScriptsLastWriteError();
+
+        let html = `剧本 <b>${store.count}</b> 条 · <b>${formatBytes(store.fileBytes)}</b> 存在 `
             + `<code>user/files/${SCRIPTS_FILE_NAME}</code>`
-            + ` · 设置里只剩 <b>${formatBytes(store.pointerBytes)}</b> 的指针`
-        );
+            + ` · 设置里的指针只占 <b>${formatBytes(store.pointerBytes)}</b>`;
+
+        if (writeError) {
+            html += `<br><span style="color:#ff7675;">⚠️ 最近一次保存失败：${writeError}`
+                + `<br>改动可能没有写进文件。请检查 ST 服务端是否正常，然后重新编辑一次触发保存。</span>`;
+        }
+
+        if (legacyCount > 0) {
+            html += `<br><span style="color:#feca57;">旧数据仍作为安全网保留在设置里`
+                + `（${legacyCount} 条，${formatBytes(footprint.bytes)}），所以设置文件<b>还没变小</b>。`
+                + `<br>先正常用一段时间，确认剧本读写都没问题，再执行收尾删除。</span>`;
+        }
+
+        $desc.html(html);
         $actions.empty();
         return;
     }
@@ -1083,10 +1135,14 @@ function renderScriptsStorageCard() {
         + `（其中指令正文 <b>${formatBytes(footprint.promptBytes)}</b>）。`
         + `<br>先跑一次试运行：它会把剧本写成文件再读回来逐条比对，`
         + `<b>不改动任何现有数据</b>，只告诉你搬家是否安全。`
+        + `<br><span style="color:#feca57;">⚠️ 搬家前会自动下载一份备份，请保存好这个文件。`
+        + `搬家后旧数据仍会保留一段时间作为安全网，所以设置文件要等「完成收尾」才会变小。</span>`
     );
     $actions.html(
         `<button class="titania-mini-btn" data-act="dryrun">`
         + `<i class="fa-solid fa-vial"></i> 试运行搬家（不改数据）</button>`
+        + `<button class="titania-mini-btn is-import" data-act="migrate">`
+        + `<i class="fa-solid fa-box-archive"></i> 一键搬家（自动备份）</button>`
     );
 }
 
@@ -1096,50 +1152,107 @@ function bindScriptsStorageCard() {
 
     $card.off("click", "[data-act]").on("click", "[data-act]", async function () {
         const act = $(this).attr("data-act");
-        if (act !== "dryrun") return;
-
-        const $btn = $(this);
-        $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 试运行中...');
-
-        try {
-            const report = await dryRunScriptsMigration();
-
-            if (report.empty) {
-                showScriptsStorageReport(`当前没有自定义剧本，无需搬家。`, "#feca57");
-            } else if (report.ok) {
-                showScriptsStorageReport(
-                    `✅ <b>试运行通过</b>：${report.settings.count} 条剧本写入文件后读回，`
-                    + `逐条深比对<b>完全一致</b>。`
-                    + `<br>文件 ${formatBytes(report.written.bytes)}，`
-                    + `搬家后可从设置里腾出 ${formatBytes(report.settings.bytes)}。`
-                    + `<br>耗时 ${report.durationMs} ms。试运行文件已删除，现有数据未改动。`
-                    + (report.cleanupError ? `<br>⚠️ 试运行文件清理失败：${report.cleanupError}` : ""),
-                    "#55efc4"
-                );
-                if (window.toastr) toastr.success("试运行通过，数据可安全搬家", "Titania Echo");
-            } else if (report.mismatches?.length) {
-                showScriptsStorageReport(
-                    `❌ <b>往返比对不一致，请勿搬家</b>`
-                    + `<br>· ${report.mismatches.join("<br>· ")}`
-                    + `<br>完整信息见控制台。`,
-                    "#ff7675"
-                );
-                console.error("[Titania] 剧本试运行比对不一致", report);
-                if (window.toastr) toastr.error("试运行比对不一致", "Titania Echo");
-            } else {
-                showScriptsStorageReport(`❌ 试运行失败：${report.reason}`, "#ff7675");
-                if (window.toastr) toastr.error(report.reason || "试运行失败", "Titania Echo");
-            }
-        } catch (e) {
-            console.error("Titania: 剧本试运行失败", e);
-            showScriptsStorageReport(`❌ 试运行失败：${e?.message || String(e)}`, "#ff7675");
-            if (window.toastr) toastr.error(e?.message || "试运行失败", "Titania Echo");
-        } finally {
-            renderScriptsStorageCard();
-        }
+        if (act === "dryrun") return void handleScriptsDryRun($(this));
+        if (act === "migrate") return void handleScriptsMigrate($(this));
     });
 
     renderScriptsStorageCard();
+}
+
+async function handleScriptsDryRun($btn) {
+    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 试运行中...');
+
+    try {
+        const report = await dryRunScriptsMigration();
+
+        if (report.empty) {
+            showScriptsStorageReport(`当前没有自定义剧本，无需搬家。`, "#feca57");
+        } else if (report.ok) {
+            showScriptsStorageReport(
+                `✅ <b>试运行通过</b>：${report.settings.count} 条剧本写入文件后读回，`
+                + `逐条深比对<b>完全一致</b>。`
+                + `<br>文件 ${formatBytes(report.written.bytes)}，`
+                + `搬家后可从设置里腾出 ${formatBytes(report.settings.bytes)}。`
+                + `<br>耗时 ${report.durationMs} ms。试运行文件已删除，现有数据未改动。`
+                + (report.cleanupError ? `<br>⚠️ 试运行文件清理失败：${report.cleanupError}` : ""),
+                "#55efc4"
+            );
+            if (window.toastr) toastr.success("试运行通过，数据可安全搬家", "Titania Echo");
+        } else if (report.mismatches?.length) {
+            showScriptsStorageReport(
+                `❌ <b>往返比对不一致，请勿搬家</b>`
+                + `<br>· ${report.mismatches.join("<br>· ")}`
+                + `<br>完整信息见控制台。`,
+                "#ff7675"
+            );
+            console.error("[Titania] 剧本试运行比对不一致", report);
+            if (window.toastr) toastr.error("试运行比对不一致", "Titania Echo");
+        } else {
+            showScriptsStorageReport(`❌ 试运行失败：${report.reason}`, "#ff7675");
+            if (window.toastr) toastr.error(report.reason || "试运行失败", "Titania Echo");
+        }
+    } catch (e) {
+        console.error("Titania: 剧本试运行失败", e);
+        showScriptsStorageReport(`❌ 试运行失败：${e?.message || String(e)}`, "#ff7675");
+        if (window.toastr) toastr.error(e?.message || "试运行失败", "Titania Echo");
+    } finally {
+        renderScriptsStorageCard();
+    }
+}
+
+async function handleScriptsMigrate($btn) {
+    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 搬家中...');
+
+    try {
+        // 搬家本身不删任何东西（旧数组保留作安全网），但仍先强制备份一次：
+        // 用户点这个按钮时未必分得清哪一步才是不可逆的，而这一步之后
+        // settings.json 会被写入指针 —— 有一份搬家前的快照总是更好回退。
+        try {
+            const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+            downloadBackupPayload(snapshot, backupFileName("before_scripts_migration"));
+            if (window.toastr) toastr.info("已下载搬家前备份，请保存这个文件", "Titania Echo");
+        } catch (backupErr) {
+            console.warn("Titania: 搬家前备份失败", backupErr);
+            if (!confirm("⚠️ 搬家前自动备份失败！是否仍要继续？\n\n建议先解决备份问题再搬家。")) {
+                return;
+            }
+        }
+
+        const report = await migrateScriptsToFiles();
+
+        if (report.alreadyMigrated) {
+            showScriptsStorageReport(`剧本已经搬过家了。`, "#feca57");
+            return;
+        }
+        if (!report.ok) {
+            showScriptsStorageReport(
+                `❌ <b>搬家已中止，未改动任何数据</b><br>${report.reason}`
+                + `<br>指针没有写入，剧本仍从设置里读取，可以直接重试。`,
+                "#ff7675"
+            );
+            if (window.toastr) toastr.error("搬家已中止，数据未改动", "Titania Echo");
+            return;
+        }
+
+        showScriptsStorageReport(
+            `✅ <b>搬家完成</b>：${report.written.count} 条剧本已写入 `
+            + `<code>user/files/${SCRIPTS_FILE_NAME}</code>（${formatBytes(report.written.bytes)}）。`
+            + `<br>设置里的指针只占 ${formatBytes(report.pointerBytes)}。耗时 ${report.durationMs} ms。`
+            + `<br>旧数据仍保留作安全网，等你确认无误后再执行收尾删除，`
+            + `届时可从设置里腾出 ${formatBytes(report.pendingRemovalBytes)}。`,
+            "#55efc4"
+        );
+        if (window.toastr) toastr.success(`${report.written.count} 条剧本已搬到文件存储`, "Titania Echo");
+
+        // 运行时要重建一次：读取来源已经从 user_scripts 切到文件缓存
+        loadScripts();
+    } catch (e) {
+        console.error("Titania: 剧本搬家失败", e);
+        showScriptsStorageReport(`❌ 搬家失败：${e?.message || String(e)}`, "#ff7675");
+        if (window.toastr) toastr.error(e?.message || "搬家失败", "Titania Echo");
+    } finally {
+        renderScriptsStorageCard();
+    }
 }
 
 async function loadExtensionSettings() {
@@ -1158,6 +1271,26 @@ async function loadExtensionSettings() {
     // 真·新用户因此要晚一次刷新才建上索引，代价可接受。
     if (!settingsWereEmpty) {
         bootstrapEmptyFavsIndex();
+        await bootstrapEmptyScriptsStore();
+    }
+
+    // 剧本整表从文件读进内存。⚠ 必须在 initCoreFeatures() **之前** await ——
+    // 那里的 loadScripts() 是同步的，会立刻整表重建 GlobalState.runtimeScripts。
+    // 未搬家时本调用是空操作（getScripts 自动回退读 data.user_scripts）。
+    //
+    // 失败时刻意**不**抛出：抛出会中断后面整个初始化，插件直接不可用。
+    // scriptStore 内部已置只读保护标志（读写全部拒绝、不会用空数组覆盖文件），
+    // 这里只负责把原因告诉用户 —— 设置页的存储卡片也会显示同一条原因。
+    const hydration = await hydrateScripts();
+    if (!hydration.ok) {
+        console.error("Titania: 剧本载入失败", hydration.error);
+        if (window.toastr) {
+            toastr.error(
+                `剧本数据未能载入，剧本读写已暂停。请刷新重试或从备份恢复。\n${hydration.error}`,
+                "Titania Echo",
+                { timeOut: 15000 }
+            );
+        }
     }
 
     // 设置版本号显示
