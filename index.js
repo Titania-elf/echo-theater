@@ -46228,6 +46228,144 @@ init_favsStore();
 import { extension_settings as extension_settings2 } from "../../../extensions.js";
 import { saveSettingsDebounced as saveSettingsDebounced2, eventSource as eventSource5, event_types as event_types5 } from "../../../../script.js";
 
+// src/core/scriptStore.js
+init_storage();
+init_userFiles();
+init_logger();
+var SCRIPTS_FILE_NAME = "titania_scripts.json";
+var SCRIPTS_DRYRUN_FILE_NAME = "titania_scripts_dryrun.json";
+var SCRIPTS_FILE_VERSION = 1;
+var SCRIPTS_STORE_KEY = "scripts_store";
+var SCRIPTS_STORE_VERSION = 1;
+var hydrationError = null;
+function getScriptsPointer() {
+  const store = getExtData()[SCRIPTS_STORE_KEY];
+  if (!store || typeof store !== "object") return null;
+  if (Number(store.version) !== SCRIPTS_STORE_VERSION) {
+    TitaniaLogger.warn(`\u5267\u672C\u5B58\u50A8\u6307\u9488\u7248\u672C\u4E0D\u53D7\u652F\u6301\uFF1A${store.version}\uFF0C\u6309\u672A\u642C\u5BB6\u5904\u7406`);
+    return null;
+  }
+  return store;
+}
+function isScriptsMigrated() {
+  return getScriptsPointer() !== null;
+}
+function buildScriptsFile(scripts, rev) {
+  return {
+    version: SCRIPTS_FILE_VERSION,
+    rev: Number(rev) || 1,
+    savedAt: Date.now(),
+    scripts: Array.isArray(scripts) ? scripts : []
+  };
+}
+async function writeScriptsFile(scripts, rev, fileName = SCRIPTS_FILE_NAME) {
+  const text = JSON.stringify(buildScriptsFile(scripts, rev));
+  const file = await uploadTextFile(fileName, text);
+  return { file, bytes: utf8ByteLength(text), rev: Number(rev) || 1, count: scripts.length };
+}
+async function readScriptsFile(filePath, rev = 0) {
+  const raw = await fetchTextFile(filePath, rev);
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(`\u5267\u672C\u6587\u4EF6\u4E0D\u662F\u5408\u6CD5 JSON\uFF08${filePath}\uFF09\uFF1A${e?.message || e}`);
+  }
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error(`\u5267\u672C\u6587\u4EF6\u7ED3\u6784\u5F02\u5E38\uFF08${filePath}\uFF09`);
+  }
+  if (Number(parsed.version) !== SCRIPTS_FILE_VERSION) {
+    throw new Error(`\u5267\u672C\u6587\u4EF6\u7248\u672C\u4E0D\u53D7\u652F\u6301\uFF1A${parsed.version}\uFF08${filePath}\uFF09`);
+  }
+  if (!Array.isArray(parsed.scripts)) {
+    throw new Error(`\u5267\u672C\u6587\u4EF6\u7F3A\u5C11 scripts \u6570\u7EC4\uFF08${filePath}\uFF09`);
+  }
+  return parsed;
+}
+function getHydrationError() {
+  return hydrationError;
+}
+function describeCurrentScriptsFootprint() {
+  const scripts = getExtData().user_scripts;
+  const list = Array.isArray(scripts) ? scripts : [];
+  const promptBytes = list.reduce((sum, s) => sum + utf8ByteLength(String(s?.prompt || "")), 0);
+  return {
+    count: list.length,
+    bytes: utf8ByteLength(JSON.stringify(list)),
+    promptBytes
+  };
+}
+function describeScriptsStorageFootprint() {
+  const pointer = getScriptsPointer();
+  if (!pointer) return null;
+  return {
+    count: Number(pointer.count) || 0,
+    fileBytes: Number(pointer.bytes) || 0,
+    pointerBytes: utf8ByteLength(JSON.stringify(pointer)),
+    file: String(pointer.file || ""),
+    rev: Number(pointer.rev) || 0,
+    migratedAt: Number(pointer.migratedAt) || 0
+  };
+}
+async function dryRunScriptsMigration() {
+  const startedAt = Date.now();
+  const source = getExtData().user_scripts;
+  const list = Array.isArray(source) ? source : [];
+  const footprint = describeCurrentScriptsFootprint();
+  if (list.length === 0) {
+    return {
+      ok: true,
+      empty: true,
+      reason: "\u5F53\u524D\u6CA1\u6709\u81EA\u5B9A\u4E49\u5267\u672C\uFF0C\u65E0\u9700\u642C\u5BB6",
+      settings: footprint,
+      durationMs: Date.now() - startedAt
+    };
+  }
+  let written = null;
+  let readBack = null;
+  let cleanupError = null;
+  try {
+    written = await writeScriptsFile(list, 1, SCRIPTS_DRYRUN_FILE_NAME);
+    readBack = await readScriptsFile(written.file, 1);
+  } catch (e) {
+    return {
+      ok: false,
+      reason: e?.message || String(e),
+      settings: footprint,
+      durationMs: Date.now() - startedAt
+    };
+  } finally {
+    if (written) {
+      try {
+        await deleteUserFile(written.file, { label: "\u5267\u672C\u8BD5\u8FD0\u884C\u6587\u4EF6" });
+      } catch (e) {
+        cleanupError = e?.message || String(e);
+      }
+    }
+  }
+  const mismatches = [];
+  const back = readBack.scripts;
+  if (back.length !== list.length) {
+    mismatches.push(`\u6761\u6570\u4E0D\u4E00\u81F4\uFF1A\u6E90 ${list.length}\uFF0C\u8BFB\u56DE ${back.length}`);
+  }
+  const limit = Math.min(back.length, list.length);
+  for (let i = 0; i < limit; i++) {
+    if (JSON.stringify(back[i]) !== JSON.stringify(list[i])) {
+      mismatches.push(`\u7B2C ${i + 1} \u6761\uFF08id=${list[i]?.id}\uFF09\u5185\u5BB9\u4E0D\u4E00\u81F4`);
+      if (mismatches.length >= 5) break;
+    }
+  }
+  return {
+    ok: mismatches.length === 0,
+    identical: mismatches.length === 0,
+    mismatches,
+    settings: footprint,
+    written: { count: written.count, bytes: written.bytes },
+    cleanupError,
+    durationMs: Date.now() - startedAt
+  };
+}
+
 // src/core/extensionUpdate.js
 init_defaults();
 import { getRequestHeaders as getRequestHeaders2 } from "../../../../script.js";
@@ -47128,6 +47266,7 @@ function bindDrawerBackupControls() {
     }
   });
   renderFavsStorageCard();
+  bindScriptsStorageCard();
 }
 function formatBytes(bytes) {
   const n = Number(bytes) || 0;
@@ -47485,6 +47624,92 @@ async function runStorageCheck($btn) {
   } finally {
     renderFavsStorageCard();
   }
+}
+function showScriptsStorageReport(html, tone) {
+  const reportId = "titania-scripts-storage-report";
+  let $report = $(`#${reportId}`);
+  if ($report.length === 0) {
+    const $card = $("#titania-scripts-storage-card");
+    if ($card.length === 0) return;
+    $report = $(`<div class="titania-backup-desc" id="${reportId}"></div>`);
+    $card.append($report);
+  }
+  $report.html(`<span style="color:${tone};">${html}</span>`);
+}
+function renderScriptsStorageCard() {
+  const $card = $("#titania-scripts-storage-card");
+  if ($card.length === 0) return;
+  const $desc = $("#titania-scripts-storage-desc");
+  const $actions = $("#titania-scripts-storage-actions");
+  const hydrationError2 = getHydrationError();
+  const migrated = isScriptsMigrated();
+  const footprint = describeCurrentScriptsFootprint();
+  if (hydrationError2) {
+    $card.removeAttr("hidden");
+    $desc.html(
+      `<span style="color:#ff7675;">\u274C <b>\u5267\u672C\u6570\u636E\u672A\u80FD\u8F7D\u5165</b></span><br><code>${hydrationError2}</code><br>\u4E3A\u907F\u514D\u8986\u76D6\u78C1\u76D8\u4E0A\u7684\u6587\u4EF6\uFF0C\u6240\u6709\u5267\u672C\u8BFB\u5199\u5DF2\u6682\u505C\u3002<br>\u8BF7\u5148\u5237\u65B0\u9875\u9762\u91CD\u8BD5\uFF1B\u4ECD\u7136\u5931\u8D25\u5C31\u7528\u4E0A\u9762\u7684\u300C\u5BFC\u5165\u5907\u4EFD\u300D\u6062\u590D\u3002`
+    );
+    $actions.empty();
+    return;
+  }
+  if (!migrated && footprint.count === 0) {
+    $card.attr("hidden", "hidden");
+    return;
+  }
+  $card.removeAttr("hidden");
+  if (migrated) {
+    const store = describeScriptsStorageFootprint();
+    $desc.html(
+      `\u5267\u672C <b>${store.count}</b> \u6761 \xB7 <b>${formatBytes(store.fileBytes)}</b> \u5B58\u5728 <code>user/files/${SCRIPTS_FILE_NAME}</code> \xB7 \u8BBE\u7F6E\u91CC\u53EA\u5269 <b>${formatBytes(store.pointerBytes)}</b> \u7684\u6307\u9488`
+    );
+    $actions.empty();
+    return;
+  }
+  $desc.html(
+    `\u5267\u672C\u6307\u4EE4\u73B0\u5728\u548C\u8BBE\u7F6E\u5B58\u5728\u4E00\u8D77\u3002ST \u6BCF\u6B21\u4FDD\u5B58\u8BBE\u7F6E\u90FD\u4F1A\u628A\u6574\u4E2A\u8BBE\u7F6E\u6587\u4EF6\u91CD\u5199\u4E00\u904D\uFF0C\u6240\u4EE5\u5267\u672C\u8D8A\u591A\uFF0C\u6539\u4EFB\u4F55\u4E00\u4E2A\u5F00\u5173\u5C31\u8D8A\u6162\u3002<br>\u5F53\u524D <b>${footprint.count}</b> \u6761\uFF0C\u5360 <b>${formatBytes(footprint.bytes)}</b>\uFF08\u5176\u4E2D\u6307\u4EE4\u6B63\u6587 <b>${formatBytes(footprint.promptBytes)}</b>\uFF09\u3002<br>\u5148\u8DD1\u4E00\u6B21\u8BD5\u8FD0\u884C\uFF1A\u5B83\u4F1A\u628A\u5267\u672C\u5199\u6210\u6587\u4EF6\u518D\u8BFB\u56DE\u6765\u9010\u6761\u6BD4\u5BF9\uFF0C<b>\u4E0D\u6539\u52A8\u4EFB\u4F55\u73B0\u6709\u6570\u636E</b>\uFF0C\u53EA\u544A\u8BC9\u4F60\u642C\u5BB6\u662F\u5426\u5B89\u5168\u3002`
+  );
+  $actions.html(
+    `<button class="titania-mini-btn" data-act="dryrun"><i class="fa-solid fa-vial"></i> \u8BD5\u8FD0\u884C\u642C\u5BB6\uFF08\u4E0D\u6539\u6570\u636E\uFF09</button>`
+  );
+}
+function bindScriptsStorageCard() {
+  const $card = $("#titania-scripts-storage-card");
+  if ($card.length === 0) return;
+  $card.off("click", "[data-act]").on("click", "[data-act]", async function() {
+    const act = $(this).attr("data-act");
+    if (act !== "dryrun") return;
+    const $btn = $(this);
+    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> \u8BD5\u8FD0\u884C\u4E2D...');
+    try {
+      const report = await dryRunScriptsMigration();
+      if (report.empty) {
+        showScriptsStorageReport(`\u5F53\u524D\u6CA1\u6709\u81EA\u5B9A\u4E49\u5267\u672C\uFF0C\u65E0\u9700\u642C\u5BB6\u3002`, "#feca57");
+      } else if (report.ok) {
+        showScriptsStorageReport(
+          `\u2705 <b>\u8BD5\u8FD0\u884C\u901A\u8FC7</b>\uFF1A${report.settings.count} \u6761\u5267\u672C\u5199\u5165\u6587\u4EF6\u540E\u8BFB\u56DE\uFF0C\u9010\u6761\u6DF1\u6BD4\u5BF9<b>\u5B8C\u5168\u4E00\u81F4</b>\u3002<br>\u6587\u4EF6 ${formatBytes(report.written.bytes)}\uFF0C\u642C\u5BB6\u540E\u53EF\u4ECE\u8BBE\u7F6E\u91CC\u817E\u51FA ${formatBytes(report.settings.bytes)}\u3002<br>\u8017\u65F6 ${report.durationMs} ms\u3002\u8BD5\u8FD0\u884C\u6587\u4EF6\u5DF2\u5220\u9664\uFF0C\u73B0\u6709\u6570\u636E\u672A\u6539\u52A8\u3002` + (report.cleanupError ? `<br>\u26A0\uFE0F \u8BD5\u8FD0\u884C\u6587\u4EF6\u6E05\u7406\u5931\u8D25\uFF1A${report.cleanupError}` : ""),
+          "#55efc4"
+        );
+        if (window.toastr) toastr.success("\u8BD5\u8FD0\u884C\u901A\u8FC7\uFF0C\u6570\u636E\u53EF\u5B89\u5168\u642C\u5BB6", "Titania Echo");
+      } else if (report.mismatches?.length) {
+        showScriptsStorageReport(
+          `\u274C <b>\u5F80\u8FD4\u6BD4\u5BF9\u4E0D\u4E00\u81F4\uFF0C\u8BF7\u52FF\u642C\u5BB6</b><br>\xB7 ${report.mismatches.join("<br>\xB7 ")}<br>\u5B8C\u6574\u4FE1\u606F\u89C1\u63A7\u5236\u53F0\u3002`,
+          "#ff7675"
+        );
+        console.error("[Titania] \u5267\u672C\u8BD5\u8FD0\u884C\u6BD4\u5BF9\u4E0D\u4E00\u81F4", report);
+        if (window.toastr) toastr.error("\u8BD5\u8FD0\u884C\u6BD4\u5BF9\u4E0D\u4E00\u81F4", "Titania Echo");
+      } else {
+        showScriptsStorageReport(`\u274C \u8BD5\u8FD0\u884C\u5931\u8D25\uFF1A${report.reason}`, "#ff7675");
+        if (window.toastr) toastr.error(report.reason || "\u8BD5\u8FD0\u884C\u5931\u8D25", "Titania Echo");
+      }
+    } catch (e) {
+      console.error("Titania: \u5267\u672C\u8BD5\u8FD0\u884C\u5931\u8D25", e);
+      showScriptsStorageReport(`\u274C \u8BD5\u8FD0\u884C\u5931\u8D25\uFF1A${e?.message || String(e)}`, "#ff7675");
+      if (window.toastr) toastr.error(e?.message || "\u8BD5\u8FD0\u884C\u5931\u8D25", "Titania Echo");
+    } finally {
+      renderScriptsStorageCard();
+    }
+  });
+  renderScriptsStorageCard();
 }
 async function loadExtensionSettings() {
   extension_settings2[extensionName] = extension_settings2[extensionName] || {};
