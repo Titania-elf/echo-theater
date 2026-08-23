@@ -939,23 +939,9 @@
     overflow-x: hidden;
 }
 
-/* 面板滚动条样式 */
-.t-mode-panel::-webkit-scrollbar {
-    width: 8px;
-}
-
-.t-mode-panel::-webkit-scrollbar-track {
-    background: var(--t-color-surface-recess);
-}
-
-.t-mode-panel::-webkit-scrollbar-thumb {
-    background: var(--t-color-accent-border-subtle);
-    border-radius: 4px;
-}
-
-.t-mode-panel::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-accent-border-strong);
-}
+/* `.t-mode-panel` 的滚动条不再单独美化，走 01-base/scrollbar.css 的 4px 极简
+   基线（原先是 8px + accent 色滑块 —— 这一族四处 accent 滚动条是全插件最抢眼
+   的滚动条，与「存在感不强」的目标正相反）。 */
 
 .t-mode-panel:not(.active) {
     display: none;
@@ -999,24 +985,9 @@
     max-height: calc(100vh - 400px);
 }
 
-/* 总结结果区域的滚动条样式 */
-.t-summary-result::-webkit-scrollbar {
-    width: 8px;
-}
-
-.t-summary-result::-webkit-scrollbar-track {
-    background: var(--t-color-surface-recess);
-    border-radius: 4px;
-}
-
-.t-summary-result::-webkit-scrollbar-thumb {
-    background: var(--t-color-focus-ring);
-    border-radius: 4px;
-}
-
-.t-summary-result::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-accent-border-hover);
-}
+/* `.t-summary-result` 的滚动条不再单独美化，走 01-base/scrollbar.css。
+   注：这一处原先用的是 --t-color-focus-ring 当滑块色（不是 accent 族），
+   属于就手取色，删掉后该 token 在本文件不再被滚动条消费。 */
 
 .t-summary-text {
     color: var(--t-color-text-cool);
@@ -1371,25 +1342,9 @@
     overflow: auto;
 }
 
-/* 自定义滚动条 */
-.t-prompt-pre::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.t-prompt-pre::-webkit-scrollbar-track {
-    background: var(--t-color-surface-recess);
-    border-radius: 4px;
-}
-
-.t-prompt-pre::-webkit-scrollbar-thumb {
-    background: var(--t-color-accent-border-subtle);
-    border-radius: 4px;
-}
-
-.t-prompt-pre::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-accent-border-strong);
-}
+/* `.t-prompt-pre` 的滚动条不再单独美化，走 01-base/scrollbar.css。
+   原先是唯一显式给了 height: 8px 的一处（提示词预览会横向滚动）；
+   基础层的尺寸组同时声明 width/height: 4px，横向照样覆盖到。 */
 
 /* 弹窗 footer 调整 */
 #t-prompt-view-dialog .t-dialog-footer {
@@ -1669,24 +1624,7 @@
     border: 1px dashed var(--t-color-border-subtle);
 }
 
-/* 原有内容区滚动条 */
-.t-original-content-box::-webkit-scrollbar {
-    width: 6px;
-}
-
-.t-original-content-box::-webkit-scrollbar-track {
-    background: var(--t-color-surface-recess);
-    border-radius: 3px;
-}
-
-.t-original-content-box::-webkit-scrollbar-thumb {
-    background: var(--t-color-accent-border-subtle);
-    border-radius: 3px;
-}
-
-.t-original-content-box::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-accent-border-strong);
-}
+/* `.t-original-content-box` 的滚动条不再单独美化，走 01-base/scrollbar.css。 */
 
 /* ========== 保存模式选择样式 ========== */
 .t-save-mode-section {

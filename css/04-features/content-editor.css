@@ -53,24 +53,9 @@
     flex: 1;
 }
 
-/* 编辑器滚动条美化 */
-.t-ce-textarea::-webkit-scrollbar {
-    width: 8px;
-}
-
-.t-ce-textarea::-webkit-scrollbar-track {
-    background: var(--t-color-surface-sunken);
-    border-radius: 4px;
-}
-
-.t-ce-textarea::-webkit-scrollbar-thumb {
-    background: var(--t-color-border-strong);
-    border-radius: 4px;
-}
-
-.t-ce-textarea::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-surface-highest);
-}
+/* `.t-ce-textarea` 的滚动条不再单独美化：原先是 8px + 实色轨道 + 实色滑块，
+   与 01-base/scrollbar.css 的 4px 极简基线撞风格（同一窗口内会同时出现两种）。
+   删掉后走基础层。 */
 
 /* `.t-ce-footer` 的视觉全部由 02-components/panel.css 的 `.t-panel-footer` 提供，
    本文件不再需要任何声明。 */

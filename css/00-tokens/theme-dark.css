@@ -116,11 +116,19 @@
          浅色主题下前者仍要是深色半透明（遮罩），后者要变成浅灰 —— 合并就锁死了。
          这是第五次遇到「同值不同角色」（前四次：6b-2 表面、6b-6 白膜、
          6b-10 描边、6b-14 金族的 surface/text）。 */
-    --t-color-scrollbar-thumb: rgb(var(--t-c-neutral-13-rgb) / .2);
+    --t-color-scrollbar-thumb: rgb(var(--t-c-neutral-13-rgb) / .12);
     /* 滚动条滑块（Phase 6b-20 新增）。⚠ 不并入 --t-color-surface-* 白膜族：
-       浅色主题下滑块要变成**深色**，而白膜族仍是白色叠加，方向相反。 */
-    --t-color-scrollbar-thumb-hover: rgb(var(--t-c-neutral-13-rgb) / .4);
-    /* 滚动条滑块 hover。与静息档差 .2，是刻意的交互反馈。 */
+       浅色主题下滑块要变成**深色**，而白膜族仍是白色叠加，方向相反。
+       静息档从 .2 降到 .12（极简改造）：滑块宽度同期从 6px 收到 4px，
+       同样的 alpha 在更细的条上显得更硬，两个量必须一起调。 */
+    --t-color-scrollbar-thumb-hover: rgb(var(--t-c-neutral-13-rgb) / .28);
+    /* 滚动条滑块 hover。与静息档差 .16 —— 相对静息值翻一倍多，
+       比原先「差 .2」的绝对差更稳：静息越淡，需要的相对跃变越大才看得出来。 */
+    --t-color-scrollbar-thumb-active: rgb(var(--t-c-neutral-13-rgb) / .4);
+    /* 滚动条滑块拖动中（极简改造新增）。三档 .12 / .28 / .4 是递减的增量：
+       hover 要「能看见」，active 只需「确认抓住了」，不必再跳一大步。
+       ⚠ 三档共用 --t-c-neutral-13-rgb，浅色主题里该原语翻成 0 0 0，
+         故滑块自动变深色、无需在 theme-light.css 里单列（与前两档同理）。 */
     --t-color-surface-hover-solid: rgb(var(--t-c-neutral-7-rgb));
     /* #444 不透明 —— .t-tool-btn:hover 的底（Phase 6b-20 新增）。
        ⚠ 与 --t-color-border-strong 同值不同角色（那是描边）。

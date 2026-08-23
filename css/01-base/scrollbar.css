@@ -17,17 +17,51 @@
    ST 元素恢复原生外观。这正是 B2 要的结果。
 
    ── 特异性说明（重要，勿改成 ID 或 :is()）──
-   属性选择器与类同级 (0,1,0)。feature 层现有 31 条形如
-   `.t-mode-panel::-webkit-scrollbar` 的覆盖规则也是 (0,1,0)，而 01-base
-   在 manifest 中排在 04-features **之前**，故 feature 覆盖依然生效。
-   若把作用域写成 ID（如 `#t-overlay`）会变成 (1,0,0)，将无条件压过那 31 条
-   规则，造成视觉回归。
+   属性选择器与类同级 (0,1,0)，故本文件各组是 (0,1,1)（带伪类的是 (0,2,1)）。
+   极简改造前 feature 层有 7 组形如 `.t-mode-panel::-webkit-scrollbar` 的美化
+   覆盖，现已全部删除（统一走本文件）；只剩两组**刻意隐藏**的：
+     · 04-features/continuation.css  .t-continuation-shortcuts（横向快捷条）
+     · 04-features/favs.css          .t-fav-carousel-thumbs（走马灯缩略图条）
+   它们同为 (0,1,1)，而 04-features 在 manifest 中排在 01-base **之后**，
+   靠源序胜出 —— 这两处必须继续隐藏，勿动。
+   若把本文件的作用域写成 ID（如 `#t-overlay`）会变成 (1,0,0)，将无条件压过
+   那两组，把已经隐藏的滚动条又放出来。
    同理不使用 `:is()`：它取参数中最高的特异性，一旦列表里有 ID 就会整体提权
    （且实测 ST 全库未使用 `:is()`，保持一致的保守取向）。
 
    ── Phase 1 ──
    Phase 1 给 plan.md §8.2 清单里所有挂载点加上 `.t-root` 后，
    本文件的 6 组匹配器可整体折叠为 `.t-root` 与 `.t-root *` 两条。
+
+   ── 极简改造（本次）──
+   目标：4px 宽、静息几乎融进背景、hover 才明确。三档 alpha 见
+   00-tokens/theme-dark.css 的 --t-color-scrollbar-thumb{,-hover,-active}。
+
+   同时补上三条**显式复位**，把 ST 泄漏进作用域的声明清掉。它们原先无害，
+   是因为滑块有 6px 宽、静息 alpha 有 .2「盖得住」；收到 4px + .12 之后
+   全部变成可见缺陷：
+
+     · box-shadow  ST style.css:196/209 给 thumb:vertical/:horizontal 上了
+                   `inset 0 0 0 1px var(--black50a)`。插件没声明过 box-shadow，
+                   所以这条一直**直接生效**。内阴影裁到 padding box，配合下面
+                   那条 2px 边框，在 4px 的条上几乎糊满滑块芯部。
+     · border      ST 同两条规则里的 `border: 2px solid transparent`。4px 宽
+                   减去左右各 2px，可视芯部正好是 **0**。这是本次必须修的根因。
+     · min-height  ST 的 `min-height: 40px`(:vertical) / `min-width: 40px`
+                   (:horizontal)。40px 本身不难看，但「抓取下限由宿主决定」
+                   是个隐藏依赖 —— ST 改了值插件就跟着变。改为自己声明 24px。
+
+   ⚠ 这三条与 ST 的规则同为 (0,1,1)，靠**插件注入更晚**取胜（见文件头 B2 段）。
+     唯一压不过的是 ST 的 `body.movingUI ::-webkit-scrollbar-thumb:vertical
+     { border-top: 20px solid transparent }`(style.css:203)，(0,2,2) > 本文件
+     的 (0,1,1)。不去追它：滑块背景用 `background` 简写、background-clip 因此
+     是 border-box，背景铺满整个边框盒，那 20px 透明上边框画不出任何东西；
+     且内阴影已复位，没有第二个属性来暴露它。
+
+   ⚠ 滑块背景必须写 `background` **简写**而不是 background-color：简写会把
+     background-clip 一并复位成 border-box，正好抵掉 ST 那条
+     `background-clip: content-box`（同 (0,1,1)、插件在后）。改成 longhand
+     会让 content-box 复活，滑块又只剩芯部可见。
    ============================================================ */
 
 /* 尺寸 */
@@ -43,8 +77,8 @@
 [class*=" titania-"] ::-webkit-scrollbar,
 [id^="t-"] ::-webkit-scrollbar,
 [id^="titania-"] ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
 }
 
 /* 轨道 */
@@ -63,7 +97,26 @@
     background: transparent;
 }
 
-/* 滑块 */
+/* 轨道 hover —— 只为压掉 ST style.css:177 的 `::-webkit-scrollbar-track:hover
+   { background-color: rgba(126,126,126,0.2) }`。上面那条静息规则同为 (0,1,1)、
+   插件在后，本来就够；显式写出来是为了不依赖注入顺序 —— 一条灰轨道足以毁掉
+   「存在感不强」这个目标，不值得为省 12 行选择器把它挂在源序上。 */
+[class^="t-"]::-webkit-scrollbar-track:hover,
+[class*=" t-"]::-webkit-scrollbar-track:hover,
+[class^="titania-"]::-webkit-scrollbar-track:hover,
+[class*=" titania-"]::-webkit-scrollbar-track:hover,
+[id^="t-"]::-webkit-scrollbar-track:hover,
+[id^="titania-"]::-webkit-scrollbar-track:hover,
+[class^="t-"] ::-webkit-scrollbar-track:hover,
+[class*=" t-"] ::-webkit-scrollbar-track:hover,
+[class^="titania-"] ::-webkit-scrollbar-track:hover,
+[class*=" titania-"] ::-webkit-scrollbar-track:hover,
+[id^="t-"] ::-webkit-scrollbar-track:hover,
+[id^="titania-"] ::-webkit-scrollbar-track:hover {
+    background: transparent;
+}
+
+/* 滑块（含对 ST 泄漏的三条复位，理由见文件头） */
 [class^="t-"]::-webkit-scrollbar-thumb,
 [class*=" t-"]::-webkit-scrollbar-thumb,
 [class^="titania-"]::-webkit-scrollbar-thumb,
@@ -77,7 +130,9 @@
 [id^="t-"] ::-webkit-scrollbar-thumb,
 [id^="titania-"] ::-webkit-scrollbar-thumb {
     background: var(--t-color-scrollbar-thumb);
-    border-radius: 3px;
+    border-radius: 2px;
+    box-shadow: none;
+    border: 0;
 }
 
 /* 滑块 hover */
@@ -94,4 +149,57 @@
 [id^="t-"] ::-webkit-scrollbar-thumb:hover,
 [id^="titania-"] ::-webkit-scrollbar-thumb:hover {
     background: var(--t-color-scrollbar-thumb-hover);
+}
+
+/* 滑块拖动中。ST 只给了 `cursor: grabbing`（style.css:187），颜色没人管 ——
+   静息降到 .12 之后，没有这一档会让「按住了」缺少反馈。 */
+[class^="t-"]::-webkit-scrollbar-thumb:active,
+[class*=" t-"]::-webkit-scrollbar-thumb:active,
+[class^="titania-"]::-webkit-scrollbar-thumb:active,
+[class*=" titania-"]::-webkit-scrollbar-thumb:active,
+[id^="t-"]::-webkit-scrollbar-thumb:active,
+[id^="titania-"]::-webkit-scrollbar-thumb:active,
+[class^="t-"] ::-webkit-scrollbar-thumb:active,
+[class*=" t-"] ::-webkit-scrollbar-thumb:active,
+[class^="titania-"] ::-webkit-scrollbar-thumb:active,
+[class*=" titania-"] ::-webkit-scrollbar-thumb:active,
+[id^="t-"] ::-webkit-scrollbar-thumb:active,
+[id^="titania-"] ::-webkit-scrollbar-thumb:active {
+    background: var(--t-color-scrollbar-thumb-active);
+}
+
+/* 抓取下限。⚠ 必须按方向分开写，**不能**把 min-height / min-width 合进上面
+   那组无方向的滑块规则：min-* 作用在滑块的两个轴上，而滑块的横轴尺寸就是
+   滚动条的 4px。给纵向滑块设 min-width: 24px 会把它撑成 24px 宽，
+   给横向滑块设 min-height: 24px 会把它撑成 24px 高 —— 都会直接毁掉「细」。
+   ST 自己也是这么分的（style.css:200 / 213）。
+   特异度 (0,2,1) > ST 的 (0,1,1)，这两组不依赖注入顺序。 */
+[class^="t-"]::-webkit-scrollbar-thumb:vertical,
+[class*=" t-"]::-webkit-scrollbar-thumb:vertical,
+[class^="titania-"]::-webkit-scrollbar-thumb:vertical,
+[class*=" titania-"]::-webkit-scrollbar-thumb:vertical,
+[id^="t-"]::-webkit-scrollbar-thumb:vertical,
+[id^="titania-"]::-webkit-scrollbar-thumb:vertical,
+[class^="t-"] ::-webkit-scrollbar-thumb:vertical,
+[class*=" t-"] ::-webkit-scrollbar-thumb:vertical,
+[class^="titania-"] ::-webkit-scrollbar-thumb:vertical,
+[class*=" titania-"] ::-webkit-scrollbar-thumb:vertical,
+[id^="t-"] ::-webkit-scrollbar-thumb:vertical,
+[id^="titania-"] ::-webkit-scrollbar-thumb:vertical {
+    min-height: 24px;
+}
+
+[class^="t-"]::-webkit-scrollbar-thumb:horizontal,
+[class*=" t-"]::-webkit-scrollbar-thumb:horizontal,
+[class^="titania-"]::-webkit-scrollbar-thumb:horizontal,
+[class*=" titania-"]::-webkit-scrollbar-thumb:horizontal,
+[id^="t-"]::-webkit-scrollbar-thumb:horizontal,
+[id^="titania-"]::-webkit-scrollbar-thumb:horizontal,
+[class^="t-"] ::-webkit-scrollbar-thumb:horizontal,
+[class*=" t-"] ::-webkit-scrollbar-thumb:horizontal,
+[class^="titania-"] ::-webkit-scrollbar-thumb:horizontal,
+[class*=" titania-"] ::-webkit-scrollbar-thumb:horizontal,
+[id^="t-"] ::-webkit-scrollbar-thumb:horizontal,
+[id^="titania-"] ::-webkit-scrollbar-thumb:horizontal {
+    min-width: 24px;
 }

@@ -162,18 +162,8 @@
     border-radius: 6px;
 }
 
-.t-queue-script-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.t-queue-script-list::-webkit-scrollbar-track {
-    background: var(--t-color-surface-sunken);
-}
-
-.t-queue-script-list::-webkit-scrollbar-thumb {
-    background: var(--t-color-border-strong);
-    border-radius: 3px;
-}
+/* `.t-queue-script-list` 的滚动条不再单独美化，走 01-base/scrollbar.css 的
+   4px 极简基线（原先是 6px + 实色轨道，且没有 hover 档）。 */
 
 .t-queue-script-item {
     display: flex;

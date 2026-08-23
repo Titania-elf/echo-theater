@@ -2198,11 +2198,19 @@ function loadCssFiles() {
          \u6D45\u8272\u4E3B\u9898\u4E0B\u524D\u8005\u4ECD\u8981\u662F\u6DF1\u8272\u534A\u900F\u660E\uFF08\u906E\u7F69\uFF09\uFF0C\u540E\u8005\u8981\u53D8\u6210\u6D45\u7070 \u2014\u2014 \u5408\u5E76\u5C31\u9501\u6B7B\u4E86\u3002
          \u8FD9\u662F\u7B2C\u4E94\u6B21\u9047\u5230\u300C\u540C\u503C\u4E0D\u540C\u89D2\u8272\u300D\uFF08\u524D\u56DB\u6B21\uFF1A6b-2 \u8868\u9762\u30016b-6 \u767D\u819C\u3001
          6b-10 \u63CF\u8FB9\u30016b-14 \u91D1\u65CF\u7684 surface/text\uFF09\u3002 */
-    --t-color-scrollbar-thumb: rgb(var(--t-c-neutral-13-rgb) / .2);
+    --t-color-scrollbar-thumb: rgb(var(--t-c-neutral-13-rgb) / .12);
     /* \u6EDA\u52A8\u6761\u6ED1\u5757\uFF08Phase 6b-20 \u65B0\u589E\uFF09\u3002\u26A0 \u4E0D\u5E76\u5165 --t-color-surface-* \u767D\u819C\u65CF\uFF1A
-       \u6D45\u8272\u4E3B\u9898\u4E0B\u6ED1\u5757\u8981\u53D8\u6210**\u6DF1\u8272**\uFF0C\u800C\u767D\u819C\u65CF\u4ECD\u662F\u767D\u8272\u53E0\u52A0\uFF0C\u65B9\u5411\u76F8\u53CD\u3002 */
-    --t-color-scrollbar-thumb-hover: rgb(var(--t-c-neutral-13-rgb) / .4);
-    /* \u6EDA\u52A8\u6761\u6ED1\u5757 hover\u3002\u4E0E\u9759\u606F\u6863\u5DEE .2\uFF0C\u662F\u523B\u610F\u7684\u4EA4\u4E92\u53CD\u9988\u3002 */
+       \u6D45\u8272\u4E3B\u9898\u4E0B\u6ED1\u5757\u8981\u53D8\u6210**\u6DF1\u8272**\uFF0C\u800C\u767D\u819C\u65CF\u4ECD\u662F\u767D\u8272\u53E0\u52A0\uFF0C\u65B9\u5411\u76F8\u53CD\u3002
+       \u9759\u606F\u6863\u4ECE .2 \u964D\u5230 .12\uFF08\u6781\u7B80\u6539\u9020\uFF09\uFF1A\u6ED1\u5757\u5BBD\u5EA6\u540C\u671F\u4ECE 6px \u6536\u5230 4px\uFF0C
+       \u540C\u6837\u7684 alpha \u5728\u66F4\u7EC6\u7684\u6761\u4E0A\u663E\u5F97\u66F4\u786C\uFF0C\u4E24\u4E2A\u91CF\u5FC5\u987B\u4E00\u8D77\u8C03\u3002 */
+    --t-color-scrollbar-thumb-hover: rgb(var(--t-c-neutral-13-rgb) / .28);
+    /* \u6EDA\u52A8\u6761\u6ED1\u5757 hover\u3002\u4E0E\u9759\u606F\u6863\u5DEE .16 \u2014\u2014 \u76F8\u5BF9\u9759\u606F\u503C\u7FFB\u4E00\u500D\u591A\uFF0C
+       \u6BD4\u539F\u5148\u300C\u5DEE .2\u300D\u7684\u7EDD\u5BF9\u5DEE\u66F4\u7A33\uFF1A\u9759\u606F\u8D8A\u6DE1\uFF0C\u9700\u8981\u7684\u76F8\u5BF9\u8DC3\u53D8\u8D8A\u5927\u624D\u770B\u5F97\u51FA\u6765\u3002 */
+    --t-color-scrollbar-thumb-active: rgb(var(--t-c-neutral-13-rgb) / .4);
+    /* \u6EDA\u52A8\u6761\u6ED1\u5757\u62D6\u52A8\u4E2D\uFF08\u6781\u7B80\u6539\u9020\u65B0\u589E\uFF09\u3002\u4E09\u6863 .12 / .28 / .4 \u662F\u9012\u51CF\u7684\u589E\u91CF\uFF1A
+       hover \u8981\u300C\u80FD\u770B\u89C1\u300D\uFF0Cactive \u53EA\u9700\u300C\u786E\u8BA4\u6293\u4F4F\u4E86\u300D\uFF0C\u4E0D\u5FC5\u518D\u8DF3\u4E00\u5927\u6B65\u3002
+       \u26A0 \u4E09\u6863\u5171\u7528 --t-c-neutral-13-rgb\uFF0C\u6D45\u8272\u4E3B\u9898\u91CC\u8BE5\u539F\u8BED\u7FFB\u6210 0 0 0\uFF0C
+         \u6545\u6ED1\u5757\u81EA\u52A8\u53D8\u6DF1\u8272\u3001\u65E0\u9700\u5728 theme-light.css \u91CC\u5355\u5217\uFF08\u4E0E\u524D\u4E24\u6863\u540C\u7406\uFF09\u3002 */
     --t-color-surface-hover-solid: rgb(var(--t-c-neutral-7-rgb));
     /* #444 \u4E0D\u900F\u660E \u2014\u2014 .t-tool-btn:hover \u7684\u5E95\uFF08Phase 6b-20 \u65B0\u589E\uFF09\u3002
        \u26A0 \u4E0E --t-color-border-strong \u540C\u503C\u4E0D\u540C\u89D2\u8272\uFF08\u90A3\u662F\u63CF\u8FB9\uFF09\u3002
@@ -3875,17 +3883,51 @@ function loadCssFiles() {
    ST \u5143\u7D20\u6062\u590D\u539F\u751F\u5916\u89C2\u3002\u8FD9\u6B63\u662F B2 \u8981\u7684\u7ED3\u679C\u3002
 
    \u2500\u2500 \u7279\u5F02\u6027\u8BF4\u660E\uFF08\u91CD\u8981\uFF0C\u52FF\u6539\u6210 ID \u6216 :is()\uFF09\u2500\u2500
-   \u5C5E\u6027\u9009\u62E9\u5668\u4E0E\u7C7B\u540C\u7EA7 (0,1,0)\u3002feature \u5C42\u73B0\u6709 31 \u6761\u5F62\u5982
-   \`.t-mode-panel::-webkit-scrollbar\` \u7684\u8986\u76D6\u89C4\u5219\u4E5F\u662F (0,1,0)\uFF0C\u800C 01-base
-   \u5728 manifest \u4E2D\u6392\u5728 04-features **\u4E4B\u524D**\uFF0C\u6545 feature \u8986\u76D6\u4F9D\u7136\u751F\u6548\u3002
-   \u82E5\u628A\u4F5C\u7528\u57DF\u5199\u6210 ID\uFF08\u5982 \`#t-overlay\`\uFF09\u4F1A\u53D8\u6210 (1,0,0)\uFF0C\u5C06\u65E0\u6761\u4EF6\u538B\u8FC7\u90A3 31 \u6761
-   \u89C4\u5219\uFF0C\u9020\u6210\u89C6\u89C9\u56DE\u5F52\u3002
+   \u5C5E\u6027\u9009\u62E9\u5668\u4E0E\u7C7B\u540C\u7EA7 (0,1,0)\uFF0C\u6545\u672C\u6587\u4EF6\u5404\u7EC4\u662F (0,1,1)\uFF08\u5E26\u4F2A\u7C7B\u7684\u662F (0,2,1)\uFF09\u3002
+   \u6781\u7B80\u6539\u9020\u524D feature \u5C42\u6709 7 \u7EC4\u5F62\u5982 \`.t-mode-panel::-webkit-scrollbar\` \u7684\u7F8E\u5316
+   \u8986\u76D6\uFF0C\u73B0\u5DF2\u5168\u90E8\u5220\u9664\uFF08\u7EDF\u4E00\u8D70\u672C\u6587\u4EF6\uFF09\uFF1B\u53EA\u5269\u4E24\u7EC4**\u523B\u610F\u9690\u85CF**\u7684\uFF1A
+     \xB7 04-features/continuation.css  .t-continuation-shortcuts\uFF08\u6A2A\u5411\u5FEB\u6377\u6761\uFF09
+     \xB7 04-features/favs.css          .t-fav-carousel-thumbs\uFF08\u8D70\u9A6C\u706F\u7F29\u7565\u56FE\u6761\uFF09
+   \u5B83\u4EEC\u540C\u4E3A (0,1,1)\uFF0C\u800C 04-features \u5728 manifest \u4E2D\u6392\u5728 01-base **\u4E4B\u540E**\uFF0C
+   \u9760\u6E90\u5E8F\u80DC\u51FA \u2014\u2014 \u8FD9\u4E24\u5904\u5FC5\u987B\u7EE7\u7EED\u9690\u85CF\uFF0C\u52FF\u52A8\u3002
+   \u82E5\u628A\u672C\u6587\u4EF6\u7684\u4F5C\u7528\u57DF\u5199\u6210 ID\uFF08\u5982 \`#t-overlay\`\uFF09\u4F1A\u53D8\u6210 (1,0,0)\uFF0C\u5C06\u65E0\u6761\u4EF6\u538B\u8FC7
+   \u90A3\u4E24\u7EC4\uFF0C\u628A\u5DF2\u7ECF\u9690\u85CF\u7684\u6EDA\u52A8\u6761\u53C8\u653E\u51FA\u6765\u3002
    \u540C\u7406\u4E0D\u4F7F\u7528 \`:is()\`\uFF1A\u5B83\u53D6\u53C2\u6570\u4E2D\u6700\u9AD8\u7684\u7279\u5F02\u6027\uFF0C\u4E00\u65E6\u5217\u8868\u91CC\u6709 ID \u5C31\u4F1A\u6574\u4F53\u63D0\u6743
    \uFF08\u4E14\u5B9E\u6D4B ST \u5168\u5E93\u672A\u4F7F\u7528 \`:is()\`\uFF0C\u4FDD\u6301\u4E00\u81F4\u7684\u4FDD\u5B88\u53D6\u5411\uFF09\u3002
 
    \u2500\u2500 Phase 1 \u2500\u2500
    Phase 1 \u7ED9 plan.md \xA78.2 \u6E05\u5355\u91CC\u6240\u6709\u6302\u8F7D\u70B9\u52A0\u4E0A \`.t-root\` \u540E\uFF0C
    \u672C\u6587\u4EF6\u7684 6 \u7EC4\u5339\u914D\u5668\u53EF\u6574\u4F53\u6298\u53E0\u4E3A \`.t-root\` \u4E0E \`.t-root *\` \u4E24\u6761\u3002
+
+   \u2500\u2500 \u6781\u7B80\u6539\u9020\uFF08\u672C\u6B21\uFF09\u2500\u2500
+   \u76EE\u6807\uFF1A4px \u5BBD\u3001\u9759\u606F\u51E0\u4E4E\u878D\u8FDB\u80CC\u666F\u3001hover \u624D\u660E\u786E\u3002\u4E09\u6863 alpha \u89C1
+   00-tokens/theme-dark.css \u7684 --t-color-scrollbar-thumb{,-hover,-active}\u3002
+
+   \u540C\u65F6\u8865\u4E0A\u4E09\u6761**\u663E\u5F0F\u590D\u4F4D**\uFF0C\u628A ST \u6CC4\u6F0F\u8FDB\u4F5C\u7528\u57DF\u7684\u58F0\u660E\u6E05\u6389\u3002\u5B83\u4EEC\u539F\u5148\u65E0\u5BB3\uFF0C
+   \u662F\u56E0\u4E3A\u6ED1\u5757\u6709 6px \u5BBD\u3001\u9759\u606F alpha \u6709 .2\u300C\u76D6\u5F97\u4F4F\u300D\uFF1B\u6536\u5230 4px + .12 \u4E4B\u540E
+   \u5168\u90E8\u53D8\u6210\u53EF\u89C1\u7F3A\u9677\uFF1A
+
+     \xB7 box-shadow  ST style.css:196/209 \u7ED9 thumb:vertical/:horizontal \u4E0A\u4E86
+                   \`inset 0 0 0 1px var(--black50a)\`\u3002\u63D2\u4EF6\u6CA1\u58F0\u660E\u8FC7 box-shadow\uFF0C
+                   \u6240\u4EE5\u8FD9\u6761\u4E00\u76F4**\u76F4\u63A5\u751F\u6548**\u3002\u5185\u9634\u5F71\u88C1\u5230 padding box\uFF0C\u914D\u5408\u4E0B\u9762
+                   \u90A3\u6761 2px \u8FB9\u6846\uFF0C\u5728 4px \u7684\u6761\u4E0A\u51E0\u4E4E\u7CCA\u6EE1\u6ED1\u5757\u82AF\u90E8\u3002
+     \xB7 border      ST \u540C\u4E24\u6761\u89C4\u5219\u91CC\u7684 \`border: 2px solid transparent\`\u30024px \u5BBD
+                   \u51CF\u53BB\u5DE6\u53F3\u5404 2px\uFF0C\u53EF\u89C6\u82AF\u90E8\u6B63\u597D\u662F **0**\u3002\u8FD9\u662F\u672C\u6B21\u5FC5\u987B\u4FEE\u7684\u6839\u56E0\u3002
+     \xB7 min-height  ST \u7684 \`min-height: 40px\`(:vertical) / \`min-width: 40px\`
+                   (:horizontal)\u300240px \u672C\u8EAB\u4E0D\u96BE\u770B\uFF0C\u4F46\u300C\u6293\u53D6\u4E0B\u9650\u7531\u5BBF\u4E3B\u51B3\u5B9A\u300D
+                   \u662F\u4E2A\u9690\u85CF\u4F9D\u8D56 \u2014\u2014 ST \u6539\u4E86\u503C\u63D2\u4EF6\u5C31\u8DDF\u7740\u53D8\u3002\u6539\u4E3A\u81EA\u5DF1\u58F0\u660E 24px\u3002
+
+   \u26A0 \u8FD9\u4E09\u6761\u4E0E ST \u7684\u89C4\u5219\u540C\u4E3A (0,1,1)\uFF0C\u9760**\u63D2\u4EF6\u6CE8\u5165\u66F4\u665A**\u53D6\u80DC\uFF08\u89C1\u6587\u4EF6\u5934 B2 \u6BB5\uFF09\u3002
+     \u552F\u4E00\u538B\u4E0D\u8FC7\u7684\u662F ST \u7684 \`body.movingUI ::-webkit-scrollbar-thumb:vertical
+     { border-top: 20px solid transparent }\`(style.css:203)\uFF0C(0,2,2) > \u672C\u6587\u4EF6
+     \u7684 (0,1,1)\u3002\u4E0D\u53BB\u8FFD\u5B83\uFF1A\u6ED1\u5757\u80CC\u666F\u7528 \`background\` \u7B80\u5199\u3001background-clip \u56E0\u6B64
+     \u662F border-box\uFF0C\u80CC\u666F\u94FA\u6EE1\u6574\u4E2A\u8FB9\u6846\u76D2\uFF0C\u90A3 20px \u900F\u660E\u4E0A\u8FB9\u6846\u753B\u4E0D\u51FA\u4EFB\u4F55\u4E1C\u897F\uFF1B
+     \u4E14\u5185\u9634\u5F71\u5DF2\u590D\u4F4D\uFF0C\u6CA1\u6709\u7B2C\u4E8C\u4E2A\u5C5E\u6027\u6765\u66B4\u9732\u5B83\u3002
+
+   \u26A0 \u6ED1\u5757\u80CC\u666F\u5FC5\u987B\u5199 \`background\` **\u7B80\u5199**\u800C\u4E0D\u662F background-color\uFF1A\u7B80\u5199\u4F1A\u628A
+     background-clip \u4E00\u5E76\u590D\u4F4D\u6210 border-box\uFF0C\u6B63\u597D\u62B5\u6389 ST \u90A3\u6761
+     \`background-clip: content-box\`\uFF08\u540C (0,1,1)\u3001\u63D2\u4EF6\u5728\u540E\uFF09\u3002\u6539\u6210 longhand
+     \u4F1A\u8BA9 content-box \u590D\u6D3B\uFF0C\u6ED1\u5757\u53C8\u53EA\u5269\u82AF\u90E8\u53EF\u89C1\u3002
    ============================================================ */
 
 /* \u5C3A\u5BF8 */
@@ -3901,8 +3943,8 @@ function loadCssFiles() {
 [class*=" titania-"] ::-webkit-scrollbar,
 [id^="t-"] ::-webkit-scrollbar,
 [id^="titania-"] ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
 }
 
 /* \u8F68\u9053 */
@@ -3921,7 +3963,26 @@ function loadCssFiles() {
     background: transparent;
 }
 
-/* \u6ED1\u5757 */
+/* \u8F68\u9053 hover \u2014\u2014 \u53EA\u4E3A\u538B\u6389 ST style.css:177 \u7684 \`::-webkit-scrollbar-track:hover
+   { background-color: rgba(126,126,126,0.2) }\`\u3002\u4E0A\u9762\u90A3\u6761\u9759\u606F\u89C4\u5219\u540C\u4E3A (0,1,1)\u3001
+   \u63D2\u4EF6\u5728\u540E\uFF0C\u672C\u6765\u5C31\u591F\uFF1B\u663E\u5F0F\u5199\u51FA\u6765\u662F\u4E3A\u4E86\u4E0D\u4F9D\u8D56\u6CE8\u5165\u987A\u5E8F \u2014\u2014 \u4E00\u6761\u7070\u8F68\u9053\u8DB3\u4EE5\u6BC1\u6389
+   \u300C\u5B58\u5728\u611F\u4E0D\u5F3A\u300D\u8FD9\u4E2A\u76EE\u6807\uFF0C\u4E0D\u503C\u5F97\u4E3A\u7701 12 \u884C\u9009\u62E9\u5668\u628A\u5B83\u6302\u5728\u6E90\u5E8F\u4E0A\u3002 */
+[class^="t-"]::-webkit-scrollbar-track:hover,
+[class*=" t-"]::-webkit-scrollbar-track:hover,
+[class^="titania-"]::-webkit-scrollbar-track:hover,
+[class*=" titania-"]::-webkit-scrollbar-track:hover,
+[id^="t-"]::-webkit-scrollbar-track:hover,
+[id^="titania-"]::-webkit-scrollbar-track:hover,
+[class^="t-"] ::-webkit-scrollbar-track:hover,
+[class*=" t-"] ::-webkit-scrollbar-track:hover,
+[class^="titania-"] ::-webkit-scrollbar-track:hover,
+[class*=" titania-"] ::-webkit-scrollbar-track:hover,
+[id^="t-"] ::-webkit-scrollbar-track:hover,
+[id^="titania-"] ::-webkit-scrollbar-track:hover {
+    background: transparent;
+}
+
+/* \u6ED1\u5757\uFF08\u542B\u5BF9 ST \u6CC4\u6F0F\u7684\u4E09\u6761\u590D\u4F4D\uFF0C\u7406\u7531\u89C1\u6587\u4EF6\u5934\uFF09 */
 [class^="t-"]::-webkit-scrollbar-thumb,
 [class*=" t-"]::-webkit-scrollbar-thumb,
 [class^="titania-"]::-webkit-scrollbar-thumb,
@@ -3935,7 +3996,9 @@ function loadCssFiles() {
 [id^="t-"] ::-webkit-scrollbar-thumb,
 [id^="titania-"] ::-webkit-scrollbar-thumb {
     background: var(--t-color-scrollbar-thumb);
-    border-radius: 3px;
+    border-radius: 2px;
+    box-shadow: none;
+    border: 0;
 }
 
 /* \u6ED1\u5757 hover */
@@ -3952,6 +4015,59 @@ function loadCssFiles() {
 [id^="t-"] ::-webkit-scrollbar-thumb:hover,
 [id^="titania-"] ::-webkit-scrollbar-thumb:hover {
     background: var(--t-color-scrollbar-thumb-hover);
+}
+
+/* \u6ED1\u5757\u62D6\u52A8\u4E2D\u3002ST \u53EA\u7ED9\u4E86 \`cursor: grabbing\`\uFF08style.css:187\uFF09\uFF0C\u989C\u8272\u6CA1\u4EBA\u7BA1 \u2014\u2014
+   \u9759\u606F\u964D\u5230 .12 \u4E4B\u540E\uFF0C\u6CA1\u6709\u8FD9\u4E00\u6863\u4F1A\u8BA9\u300C\u6309\u4F4F\u4E86\u300D\u7F3A\u5C11\u53CD\u9988\u3002 */
+[class^="t-"]::-webkit-scrollbar-thumb:active,
+[class*=" t-"]::-webkit-scrollbar-thumb:active,
+[class^="titania-"]::-webkit-scrollbar-thumb:active,
+[class*=" titania-"]::-webkit-scrollbar-thumb:active,
+[id^="t-"]::-webkit-scrollbar-thumb:active,
+[id^="titania-"]::-webkit-scrollbar-thumb:active,
+[class^="t-"] ::-webkit-scrollbar-thumb:active,
+[class*=" t-"] ::-webkit-scrollbar-thumb:active,
+[class^="titania-"] ::-webkit-scrollbar-thumb:active,
+[class*=" titania-"] ::-webkit-scrollbar-thumb:active,
+[id^="t-"] ::-webkit-scrollbar-thumb:active,
+[id^="titania-"] ::-webkit-scrollbar-thumb:active {
+    background: var(--t-color-scrollbar-thumb-active);
+}
+
+/* \u6293\u53D6\u4E0B\u9650\u3002\u26A0 \u5FC5\u987B\u6309\u65B9\u5411\u5206\u5F00\u5199\uFF0C**\u4E0D\u80FD**\u628A min-height / min-width \u5408\u8FDB\u4E0A\u9762
+   \u90A3\u7EC4\u65E0\u65B9\u5411\u7684\u6ED1\u5757\u89C4\u5219\uFF1Amin-* \u4F5C\u7528\u5728\u6ED1\u5757\u7684\u4E24\u4E2A\u8F74\u4E0A\uFF0C\u800C\u6ED1\u5757\u7684\u6A2A\u8F74\u5C3A\u5BF8\u5C31\u662F
+   \u6EDA\u52A8\u6761\u7684 4px\u3002\u7ED9\u7EB5\u5411\u6ED1\u5757\u8BBE min-width: 24px \u4F1A\u628A\u5B83\u6491\u6210 24px \u5BBD\uFF0C
+   \u7ED9\u6A2A\u5411\u6ED1\u5757\u8BBE min-height: 24px \u4F1A\u628A\u5B83\u6491\u6210 24px \u9AD8 \u2014\u2014 \u90FD\u4F1A\u76F4\u63A5\u6BC1\u6389\u300C\u7EC6\u300D\u3002
+   ST \u81EA\u5DF1\u4E5F\u662F\u8FD9\u4E48\u5206\u7684\uFF08style.css:200 / 213\uFF09\u3002
+   \u7279\u5F02\u5EA6 (0,2,1) > ST \u7684 (0,1,1)\uFF0C\u8FD9\u4E24\u7EC4\u4E0D\u4F9D\u8D56\u6CE8\u5165\u987A\u5E8F\u3002 */
+[class^="t-"]::-webkit-scrollbar-thumb:vertical,
+[class*=" t-"]::-webkit-scrollbar-thumb:vertical,
+[class^="titania-"]::-webkit-scrollbar-thumb:vertical,
+[class*=" titania-"]::-webkit-scrollbar-thumb:vertical,
+[id^="t-"]::-webkit-scrollbar-thumb:vertical,
+[id^="titania-"]::-webkit-scrollbar-thumb:vertical,
+[class^="t-"] ::-webkit-scrollbar-thumb:vertical,
+[class*=" t-"] ::-webkit-scrollbar-thumb:vertical,
+[class^="titania-"] ::-webkit-scrollbar-thumb:vertical,
+[class*=" titania-"] ::-webkit-scrollbar-thumb:vertical,
+[id^="t-"] ::-webkit-scrollbar-thumb:vertical,
+[id^="titania-"] ::-webkit-scrollbar-thumb:vertical {
+    min-height: 24px;
+}
+
+[class^="t-"]::-webkit-scrollbar-thumb:horizontal,
+[class*=" t-"]::-webkit-scrollbar-thumb:horizontal,
+[class^="titania-"]::-webkit-scrollbar-thumb:horizontal,
+[class*=" titania-"]::-webkit-scrollbar-thumb:horizontal,
+[id^="t-"]::-webkit-scrollbar-thumb:horizontal,
+[id^="titania-"]::-webkit-scrollbar-thumb:horizontal,
+[class^="t-"] ::-webkit-scrollbar-thumb:horizontal,
+[class*=" t-"] ::-webkit-scrollbar-thumb:horizontal,
+[class^="titania-"] ::-webkit-scrollbar-thumb:horizontal,
+[class*=" titania-"] ::-webkit-scrollbar-thumb:horizontal,
+[id^="t-"] ::-webkit-scrollbar-thumb:horizontal,
+[id^="titania-"] ::-webkit-scrollbar-thumb:horizontal {
+    min-width: 24px;
 }
 
 
@@ -6739,24 +6855,8 @@ textarea.t-input {
     overflow-y: auto;
 }
 
-/* \u7B5B\u9009\u5F39\u51FA\u83DC\u5355\u6EDA\u52A8\u6761\u7F8E\u5316 */
-.t-filter-popover::-webkit-scrollbar {
-    width: 6px;
-}
-
-.t-filter-popover::-webkit-scrollbar-track {
-    background: var(--t-color-surface-sunken);
-    border-radius: 3px;
-}
-
-.t-filter-popover::-webkit-scrollbar-thumb {
-    background: var(--t-color-border-strong);
-    border-radius: 3px;
-}
-
-.t-filter-popover::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-surface-highest);
-}
+/* \`.t-filter-popover\` \u7684\u6EDA\u52A8\u6761\u4E0D\u518D\u5355\u72EC\u7F8E\u5316\uFF0C\u8D70 01-base/scrollbar.css \u7684
+   4px \u6781\u7B80\u57FA\u7EBF\uFF08\u539F\u5148\u662F 6px + \u5B9E\u8272\u8F68\u9053\uFF09\u3002 */
 
 .t-filter-item {
     padding: 8px 12px;
@@ -10128,18 +10228,8 @@ textarea.t-input {
     border-radius: 6px;
 }
 
-.t-queue-script-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.t-queue-script-list::-webkit-scrollbar-track {
-    background: var(--t-color-surface-sunken);
-}
-
-.t-queue-script-list::-webkit-scrollbar-thumb {
-    background: var(--t-color-border-strong);
-    border-radius: 3px;
-}
+/* \`.t-queue-script-list\` \u7684\u6EDA\u52A8\u6761\u4E0D\u518D\u5355\u72EC\u7F8E\u5316\uFF0C\u8D70 01-base/scrollbar.css \u7684
+   4px \u6781\u7B80\u57FA\u7EBF\uFF08\u539F\u5148\u662F 6px + \u5B9E\u8272\u8F68\u9053\uFF0C\u4E14\u6CA1\u6709 hover \u6863\uFF09\u3002 */
 
 .t-queue-script-item {
     display: flex;
@@ -10327,24 +10417,9 @@ textarea.t-input {
     flex: 1;
 }
 
-/* \u7F16\u8F91\u5668\u6EDA\u52A8\u6761\u7F8E\u5316 */
-.t-ce-textarea::-webkit-scrollbar {
-    width: 8px;
-}
-
-.t-ce-textarea::-webkit-scrollbar-track {
-    background: var(--t-color-surface-sunken);
-    border-radius: 4px;
-}
-
-.t-ce-textarea::-webkit-scrollbar-thumb {
-    background: var(--t-color-border-strong);
-    border-radius: 4px;
-}
-
-.t-ce-textarea::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-surface-highest);
-}
+/* \`.t-ce-textarea\` \u7684\u6EDA\u52A8\u6761\u4E0D\u518D\u5355\u72EC\u7F8E\u5316\uFF1A\u539F\u5148\u662F 8px + \u5B9E\u8272\u8F68\u9053 + \u5B9E\u8272\u6ED1\u5757\uFF0C
+   \u4E0E 01-base/scrollbar.css \u7684 4px \u6781\u7B80\u57FA\u7EBF\u649E\u98CE\u683C\uFF08\u540C\u4E00\u7A97\u53E3\u5185\u4F1A\u540C\u65F6\u51FA\u73B0\u4E24\u79CD\uFF09\u3002
+   \u5220\u6389\u540E\u8D70\u57FA\u7840\u5C42\u3002 */
 
 /* \`.t-ce-footer\` \u7684\u89C6\u89C9\u5168\u90E8\u7531 02-components/panel.css \u7684 \`.t-panel-footer\` \u63D0\u4F9B\uFF0C
    \u672C\u6587\u4EF6\u4E0D\u518D\u9700\u8981\u4EFB\u4F55\u58F0\u660E\u3002 */
@@ -15824,23 +15899,9 @@ textarea.t-input {
     overflow-x: hidden;
 }
 
-/* \u9762\u677F\u6EDA\u52A8\u6761\u6837\u5F0F */
-.t-mode-panel::-webkit-scrollbar {
-    width: 8px;
-}
-
-.t-mode-panel::-webkit-scrollbar-track {
-    background: var(--t-color-surface-recess);
-}
-
-.t-mode-panel::-webkit-scrollbar-thumb {
-    background: var(--t-color-accent-border-subtle);
-    border-radius: 4px;
-}
-
-.t-mode-panel::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-accent-border-strong);
-}
+/* \`.t-mode-panel\` \u7684\u6EDA\u52A8\u6761\u4E0D\u518D\u5355\u72EC\u7F8E\u5316\uFF0C\u8D70 01-base/scrollbar.css \u7684 4px \u6781\u7B80
+   \u57FA\u7EBF\uFF08\u539F\u5148\u662F 8px + accent \u8272\u6ED1\u5757 \u2014\u2014 \u8FD9\u4E00\u65CF\u56DB\u5904 accent \u6EDA\u52A8\u6761\u662F\u5168\u63D2\u4EF6\u6700\u62A2\u773C
+   \u7684\u6EDA\u52A8\u6761\uFF0C\u4E0E\u300C\u5B58\u5728\u611F\u4E0D\u5F3A\u300D\u7684\u76EE\u6807\u6B63\u76F8\u53CD\uFF09\u3002 */
 
 .t-mode-panel:not(.active) {
     display: none;
@@ -15884,24 +15945,9 @@ textarea.t-input {
     max-height: calc(100vh - 400px);
 }
 
-/* \u603B\u7ED3\u7ED3\u679C\u533A\u57DF\u7684\u6EDA\u52A8\u6761\u6837\u5F0F */
-.t-summary-result::-webkit-scrollbar {
-    width: 8px;
-}
-
-.t-summary-result::-webkit-scrollbar-track {
-    background: var(--t-color-surface-recess);
-    border-radius: 4px;
-}
-
-.t-summary-result::-webkit-scrollbar-thumb {
-    background: var(--t-color-focus-ring);
-    border-radius: 4px;
-}
-
-.t-summary-result::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-accent-border-hover);
-}
+/* \`.t-summary-result\` \u7684\u6EDA\u52A8\u6761\u4E0D\u518D\u5355\u72EC\u7F8E\u5316\uFF0C\u8D70 01-base/scrollbar.css\u3002
+   \u6CE8\uFF1A\u8FD9\u4E00\u5904\u539F\u5148\u7528\u7684\u662F --t-color-focus-ring \u5F53\u6ED1\u5757\u8272\uFF08\u4E0D\u662F accent \u65CF\uFF09\uFF0C
+   \u5C5E\u4E8E\u5C31\u624B\u53D6\u8272\uFF0C\u5220\u6389\u540E\u8BE5 token \u5728\u672C\u6587\u4EF6\u4E0D\u518D\u88AB\u6EDA\u52A8\u6761\u6D88\u8D39\u3002 */
 
 .t-summary-text {
     color: var(--t-color-text-cool);
@@ -16256,25 +16302,9 @@ textarea.t-input {
     overflow: auto;
 }
 
-/* \u81EA\u5B9A\u4E49\u6EDA\u52A8\u6761 */
-.t-prompt-pre::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.t-prompt-pre::-webkit-scrollbar-track {
-    background: var(--t-color-surface-recess);
-    border-radius: 4px;
-}
-
-.t-prompt-pre::-webkit-scrollbar-thumb {
-    background: var(--t-color-accent-border-subtle);
-    border-radius: 4px;
-}
-
-.t-prompt-pre::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-accent-border-strong);
-}
+/* \`.t-prompt-pre\` \u7684\u6EDA\u52A8\u6761\u4E0D\u518D\u5355\u72EC\u7F8E\u5316\uFF0C\u8D70 01-base/scrollbar.css\u3002
+   \u539F\u5148\u662F\u552F\u4E00\u663E\u5F0F\u7ED9\u4E86 height: 8px \u7684\u4E00\u5904\uFF08\u63D0\u793A\u8BCD\u9884\u89C8\u4F1A\u6A2A\u5411\u6EDA\u52A8\uFF09\uFF1B
+   \u57FA\u7840\u5C42\u7684\u5C3A\u5BF8\u7EC4\u540C\u65F6\u58F0\u660E width/height: 4px\uFF0C\u6A2A\u5411\u7167\u6837\u8986\u76D6\u5230\u3002 */
 
 /* \u5F39\u7A97 footer \u8C03\u6574 */
 #t-prompt-view-dialog .t-dialog-footer {
@@ -16554,24 +16584,7 @@ textarea.t-input {
     border: 1px dashed var(--t-color-border-subtle);
 }
 
-/* \u539F\u6709\u5185\u5BB9\u533A\u6EDA\u52A8\u6761 */
-.t-original-content-box::-webkit-scrollbar {
-    width: 6px;
-}
-
-.t-original-content-box::-webkit-scrollbar-track {
-    background: var(--t-color-surface-recess);
-    border-radius: 3px;
-}
-
-.t-original-content-box::-webkit-scrollbar-thumb {
-    background: var(--t-color-accent-border-subtle);
-    border-radius: 3px;
-}
-
-.t-original-content-box::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-accent-border-strong);
-}
+/* \`.t-original-content-box\` \u7684\u6EDA\u52A8\u6761\u4E0D\u518D\u5355\u72EC\u7F8E\u5316\uFF0C\u8D70 01-base/scrollbar.css\u3002 */
 
 /* ========== \u4FDD\u5B58\u6A21\u5F0F\u9009\u62E9\u6837\u5F0F ========== */
 .t-save-mode-section {

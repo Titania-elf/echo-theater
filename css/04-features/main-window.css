@@ -748,24 +748,8 @@
     overflow-y: auto;
 }
 
-/* 筛选弹出菜单滚动条美化 */
-.t-filter-popover::-webkit-scrollbar {
-    width: 6px;
-}
-
-.t-filter-popover::-webkit-scrollbar-track {
-    background: var(--t-color-surface-sunken);
-    border-radius: 3px;
-}
-
-.t-filter-popover::-webkit-scrollbar-thumb {
-    background: var(--t-color-border-strong);
-    border-radius: 3px;
-}
-
-.t-filter-popover::-webkit-scrollbar-thumb:hover {
-    background: var(--t-color-surface-highest);
-}
+/* `.t-filter-popover` 的滚动条不再单独美化，走 01-base/scrollbar.css 的
+   4px 极简基线（原先是 6px + 实色轨道）。 */
 
 .t-filter-item {
     padding: 8px 12px;
