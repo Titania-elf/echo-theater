@@ -35,6 +35,7 @@ import {
     bootstrapEmptyScriptsStore,
     migrateScriptsToFiles,
     dryRunScriptsMigration,
+    dropLegacyScripts,
     exportScriptsAsLegacyArray,
     flushScriptsNow,
     setScripts,
@@ -1120,7 +1121,14 @@ function renderScriptsStorageCard() {
         if (legacyCount > 0) {
             html += `<br><span style="color:#feca57;">旧数据仍作为安全网保留在设置里`
                 + `（${legacyCount} 条，${formatBytes(footprint.bytes)}），所以设置文件<b>还没变小</b>。`
-                + `<br>先正常用一段时间，确认剧本读写都没问题，再执行收尾删除。</span>`;
+                + `<br>点下面的按钮，核对无误后会把旧数据删掉。`
+                + `<br>⚠️ 这一步删了就找不回来，执行前会自动下载一份备份。</span>`;
+            $desc.html(html);
+            $actions.html(
+                `<button class="titania-mini-btn is-export" data-act="finish">`
+                + `<i class="fa-solid fa-broom"></i> 完成收尾（删除旧数据）</button>`
+            );
+            return;
         }
 
         $desc.html(html);
@@ -1154,6 +1162,7 @@ function bindScriptsStorageCard() {
         const act = $(this).attr("data-act");
         if (act === "dryrun") return void handleScriptsDryRun($(this));
         if (act === "migrate") return void handleScriptsMigrate($(this));
+        if (act === "finish") return void handleScriptsFinish($(this));
     });
 
     renderScriptsStorageCard();
@@ -1250,6 +1259,72 @@ async function handleScriptsMigrate($btn) {
         console.error("Titania: 剧本搬家失败", e);
         showScriptsStorageReport(`❌ 搬家失败：${e?.message || String(e)}`, "#ff7675");
         if (window.toastr) toastr.error(e?.message || "搬家失败", "Titania Echo");
+    } finally {
+        renderScriptsStorageCard();
+    }
+}
+
+/**
+ * 收尾：删除 settings.json 里的旧剧本数组。整个搬家里唯一不可逆的一步。
+ *
+ * 三道闸：核对（逐条比对磁盘上那份）→ 强制备份 → 人工确认。
+ * 核对不过就不给删，且把不一致的地方列出来。
+ */
+async function handleScriptsFinish($btn) {
+    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 核对中...');
+
+    try {
+        const result = await dropLegacyScripts({
+            // 核对通过之后才走到这里 —— 先备份，再让用户拍板
+            confirmBeforeDelete: async (verification) => {
+                try {
+                    const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+                    downloadBackupPayload(snapshot, backupFileName("before_scripts_cleanup"));
+                    if (window.toastr) toastr.info("已下载收尾前备份，请保存这个文件", "Titania Echo");
+                } catch (backupErr) {
+                    console.warn("Titania: 收尾前备份失败", backupErr);
+                    if (!confirm("⚠️ 收尾前自动备份失败！是否仍要继续删除旧数据？\n\n删除后无法撤销。建议先解决备份问题。")) {
+                        return false;
+                    }
+                }
+                return confirm(
+                    `核对通过：${verification.checked} 条剧本在文件里与设置里逐条一致。\n\n`
+                    + `现在要删除 settings.json 里的旧剧本数据吗？\n`
+                    + `⚠️ 这一步不可撤销。删除后剧本只存在于 user/files/${SCRIPTS_FILE_NAME}。`
+                );
+            }
+        });
+
+        if (result.cancelled) {
+            showScriptsStorageReport(`已取消，旧数据保留。核对是通过的，随时可以再点。`, "#feca57");
+            return;
+        }
+        if (!result.ok) {
+            showScriptsStorageReport(
+                `❌ <b>核对未通过，未删除任何数据</b>`
+                + `<br>· ${result.problems.join("<br>· ")}`
+                + `<br>旧数据仍在设置里，剧本不会丢。请把上面的信息发给开发者。`,
+                "#ff7675"
+            );
+            console.error("[Titania] 剧本收尾核对未通过", result.problems);
+            if (window.toastr) toastr.error("核对未通过，未删除任何数据", "Titania Echo");
+            return;
+        }
+
+        showScriptsStorageReport(
+            `✅ <b>收尾完成</b>：核对 ${result.checked} 条无误后已删除旧数据，`
+            + `settings.json 减少约 <b>${formatBytes(result.removedBytes)}</b>。`
+            + `<br>从现在起改设置不再牵连剧本。`,
+            "#55efc4"
+        );
+        if (window.toastr) toastr.success(`旧数据已删除，设置文件减少 ${formatBytes(result.removedBytes)}`, "Titania Echo");
+
+        // 立即落盘：这一步删了东西，不该留在 debounce 队列里等
+        await saveExtDataImmediate();
+    } catch (e) {
+        console.error("Titania: 剧本收尾失败", e);
+        showScriptsStorageReport(`❌ 收尾失败：${e?.message || String(e)}`, "#ff7675");
+        if (window.toastr) toastr.error(e?.message || "收尾失败", "Titania Echo");
     } finally {
         renderScriptsStorageCard();
     }

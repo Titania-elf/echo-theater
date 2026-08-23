@@ -39,17 +39,23 @@ import {
 import { TitaniaLogger } from "./logger.js";
 
 /**
- * 双写开关。
+ * 是否还要同步维护旧的 data.user_scripts。
  *
- * 搬家后的一段时间里，写入同时落**文件**与旧的 data.user_scripts：
- * 文件是读取来源，旧数组是安全网 —— 万一文件侧出问题，settings.json 里那份
- * 仍然是最新的，把指针删掉就能原地退回搬家前的状态，不需要翻备份。
+ * 搬家后的过渡期里，写入同时落**文件**与旧数组：文件是读取来源，旧数组是安全网 ——
+ * 万一文件侧出问题，settings.json 里那份仍然是最新的，把指针删掉就能原地退回
+ * 搬家前的状态，不需要翻备份。代价是这期间 settings.json 并没有变小。
  *
- * 代价是这期间 settings.json 并没有变小（旧数组还在）。所以它是**临时**状态：
- * 「完成收尾（删除旧数据）」会把 data.user_scripts 删掉并把这个常量翻成 false。
- * ⚠ 翻成 false 之前必须确认文件侧已经跑过一段时间且没有落盘失败告警。
+ * ⚠ 判据刻意是「旧数组还在不在」而**不是**一个常量开关。
+ *   写成常量的话，收尾这个版本一发布，用户更新后先编辑几条剧本、再点收尾，
+ *   就会撞上「文件与旧数组不一致」的校验失败 —— 而那个不一致完全是合法的，
+ *   正是常量关掉双写造成的。改成状态推导后：旧数组在 → 一直同步（校验必然过），
+ *   收尾删掉它 → 本函数自然返回 false，不需要任何手动翻转。
+ *   全新安装走 bootstrapEmptyScriptsStore()，旧数组天生是空的，因此从不双写。
  */
-const DUAL_WRITE = true;
+function shouldDualWrite() {
+    const legacy = getExtData().user_scripts;
+    return Array.isArray(legacy) && legacy.length > 0;
+}
 
 /** 剧本整表文件名。固定单文件，不带 id */
 export const SCRIPTS_FILE_NAME = "titania_scripts.json";
@@ -74,15 +80,14 @@ const SCRIPTS_STORE_VERSION = 1;
  * ------------------------------------------------------------------ */
 
 let cache = null;
-let hydrated = false;
 let hydrationError = null;
 
 /* ------------------------------------------------------------------ *
  * 指针
  * ------------------------------------------------------------------ */
 
-/** 读指针；结构不对或版本不认识都按「未搬家」处理 */
-export function getScriptsPointer() {
+/** 读指针；结构不对或版本不认识都按「未搬家」处理。模块内部用，未对外导出 */
+function getScriptsPointer() {
     const store = getExtData()[SCRIPTS_STORE_KEY];
     if (!store || typeof store !== "object") return null;
     if (Number(store.version) !== SCRIPTS_STORE_VERSION) {
@@ -245,7 +250,6 @@ export function getLastWriteError() {
 export async function hydrateScripts() {
     const pointer = getScriptsPointer();
     if (!pointer) {
-        hydrated = true;
         hydrationError = null;
         cache = null;
         return { ok: true, migrated: false, count: 0, error: null };
@@ -254,7 +258,6 @@ export async function hydrateScripts() {
     try {
         const parsed = await readScriptsFile(pointer.file, Number(pointer.rev) || 0);
         cache = parsed.scripts.filter(Boolean);
-        hydrated = true;
         hydrationError = null;
         TitaniaLogger.info(`剧本已从文件载入：${cache.length} 条`);
         return { ok: true, migrated: true, count: cache.length, error: null };
@@ -263,7 +266,6 @@ export async function hydrateScripts() {
         // 而随后任何一次写入会用空数组覆盖掉文件，把「看着像」变成「真的丢」。
         // 所以这里置错误标志，让 getScripts/setScripts 全部拒绝执行。
         cache = null;
-        hydrated = true;
         hydrationError = e?.message || String(e);
         TitaniaLogger.error("剧本载入失败，已进入只读保护状态", e);
         return { ok: false, migrated: true, count: 0, error: hydrationError };
@@ -278,11 +280,6 @@ function assertUsable() {
             `所有剧本读写已暂停。请刷新重试，或从备份恢复。`
         );
     }
-}
-
-/** 本次会话是否已经水合过（entry.js 用它避免重复 await） */
-export function isScriptsHydrated() {
-    return hydrated;
 }
 
 /** 水合失败的原因；null 表示正常 */
@@ -326,10 +323,10 @@ export function setScripts(list) {
     cache = next;
     void pump();
 
-    // 安全网：搬家后的过渡期同时维护旧数组，见 DUAL_WRITE 的注释。
+    // 安全网：旧数组还在时同步维护它，见 shouldDualWrite() 的注释。
     // ⚠ 顺序很重要 —— 先改 cache 再写旧数组。反过来的话，若 saveExtData
     //   触发的序列化中途抛错，cache 与旧数组会停在不同的版本上。
-    if (DUAL_WRITE) {
+    if (shouldDualWrite()) {
         const data = getExtData();
         data.user_scripts = next;
         saveExtData();
@@ -477,7 +474,6 @@ export async function bootstrapEmptyScriptsStore() {
         const written = await writeScriptsFile([], 1);
         writePointer({ rev: written.rev, count: 0, bytes: written.bytes, migratedAt: Date.now() });
         cache = [];
-        hydrated = true;
         hydrationError = null;
         TitaniaLogger.info("剧本为零，已直接建立文件存储（新增剧本将直接落文件）");
         return true;
@@ -575,7 +571,6 @@ export async function migrateScriptsToFiles() {
     }
 
     writePointer({ rev: written.rev, count: written.count, bytes: written.bytes, migratedAt: Date.now() });
-    hydrated = true;
     hydrationError = null;
 
     const report = {
@@ -610,4 +605,106 @@ export function exportScriptsAsLegacyArray() {
         throw new Error("剧本尚未载入，无法导出备份。请刷新页面后重试。");
     }
     return cache;
+}
+
+/* ------------------------------------------------------------------ *
+ * 收尾：删除旧数据（唯一不可逆的一步）
+ * ------------------------------------------------------------------ */
+
+/**
+ * 删除之前的核对：磁盘上那份必须与 settings.json 里的旧数组逐条一致。
+ *
+ * ⚠ 刻意**重新从磁盘读**，不用内存里的 cache。要确认的正是「磁盘上到底是什么」——
+ *   拿 cache 比对只能证明内存自己跟自己一致，万一某次写入静默失败就查不出来。
+ *
+ * @returns {Promise<{ok: boolean, checked: number, problems: string[]}>}
+ */
+async function verifyScriptsAgainstLegacy() {
+    const pointer = getScriptsPointer();
+    if (!pointer) return { ok: false, checked: 0, problems: ["尚未搬家，没有可核对的文件存储"] };
+    if (hydrationError) return { ok: false, checked: 0, problems: [`剧本未能载入：${hydrationError}`] };
+
+    const legacy = getExtData().user_scripts;
+    const legacyList = Array.isArray(legacy) ? legacy.filter(Boolean) : [];
+    const problems = [];
+
+    if (legacyList.length === 0) {
+        return { ok: false, checked: 0, problems: ["settings.json 里已经没有旧剧本数据了"] };
+    }
+
+    // 先确认文件在磁盘上 —— 上传接口返回 200 只说明请求被接受了
+    try {
+        const verifyResult = await verifyUserFiles([pointer.file], { label: "剧本文件" });
+        if (verifyResult[pointer.file] === false) {
+            return { ok: false, checked: 0, problems: [`剧本文件不存在：${pointer.file}`] };
+        }
+    } catch (e) {
+        return { ok: false, checked: 0, problems: [`文件校验请求失败：${e?.message || String(e)}`] };
+    }
+
+    let parsed;
+    try {
+        parsed = await readScriptsFile(pointer.file, Number(pointer.rev) || 0);
+    } catch (e) {
+        return { ok: false, checked: 0, problems: [`剧本文件读取失败：${e?.message || String(e)}`] };
+    }
+
+    const onDisk = parsed.scripts.filter(Boolean);
+    if (onDisk.length !== legacyList.length) {
+        problems.push(`条数不一致：文件里 ${onDisk.length} 条，settings.json 里 ${legacyList.length} 条`);
+        return { ok: false, checked: 0, problems };
+    }
+
+    // 按 id 配对比对，不依赖顺序 —— 顺序理论上一致（两侧写的是同一个数组），
+    // 但「顺序不同」不该算数据问题，真正要拦的是内容不一致或缺条目。
+    const diskById = new Map(onDisk.map(s => [String(s?.id), s]));
+    let checked = 0;
+
+    for (const original of legacyList) {
+        const mirror = diskById.get(String(original?.id));
+        if (!mirror) {
+            problems.push(`settings.json 里的「${original?.name || original?.id}」在文件里找不到`);
+        } else if (JSON.stringify(mirror) !== JSON.stringify(original)) {
+            problems.push(`剧本「${original?.name || original?.id}」的内容与 settings.json 里的不一致`);
+        }
+        checked++;
+        if (problems.length >= 5) break;
+    }
+
+    return { ok: problems.length === 0, checked, problems };
+}
+
+/**
+ * 删除 settings.json 里的旧剧本数组。**这是整个搬家里唯一不可逆的一步。**
+ *
+ * 删掉之后 shouldDualWrite() 自然返回 false，写入不再碰 settings，
+ * 于是「改任何一个开关都要重抄一遍全部剧本」这件事才真正结束。
+ *
+ * @param {{confirmBeforeDelete?: (v: object) => Promise<boolean>|boolean}} [options]
+ * @returns {Promise<object>}
+ */
+export async function dropLegacyScripts(options = {}) {
+    const verification = await verifyScriptsAgainstLegacy();
+    if (!verification.ok) {
+        return { ok: false, removedBytes: 0, problems: verification.problems };
+    }
+
+    if (typeof options.confirmBeforeDelete === "function") {
+        const proceed = await options.confirmBeforeDelete(verification);
+        if (!proceed) {
+            TitaniaLogger.info("核对已通过，但用户在删除前取消，旧剧本数据保留");
+            return { ok: false, removedBytes: 0, cancelled: true, checked: verification.checked };
+        }
+    }
+
+    const data = getExtData();
+    const removedBytes = utf8ByteLength(JSON.stringify(data.user_scripts || []));
+    // 用 delete 而不是赋空数组：defaultSettings.user_scripts = [] 会在整个扩展
+    // 设置对象缺失时把它加回来，那时是个空数组、shouldDualWrite() 仍返回 false，
+    // 于是行为一致 —— 但 delete 能让 settings.json 里真的少掉这个键。
+    delete data.user_scripts;
+    saveExtData();
+
+    TitaniaLogger.info(`旧剧本数据已删除，settings.json 减少约 ${removedBytes} 字节`);
+    return { ok: true, removedBytes, checked: verification.checked };
 }
