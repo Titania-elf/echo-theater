@@ -458,8 +458,8 @@ export async function dryRunScriptsMigration() {
  * 不存在不可逆动作，代价只是一次上传 + 一次 saveExtData()。
  * 理由与 favsStore.js 的 bootstrapEmptyFavsIndex() 完全相同。
  *
- * data.user_scripts 刻意**不删**：defaultSettings.user_scripts = []
- * （src/config/defaults.js）会把它加回来，删了是白折腾。
+ * 这里刻意不动 data.user_scripts：0 条时它要么不存在（defaults 已不再声明它），
+ * 要么是个空数组，两种情况 shouldDualWrite() 都返回 false，写入直接走文件。
  *
  * @returns {Promise<boolean>} 是否真的建了
  */
@@ -699,9 +699,8 @@ export async function dropLegacyScripts(options = {}) {
 
     const data = getExtData();
     const removedBytes = utf8ByteLength(JSON.stringify(data.user_scripts || []));
-    // 用 delete 而不是赋空数组：defaultSettings.user_scripts = [] 会在整个扩展
-    // 设置对象缺失时把它加回来，那时是个空数组、shouldDualWrite() 仍返回 false，
-    // 于是行为一致 —— 但 delete 能让 settings.json 里真的少掉这个键。
+    // 用 delete 而不是赋空数组：defaults 已不再声明 user_scripts，所以删掉之后
+    // 它不会再被任何路径加回来，settings.json 里真的少掉这个键。
     delete data.user_scripts;
     saveExtData();
 

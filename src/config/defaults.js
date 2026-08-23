@@ -41,7 +41,13 @@ export const defaultSettings = {
         auto_categories: [],
         history_limit: 10
     },
-    user_scripts: [],
+    // ⚠ 这里刻意**没有** user_scripts —— 剧本已搬到 user/files/titania_scripts.json，
+    //   settings 里只留 scripts_store 指针（见 src/core/scriptStore.js）。
+    //   把它加回来会让「剧本住在设置里」这个已经不成立的印象复活；
+    //   而且全新安装会因此带上一个空数组，bootstrapEmptyScriptsStore() 虽然仍能
+    //   正常建store，但 settings.json 里会多一个永远不再写入的死键。
+    //   所有读取点都能处理 undefined（getScripts / describeCurrentScriptsFootprint /
+    //   shouldDualWrite / migrateScriptsToFiles 等一律先 Array.isArray 判定）。
     favs: [],
     history_extraction: {
         whitelist: "",

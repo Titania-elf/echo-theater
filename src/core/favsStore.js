@@ -797,7 +797,20 @@ const ORPHAN_SETTINGS_KEYS = [
     "last_seen_version",
     "ignored_version",
     "welcomed",
-    "theater_model_override"
+    "theater_model_override",
+    // `scripts` 是极早期版本存内置预设的地方（旧 schema：mode / isPreset /
+    // 驼峰 createdAt / updatedAt），与后来的 user_scripts 无关、id 也无交集。
+    // 实测这份残留 20 条、9.7 KB，逐条核对结论：
+    //   · 20 条 id 全部命中当前 src/config/presets.js 的 DEFAULT_PRESETS（20 条）
+    //   · 其中 isPreset=false（即被用户改过）的有 0 条
+    // 所以它是内置预设的陈旧副本，没有任何独有内容，删掉不会失去用户数据。
+    //
+    // ⚠ 本键的零引用**不能**用上面那句 `grep -rl scripts src/` 验证 —— 名字太泛，
+    //   会命中 user_scripts / runtimeScripts / scriptStore / parsed.scripts 一大片。
+    //   实际用的是精确形态：`data\.scripts\b`、`getExtData()\.scripts\b`、
+    //   `["scripts"]`、`['scripts']`，四种全库均为 0 命中。
+    // ⚠ 精确匹配，不会碰到新的 scripts_store 指针键（那个仍在使用中）。
+    "scripts"
 ];
 
 /** 从旧索引 favs_meta 里找出「已不被 favs_index 引用」的正文文件 */

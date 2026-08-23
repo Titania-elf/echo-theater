@@ -57,7 +57,13 @@ var init_defaults = __esm({
         auto_categories: [],
         history_limit: 10
       },
-      user_scripts: [],
+      // ⚠ 这里刻意**没有** user_scripts —— 剧本已搬到 user/files/titania_scripts.json，
+      //   settings 里只留 scripts_store 指针（见 src/core/scriptStore.js）。
+      //   把它加回来会让「剧本住在设置里」这个已经不成立的印象复活；
+      //   而且全新安装会因此带上一个空数组，bootstrapEmptyScriptsStore() 虽然仍能
+      //   正常建store，但 settings.json 里会多一个永远不再写入的死键。
+      //   所有读取点都能处理 undefined（getScripts / describeCurrentScriptsFootprint /
+      //   shouldDualWrite / migrateScriptsToFiles 等一律先 Array.isArray 判定）。
       favs: [],
       history_extraction: {
         whitelist: "",
@@ -22572,7 +22578,20 @@ var init_favsStore = __esm({
       "last_seen_version",
       "ignored_version",
       "welcomed",
-      "theater_model_override"
+      "theater_model_override",
+      // `scripts` 是极早期版本存内置预设的地方（旧 schema：mode / isPreset /
+      // 驼峰 createdAt / updatedAt），与后来的 user_scripts 无关、id 也无交集。
+      // 实测这份残留 20 条、9.7 KB，逐条核对结论：
+      //   · 20 条 id 全部命中当前 src/config/presets.js 的 DEFAULT_PRESETS（20 条）
+      //   · 其中 isPreset=false（即被用户改过）的有 0 条
+      // 所以它是内置预设的陈旧副本，没有任何独有内容，删掉不会失去用户数据。
+      //
+      // ⚠ 本键的零引用**不能**用上面那句 `grep -rl scripts src/` 验证 —— 名字太泛，
+      //   会命中 user_scripts / runtimeScripts / scriptStore / parsed.scripts 一大片。
+      //   实际用的是精确形态：`data\.scripts\b`、`getExtData()\.scripts\b`、
+      //   `["scripts"]`、`['scripts']`，四种全库均为 0 命中。
+      // ⚠ 精确匹配，不会碰到新的 scripts_store 指针键（那个仍在使用中）。
+      "scripts"
     ];
   }
 });
