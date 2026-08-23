@@ -20,9 +20,15 @@
 //
 // 本文件当前只被「试运行搬家」按钮调用，尚未接入收藏夹的读写路径。
 
-import { getRequestHeaders } from "../../../../script.js";
 import { getSnippet, parseMeta } from "../utils/helpers.js";
 import { getExtData, saveExtData } from "../utils/storage.js";
+import {
+    utf8ByteLength,
+    uploadTextFile,
+    fetchTextFile,
+    deleteUserFile,
+    verifyUserFiles
+} from "../utils/userFiles.js";
 import { TitaniaLogger } from "./logger.js";
 
 /** 正文文件名前缀。与 8 月遗留的同名文件保持一致，便于对照校验 */
@@ -37,27 +43,6 @@ const FAV_BODY_VERSION = 1;
  *  复用它会让过期数据被误判为有效索引。favs_meta 的清理留到后续提交，
  *  在那之前它还是定位残留文件的唯一线索。*/
 export const FAVS_INDEX_KEY = "favs_index";
-
-/** base64 分块大小。String.fromCharCode.apply 对十万级参数会爆栈，
- *  而实测单条收藏正文最大已达 127 KB */
-const BASE64_CHUNK = 0x8000;
-
-/* ------------------------------------------------------------------ *
- * 编解码
- * ------------------------------------------------------------------ */
-
-function utf8ToBase64(text) {
-    const bytes = new TextEncoder().encode(String(text ?? ""));
-    let binary = "";
-    for (let offset = 0; offset < bytes.length; offset += BASE64_CHUNK) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + BASE64_CHUNK));
-    }
-    return btoa(binary);
-}
-
-function utf8ByteLength(text) {
-    return new TextEncoder().encode(String(text ?? "")).length;
-}
 
 /**
  * 生成正文文件名。
@@ -74,80 +59,19 @@ export function favFileName(id) {
 
 /* ------------------------------------------------------------------ *
  * 服务端文件读写
+ *
+ * 原语已抽到 src/utils/userFiles.js（剧本存储要用同一套，不能有第二份实现）。
+ * 这里只留收藏侧的两个薄封装：它们是本模块的对外 API，且要给失败信息带上
+ * 「收藏文件」这个措辞，好让日志能分辨是哪个 store 出的问题。
  * ------------------------------------------------------------------ */
-
-/**
- * 上传一个文本文件到 <user>/user/files/。
- * @param {string} fileName
- * @param {string} text
- * @returns {Promise<string>} 服务端返回的相对路径，形如 /user/files/xxx.json
- */
-async function uploadTextFile(fileName, text) {
-    const response = await fetch("/api/files/upload", {
-        method: "POST",
-        headers: getRequestHeaders(),
-        body: JSON.stringify({ name: fileName, data: utf8ToBase64(text) })
-    });
-
-    if (!response.ok) {
-        const detail = await response.text().catch(() => "");
-        throw new Error(`上传 ${fileName} 失败（${response.status}）${detail ? `：${detail}` : ""}`);
-    }
-
-    const payload = await response.json();
-    const filePath = String(payload?.path || "").trim();
-    if (!filePath) throw new Error(`上传 ${fileName} 后服务端未返回路径`);
-    return filePath;
-}
-
-/**
- * 读取一个正文文件。
- *
- * 缓存处理：/user/files/* 走 res.sendFile，带 ETag/Last-Modified 但没有显式
- * Cache-Control，浏览器会按启发式规则判定新鲜度。ST 自带的 getFileAttachment()
- * 用的是 cache:"force-cache"，那会在启发式新鲜期内直接吃旧内容 ——
- * 收藏被编辑过就会读到改之前的正文。这里改用 no-cache（仍能走 304）
- * 并额外挂 rev 查询串，双重保证拿到的是当前版本。
- *
- * @param {string} filePath /user/files/xxx.json
- * @param {number} [rev]
- * @returns {Promise<string>}
- */
-async function fetchTextFile(filePath, rev = 0) {
-    const url = rev > 0 ? `${filePath}?rev=${encodeURIComponent(rev)}` : filePath;
-    const response = await fetch(url, {
-        method: "GET",
-        cache: "no-cache",
-        headers: getRequestHeaders()
-    });
-
-    if (!response.ok) {
-        throw new Error(`读取 ${filePath} 失败（${response.status}）`);
-    }
-    return response.text();
-}
 
 /**
  * 删除一个正文文件。
  * @param {string} filePath
  * @returns {Promise<boolean>} 文件已不存在也算成功
  */
-export async function deleteFavFile(filePath) {
-    const target = String(filePath || "").trim();
-    if (!target) return false;
-
-    const response = await fetch("/api/files/delete", {
-        method: "POST",
-        headers: getRequestHeaders(),
-        body: JSON.stringify({ path: target })
-    });
-
-    if (response.status === 404) return true;
-    if (!response.ok) {
-        TitaniaLogger.warn(`删除收藏文件失败（${response.status}）：${target}`);
-        return false;
-    }
-    return true;
+export function deleteFavFile(filePath) {
+    return deleteUserFile(filePath, { label: "收藏文件" });
 }
 
 /**
@@ -156,20 +80,8 @@ export async function deleteFavFile(filePath) {
  * @param {string[]} filePaths
  * @returns {Promise<Record<string, boolean>>}
  */
-export async function verifyFavFiles(filePaths) {
-    const urls = (Array.isArray(filePaths) ? filePaths : []).map(p => String(p || "")).filter(Boolean);
-    if (urls.length === 0) return {};
-
-    const response = await fetch("/api/files/verify", {
-        method: "POST",
-        headers: getRequestHeaders(),
-        body: JSON.stringify({ urls })
-    });
-
-    if (!response.ok) {
-        throw new Error(`校验收藏文件失败（${response.status}）`);
-    }
-    return await response.json();
+export function verifyFavFiles(filePaths) {
+    return verifyUserFiles(filePaths, { label: "收藏文件" });
 }
 
 /* ------------------------------------------------------------------ *

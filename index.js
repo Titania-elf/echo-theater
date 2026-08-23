@@ -21605,7 +21605,7 @@ var init_apiProfileRegistry = __esm({
   }
 });
 
-// src/core/favsStore.js
+// src/utils/userFiles.js
 import { getRequestHeaders } from "../../../../script.js";
 function utf8ToBase64(text) {
   const bytes = new TextEncoder().encode(String(text ?? ""));
@@ -21617,11 +21617,6 @@ function utf8ToBase64(text) {
 }
 function utf8ByteLength(text) {
   return new TextEncoder().encode(String(text ?? "")).length;
-}
-function favFileName(id3) {
-  const safeId = String(id3 ?? "").replace(/[^a-zA-Z0-9_-]/g, "");
-  if (!safeId) throw new Error(`\u6536\u85CF ID \u975E\u6CD5\uFF0C\u65E0\u6CD5\u751F\u6210\u6587\u4EF6\u540D\uFF1A${JSON.stringify(id3)}`);
-  return `${FAV_FILE_PREFIX}${safeId}.json`;
 }
 async function uploadTextFile(fileName, text) {
   const response = await fetch("/api/files/upload", {
@@ -21650,7 +21645,8 @@ async function fetchTextFile(filePath, rev = 0) {
   }
   return response.text();
 }
-async function deleteFavFile(filePath) {
+async function deleteUserFile(filePath, options = {}) {
+  const label = options.label || "\u6587\u4EF6";
   const target = String(filePath || "").trim();
   if (!target) return false;
   const response = await fetch("/api/files/delete", {
@@ -21660,12 +21656,13 @@ async function deleteFavFile(filePath) {
   });
   if (response.status === 404) return true;
   if (!response.ok) {
-    TitaniaLogger.warn(`\u5220\u9664\u6536\u85CF\u6587\u4EF6\u5931\u8D25\uFF08${response.status}\uFF09\uFF1A${target}`);
+    TitaniaLogger.warn(`\u5220\u9664${label}\u5931\u8D25\uFF08${response.status}\uFF09\uFF1A${target}`);
     return false;
   }
   return true;
 }
-async function verifyFavFiles(filePaths) {
+async function verifyUserFiles(filePaths, options = {}) {
+  const label = options.label || "\u6587\u4EF6";
   const urls = (Array.isArray(filePaths) ? filePaths : []).map((p) => String(p || "")).filter(Boolean);
   if (urls.length === 0) return {};
   const response = await fetch("/api/files/verify", {
@@ -21674,9 +21671,29 @@ async function verifyFavFiles(filePaths) {
     body: JSON.stringify({ urls })
   });
   if (!response.ok) {
-    throw new Error(`\u6821\u9A8C\u6536\u85CF\u6587\u4EF6\u5931\u8D25\uFF08${response.status}\uFF09`);
+    throw new Error(`\u6821\u9A8C${label}\u5931\u8D25\uFF08${response.status}\uFF09`);
   }
   return await response.json();
+}
+var BASE64_CHUNK;
+var init_userFiles = __esm({
+  "src/utils/userFiles.js"() {
+    init_logger();
+    BASE64_CHUNK = 32768;
+  }
+});
+
+// src/core/favsStore.js
+function favFileName(id3) {
+  const safeId = String(id3 ?? "").replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!safeId) throw new Error(`\u6536\u85CF ID \u975E\u6CD5\uFF0C\u65E0\u6CD5\u751F\u6210\u6587\u4EF6\u540D\uFF1A${JSON.stringify(id3)}`);
+  return `${FAV_FILE_PREFIX}${safeId}.json`;
+}
+function deleteFavFile(filePath) {
+  return deleteUserFile(filePath, { label: "\u6536\u85CF\u6587\u4EF6" });
+}
+function verifyFavFiles(filePaths) {
+  return verifyUserFiles(filePaths, { label: "\u6536\u85CF\u6587\u4EF6" });
 }
 function buildFavBody(fav) {
   const type = fav?.type === "chain" ? "chain" : "plain";
@@ -22113,16 +22130,16 @@ async function cleanupLegacyArtifacts() {
   TitaniaLogger.info("\u9057\u7559\u6570\u636E\u6E05\u7406\u5B8C\u6210", report);
   return report;
 }
-var FAV_FILE_PREFIX, FAV_BODY_VERSION, FAVS_INDEX_KEY, BASE64_CHUNK, VOID_RESOURCE_TAG_RE, FAVS_INDEX_VERSION, ORPHAN_SETTINGS_KEYS;
+var FAV_FILE_PREFIX, FAV_BODY_VERSION, FAVS_INDEX_KEY, VOID_RESOURCE_TAG_RE, FAVS_INDEX_VERSION, ORPHAN_SETTINGS_KEYS;
 var init_favsStore = __esm({
   "src/core/favsStore.js"() {
     init_helpers();
     init_storage();
+    init_userFiles();
     init_logger();
     FAV_FILE_PREFIX = "titania_fav_";
     FAV_BODY_VERSION = 1;
     FAVS_INDEX_KEY = "favs_index";
-    BASE64_CHUNK = 32768;
     VOID_RESOURCE_TAG_RE = /<(?:img|link|input|source|track|embed|base)\b(?:"[^"]*"|'[^']*'|[^>])*>/gi;
     FAVS_INDEX_VERSION = 1;
     ORPHAN_SETTINGS_KEYS = [
