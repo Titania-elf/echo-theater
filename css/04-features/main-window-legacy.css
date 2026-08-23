@@ -306,7 +306,393 @@
     color: var(--t-color-accent);
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   第二栏（`.t-top-bar`）—— 5.1.2 的三簇布局
+   ══════════════════════════════════════════════════════════════════
+   提交 1f6c74b（第二栏 4/5）把这一栏重做成了单行胶囊条，经典版跟着一起变了。
+   但经典版的定位是「保留 5.1.2 的观感」，所以这里把 4/5 之前的样式取回来。
+   DOM 侧的分叉在 src/ui/mainWindow/topBar.js 的 renderLegacyTopBar()。
+
+   与 3151a84（4/5 之前的最后一版）逐项对应，三处刻意的差异：
+
+     1. 图标是 FontAwesome 而非 emoji（沿用 5/5 的映射）。因此本段多了
+        `.t-toggle-icon` / `.t-mode-btn-icon` 两条 —— 改版前 emoji 混在文字里、
+        不需要独立选择器。开/关态因此多了一个 color 通道（emoji 是彩色字形，
+        CSS color 对它无效，那一版只能靠不透明度做明度差）。
+     2. 开关的开态类是 `.is-on`（改版前是 `.active`）、子开关的禁用态是
+        `.is-collapsed`（改版前是 `.disabled`）。类名跟着现在的
+        updateHistoryToggleUI() 走，**没有**为经典版另写一套 —— 那个函数是
+        两套布局共用的，让它按布局吐不同类名是白折腾。视觉仍是 5.1.2 的：
+        `.is-collapsed` 在这里被改回「置灰」而不是新版的「收起」。
+     3. `transition` 用 --t-transition-hover 而非改版前的 `transition: 0.2s`。
+        后者是简写、transition-property 取初始值 all，正是审计 A20 要拦的写法。
+        可见效果相同：那一版实际过渡的就是 background / border / color 三项。
+
+   ⚠ 本段是**覆盖**而不是替换：main-window.css 的新版规则仍然命中这些元素
+     （`.t-top-bar` / `.t-trigger-card` / `.t-history-group` / `.t-filter-btn` /
+     `.t-dice-btn` 两版都用）。所以凡是新版设了、旧版没设的属性都必须在这里
+     显式写回旧值 —— 下面每处这样的复位都标了「新版设了 X」。
+     ⚠ 新增声明时别忘了这一点：漏一条不会报错，只会让经典版长出新版的局部特征。
+   ────────────────────────────────────────────────────────────────── */
+
+/* 新版：padding 8px 20px / gap 10px / height 52px */
+#t-main-view.t-layout-legacy .t-top-bar {
+    padding: 12px 20px;
+    gap: 15px;
+    height: 75px;
+}
+
+/* 新版 gap 4px。桌面端沿用顶栏的 15px，视觉与两个开关各自作为顶栏直接子项
+   时完全一致；这个容器存在的意义在窄屏 —— 让它们共占一行而不是各占一行 */
+#t-main-view.t-layout-legacy .t-history-group {
+    gap: 15px;
+}
+
+/* PC 端布局核心：吃掉顶栏剩余宽度，内含剧本卡 + 筛选/骰子。
+   新版没有这一层（三个控件簇都是 .t-top-bar 的直接子项） */
+#t-main-view.t-layout-legacy .t-mobile-row {
+    display: flex;
+    flex-grow: 1;
+    gap: 15px;
+    height: 100%;
+    min-width: 0;
+}
+
+/* 历史开关本体。新版是 36px 见方的纯图标钮（.t-topbar-toggle），
+   经典版是 160px 的「勾选框 + 图标 + 文字」横条 */
+#t-main-view.t-layout-legacy .t-history-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    background: var(--t-color-surface-sunken);
+    border-radius: var(--t-radius-control);
+    padding: 0 12px;
+    border: 1px solid var(--t-color-border);
+    flex-shrink: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: var(--t-transition-hover);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle:hover {
+    background: var(--t-color-surface-elevated);
+    border-color: var(--t-color-border-strong);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle.is-on {
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-accent-border-subtle);
+}
+
+#t-main-view.t-layout-legacy .t-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* 图标（改版前是嵌在文字里的 emoji，没有独立选择器）。
+   关态 faint / 开态 accent —— 与新版同一套明度通道 */
+#t-main-view.t-layout-legacy .t-toggle-icon {
+    font-size: 1.05em;
+    line-height: 1;
+    flex-shrink: 0;
+    color: var(--t-color-text-faint);
+    transition: var(--t-transition-hover);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle:hover .t-toggle-icon {
+    color: var(--t-color-text-secondary);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle.is-on .t-toggle-icon {
+    color: var(--t-color-accent);
+}
+
+/* 文字。⚠ 新版把它的对应物 `.t-topbar-toggle-text` 做了视觉隐藏
+   （position:absolute + 1px + clip-path），因为那一版只留图标。
+   两版类名不同（t-toggle-text / t-topbar-toggle-text），故这里**不需要**
+   复位那七条 —— 写下来只为提醒别把两个名字弄混：若日后把经典版的文字也
+   改叫 t-topbar-toggle-text，它会立刻隐形，而且看不出是谁隐藏了它 */
+#t-main-view.t-layout-legacy .t-toggle-text {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: var(--t-color-text-muted);
+    white-space: nowrap;
+    transition: color var(--t-duration-base) var(--t-ease-standard);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle:hover .t-toggle-text {
+    color: var(--t-color-text-label);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle.is-on .t-toggle-text {
+    color: var(--t-color-accent);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle.is-on:hover .t-toggle-text {
+    color: rgb(var(--t-sky-text-2-rgb));
+}
+
+/* 「只要角色发言」：窄一点，以免顶栏被两个同宽开关挤满。
+   ⚠ 新版给 .t-subtoggle 设了 overflow:hidden + max-width:36px 做收起动画，
+     两条都必须解除，否则 160px 的横条会被压成 36px 且内容被裁 */
+#t-main-view.t-layout-legacy .t-subtoggle {
+    min-width: 150px;
+    max-width: none;
+    overflow: visible;
+}
+
+/* 不读历史时置灰（5.1.2 的做法），而不是新版的整个收起。
+   仍保留 pointer-events，好让 title 提示能说明为什么不可用 ——
+   这是「置灰」相对「收起」唯一需要额外交代的地方。
+   ⚠ 新版的 .is-collapsed 设了 max-width:0 / opacity:0 / border-width:0 /
+     pointer-events:none，四条全部要写回 */
+#t-main-view.t-layout-legacy .t-subtoggle.is-collapsed {
+    max-width: none;
+    opacity: 0.45;
+    border-width: 1px;
+    pointer-events: auto;
+    cursor: not-allowed;
+}
+
+#t-main-view.t-layout-legacy .t-subtoggle.is-collapsed .t-toggle-label {
+    cursor: not-allowed;
+}
+
+#t-main-view.t-layout-legacy .t-subtoggle.is-collapsed:hover {
+    background: var(--t-color-surface-sunken);
+    border-color: var(--t-color-border);
+}
+
+#t-main-view.t-layout-legacy .t-subtoggle.is-collapsed:hover .t-toggle-text {
+    color: var(--t-color-text-muted);
+}
+
+#t-main-view.t-layout-legacy .t-subtoggle.is-collapsed:hover .t-toggle-icon {
+    color: var(--t-color-text-faint);
+}
+
+/* 生成模式：三个并排按钮。新版是单个胶囊（.t-mode-chip）+ 下拉菜单，
+   类名不同故互不干扰；点击绑定在 mainWindow.js 里按 layout.id 分叉 */
+#t-main-view.t-layout-legacy .t-mode-toggle {
+    display: flex;
+    align-items: center;
+    background: var(--t-color-surface-sunken);
+    border-radius: var(--t-radius-control);
+    border: 1px solid var(--t-color-border);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 14px;
+    height: 100%;
+    cursor: pointer;
+    color: var(--t-color-text-faint);
+    font-size: 0.85em;
+    font-weight: bold;
+    white-space: nowrap;
+    border-right: 1px solid var(--t-color-border);
+    transition: var(--t-transition-hover);
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn-icon {
+    font-size: 1.05em;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn:last-child {
+    border-right: none;
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn:hover {
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text-secondary);
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn.active {
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-brand);
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn.active:hover {
+    background: var(--t-color-brand-soft-strong);
+}
+
+/* 剧本卡：竖排两行（名字 / 分类+简介）。
+   ⚠ 新版改成了横排单行，设了 flex-direction:row + align-items:center + gap:8px，
+     三条都要写回。flex 与 padding 两版相同（padding 的 chevron 让位是
+     09d902b 修的 bug，两版都要），故不重复声明 */
+#t-main-view.t-layout-legacy .t-trigger-card {
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: 0;
+}
+
+#t-main-view.t-layout-legacy .t-trigger-main {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--t-color-text);
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* 剧本名。`.t-trigger-main` 是 flex 容器，text-overflow 在容器上不生效、
+   只在 flex 子项上生效 —— 所以省略号必须落在这个 span 上。
+   改版前这两条是写在 topBar.js 模板里的内联 style，搬进 CSS 是为了不给
+   审计 A16/A17 增加 inline style 计数；产出的外观相同 */
+#t-main-view.t-layout-legacy .t-trigger-main > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#t-main-view.t-layout-legacy .t-trigger-sub {
+    font-size: 0.8em;
+    color: var(--t-color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* 新版 gap 4px */
+#t-main-view.t-layout-legacy .t-trigger-actions {
+    gap: 5px;
+}
+
+/* 新版 36px / 44px + 1.3em。经典版的两个按钮都更大一档 */
+#t-main-view.t-layout-legacy .t-filter-btn {
+    width: 40px;
+}
+
+#t-main-view.t-layout-legacy .t-dice-btn {
+    width: 50px;
+    font-size: 1.5em;
+}
+
 @media screen and (max-width: 600px) {
+    /* ── 第二栏窄屏：3 行（开关组 / 模式三连 / 剧本卡行）──
+       新版窄屏是 2 行（靠 flex-wrap + order 把剧本卡换到第二行，
+       三个控件簇共占第一行，约 104px）。经典版回到 5.1.2 的 3 行、约 155px。
+       ⚠ 新版的 .t-top-bar 在窄屏用了 flex-wrap，这里必须显式关掉：
+         经典版靠 flex-direction:column 分行，wrap 会让它多出一次意外折行 */
+    #t-main-view.t-layout-legacy .t-top-bar {
+        height: auto;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        padding: 10px;
+        gap: 8px;
+    }
+
+    /* ⚠ 复位新版窄屏的 order / flex —— 这是本段最容易漏、且症状最像「玄学」的一处。
+       新版靠 flex-wrap + order 把 4 个直接子项重排成两行，给
+       `.t-history-group`(order 2) / `.t-trigger-actions`(order 3) /
+       `.t-trigger-card`(order 4) 都写了序号。这三个类经典版也用，于是：
+         · .t-history-group 的 order:2 会把开关组挤到**最后**一行
+           （经典版另两个直接子项是默认 order:0）
+         · .t-trigger-actions(3) 与 .t-trigger-card(4) 在经典版是
+           `.t-mobile-row` 的兄弟，序号使筛选/骰子跑到剧本卡**左边**
+         · .t-trigger-card 的 `flex: 1 0 100%` 里 flex-shrink 是 0，
+           在不换行的 `.t-mobile-row` 里会顶开筛选/骰子
+       order 归零即可，无需逐个排序：经典版的 DOM 顺序本身就是想要的顺序。 */
+    #t-main-view.t-layout-legacy .t-history-group,
+    #t-main-view.t-layout-legacy .t-trigger-actions,
+    #t-main-view.t-layout-legacy .t-trigger-card {
+        order: 0;
+    }
+
+    #t-main-view.t-layout-legacy .t-trigger-card {
+        flex: 1 1 auto;
+    }
+
+    /* 两个开关平分一行：各占一行会让顶栏在窄屏多吃 48px */
+    #t-main-view.t-layout-legacy .t-history-group {
+        width: 100%;
+        gap: 8px;
+    }
+
+    #t-main-view.t-layout-legacy .t-history-toggle {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        justify-content: center;
+        /* 极端组合（320px 屏 + 130% 字号缩放）下文字要折成两行，
+           固定 40px 会裁掉第二行，所以改成下限 */
+        height: auto;
+        min-height: 40px;
+        padding: 0 6px;
+    }
+
+    /* 半格宽度容不下 0.9em 的 7 个汉字。收到 0.8em，与同排的 .t-mode-btn 一致 */
+    #t-main-view.t-layout-legacy .t-toggle-text {
+        font-size: 0.8em;
+        /* 基准字号可被用户放大到 130%，那时半格仍会不够。
+           解除桌面端的 nowrap 让它折行 —— 比截断成省略号不丢信息 */
+        white-space: normal;
+        line-height: 1.25;
+        text-align: center;
+    }
+
+    #t-main-view.t-layout-legacy .t-toggle-label {
+        gap: 6px;
+        min-width: 0;
+    }
+
+    /* 子开关在窄屏也参与平分，不能保留桌面端的 150px 下限 */
+    #t-main-view.t-layout-legacy .t-subtoggle {
+        min-width: 0;
+    }
+
+    #t-main-view.t-layout-legacy .t-mode-toggle {
+        width: 100%;
+        height: 40px;
+    }
+
+    #t-main-view.t-layout-legacy .t-mode-btn {
+        flex: 1;
+        font-size: 0.8em;
+        padding: 0 10px;
+    }
+
+    #t-main-view.t-layout-legacy .t-mobile-row {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        height: 50px;
+    }
+
+    #t-main-view.t-layout-legacy .t-trigger-card,
+    #t-main-view.t-layout-legacy .t-trigger-actions {
+        height: 100%;
+    }
+
+    #t-main-view.t-layout-legacy .t-dice-btn {
+        height: 100%;
+        width: 50px;
+    }
+
+    #t-main-view.t-layout-legacy .t-filter-btn {
+        height: 100%;
+        width: 40px;
+    }
+
     #t-main-view.t-layout-legacy .t-bot-left {
         width: 76px;
         height: 55px;

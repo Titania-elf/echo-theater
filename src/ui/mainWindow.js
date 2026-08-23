@@ -134,11 +134,14 @@ export function updateHistoryToggleUI() {
 
     $toggle.toggleClass("is-on", GlobalState.useHistoryAnalysis);
     $checkbox.prop("checked", GlobalState.useHistoryAnalysis);
-    // 开关已图标化，没有可见文字了。title 是鼠标用户唯一的解释渠道，
-    // 所以开/关状态也得写进去（读屏软件走 checkbox 自身的 checked 态）
+    // 新版把开关图标化了，没有可见文字，title 是鼠标用户唯一的解释渠道，
+    // 所以开/关状态也得写进去（读屏软件走 checkbox 自身的 checked 态）。
+    // 经典版有可见文字，这条 title 只是冗余，不冲突。
     $toggle.attr("title", GlobalState.useHistoryAnalysis ? "读取聊天历史（开）" : "读取聊天历史（关）");
 
-    // 「只要角色发言」是历史开关的子项：不读历史时它没有意义，整个收起。
+    // 「只要角色发言」是历史开关的子项：不读历史时它没有意义。
+    // 新版整个收起，经典版按 5.1.2 的做法置灰（两者都由 .is-collapsed 驱动，
+    // 差别在 CSS —— 见 main-window-legacy.css 的第二栏段）。
     // 这里只改可用状态，不动 GlobalState.historyAiOnly —— 重新开启历史后要恢复用户原来的选择
     const $aiOnly = $("#t-ai-only-toggle");
     const $aiOnlyBox = $("#t-history-ai-only");
@@ -149,8 +152,25 @@ export function updateHistoryToggleUI() {
     $aiOnly.attr("title", `${HISTORY_AI_ONLY_HINT}（${GlobalState.historyAiOnly ? "开" : "关"}）`);
 }
 
-/** 更新生成模式 UI —— 胶囊上只显示当前模式，三选一在点开的菜单里 */
+/**
+ * 更新生成模式 UI。
+ *
+ * 两套布局的这一栏形态不同（见 mainWindow/topBar.js）：
+ *   modern —— 胶囊上只显示当前模式，三选一在点开的菜单里
+ *   legacy —— 三个并排按钮，靠 `.active` 标出当前项
+ *
+ * 分叉判据取「DOM 里有没有 .t-mode-btn」而不是布局 id：本函数的 3 处调用点
+ * 有两处在 applyGenerationMode 里，那里拿不到 layout 引用，
+ * 按 DOM 现状判断可以少穿一层参数，且窗口未开时两个分支都是空操作、不会误伤。
+ */
 export function updateModeToggleUI() {
+    const $legacyBtns = $("#t-mode-toggle .t-mode-btn");
+    if ($legacyBtns.length) {
+        $legacyBtns.removeClass("active");
+        $legacyBtns.filter(`[data-mode="${GlobalState.generationMode}"]`).addClass("active");
+        return;
+    }
+
     const meta = getGenerationModeMeta(GlobalState.generationMode);
     // 图标是 FontAwesome 字形，整条 class 重写而不是 .text()
     $("#t-mode-icon").attr("class", `fa-solid ${meta.icon} t-mode-chip-icon`);
@@ -1064,24 +1084,34 @@ export async function openMainWindow() {
         }
     });
 
-    // 生成模式切换：胶囊只显示当前模式，点开才列出三项。
-    // 改版前是三个并排按钮（约 257px）只为呈现一个三选一，
-    // 那点宽度对剧本卡（原本只剩 188px）比对模式切换更值。
-    $("#t-mode-toggle").on("click", function (e) {
-        e.stopPropagation();
-        renderAnchoredMenu({
-            id: "t-mode-popover",
-            $anchor: $(this),
-            current: GlobalState.generationMode,
-            items: GENERATION_MODES.map(item => ({
-                value: item.id,
-                label: item.label,
-                icon: item.icon,
-                title: item.hint
-            })),
-            onSelect: applyGenerationMode
+    // 生成模式切换。两套布局的控件形态不同，绑定也必须分开：
+    //   modern —— #t-mode-toggle 本身就是胶囊按钮，点它开下拉菜单。
+    //             改版前是三个并排按钮（约 257px）只为呈现一个三选一，
+    //             那点宽度对剧本卡（原本只剩 188px）比对模式切换更值。
+    //   legacy —— #t-mode-toggle 是三连按钮的**外壳**，真正的目标是 .t-mode-btn。
+    //             这里必须用委托而不是直接绑在外壳上：绑外壳的话点子项会冒泡上来，
+    //             无法区分点的是哪个模式。
+    if (layout.id === "legacy") {
+        $("#t-mode-toggle").on("click", ".t-mode-btn", function () {
+            applyGenerationMode($(this).attr("data-mode"));
         });
-    });
+    } else {
+        $("#t-mode-toggle").on("click", function (e) {
+            e.stopPropagation();
+            renderAnchoredMenu({
+                id: "t-mode-popover",
+                $anchor: $(this),
+                current: GlobalState.generationMode,
+                items: GENERATION_MODES.map(item => ({
+                    value: item.id,
+                    label: item.label,
+                    icon: item.icon,
+                    title: item.hint
+                })),
+                onSelect: applyGenerationMode
+            });
+        });
+    }
 
     $("#t-trigger-btn").on("click", () => showScriptSelector(GlobalState.currentCategoryFilter));
 

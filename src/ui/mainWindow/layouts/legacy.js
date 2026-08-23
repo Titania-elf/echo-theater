@@ -37,7 +37,7 @@ export function renderHtml(viewData) {
                 </div>
             </div>
 
-            ${renderTopBarHtml()}
+            ${renderTopBarHtml(id)}
 
             <div class="t-content-wrapper">
                 <div class="t-stats-hud" id="t-stats-hud" style="display:none;">

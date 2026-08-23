@@ -8021,7 +8021,393 @@ textarea.t-input {
     color: var(--t-color-accent);
 }
 
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   \u7B2C\u4E8C\u680F\uFF08\`.t-top-bar\`\uFF09\u2014\u2014 5.1.2 \u7684\u4E09\u7C07\u5E03\u5C40
+   \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   \u63D0\u4EA4 1f6c74b\uFF08\u7B2C\u4E8C\u680F 4/5\uFF09\u628A\u8FD9\u4E00\u680F\u91CD\u505A\u6210\u4E86\u5355\u884C\u80F6\u56CA\u6761\uFF0C\u7ECF\u5178\u7248\u8DDF\u7740\u4E00\u8D77\u53D8\u4E86\u3002
+   \u4F46\u7ECF\u5178\u7248\u7684\u5B9A\u4F4D\u662F\u300C\u4FDD\u7559 5.1.2 \u7684\u89C2\u611F\u300D\uFF0C\u6240\u4EE5\u8FD9\u91CC\u628A 4/5 \u4E4B\u524D\u7684\u6837\u5F0F\u53D6\u56DE\u6765\u3002
+   DOM \u4FA7\u7684\u5206\u53C9\u5728 src/ui/mainWindow/topBar.js \u7684 renderLegacyTopBar()\u3002
+
+   \u4E0E 3151a84\uFF084/5 \u4E4B\u524D\u7684\u6700\u540E\u4E00\u7248\uFF09\u9010\u9879\u5BF9\u5E94\uFF0C\u4E09\u5904\u523B\u610F\u7684\u5DEE\u5F02\uFF1A
+
+     1. \u56FE\u6807\u662F FontAwesome \u800C\u975E emoji\uFF08\u6CBF\u7528 5/5 \u7684\u6620\u5C04\uFF09\u3002\u56E0\u6B64\u672C\u6BB5\u591A\u4E86
+        \`.t-toggle-icon\` / \`.t-mode-btn-icon\` \u4E24\u6761 \u2014\u2014 \u6539\u7248\u524D emoji \u6DF7\u5728\u6587\u5B57\u91CC\u3001
+        \u4E0D\u9700\u8981\u72EC\u7ACB\u9009\u62E9\u5668\u3002\u5F00/\u5173\u6001\u56E0\u6B64\u591A\u4E86\u4E00\u4E2A color \u901A\u9053\uFF08emoji \u662F\u5F69\u8272\u5B57\u5F62\uFF0C
+        CSS color \u5BF9\u5B83\u65E0\u6548\uFF0C\u90A3\u4E00\u7248\u53EA\u80FD\u9760\u4E0D\u900F\u660E\u5EA6\u505A\u660E\u5EA6\u5DEE\uFF09\u3002
+     2. \u5F00\u5173\u7684\u5F00\u6001\u7C7B\u662F \`.is-on\`\uFF08\u6539\u7248\u524D\u662F \`.active\`\uFF09\u3001\u5B50\u5F00\u5173\u7684\u7981\u7528\u6001\u662F
+        \`.is-collapsed\`\uFF08\u6539\u7248\u524D\u662F \`.disabled\`\uFF09\u3002\u7C7B\u540D\u8DDF\u7740\u73B0\u5728\u7684
+        updateHistoryToggleUI() \u8D70\uFF0C**\u6CA1\u6709**\u4E3A\u7ECF\u5178\u7248\u53E6\u5199\u4E00\u5957 \u2014\u2014 \u90A3\u4E2A\u51FD\u6570\u662F
+        \u4E24\u5957\u5E03\u5C40\u5171\u7528\u7684\uFF0C\u8BA9\u5B83\u6309\u5E03\u5C40\u5410\u4E0D\u540C\u7C7B\u540D\u662F\u767D\u6298\u817E\u3002\u89C6\u89C9\u4ECD\u662F 5.1.2 \u7684\uFF1A
+        \`.is-collapsed\` \u5728\u8FD9\u91CC\u88AB\u6539\u56DE\u300C\u7F6E\u7070\u300D\u800C\u4E0D\u662F\u65B0\u7248\u7684\u300C\u6536\u8D77\u300D\u3002
+     3. \`transition\` \u7528 --t-transition-hover \u800C\u975E\u6539\u7248\u524D\u7684 \`transition: 0.2s\`\u3002
+        \u540E\u8005\u662F\u7B80\u5199\u3001transition-property \u53D6\u521D\u59CB\u503C all\uFF0C\u6B63\u662F\u5BA1\u8BA1 A20 \u8981\u62E6\u7684\u5199\u6CD5\u3002
+        \u53EF\u89C1\u6548\u679C\u76F8\u540C\uFF1A\u90A3\u4E00\u7248\u5B9E\u9645\u8FC7\u6E21\u7684\u5C31\u662F background / border / color \u4E09\u9879\u3002
+
+   \u26A0 \u672C\u6BB5\u662F**\u8986\u76D6**\u800C\u4E0D\u662F\u66FF\u6362\uFF1Amain-window.css \u7684\u65B0\u7248\u89C4\u5219\u4ECD\u7136\u547D\u4E2D\u8FD9\u4E9B\u5143\u7D20
+     \uFF08\`.t-top-bar\` / \`.t-trigger-card\` / \`.t-history-group\` / \`.t-filter-btn\` /
+     \`.t-dice-btn\` \u4E24\u7248\u90FD\u7528\uFF09\u3002\u6240\u4EE5\u51E1\u662F\u65B0\u7248\u8BBE\u4E86\u3001\u65E7\u7248\u6CA1\u8BBE\u7684\u5C5E\u6027\u90FD\u5FC5\u987B\u5728\u8FD9\u91CC
+     \u663E\u5F0F\u5199\u56DE\u65E7\u503C \u2014\u2014 \u4E0B\u9762\u6BCF\u5904\u8FD9\u6837\u7684\u590D\u4F4D\u90FD\u6807\u4E86\u300C\u65B0\u7248\u8BBE\u4E86 X\u300D\u3002
+     \u26A0 \u65B0\u589E\u58F0\u660E\u65F6\u522B\u5FD8\u4E86\u8FD9\u4E00\u70B9\uFF1A\u6F0F\u4E00\u6761\u4E0D\u4F1A\u62A5\u9519\uFF0C\u53EA\u4F1A\u8BA9\u7ECF\u5178\u7248\u957F\u51FA\u65B0\u7248\u7684\u5C40\u90E8\u7279\u5F81\u3002
+   \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+
+/* \u65B0\u7248\uFF1Apadding 8px 20px / gap 10px / height 52px */
+#t-main-view.t-layout-legacy .t-top-bar {
+    padding: 12px 20px;
+    gap: 15px;
+    height: 75px;
+}
+
+/* \u65B0\u7248 gap 4px\u3002\u684C\u9762\u7AEF\u6CBF\u7528\u9876\u680F\u7684 15px\uFF0C\u89C6\u89C9\u4E0E\u4E24\u4E2A\u5F00\u5173\u5404\u81EA\u4F5C\u4E3A\u9876\u680F\u76F4\u63A5\u5B50\u9879
+   \u65F6\u5B8C\u5168\u4E00\u81F4\uFF1B\u8FD9\u4E2A\u5BB9\u5668\u5B58\u5728\u7684\u610F\u4E49\u5728\u7A84\u5C4F \u2014\u2014 \u8BA9\u5B83\u4EEC\u5171\u5360\u4E00\u884C\u800C\u4E0D\u662F\u5404\u5360\u4E00\u884C */
+#t-main-view.t-layout-legacy .t-history-group {
+    gap: 15px;
+}
+
+/* PC \u7AEF\u5E03\u5C40\u6838\u5FC3\uFF1A\u5403\u6389\u9876\u680F\u5269\u4F59\u5BBD\u5EA6\uFF0C\u5185\u542B\u5267\u672C\u5361 + \u7B5B\u9009/\u9AB0\u5B50\u3002
+   \u65B0\u7248\u6CA1\u6709\u8FD9\u4E00\u5C42\uFF08\u4E09\u4E2A\u63A7\u4EF6\u7C07\u90FD\u662F .t-top-bar \u7684\u76F4\u63A5\u5B50\u9879\uFF09 */
+#t-main-view.t-layout-legacy .t-mobile-row {
+    display: flex;
+    flex-grow: 1;
+    gap: 15px;
+    height: 100%;
+    min-width: 0;
+}
+
+/* \u5386\u53F2\u5F00\u5173\u672C\u4F53\u3002\u65B0\u7248\u662F 36px \u89C1\u65B9\u7684\u7EAF\u56FE\u6807\u94AE\uFF08.t-topbar-toggle\uFF09\uFF0C
+   \u7ECF\u5178\u7248\u662F 160px \u7684\u300C\u52FE\u9009\u6846 + \u56FE\u6807 + \u6587\u5B57\u300D\u6A2A\u6761 */
+#t-main-view.t-layout-legacy .t-history-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    background: var(--t-color-surface-sunken);
+    border-radius: var(--t-radius-control);
+    padding: 0 12px;
+    border: 1px solid var(--t-color-border);
+    flex-shrink: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: var(--t-transition-hover);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle:hover {
+    background: var(--t-color-surface-elevated);
+    border-color: var(--t-color-border-strong);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle.is-on {
+    background: var(--t-color-accent-veil);
+    border-color: var(--t-color-accent-border-subtle);
+}
+
+#t-main-view.t-layout-legacy .t-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* \u56FE\u6807\uFF08\u6539\u7248\u524D\u662F\u5D4C\u5728\u6587\u5B57\u91CC\u7684 emoji\uFF0C\u6CA1\u6709\u72EC\u7ACB\u9009\u62E9\u5668\uFF09\u3002
+   \u5173\u6001 faint / \u5F00\u6001 accent \u2014\u2014 \u4E0E\u65B0\u7248\u540C\u4E00\u5957\u660E\u5EA6\u901A\u9053 */
+#t-main-view.t-layout-legacy .t-toggle-icon {
+    font-size: 1.05em;
+    line-height: 1;
+    flex-shrink: 0;
+    color: var(--t-color-text-faint);
+    transition: var(--t-transition-hover);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle:hover .t-toggle-icon {
+    color: var(--t-color-text-secondary);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle.is-on .t-toggle-icon {
+    color: var(--t-color-accent);
+}
+
+/* \u6587\u5B57\u3002\u26A0 \u65B0\u7248\u628A\u5B83\u7684\u5BF9\u5E94\u7269 \`.t-topbar-toggle-text\` \u505A\u4E86\u89C6\u89C9\u9690\u85CF
+   \uFF08position:absolute + 1px + clip-path\uFF09\uFF0C\u56E0\u4E3A\u90A3\u4E00\u7248\u53EA\u7559\u56FE\u6807\u3002
+   \u4E24\u7248\u7C7B\u540D\u4E0D\u540C\uFF08t-toggle-text / t-topbar-toggle-text\uFF09\uFF0C\u6545\u8FD9\u91CC**\u4E0D\u9700\u8981**
+   \u590D\u4F4D\u90A3\u4E03\u6761 \u2014\u2014 \u5199\u4E0B\u6765\u53EA\u4E3A\u63D0\u9192\u522B\u628A\u4E24\u4E2A\u540D\u5B57\u5F04\u6DF7\uFF1A\u82E5\u65E5\u540E\u628A\u7ECF\u5178\u7248\u7684\u6587\u5B57\u4E5F
+   \u6539\u53EB t-topbar-toggle-text\uFF0C\u5B83\u4F1A\u7ACB\u523B\u9690\u5F62\uFF0C\u800C\u4E14\u770B\u4E0D\u51FA\u662F\u8C01\u9690\u85CF\u4E86\u5B83 */
+#t-main-view.t-layout-legacy .t-toggle-text {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: var(--t-color-text-muted);
+    white-space: nowrap;
+    transition: color var(--t-duration-base) var(--t-ease-standard);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle:hover .t-toggle-text {
+    color: var(--t-color-text-label);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle.is-on .t-toggle-text {
+    color: var(--t-color-accent);
+}
+
+#t-main-view.t-layout-legacy .t-history-toggle.is-on:hover .t-toggle-text {
+    color: rgb(var(--t-sky-text-2-rgb));
+}
+
+/* \u300C\u53EA\u8981\u89D2\u8272\u53D1\u8A00\u300D\uFF1A\u7A84\u4E00\u70B9\uFF0C\u4EE5\u514D\u9876\u680F\u88AB\u4E24\u4E2A\u540C\u5BBD\u5F00\u5173\u6324\u6EE1\u3002
+   \u26A0 \u65B0\u7248\u7ED9 .t-subtoggle \u8BBE\u4E86 overflow:hidden + max-width:36px \u505A\u6536\u8D77\u52A8\u753B\uFF0C
+     \u4E24\u6761\u90FD\u5FC5\u987B\u89E3\u9664\uFF0C\u5426\u5219 160px \u7684\u6A2A\u6761\u4F1A\u88AB\u538B\u6210 36px \u4E14\u5185\u5BB9\u88AB\u88C1 */
+#t-main-view.t-layout-legacy .t-subtoggle {
+    min-width: 150px;
+    max-width: none;
+    overflow: visible;
+}
+
+/* \u4E0D\u8BFB\u5386\u53F2\u65F6\u7F6E\u7070\uFF085.1.2 \u7684\u505A\u6CD5\uFF09\uFF0C\u800C\u4E0D\u662F\u65B0\u7248\u7684\u6574\u4E2A\u6536\u8D77\u3002
+   \u4ECD\u4FDD\u7559 pointer-events\uFF0C\u597D\u8BA9 title \u63D0\u793A\u80FD\u8BF4\u660E\u4E3A\u4EC0\u4E48\u4E0D\u53EF\u7528 \u2014\u2014
+   \u8FD9\u662F\u300C\u7F6E\u7070\u300D\u76F8\u5BF9\u300C\u6536\u8D77\u300D\u552F\u4E00\u9700\u8981\u989D\u5916\u4EA4\u4EE3\u7684\u5730\u65B9\u3002
+   \u26A0 \u65B0\u7248\u7684 .is-collapsed \u8BBE\u4E86 max-width:0 / opacity:0 / border-width:0 /
+     pointer-events:none\uFF0C\u56DB\u6761\u5168\u90E8\u8981\u5199\u56DE */
+#t-main-view.t-layout-legacy .t-subtoggle.is-collapsed {
+    max-width: none;
+    opacity: 0.45;
+    border-width: 1px;
+    pointer-events: auto;
+    cursor: not-allowed;
+}
+
+#t-main-view.t-layout-legacy .t-subtoggle.is-collapsed .t-toggle-label {
+    cursor: not-allowed;
+}
+
+#t-main-view.t-layout-legacy .t-subtoggle.is-collapsed:hover {
+    background: var(--t-color-surface-sunken);
+    border-color: var(--t-color-border);
+}
+
+#t-main-view.t-layout-legacy .t-subtoggle.is-collapsed:hover .t-toggle-text {
+    color: var(--t-color-text-muted);
+}
+
+#t-main-view.t-layout-legacy .t-subtoggle.is-collapsed:hover .t-toggle-icon {
+    color: var(--t-color-text-faint);
+}
+
+/* \u751F\u6210\u6A21\u5F0F\uFF1A\u4E09\u4E2A\u5E76\u6392\u6309\u94AE\u3002\u65B0\u7248\u662F\u5355\u4E2A\u80F6\u56CA\uFF08.t-mode-chip\uFF09+ \u4E0B\u62C9\u83DC\u5355\uFF0C
+   \u7C7B\u540D\u4E0D\u540C\u6545\u4E92\u4E0D\u5E72\u6270\uFF1B\u70B9\u51FB\u7ED1\u5B9A\u5728 mainWindow.js \u91CC\u6309 layout.id \u5206\u53C9 */
+#t-main-view.t-layout-legacy .t-mode-toggle {
+    display: flex;
+    align-items: center;
+    background: var(--t-color-surface-sunken);
+    border-radius: var(--t-radius-control);
+    border: 1px solid var(--t-color-border);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 14px;
+    height: 100%;
+    cursor: pointer;
+    color: var(--t-color-text-faint);
+    font-size: 0.85em;
+    font-weight: bold;
+    white-space: nowrap;
+    border-right: 1px solid var(--t-color-border);
+    transition: var(--t-transition-hover);
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn-icon {
+    font-size: 1.05em;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn:last-child {
+    border-right: none;
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn:hover {
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text-secondary);
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn.active {
+    background: var(--t-color-brand-soft);
+    color: var(--t-color-brand);
+}
+
+#t-main-view.t-layout-legacy .t-mode-btn.active:hover {
+    background: var(--t-color-brand-soft-strong);
+}
+
+/* \u5267\u672C\u5361\uFF1A\u7AD6\u6392\u4E24\u884C\uFF08\u540D\u5B57 / \u5206\u7C7B+\u7B80\u4ECB\uFF09\u3002
+   \u26A0 \u65B0\u7248\u6539\u6210\u4E86\u6A2A\u6392\u5355\u884C\uFF0C\u8BBE\u4E86 flex-direction:row + align-items:center + gap:8px\uFF0C
+     \u4E09\u6761\u90FD\u8981\u5199\u56DE\u3002flex \u4E0E padding \u4E24\u7248\u76F8\u540C\uFF08padding \u7684 chevron \u8BA9\u4F4D\u662F
+     09d902b \u4FEE\u7684 bug\uFF0C\u4E24\u7248\u90FD\u8981\uFF09\uFF0C\u6545\u4E0D\u91CD\u590D\u58F0\u660E */
+#t-main-view.t-layout-legacy .t-trigger-card {
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: 0;
+}
+
+#t-main-view.t-layout-legacy .t-trigger-main {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--t-color-text);
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* \u5267\u672C\u540D\u3002\`.t-trigger-main\` \u662F flex \u5BB9\u5668\uFF0Ctext-overflow \u5728\u5BB9\u5668\u4E0A\u4E0D\u751F\u6548\u3001
+   \u53EA\u5728 flex \u5B50\u9879\u4E0A\u751F\u6548 \u2014\u2014 \u6240\u4EE5\u7701\u7565\u53F7\u5FC5\u987B\u843D\u5728\u8FD9\u4E2A span \u4E0A\u3002
+   \u6539\u7248\u524D\u8FD9\u4E24\u6761\u662F\u5199\u5728 topBar.js \u6A21\u677F\u91CC\u7684\u5185\u8054 style\uFF0C\u642C\u8FDB CSS \u662F\u4E3A\u4E86\u4E0D\u7ED9
+   \u5BA1\u8BA1 A16/A17 \u589E\u52A0 inline style \u8BA1\u6570\uFF1B\u4EA7\u51FA\u7684\u5916\u89C2\u76F8\u540C */
+#t-main-view.t-layout-legacy .t-trigger-main > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#t-main-view.t-layout-legacy .t-trigger-sub {
+    font-size: 0.8em;
+    color: var(--t-color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* \u65B0\u7248 gap 4px */
+#t-main-view.t-layout-legacy .t-trigger-actions {
+    gap: 5px;
+}
+
+/* \u65B0\u7248 36px / 44px + 1.3em\u3002\u7ECF\u5178\u7248\u7684\u4E24\u4E2A\u6309\u94AE\u90FD\u66F4\u5927\u4E00\u6863 */
+#t-main-view.t-layout-legacy .t-filter-btn {
+    width: 40px;
+}
+
+#t-main-view.t-layout-legacy .t-dice-btn {
+    width: 50px;
+    font-size: 1.5em;
+}
+
 @media screen and (max-width: 600px) {
+    /* \u2500\u2500 \u7B2C\u4E8C\u680F\u7A84\u5C4F\uFF1A3 \u884C\uFF08\u5F00\u5173\u7EC4 / \u6A21\u5F0F\u4E09\u8FDE / \u5267\u672C\u5361\u884C\uFF09\u2500\u2500
+       \u65B0\u7248\u7A84\u5C4F\u662F 2 \u884C\uFF08\u9760 flex-wrap + order \u628A\u5267\u672C\u5361\u6362\u5230\u7B2C\u4E8C\u884C\uFF0C
+       \u4E09\u4E2A\u63A7\u4EF6\u7C07\u5171\u5360\u7B2C\u4E00\u884C\uFF0C\u7EA6 104px\uFF09\u3002\u7ECF\u5178\u7248\u56DE\u5230 5.1.2 \u7684 3 \u884C\u3001\u7EA6 155px\u3002
+       \u26A0 \u65B0\u7248\u7684 .t-top-bar \u5728\u7A84\u5C4F\u7528\u4E86 flex-wrap\uFF0C\u8FD9\u91CC\u5FC5\u987B\u663E\u5F0F\u5173\u6389\uFF1A
+         \u7ECF\u5178\u7248\u9760 flex-direction:column \u5206\u884C\uFF0Cwrap \u4F1A\u8BA9\u5B83\u591A\u51FA\u4E00\u6B21\u610F\u5916\u6298\u884C */
+    #t-main-view.t-layout-legacy .t-top-bar {
+        height: auto;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        padding: 10px;
+        gap: 8px;
+    }
+
+    /* \u26A0 \u590D\u4F4D\u65B0\u7248\u7A84\u5C4F\u7684 order / flex \u2014\u2014 \u8FD9\u662F\u672C\u6BB5\u6700\u5BB9\u6613\u6F0F\u3001\u4E14\u75C7\u72B6\u6700\u50CF\u300C\u7384\u5B66\u300D\u7684\u4E00\u5904\u3002
+       \u65B0\u7248\u9760 flex-wrap + order \u628A 4 \u4E2A\u76F4\u63A5\u5B50\u9879\u91CD\u6392\u6210\u4E24\u884C\uFF0C\u7ED9
+       \`.t-history-group\`(order 2) / \`.t-trigger-actions\`(order 3) /
+       \`.t-trigger-card\`(order 4) \u90FD\u5199\u4E86\u5E8F\u53F7\u3002\u8FD9\u4E09\u4E2A\u7C7B\u7ECF\u5178\u7248\u4E5F\u7528\uFF0C\u4E8E\u662F\uFF1A
+         \xB7 .t-history-group \u7684 order:2 \u4F1A\u628A\u5F00\u5173\u7EC4\u6324\u5230**\u6700\u540E**\u4E00\u884C
+           \uFF08\u7ECF\u5178\u7248\u53E6\u4E24\u4E2A\u76F4\u63A5\u5B50\u9879\u662F\u9ED8\u8BA4 order:0\uFF09
+         \xB7 .t-trigger-actions(3) \u4E0E .t-trigger-card(4) \u5728\u7ECF\u5178\u7248\u662F
+           \`.t-mobile-row\` \u7684\u5144\u5F1F\uFF0C\u5E8F\u53F7\u4F7F\u7B5B\u9009/\u9AB0\u5B50\u8DD1\u5230\u5267\u672C\u5361**\u5DE6\u8FB9**
+         \xB7 .t-trigger-card \u7684 \`flex: 1 0 100%\` \u91CC flex-shrink \u662F 0\uFF0C
+           \u5728\u4E0D\u6362\u884C\u7684 \`.t-mobile-row\` \u91CC\u4F1A\u9876\u5F00\u7B5B\u9009/\u9AB0\u5B50
+       order \u5F52\u96F6\u5373\u53EF\uFF0C\u65E0\u9700\u9010\u4E2A\u6392\u5E8F\uFF1A\u7ECF\u5178\u7248\u7684 DOM \u987A\u5E8F\u672C\u8EAB\u5C31\u662F\u60F3\u8981\u7684\u987A\u5E8F\u3002 */
+    #t-main-view.t-layout-legacy .t-history-group,
+    #t-main-view.t-layout-legacy .t-trigger-actions,
+    #t-main-view.t-layout-legacy .t-trigger-card {
+        order: 0;
+    }
+
+    #t-main-view.t-layout-legacy .t-trigger-card {
+        flex: 1 1 auto;
+    }
+
+    /* \u4E24\u4E2A\u5F00\u5173\u5E73\u5206\u4E00\u884C\uFF1A\u5404\u5360\u4E00\u884C\u4F1A\u8BA9\u9876\u680F\u5728\u7A84\u5C4F\u591A\u5403 48px */
+    #t-main-view.t-layout-legacy .t-history-group {
+        width: 100%;
+        gap: 8px;
+    }
+
+    #t-main-view.t-layout-legacy .t-history-toggle {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        justify-content: center;
+        /* \u6781\u7AEF\u7EC4\u5408\uFF08320px \u5C4F + 130% \u5B57\u53F7\u7F29\u653E\uFF09\u4E0B\u6587\u5B57\u8981\u6298\u6210\u4E24\u884C\uFF0C
+           \u56FA\u5B9A 40px \u4F1A\u88C1\u6389\u7B2C\u4E8C\u884C\uFF0C\u6240\u4EE5\u6539\u6210\u4E0B\u9650 */
+        height: auto;
+        min-height: 40px;
+        padding: 0 6px;
+    }
+
+    /* \u534A\u683C\u5BBD\u5EA6\u5BB9\u4E0D\u4E0B 0.9em \u7684 7 \u4E2A\u6C49\u5B57\u3002\u6536\u5230 0.8em\uFF0C\u4E0E\u540C\u6392\u7684 .t-mode-btn \u4E00\u81F4 */
+    #t-main-view.t-layout-legacy .t-toggle-text {
+        font-size: 0.8em;
+        /* \u57FA\u51C6\u5B57\u53F7\u53EF\u88AB\u7528\u6237\u653E\u5927\u5230 130%\uFF0C\u90A3\u65F6\u534A\u683C\u4ECD\u4F1A\u4E0D\u591F\u3002
+           \u89E3\u9664\u684C\u9762\u7AEF\u7684 nowrap \u8BA9\u5B83\u6298\u884C \u2014\u2014 \u6BD4\u622A\u65AD\u6210\u7701\u7565\u53F7\u4E0D\u4E22\u4FE1\u606F */
+        white-space: normal;
+        line-height: 1.25;
+        text-align: center;
+    }
+
+    #t-main-view.t-layout-legacy .t-toggle-label {
+        gap: 6px;
+        min-width: 0;
+    }
+
+    /* \u5B50\u5F00\u5173\u5728\u7A84\u5C4F\u4E5F\u53C2\u4E0E\u5E73\u5206\uFF0C\u4E0D\u80FD\u4FDD\u7559\u684C\u9762\u7AEF\u7684 150px \u4E0B\u9650 */
+    #t-main-view.t-layout-legacy .t-subtoggle {
+        min-width: 0;
+    }
+
+    #t-main-view.t-layout-legacy .t-mode-toggle {
+        width: 100%;
+        height: 40px;
+    }
+
+    #t-main-view.t-layout-legacy .t-mode-btn {
+        flex: 1;
+        font-size: 0.8em;
+        padding: 0 10px;
+    }
+
+    #t-main-view.t-layout-legacy .t-mobile-row {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        height: 50px;
+    }
+
+    #t-main-view.t-layout-legacy .t-trigger-card,
+    #t-main-view.t-layout-legacy .t-trigger-actions {
+        height: 100%;
+    }
+
+    #t-main-view.t-layout-legacy .t-dice-btn {
+        height: 100%;
+        width: 50px;
+    }
+
+    #t-main-view.t-layout-legacy .t-filter-btn {
+        height: 100%;
+        width: 40px;
+    }
+
     #t-main-view.t-layout-legacy .t-bot-left {
         width: 76px;
         height: 55px;
@@ -39289,7 +39675,10 @@ var init_viewState = __esm({
 function getGenerationModeMeta(id3) {
   return GENERATION_MODES.find((item) => item.id === String(id3 || "")) || GENERATION_MODES[0];
 }
-function renderTopBarHtml() {
+function renderTopBarHtml(variant = "modern") {
+  return variant === "legacy" ? renderLegacyTopBar() : renderModernTopBar();
+}
+function renderModernTopBar() {
   const mode = getGenerationModeMeta(GlobalState.generationMode);
   return `<div class="t-top-bar">
                 <button type="button" class="t-mode-chip" id="t-mode-toggle" title="\u751F\u6210\u6A21\u5F0F\uFF1A${mode.label}" aria-haspopup="menu" aria-expanded="false">
@@ -39324,6 +39713,54 @@ function renderTopBarHtml() {
                     </div>
                     <div class="t-dice-btn" id="t-btn-dice" title="\u968F\u673A\u5267\u672C">
                         <i class="fa-solid fa-dice"></i>
+                    </div>
+                </div>
+            </div>`;
+}
+function renderLegacyTopBar() {
+  const modeButtons = GENERATION_MODES.map((item) => `
+                    <div class="t-mode-btn ${GlobalState.generationMode === item.id ? "active" : ""}" data-mode="${item.id}"${item.hint ? ` title="${item.hint}"` : ""}>
+                        <i class="fa-solid ${item.icon} t-mode-btn-icon"></i>
+                        <span>${item.label}</span>
+                    </div>`).join("");
+  return `<div class="t-top-bar">
+                <div class="t-history-group">
+                    <div class="t-history-toggle" id="t-history-toggle" title="\u8BFB\u53D6\u804A\u5929\u5386\u53F2">
+                        <label class="t-toggle-label">
+                            <input type="checkbox" id="t-use-history" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.useHistoryAnalysis ? "checked" : ""}>
+                            <i class="fa-solid fa-scroll t-toggle-icon"></i>
+                            <span class="t-toggle-text">\u8BFB\u53D6\u804A\u5929\u5386\u53F2</span>
+                        </label>
+                    </div>
+                    <div class="t-history-toggle t-subtoggle" id="t-ai-only-toggle" title="${HISTORY_AI_ONLY_HINT}">
+                        <label class="t-toggle-label">
+                            <input type="checkbox" id="t-history-ai-only" class="t-choice-input t-choice-input--accent t-choice-input--responsive-lg" ${GlobalState.historyAiOnly ? "checked" : ""}>
+                            <i class="fa-solid fa-masks-theater t-toggle-icon"></i>
+                            <span class="t-toggle-text">\u53EA\u8981\u89D2\u8272\u53D1\u8A00</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="t-mode-toggle" id="t-mode-toggle">${modeButtons}
+                </div>
+                <div class="t-mobile-row">
+                    <div class="t-trigger-card" id="t-trigger-btn" title="\u70B9\u51FB\u5207\u6362\u5267\u672C">
+                        <div class="t-trigger-main">
+                            <span id="t-lbl-name">\u52A0\u8F7D\u4E2D...</span>
+                        </div>
+                        <div class="t-trigger-sub">
+                            <span class="t-cat-tag" id="t-lbl-cat">\u5206\u7C7B</span>
+                            <span id="t-lbl-desc-mini">...</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down t-chevron"></i>
+                    </div>
+
+                    <div class="t-trigger-actions">
+                        <div class="t-filter-btn" id="t-btn-filter" title="\u7B5B\u9009\u968F\u673A\u8303\u56F4">
+                            <i class="fa-solid fa-filter"></i>
+                        </div>
+                        <div class="t-dice-btn" id="t-btn-dice" title="\u968F\u673A\u5267\u672C">
+                            <i class="fa-solid fa-dice"></i>
+                        </div>
                     </div>
                 </div>
             </div>`;
@@ -39367,7 +39804,7 @@ function renderHtml(viewData) {
                 </div>
             </div>
 
-            ${renderTopBarHtml()}
+            ${renderTopBarHtml(id)}
 
             <div class="t-content-wrapper">
                 <div class="t-stats-hud" id="t-stats-hud" style="display:none;">
@@ -39730,7 +40167,7 @@ function renderHtml2(viewData) {
                 </div>
             </div>
 
-            ${renderTopBarHtml()}
+            ${renderTopBarHtml(id2)}
 
             <div class="t-content-wrapper">
                 <div class="t-stats-hud" id="t-stats-hud" style="display:none;">
@@ -39963,6 +40400,12 @@ function updateHistoryToggleUI() {
   $aiOnly.attr("title", `${HISTORY_AI_ONLY_HINT}\uFF08${GlobalState.historyAiOnly ? "\u5F00" : "\u5173"}\uFF09`);
 }
 function updateModeToggleUI() {
+  const $legacyBtns = $("#t-mode-toggle .t-mode-btn");
+  if ($legacyBtns.length) {
+    $legacyBtns.removeClass("active");
+    $legacyBtns.filter(`[data-mode="${GlobalState.generationMode}"]`).addClass("active");
+    return;
+  }
   const meta = getGenerationModeMeta(GlobalState.generationMode);
   $("#t-mode-icon").attr("class", `fa-solid ${meta.icon} t-mode-chip-icon`);
   $("#t-mode-label").text(meta.label);
@@ -40689,21 +41132,27 @@ async function openMainWindow() {
       }
     }
   });
-  $("#t-mode-toggle").on("click", function(e) {
-    e.stopPropagation();
-    renderAnchoredMenu({
-      id: "t-mode-popover",
-      $anchor: $(this),
-      current: GlobalState.generationMode,
-      items: GENERATION_MODES.map((item) => ({
-        value: item.id,
-        label: item.label,
-        icon: item.icon,
-        title: item.hint
-      })),
-      onSelect: applyGenerationMode
+  if (layout.id === "legacy") {
+    $("#t-mode-toggle").on("click", ".t-mode-btn", function() {
+      applyGenerationMode($(this).attr("data-mode"));
     });
-  });
+  } else {
+    $("#t-mode-toggle").on("click", function(e) {
+      e.stopPropagation();
+      renderAnchoredMenu({
+        id: "t-mode-popover",
+        $anchor: $(this),
+        current: GlobalState.generationMode,
+        items: GENERATION_MODES.map((item) => ({
+          value: item.id,
+          label: item.label,
+          icon: item.icon,
+          title: item.hint
+        })),
+        onSelect: applyGenerationMode
+      });
+    });
+  }
   $("#t-trigger-btn").on("click", () => showScriptSelector(GlobalState.currentCategoryFilter));
   $("#t-btn-filter").on("click", function(e) {
     renderFilterMenu(GlobalState.currentCategoryFilter, $(this), (newCat) => {
