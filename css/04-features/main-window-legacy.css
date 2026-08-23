@@ -587,6 +587,66 @@
     font-size: 1.5em;
 }
 
+/* ── 第二栏平板档：2 行 ────────────────────────────────────────────
+   桌面的三簇单行在平板上装不下，剧本卡会被压到 0 宽甚至把整栏顶溢出。
+   按显式值算（不依赖字形宽度估算）：
+     开关组   min-width 160 + 150 + gap 15 = 325px，且 .t-history-toggle 是
+              flex-shrink: 0 —— 这 325px 是硬地板，不参与收缩
+     模式三连 同样 flex-shrink: 0，三个按钮实测约 230~266px
+     两个 gap 30px
+   固定部分合计 585~621px。而 #t-main-view 是 `width: 950px; max-width: 95vw`，
+   iPad 竖屏(768px 视口)下窗口只有 730px、内容区 690px：
+     690 - 585 = 105px 归 .t-mobile-row，可筛选+骰子自己就要 95px + gap 15px
+     → 剧本卡 = -5px，被压成 0 或整栏溢出。
+   到 920px 视口(窗口 874、内容 834)剧本卡也只剩 84~120px，仍然读不出简介。
+
+   ⚠ 这不是本次还原引入的新问题：5.1.2 原版就只有一个 600px 断点，同样的洞。
+     新版靠「600px 换行 + 可伸缩胶囊」绕开了，还原时把洞一起带回来了。
+
+   为什么不走「让开关和模式按钮收缩」那条路：要在 730px 里给剧本卡留出可用的
+   200px，开关组得压到约 190px（两个 95px）、模式三连压到约 160px —— 那就只能
+   去掉文字变成纯图标，而「带文字的粗横条开关 + 三个并排模式按钮」正是经典版的
+   识别特征。压到那一步等于把经典版改成新版，还原就白做了。改成换行则一条视觉
+   特征都不丢，只改排列 —— 这也正是 5.1.2 自己在 600px 处的做法。
+
+   ⚠ 本段的 max-width: 920px 在 ≤600px 时**同样命中**，故必须排在下面的 600px
+     段**之前**（同特异度靠源序）。600px 段里已显式复位本段引入的 height 与
+     flex，见那里的注释。
+   ──────────────────────────────────────────────────────────────── */
+@media screen and (max-width: 920px) {
+    #t-main-view.t-layout-legacy .t-top-bar {
+        height: auto;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    /* 第一行。⚠ 必须给这两簇显式高度：桌面下它们靠 align-items:stretch 撑到
+       整栏内容高(51px)，`.t-mode-btn { height: 100% }` 也是拿这个当基准。
+       一旦 .t-top-bar 改成 height:auto，父高变成 auto，那条 100% 就退化成
+       内容高 —— 模式按钮会塌成一行文字的高度。 */
+    #t-main-view.t-layout-legacy .t-history-group {
+        height: 48px;
+    }
+
+    /* 模式三连吃掉第一行余量，三个按钮等分 —— 与 600px 档同一套做法。
+       不让它保持内容宽：那样右侧留一大片空白，比等分难看。 */
+    #t-main-view.t-layout-legacy .t-mode-toggle {
+        flex: 1 1 auto;
+        height: 48px;
+    }
+
+    #t-main-view.t-layout-legacy .t-mode-btn {
+        flex: 1;
+    }
+
+    /* 第二行通栏。flex-basis 100% 让它必定换行（与新版 .t-trigger-card 在
+       600px 档的做法相同）；shrink 取 0 是安全的 —— 100% 正好等于可用宽度。 */
+    #t-main-view.t-layout-legacy .t-mobile-row {
+        flex: 1 0 100%;
+        height: 50px;
+    }
+}
+
 @media screen and (max-width: 600px) {
     /* ── 第二栏窄屏：3 行（开关组 / 模式三连 / 剧本卡行）──
        新版窄屏是 2 行（靠 flex-wrap + order 把剧本卡换到第二行，
@@ -599,6 +659,25 @@
         flex-wrap: nowrap;
         padding: 10px;
         gap: 8px;
+    }
+
+    /* ⚠ 复位上面 920px 平板档引入的 height / flex —— 那段的 max-width: 920px
+       在这里同样命中，只靠本段覆盖同名属性并不够：
+         · .t-history-group 的 height:48px 会盖住本段 .t-history-toggle 的
+           `height:auto; min-height:40px` —— 320px 屏 + 130% 字号时开关文字要折
+           成两行，48px 的父容器会把第二行裁掉。必须放开成 auto。
+         · .t-mode-toggle / .t-mobile-row 的 flex 在本段是竖排(column)容器里的
+           子项，主轴变成了**纵向**：flex-basis 100% 与 flex-grow 1 于是改为
+           作用在高度上。当前 .t-top-bar 是 height:auto、没有可分配余量，
+           所以暂时看不出症状 —— 但这属于「碰巧不出错」，一旦哪天给窄屏顶栏
+           定了高度就会立刻错乱。显式归零。 */
+    #t-main-view.t-layout-legacy .t-history-group {
+        height: auto;
+    }
+
+    #t-main-view.t-layout-legacy .t-mode-toggle,
+    #t-main-view.t-layout-legacy .t-mobile-row {
+        flex: 0 0 auto;
     }
 
     /* ⚠ 复位新版窄屏的 order / flex —— 这是本段最容易漏、且症状最像「玄学」的一处。
