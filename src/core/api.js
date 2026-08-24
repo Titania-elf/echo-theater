@@ -1,6 +1,7 @@
 // src/core/api.js
 
 import { getExtData } from "../utils/storage.js";
+import { AUTO_CONTINUE_RETIRED } from "../config/defaults.js";
 import {
     GlobalState,
     resetContinuationState,
@@ -2330,8 +2331,18 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
         let finalOutput = cleanContent;
 
         // --- 5. 自动续写检测与处理 ---
+        // ⚠ AUTO_CONTINUE_RETIRED 为真时整段跳过，无论用户存过什么配置。
+        //   这是功能下线的唯一闸门，理由见 src/config/defaults.js 里该常量的注释。
+        //
+        //   为什么掐这一个 if 就够：performContinuation 全库只有两个调用点 ——
+        //   下面这一处，以及它自己在 api.js:3225 的递归。主动续写（续写操作台）
+        //   走的是 handleUserContinuation → handleGenerate 带 continuationPlan，
+        //   完全不经过 performContinuation。所以这一刀让整棵子树不可达
+        //   （含内层写死的 maxRetries=2 与截断递归），而操作台毫发无损。
+        //   GlobalState.continuation.isActive 也只在本段内被置真（下方 2352 附近），
+        //   所以续写状态机连带失效，不会留下半开状态。
         const autoContinueCfg = data.auto_continue || {};
-        if (autoContinueCfg.enabled) {
+        if (!AUTO_CONTINUE_RETIRED && autoContinueCfg.enabled) {
             const truncationResult = detectTruncation(finalOutput, autoContinueCfg.detection_mode || "html");
 
             if (truncationResult.isTruncated) {

@@ -13,6 +13,36 @@ export const LEGACY_KEYS = {
     FAVS: "Titania_Favs_v3"
 };
 
+/**
+ * 自动续写已下线（入口隐藏 + 运行时强制失效），不再维护。
+ *
+ * ── 为什么下线 ──
+ * 它把一次点击放大成最多 9 次 API 请求，而触发它的截断检测有确认的误判：
+ *   · 三层重试是乘算的：主生成 1 次 + 外层 max_retries(默认 2) 轮
+ *     × (内层写死的 maxRetries=2 → 3 次 fetch + 5xx 非流式降级 1 次) = 9 次。
+ *     内层那个 2 是写死的，用户把「最大续写次数」调成 1 也压不住。
+ *   · checkHtmlTags 的栈只在栈顶匹配时 pop（helpers.js），交叉嵌套会留残渣：
+ *     `<div><p>x</div></p>` 与 `<div><span><p>x</span></p></div>` 都被判成截断，
+ *     而这两种形态在 AI 生成的 HTML 里极常见。
+ *   · sentence 模式判「末字是汉字且不以中文标点收尾」，AI 结尾常是状态行/章节名，
+ *     一律误判。both 模式取并集，误判面最大。
+ * 结果是用户看到一串带「截断」字样的提示与 ⚠️ 失败提示，把它报告成
+ * 「截断变得频繁」——实际是误判触发的续写在撞限流。
+ *
+ * ── 为什么是开关而不是删代码 ──
+ * performContinuation 及其上下文构建有约 500 行，且与主动续写共用若干工具函数
+ * （mergeContinuationContent / smartMergeContinuation / buildContinuationContext）。
+ * 删除的波及面远大于收益，故只切断入口。
+ *
+ * ⚠ 这个常量是唯一的事实来源。要复活功能必须先修上面三条，
+ *   只把它改成 false 会把已知缺陷原样放回去。
+ *
+ * ⚠ 刻意**不改**用户已存的 data.auto_continue：闸门在运行时判定，
+ *   所以老用户存过 enabled: true 也不会生效，而他们的设置值原样保留 ——
+ *   万一将来复活，不必让他们重新配一遍。
+ */
+export const AUTO_CONTINUE_RETIRED = true;
+
 export const defaultSettings = {
     enabled: false,
     config: {

@@ -683,8 +683,18 @@ export function openSettingsWindow() {
                         </div>
                     </div>
                     
-                    <!-- 自动续写功能 -->
-                    <div style="margin-top:25px; border-top:1px solid var(--t-color-border); padding-top:20px;">
+                    <!-- 自动续写功能 —— 已下线，整块隐藏。
+                         理由见 src/config/defaults.js 的 AUTO_CONTINUE_RETIRED 注释；
+                         运行时闸门在 src/core/api.js 的「5. 自动续写检测与处理」段。
+
+                         ⚠ 刻意用 display:none 隐藏，而不是把这段 HTML 删掉或不渲染：
+                           保存处理器（本文件 d.auto_continue = {...}）仍按 id 读这四个
+                           控件。DOM 一旦消失，$("#cfg-auto-continue").is(":checked") 会
+                           返回 false、parseInt(undefined)||2 回落默认值，于是每次保存设置
+                           都会静默改写用户存过的 auto_continue —— 功能虽已失效，但白白动了
+                           用户数据，将来若复活也没得恢复。保留 DOM 则读到的仍是他们原来的值。
+                         ⚠ display:none 的元素不进 Tab 序，键盘用户也摸不到。 -->
+                    <div style="display:none;" data-titania-retired="auto-continue">
                         <div class="t-form-group">
                             <label style="cursor:pointer; display:flex; align-items:center; color:var(--t-color-accent); font-weight:bold;">
                                 <input type="checkbox" id="cfg-auto-continue" ${(data.auto_continue?.enabled) ? 'checked' : ''} style="margin-right:10px;">

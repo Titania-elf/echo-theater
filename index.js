@@ -17,7 +17,7 @@ var __export = (target, all) => {
 };
 
 // src/config/defaults.js
-var extensionName, extensionFolderPath, CURRENT_VERSION, LEGACY_KEYS, defaultSettings;
+var extensionName, extensionFolderPath, CURRENT_VERSION, LEGACY_KEYS, AUTO_CONTINUE_RETIRED, defaultSettings;
 var init_defaults = __esm({
   "src/config/defaults.js"() {
     extensionName = "Titania_Theater_Echo";
@@ -28,6 +28,7 @@ var init_defaults = __esm({
       SCRIPTS: "Titania_UserScripts_v3",
       FAVS: "Titania_Favs_v3"
     };
+    AUTO_CONTINUE_RETIRED = true;
     defaultSettings = {
       enabled: false,
       config: {
@@ -36710,8 +36711,18 @@ function openSettingsWindow() {
                         </div>
                     </div>
                     
-                    <!-- \u81EA\u52A8\u7EED\u5199\u529F\u80FD -->
-                    <div style="margin-top:25px; border-top:1px solid var(--t-color-border); padding-top:20px;">
+                    <!-- \u81EA\u52A8\u7EED\u5199\u529F\u80FD \u2014\u2014 \u5DF2\u4E0B\u7EBF\uFF0C\u6574\u5757\u9690\u85CF\u3002
+                         \u7406\u7531\u89C1 src/config/defaults.js \u7684 AUTO_CONTINUE_RETIRED \u6CE8\u91CA\uFF1B
+                         \u8FD0\u884C\u65F6\u95F8\u95E8\u5728 src/core/api.js \u7684\u300C5. \u81EA\u52A8\u7EED\u5199\u68C0\u6D4B\u4E0E\u5904\u7406\u300D\u6BB5\u3002
+
+                         \u26A0 \u523B\u610F\u7528 display:none \u9690\u85CF\uFF0C\u800C\u4E0D\u662F\u628A\u8FD9\u6BB5 HTML \u5220\u6389\u6216\u4E0D\u6E32\u67D3\uFF1A
+                           \u4FDD\u5B58\u5904\u7406\u5668\uFF08\u672C\u6587\u4EF6 d.auto_continue = {...}\uFF09\u4ECD\u6309 id \u8BFB\u8FD9\u56DB\u4E2A
+                           \u63A7\u4EF6\u3002DOM \u4E00\u65E6\u6D88\u5931\uFF0C$("#cfg-auto-continue").is(":checked") \u4F1A
+                           \u8FD4\u56DE false\u3001parseInt(undefined)||2 \u56DE\u843D\u9ED8\u8BA4\u503C\uFF0C\u4E8E\u662F\u6BCF\u6B21\u4FDD\u5B58\u8BBE\u7F6E
+                           \u90FD\u4F1A\u9759\u9ED8\u6539\u5199\u7528\u6237\u5B58\u8FC7\u7684 auto_continue \u2014\u2014 \u529F\u80FD\u867D\u5DF2\u5931\u6548\uFF0C\u4F46\u767D\u767D\u52A8\u4E86
+                           \u7528\u6237\u6570\u636E\uFF0C\u5C06\u6765\u82E5\u590D\u6D3B\u4E5F\u6CA1\u5F97\u6062\u590D\u3002\u4FDD\u7559 DOM \u5219\u8BFB\u5230\u7684\u4ECD\u662F\u4ED6\u4EEC\u539F\u6765\u7684\u503C\u3002
+                         \u26A0 display:none \u7684\u5143\u7D20\u4E0D\u8FDB Tab \u5E8F\uFF0C\u952E\u76D8\u7528\u6237\u4E5F\u6478\u4E0D\u5230\u3002 -->
+                    <div style="display:none;" data-titania-retired="auto-continue">
                         <div class="t-form-group">
                             <label style="cursor:pointer; display:flex; align-items:center; color:var(--t-color-accent); font-weight:bold;">
                                 <input type="checkbox" id="cfg-auto-continue" ${data.auto_continue?.enabled ? "checked" : ""} style="margin-right:10px;">
@@ -45728,7 +45739,7 @@ ${processedPrompt}`;
     }
     let finalOutput = cleanContent;
     const autoContinueCfg = data.auto_continue || {};
-    if (autoContinueCfg.enabled) {
+    if (!AUTO_CONTINUE_RETIRED && autoContinueCfg.enabled) {
       const truncationResult = detectTruncation(finalOutput, autoContinueCfg.detection_mode || "html");
       if (truncationResult.isTruncated) {
         const maxRetries = autoContinueCfg.max_retries || 2;
@@ -46685,6 +46696,7 @@ var CONTINUATION_SESSION_MAX_ROUNDS, CONTINUATION_INJECT_MAX, CONTINUATION_INJEC
 var init_api = __esm({
   "src/core/api.js"() {
     init_storage();
+    init_defaults();
     init_state();
     init_logger();
     init_context();
