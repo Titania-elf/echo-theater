@@ -1119,14 +1119,14 @@ function renderScriptsStorageCard() {
         }
 
         if (legacyCount > 0) {
-            html += `<br><span style="color:#feca57;">旧数据仍作为安全网保留在设置里`
+            html += `<br><span style="color:#feca57;">旧数据还留在设置里`
                 + `（${legacyCount} 条，${formatBytes(footprint.bytes)}），所以设置文件<b>还没变小</b>。`
-                + `<br>点下面的按钮，核对无误后会把旧数据删掉。`
-                + `<br>⚠️ 这一步删了就找不回来，执行前会自动下载一份备份。</span>`;
+                + `<br>这通常是上次搬家中途被打断了。点下面的按钮补完最后一步。`
+                + `<br>⚠️ 会先核对再删除，执行前自动下载备份。</span>`;
             $desc.html(html);
             $actions.html(
                 `<button class="titania-mini-btn is-export" data-act="finish">`
-                + `<i class="fa-solid fa-broom"></i> 完成收尾（删除旧数据）</button>`
+                + `<i class="fa-solid fa-broom"></i> 补完收尾</button>`
             );
             return;
         }
@@ -1136,20 +1136,23 @@ function renderScriptsStorageCard() {
         return;
     }
 
+    // 未搬家。⚠ 只给**一个**按钮。
+    // 早先这里是「试运行」+「一键搬家」+ 搬完再点「完成收尾」，三次点击三个按钮 ——
+    // 那是开发期自己调试用的粒度，对用户是没必要的负担，而且中间任一步忘了点，
+    // 就会停在「已搬家但设置文件没变小」的半途状态（收藏存储在 3067eac
+    // 已经踩过并修过同一个问题：4 个测试按钮收窄成 1 个状态感知入口）。
+    // 现在一个按钮把 备份 → 试运行 → 搬家 → 核对 → 删旧数据 全串起来，
+    // 只在删除前问一次。
     $desc.html(
         `剧本指令现在和设置存在一起。ST 每次保存设置都会把整个设置文件重写一遍，`
         + `所以剧本越多，改任何一个开关就越慢。`
         + `<br>当前 <b>${footprint.count}</b> 条，占 <b>${formatBytes(footprint.bytes)}</b>`
         + `（其中指令正文 <b>${formatBytes(footprint.promptBytes)}</b>）。`
-        + `<br>先跑一次试运行：它会把剧本写成文件再读回来逐条比对，`
-        + `<b>不改动任何现有数据</b>，只告诉你搬家是否安全。`
-        + `<br><span style="color:#feca57;">⚠️ 搬家前会自动下载一份备份，请保存好这个文件。`
-        + `搬家后旧数据仍会保留一段时间作为安全网，所以设置文件要等「完成收尾」才会变小。</span>`
+        + `<br>搬家会把剧本挪到独立文件单独存放，一条都不会少，之后改设置就快了。`
+        + `<br><span style="color:#feca57;">⚠️ 开始前会自动下载一份备份，请保存好这个文件。</span>`
     );
     $actions.html(
-        `<button class="titania-mini-btn" data-act="dryrun">`
-        + `<i class="fa-solid fa-vial"></i> 试运行搬家（不改数据）</button>`
-        + `<button class="titania-mini-btn is-import" data-act="migrate">`
+        `<button class="titania-mini-btn is-import" data-act="migrate">`
         + `<i class="fa-solid fa-box-archive"></i> 一键搬家（自动备份）</button>`
     );
 }
@@ -1160,79 +1163,88 @@ function bindScriptsStorageCard() {
 
     $card.off("click", "[data-act]").on("click", "[data-act]", async function () {
         const act = $(this).attr("data-act");
-        if (act === "dryrun") return void handleScriptsDryRun($(this));
-        if (act === "migrate") return void handleScriptsMigrate($(this));
-        if (act === "finish") return void handleScriptsFinish($(this));
+        if (act === "migrate") return void runScriptsOneClick($(this));
+        if (act === "finish") return void runScriptsFinish($(this), { backupAlreadyDone: false });
     });
 
     renderScriptsStorageCard();
 }
 
-async function handleScriptsDryRun($btn) {
-    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 试运行中...');
-
-    try {
-        const report = await dryRunScriptsMigration();
-
-        if (report.empty) {
-            showScriptsStorageReport(`当前没有自定义剧本，无需搬家。`, "#feca57");
-        } else if (report.ok) {
-            showScriptsStorageReport(
-                `✅ <b>试运行通过</b>：${report.settings.count} 条剧本写入文件后读回，`
-                + `逐条深比对<b>完全一致</b>。`
-                + `<br>文件 ${formatBytes(report.written.bytes)}，`
-                + `搬家后可从设置里腾出 ${formatBytes(report.settings.bytes)}。`
-                + `<br>耗时 ${report.durationMs} ms。试运行文件已删除，现有数据未改动。`
-                + (report.cleanupError ? `<br>⚠️ 试运行文件清理失败：${report.cleanupError}` : ""),
-                "#55efc4"
-            );
-            if (window.toastr) toastr.success("试运行通过，数据可安全搬家", "Titania Echo");
-        } else if (report.mismatches?.length) {
-            showScriptsStorageReport(
-                `❌ <b>往返比对不一致，请勿搬家</b>`
-                + `<br>· ${report.mismatches.join("<br>· ")}`
-                + `<br>完整信息见控制台。`,
-                "#ff7675"
-            );
-            console.error("[Titania] 剧本试运行比对不一致", report);
-            if (window.toastr) toastr.error("试运行比对不一致", "Titania Echo");
-        } else {
-            showScriptsStorageReport(`❌ 试运行失败：${report.reason}`, "#ff7675");
-            if (window.toastr) toastr.error(report.reason || "试运行失败", "Titania Echo");
-        }
-    } catch (e) {
-        console.error("Titania: 剧本试运行失败", e);
-        showScriptsStorageReport(`❌ 试运行失败：${e?.message || String(e)}`, "#ff7675");
-        if (window.toastr) toastr.error(e?.message || "试运行失败", "Titania Echo");
-    } finally {
+/**
+ * 一键搬家：备份 → 试运行 → 正式搬家 → 核对 → 删旧数据，全串在一个按钮里。
+ *
+ * ⚠ 早先这里拆成「试运行」「一键搬家」「完成收尾」三个按钮，那是开发期自己调试
+ *   用的粒度。对用户的问题有两个：多按两次是白搭的负担；更糟的是中间任一步忘了点，
+ *   就停在「已搬家但设置文件没变小」的半途状态 —— 而那个状态下双写还在跑，
+ *   等于两份数据都在维护，一点好处没拿到。收藏存储在 3067eac 踩过同一个坑，
+ *   结论是收窄成一个状态感知入口，这里照抄。
+ *
+ * 试运行没做成独立按钮，而是折进流程当第一步：它写的是**独立的**试运行文件，
+ * 所以能在碰到正式文件之前就发现序列化往返有问题。代价只有一次上传+下载+删除。
+ */
+async function runScriptsOneClick($btn) {
+    if (isScriptsMigrated()) {
+        showScriptsStorageReport("剧本已经搬过家了，无需重复操作。", "#feca57");
         renderScriptsStorageCard();
+        return;
     }
-}
 
-async function handleScriptsMigrate($btn) {
-    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 搬家中...');
+    const footprint = describeCurrentScriptsFootprint();
+    if (footprint.count === 0) {
+        showScriptsStorageReport("当前没有自定义剧本，无需搬家。", "#feca57");
+        renderScriptsStorageCard();
+        return;
+    }
+
+    const confirmed = confirm(
+        `即将把 ${footprint.count} 条剧本指令挪到独立文件（约 ${formatBytes(footprint.bytes)}）。\n\n`
+        + `流程：\n`
+        + `  1. 下载一份完整备份（请务必保存好）\n`
+        + `  2. 试写一个临时文件并读回逐条比对，确认序列化无损\n`
+        + `  3. 写入正式文件并校验，然后在设置里只留一个指针\n`
+        + `  4. 全量逐条核对文件与设置里的旧数据\n`
+        + `  5. 核对通过后删掉设置里的旧数据（删之前会再问你一次）\n\n`
+        + `确定继续吗？`
+    );
+    if (!confirmed) return;
+
+    $btn.prop("disabled", true);
 
     try {
-        // 搬家本身不删任何东西（旧数组保留作安全网），但仍先强制备份一次：
-        // 用户点这个按钮时未必分得清哪一步才是不可逆的，而这一步之后
-        // settings.json 会被写入指针 —— 有一份搬家前的快照总是更好回退。
+        // 1. 强制备份。失败就不许往下走 —— 这是唯一的人工退路
+        $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
         try {
             const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
             downloadBackupPayload(snapshot, backupFileName("before_scripts_migration"));
             if (window.toastr) toastr.info("已下载搬家前备份，请保存这个文件", "Titania Echo");
         } catch (backupErr) {
-            console.warn("Titania: 搬家前备份失败", backupErr);
-            if (!confirm("⚠️ 搬家前自动备份失败！是否仍要继续？\n\n建议先解决备份问题再搬家。")) {
-                return;
-            }
-        }
-
-        const report = await migrateScriptsToFiles();
-
-        if (report.alreadyMigrated) {
-            showScriptsStorageReport(`剧本已经搬过家了。`, "#feca57");
+            console.error("Titania: 搬家前备份失败", backupErr);
+            showScriptsStorageReport(
+                `❌ 备份失败，已中止，未改动任何数据：${backupErr?.message || String(backupErr)}`,
+                "#ff7675"
+            );
+            if (window.toastr) toastr.error("备份失败，搬家已中止", "Titania Echo");
             return;
         }
+
+        // 2. 试运行：独立临时文件的往返比对，不碰正式文件也不写指针
+        $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> 校验数据...');
+        const dry = await dryRunScriptsMigration();
+        if (!dry.ok) {
+            const detail = dry.mismatches?.length ? dry.mismatches.join("；") : dry.reason;
+            showScriptsStorageReport(
+                `❌ <b>数据校验未通过，已中止，未改动任何数据</b><br>${detail}`
+                + `<br>请把这条信息发给开发者。`,
+                "#ff7675"
+            );
+            console.error("[Titania] 剧本搬家前校验未通过", dry);
+            if (window.toastr) toastr.error("数据校验未通过，搬家已中止", "Titania Echo");
+            return;
+        }
+
+        // 3. 正式搬家。指针最后写，失败即「什么都没发生」
+        $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> 搬家中...');
+        const report = await migrateScriptsToFiles();
         if (!report.ok) {
             showScriptsStorageReport(
                 `❌ <b>搬家已中止，未改动任何数据</b><br>${report.reason}`
@@ -1243,18 +1255,14 @@ async function handleScriptsMigrate($btn) {
             return;
         }
 
-        showScriptsStorageReport(
-            `✅ <b>搬家完成</b>：${report.written.count} 条剧本已写入 `
-            + `<code>user/files/${SCRIPTS_FILE_NAME}</code>（${formatBytes(report.written.bytes)}）。`
-            + `<br>设置里的指针只占 ${formatBytes(report.pointerBytes)}。耗时 ${report.durationMs} ms。`
-            + `<br>旧数据仍保留作安全网，等你确认无误后再执行收尾删除，`
-            + `届时可从设置里腾出 ${formatBytes(report.pendingRemovalBytes)}。`,
-            "#55efc4"
-        );
-        if (window.toastr) toastr.success(`${report.written.count} 条剧本已搬到文件存储`, "Titania Echo");
-
-        // 运行时要重建一次：读取来源已经从 user_scripts 切到文件缓存
+        // 读取来源已从 user_scripts 切到文件缓存，运行时要重建一次
         loadScripts();
+
+        const migrationSummary = `${report.written.count} 条剧本已写入 `
+            + `<code>user/files/${SCRIPTS_FILE_NAME}</code>（${formatBytes(report.written.bytes)}）`;
+
+        // 4-5. 直接续上收尾。备份已经做过，不再下第二份
+        await runScriptsFinish($btn, { backupAlreadyDone: true, migrationSummary });
     } catch (e) {
         console.error("Titania: 剧本搬家失败", e);
         showScriptsStorageReport(`❌ 搬家失败：${e?.message || String(e)}`, "#ff7675");
@@ -1265,43 +1273,61 @@ async function handleScriptsMigrate($btn) {
 }
 
 /**
- * 收尾：删除 settings.json 里的旧剧本数组。整个搬家里唯一不可逆的一步。
+ * 收尾：核对 → 确认 → 删除设置里的旧数据。整个搬家里唯一不可逆的一步。
  *
- * 三道闸：核对（逐条比对磁盘上那份）→ 强制备份 → 人工确认。
- * 核对不过就不给删，且把不一致的地方列出来。
+ * 两个入口：一键搬家末尾（backupAlreadyDone: true），以及上次中途被打断后
+ * 卡片上的「补完收尾」按钮（backupAlreadyDone: false，自己补一次备份）。
  */
-async function handleScriptsFinish($btn) {
+async function runScriptsFinish($btn, { backupAlreadyDone = false, migrationSummary = "" } = {}) {
+    if (!isScriptsMigrated()) {
+        showScriptsStorageReport("请先完成搬家，再执行收尾。", "#feca57");
+        return;
+    }
+
+    const legacy = getExtData().user_scripts;
+    if (!Array.isArray(legacy) || legacy.length === 0) {
+        showScriptsStorageReport("设置里已经没有旧剧本数据了。", "#feca57");
+        return;
+    }
+
     $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 核对中...');
 
     try {
         const result = await dropLegacyScripts({
-            // 核对通过之后才走到这里 —— 先备份，再让用户拍板
+            // 核对通过之后才走到这里：先补备份（若还没做），再让用户拍板
             confirmBeforeDelete: async (verification) => {
-                try {
-                    const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-                    downloadBackupPayload(snapshot, backupFileName("before_scripts_cleanup"));
-                    if (window.toastr) toastr.info("已下载收尾前备份，请保存这个文件", "Titania Echo");
-                } catch (backupErr) {
-                    console.warn("Titania: 收尾前备份失败", backupErr);
-                    if (!confirm("⚠️ 收尾前自动备份失败！是否仍要继续删除旧数据？\n\n删除后无法撤销。建议先解决备份问题。")) {
-                        return false;
+                if (!backupAlreadyDone) {
+                    try {
+                        const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+                        downloadBackupPayload(snapshot, backupFileName("before_scripts_cleanup"));
+                        if (window.toastr) toastr.info("已下载收尾前备份，请保存这个文件", "Titania Echo");
+                    } catch (backupErr) {
+                        console.warn("Titania: 收尾前备份失败", backupErr);
+                        if (!confirm("⚠️ 备份失败！是否仍要继续删除旧数据？\n\n删除后无法撤销。建议先解决备份问题。")) {
+                            return false;
+                        }
                     }
                 }
                 return confirm(
                     `核对通过：${verification.checked} 条剧本在文件里与设置里逐条一致。\n\n`
-                    + `现在要删除 settings.json 里的旧剧本数据吗？\n`
+                    + `现在要删除设置里的旧剧本数据吗？\n`
                     + `⚠️ 这一步不可撤销。删除后剧本只存在于 user/files/${SCRIPTS_FILE_NAME}。`
                 );
             }
         });
 
         if (result.cancelled) {
-            showScriptsStorageReport(`已取消，旧数据保留。核对是通过的，随时可以再点。`, "#feca57");
+            showScriptsStorageReport(
+                (migrationSummary ? `${migrationSummary}。<br>` : "")
+                + `已取消删除，旧数据保留。核对是通过的，随时可以点「补完收尾」。`,
+                "#feca57"
+            );
             return;
         }
         if (!result.ok) {
             showScriptsStorageReport(
-                `❌ <b>核对未通过，未删除任何数据</b>`
+                (migrationSummary ? `${migrationSummary}。<br>` : "")
+                + `❌ <b>核对未通过，未删除任何数据</b>`
                 + `<br>· ${result.problems.join("<br>· ")}`
                 + `<br>旧数据仍在设置里，剧本不会丢。请把上面的信息发给开发者。`,
                 "#ff7675"
@@ -1312,14 +1338,15 @@ async function handleScriptsFinish($btn) {
         }
 
         showScriptsStorageReport(
-            `✅ <b>收尾完成</b>：核对 ${result.checked} 条无误后已删除旧数据，`
-            + `settings.json 减少约 <b>${formatBytes(result.removedBytes)}</b>。`
+            (migrationSummary ? `✅ ${migrationSummary}。<br>` : "✅ ")
+            + `核对 ${result.checked} 条无误后已删除旧数据，`
+            + `设置文件减少约 <b>${formatBytes(result.removedBytes)}</b>。`
             + `<br>从现在起改设置不再牵连剧本。`,
             "#55efc4"
         );
-        if (window.toastr) toastr.success(`旧数据已删除，设置文件减少 ${formatBytes(result.removedBytes)}`, "Titania Echo");
+        if (window.toastr) toastr.success(`搬家完成，设置文件减少 ${formatBytes(result.removedBytes)}`, "Titania Echo");
 
-        // 立即落盘：这一步删了东西，不该留在 debounce 队列里等
+        // 这一步删了东西，不该留在 debounce 队列里等
         await saveExtDataImmediate();
     } catch (e) {
         console.error("Titania: 剧本收尾失败", e);
