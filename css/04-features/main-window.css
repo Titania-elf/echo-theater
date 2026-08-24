@@ -1191,7 +1191,24 @@
     right: 8px;
     z-index: 150;
     font-size: 10px;
-    color: rgb(var(--t-text-white-rgb) / .3);
+    /* ⚠ 原先是 `rgb(var(--t-text-white-rgb) / .3)`。那个原语确实会随主题翻转
+       （255 255 255 -> 0 0 0），所以浅色下是 30% 黑 —— 问题不在方向错了，
+       而在**同一个 alpha 在两个主题下的对比度并不对称**：
+         深色  30% 白压在 --t-color-surface-well #111  → 2.65:1
+         浅色  30% 黑压在 --t-color-surface-well #f0f0f0 → 2.09:1
+       10px 等宽字在 2.09:1 下基本读不出来，于是浅色主题里「看不到页码」。
+
+       改用语义 token：--t-color-text-faint 是逐主题调过的，深 3.29 / 浅 3.11，
+       两侧几乎对称（差 0.18），仍远低于正文、保持角标该有的弱化感。
+       ⚠ 不要退回「按主题改 alpha」那条路：theme-light.css 的推导规则里
+         「alpha 不随主题变」是 Phase 6b-12「token 只存色相」的前提，
+         而且那个文件是 gen-theme-light.py 生成的，手改会被覆盖。
+
+       另注：本元素是这一区四个覆盖层里**唯一没有自己底色**的
+       （.t-stats-hud 有毛玻璃 scrim、.t-page-nav 有 surface-recess-strong 底），
+       所以它的可读性完全取决于身后是什么 —— 这也是四个里只有它出问题的原因。
+       身后压到 AI 生成内容的自带底色时仍可能偏淡，那是另一个问题，本次不处理。 */
+    color: var(--t-color-text-faint);
     font-family: 'Consolas', 'Monaco', monospace;
     pointer-events: none;
 }
