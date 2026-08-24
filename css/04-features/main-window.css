@@ -1240,7 +1240,9 @@
     z-index: 3000;
     display: flex;
     flex-direction: column;
-    animation: t-fade-in 0.2s;
+    /* 必须用居中版:本元素靠 translateX(-50%) 居中，裸 t-fade-in 会覆盖掉它，
+       开窗瞬间面板右移自身一半宽度（此处约 400px）再猛跳回来 */
+    animation: t-fade-in-centered 0.2s;
 }
 
 

@@ -15,7 +15,16 @@
 
 /* ===== 通用:淡入 / 上滑 ===== */
 
-/* base.css  ·  旧名 fadeIn(无前缀,与 ST 及其它扩展冲突)— 修 B3 */
+/* base.css  ·  旧名 fadeIn(无前缀,与 ST 及其它扩展冲突)— 修 B3
+   ⚠ 本动画会**接管 transform**。用在靠 transform 定位的元素上会出 bug:
+     CSS 动画处在 animation origin 层级,优先级高于元素自己的普通声明,
+     于是动画期间元素的 translateX(-50%) 之类被整条覆盖掉、结束时又突然恢复,
+     表现为开窗瞬间横向猛跳一下(实测幅度可达 400px+)。
+     居中面板请改用下面的 t-fade-in-centered。
+   本动画仍保留 translateY,因为全库 9 处用它的元素都不带 transform(已逐处核对:
+   .t-selector-panel / .t-filter-popover / .t-img-mgr-overlay / .t-fav-tools-drawer /
+   .t-read-more-menu / .t-ws-card / .t-queue-running-indicator / .t-wi-preview-modal /
+   经典版 .t-tools-panel),对它们无害。 */
 @keyframes t-fade-in {
     from {
         opacity: 0;
@@ -25,6 +34,29 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* t-fade-in 的居中版:把 translateX(-50%) 一并写进关键帧,于是不再覆盖掉
+   元素用来水平居中的那一条。
+
+   做法照 t-indicator-slide-up(见下) —— 那是全库最早遇到同一问题并已正确处理的
+   一处,本关键帧只是把同样的解法补给淡入这一族。
+
+   用它的三处面板都是 `left: 50%; transform: translateX(-50%)` 居中,
+   且各自的 @media 覆盖只改宽高与 top、不碰 transform(已逐处核对):
+     .t-content-editor(续写操作台) / .t-wi-selector(世界书) / .t-queue-settings(队列设置)
+   ⚠ 因此它**只能**用在确实靠 translateX(-50%) 居中的元素上 ——
+     用在没有这个偏移的元素上会把它往左推走自身一半宽度。 */
+@keyframes t-fade-in-centered {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
     }
 }
 
