@@ -111,20 +111,26 @@ function enableFeaturedStripScroll(strip) {
 }
 
 /**
- * 精选条：横向可滑动的热门榜。
+ * 精选条：横向可滑动的榜单。首页摆两条，语义不同：
+ *   1. 近 7 天新作热度 —— 窗口内新上传、且已有人下载的，按下载量排（newWorksStrip）
+ *   2. 工坊总榜       —— 全站累计下载前 10（allTimeStrip）
+ *
  * 没做大轮播是因为工坊没有配图字段，大卡片只能拿色块填，
  * 而且一次只露一条，条目少的时候特别空。
+ *
+ * @param {object[]} items 已排好序的条目
+ * @param {{title: string, hint?: string, medals?: boolean}} opts
  */
-function featuredStrip(items) {
-    const top = sortItems(items, "hot").slice(0, 10);
-    if (top.length < 3) return null;   // 太少就不摆榜，显得寒酸
-
-    const strip = el("div", { class: "featured-strip" }, top.map((s, i) =>
+function featuredStrip(items, opts) {
+    const strip = el("div", { class: "featured-strip" }, items.map((s, i) =>
         el("article", {
-            class: `f-card${i < 3 ? " is-top" : ""}`,
+            class: `f-card${opts.medals && i < 3 ? " is-top" : ""}`,
             onclick: () => { location.hash = `#/s/${s.id}`; }
         }, [
-            el("span", { class: "f-rank", text: RANK_MARK[i] || String(i + 1) }),
+            el("span", {
+                class: "f-rank",
+                text: (opts.medals && RANK_MARK[i]) || String(i + 1)
+            }),
             el("div", { class: "f-body" }, [
                 el("h3", { class: "f-title", text: s.name }),
                 el("div", { class: "f-meta" }, [
@@ -139,11 +145,74 @@ function featuredStrip(items) {
 
     return el("section", { class: "featured" }, [
         el("div", { class: "featured-head" }, [
-            el("h2", { text: "🔥 本期热门" }),
-            el("span", { class: "featured-hint", text: "横向滑动查看更多" })
+            el("h2", { text: opts.title }),
+            opts.hint ? el("span", { class: "featured-hint", text: opts.hint }) : null
         ]),
         strip
     ]);
+}
+
+/**
+ * 「近 7 天新作热度」的窗口链。
+ *
+ * 为什么是滚动小时窗而不是自然周：自然周每逢周一凌晨归零，榜单恰好在流量重启
+ * 的时刻最空；滚动窗口连续移动，没有这个悬崖，也完全不用管时区
+ * （Workers 跑在 UTC，用户在 +08，按自然周切会差 8 小时）。
+ *
+ * 为什么用 created_at 而不是 updated_at：老剧本改一下不该重新算作「新上传」。
+ * 现有的 hotScore() 就是拿 updated_at 当新鲜度，编辑一次就能刷新，这里不沿用。
+ *
+ * 为什么要求 downloads ≥ 1：横幅说的是「受欢迎」，把 ↓0 的排进去就名不副实了。
+ * 窗口内没人达标时逐级放宽，标题跟着变 —— 宁可显示「近一月」，不显示假的「近 7 天热度」。
+ *
+ * ⚠ 刻意不按曝光时长归一（如 downloads / 小时数）。看着更公平，实际没必要：
+ *   横条有 10 个位置，而按当前投稿节奏（≤5 条/周）窗口里通常只有 3–5 条，
+ *   没有任何条目会被挤掉 —— 排序只决定先后，不决定去留。
+ *   而归一化会让「↓3 排在 ↓5 上面」，读者看到的数字和顺序矛盾，反而更糊。
+ */
+const NEW_WORK_WINDOWS = [
+    { hours: 24 * 7, label: "🔥 近 7 天新作热度" },
+    { hours: 24 * 14, label: "🔥 近两周新作热度" },
+    { hours: 24 * 30, label: "🔥 近一月新作热度" }
+];
+
+function pickNewWorks(items, nowSec) {
+    for (const win of NEW_WORK_WINDOWS) {
+        const from = nowSec - win.hours * 3600;
+        const hits = items
+            .filter(s => (s.created_at || 0) >= from && (s.downloads || 0) > 0)
+            .sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
+            .slice(0, 10);
+        // 门槛是 1 而不是 3：按 ≤5 条/周的节奏，要求 3 条会让横幅频繁整块消失、
+        // 首屏跟着跳。这条横条的作用是露出新作，露 1 条也比空着有用。
+        if (hits.length >= 1) return { items: hits, label: win.label, hours: win.hours };
+    }
+    return null;
+}
+
+function newWorksStrip(all) {
+    const picked = pickNewWorks(all, Math.floor(Date.now() / 1000));
+    if (!picked) return null;   // 连 30 天内都没有被下载过的新作，整条隐藏
+
+    return featuredStrip(picked.items, {
+        title: picked.label,
+        hint: `${picked.items.length} 部作品`,
+        medals: false   // 只有 3–5 条时挂奖牌是在给噪声发奖，用朴素序号
+    });
+}
+
+/** 工坊总榜：全站累计下载。奖牌留给这里 —— 400 条里排前三才有意义 */
+function allTimeStrip(all) {
+    const top = [...all]
+        .sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
+        .slice(0, 10);
+    if (top.length < 3) return null;   // 太少就不摆榜，显得寒酸
+
+    return featuredStrip(top, {
+        title: "🏆 工坊总榜",
+        hint: "横向滑动查看更多",
+        medals: true
+    });
 }
 
 export async function renderList() {
@@ -226,7 +295,8 @@ export async function renderList() {
                 el("p", { class: "workshop-home-subtitle", text: "收录值得反复演绎的剧本指令，也把每一位创作者的回声留在这里。" })
             ])
         ]),
-        featuredStrip(all),
+        newWorksStrip(all),
+        allTimeStrip(all),
         el("div", { class: "toolbar" }, [search, sortSel]),
         categories.length ? chipBox : null,
         el("div", { class: "meta list-count" }, [countLabel]),
