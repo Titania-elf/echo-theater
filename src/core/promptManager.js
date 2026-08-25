@@ -202,18 +202,6 @@ export function createCustomPresetEntry(overrides = {}) {
     };
 }
 
-/**
- * 用户可插入新条目的下标上限（含）。
- * ensureTitaniaPresetEntries 会把两条受管条目钉在队尾，插到它们之后的条目会被重排，
- * 所以界面只在这个下标之前提供插入点，避免「插了但没插在那儿」的意外。
- */
-export function getPresetInsertLimit(preset) {
-    const entries = preset?.entries;
-    if (!Array.isArray(entries)) return 0;
-    const managedIndex = entries.findIndex(isTitaniaManagedEntry);
-    return managedIndex < 0 ? entries.length : managedIndex;
-}
-
 export function getPromptScheme(data, mode = "narrative") {
     ensurePromptManager(data);
     const manager = data.prompt_manager;
@@ -329,7 +317,7 @@ function getDeclaredMarker(definition, identifier) {
 }
 
 function isAssistantPrefill(entry) {
-    return entry.role === "assistant" && String(entry.content || "").trim().length > 0;
+    return entry?.role === "assistant" && String(entry?.content || "").trim().length > 0;
 }
 
 function createTitaniaScriptEntry() {
@@ -362,10 +350,16 @@ function createTitaniaOutputContractEntry() {
     };
 }
 
-function isTitaniaManagedEntry(entry) {
-    return entry?.id === "titania_output_contract"
-        || entry?.id === "titania_script_instruction"
-        || entry?.marker === "titaniaScript";
+const TITANIA_ENTRY_FACTORIES = {
+    contract: createTitaniaOutputContractEntry,
+    instruction: createTitaniaScriptEntry
+};
+const TITANIA_ENTRY_KINDS = Object.keys(TITANIA_ENTRY_FACTORIES);
+
+function getTitaniaEntryKind(entry) {
+    if (entry?.id === "titania_output_contract") return "contract";
+    if (entry?.id === "titania_script_instruction" || entry?.marker === "titaniaScript") return "instruction";
+    return "";
 }
 
 // 逐字段比对，等价于旧实现里 JSON.stringify 的深比较（规范条目字段全为原始值）
@@ -378,43 +372,54 @@ function isCanonicalEntry(entry, canonical) {
 
 /**
  * 快速判断预设是否已满足 Titania 条目的全部不变量，命中则可跳过重建。
- * 不变量：恰好两个受管条目，相邻且顺序为「输出规范 → 小剧场指令」，
- * 位于尾部 assistant 预填之前，且字段与当前规范值一致。
+ * 不变量只剩两条：每种受管条目恰好一条，且字段与当前规范值一致。
+ *
+ * 位置刻意不在不变量里。以前要求「相邻且钉在队尾」，结果是把预设作者排在末位的
+ * 收尾/越狱指令挤到中段，而末位指令的服从度最高 —— 那正是预设最吃重的位置。
+ * 现在顺序交给用户拖动决定，这里只保证条目存在且没被改坏。
  */
 function hasCanonicalTitaniaEntries(entries) {
-    let firstIndex = -1;
-    let managedCount = 0;
-    for (let i = 0; i < entries.length; i++) {
-        if (!isTitaniaManagedEntry(entries[i])) continue;
-        if (firstIndex === -1) firstIndex = i;
-        managedCount++;
+    const seen = new Set();
+    for (const entry of entries) {
+        const kind = getTitaniaEntryKind(entry);
+        if (!kind) continue;
+        if (seen.has(kind)) return false;
+        if (!isCanonicalEntry(entry, TITANIA_ENTRY_FACTORIES[kind]())) return false;
+        seen.add(kind);
     }
-    if (managedCount !== 2) return false;
-
-    if (!isCanonicalEntry(entries[firstIndex], createTitaniaOutputContractEntry())) return false;
-    if (!isCanonicalEntry(entries[firstIndex + 1], createTitaniaScriptEntry())) return false;
-
-    // 插入点应尽量靠后：前一条不能是 assistant 预填，其后必须全是 assistant 预填
-    const isPrefill = entry => !!entry && typeof entry === "object" && isAssistantPrefill(entry);
-    if (firstIndex > 0 && isPrefill(entries[firstIndex - 1])) return false;
-    for (let i = firstIndex + 2; i < entries.length; i++) {
-        if (!isPrefill(entries[i])) return false;
-    }
-    return true;
+    return seen.size === TITANIA_ENTRY_KINDS.length;
 }
 
+/**
+ * 补齐受管条目，同时保留用户排好的位置。
+ *
+ * 已存在的条目原地换成规范值（只修字段漂移，不动下标），重复副本丢弃，
+ * 缺失的才补到队尾——且跳过尾部的 assistant 预填，让预填继续贴着生成点。
+ */
 export function ensureTitaniaPresetEntries(preset) {
     if (!preset || !Array.isArray(preset.entries)) return false;
     if (hasCanonicalTitaniaEntries(preset.entries)) return false;
     const previous = JSON.stringify(preset.entries);
-    preset.entries = preset.entries.filter(entry => (
-        entry?.id !== "titania_output_contract"
-        && entry?.id !== "titania_script_instruction"
-        && entry?.marker !== "titaniaScript"
-    ));
-    let insertAt = preset.entries.length;
-    while (insertAt > 0 && isAssistantPrefill(preset.entries[insertAt - 1])) insertAt--;
-    preset.entries.splice(insertAt, 0, createTitaniaOutputContractEntry(), createTitaniaScriptEntry());
+
+    const kept = new Set();
+    const entries = [];
+    for (const entry of preset.entries) {
+        const kind = getTitaniaEntryKind(entry);
+        if (!kind) {
+            entries.push(entry);
+            continue;
+        }
+        if (kept.has(kind)) continue;
+        kept.add(kind);
+        entries.push(TITANIA_ENTRY_FACTORIES[kind]());
+    }
+
+    let insertAt = entries.length;
+    while (insertAt > 0 && isAssistantPrefill(entries[insertAt - 1])) insertAt--;
+    const missing = TITANIA_ENTRY_KINDS.filter(kind => !kept.has(kind));
+    entries.splice(insertAt, 0, ...missing.map(kind => TITANIA_ENTRY_FACTORIES[kind]()));
+
+    preset.entries = entries;
     return JSON.stringify(preset.entries) !== previous;
 }
 

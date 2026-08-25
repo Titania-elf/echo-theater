@@ -14,7 +14,7 @@ import { refreshOutlineEntryButton } from "./outlineEntryButton.js";
 import { refreshRewriteEntryButton } from "./rewriteEntryButton.js";
 import { ensureMainApiProfiles } from "../core/apiProfileRegistry.js";
 import { createApiConnectionEditor, renderApiConnectionEditorHTML } from "./shared/apiConnectionEditor.js";
-import { normalizeChatCompletionPreset, getPresetEntrySummary, ensurePromptManager, ensureTitaniaPresetEntries, createCustomPresetEntry, getPresetInsertLimit } from "../core/promptManager.js";
+import { normalizeChatCompletionPreset, getPresetEntrySummary, ensurePromptManager, ensureTitaniaPresetEntries, createCustomPresetEntry } from "../core/promptManager.js";
 import {
     HEADER_ACTION_REGISTRY,
     HEADER_ACTION_MAX,
@@ -1595,10 +1595,10 @@ export function openSettingsWindow() {
             $list.html('<div style="color:var(--t-color-text-muted); padding:12px 0;">暂无导入的预设</div>');
             return;
         }
-        // 新增条目只开放给导入的预设：内置方案有「恢复默认」，加了也会被一键清掉
-        const insertLimit = isPreset ? getPresetInsertLimit(scheme) : -1;
+        // 新增条目只开放给导入的预设：内置方案有「恢复默认」，加了也会被一键清掉。
+        // 受管条目不再钉死在队尾，所以插入点也不用再设上限。
         const appendInsertSlot = (position) => {
-            if (position > insertLimit) return;
+            if (!isPreset) return;
             const $slot = $(`<button type="button" class="t-prompt-insert-slot" title="在这里插入一个新条目">
                 <span class="t-prompt-insert-line"></span>
                 <span class="t-prompt-insert-label"><i class="fa-solid fa-plus"></i> 在此插入</span>
@@ -1609,17 +1609,18 @@ export function openSettingsWindow() {
         };
         entries.forEach((entry, entryIndex) => {
             appendInsertSlot(entryIndex);
+            // 插件受管条目：内容锁定、不能禁用，但和普通条目一样可以拖动排序
             const isLocked = entry.readonly === true;
             const stateLabel = isLocked ? "插件内置" : (entry.required ? "必需" : (entry.enabled ? "已启用" : "已禁用"));
             const stateIcon = (isLocked || entry.required) ? "fa-lock" : (entry.enabled ? "fa-check" : "fa-xmark");
-            const $row = $(`<div class="t-prompt-entry-card ${entry.enabled ? '' : 'is-disabled'} ${isLocked ? 'is-locked' : ''} ${entry.custom ? 'is-custom' : ''}" data-entry-id="${entry.id}" draggable="${isLocked ? 'false' : 'true'}">
+            const $row = $(`<div class="t-prompt-entry-card ${entry.enabled ? '' : 'is-disabled'} ${isLocked ? 'is-locked' : ''} ${entry.custom ? 'is-custom' : ''}" data-entry-id="${entry.id}" draggable="true">
                 <div class="t-prompt-entry-header">
-                    <span class="t-prompt-entry-drag-hint" title="${isLocked ? '插件固定条目' : '拖动排序'}"><i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-grip-vertical'}"></i></span>
+                    <span class="t-prompt-entry-drag-hint" title="拖动排序"><i class="fa-solid fa-grip-vertical"></i></span>
                     <span class="t-prompt-entry-index">#${entry.index}</span>
                     <span class="t-prompt-entry-name"></span>
                     <span class="t-prompt-entry-badge"></span>
                     <div class="t-prompt-entry-actions">
-                        <button type="button" class="t-prompt-entry-toggle ${entry.enabled ? 'is-enabled' : ''} ${entry.required ? 'is-required' : ''}" title="${isLocked ? '插件内置条目，不能编辑、禁用或排序' : (entry.required ? '必需条目，不能禁用' : `${stateLabel}，点击切换状态`)}" aria-label="${stateLabel}" ${entry.required ? 'disabled' : ''}><i class="fa-solid ${stateIcon}"></i><span class="t-prompt-entry-toggle-label">${stateLabel}</span></button>
+                        <button type="button" class="t-prompt-entry-toggle ${entry.enabled ? 'is-enabled' : ''} ${entry.required ? 'is-required' : ''}" title="${isLocked ? '插件内置条目，可以拖动排序，但不能编辑或禁用' : (entry.required ? '必需条目，不能禁用' : `${stateLabel}，点击切换状态`)}" aria-label="${stateLabel}" ${entry.required ? 'disabled' : ''}><i class="fa-solid ${stateIcon}"></i><span class="t-prompt-entry-toggle-label">${stateLabel}</span></button>
                         ${entry.custom ? '<button type="button" class="t-prompt-entry-delete" title="删除这个自定义条目" aria-label="删除条目"><i class="fa-solid fa-trash"></i></button>' : ''}
                     </div>
                 </div>
@@ -1651,7 +1652,7 @@ export function openSettingsWindow() {
             });
             $row.on("dragstart", function (event) {
                 const originalEvent = event.originalEvent;
-                if (isLocked || $(event.target).closest("input, textarea, select, button").length) {
+                if ($(event.target).closest("input, textarea, select, button").length) {
                     originalEvent?.preventDefault();
                     return;
                 }
@@ -1660,7 +1661,6 @@ export function openSettingsWindow() {
                 $(this).addClass("is-dragging");
             });
             $row.on("dragover", function (event) {
-                if (isLocked) return;
                 event.preventDefault();
                 const originalEvent = event.originalEvent;
                 const rect = this.getBoundingClientRect();
@@ -1672,7 +1672,6 @@ export function openSettingsWindow() {
                 if (event.target === this) $(this).removeClass("is-drag-over");
             });
             $row.on("drop", function (event) {
-                if (isLocked) return;
                 event.preventDefault();
                 const originalEvent = event.originalEvent;
                 const draggedId = originalEvent.dataTransfer.getData("text/plain");
@@ -1688,7 +1687,6 @@ export function openSettingsWindow() {
                 let nextIndex = scheme.entries.findIndex(item => item.id === entry.id);
                 if (!insertBefore) nextIndex++;
                 scheme.entries.splice(Math.max(0, nextIndex), 0, moved);
-                if (scheme.type === "preset") ensureTitaniaPresetEntries(scheme);
                 renderPromptManager();
             });
             $row.on("dragend", function () {

@@ -515,7 +515,6 @@
 }
 
 .t-prompt-entry-card.is-locked {
-    cursor: default;
     border-color: rgb(var(--t-glass-locked-border-rgb));
     background: var(--t-color-dialog-surface);
 }
