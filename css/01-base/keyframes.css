@@ -43,11 +43,13 @@
    做法照 t-indicator-slide-up(见下) —— 那是全库最早遇到同一问题并已正确处理的
    一处,本关键帧只是把同样的解法补给淡入这一族。
 
-   用它的三处面板都是 `left: 50%; transform: translateX(-50%)` 居中,
+   用它的两处面板都是 `left: 50%; transform: translateX(-50%)` 只做**水平**居中,
    且各自的 @media 覆盖只改宽高与 top、不碰 transform(已逐处核对):
-     .t-content-editor(续写操作台) / .t-wi-selector(世界书) / .t-queue-settings(队列设置)
+     .t-content-editor(续写操作台) / .t-queue-settings(队列设置)
    ⚠ 因此它**只能**用在确实靠 translateX(-50%) 居中的元素上 ——
-     用在没有这个偏移的元素上会把它往左推走自身一半宽度。 */
+     用在没有这个偏移的元素上会把它往左推走自身一半宽度。
+   ⚠ 双轴居中(translate(-50%, -50%))的元素要用下面的 t-fade-in-centered-xy,
+     用本动画会丢掉 Y 轴那一半偏移、开窗瞬间下坠自身一半高度。 */
 @keyframes t-fade-in-centered {
     from {
         opacity: 0;
@@ -57,6 +59,26 @@
     to {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* 双轴居中版:`top: 50%; left: 50%; transform: translate(-50%, -50%)` 的元素用它。
+   与上面那条同理 —— 动画处在 animation origin 层级,不把定位用的偏移写进关键帧
+   就会被整条覆盖掉。
+
+   当前使用者:
+     .t-wi-selector(世界书管理)
+   ⚠ 两个 translate 都是纯位移、可交换,所以 translateY(5px) 追加在后面不影响
+     -50% 的语义(百分比始终按元素自身尺寸解析,与书写顺序无关)。 */
+@keyframes t-fade-in-centered-xy {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) translateY(0);
     }
 }
 

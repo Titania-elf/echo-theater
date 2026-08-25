@@ -6,11 +6,24 @@
 
 /* ===== 世界书条目选择器 ===== */
 /* 选择器面板 */
+/* 双轴居中。
+   ── 为什么不是 top: 60px ──
+   原先是 `top: 60px; max-height: 80vh`，而定位父级 #t-main-view 是
+   `height: 85vh`（main-window.css:6）且带 .t-box 的 `overflow: hidden`
+   （base.css:44）。于是面板底边 = 60px + 80vh，容器只有 85vh：
+     溢出量 = 60px + 80vh − 85vh = 60px − 5vh
+   只要视口高 < 1200px 就装不下，多出来的部分被容器直接裁掉 ——
+   1080p 浏览器视口约 950px 时裁掉约 12.5px，视口 800px 时裁掉 20px。
+   改成双轴居中后上下余量自动均分（80vh 面板在 85vh 容器里各留 2.5vh），
+   与视口高度无关，且面板比 max-height 矮时仍然居中。
+   ⚠ 同栏另两处居中面板没有这个问题，不要顺手一起改：
+     .t-content-editor 是 `height: calc(100% - 80px)`（自己算好了 60+20 的余量），
+     .t-queue-settings 是 `max-height: 75vh`（要视口高 <600px 才溢出）。 */
 .t-wi-selector {
     position: absolute;
-    top: 60px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     width: 90%;
     max-width: 860px;
     max-height: 80vh;
@@ -21,9 +34,10 @@
     z-index: 3000;
     display: flex;
     flex-direction: column;
-    /* 必须用居中版:本元素靠 translateX(-50%) 居中，裸 t-fade-in 会覆盖掉它，
-       开窗瞬间面板右移自身一半宽度（此处约 427px）再猛跳回来 */
-    animation: t-fade-in-centered 0.2s;
+    /* 必须用**双轴**居中版:本元素靠 translate(-50%, -50%) 定位，裸 t-fade-in 会
+       整条覆盖掉它（开窗瞬间横向猛跳约 427px），只带 X 的 t-fade-in-centered
+       则会丢掉 Y 那一半、下坠自身一半高度 */
+    animation: t-fade-in-centered-xy 0.2s;
 }
 
 .t-wi-body {
@@ -517,10 +531,13 @@
 @media screen and (max-width: 600px) {
 /* 面板拉到近满屏。用父容器百分比而不是 vh/dvh：
        .t-wi-selector 绝对定位在 #t-main-view 内，而 .t-box 是 overflow:hidden，
-       所以 100% 就是主窗口可视高度，且不受移动浏览器地址栏伸缩影响 */
+       所以 100% 就是主窗口可视高度，且不受移动浏览器地址栏伸缩影响。
+       ⚠ 刻意**不再**写 top —— 基础规则的 `top: 50%` + translate(-50%, -50%)
+         配上这里的 max-height 正好上下各留 8px，与改版前 `top: 8px` 的产出
+         完全相同。若在这里写回 top: 8px，translateY(-50%) 会把面板往上抬走
+         自身一半高度，直接跑出容器。 */
 .t-wi-selector {
         width: 95%;
-        top: 8px;
         max-height: calc(100% - 16px);
     }
 

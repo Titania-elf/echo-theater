@@ -342,10 +342,26 @@
     height: 75px;
 }
 
-/* 新版 gap 4px。桌面端沿用顶栏的 15px，视觉与两个开关各自作为顶栏直接子项
-   时完全一致；这个容器存在的意义在窄屏 —— 让它们共占一行而不是各占一行 */
+/* 新版 gap 4px。
+   ── 桌面端为什么是竖排 ──
+   5.1.2 这里只有「读取聊天历史」一个开关（160px）。后来加入的「只要角色发言」
+   又要 150px + gap 15px = 165px，而这 325px 是 flex-shrink: 0 的硬地板 ——
+   那 165px 整整是从剧本卡身上扣的。按 950px 窗口算（基准字号 12px）：
+     顶栏内容宽 910 − 开关组 325 − 模式三连约 260 − 两个 gap 30
+       = 295px 归 .t-mobile-row
+     其中筛选 40 + gap 5 + 骰子 50 + gap 15 = 110px
+       → 剧本卡约 185px，再减 padding(15 + 15+1.8em ≈ 51.6px)
+       → 标题只剩约 133px，1.1em 粗体下约 10 个汉字
+   而窗口还受 max-width: 95vw 约束：视口 960px 时窗口只有 912px，标题剩 8 个字。
+   竖排把开关组从 325px 收回 160px，剧本卡拿到约 350px（标题约 22 个汉字），
+   而两个开关的「勾选框 + 图标 + 文字」横条形态一条不丢 —— 归还的正是新控件
+   占走的那 165px，不动模式三连、不改文案、不改窗口尺寸。
+   ⚠ gap 从 15px 收到 3px：竖排后 gap 作用在**纵向**，可用高度只有 51px
+     （顶栏 75 − padding 24）。留 15px 会让两条各剩 18px，比内容还矮。
+   ⚠ 只在桌面档竖排。平板(920px)与窄屏(600px)两档仍是横排，见下方两段的复位。 */
 #t-main-view.t-layout-legacy .t-history-group {
-    gap: 15px;
+    flex-direction: column;
+    gap: 3px;
 }
 
 /* PC 端布局核心：吃掉顶栏剩余宽度，内含剧本卡 + 筛选/骰子。
@@ -359,7 +375,11 @@
 }
 
 /* 历史开关本体。新版是 36px 见方的纯图标钮（.t-topbar-toggle），
-   经典版是 160px 的「勾选框 + 图标 + 文字」横条 */
+   经典版是 160px 的「勾选框 + 图标 + 文字」横条。
+   宽度：竖排后由 .t-history-group 的 align-items: stretch（main-window.css:143）
+   把两条都拉到组的内容宽 = 两者 min-width 的较大值 = 160px，于是等宽。
+   下面 .t-subtoggle 的 min-width: 150px 在竖排下因此不再决定宽度，
+   只在平板/窄屏的横排档起作用。 */
 #t-main-view.t-layout-legacy .t-history-toggle {
     display: flex;
     align-items: center;
@@ -369,7 +389,13 @@
     border-radius: var(--t-radius-control);
     padding: 0 12px;
     border: 1px solid var(--t-color-border);
-    flex-shrink: 0;
+    /* 两条等分 51px → 各 24px，内容框 22px。行内最高的是勾选框（18px 固定，
+       见 choice-input.css 的 --responsive-lg），文字在 130% / 150% 字号缩放下
+       行高约 17 / 19.5px，都装得下。
+       ⚠ 这一条取代了原来的 flex-shrink: 0。竖排后它约束的是**纵向**，而此处
+         本来就没有可收缩的余量，无副作用；但平板/窄屏是横排，那 325px 的硬地板
+         正是靠 shrink:0 撑住的，故两档都要显式复位（见下方 920px 段）。 */
+    flex: 1;
     box-sizing: border-box;
     cursor: pointer;
     transition: var(--t-transition-hover);
@@ -590,8 +616,10 @@
 /* ── 第二栏平板档：2 行 ────────────────────────────────────────────
    桌面的三簇单行在平板上装不下，剧本卡会被压到 0 宽甚至把整栏顶溢出。
    按显式值算（不依赖字形宽度估算）：
-     开关组   min-width 160 + 150 + gap 15 = 325px，且 .t-history-toggle 是
-              flex-shrink: 0 —— 这 325px 是硬地板，不参与收缩
+     开关组   min-width 160 + 150 + gap 15 = 325px，且本段把 .t-history-toggle
+              复位成 flex: 0 0 auto —— 这 325px 是硬地板，不参与收缩
+              （桌面档改成竖排后开关组只占 160px，那条路见上方 .t-history-group
+                的注释；本段起横排，325px 重新成立）
      模式三连 同样 flex-shrink: 0，三个按钮实测约 230~266px
      两个 gap 30px
    固定部分合计 585~621px。而 #t-main-view 是 `width: 950px; max-width: 95vw`，
@@ -623,9 +651,23 @@
     /* 第一行。⚠ 必须给这两簇显式高度：桌面下它们靠 align-items:stretch 撑到
        整栏内容高(51px)，`.t-mode-btn { height: 100% }` 也是拿这个当基准。
        一旦 .t-top-bar 改成 height:auto，父高变成 auto，那条 100% 就退化成
-       内容高 —— 模式按钮会塌成一行文字的高度。 */
+       内容高 —— 模式按钮会塌成一行文字的高度。
+       ⚠ flex-direction 是复位桌面档的竖排。平板起两个开关重新并排：这一档的
+         剧本卡已经独占第二行、拿到通栏宽度，不需要再从开关组抠那 165px，
+         而横排在 48px 的行高里比两条 22px 更接近 5.1.2 的观感。 */
     #t-main-view.t-layout-legacy .t-history-group {
         height: 48px;
+        flex-direction: row;
+        gap: 15px;
+    }
+
+    /* ⚠ 复位桌面档的 flex: 1。横排下它会让两个开关去抢第一行的余量，把
+       min-width 160/150 的「硬地板」变成「起始宽度」—— 上面那段空间账
+       （开关组恒占 325px）就不再成立，模式三连会被挤窄。
+       写 0 0 auto 而不是只写 flex-shrink: 0：flex-basis 也得从 0% 回到 auto，
+       否则宽度只剩 min-width 兜着，语义上不再是「按内容撑开」。 */
+    #t-main-view.t-layout-legacy .t-history-toggle {
+        flex: 0 0 auto;
     }
 
     /* 模式三连吃掉第一行余量，三个按钮等分 —— 与 600px 档同一套做法。
