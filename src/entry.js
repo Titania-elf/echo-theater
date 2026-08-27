@@ -11,6 +11,7 @@ import { saveSettingsDebounced, eventSource, event_types } from "../../../../scr
 import { extensionName, defaultSettings, extensionFolderPath, LEGACY_KEYS, CURRENT_VERSION } from "./config/defaults.js";
 import { getExtData, saveExtData, saveExtDataImmediate } from "./utils/storage.js";
 import { loadCssFiles } from "./utils/dom.js";
+import { escapeHtml } from "./utils/helpers.js";
 import { GlobalState } from "./core/state.js";
 import { loadScripts } from "./core/scriptData.js";
 import { handleGenerate } from "./core/api.js";
@@ -436,7 +437,55 @@ function downloadBackupPayload(payload, filename) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    // revoke 刻意延后，不在同一 tick 里做：iOS Safari 的下载是异步启动的，
+    // 同步撤销 blob URL 会让下载拿不到内容（几 MB 的备份尤其明显）。
+    // 代价只是这个 blob 多活一分钟，刷新页面即释放
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+/**
+ * 下载之后必须把主线程交还给浏览器的那一小段等待。原因见 downloadBackupAndConfirm。
+ * @returns {Promise<void>}
+ */
+function settleAfterDownload() {
+    return new Promise(resolve => setTimeout(resolve, 1200));
+}
+
+/**
+ * 下载备份，然后停下来等用户点确定，之后才允许继续做网络写入。
+ *
+ * 这个「停一下」不是礼貌，是必需的
+ * -------------------------------
+ * iOS Safari 对 <a download> 的支持是残的：点击 blob 链接会触发一次导航 /
+ * 系统下载面板。文档一旦进入 unload 流程，这个文档之后发出的所有 fetch()
+ * 都会被立刻拒掉，报错是 `TypeError: Load failed`（Safari 版的 Failed to fetch）。
+ *
+ * 实测一位 iPhone 用户（iOS 18.7 / Safari 26.6）的收藏搬家：备份下载之后
+ * 107 条正文上传在**同一秒内全部瞬间失败**，107/107，服务端一个请求都没收到。
+ * 桌面 Chrome / Firefox 的 <a download> 不会导航，所以同一段代码只在手机上炸。
+ *
+ * confirm() 一次解决三件事：
+ *   · 给下载留出完成时间，页面的 unload 状态过去了
+ *   · 用户点确定本身是一次新的用户手势，网络请求恢复正常
+ *   · 备份是唯一的人工退路，本来就该让用户亲眼确认一次再往下走
+ *
+ * @param {object} payload 备份内容
+ * @param {string} filename
+ * @param {string} what 用在文案里的动作名，例如「搬家」「收尾」
+ * @returns {Promise<boolean>} 用户是否确认继续
+ */
+async function downloadBackupAndConfirm(payload, filename, what) {
+    downloadBackupPayload(payload, filename);
+    await settleAfterDownload();
+
+    return confirm(
+        `备份已开始下载：\n${filename}\n\n`
+        + `请先确认这个文件存好了（手机上一般在「文件」App 的「下载项」里），`
+        + `它是${what}出问题时唯一的退路。\n\n`
+        + `确定 = 继续${what}\n`
+        + `取消 = 就此停下，什么都不改`
+    );
 }
 
 function bindDrawerBackupControls() {
@@ -494,6 +543,10 @@ function bindDrawerBackupControls() {
                 const filename = `titania_auto_backup_${new Date().toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
                 downloadBackupPayload(currentSnapshot, filename);
                 if (window.toastr) toastr.info("已自动备份当前数据，请保存下载的文件", "Titania Echo");
+                // 下面 saveExtDataImmediate() 是真的网络写入，而且那时向量库已经清空了 ——
+                // 在 iOS 上被下载导航掀掉的话，会停在「旧向量已删、新设置没存上」的半截状态。
+                // 原因见 downloadBackupAndConfirm
+                await settleAfterDownload();
             } catch (backupErr) {
                 console.warn("Titania: 自动备份失败", backupErr);
                 if (!confirm("⚠️ 自动备份失败！是否仍要继续导入？\n\n如果继续，当前数据可能无法恢复。")) {
@@ -745,11 +798,17 @@ async function runOneClickMigration($btn) {
     $btn.prop("disabled", true);
 
     try {
-        // 1. 强制备份。备份失败就不许往下走 —— 这是唯一的人工退路
+        // 1. 强制备份。备份失败就不许往下走 —— 这是唯一的人工退路。
+        //    下载完必须等用户确认再发上传请求，否则 iOS 上会 107/107 全挂，
+        //    原因见 downloadBackupAndConfirm
         $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
         try {
             const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-            downloadBackupPayload(snapshot, backupFileName("before_favs_migration"));
+            const go = await downloadBackupAndConfirm(snapshot, backupFileName("before_favs_migration"), "搬家");
+            if (!go) {
+                showFavsMigrationReport("已取消，未改动任何数据。备份文件已下载，可随时回来重试。", "#feca57");
+                return;
+            }
         } catch (backupErr) {
             console.error("Titania: 搬家前备份失败", backupErr);
             showFavsMigrationReport(
@@ -768,9 +827,17 @@ async function runOneClickMigration($btn) {
         });
 
         if (!report.ok) {
+            // 真实原因必须出现在界面上。只报「N 条写入失败」的话，用户唯一能转达的
+            // 就是一个条数，排查得从零开始 —— 那位 iPhone 用户的 "Load failed"
+            // 就是这么被埋了一轮的
+            const sample = report.failures?.[0]?.error;
+            const allFailed = report.failures?.length === footprint.count && footprint.count > 0;
             showFavsMigrationReport(
                 `❌ 搬家已中止，索引未写入，settings.json 未改动：${report.reason || "未知原因"}`
-                + `<br>· 备份文件已下载，可放心重试<br>· 详情见控制台`,
+                + (sample ? `<br>· 报错原因：<b>${escapeHtml(sample)}</b>` : "")
+                + (allFailed ? `<br>· 一条都没成功，通常是浏览器没能把请求发出去：`
+                    + `请确认备份已下载完、SillyTavern 仍连得上，然后重试` : "")
+                + `<br>· 备份文件已下载，可放心重试<br>· 详情见控制台与设置页的日志`,
                 "#ff7675"
             );
             console.error("[Titania] 收藏搬家中止", report);
@@ -832,11 +899,17 @@ async function runFinishCleanup($btn, { backupAlreadyDone = false, migrationSumm
 
     try {
         if (!backupAlreadyDone) {
-            // 此刻备份已会把正文从文件读回来重建，能独立还原
+            // 此刻备份已会把正文从文件读回来重建，能独立还原。
+            // 下载完要等用户确认：紧接着的 dropLegacyFavs 要把 N 条正文全部读回来核对，
+            // 那是一串 fetch，会撞上 iOS 的下载导航问题（见 downloadBackupAndConfirm）
             $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
             try {
                 const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-                downloadBackupPayload(snapshot, backupFileName("before_favs_cleanup"));
+                const go = await downloadBackupAndConfirm(snapshot, backupFileName("before_favs_cleanup"), "收尾");
+                if (!go) {
+                    showFavsMigrationReport("已取消，旧数据保留，什么都没删。备份文件已下载。", "#feca57");
+                    return;
+                }
             } catch (backupErr) {
                 console.error("Titania: 收尾前备份失败", backupErr);
                 showFavsMigrationReport(
@@ -1211,12 +1284,17 @@ async function runScriptsOneClick($btn) {
     $btn.prop("disabled", true);
 
     try {
-        // 1. 强制备份。失败就不许往下走 —— 这是唯一的人工退路
+        // 1. 强制备份。失败就不许往下走 —— 这是唯一的人工退路。
+        //    下载完要等用户确认再往下：第 2 步的试写就是 fetch，
+        //    会撞上 iOS 的下载导航问题（见 downloadBackupAndConfirm）
         $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
         try {
             const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-            downloadBackupPayload(snapshot, backupFileName("before_scripts_migration"));
-            if (window.toastr) toastr.info("已下载搬家前备份，请保存这个文件", "Titania Echo");
+            const go = await downloadBackupAndConfirm(snapshot, backupFileName("before_scripts_migration"), "搬家");
+            if (!go) {
+                showScriptsStorageReport("已取消，未改动任何数据。备份文件已下载，可随时回来重试。", "#feca57");
+                return;
+            }
         } catch (backupErr) {
             console.error("Titania: 搬家前备份失败", backupErr);
             showScriptsStorageReport(
@@ -1300,7 +1378,9 @@ async function runScriptsFinish($btn, { backupAlreadyDone = false, migrationSumm
                     try {
                         const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
                         downloadBackupPayload(snapshot, backupFileName("before_scripts_cleanup"));
-                        if (window.toastr) toastr.info("已下载收尾前备份，请保存这个文件", "Titania Echo");
+                        // 这里不再单独弹确认：紧接着的 confirm 本身就是那道闸门，
+                        // 只需要把主线程交还浏览器一下（原因见 downloadBackupAndConfirm）
+                        await settleAfterDownload();
                     } catch (backupErr) {
                         console.warn("Titania: 收尾前备份失败", backupErr);
                         if (!confirm("⚠️ 备份失败！是否仍要继续删除旧数据？\n\n删除后无法撤销。建议先解决备份问题。")) {

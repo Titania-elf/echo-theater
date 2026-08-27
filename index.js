@@ -46818,6 +46818,7 @@ var init_api = __esm({
 init_defaults();
 init_storage();
 init_dom();
+init_helpers();
 init_state();
 init_scriptData();
 init_api();
@@ -47646,7 +47647,23 @@ function downloadBackupPayload(payload, filename) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 6e4);
+}
+function settleAfterDownload() {
+  return new Promise((resolve) => setTimeout(resolve, 1200));
+}
+async function downloadBackupAndConfirm(payload, filename, what) {
+  downloadBackupPayload(payload, filename);
+  await settleAfterDownload();
+  return confirm(
+    `\u5907\u4EFD\u5DF2\u5F00\u59CB\u4E0B\u8F7D\uFF1A
+${filename}
+
+\u8BF7\u5148\u786E\u8BA4\u8FD9\u4E2A\u6587\u4EF6\u5B58\u597D\u4E86\uFF08\u624B\u673A\u4E0A\u4E00\u822C\u5728\u300C\u6587\u4EF6\u300DApp \u7684\u300C\u4E0B\u8F7D\u9879\u300D\u91CC\uFF09\uFF0C\u5B83\u662F${what}\u51FA\u95EE\u9898\u65F6\u552F\u4E00\u7684\u9000\u8DEF\u3002
+
+\u786E\u5B9A = \u7EE7\u7EED${what}
+\u53D6\u6D88 = \u5C31\u6B64\u505C\u4E0B\uFF0C\u4EC0\u4E48\u90FD\u4E0D\u6539`
+  );
 }
 function bindDrawerBackupControls() {
   $("#titania-backup-export").off("click").on("click", async function() {
@@ -47696,6 +47713,7 @@ function bindDrawerBackupControls() {
         const filename = `titania_auto_backup_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
         downloadBackupPayload(currentSnapshot, filename);
         if (window.toastr) toastr.info("\u5DF2\u81EA\u52A8\u5907\u4EFD\u5F53\u524D\u6570\u636E\uFF0C\u8BF7\u4FDD\u5B58\u4E0B\u8F7D\u7684\u6587\u4EF6", "Titania Echo");
+        await settleAfterDownload();
       } catch (backupErr) {
         console.warn("Titania: \u81EA\u52A8\u5907\u4EFD\u5931\u8D25", backupErr);
         if (!confirm("\u26A0\uFE0F \u81EA\u52A8\u5907\u4EFD\u5931\u8D25\uFF01\u662F\u5426\u4ECD\u8981\u7EE7\u7EED\u5BFC\u5165\uFF1F\n\n\u5982\u679C\u7EE7\u7EED\uFF0C\u5F53\u524D\u6570\u636E\u53EF\u80FD\u65E0\u6CD5\u6062\u590D\u3002")) {
@@ -47865,7 +47883,11 @@ async function runOneClickMigration($btn) {
     $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> \u6B63\u5728\u5907\u4EFD...');
     try {
       const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-      downloadBackupPayload(snapshot, backupFileName("before_favs_migration"));
+      const go = await downloadBackupAndConfirm(snapshot, backupFileName("before_favs_migration"), "\u642C\u5BB6");
+      if (!go) {
+        showFavsMigrationReport("\u5DF2\u53D6\u6D88\uFF0C\u672A\u6539\u52A8\u4EFB\u4F55\u6570\u636E\u3002\u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\uFF0C\u53EF\u968F\u65F6\u56DE\u6765\u91CD\u8BD5\u3002", "#feca57");
+        return;
+      }
     } catch (backupErr) {
       console.error("Titania: \u642C\u5BB6\u524D\u5907\u4EFD\u5931\u8D25", backupErr);
       showFavsMigrationReport(
@@ -47881,8 +47903,10 @@ async function runOneClickMigration($btn) {
       }
     });
     if (!report.ok) {
+      const sample = report.failures?.[0]?.error;
+      const allFailed = report.failures?.length === footprint.count && footprint.count > 0;
       showFavsMigrationReport(
-        `\u274C \u642C\u5BB6\u5DF2\u4E2D\u6B62\uFF0C\u7D22\u5F15\u672A\u5199\u5165\uFF0Csettings.json \u672A\u6539\u52A8\uFF1A${report.reason || "\u672A\u77E5\u539F\u56E0"}<br>\xB7 \u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\uFF0C\u53EF\u653E\u5FC3\u91CD\u8BD5<br>\xB7 \u8BE6\u60C5\u89C1\u63A7\u5236\u53F0`,
+        `\u274C \u642C\u5BB6\u5DF2\u4E2D\u6B62\uFF0C\u7D22\u5F15\u672A\u5199\u5165\uFF0Csettings.json \u672A\u6539\u52A8\uFF1A${report.reason || "\u672A\u77E5\u539F\u56E0"}` + (sample ? `<br>\xB7 \u62A5\u9519\u539F\u56E0\uFF1A<b>${escapeHtml(sample)}</b>` : "") + (allFailed ? `<br>\xB7 \u4E00\u6761\u90FD\u6CA1\u6210\u529F\uFF0C\u901A\u5E38\u662F\u6D4F\u89C8\u5668\u6CA1\u80FD\u628A\u8BF7\u6C42\u53D1\u51FA\u53BB\uFF1A\u8BF7\u786E\u8BA4\u5907\u4EFD\u5DF2\u4E0B\u8F7D\u5B8C\u3001SillyTavern \u4ECD\u8FDE\u5F97\u4E0A\uFF0C\u7136\u540E\u91CD\u8BD5` : "") + `<br>\xB7 \u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\uFF0C\u53EF\u653E\u5FC3\u91CD\u8BD5<br>\xB7 \u8BE6\u60C5\u89C1\u63A7\u5236\u53F0\u4E0E\u8BBE\u7F6E\u9875\u7684\u65E5\u5FD7`,
         "#ff7675"
       );
       console.error("[Titania] \u6536\u85CF\u642C\u5BB6\u4E2D\u6B62", report);
@@ -47932,7 +47956,11 @@ async function runFinishCleanup($btn, { backupAlreadyDone = false, migrationSumm
       $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> \u6B63\u5728\u5907\u4EFD...');
       try {
         const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-        downloadBackupPayload(snapshot, backupFileName("before_favs_cleanup"));
+        const go = await downloadBackupAndConfirm(snapshot, backupFileName("before_favs_cleanup"), "\u6536\u5C3E");
+        if (!go) {
+          showFavsMigrationReport("\u5DF2\u53D6\u6D88\uFF0C\u65E7\u6570\u636E\u4FDD\u7559\uFF0C\u4EC0\u4E48\u90FD\u6CA1\u5220\u3002\u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\u3002", "#feca57");
+          return;
+        }
       } catch (backupErr) {
         console.error("Titania: \u6536\u5C3E\u524D\u5907\u4EFD\u5931\u8D25", backupErr);
         showFavsMigrationReport(
@@ -48197,8 +48225,11 @@ async function runScriptsOneClick($btn) {
     $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> \u6B63\u5728\u5907\u4EFD...');
     try {
       const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-      downloadBackupPayload(snapshot, backupFileName("before_scripts_migration"));
-      if (window.toastr) toastr.info("\u5DF2\u4E0B\u8F7D\u642C\u5BB6\u524D\u5907\u4EFD\uFF0C\u8BF7\u4FDD\u5B58\u8FD9\u4E2A\u6587\u4EF6", "Titania Echo");
+      const go = await downloadBackupAndConfirm(snapshot, backupFileName("before_scripts_migration"), "\u642C\u5BB6");
+      if (!go) {
+        showScriptsStorageReport("\u5DF2\u53D6\u6D88\uFF0C\u672A\u6539\u52A8\u4EFB\u4F55\u6570\u636E\u3002\u5907\u4EFD\u6587\u4EF6\u5DF2\u4E0B\u8F7D\uFF0C\u53EF\u968F\u65F6\u56DE\u6765\u91CD\u8BD5\u3002", "#feca57");
+        return;
+      }
     } catch (backupErr) {
       console.error("Titania: \u642C\u5BB6\u524D\u5907\u4EFD\u5931\u8D25", backupErr);
       showScriptsStorageReport(
@@ -48260,7 +48291,7 @@ async function runScriptsFinish($btn, { backupAlreadyDone = false, migrationSumm
           try {
             const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
             downloadBackupPayload(snapshot, backupFileName("before_scripts_cleanup"));
-            if (window.toastr) toastr.info("\u5DF2\u4E0B\u8F7D\u6536\u5C3E\u524D\u5907\u4EFD\uFF0C\u8BF7\u4FDD\u5B58\u8FD9\u4E2A\u6587\u4EF6", "Titania Echo");
+            await settleAfterDownload();
           } catch (backupErr) {
             console.warn("Titania: \u6536\u5C3E\u524D\u5907\u4EFD\u5931\u8D25", backupErr);
             if (!confirm("\u26A0\uFE0F \u5907\u4EFD\u5931\u8D25\uFF01\u662F\u5426\u4ECD\u8981\u7EE7\u7EED\u5220\u9664\u65E7\u6570\u636E\uFF1F\n\n\u5220\u9664\u540E\u65E0\u6CD5\u64A4\u9500\u3002\u5EFA\u8BAE\u5148\u89E3\u51B3\u5907\u4EFD\u95EE\u9898\u3002")) {
