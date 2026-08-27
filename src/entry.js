@@ -719,8 +719,8 @@ function renderFavsStorageCard() {
     } else if (info.state === "needs-cleanup") {
         $desc.html(
             `收藏已经搬好了，但设置里的旧数据还没删，所以速度<b>还没变快</b>。`
-            + `<br>点下面的按钮，核对无误后会把旧数据删掉。`
-            + `<br><span style="color:#feca57;">⚠️ 这一步删了就找不回来，执行前会自动下载一份备份。</span>`
+            + `<br>点下面的按钮，核对无误并确认后会把旧数据删掉。`
+            + `<br><span style="color:#feca57;">⚠️ 这一步删了就找不回来。</span>`
         );
         $actions.html(
             `<button class="titania-mini-btn is-export" data-act="finish">`
@@ -755,7 +755,7 @@ function renderFavsStorageCard() {
         const $self = $(this);
         switch ($self.data("act")) {
             case "migrate": return runOneClickMigration($self);
-            case "finish": return runFinishCleanup($self, { backupAlreadyDone: false });
+            case "finish": return runFinishCleanup($self);
             case "artifacts": return runArtifactCleanup($self);
             case "check": return runStorageCheck($self);
         }
@@ -846,9 +846,8 @@ async function runOneClickMigration($btn) {
         }
         console.log("[Titania] 收藏搬家报告", report);
 
-        // 3. 直接转入收尾。备份刚下过一份，不重复下
+        // 3. 直接转入收尾。备份已在流程开始时完成
         await runFinishCleanup($btn, {
-            backupAlreadyDone: true,
             migrationSummary: `${report.written.count} 条正文已落文件，共 ${formatBytes(report.written.bytesTotal)}，`
                 + `索引 ${formatBytes(report.indexBytes)}`
         });
@@ -865,13 +864,12 @@ async function runOneClickMigration($btn) {
  * 收尾：全量核对 → 人工闸门 → 删旧数据 → 清理遗留。
  *
  * 这是整个搬家里唯一不可逆的一步，也是 settings.json 真正瘦下来、
- * 保存速度真正变快的那一步。所以门槛设得很高：
- *   1. 一份完整备份（一键流程里刚下过就不重复下）
- *   2. 全量核对——不是抽样：每个文件都要在、每条正文都要能读回来，
+ * 保存速度真正变快的那一步。备份只在一键搬家开始时做；这里只负责：
+ *   1. 全量核对——不是抽样：每个文件都要在、每条正文都要能读回来，
  *      且与 settings.json 里的旧数据逐字一致（favsStore 的 verifyMigrationAgainstLegacy）
- *   3. 核对通过后再问一次，给用户机会先打开收藏夹看一眼
+ *   2. 核对通过后再问一次，给用户机会先打开收藏夹看一眼
  */
-async function runFinishCleanup($btn, { backupAlreadyDone = false, migrationSummary = "" } = {}) {
+async function runFinishCleanup($btn, { migrationSummary = "" } = {}) {
     if (!isFavsMigrated()) {
         showFavsMigrationReport("请先完成搬家，再执行收尾。", "#feca57");
         renderFavsStorageCard();
@@ -884,43 +882,9 @@ async function runFinishCleanup($btn, { backupAlreadyDone = false, migrationSumm
         return;
     }
 
-    if (!backupAlreadyDone) {
-        const confirmed = confirm(
-            `即将从 settings.json 删除 ${footprint.count} 条收藏的旧数据（约 ${formatBytes(footprint.bytes)}）。\n\n`
-            + `· 删除前会全量核对每一条正文，任何一条不一致就中止\n`
-            + `· 会先下载一份完整备份，请务必保存好\n`
-            + `· 核对通过后会再问你一次\n\n`
-            + `确定继续吗？`
-        );
-        if (!confirmed) return;
-    }
-
     $btn.prop("disabled", true);
 
     try {
-        if (!backupAlreadyDone) {
-            // 此刻备份已会把正文从文件读回来重建，能独立还原。
-            // 下载完要等用户确认：紧接着的 dropLegacyFavs 要把 N 条正文全部读回来核对，
-            // 那是一串 fetch，会撞上 iOS 的下载导航问题（见 downloadBackupAndConfirm）
-            $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
-            try {
-                const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-                const go = await downloadBackupAndConfirm(snapshot, backupFileName("before_favs_cleanup"), "收尾");
-                if (!go) {
-                    showFavsMigrationReport("已取消，旧数据保留，什么都没删。备份文件已下载。", "#feca57");
-                    return;
-                }
-            } catch (backupErr) {
-                console.error("Titania: 收尾前备份失败", backupErr);
-                showFavsMigrationReport(
-                    `❌ 收尾前的备份失败，已中止，未删除任何数据：${backupErr?.message || String(backupErr)}`,
-                    "#ff7675"
-                );
-                if (window.toastr) toastr.error("备份失败，收尾已中止", "Titania Echo");
-                return;
-            }
-        }
-
         // 全量核对 → 人工闸门 → 删除。三步都在 dropLegacyFavs 里：核对只跑一遍，
         // 且「没核对通过就绝不删」这条不变量锁在 store 里，UI 绕不过去
         const result = await dropLegacyFavs({
@@ -950,8 +914,7 @@ async function runFinishCleanup($btn, { backupAlreadyDone = false, migrationSumm
         if (!result.ok) {
             showFavsMigrationReport(
                 `❌ 核对未通过，<b>旧数据一个字都没删</b>：`
-                + `<br>· ${(result.problems || []).join("<br>· ")}`
-                + `<br>备份文件已下载，可放心排查后重试。`,
+                + `<br>· ${(result.problems || []).join("<br>· ")}`,
                 "#ff7675"
             );
             console.error("[Titania] 收尾核对未通过", result);
@@ -959,7 +922,7 @@ async function runFinishCleanup($btn, { backupAlreadyDone = false, migrationSumm
             return;
         }
 
-        // 旧数据删净后顺带清遗留。不再单独确认：都是死数据，且刚下过备份。
+        // 旧数据删净后顺带清遗留。不再单独确认：都是死数据，且迁移开始前已有备份。
         // 必须排在这里而不是更早 —— findOrphanFavFiles 要拿新索引比对才知道谁是孤儿。
         // 清理本身失败不该让整个收尾报错：旧数据已经删成功了，遗留下次再清就行
         $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> 清理遗留...');
@@ -1195,7 +1158,7 @@ function renderScriptsStorageCard() {
             html += `<br><span style="color:#feca57;">旧数据还留在设置里`
                 + `（${legacyCount} 条，${formatBytes(footprint.bytes)}），所以设置文件<b>还没变小</b>。`
                 + `<br>这通常是上次搬家中途被打断了。点下面的按钮补完最后一步。`
-                + `<br>⚠️ 会先核对再删除，执行前自动下载备份。</span>`;
+                + `<br>⚠️ 会先核对，确认后再删除。</span>`;
             $desc.html(html);
             $actions.html(
                 `<button class="titania-mini-btn is-export" data-act="finish">`
@@ -1237,7 +1200,7 @@ function bindScriptsStorageCard() {
     $card.off("click", "[data-act]").on("click", "[data-act]", async function () {
         const act = $(this).attr("data-act");
         if (act === "migrate") return void runScriptsOneClick($(this));
-        if (act === "finish") return void runScriptsFinish($(this), { backupAlreadyDone: false });
+        if (act === "finish") return void runScriptsFinish($(this));
     });
 
     renderScriptsStorageCard();
@@ -1339,8 +1302,8 @@ async function runScriptsOneClick($btn) {
         const migrationSummary = `${report.written.count} 条剧本已写入 `
             + `<code>user/files/${SCRIPTS_FILE_NAME}</code>（${formatBytes(report.written.bytes)}）`;
 
-        // 4-5. 直接续上收尾。备份已经做过，不再下第二份
-        await runScriptsFinish($btn, { backupAlreadyDone: true, migrationSummary });
+        // 4-5. 直接续上收尾。备份已在流程开始时做过
+        await runScriptsFinish($btn, { migrationSummary });
     } catch (e) {
         console.error("Titania: 剧本搬家失败", e);
         showScriptsStorageReport(`❌ 搬家失败：${e?.message || String(e)}`, "#ff7675");
@@ -1353,10 +1316,10 @@ async function runScriptsOneClick($btn) {
 /**
  * 收尾：核对 → 确认 → 删除设置里的旧数据。整个搬家里唯一不可逆的一步。
  *
- * 两个入口：一键搬家末尾（backupAlreadyDone: true），以及上次中途被打断后
- * 卡片上的「补完收尾」按钮（backupAlreadyDone: false，自己补一次备份）。
+ * 备份只在一键搬家开始时做；无论从搬家流程续上，还是中断后点「补完收尾」，
+ * 这里都只负责核对、确认和删除。
  */
-async function runScriptsFinish($btn, { backupAlreadyDone = false, migrationSummary = "" } = {}) {
+async function runScriptsFinish($btn, { migrationSummary = "" } = {}) {
     if (!isScriptsMigrated()) {
         showScriptsStorageReport("请先完成搬家，再执行收尾。", "#feca57");
         return;
@@ -1372,22 +1335,7 @@ async function runScriptsFinish($btn, { backupAlreadyDone = false, migrationSumm
 
     try {
         const result = await dropLegacyScripts({
-            // 核对通过之后才走到这里：先补备份（若还没做），再让用户拍板
             confirmBeforeDelete: async (verification) => {
-                if (!backupAlreadyDone) {
-                    try {
-                        const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
-                        downloadBackupPayload(snapshot, backupFileName("before_scripts_cleanup"));
-                        // 这里不再单独弹确认：紧接着的 confirm 本身就是那道闸门，
-                        // 只需要把主线程交还浏览器一下（原因见 downloadBackupAndConfirm）
-                        await settleAfterDownload();
-                    } catch (backupErr) {
-                        console.warn("Titania: 收尾前备份失败", backupErr);
-                        if (!confirm("⚠️ 备份失败！是否仍要继续删除旧数据？\n\n删除后无法撤销。建议先解决备份问题。")) {
-                            return false;
-                        }
-                    }
-                }
                 return confirm(
                     `核对通过：${verification.checked} 条剧本在文件里与设置里逐条一致。\n\n`
                     + `现在要删除设置里的旧剧本数据吗？\n`
