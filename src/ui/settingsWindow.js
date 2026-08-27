@@ -14,6 +14,7 @@ import { refreshOutlineEntryButton } from "./outlineEntryButton.js";
 import { refreshRewriteEntryButton } from "./rewriteEntryButton.js";
 import { ensureMainApiProfiles } from "../core/apiProfileRegistry.js";
 import { createApiConnectionEditor, renderApiConnectionEditorHTML } from "./shared/apiConnectionEditor.js";
+import { renderLogEntriesHtml } from "./shared/logView.js";
 import { normalizeChatCompletionPreset, getPresetEntrySummary, ensurePromptManager, ensureTitaniaPresetEntries, createCustomPresetEntry } from "../core/promptManager.js";
 import {
     HEADER_ACTION_REGISTRY,
@@ -2142,36 +2143,7 @@ export function openSettingsWindow() {
             $("#t-log-viewer").html('<div class="t-set-log-empty">暂无日志</div>');
             return;
         }
-        let html = "";
-        logs.forEach(l => {
-            let colorClass = "t-log-entry-info";
-            if (l.type === 'ERROR') colorClass = "t-log-entry-error";
-            if (l.type === 'WARN') colorClass = "t-log-entry-warn";
-
-            let detailStr = "";
-            if (l.details) {
-                if (l.details.diagnostics) {
-                    const d = l.details.diagnostics;
-                    const net = d.network || {};
-                    const summary = {
-                        phase: d.phase,
-                        status: net.status,
-                        latency: net.latency + 'ms',
-                        input: d.input_stats
-                    };
-                    if (d.raw_response_snippet) {
-                        summary.raw_snippet = d.raw_response_snippet.substring(0, 100) + (d.raw_response_snippet.length > 100 ? '...' : '');
-                    }
-                    detailStr = `\n[Diagnostics]: ${JSON.stringify(summary, null, 2)}`;
-                } else {
-                    try {
-                        detailStr = `\n${JSON.stringify(l.details, null, 2)}`;
-                    } catch (e) { detailStr = "\n[Complex Data]"; }
-                }
-            }
-            html += `<div class="${colorClass}">[${l.timestamp}] [${l.type}] ${l.message}${detailStr}</div>`;
-        });
-        $("#t-log-viewer").html(html);
+        $("#t-log-viewer").html(renderLogEntriesHtml(logs));
     };
 
     renderLogView();

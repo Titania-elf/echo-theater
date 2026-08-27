@@ -50,11 +50,20 @@ export const TitaniaLogger = {
             msg += ` [HTTP ${contextData.network.status}]`;
         }
 
-        this.add('ERROR', msg, {
-            error_message: errMsg,
-            stack_trace: stack,
-            diagnostics: contextData
-        });
+        const details = { error_message: errMsg, stack_trace: stack };
+
+        // diagnostics 只在真的带了上下文时才挂。
+        // 挂一个空对象的代价很实在：日志查看器靠 details.diagnostics 判断
+        // 「这是不是一条 API 诊断」，而 {} 是 truthy —— 于是全部 58 处
+        // TitaniaLogger.error 里那 55 处没传第三个参数的，报错原因会被整条藏起来，
+        // 只渲染出一个 `{"latency": "undefinedms"}`。一位用户的收藏搬家因此排查了很久：
+        // 真正的原因 "Load failed" 一直在数据里，只是没显示出来。
+        // 查看器那侧也已改成看内容而不是看键（src/ui/shared/logView.js），这里是第二道防线。
+        if (contextData && typeof contextData === 'object' && Object.keys(contextData).length > 0) {
+            details.diagnostics = contextData;
+        }
+
+        this.add('ERROR', msg, details);
     },
 
     // 导出并下载日志

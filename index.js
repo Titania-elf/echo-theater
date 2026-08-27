@@ -452,8 +452,8 @@ ${bodyContent}
 </html>`;
 }
 function escapeHtml(str) {
-  if (!str) return "";
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  if (str === null || str === void 0 || str === "") return "";
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 function openInNewWindow(html, scriptName = "\u4E92\u52A8\u573A\u666F") {
   console.log("[Titania] openInNewWindow \u88AB\u8C03\u7528\uFF0C\u539F\u59CBHTML\u957F\u5EA6:", html?.length || 0);
@@ -20897,11 +20897,11 @@ var init_logger = __esm({
         if (contextData && contextData.network && contextData.network.status) {
           msg += ` [HTTP ${contextData.network.status}]`;
         }
-        this.add("ERROR", msg, {
-          error_message: errMsg,
-          stack_trace: stack,
-          diagnostics: contextData
-        });
+        const details = { error_message: errMsg, stack_trace: stack };
+        if (contextData && typeof contextData === "object" && Object.keys(contextData).length > 0) {
+          details.diagnostics = contextData;
+        }
+        this.add("ERROR", msg, details);
       },
       // 导出并下载日志
       downloadReport: function() {
@@ -24703,6 +24703,74 @@ var init_favsWindow = __esm({
   }
 });
 
+// src/ui/shared/logView.js
+function clip(text) {
+  const str = String(text ?? "");
+  if (str.length <= MAX_DETAIL_CHARS) return str;
+  return `${str.slice(0, MAX_DETAIL_CHARS)}\u2026\uFF08\u5DF2\u622A\u65AD\uFF0C\u5B8C\u6574\u5185\u5BB9\u89C1\u300C\u5BFC\u51FA\u65E5\u5FD7\u300D\uFF09`;
+}
+function safeStringify(value) {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch (e) {
+    return "[\u65E0\u6CD5\u5E8F\u5217\u5316\u7684\u6570\u636E]";
+  }
+}
+function isNetworkDiagnostics(diag) {
+  return !!(diag.network || diag.phase || diag.input_stats || diag.raw_response_snippet);
+}
+function formatNetworkDiagnostics(diag) {
+  const net = diag.network || {};
+  const parts = [];
+  if (diag.phase) parts.push(`\u9636\u6BB5=${diag.phase}`);
+  if (net.status) parts.push(`HTTP=${net.status}${net.statusText ? ` ${net.statusText}` : ""}`);
+  const latency = Number(net.latency);
+  if (Number.isFinite(latency) && latency > 0) parts.push(`\u8017\u65F6=${latency}ms`);
+  if (diag.input_stats) parts.push(`\u8F93\u5165=${safeStringify(diag.input_stats)}`);
+  const lines = [];
+  if (parts.length) lines.push(`\u8BCA\u65AD: ${parts.join("  ")}`);
+  if (diag.raw_response_snippet) lines.push(`\u54CD\u5E94\u7247\u6BB5: ${clip(diag.raw_response_snippet)}`);
+  return lines.join("\n");
+}
+function formatDetails(details) {
+  if (!details) return "";
+  if (typeof details !== "object") return String(details);
+  const lines = [];
+  if (details.error_message) lines.push(`\u539F\u56E0: ${details.error_message}`);
+  const diag = details.diagnostics;
+  if (diag && typeof diag === "object" && Object.keys(diag).length > 0) {
+    lines.push(isNetworkDiagnostics(diag) ? formatNetworkDiagnostics(diag) : `\u4E0A\u4E0B\u6587: ${clip(safeStringify(diag))}`);
+  }
+  const stack = details.stack_trace;
+  if (stack && stack !== "{}" && stack !== "Unknown") {
+    lines.push(`${/^[[{]/.test(String(stack).trim()) ? "\u8BE6\u60C5" : "\u5806\u6808"}: ${clip(stack)}`);
+  }
+  if (lines.length === 0) return clip(safeStringify(details));
+  return lines.filter(Boolean).join("\n");
+}
+function entryClass(type) {
+  if (type === "ERROR") return "t-log-entry-error";
+  if (type === "WARN") return "t-log-entry-warn";
+  return "t-log-entry-info";
+}
+function renderLogEntriesHtml(logs) {
+  if (!Array.isArray(logs)) return "";
+  return logs.map((entry) => {
+    const head = `[${entry.timestamp}] [${entry.type}] ${entry.message}`;
+    const detail = formatDetails(entry.details);
+    const text = detail ? `${head}
+${detail}` : head;
+    return `<div class="${entryClass(entry.type)}">${escapeHtml(text)}</div>`;
+  }).join("");
+}
+var MAX_DETAIL_CHARS;
+var init_logView = __esm({
+  "src/ui/shared/logView.js"() {
+    init_helpers();
+    MAX_DETAIL_CHARS = 1200;
+  }
+});
+
 // src/ui/debugWindow.js
 var debugWindow_exports = {};
 __export(debugWindow_exports, {
@@ -25098,39 +25166,7 @@ function showDiagnosticsWindow() {
       $viewer.html('<div class="t-diag-log-empty"><i class="fa-solid fa-inbox"></i><br>\u6682\u65E0\u65E5\u5FD7</div>');
       return;
     }
-    let html2 = "";
-    logs.forEach((l) => {
-      let colorClass = "t-log-entry-info";
-      if (l.type === "ERROR") colorClass = "t-log-entry-error";
-      if (l.type === "WARN") colorClass = "t-log-entry-warn";
-      let detailStr = "";
-      if (l.details) {
-        if (l.details.diagnostics) {
-          const d = l.details.diagnostics;
-          const net = d.network || {};
-          const summary = {
-            phase: d.phase,
-            status: net.status,
-            latency: net.latency + "ms",
-            input: d.input_stats
-          };
-          if (d.raw_response_snippet) {
-            summary.raw_snippet = d.raw_response_snippet.substring(0, 100) + (d.raw_response_snippet.length > 100 ? "..." : "");
-          }
-          detailStr = `
-[Diagnostics]: ${JSON.stringify(summary, null, 2)}`;
-        } else {
-          try {
-            detailStr = `
-${JSON.stringify(l.details, null, 2)}`;
-          } catch (e) {
-            detailStr = "\n[Complex Data]";
-          }
-        }
-      }
-      html2 += `<div class="${colorClass}">[${l.timestamp}] [${l.type}] ${l.message}${detailStr}</div>`;
-    });
-    $viewer.html(html2);
+    $viewer.html(renderLogEntriesHtml(logs));
     $viewer.scrollTop($viewer[0].scrollHeight);
   };
   renderLogView();
@@ -25171,6 +25207,7 @@ var init_debugWindow = __esm({
     init_logger();
     init_dom();
     init_helpers();
+    init_logView();
     tokenCountRun = 0;
   }
 });
@@ -38023,39 +38060,7 @@ function openSettingsWindow() {
       $("#t-log-viewer").html('<div class="t-set-log-empty">\u6682\u65E0\u65E5\u5FD7</div>');
       return;
     }
-    let html2 = "";
-    logs.forEach((l) => {
-      let colorClass = "t-log-entry-info";
-      if (l.type === "ERROR") colorClass = "t-log-entry-error";
-      if (l.type === "WARN") colorClass = "t-log-entry-warn";
-      let detailStr = "";
-      if (l.details) {
-        if (l.details.diagnostics) {
-          const d = l.details.diagnostics;
-          const net = d.network || {};
-          const summary = {
-            phase: d.phase,
-            status: net.status,
-            latency: net.latency + "ms",
-            input: d.input_stats
-          };
-          if (d.raw_response_snippet) {
-            summary.raw_snippet = d.raw_response_snippet.substring(0, 100) + (d.raw_response_snippet.length > 100 ? "..." : "");
-          }
-          detailStr = `
-[Diagnostics]: ${JSON.stringify(summary, null, 2)}`;
-        } else {
-          try {
-            detailStr = `
-${JSON.stringify(l.details, null, 2)}`;
-          } catch (e) {
-            detailStr = "\n[Complex Data]";
-          }
-        }
-      }
-      html2 += `<div class="${colorClass}">[${l.timestamp}] [${l.type}] ${l.message}${detailStr}</div>`;
-    });
-    $("#t-log-viewer").html(html2);
+    $("#t-log-viewer").html(renderLogEntriesHtml(logs));
   };
   renderLogView();
   $("#btn-refresh-log").on("click", renderLogView);
@@ -38247,6 +38252,7 @@ var init_settingsWindow = __esm({
     init_rewriteEntryButton();
     init_apiProfileRegistry();
     init_apiConnectionEditor();
+    init_logView();
     init_promptManager();
     init_headerActions();
     init_theme();

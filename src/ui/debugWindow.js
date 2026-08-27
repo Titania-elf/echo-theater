@@ -4,6 +4,7 @@ import { getPromptTraceList } from "../core/state.js";
 import { TitaniaLogger } from "../core/logger.js";
 import { ensureOverlay } from "../utils/dom.js";
 import { estimateTokens, countTokensBatch } from "../utils/helpers.js";
+import { renderLogEntriesHtml } from "./shared/logView.js";
 
 function escapeHtml(str) {
     return String(str || "")
@@ -490,36 +491,7 @@ export function showDiagnosticsWindow() {
             return;
         }
 
-        let html = "";
-        logs.forEach(l => {
-            let colorClass = "t-log-entry-info";
-            if (l.type === 'ERROR') colorClass = "t-log-entry-error";
-            if (l.type === 'WARN') colorClass = "t-log-entry-warn";
-
-            let detailStr = "";
-            if (l.details) {
-                if (l.details.diagnostics) {
-                    const d = l.details.diagnostics;
-                    const net = d.network || {};
-                    const summary = {
-                        phase: d.phase,
-                        status: net.status,
-                        latency: net.latency + 'ms',
-                        input: d.input_stats
-                    };
-                    if (d.raw_response_snippet) {
-                        summary.raw_snippet = d.raw_response_snippet.substring(0, 100) + (d.raw_response_snippet.length > 100 ? '...' : '');
-                    }
-                    detailStr = `\n[Diagnostics]: ${JSON.stringify(summary, null, 2)}`;
-                } else {
-                    try {
-                        detailStr = `\n${JSON.stringify(l.details, null, 2)}`;
-                    } catch (e) { detailStr = "\n[Complex Data]"; }
-                }
-            }
-            html += `<div class="${colorClass}">[${l.timestamp}] [${l.type}] ${l.message}${detailStr}</div>`;
-        });
-        $viewer.html(html);
+        $viewer.html(renderLogEntriesHtml(logs));
 
         // 自动滚动到底部
         $viewer.scrollTop($viewer[0].scrollHeight);

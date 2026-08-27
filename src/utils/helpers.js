@@ -103,12 +103,19 @@ ${bodyContent}
 
 /**
  * HTML 转义（用于安全插入标题等）
- * @param {string} str - 原始字符串
+ *
+ * 已导出：src/ui/shared/logView.js 与 src/entry.js 要往界面上打服务端返回的报错
+ * 和用户数据（收藏标题等），必须转义。别再复制新的私有实现 ——
+ * debugWindow.js / favsWindow.js / chatInjectButton.js / extensionUpdate.js
+ * 里各有一份早于本次改动的同名副本，新代码统一用这个。
+ *
+ * 入参刻意不限定字符串：调用方常直接把 err.message、数字或 undefined 递进来。
+ * @param {*} str - 原始值
  * @returns {string} 转义后的字符串
  */
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
+export function escapeHtml(str) {
+    if (str === null || str === undefined || str === '') return '';
+    return String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
