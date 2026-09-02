@@ -35,12 +35,44 @@ const pendingWrites = new Map();
  * 并额外保留 branchKey 字段作为别名。
  */
 
-function openDatabase() {
-    if (dbPromise) return dbPromise;
+/**
+ * 连接被浏览器单方面关闭后再开事务会同步抛 InvalidStateError
+ * （"The database connection is closing"）。iOS Safari 在页面切后台/
+ * 锁屏/冻结恢复后就会出现这种死连接，而 onclose 在 BFCache 恢复时
+ * 不保证触发，所以每次取缓存连接前都先用探测事务确认可用。
+ */
+function isConnectionUsable(db) {
+    try {
+        db.transaction([STORE_SESSIONS], "readonly");
+        return true;
+    } catch (_error) {
+        return false;
+    }
+}
+
+async function openDatabase() {
+    if (dbPromise) {
+        const cached = await dbPromise.catch(() => null);
+        if (cached && isConnectionUsable(cached)) return cached;
+        dbPromise = null;
+    }
     dbPromise = new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => {
+            // 打开失败时清掉缓存，让下一次调用还能重试
+            dbPromise = null;
+            reject(request.error);
+        };
+        request.onsuccess = () => {
+            const db = request.result;
+            // onclose 能触发时立即清缓存；触发不了的场景由上面的探测兜底
+            db.onclose = () => {
+                dbPromise = null;
+            };
+            // 其他标签页要升级库版本时主动让位，避免对方被 blocked
+            db.onversionchange = () => db.close();
+            resolve(db);
+        };
         request.onblocked = () => TitaniaLogger.warn("续写历史数据库升级被其他标签页阻塞，请关闭多余的 SillyTavern 页面");
         request.onupgradeneeded = event => {
             const db = request.result;

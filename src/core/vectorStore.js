@@ -42,26 +42,51 @@ function resetUnsavedCacheFromMetadataChange() {
 }
 
 /**
+ * 连接被浏览器单方面关闭后再开事务会同步抛 InvalidStateError
+ * （"The database connection is closing"）。iOS Safari 在页面切后台/
+ * 锁屏/冻结恢复后就会出现这种死连接，而 onclose 在 BFCache 恢复时
+ * 不保证触发，所以每次取缓存连接前都先用探测事务确认可用。
+ */
+function isConnectionUsable(db) {
+    try {
+        db.transaction([STORE_EMBEDDINGS], "readonly");
+        return true;
+    } catch (_error) {
+        return false;
+    }
+}
+
+/**
  * 初始化/获取 IndexedDB 数据库实例
  * @returns {Promise<IDBDatabase>}
  */
 export async function initVectorDB() {
-    if (dbInstance) {
+    if (dbInstance && isConnectionUsable(dbInstance)) {
         return dbInstance;
     }
+    dbInstance = null;
 
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onerror = () => {
+            // 打开失败时清掉缓存，让下一次调用还能重试
+            dbInstance = null;
             TitaniaLogger.error("打开向量数据库失败", request.error);
             reject(request.error);
         };
 
         request.onsuccess = () => {
-            dbInstance = request.result;
+            const db = request.result;
+            // onclose 能触发时立即清缓存；触发不了的场景由上面的探测兜底
+            db.onclose = () => {
+                dbInstance = null;
+            };
+            // 其他标签页要升级库版本时主动让位，避免对方被 blocked
+            db.onversionchange = () => db.close();
+            dbInstance = db;
             TitaniaLogger.info("向量数据库已连接");
-            resolve(dbInstance);
+            resolve(db);
         };
 
         request.onupgradeneeded = (event) => {
