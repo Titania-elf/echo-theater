@@ -761,6 +761,135 @@
     gap: 6px;
 }
 
+/* 渐进续写面板：进度条 + 生成下一段 + 手动指针 */
+.t-outline-rolling {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid var(--t-color-border-glass);
+    border-radius: 10px;
+    background: var(--t-glass-panel);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.t-outline-rolling-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.t-outline-rolling-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--t-color-text);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.t-outline-rolling-status {
+    font-size: 12px;
+    color: var(--t-glass-text-soft);
+    text-align: right;
+}
+
+.t-outline-rolling-bar {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--t-color-border-glass);
+    overflow: hidden;
+}
+
+.t-outline-rolling-bar-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    background: var(--t-color-accent, #90cdf4);
+    transition: width 0.25s ease;
+}
+
+.t-outline-rolling-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.t-outline-rolling-cursor {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--t-glass-text-soft);
+}
+
+.t-outline-rolling-cursor .t-outline-select {
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: 12px;
+    width: auto;
+    max-width: 180px;
+}
+
+.t-outline-rolling-hint {
+    font-size: 11px;
+    color: var(--t-glass-text-soft);
+    line-height: 1.5;
+}
+
+/* 生成参数面板：大纲/细纲各一行，行内三个参数横排 */
+.t-outline-genparam-hint {
+    font-size: 12px;
+    color: var(--t-glass-text-soft);
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.t-outline-genparam-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px solid var(--t-color-border-glass);
+}
+
+.t-outline-genparam-row:first-of-type {
+    border-top: none;
+}
+
+.t-outline-genparam-title {
+    flex: 0 0 44px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--t-color-text);
+}
+
+.t-outline-genparam-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    flex: 1 1 auto;
+}
+
+.t-outline-genparam-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 11px;
+    color: var(--t-glass-text-soft);
+    flex: 1 1 90px;
+    min-width: 80px;
+}
+
+.t-outline-genparam-fields input {
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: 12px;
+    width: 100%;
+}
+
 .t-outline-mode-source .t-outline-select {
     min-height: 30px;
     padding: 4px 8px;
