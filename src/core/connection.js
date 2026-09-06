@@ -193,8 +193,23 @@ export async function sendChatRequest(messages, options = {}) {
     const conn = options.profileId
         ? (getConnectionByProfileId(String(options.profileId), options.model || null) || getActiveConnection())
         : getActiveConnection();
-    const data = getExtData();
 
+    return sendChatRequestWithConnection(conn, messages, options);
+}
+
+/**
+ * 用一个已解析的连接对象发送聊天完成请求。
+ *
+ * 与 sendChatRequest 的区别：调用方自己提供 conn（可以来自主 profile 体系，
+ * 也可以是功能模块自建的裸连接），本函数只负责发请求。让不走主 profile 体系的
+ * 功能（如故事大纲的独立方案）也能复用 ST 的 SSE 解析、流式错误处理与中断。
+ *
+ * @param {object} conn - 连接对象，至少包含 { useSTConnection, url, key, model, stream }
+ * @param {Array<{role: string, content: string}>} messages
+ * @param {object} options - 同 sendChatRequest（model/stream/maxTokens/temperature/signal/onProgress）
+ * @returns {Promise<string>} 生成内容
+ */
+export async function sendChatRequestWithConnection(conn, messages, options = {}) {
     const model = options.model || conn.model;
     const useStream = options.stream !== undefined ? options.stream : conn.stream;
     const maxTokens = options.maxTokens || 2048;
@@ -238,8 +253,9 @@ export async function sendChatRequest(messages, options = {}) {
         }
 
     } else {
-        // 使用自定义配置直接发送请求
-        if (!conn.key) {
+        // 使用自定义配置直接发送请求。
+        // 部分本地/自建端点无需 key，调用方可传 allowEmptyKey 放行（故事大纲即如此）。
+        if (!conn.key && options.allowEmptyKey !== true) {
             throw new Error("配置缺失：请先去设置填 API Key！");
         }
 
@@ -247,6 +263,12 @@ export async function sendChatRequest(messages, options = {}) {
         if (!endpoint) {
             throw new Error("ERR_CONFIG: API URL 未设置");
         }
+
+        const buildHeaders = () => {
+            const headers = { "Content-Type": "application/json" };
+            if (conn.key) headers.Authorization = `Bearer ${conn.key}`;
+            return headers;
+        };
 
         const requestBody = {
             model: model,
@@ -259,10 +281,7 @@ export async function sendChatRequest(messages, options = {}) {
         if (useStream) {
             const fetchOptions = {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${conn.key}`
-                },
+                headers: buildHeaders(),
                 body: JSON.stringify(requestBody)
             };
 
@@ -340,10 +359,7 @@ export async function sendChatRequest(messages, options = {}) {
             // 非流式请求
             const fetchOptions = {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${conn.key}`
-                },
+                headers: buildHeaders(),
                 body: JSON.stringify(requestBody)
             };
 

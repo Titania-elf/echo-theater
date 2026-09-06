@@ -1,6 +1,7 @@
 // src/ui/storyOutlineWindow.js
 
 import { getContextData } from "../core/context.js";
+import { sendChatRequestWithConnection, getConnectionByProfileId, getActiveConnection } from "../core/connection.js";
 import { normalizeApiBaseUrl, normalizeRewriteCustomProfiles } from "../core/apiProfileRegistry.js";
 import { ensureFeatureCss } from "../utils/dom.js";
 import { getExtData, saveExtData } from "../utils/storage.js";
@@ -26,6 +27,7 @@ let responseTimerStartAt = 0;
 let responseElapsedMs = 0;
 let responseTimerId = null;
 let responseTimerRunning = false;
+let activeOutlineAbortController = null;
 
 const DRAFT_KEY = "story_outline_draft";
 const PLANS_KEY = "story_outline_plans";
@@ -38,6 +40,66 @@ const OUTLINE_CHAT_TAG_WHITELIST_KEY = "story_outline_chat_tag_whitelist";
 const RAW_HISTORY_KEY = "story_outline_raw_history";
 const OUTLINE_SELECTED_PROFILE_KEY = "story_outline_selected_profile_id";
 const OUTLINE_CUSTOM_PROFILES_KEY = "story_outline_custom_profiles";
+const GEN_PARAMS_KEY = "story_outline_gen_params";
+
+// 生成参数默认值（沿用改成可配置前写死的数值）。timeoutSec=0 表示不限制。
+function getGenParamDefaults() {
+    return {
+        outline: { temperature: 0.4, maxTokens: 20000, timeoutSec: 0 },
+        scenes: { temperature: 0.8, maxTokens: 60000, timeoutSec: 0 }
+    };
+}
+
+// 把单组参数规范化到安全范围，缺失/非法回退到默认。
+function normalizeGenParamGroup(raw, fallback) {
+    const src = raw && typeof raw === "object" ? raw : {};
+    const temp = Number(src.temperature);
+    const maxTok = Number(src.maxTokens);
+    const timeout = Number(src.timeoutSec);
+    return {
+        temperature: Number.isFinite(temp) ? Math.min(2, Math.max(0, temp)) : fallback.temperature,
+        maxTokens: Number.isFinite(maxTok) && maxTok >= 256 ? Math.min(200000, Math.floor(maxTok)) : fallback.maxTokens,
+        timeoutSec: Number.isFinite(timeout) && timeout > 0 ? Math.min(3600, Math.floor(timeout)) : 0
+    };
+}
+
+function getOutlineGenParams() {
+    const data = getExtData();
+    const defaults = getGenParamDefaults();
+    const raw = data?.[GEN_PARAMS_KEY] && typeof data[GEN_PARAMS_KEY] === "object" ? data[GEN_PARAMS_KEY] : {};
+    return {
+        outline: normalizeGenParamGroup(raw.outline, defaults.outline),
+        scenes: normalizeGenParamGroup(raw.scenes, defaults.scenes)
+    };
+}
+
+function saveOutlineGenParams(params) {
+    const data = getExtData();
+    const defaults = getGenParamDefaults();
+    data[GEN_PARAMS_KEY] = {
+        outline: normalizeGenParamGroup(params?.outline, defaults.outline),
+        scenes: normalizeGenParamGroup(params?.scenes, defaults.scenes)
+    };
+    saveExtData();
+}
+
+// 渐进续写读取的酒馆正文楼层数（0=不读，仅用大纲与已生成细纲推进）。
+const ROLLING_CHAT_FLOORS_KEY = "story_outline_rolling_chat_floors";
+const ROLLING_CHAT_FLOORS_DEFAULT = 6;
+
+function getRollingChatFloors() {
+    const data = getExtData();
+    const raw = Number(data?.[ROLLING_CHAT_FLOORS_KEY]);
+    if (!Number.isFinite(raw) || raw < 0) return ROLLING_CHAT_FLOORS_DEFAULT;
+    return Math.min(50, Math.floor(raw));
+}
+
+function saveRollingChatFloors(n) {
+    const data = getExtData();
+    const raw = Number(n);
+    data[ROLLING_CHAT_FLOORS_KEY] = Number.isFinite(raw) && raw >= 0 ? Math.min(50, Math.floor(raw)) : ROLLING_CHAT_FLOORS_DEFAULT;
+    saveExtData();
+}
 
 let currentView = "hub";
 let activePlanId = "";
@@ -200,12 +262,42 @@ function saveOutlineCustomProfiles(profiles) {
     saveExtData();
 }
 
-function getOutlineProfilesByMode() {
-    return getOutlineCustomProfiles();
+// 大纲的"跟随 SillyTavern 主连接"方案 id。选中它时不走独立的自定义方案，
+// 而是复用主连接体系（ST 后端托管，无需自己填 url/key）。与 connection.js 的 st_sync 对齐。
+const OUTLINE_ST_FOLLOW_ID = "st_sync";
+
+function isOutlineStFollowSelected(profileId = null) {
+    const preferred = String(profileId || getOutlineSelectedProfileId() || "").trim();
+    return preferred === OUTLINE_ST_FOLLOW_ID;
+}
+
+// 给设置页的方案下拉最前面加上"跟随 SillyTavern 主连接"（internal 类型，编辑器会自动
+// 禁用 url/key 输入并显示"由 ST 托管"）。自定义方案原样跟在后面。
+function buildOutlineEditorProfiles(customProfiles) {
+    const followProfile = {
+        id: OUTLINE_ST_FOLLOW_ID,
+        name: "🔗 跟随 SillyTavern (主连接)",
+        type: "internal",
+        readonly: true,
+        url: "",
+        key: "",
+        model: "gpt-3.5-turbo"
+    };
+    return [followProfile, ...mapCustomProfilesToConnectionProfiles(customProfiles, "gpt-3.5-turbo")];
+}
+
+// 设置页里 internal 方案要展示的 ST 连接地址（只读提示用）。
+function getOutlineInternalUrlLabel() {
+    try {
+        const conn = getConnectionByProfileId(OUTLINE_ST_FOLLOW_ID) || getActiveConnection();
+        return String(conn?.url || "由 ST 托管");
+    } catch {
+        return "由 ST 托管";
+    }
 }
 
 function resolveOutlineProfileSelection(profileId = null) {
-    const profiles = getOutlineProfilesByMode();
+    const profiles = getOutlineCustomProfiles();
     if (profiles.length === 0) return { profileId: "", profiles };
 
     const preferred = String(profileId || getOutlineSelectedProfileId() || "").trim();
@@ -220,91 +312,114 @@ function getOutlineActiveProfile() {
     return selected;
 }
 
-async function sendOutlineRequest(messages, options = {}) {
+// 把选中的方案解析成一个可直接发送的连接对象。ST-follow 走主连接（useSTConnection:true），
+// 否则用大纲自己的独立方案自建裸连接。返回 null 表示无有效方案。
+function resolveOutlineConnection(model) {
+    if (isOutlineStFollowSelected()) {
+        // 复用主连接体系里的 st_sync（内部连接），拿不到就退回当前激活连接。
+        const conn = getConnectionByProfileId(OUTLINE_ST_FOLLOW_ID, model || null) || getActiveConnection();
+        return { ...conn, stream: conn.stream };
+    }
+
     const profile = getOutlineActiveProfile();
-    if (!profile) throw new Error("请先在设置中选择 API 方案");
+    if (!profile) return null;
 
     const apiUrl = normalizeApiBaseUrl(String(profile.api_url || "").trim());
-    const apiKey = String(profile.api_key || "").trim();
-    const model = String(options.model || profile.model || "").trim();
-    const useStream = options.stream === true;
-    const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
-    const maxTokens = Number(options.maxTokens) || 2048;
-    const temperature = Number.isFinite(options.temperature) ? options.temperature : 0.7;
-
     if (!apiUrl) throw new Error("请先填写 API 地址");
-    if (!model) throw new Error("请先选择模型");
 
-    const endpoint = `${apiUrl}/chat/completions`;
-    const headers = { "Content-Type": "application/json" };
-    if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
-
-    const requestBody = {
-        model,
-        messages,
-        stream: useStream,
-        max_tokens: maxTokens,
-        temperature
+    return {
+        useSTConnection: false,
+        profileName: "故事大纲",
+        url: apiUrl,
+        key: String(profile.api_key || "").trim(),
+        model: model || String(profile.model || "").trim()
     };
+}
 
-    const res = await fetch(endpoint, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(requestBody)
+async function sendOutlineRequest(messages, options = {}) {
+    const requestModel = String(options.model || "").trim();
+    const conn = resolveOutlineConnection(requestModel);
+    if (!conn) throw new Error("请先在设置中选择 API 方案");
+
+    const model = requestModel || String(conn.model || "").trim();
+    // 走 ST 主连接时模型由 ST 托管，不强制要求；自定义方案则必须先选模型。
+    if (!conn.useSTConnection && !model) throw new Error("请先选择模型");
+
+    return sendChatRequestWithConnection({ ...conn, stream: options.stream === true }, messages, {
+        model,
+        stream: options.stream === true,
+        maxTokens: Number(options.maxTokens) || 2048,
+        temperature: Number.isFinite(options.temperature) ? options.temperature : 0.7,
+        signal: options.signal,
+        allowEmptyKey: true,
+        onProgress: typeof options.onProgress === "function" ? options.onProgress : undefined
     });
-
-    if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status}: ${errText.slice(0, 200)}`);
-    }
-
-    if (useStream) {
-        if (!res.body) throw new Error("Stream Empty Body: 响应体为空");
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let aggregated = "";
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-
-            while (true) {
-                const idx = buffer.indexOf("\n");
-                if (idx < 0) break;
-                const line = buffer.slice(0, idx).trim();
-                buffer = buffer.slice(idx + 1);
-                if (!line || !line.startsWith("data:")) continue;
-
-                const data = line.slice(5).trim();
-                if (!data || data === "[DONE]") continue;
-
-                try {
-                    const json = JSON.parse(data);
-                    const chunk = json?.choices?.[0]?.delta?.content || json?.choices?.[0]?.message?.content || "";
-                    if (!chunk) continue;
-                    aggregated += chunk;
-                    if (onProgress) onProgress(aggregated);
-                } catch {
-                    // ignore malformed stream chunk
-                }
-            }
-        }
-
-        if (!aggregated.trim()) throw new Error("流式返回为空");
-        return aggregated;
-    }
-
-    const json = await res.json();
-    const content = json?.choices?.[0]?.message?.content || "";
-    return String(content || "");
 }
 
 function setRawWaitingAnimation(active) {
     const $anim = $("#t-outline-raw-mood");
     if ($anim.length === 0) return;
     $anim.toggleClass("is-active", !!active);
+}
+
+function syncAbortButtonUI() {
+    const $btn = $("#t-outline-raw-abort");
+    if ($btn.length === 0) return;
+    const active = !!activeOutlineAbortController;
+    $btn.prop("disabled", !active).toggle(active);
+}
+
+// 用中断信号包裹一次大纲生成：期间挂上 AbortController、露出「终止」按钮，
+// 结束后无论成败都清理，避免中断状态泄漏到下一次生成。
+// timeoutSec>0 时到点自动中断，并把错误标记为超时，便于上层区分「用户终止」与「超时」。
+async function runOutlineGeneration(task, { timeoutSec = 0 } = {}) {
+    const controller = new AbortController();
+    activeOutlineAbortController = controller;
+    let timedOut = false;
+    let timeoutTimer = null;
+    if (timeoutSec > 0) {
+        timeoutTimer = setTimeout(() => {
+            timedOut = true;
+            controller.abort();
+        }, timeoutSec * 1000);
+    }
+    syncAbortButtonUI();
+    try {
+        return await task(controller.signal);
+    } catch (e) {
+        if (timedOut && isAbortError(e)) {
+            const err = new Error(`响应超时（超过 ${timeoutSec} 秒）`);
+            err.name = "AbortError";
+            err.__timeout = true;
+            throw err;
+        }
+        throw e;
+    } finally {
+        if (timeoutTimer) clearTimeout(timeoutTimer);
+        activeOutlineAbortController = null;
+        syncAbortButtonUI();
+    }
+}
+
+function isAbortError(e) {
+    return e && (e.name === "AbortError" || /aborted/i.test(String(e.message || "")));
+}
+
+// 生成流程收尾时的统一错误上报：区分超时、用户终止、真实错误，写好流式预览状态与 toast。
+function reportGenerationError(e, label, failMessage) {
+    if (e?.__timeout) {
+        if (isStreamingEnabled()) updateRawPreview("已超时中断");
+        if (window.toastr) toastr.warning(e.message || "响应超时，已中断生成", label);
+        return;
+    }
+    if (isAbortError(e)) {
+        if (isStreamingEnabled()) updateRawPreview("已终止生成");
+        if (window.toastr) toastr.info(`已终止${label === "故事细纲" ? "细纲" : "大纲"}生成`, label);
+        return;
+    }
+    console.error(`Titania: ${label}生成失败`, e);
+    if (isStreamingEnabled()) updateRawPreview("生成失败");
+    if (window.toastr) toastr.error(e?.message || failMessage, label);
 }
 
 function startResponseTimer(reset = true) {
@@ -531,21 +646,6 @@ function getOpeningFromCardRef(sourceRef, entries) {
     if (Number.isNaN(openingIndex)) return "";
     const target = (entries || []).find(entry => entry.openingIndex === openingIndex);
     return target?.text || "";
-}
-
-function formatOpeningSourceLabel(mode, sourceRef, entries) {
-    if (mode === "chat_selected") {
-        const selected = getOpeningFromSelectedRef(sourceRef, entries.chatEntries || []);
-        if (!selected) return "未选择聊天记录";
-        return `${String(sourceRef?.preview || selected).slice(0, 48)}${selected.length > 48 ? "..." : ""}`;
-    }
-
-    const cardEntries = entries.cardEntries || [];
-    if (cardEntries.length === 0) return "当前角色卡无可用开场白";
-    const selected = getOpeningFromCardRef(sourceRef, cardEntries);
-    const fallback = selected || cardEntries[0]?.text || "";
-    const prefix = selected ? "已选开场白" : "默认开场白";
-    return `${prefix}：${String(sourceRef?.preview || fallback).slice(0, 48)}${fallback.length > 48 ? "..." : ""}`;
 }
 
 function getOpeningTextForPreview(mode, sourceRef) {
@@ -792,6 +892,12 @@ function getDefaultPromptTemplates() {
 [用户设定]
 {{userDesc}}
 
+[世界书/设定]
+{{worldInfo}}
+
+[剧情设定]
+{{scenario}}
+
 [开场白]
 {{openingText}}
 
@@ -841,6 +947,9 @@ function getDefaultPromptTemplates() {
 [用户设定]
 {{userDesc}}
 
+[世界书/设定]
+{{worldInfo}}
+
 [开场白]
 {{openingText}}
 
@@ -855,6 +964,77 @@ function getDefaultPromptTemplates() {
 保持总纲主线与顺序不变，只补全细纲内容。
 严格使用 version 1.2 的精简结构，仅返回 index 和 scenes，不要返回 time/title/plot/foreshadowing/story_summary。
 sendable_prompt 必须写成可供模型扩写/转述/润色的具体摘要段落，并融合 conflict 与 key_beats。
+只返回 JSON。`
+        },
+        rolling: {
+            system: `你是渐进式剧情推进策划。完整故事大纲已给定（最后一条即结局），你的职责是：结合"已经发生的剧情"，只生成"接下来 1~2 个场景"的细纲，让故事在大纲的暗中引导下自然、稳步地朝结局推进。
+
+[核心原则]
+1) 大纲是路标与终点约束：始终朝大纲结局收束，可提前埋伏笔、控制节奏，但绝不跳步、不一次写到结局。
+2) 承接已发生的剧情：新场景必须自然衔接"已发生的剧情"的最后状态，不重复已经写过的情节。
+3) 一次只推进一小步：只产出 1~2 个场景。仅当进度已到大纲最后一条、且剧情确实该收尾时，才允许写结局场景。
+
+[硬性要求]
+1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
+2) 只允许返回以下结构：
+{
+  "version": "1.3",
+  "items": [
+    {
+      "index": 1,
+      "scenes": [
+        {
+          "scene_index": 1,
+          "scene_time": "时间点",
+          "scene_location": "地点",
+          "scene_goal": "本场目标",
+          "conflict": "冲突",
+          "key_beats": ["关键节点1", "关键节点2"],
+          "sendable_prompt": "可供扩写的场景摘要段落",
+          "notes": ""
+        }
+      ]
+    }
+  ],
+  "progress": {
+    "current_item_index": 1,
+    "reached_ending": false,
+    "note": "一句话说明推进到哪、为什么"
+  }
+}
+3) index 必须是这些场景所归属的大纲条目序号（对应输入大纲里的 index），与大纲一一对应，不得新增大纲没有的 index。
+4) 本次总共只产出 1~2 个场景（可以都挂在同一个 index 下，或跨相邻两个 index）。
+5) 每个 scene 必须包含 scene_goal、conflict、key_beats、sendable_prompt；key_beats 至少 2 条，单条不超过 24 字。
+6) sendable_prompt 融合 conflict 与 key_beats，120-220 字，中文，具体可延展，写成可直接发给模型续写的场景摘要，不写"请你/你需要"。
+7) progress.current_item_index 填这批场景推进到的大纲条目序号；reached_ending 仅在确实抵达结局时为 true。
+8) 输出语言使用中文。`,
+            user: `[角色设定]
+{{persona}}
+
+[用户设定]
+{{userDesc}}
+
+[世界书/设定]
+{{worldInfo}}
+
+[故事需求]
+{{storyInput}}
+
+[完整故事大纲（路标，最后一条=结局）]
+{{outlineItemsJson}}
+
+[已经发生的剧情（最近正文，越靠后越新）]
+{{recentChat}}
+
+[已生成的细纲摘要]
+{{scenesSoFar}}
+
+[当前进度]
+{{progressHint}}
+
+[任务]
+只生成"接下来 1~2 个场景"的细纲，承接上面已发生的剧情，朝大纲结局稳步推进，不要一次写到结局。
+严格按 version 1.3 结构返回，并在 progress 里回报推进到的大纲条目与是否抵达结局。
 只返回 JSON。`
         }
     };
@@ -872,6 +1052,10 @@ function getPromptTemplates() {
         scenes: {
             system: String(raw?.scenes?.system || defaults.scenes.system),
             user: String(raw?.scenes?.user || defaults.scenes.user)
+        },
+        rolling: {
+            system: String(raw?.rolling?.system || defaults.rolling.system),
+            user: String(raw?.rolling?.user || defaults.rolling.user)
         }
     };
 }
@@ -888,11 +1072,18 @@ function renderPromptTemplate(template, vars) {
 }
 
 function getPromptTemplateSection(templates, type) {
-    return type === "scenes" ? templates.scenes : templates.outline;
+    if (type === "scenes") return templates.scenes;
+    if (type === "rolling") return templates.rolling;
+    return templates.outline;
 }
 
 function getUnknownPromptVars(text) {
-    const known = new Set(["persona", "userDesc", "openingText", "storyInput", "outlineItemsJson"]);
+    const known = new Set([
+        "persona", "userDesc", "openingText", "storyInput", "outlineItemsJson",
+        "worldInfo", "scenario", "dialogueExamples",
+        // 渐进续写专用变量
+        "recentChat", "scenesSoFar", "progressHint"
+    ]);
     const unknown = new Set();
     String(text || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
         if (!known.has(key)) unknown.add(key);
@@ -901,14 +1092,41 @@ function getUnknownPromptVars(text) {
     return Array.from(unknown);
 }
 
-function buildPromptTemplateVars(ctx, userStoryInput, openingText, outlinePayload = []) {
+function buildPromptTemplateVars(ctx, userStoryInput, openingText, outlinePayload = [], extras = {}) {
+    // worldInfo 里 getContextData 已经加了 "[World Info / Lore]\n" 前缀，去掉它避免和模板里的标签重复。
+    const rawWorldInfo = String(ctx?.worldInfo || "").replace(/^\[World Info \/ Lore\]\n/, "").trim();
     return {
         persona: String(ctx?.persona || "(空)"),
         userDesc: String(ctx?.userDesc || "(空)"),
         openingText: String(openingText || "(空)"),
         storyInput: String(userStoryInput || "未填写故事方向，请结合上方设定生成"),
-        outlineItemsJson: JSON.stringify(outlinePayload, null, 2)
+        outlineItemsJson: JSON.stringify(outlinePayload, null, 2),
+        worldInfo: rawWorldInfo || "(无)",
+        scenario: String(ctx?.scenario || "").trim() || "(无)",
+        dialogueExamples: String(ctx?.dialogueExamples || "").trim() || "(无)",
+        // 渐进续写专用；非续写场景为 "(无)"，模板里没引用就不影响。
+        recentChat: String(extras?.recentChat || "").trim() || "(无)",
+        scenesSoFar: String(extras?.scenesSoFar || "").trim() || "(无)",
+        progressHint: String(extras?.progressHint || "").trim() || "(无)"
     };
+}
+
+function renderGenParamRow(moduleKey, moduleLabel, group) {
+    return `
+        <div class="t-outline-genparam-row" data-genparam-module="${moduleKey}">
+            <div class="t-outline-genparam-title">${escapeHtml(moduleLabel)}</div>
+            <div class="t-outline-genparam-fields">
+                <label>温度
+                    <input type="number" class="t-outline-select" data-genparam-field="temperature" value="${escapeHtml(group.temperature)}" min="0" max="2" step="0.1">
+                </label>
+                <label>max_tokens
+                    <input type="number" class="t-outline-select" data-genparam-field="maxTokens" value="${escapeHtml(group.maxTokens)}" min="256" max="200000" step="256">
+                </label>
+                <label>超时(秒·0不限)
+                    <input type="number" class="t-outline-select" data-genparam-field="timeoutSec" value="${escapeHtml(group.timeoutSec)}" min="0" max="3600" step="10">
+                </label>
+            </div>
+        </div>`;
 }
 
 export async function openPromptTemplateManager() {
@@ -923,6 +1141,8 @@ export async function openPromptTemplateManager() {
         openingSourceRef: getOpeningSourceRef(),
         chatTagWhitelist: getOutlineChatTagWhitelistRaw(),
         streamEnabled: loadDraft().streamEnabled === true,
+        genParams: getOutlineGenParams(),
+        rollingChatFloors: getRollingChatFloors(),
         promptTemplates: JSON.parse(JSON.stringify(getPromptTemplates()))
     };
     const working = settingsDraft.promptTemplates;
@@ -1006,6 +1226,22 @@ export async function openPromptTemplateManager() {
                         </div>
 
                         <div class="t-form-group">
+                            <label class="t-form-label">生成参数</label>
+                            <div class="t-outline-genparam-hint">分别控制大纲/细纲生成的采样与上限（渐进续写沿用细纲参数）。细纲过长被中途掐断时多为网关超时，建议调低 max_tokens 或用渐进续写分段生成。超时为客户端安全上限（0=不限制）。</div>
+                            ${renderGenParamRow("outline", "大纲", settingsDraft.genParams.outline)}
+                            ${renderGenParamRow("scenes", "细纲/续写", settingsDraft.genParams.scenes)}
+                        </div>
+
+                        <div class="t-form-group">
+                            <label class="t-form-label">渐进续写</label>
+                            <label class="t-outline-mode t-outline-mode-source" style="margin-left:0;">
+                                读取最近正文楼层数
+                                <input id="t-outline-settings-rolling-floors" type="number" class="t-outline-select" value="${escapeHtml(settingsDraft.rollingChatFloors)}" min="0" max="50" step="1" style="width:80px;">
+                            </label>
+                            <div class="t-outline-genparam-hint">渐进续写时读取酒馆最近 N 楼正文作为"已发生的剧情"（走下方聊天提取白名单过滤）。0=不读正文，仅靠大纲与已生成细纲推进。</div>
+                        </div>
+
+                        <div class="t-form-group">
                             <label class="t-form-label">参考来源</label>
                             <label class="t-outline-mode t-outline-mode-source" style="margin-left:0; margin-bottom:8px;">
                                 来源模式
@@ -1035,10 +1271,11 @@ export async function openPromptTemplateManager() {
                                 <select id="t-prompt-target" class="t-outline-select">
                                     <option value="outline">故事大纲</option>
                                     <option value="scenes">细纲生成</option>
+                                    <option value="rolling">渐进续写</option>
                                 </select>
                                 <button id="t-prompt-reset-current" class="t-btn t-btn-xs"><i class="fa-solid fa-rotate-left"></i> 恢复当前默认</button>
                             </div>
-                            <div class="t-plan-tip" style="margin-top:8px;">可用变量：{{persona}} {{userDesc}} {{openingText}} {{storyInput}} {{outlineItemsJson}}</div>
+                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>渐进续写额外变量：{{recentChat}} {{scenesSoFar}} {{progressHint}}</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1094,13 +1331,17 @@ export async function openPromptTemplateManager() {
             modelId: "t-outline-settings-model",
             fetchModelsId: "t-outline-settings-fetch-models",
             statusId: "t-outline-settings-status",
+            urlHintId: "t-outline-settings-url-hint",
+            stUrlDisplayId: "t-outline-settings-st-url",
         },
-        profiles: mapCustomProfilesToConnectionProfiles(settingsDraft.customProfiles, "gpt-3.5-turbo"),
+        profiles: buildOutlineEditorProfiles(settingsDraft.customProfiles),
         activeProfileId: settingsDraft.selectedProfileId,
         profileIdPrefix: "outline_custom",
         autoFetchOnInput: false,
         autoFetchOnProfileSwitch: false,
+        getInternalUrl: getOutlineInternalUrlLabel,
         onChange: (nextState) => {
+            // internal（跟随主连接）方案不写进独立的自定义方案存储，只保留 selectedProfileId 记住选择。
             settingsDraft.customProfiles = mapConnectionProfilesToCustomProfiles(nextState.profiles, "gpt-3.5-turbo");
             settingsDraft.selectedProfileId = nextState.activeProfileId;
         },
@@ -1169,6 +1410,19 @@ export async function openPromptTemplateManager() {
         switchTab(String($(this).data("tab") || "runtime"));
     });
 
+    // 生成参数：输入即写入 draft（保存时再落盘 + 规范化）。
+    $("#t-outline-prompt-manager").on("input", "[data-genparam-field]", function () {
+        const $input = $(this);
+        const moduleKey = String($input.closest("[data-genparam-module]").data("genparam-module") || "").trim();
+        const field = String($input.data("genparam-field") || "").trim();
+        if (!settingsDraft.genParams[moduleKey] || !field) return;
+        settingsDraft.genParams[moduleKey][field] = Number($input.val());
+    });
+
+    $("#t-outline-settings-rolling-floors").on("input change", function () {
+        settingsDraft.rollingChatFloors = Number($(this).val());
+    });
+
     $("#t-prompt-target").on("change", () => {
         syncToEditor();
         preview();
@@ -1228,6 +1482,8 @@ export async function openPromptTemplateManager() {
         setOpeningSourceMode(settingsDraft.openingSourceMode);
         setOpeningSourceRef(settingsDraft.openingSourceRef);
         setOutlineChatTagWhitelistRaw(settingsDraft.chatTagWhitelist);
+        saveOutlineGenParams(settingsDraft.genParams);
+        saveRollingChatFloors(settingsDraft.rollingChatFloors);
         savePromptTemplates(settingsDraft.promptTemplates);
         $("#t-outline-stream-enabled").prop("checked", settingsDraft.streamEnabled === true);
         saveDraftStreamEnabledOnly(settingsDraft.streamEnabled === true);
@@ -1257,13 +1513,14 @@ function buildPrompt(ctx, userStoryInput, openingText) {
     ];
 }
 
-function parseOutlineResponse(raw) {
+// 大纲与细纲返回的 JSON 结构解析逻辑相同（都要求顶层 data.items 为数组）：
+// 三段尝试（原文 → ```代码块 → 第一个 {...}）+ 尾逗号修复。仅错误文案不同。
+function parseJsonItemsResponse(raw, failMessage = "返回格式无法解析为 JSON") {
     if (!raw || typeof raw !== "string") {
         throw new Error("模型返回为空");
     }
 
-    const attempts = [];
-    attempts.push(raw.trim());
+    const attempts = [raw.trim()];
 
     const codeBlockMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
     if (codeBlockMatch?.[1]) attempts.push(codeBlockMatch[1].trim());
@@ -1275,14 +1532,17 @@ function parseOutlineResponse(raw) {
         try {
             const fixed = content.replace(/,\s*([}\]])/g, "$1");
             const data = JSON.parse(fixed);
-            if (!data || !Array.isArray(data.items)) continue;
-            return data;
+            if (data && Array.isArray(data.items)) return data;
         } catch {
             // try next
         }
     }
 
-    throw new Error("返回格式无法解析为 JSON");
+    throw new Error(failMessage);
+}
+
+function parseOutlineResponse(raw) {
+    return parseJsonItemsResponse(raw, "返回格式无法解析为 JSON");
 }
 
 function getDraft() {
@@ -1449,62 +1709,58 @@ function createDistinctPlanName(baseName = "") {
     return candidate;
 }
 
-function createNewPlan(nameInput = "", defaultName = "") {
+// 三种"新建方案"（沿用编辑器内容 / 空白 / 从来源分支）共用的落盘骨架：
+// 构造 plan → unshift → 设为 active，首个方案兼作细纲来源 → 存 → 标记为编辑态。
+function insertPlan({ name, storyInput, instruction, items }) {
     const plans = getPlans();
-    const planId = `plan_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const now = Date.now();
-    const payload = createPlanPayloadFromEditor();
     const plan = {
-        id: planId,
-        name: (nameInput || "").trim() || defaultName || createPlanName(getCurrentCharCardName()),
+        id: `plan_${now}_${Math.random().toString(36).slice(2, 8)}`,
+        name: String(name || "").trim() || createPlanName(getCurrentCharCardName()),
+        storyInput: storyInput || "",
+        instruction: instruction || "",
+        items: Array.isArray(items) ? items : [],
+        used_scene_keys: [],
+        createdAt: now,
+        updatedAt: now
+    };
+    plans.unshift(plan);
+    activePlanId = plan.id;
+    setActivePlanId(plan.id);
+    if (!getSceneSourcePlanId()) {
+        setSceneSourcePlanId(plan.id);
+    }
+    saveExtData();
+    setEditingPlan(plan);
+    return plan;
+}
+
+// 保存当前编辑器内容（含已生成的大纲条目）为新方案。
+function createNewPlan(nameInput = "", defaultName = "") {
+    const payload = createPlanPayloadFromEditor();
+    return insertPlan({
+        name: (nameInput || "").trim() || defaultName,
         storyInput: payload.storyInput,
         instruction: payload.instruction,
-        items: payload.items,
-        used_scene_keys: [],
-        createdAt: now,
-        updatedAt: now
-    };
-    plans.unshift(plan);
-    activePlanId = plan.id;
-    setActivePlanId(plan.id);
-    if (!getSceneSourcePlanId()) {
-        setSceneSourcePlanId(plan.id);
-    }
-    saveExtData();
-    setEditingPlan(plan);
-    return plan;
+        items: payload.items
+    });
 }
 
+// 新建空白方案，仅带上输入框里的故事指令。
 function createEmptyPlan(nameInput = "", defaultName = "") {
-    const plans = getPlans();
-    const planId = `plan_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const now = Date.now();
     const instruction = String($("#t-outline-story-input").val() || "").trim();
-    const plan = {
-        id: planId,
-        name: (nameInput || "").trim() || defaultName || createPlanName(getCurrentCharCardName()),
+    return insertPlan({
+        name: (nameInput || "").trim() || defaultName,
         storyInput: instruction,
         instruction,
-        items: [],
-        used_scene_keys: [],
-        createdAt: now,
-        updatedAt: now
-    };
-    plans.unshift(plan);
-    activePlanId = plan.id;
-    setActivePlanId(plan.id);
-    if (!getSceneSourcePlanId()) {
-        setSceneSourcePlanId(plan.id);
-    }
-    saveExtData();
-    setEditingPlan(plan);
-    return plan;
+        items: []
+    });
 }
 
+// 从来源方案分支出一个空白方案，沿用其故事指令，名字追加"（分支）"并去重。
 function createBranchPlanFromSource(sourcePlan) {
     if (!sourcePlan?.id) return null;
     const plans = getPlans();
-    const now = Date.now();
     const baseName = String(sourcePlan.name || createPlanName(getCurrentCharCardName())).trim() || "未命名方案";
     let candidateName = `${baseName}（分支）`;
     let suffix = 2;
@@ -1514,26 +1770,12 @@ function createBranchPlanFromSource(sourcePlan) {
     }
 
     const instruction = getPlanInstruction(sourcePlan);
-    const plan = {
-        id: `plan_${now}_${Math.random().toString(36).slice(2, 8)}`,
+    return insertPlan({
         name: candidateName,
         storyInput: instruction,
         instruction,
-        items: [],
-        used_scene_keys: [],
-        createdAt: now,
-        updatedAt: now
-    };
-
-    plans.unshift(plan);
-    activePlanId = plan.id;
-    setActivePlanId(plan.id);
-    if (!getSceneSourcePlanId()) {
-        setSceneSourcePlanId(plan.id);
-    }
-    saveExtData();
-    setEditingPlan(plan);
-    return plan;
+        items: []
+    });
 }
 
 function persistCurrentEditingPlan() {
@@ -1586,6 +1828,7 @@ function updatePlanWorkflowUI() {
     $("#t-outline-top").toggle(inEditor);
     $("#t-outline-hub-view").toggle(currentView === "hub");
     refreshPlanNameDisplay();
+    refreshRollingProgressUI();
 }
 
 function updatePlanHubActionState() {
@@ -1774,9 +2017,49 @@ function getSceneUsageKey(itemIndex, sceneIndex) {
     return `${itemIndex}:${sceneIndex}`;
 }
 
+// 渐进续写的进度指针（持久化在 plan 上）。itemIndex 指向当前推进到的大纲条目（0-based），
+// reachedEnding 标记是否已抵达结局。缺失时归零。
+function getPlanProgress(plan) {
+    const raw = plan && typeof plan.progress === "object" ? plan.progress : null;
+    const totalItems = Array.isArray(plan?.items) ? plan.items.length : 0;
+    let itemIndex = Number(raw?.itemIndex);
+    if (!Number.isFinite(itemIndex) || itemIndex < 0) itemIndex = 0;
+    if (totalItems > 0) itemIndex = Math.min(itemIndex, totalItems - 1);
+    return { itemIndex, reachedEnding: raw?.reachedEnding === true };
+}
+
+function setPlanProgress(planId, progress) {
+    const plans = getPlans();
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+    const totalItems = Array.isArray(plan.items) ? plan.items.length : 0;
+    let itemIndex = Number(progress?.itemIndex);
+    if (!Number.isFinite(itemIndex) || itemIndex < 0) itemIndex = 0;
+    if (totalItems > 0) itemIndex = Math.min(itemIndex, totalItems - 1);
+    plan.progress = { itemIndex, reachedEnding: progress?.reachedEnding === true };
+    plan.updatedAt = Date.now();
+    saveExtData();
+}
+
 function isSceneUsed(plan, itemIndex, sceneIndex) {
     if (!plan || !Array.isArray(plan.used_scene_keys)) return false;
     return plan.used_scene_keys.includes(getSceneUsageKey(itemIndex, sceneIndex));
+}
+
+// 发送某场景即推进进度：指针只前进不后退；发送到最后一条大纲时标记已抵达结局。
+// 只对当前正在编辑的方案生效（进度指针属于编辑态），发送其它方案的场景不影响。
+function advanceProgressOnSend(planId, itemIndex) {
+    if (!planId || planId !== editingPlanId) return;
+    const plan = getPlans().find(p => p.id === planId);
+    if (!plan) return;
+    const total = Array.isArray(plan.items) ? plan.items.length : 0;
+    if (total <= 0) return;
+    const prev = getPlanProgress(plan);
+    const nextIdx = Math.max(prev.itemIndex, Math.min(Number(itemIndex) || 0, total - 1));
+    const reachedEnding = prev.reachedEnding || nextIdx >= total - 1;
+    setPlanProgress(planId, { itemIndex: nextIdx, reachedEnding });
+    setEditingPlan(getPlans().find(p => p.id === planId));
+    refreshRollingProgressUI();
 }
 
 function markSceneUsed(planId, itemIndex, sceneIndex) {
@@ -1819,6 +2102,7 @@ function loadPlanToEditor(plan) {
     saveDraft(planInstruction, $("#t-outline-insert-mode").val() || "overwrite");
     renderRows();
     refreshPlanNameDisplay();
+    refreshRollingProgressUI();
     return true;
 }
 
@@ -1980,6 +2264,7 @@ export function openSceneHubWindow() {
         if (!selected) return;
         writePlotToInput(selected.scene?.sendable_prompt || "", getCurrentInsertMode());
         markSceneUsed(selected.planId, selected.itemIndex, selected.sceneIndex);
+        advanceProgressOnSend(selected.planId, selected.itemIndex);
         sceneHubSelectedKey = "";
         $overlay.remove();
         if (window.toastr) toastr.success("已发送场景到输入框", "故事大纲");
@@ -2453,6 +2738,7 @@ function showRawResponseDialog(rawContent, options = {}) {
             </div>
             <div class="t-dialog-footer">
                 ${editable ? `<button id="t-outline-raw-reparse" class="t-btn t-btn-primary">${escapeHtml(parseButtonLabel)}</button>` : ""}
+                <button id="t-outline-raw-abort" class="t-btn t-btn--glass" ${activeOutlineAbortController ? "" : "disabled"} ${activeOutlineAbortController ? "" : "style=\"display:none;\""}><i class="fa-solid fa-stop"></i> 终止</button>
                 <button id="t-outline-raw-close-btn" class="t-btn">关闭</button>
             </div>
         </div>
@@ -2487,6 +2773,10 @@ function showRawResponseDialog(rawContent, options = {}) {
     $("#t-outline-raw-close, #t-outline-raw-close-btn").on("click", () => {
         $("#t-outline-raw-dialog").remove();
         isRawDialogOpen = false;
+    });
+
+    $("#t-outline-raw-abort").on("click", () => {
+        if (activeOutlineAbortController) activeOutlineAbortController.abort();
     });
 
     $("#t-outline-raw-history").on("change", function () {
@@ -2548,6 +2838,7 @@ function ensureRawDialogForStreaming(title = "流式生成中...") {
     if (!isRawDialogOpen || $("#t-outline-raw-dialog").length === 0) {
         showRawResponseDialog(lastRawResponse || "");
     }
+    syncAbortButtonUI();
     updateRawPreview(title);
 }
 
@@ -2574,43 +2865,31 @@ function applyParsedOutline(parsed, storyInput, insertMode) {
     sceneExpandedMap = {};
     renderRows();
     persistCurrentEditingPlan();
+    // 重新生成大纲=路标重画，渐进续写进度归零。
+    if (editingPlanId) {
+        setPlanProgress(editingPlanId, { itemIndex: 0, reachedEnding: false });
+        setEditingPlan(getPlans().find(p => p.id === editingPlanId));
+    }
+    refreshRollingProgressUI();
     saveDraft(storyInput, insertMode);
 }
 
 function parseAllScenesResponse(raw) {
-    if (!raw || typeof raw !== "string") {
-        throw new Error("模型返回为空");
-    }
-
-    const attempts = [raw.trim()];
-    const codeBlockMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (codeBlockMatch?.[1]) attempts.push(codeBlockMatch[1].trim());
-    const objMatch = raw.match(/\{[\s\S]*\}/);
-    if (objMatch?.[0]) attempts.push(objMatch[0].trim());
-
-    for (const content of attempts) {
-        try {
-            const fixed = content.replace(/,\s*([}\]])/g, "$1");
-            const data = JSON.parse(fixed);
-            if (data && Array.isArray(data.items)) {
-                return data;
-            }
-        } catch {
-            // continue
-        }
-    }
-
-    throw new Error("细纲返回格式无法解析为 JSON（缺少 items）");
+    return parseJsonItemsResponse(raw, "细纲返回格式无法解析为 JSON（缺少 items）");
 }
 
-function buildAllScenesPrompt(ctx, userStoryInput, openingText) {
-    const outlinePayload = outlineItems.map((item) => ({
+function buildOutlinePayloadForPrompt() {
+    return outlineItems.map((item) => ({
         index: item.index,
         time: item.time || "",
         title: item.title || "",
         plot: item.plot || "",
         foreshadowing: item.foreshadowing || ""
     }));
+}
+
+function buildAllScenesPrompt(ctx, userStoryInput, openingText) {
+    const outlinePayload = buildOutlinePayloadForPrompt();
     const templates = getPromptTemplates();
     const vars = buildPromptTemplateVars(ctx, userStoryInput || "(空)", openingText, outlinePayload);
     const sys = renderPromptTemplate(templates.scenes.system, vars);
@@ -2620,6 +2899,103 @@ function buildAllScenesPrompt(ctx, userStoryInput, openingText) {
         { role: "system", content: sys },
         { role: "user", content: user }
     ];
+}
+
+// 取最近 N 楼酒馆正文（走标签白名单过滤），越靠后越新，拼成给模型的"已发生的剧情"。
+function collectRecentChatText(floors) {
+    const n = Number(floors) || 0;
+    if (n <= 0) return "";
+    const entries = getChatHistoryEntries();
+    if (!entries.length) return "";
+    return entries
+        .slice(-n)
+        .map((e) => `【${e.role}】${e.text}`)
+        .join("\n\n");
+}
+
+// 汇总当前方案已生成的细纲场景，作为"已生成的细纲摘要"喂回模型，避免重复推进。
+function summarizeScenesSoFar() {
+    const lines = [];
+    outlineItems.forEach((item) => {
+        const scenes = Array.isArray(item.scenes) ? item.scenes : [];
+        scenes.forEach((scene) => {
+            const summary = String(scene.sendable_prompt || scene.scene_goal || scene.key_beats || "").trim();
+            if (summary) {
+                lines.push(`#${item.index}-${scene.scene_index} ${summary.slice(0, 120)}`);
+            }
+        });
+    });
+    return lines.join("\n");
+}
+
+// 组装渐进续写 prompt：完整大纲 + 最近正文 + 已生成细纲摘要 + 当前进度。
+function buildRollingPrompt(ctx, userStoryInput, openingText, progressHint) {
+    const outlinePayload = buildOutlinePayloadForPrompt();
+    const templates = getPromptTemplates();
+    const vars = buildPromptTemplateVars(ctx, userStoryInput || "(空)", openingText, outlinePayload, {
+        recentChat: collectRecentChatText(getRollingChatFloors()),
+        scenesSoFar: summarizeScenesSoFar(),
+        progressHint
+    });
+    const sys = renderPromptTemplate(templates.rolling.system, vars);
+    const user = renderPromptTemplate(templates.rolling.user, vars);
+
+    return [
+        { role: "system", content: sys },
+        { role: "user", content: user }
+    ];
+}
+
+// 解析渐进续写返回：复用 items 解析，progress 字段单独容错（缺失返回 null，由上层退回指针推进）。
+function parseRollingResponse(raw) {
+    const data = parseJsonItemsResponse(raw, "渐进续写返回格式无法解析为 JSON（缺少 items）");
+    let progress = null;
+    const rawProgress = data?.progress;
+    if (rawProgress && typeof rawProgress === "object") {
+        const idx = Number(rawProgress.current_item_index);
+        progress = {
+            currentItemIndex: Number.isFinite(idx) ? idx : null,
+            reachedEnding: rawProgress.reached_ending === true,
+            note: String(rawProgress.note || "").trim()
+        };
+    }
+    return { items: Array.isArray(data.items) ? data.items : [], progress };
+}
+
+// 把新生成的场景"追加"到对应大纲条目（区别于 applyParsedScenes 的整体替换）。
+// index 按大纲条目序号匹配（1-based），匹配不到就落到当前进度指针那一条。
+function appendRollingScenes(parsed, fallbackItemIndex) {
+    const incomingItems = Array.isArray(parsed?.items) ? parsed.items : [];
+    let appended = 0;
+    let lastTouchedIdx = -1;
+
+    incomingItems.forEach((incoming) => {
+        const declaredIndex = Number(incoming?.index);
+        let targetIdx = outlineItems.findIndex((it) => it.index === declaredIndex);
+        if (targetIdx === -1) {
+            targetIdx = Math.min(Math.max(Number(fallbackItemIndex) || 0, 0), outlineItems.length - 1);
+        }
+        const target = outlineItems[targetIdx];
+        if (!target) return;
+        if (!Array.isArray(target.scenes)) target.scenes = [];
+        const newScenes = normalizeScenes(incoming?.scenes || []);
+        if (newScenes.length === 0) return;
+        target.scenes = target.scenes.concat(newScenes);
+        reindexScenes(target);
+        sceneExpandedMap[targetIdx] = true;
+        appended += newScenes.length;
+        lastTouchedIdx = targetIdx;
+    });
+
+    renderRows();
+    const mobileIdx = getMobileDrawerIndex();
+    if (!Number.isNaN(mobileIdx) && mobileIdx >= 0 && outlineItems[mobileIdx]) {
+        renderMobileDrawerScenes(mobileIdx);
+    }
+    persistCurrentEditingPlan();
+    saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
+
+    return { appended, lastTouchedIdx };
 }
 
 function renderRows() {
@@ -2939,6 +3315,43 @@ function saveDesktopEditor() {
 function updateGenerateAllScenesButtonState() {
     const hasOutline = Array.isArray(outlineItems) && outlineItems.length > 0;
     $("#t-outline-generate-all-scenes").prop("disabled", !hasOutline);
+    refreshRollingProgressUI();
+}
+
+// 刷新渐进续写面板：进度条、状态文案、条目下拉。无大纲或无编辑方案时隐藏整块。
+function refreshRollingProgressUI() {
+    const $panel = $("#t-outline-rolling");
+    if ($panel.length === 0) return;
+
+    const hasOutline = Array.isArray(outlineItems) && outlineItems.length > 0;
+    const plan = editingPlanId ? getPlans().find(p => p.id === editingPlanId) : null;
+    if (!hasOutline || !plan) {
+        $panel.hide();
+        return;
+    }
+    $panel.show();
+
+    const total = outlineItems.length;
+    const progress = getPlanProgress(plan);
+    const stepNo = progress.itemIndex + 1;
+    const pct = total > 0 ? Math.round((stepNo / total) * 100) : 0;
+
+    $("#t-outline-rolling-bar-fill").css("width", `${progress.reachedEnding ? 100 : pct}%`);
+    const currentTitle = outlineItems[progress.itemIndex]?.title || "未命名";
+    $("#t-outline-rolling-status").text(
+        progress.reachedEnding
+            ? `已抵达结局（${total}/${total}）`
+            : `第 ${stepNo}/${total} 条 · ${currentTitle}`
+    );
+    $("#t-outline-generate-next").prop("disabled", progress.reachedEnding);
+
+    const $select = $("#t-outline-rolling-cursor-select");
+    if ($select.length) {
+        const options = outlineItems.map((it, idx) =>
+            `<option value="${idx}" ${idx === progress.itemIndex ? "selected" : ""}>${idx + 1}. ${escapeHtml((it.title || "未命名").slice(0, 16))}</option>`
+        ).join("");
+        $select.html(options).val(String(progress.itemIndex));
+    }
 }
 
 function getMobileDrawerIndex() {
@@ -2984,6 +3397,74 @@ function renderMobileDrawerScenes(index) {
     $list.html(html);
 }
 
+/**
+ * 大纲/细纲两个生成流程的公共骨架：计时器、流式预览、pushHistory、解析、
+ * 失败回退可编辑对话框、中断包裹、按钮态恢复。差异点由 cfg 提供。
+ *
+ * @param {object} cfg
+ * @param {string} cfg.label           toast 标题（"故事大纲"/"故事细纲"）
+ * @param {string} cfg.historyLabel    写入历史的类型标签
+ * @param {string} cfg.streamingTitle  流式对话框标题
+ * @param {string} cfg.doneTitle       完成时对话框标题
+ * @param {string} cfg.failTitle       失败时对话框标题
+ * @param {number} cfg.temperature
+ * @param {number} cfg.maxTokens
+ * @param {() => Array} cfg.buildMessages          组装 messages（同步，返回前 ctx/opening 已就绪）
+ * @param {(ctx, opening) => Array} 见下方调用
+ * @param {(raw: string) => object} cfg.parse      解析函数
+ * @param {(parsed: object) => void} cfg.apply     应用解析结果
+ * @param {string} cfg.reparseLabel   回退对话框的重解析按钮文案
+ * @param {(count: number) => string} cfg.successMessage
+ * @param {() => void} [cfg.beforeButtonRestore]   收尾前的钩子
+ */
+async function runGenerationFlow(cfg) {
+    const useStream = isStreamingEnabled();
+    return runOutlineGeneration(async (signal) => {
+        const ctx = await getContextData();
+        const opening = await ensureOpeningTextForGeneration();
+        const messages = cfg.buildMessages(ctx, opening);
+
+        startResponseTimer(true);
+        if (useStream) {
+            lastRawResponse = "";
+            ensureRawDialogForStreaming(cfg.streamingTitle);
+        }
+
+        const raw = await sendOutlineRequest(messages, {
+            stream: useStream,
+            temperature: cfg.temperature,
+            maxTokens: cfg.maxTokens,
+            signal,
+            onProgress: useStream ? (partial) => {
+                lastRawResponse = partial || "";
+                updateRawPreview(cfg.streamingTitle);
+            } : undefined
+        });
+
+        lastRawResponse = raw || lastRawResponse || "";
+        pushRawResponseHistory(lastRawResponse, cfg.historyLabel);
+        if (useStream) updateRawPreview(cfg.doneTitle);
+
+        try {
+            cfg.apply(cfg.parse(raw));
+        } catch (parseError) {
+            showRawResponseDialog(lastRawResponse || raw || "", {
+                title: cfg.failTitle,
+                editable: true,
+                parseButtonLabel: cfg.reparseLabel,
+                parseHint: "你可以直接修正 JSON 后点击按钮重新解析，无需重新请求模型。",
+                parseAction: async (editedText) => {
+                    cfg.apply(cfg.parse(editedText));
+                    if (window.toastr) toastr.success(cfg.successMessage(outlineItems.length, true), cfg.label);
+                }
+            });
+            throw parseError;
+        }
+
+        if (window.toastr) toastr.success(cfg.successMessage(outlineItems.length, false), cfg.label);
+    }, { timeoutSec: cfg.timeoutSec });
+}
+
 async function generateAllScenes() {
     if (!ensureEditingPlanContext()) return;
     if (!Array.isArray(outlineItems) || outlineItems.length === 0) {
@@ -2999,58 +3480,105 @@ async function generateAllScenes() {
     });
 
     try {
-        const ctx = await getContextData();
-        const opening = await ensureOpeningTextForGeneration();
         const storyInput = ($("#t-outline-story-input").val() || "").trim();
-        const useStream = isStreamingEnabled();
-        startResponseTimer(true);
-        if (useStream) {
-            lastRawResponse = "";
-            ensureRawDialogForStreaming("流式生成细纲中...");
-        }
-        const messages = buildAllScenesPrompt(ctx, storyInput, opening);
-        const raw = await sendOutlineRequest(messages, {
-            stream: useStream,
-            temperature: 0.8,
-            maxTokens: 60000,
-            onProgress: useStream ? (partial) => {
-                lastRawResponse = partial || "";
-                updateRawPreview("流式生成细纲中...");
-            } : undefined
+        const params = getOutlineGenParams().scenes;
+        await runGenerationFlow({
+            label: "故事细纲",
+            historyLabel: "细纲生成",
+            streamingTitle: "流式生成细纲中...",
+            doneTitle: "细纲生成完成",
+            failTitle: "细纲解析失败 - 可手动修复",
+            temperature: params.temperature,
+            maxTokens: params.maxTokens,
+            timeoutSec: params.timeoutSec,
+            buildMessages: (ctx, opening) => buildAllScenesPrompt(ctx, storyInput, opening),
+            parse: parseAllScenesResponse,
+            apply: applyParsedScenes,
+            reparseLabel: "重新解析细纲并应用",
+            successMessage: (count, fixed) => fixed
+                ? `修复成功，已应用 ${count} 条情节细纲`
+                : `已一次性生成 ${count} 条情节的细纲`
         });
-
-        lastRawResponse = raw || lastRawResponse || "";
-        pushRawResponseHistory(lastRawResponse, "细纲生成");
-        if (useStream) updateRawPreview("细纲生成完成");
-
-        try {
-            const parsed = parseAllScenesResponse(raw);
-            applyParsedScenes(parsed);
-        } catch (parseError) {
-            showRawResponseDialog(lastRawResponse || raw || "", {
-                title: "细纲解析失败 - 可手动修复",
-                editable: true,
-                parseButtonLabel: "重新解析细纲并应用",
-                parseHint: "你可以直接修正 JSON 后点击按钮重新解析，无需重新请求模型。",
-                parseAction: async (editedText) => {
-                    const reparsed = parseAllScenesResponse(editedText);
-                    applyParsedScenes(reparsed);
-                    if (window.toastr) toastr.success(`修复成功，已应用 ${outlineItems.length} 条情节细纲`, "故事细纲");
-                }
-            });
-            throw parseError;
-        }
-
-        if (window.toastr) toastr.success(`已一次性生成 ${outlineItems.length} 条情节的细纲`, "故事细纲");
     } catch (e) {
-        console.error("Titania: 批量生成细纲失败", e);
-        if (isStreamingEnabled()) updateRawPreview("细纲生成失败");
-        if (window.toastr) toastr.error(e.message || "批量细纲生成失败", "故事细纲");
+        reportGenerationError(e, "故事细纲", "批量细纲生成失败");
     } finally {
         stopResponseTimer();
         $buttons.each(function (idx) {
             $(this).prop("disabled", false).html(originTexts[idx] || '<i class="fa-solid fa-wand-magic-sparkles"></i>');
         });
+    }
+}
+
+// 渐进续写：结合大纲(终点)+最近正文，生成"接下来 1~2 个场景"，并推进进度指针。
+async function generateNextRolling() {
+    if (!ensureEditingPlanContext()) return;
+    if (!Array.isArray(outlineItems) || outlineItems.length === 0) {
+        if (window.toastr) toastr.warning("请先生成或填写总纲，再渐进续写", "渐进续写");
+        return;
+    }
+
+    const plan = getPlans().find(p => p.id === editingPlanId);
+    const progress = getPlanProgress(plan);
+    if (progress.reachedEnding) {
+        if (window.toastr) toastr.info("已抵达结局。如需重写，可在进度条手动回退。", "渐进续写");
+        return;
+    }
+
+    const $btn = $("#t-outline-generate-next");
+    const originHtml = $btn.html();
+    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 续写中...');
+
+    const total = outlineItems.length;
+    const currentItem = outlineItems[progress.itemIndex];
+    const progressHint = `当前推进到第 ${progress.itemIndex + 1}/${total} 条大纲（${currentItem?.title || "未命名"}）。距结局还有 ${total - 1 - progress.itemIndex} 条。请只推进一小步。`;
+
+    let outcome = { appended: 0, reachedEnding: false, note: "" };
+
+    try {
+        const storyInput = ($("#t-outline-story-input").val() || "").trim();
+        const params = getOutlineGenParams().scenes;
+        await runGenerationFlow({
+            label: "渐进续写",
+            historyLabel: "渐进续写",
+            streamingTitle: "流式渐进续写中...",
+            doneTitle: "渐进续写完成",
+            failTitle: "渐进续写解析失败 - 可手动修复",
+            temperature: params.temperature,
+            maxTokens: params.maxTokens,
+            timeoutSec: params.timeoutSec,
+            buildMessages: (ctx, opening) => buildRollingPrompt(ctx, storyInput, opening, progressHint),
+            parse: parseRollingResponse,
+            apply: (parsed) => {
+                const res = appendRollingScenes(parsed, progress.itemIndex);
+                // 进度推进：优先用模型回报的 current_item_index（1-based → 0-based），
+                // 缺失则退回"追加落到的最后一条"，再退回原指针。
+                let nextIdx = progress.itemIndex;
+                const reported = parsed?.progress?.currentItemIndex;
+                if (Number.isFinite(reported)) {
+                    nextIdx = Math.min(Math.max(reported - 1, 0), total - 1);
+                } else if (res.lastTouchedIdx >= 0) {
+                    nextIdx = res.lastTouchedIdx;
+                }
+                const reachedEnding = parsed?.progress?.reachedEnding === true
+                    || (nextIdx >= total - 1 && parsed?.progress?.reachedEnding === true);
+                setPlanProgress(editingPlanId, { itemIndex: nextIdx, reachedEnding });
+                if (editingPlanId) setEditingPlan(getPlans().find(p => p.id === editingPlanId));
+                outcome = { appended: res.appended, reachedEnding, note: parsed?.progress?.note || "" };
+                refreshRollingProgressUI();
+            },
+            reparseLabel: "重新解析并追加",
+            successMessage: () => {
+                const tail = outcome.reachedEnding ? "，已抵达结局" : "";
+                const note = outcome.note ? `（${outcome.note}）` : "";
+                return `已续写 ${outcome.appended} 个场景${tail}${note}`;
+            }
+        });
+    } catch (e) {
+        reportGenerationError(e, "渐进续写", "渐进续写失败");
+    } finally {
+        stopResponseTimer();
+        $btn.prop("disabled", false).html(originHtml || '<i class="fa-solid fa-forward-step"></i> 生成下一段');
+        refreshRollingProgressUI();
     }
 }
 
@@ -3063,51 +3591,26 @@ async function generateOutline() {
     $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 生成中...');
 
     try {
-        const ctx = await getContextData();
-        const opening = await ensureOpeningTextForGeneration();
-        const useStream = isStreamingEnabled();
-        startResponseTimer(true);
-        if (useStream) {
-            lastRawResponse = "";
-            ensureRawDialogForStreaming("流式生成大纲中...");
-        }
-        const messages = buildPrompt(ctx, storyInput, opening);
-        const raw = await sendOutlineRequest(messages, {
-            stream: useStream,
-            temperature: 0.4,
-            maxTokens: 20000,
-            onProgress: useStream ? (partial) => {
-                lastRawResponse = partial || "";
-                updateRawPreview("流式生成大纲中...");
-            } : undefined
+        const params = getOutlineGenParams().outline;
+        await runGenerationFlow({
+            label: "故事大纲",
+            historyLabel: "大纲生成",
+            streamingTitle: "流式生成大纲中...",
+            doneTitle: "大纲生成完成",
+            failTitle: "大纲解析失败 - 可手动修复",
+            temperature: params.temperature,
+            maxTokens: params.maxTokens,
+            timeoutSec: params.timeoutSec,
+            buildMessages: (ctx, opening) => buildPrompt(ctx, storyInput, opening),
+            parse: parseOutlineResponse,
+            apply: (parsed) => applyParsedOutline(parsed, storyInput, insertMode),
+            reparseLabel: "重新解析大纲并应用",
+            successMessage: (count, fixed) => fixed
+                ? `修复成功，已生成 ${count} 条大纲`
+                : `已生成 ${count} 条大纲`
         });
-        lastRawResponse = raw || lastRawResponse || "";
-        pushRawResponseHistory(lastRawResponse, "大纲生成");
-        if (useStream) updateRawPreview("大纲生成完成");
-
-        try {
-            const parsed = parseOutlineResponse(raw);
-            applyParsedOutline(parsed, storyInput, insertMode);
-        } catch (parseError) {
-            showRawResponseDialog(lastRawResponse || raw || "", {
-                title: "大纲解析失败 - 可手动修复",
-                editable: true,
-                parseButtonLabel: "重新解析大纲并应用",
-                parseHint: "你可以直接修正 JSON 后点击按钮重新解析，无需重新请求模型。",
-                parseAction: async (editedText) => {
-                    const reparsed = parseOutlineResponse(editedText);
-                    applyParsedOutline(reparsed, storyInput, insertMode);
-                    if (window.toastr) toastr.success(`修复成功，已生成 ${outlineItems.length} 条大纲`, "故事大纲");
-                }
-            });
-            throw parseError;
-        }
-
-        if (window.toastr) toastr.success(`已生成 ${outlineItems.length} 条大纲`, "故事大纲");
     } catch (e) {
-        console.error("Titania: 设计大纲失败", e);
-        if (isStreamingEnabled()) updateRawPreview("大纲生成失败");
-        if (window.toastr) toastr.error(e.message || "生成失败", "故事大纲");
+        reportGenerationError(e, "故事大纲", "生成失败");
     } finally {
         stopResponseTimer();
         $btn.prop("disabled", false).html('<i class="fa-solid fa-wand-magic-sparkles"></i> 大纲生成');
@@ -3312,6 +3815,32 @@ function bindEvents() {
 
     $overlay.on("click", "#t-outline-generate-all-scenes", async () => {
         await generateAllScenes();
+    });
+
+    $overlay.on("click", "#t-outline-generate-next", async () => {
+        await generateNextRolling();
+    });
+
+    // 手动指定当前推进到的大纲条目（发送即推进之外的兜底纠偏）。
+    $overlay.on("change", "#t-outline-rolling-cursor-select", function () {
+        if (!editingPlanId) return;
+        const idx = Number($(this).val());
+        if (!Number.isFinite(idx)) return;
+        const plan = getPlans().find(p => p.id === editingPlanId);
+        const prev = getPlanProgress(plan);
+        // 手动往回拨时清掉"已抵达结局"，允许继续续写。
+        const reachedEnding = prev.reachedEnding && idx >= outlineItems.length - 1;
+        setPlanProgress(editingPlanId, { itemIndex: idx, reachedEnding });
+        if (editingPlanId) setEditingPlan(getPlans().find(p => p.id === editingPlanId));
+        refreshRollingProgressUI();
+    });
+
+    $overlay.on("click", "#t-outline-rolling-reset", () => {
+        if (!editingPlanId) return;
+        setPlanProgress(editingPlanId, { itemIndex: 0, reachedEnding: false });
+        setEditingPlan(getPlans().find(p => p.id === editingPlanId));
+        refreshRollingProgressUI();
+        if (window.toastr) toastr.info("已回到开头，可重新渐进续写", "渐进续写");
     });
 
     $overlay.on("click", "#t-outline-add-fab", () => {
@@ -3579,6 +4108,21 @@ export function openStoryOutlineWindow() {
                                 <i class="fa-solid fa-clapperboard"></i> 细纲生成
                             </button>
                         </div>
+                    </div>
+                    <div id="t-outline-rolling" class="t-outline-rolling" style="display:none;">
+                        <div class="t-outline-rolling-head">
+                            <span class="t-outline-rolling-title"><i class="fa-solid fa-forward-step"></i> 渐进续写</span>
+                            <span id="t-outline-rolling-status" class="t-outline-rolling-status"></span>
+                        </div>
+                        <div class="t-outline-rolling-bar"><div id="t-outline-rolling-bar-fill" class="t-outline-rolling-bar-fill"></div></div>
+                        <div class="t-outline-rolling-controls">
+                            <button id="t-outline-generate-next" class="t-btn t-btn-primary t-btn-xs"><i class="fa-solid fa-forward-step"></i> 生成下一段</button>
+                            <label class="t-outline-rolling-cursor">推进到
+                                <select id="t-outline-rolling-cursor-select" class="t-outline-select"></select>
+                            </label>
+                            <button id="t-outline-rolling-reset" class="t-btn t-btn-xs" title="回到开头重新推进"><i class="fa-solid fa-rotate-left"></i></button>
+                        </div>
+                        <div class="t-outline-rolling-hint">大纲当路标，结合最近正文一步步写到结局。发送场景会自动推进，也可手动指定当前进度。</div>
                     </div>
                     <select id="t-outline-insert-mode" class="t-outline-select" style="display:none;">
                         <option value="overwrite" ${draft.insertMode === "overwrite" ? "selected" : ""}>覆盖输入框</option>
