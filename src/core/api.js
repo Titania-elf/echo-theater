@@ -57,16 +57,14 @@ import {
     sendChatRequest,
     validateConnection
 } from "./connection.js";
+import { sendChatCompletion } from "./relayClient.js";
 import { recordScriptGenerated } from "./scriptData.js";
 import { getPromptScheme, buildPromptMessageDetails, DEFAULT_CONTENT_PROMPT, DEFAULT_VISUAL_PROMPT } from "./promptManager.js";
 import { scheduleContinuationPersistence } from "./continuationStore.js";
 
 // 导入 ST 的 ChatCompletionService 和配置（仅用于特殊场景）
 import { ChatCompletionService } from "../../../custom-request.js";
-import { oai_settings, getChatCompletionModel, tryParseStreamingError } from "../../../openai.js";
-
-// 导入 ST 的 SSE 流处理器（用于正确处理长响应）
-import EventSourceStream from "../../../sse-stream.js";
+import { oai_settings, getChatCompletionModel } from "../../../openai.js";
 
 // 导入 ST 的宏处理器
 import { evaluateMacros } from "../../../macros.js";
@@ -1638,6 +1636,7 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
         profile: '',
         model: '',
         endpoint: '',
+        transport: 'st_proxy',
         input_stats: { sys_len: 0, user_len: 0 },
         network: { status: 0, statusText: '', contentType: '', latency: 0 },
         stream_stats: { chunks: 0, ttft: 0 },
@@ -2143,162 +2142,37 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
             diagnostics.network.status = 200; // ST 后端已处理错误
 
         } else {
-            // 使用自定义配置直接发送请求
-            let endpoint = finalUrl.trim().replace(/\/+$/, "");
-            if (!endpoint) throw new Error("ERR_CONFIG: API URL 未设置");
-            if (!endpoint.endsWith("/chat/completions")) {
-                if (endpoint.endsWith("/v1")) endpoint += "/chat/completions";
-                else endpoint += "/v1/chat/completions";
-            }
-            diagnostics.endpoint = endpoint;
+            // 使用自定义配置：经 ST 后端代理发送（见 src/core/relayClient.js）。
+            // 诊断（transport/endpoint/network/stream_stats/raw_response_snippet）由 relayClient 写入。
+            if (!finalUrl || !finalUrl.trim()) throw new Error("ERR_CONFIG: API URL 未设置");
 
-            const requestBody = {
+            rawContent = await sendChatCompletion({
+                url: finalUrl,
+                key: finalKey,
                 model: finalModel,
                 messages,
                 stream: useStream,
-                max_tokens: cfg.max_tokens || 4096
-            };
+                maxTokens: cfg.max_tokens || 4096,
+                // 保持原有请求形状：自定义分支此前不发送 temperature
+                signal,
+                diagnostics,
+                onProgress: useStream ? ((accumulated) => {
+                    rawContent = accumulated;
 
-            if (useStream) {
-                const attemptStartTime = Date.now();
-                const res = await fetch(endpoint, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${finalKey}` },
-                    body: JSON.stringify(requestBody),
-                    signal: signal
-                });
-
-                diagnostics.network.status = res.status;
-                diagnostics.network.latency = Date.now() - startTime;
-
-                if (!res.ok) {
-                    const errText = await res.text().catch(() => "");
-                    diagnostics.raw_response_snippet = errText.substring(0, 500);
-
-                    // 参考 ST：尝试解析错误响应中的结构化错误
-                    try {
-                        tryParseStreamingError(res, errText, { quiet: true });
-                    } catch (parsedErr) {
-                        // tryParseStreamingError 可能会抛出更详细的错误
-                        throw parsedErr;
+                    // 实时流式渲染到 UI（如果主窗口存在）
+                    // scheduleStreamRender 内部会检查是否应该渲染
+                    if ($("#t-output-content").length > 0 || $("#t-main-view").length > 0) {
+                        // 对流式内容进行基础清洗后渲染
+                        const streamCleanContent = sanitizeAIOutputLite(rawContent);
+                        scheduleStreamRender(streamCleanContent, script.name);
                     }
+                }) : null,
+            });
 
-                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                }
-
-                // 流式读取 - 使用 ST 的 EventSourceStream 正确处理 SSE
-                diagnostics.phase = 'streaming';
-                const eventStream = new EventSourceStream();
-                res.body.pipeThrough(eventStream);
-                const reader = eventStream.readable.getReader();
-                let chunkCount = 0;
-                let parseFailCount = 0; // 新增：记录解析失败次数
-
-                while (true) {
-                    // 检查是否被中断
-                    if (signal.aborted) {
-                        await reader.cancel();
-                        throw new DOMException('Generation aborted', 'AbortError');
-                    }
-
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    // value 是 MessageEvent，data 属性包含实际数据
-                    const data = value.data;
-                    if (data === "[DONE]") break;
-
-                    // 参考 ST：尝试解析流式错误（如配额错误、审核错误等）
-                    try {
-                        tryParseStreamingError(res, data, { quiet: true });
-                    } catch (streamParseErr) {
-                        // 如果是结构化错误响应，抛出
-                        throw streamParseErr;
-                    }
-
-                    if (chunkCount === 0) {
-                        diagnostics.stream_stats.ttft = Date.now() - attemptStartTime;
-                        TitaniaLogger.info(`流式响应开始 (TTFT: ${diagnostics.stream_stats.ttft}ms)`);
-                    }
-                    chunkCount++;
-                    diagnostics.stream_stats.chunks = chunkCount;
-
-                    try {
-                        const json = JSON.parse(data);
-                        const chunk = json.choices?.[0]?.delta?.content || "";
-                        if (chunk) {
-                            rawContent += chunk;
-
-                            // 实时流式渲染到 UI（如果主窗口存在）
-                            // scheduleStreamRender 内部会检查是否应该渲染
-                            if ($("#t-output-content").length > 0 || $("#t-main-view").length > 0) {
-                                // 对流式内容进行基础清洗后渲染
-                                const streamCleanContent = sanitizeAIOutputLite(rawContent);
-                                scheduleStreamRender(streamCleanContent, script.name);
-                            }
-                        }
-                    } catch (parseErr) {
-                        // 记录解析失败，而不是完全静默
-                        parseFailCount++;
-                        if (parseFailCount <= 3) {
-                            TitaniaLogger.warn(`流式 chunk 解析失败 (#${parseFailCount})`, {
-                                data: data.substring(0, 100),
-                                error: parseErr.message
-                            });
-                        }
-                    }
-                }
-
-                // 改进的空流检测：区分不同情况
-                if (chunkCount === 0) {
-                    throw new Error("ERR_STREAM_NO_CHUNKS: 服务器未返回任何数据块");
-                }
-
-                // 新增：检查是否所有 chunk 都解析失败
-                if (parseFailCount > 0 && rawContent.length === 0) {
-                    throw new Error(`ERR_STREAM_PARSE_FAILED: 接收到 ${chunkCount} 个数据块，但全部解析失败`);
-                }
-
-                TitaniaLogger.info(`流式传输完成`, {
-                    chunks: chunkCount,
-                    contentLength: rawContent.length,
-                    parseFailures: parseFailCount
-                });
-
-            } else {
-                // 非流式请求
-                const res = await fetch(endpoint, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${finalKey}` },
-                    body: JSON.stringify(requestBody),
-                    signal: signal
-                });
-
-                diagnostics.network.status = res.status;
-                diagnostics.network.latency = Date.now() - startTime;
-                diagnostics.phase = 'parsing_json';
-
-                if (!res.ok) {
-                    const errText = await res.text().catch(() => "");
-                    diagnostics.raw_response_snippet = errText.substring(0, 500);
-                    throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
-                }
-
-                const jsonText = await res.text();
-                try {
-                    const json = JSON.parse(jsonText);
-                    if (json?.error) {
-                        throw new Error(json.error?.message || json.error || "ERR_API_RESPONSE");
-                    }
-                    if (!Array.isArray(json?.choices)) {
-                        throw new Error("ERR_INVALID_API_RESPONSE");
-                    }
-                    rawContent = json.choices?.[0]?.message?.content || "";
-                } catch (jsonErr) {
-                    if (["ERR_API_RESPONSE", "ERR_INVALID_API_RESPONSE"].some(code => String(jsonErr?.message || "").includes(code))) throw jsonErr;
-                    throw new Error("Invalid JSON");
-                }
-            }
+            TitaniaLogger.info(`流式传输完成`, {
+                chunks: diagnostics.stream_stats?.chunks || 0,
+                contentLength: rawContent.length
+            });
         }
 
         // --- 4. 内容验证与清洗 ---
@@ -3013,21 +2887,20 @@ Generate ONLY the continuation (no repetition):`;
                 rawContent = result?.content || "";
             }
         } else {
-            // 使用自定义配置直接发送请求
-            let endpoint = finalUrl.trim().replace(/\/+$/, "");
-            if (!endpoint.endsWith("/chat/completions")) {
-                if (endpoint.endsWith("/v1")) endpoint += "/chat/completions";
-                else endpoint += "/v1/chat/completions";
-            }
+            // 使用自定义配置：经 ST 后端代理发送（见 src/core/relayClient.js）
+            const continuationMessages = [
+                { role: "system", content: continuationSys },
+                { role: "user", content: continuationUser }
+            ];
+            const continuationMaxTokens = cfg.max_tokens || 4096;
 
-            const requestBody = {
-                model: finalModel,
-                messages: [
-                    { role: "system", content: continuationSys },
-                    { role: "user", content: continuationUser }
-                ],
-                stream: useStream,
-                max_tokens: cfg.max_tokens || 4096
+            // 统一错误包装：保留 relayClient 挂的 .status/.body，供 5xx 判定使用
+            const wrapContinuationError = (err) => {
+                if (err?.name === 'AbortError') return err;
+                const wrapped = new Error(`Continuation ${err?.message || err}`);
+                if (err?.status !== undefined) wrapped.status = err.status;
+                if (err?.body !== undefined) wrapped.body = err.body;
+                return wrapped;
             };
 
             if (useStream) {
@@ -3047,63 +2920,15 @@ Generate ONLY the continuation (no repetition):`;
                             }
                         }
 
-                        const res = await fetch(endpoint, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${finalKey}` },
-                            body: JSON.stringify(requestBody),
+                        rawContent = await sendChatCompletion({
+                            url: finalUrl,
+                            key: finalKey,
+                            model: finalModel,
+                            messages: continuationMessages,
+                            stream: true,
+                            maxTokens: continuationMaxTokens,
                             signal: signal
                         });
-
-                        if (!res.ok) {
-                            let errorDetail = "";
-                            try {
-                                const errorText = (await res.text() || "").trim();
-                                if (errorText) {
-                                    errorDetail = ` | ${errorText.slice(0, 180)}`;
-                                }
-                            } catch (e) {
-                                // 忽略错误体解析失败
-                            }
-
-                            if (res.status >= 500) {
-                                shouldFallbackToNonStream = true;
-                            }
-
-                            const statusPart = res.statusText ? `${res.status}: ${res.statusText}` : `${res.status}`;
-                            throw new Error(`Continuation HTTP Error ${statusPart}${errorDetail}`);
-                        }
-
-                        // 使用 ST 的 EventSourceStream 正确处理 SSE
-                        const eventStream = new EventSourceStream();
-                        res.body.pipeThrough(eventStream);
-                        const reader = eventStream.readable.getReader();
-                        let chunkCount = 0;
-
-                        while (true) {
-                            if (signal?.aborted) {
-                                await reader.cancel();
-                                throw new DOMException('Continuation aborted', 'AbortError');
-                            }
-
-                            const { done, value } = await reader.read();
-                            if (done) break;
-
-                            // value 是 MessageEvent，data 属性包含实际数据
-                            const data = value.data;
-                            if (data === "[DONE]") break;
-
-                            chunkCount++;
-
-                            try {
-                                const json = JSON.parse(data);
-                                const chunk = json.choices?.[0]?.delta?.content || "";
-                                if (chunk) rawContent += chunk;
-                            } catch (e) { /* 忽略单个事件解析错误 */ }
-                        }
-
-                        if (chunkCount === 0) {
-                            throw new Error("Continuation Stream Empty");
-                        }
 
                         streamSuccess = true;
 
@@ -3118,6 +2943,11 @@ Generate ONLY the continuation (no repetition):`;
                             error: streamErr.message,
                             attempt: attempt + 1
                         });
+
+                        // 代理流式路径透传上游状态码（relayClient 挂在 err.status 上）
+                        if (Number(streamErr?.status) >= 500) {
+                            shouldFallbackToNonStream = true;
+                        }
 
                         if (attempt < maxRetries) {
                             rawContent = "";
@@ -3137,38 +2967,19 @@ Generate ONLY the continuation (no repetition):`;
                         toastr.info("🔁 续写服务繁忙，尝试非流式模式...", "Titania Echo");
                     }
 
-                    const fallbackBody = { ...requestBody, stream: false };
-                    const fallbackRes = await fetch(endpoint, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${finalKey}` },
-                        body: JSON.stringify(fallbackBody),
-                        signal: signal
-                    });
-
-                    if (!fallbackRes.ok) {
-                        let fallbackDetail = "";
-                        try {
-                            const fallbackText = (await fallbackRes.text() || "").trim();
-                            if (fallbackText) {
-                                fallbackDetail = ` | ${fallbackText.slice(0, 180)}`;
-                            }
-                        } catch (e) {
-                            // 忽略错误体解析失败
-                        }
-
-                        const fallbackStatus = fallbackRes.statusText
-                            ? `${fallbackRes.status}: ${fallbackRes.statusText}`
-                            : `${fallbackRes.status}`;
-                        throw new Error(`Continuation Fallback HTTP Error ${fallbackStatus}${fallbackDetail}`);
-                    }
-
-                    const fallbackJsonText = await fallbackRes.text();
                     try {
-                        const fallbackJson = JSON.parse(fallbackJsonText);
-                        rawContent = fallbackJson.choices?.[0]?.message?.content || "";
+                        rawContent = await sendChatCompletion({
+                            url: finalUrl,
+                            key: finalKey,
+                            model: finalModel,
+                            messages: continuationMessages,
+                            stream: false,
+                            maxTokens: continuationMaxTokens,
+                            signal: signal
+                        });
                         streamSuccess = rawContent.trim().length > 0;
-                    } catch (jsonErr) {
-                        throw new Error("Continuation Fallback Invalid JSON");
+                    } catch (fallbackErr) {
+                        throw wrapContinuationError(fallbackErr);
                     }
                 }
 
@@ -3177,23 +2988,18 @@ Generate ONLY the continuation (no repetition):`;
                 }
 
             } else {
-                const res = await fetch(endpoint, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${finalKey}` },
-                    body: JSON.stringify(requestBody),
-                    signal: signal
-                });
-
-                if (!res.ok) {
-                    throw new Error(`Continuation HTTP Error ${res.status}: ${res.statusText}`);
-                }
-
-                const jsonText = await res.text();
                 try {
-                    const json = JSON.parse(jsonText);
-                    rawContent = json.choices?.[0]?.message?.content || "";
-                } catch (jsonErr) {
-                    throw new Error("Continuation Invalid JSON");
+                    rawContent = await sendChatCompletion({
+                        url: finalUrl,
+                        key: finalKey,
+                        model: finalModel,
+                        messages: continuationMessages,
+                        stream: false,
+                        maxTokens: continuationMaxTokens,
+                        signal: signal
+                    });
+                } catch (e) {
+                    throw wrapContinuationError(e);
                 }
             }
         }

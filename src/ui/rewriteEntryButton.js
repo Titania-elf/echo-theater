@@ -3,7 +3,8 @@
 import { getExtData, saveExtData } from "../utils/storage.js";
 import { saveChatConditional, reloadCurrentChat, eventSource, event_types } from "../../../../script.js";
 import { parseTagWhitelistInput, extractTextByWhitelist } from "../utils/chatTagWhitelist.js";
-import { normalizeApiBaseUrl, normalizeRewriteCustomProfiles } from "../core/apiProfileRegistry.js";
+import { normalizeRewriteCustomProfiles } from "../core/apiProfileRegistry.js";
+import { sendChatCompletion } from "../core/relayClient.js";
 import {
     createApiConnectionEditor,
     mapConnectionProfilesToCustomProfiles,
@@ -106,14 +107,6 @@ function escapeHtml(text) {
         .replace(/>/g, "&gt;")
         .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#39;");
-}
-
-function normalizeChatEndpoint(inputUrl) {
-    const base = normalizeApiBaseUrl(inputUrl);
-    if (!base) return "";
-    if (base.endsWith("/chat/completions")) return base;
-    if (base.endsWith("/v1")) return `${base}/chat/completions`;
-    return `${base}/v1/chat/completions`;
 }
 
 function normalizeToken(s) {
@@ -1311,127 +1304,36 @@ function shouldFallbackWithoutSchema(status, bodyText) {
 }
 
 async function requestRewriteWithOptions(apiUrl, apiKey, model, messages, maxTokens, options = {}) {
-    const endpoint = normalizeChatEndpoint(apiUrl);
-    if (!endpoint) throw new Error("API 地址无效");
-
-    const headers = { "Content-Type": "application/json" };
-    if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
-
+    // 经 ST 后端代理发送（见 src/core/relayClient.js）：responseFormat 会被翻译成
+    // ST 后端认的顶层 json_schema 字段转发。
     const temperature = Number.isFinite(options.temperature) ? options.temperature : REWRITE_TEMPERATURE;
     const stream = options.stream === true;
     const signal = options.signal;
     const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
-    const body = {
+
+    const baseCall = (responseFormat) => sendChatCompletion({
+        url: apiUrl,
+        key: apiKey,
         model,
         messages,
         stream,
+        maxTokens,
         temperature,
-        max_tokens: maxTokens,
-        response_format: buildRewriteJsonSchema()
-    };
-
-    let res = await fetch(endpoint, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-        signal
+        signal,
+        responseFormat,
+        onProgress: stream ? ((all) => onProgress && onProgress(all, all)) : null,
     });
 
-    if (!res.ok) {
-        const firstErrText = await res.text().catch(() => "");
-        if (shouldFallbackWithoutSchema(res.status, firstErrText)) {
-            const fallbackBody = {
-                model,
-                messages,
-                stream,
-                temperature,
-                max_tokens: maxTokens
-            };
-
-            res = await fetch(endpoint, {
-                method: "POST",
-                headers,
-                body: JSON.stringify(fallbackBody),
-                signal
-            });
-
-            if (!res.ok) {
-                const errText = await res.text().catch(() => "");
-                throw new Error(`HTTP ${res.status}: ${errText.slice(0, 200)}`);
-            }
-
-            if (stream) {
-                return await consumeStreamResponse(res, onProgress);
-            }
-
-            const json = await res.json();
-            const content = json?.choices?.[0]?.message?.content || "";
-            return String(content || "");
+    try {
+        return await baseCall(buildRewriteJsonSchema());
+    } catch (err) {
+        // 部分端点不接受 response_format/json_schema（400/422）：去掉 schema 重试一次。
+        // relayClient 在 HTTP 错误对象上挂 .status/.body，这里照旧判断。
+        if (shouldFallbackWithoutSchema(Number(err?.status), String(err?.body || err?.message || ""))) {
+            return await baseCall(null);
         }
-
-        throw new Error(`HTTP ${res.status}: ${firstErrText.slice(0, 200)}`);
+        throw err;
     }
-
-    if (stream) {
-        return await consumeStreamResponse(res, onProgress);
-    }
-
-    const json = await res.json();
-    const content = json?.choices?.[0]?.message?.content || "";
-    return String(content || "");
-}
-
-async function consumeStreamResponse(res, onProgress) {
-    if (!res.body) throw new Error("Stream Empty Body: 响应体为空");
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let aggregated = "";
-
-    const processSseLine = (rawLine) => {
-        const line = String(rawLine || "").trim();
-        if (!line || !line.startsWith("data:")) return;
-
-        const data = line.slice(5).trim();
-        if (!data || data === "[DONE]") return;
-
-        try {
-            const json = JSON.parse(data);
-            const chunk = json?.choices?.[0]?.delta?.content
-                || json?.choices?.[0]?.message?.content
-                || "";
-            if (!chunk) return;
-            aggregated += chunk;
-            if (onProgress) onProgress(chunk, aggregated);
-        } catch {
-            // ignore malformed stream chunk
-        }
-    };
-
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        while (true) {
-            const idx = buffer.indexOf("\n");
-            if (idx < 0) break;
-            const line = buffer.slice(0, idx);
-            buffer = buffer.slice(idx + 1);
-            processSseLine(line);
-        }
-    }
-
-    // 某些服务端最后一个 SSE 包不会以换行结束，需手动处理残留缓冲区
-    if (buffer) {
-        const tailLines = buffer.split(/\r?\n/);
-        tailLines.forEach((line) => processSseLine(line));
-    }
-
-    if (!aggregated.trim()) {
-        throw new Error("流式返回为空");
-    }
-    return aggregated;
 }
 
 function normalizeRewriteResponseShape(parsed, payload) {
@@ -1524,7 +1426,7 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
             temperature: REWRITE_TEMPERATURE,
             stream: streamLive,
             signal: abortController.signal,
-            onProgress: (_chunk, all) => {
+            onProgress: (all) => {
                 if (streamLive) {
                     setRawResponse(all);
                 }

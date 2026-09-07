@@ -8,6 +8,7 @@ import { getFeatureConnection } from "./connection.js";
 import { getExtData, saveExtData } from "../utils/storage.js";
 import { oai_settings } from "../../../openai.js";
 import { ChatCompletionService } from "../../../custom-request.js";
+import { sendChatCompletion } from "./relayClient.js";
 import { getRelevantContext, semanticSearch } from "./semanticSearch.js";
 import { getCharacterVectors, getIndexStatus, clearCharacterVectors } from "./vectorStore.js";
 import { getBatchEmbeddings, getEmbeddingConfig } from "./embeddings.js";
@@ -82,38 +83,20 @@ async function sendSummaryRequest(messages, options = {}) {
         const result = await ChatCompletionService.sendRequest(requestData, true, null);
         return result?.content || "";
     } else {
+        // 使用自定义配置：经 ST 后端代理发送（见 src/core/relayClient.js）
         if (!conn.key) {
             throw new Error("API Key 未设置");
         }
 
-        let endpoint = conn.url.trim().replace(/\/+$/, "");
-        if (!endpoint.endsWith("/chat/completions")) {
-            if (endpoint.endsWith("/v1")) endpoint += "/chat/completions";
-            else endpoint += "/v1/chat/completions";
-        }
-
-        const res = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${conn.key}`
-            },
-            body: JSON.stringify({
-                model: model,
-                messages: messages,
-                stream: false,
-                max_tokens: maxTokens,
-                temperature: temperature
-            })
+        return sendChatCompletion({
+            url: conn.url,
+            key: conn.key,
+            model,
+            messages,
+            stream: false,
+            maxTokens,
+            temperature,
         });
-
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(`HTTP Error ${res.status}: ${res.statusText} - ${errText.substring(0, 100)}`);
-        }
-
-        const json = await res.json();
-        return json.choices?.[0]?.message?.content || "";
     }
 }
 

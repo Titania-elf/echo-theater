@@ -405,6 +405,8 @@ async function showProfileConfigDialog(onSave) {
         $("#t-lore-use-vector").prop("checked", settingsDraft.summarizer.use_vector_search !== false);
     };
 
+    // 已知限制：embedding 模型列表/连接测试保持浏览器直连（ST 后端无通用 embeddings
+    // 代理路由），中转站若未开 CORS 会失败——见 src/core/embeddings.js 头部注释。
     const fetchEmbeddingModelListDraft = async (showToast = true) => {
         const $btn = $("#t-lore-embed-fetch-models");
         const $sel = $("#t-lore-embed-model");

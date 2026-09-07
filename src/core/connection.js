@@ -4,9 +4,9 @@
 import { getExtData } from "../utils/storage.js";
 import { TitaniaLogger } from "./logger.js";
 import { ChatCompletionService } from "../../../custom-request.js";
-import { oai_settings, getChatCompletionModel, tryParseStreamingError } from "../../../openai.js";
-import EventSourceStream from "../../../sse-stream.js";
+import { oai_settings, getChatCompletionModel } from "../../../openai.js";
 import { ensureMainApiProfiles, normalizeApiBaseUrl, normalizeRewriteCustomProfiles, getStPresetProfiles } from "./apiProfileRegistry.js";
+import { sendChatCompletion } from "./relayClient.js";
 
 /**
  * 获取当前激活的 API 连接配置
@@ -64,120 +64,7 @@ export function getActiveConnection() {
 }
 
 /**
- * 获取当前配置的默认模型名称
- * @returns {string} 模型名称
- */
-export function getCurrentModel() {
-    const conn = getActiveConnection();
-    return conn.model;
-}
-
-/**
- * 获取可用模型列表
- * @returns {Promise<string[]>} 模型 ID 列表
- */
-export async function getAvailableModels() {
-    const conn = getActiveConnection();
-
-    if (conn.useSTConnection) {
-        // 对于 ST 内部连接，尝试从 DOM 中获取模型列表
-        try {
-            const selectors = [
-                "#model_openai_select",
-                "#model_claude_select",
-                "#model_openrouter_select",
-                "#model_mistral_select",
-                "#api_button_text_generation_webui_model",
-                ".model_select",
-                "select[id*='model']",
-            ];
-
-            let models = [];
-
-            for (const sel of selectors) {
-                const $sel = $(sel);
-                if ($sel.length > 0 && $sel.is("select")) {
-                    $sel.find("option").each(function () {
-                        const val = $(this).val();
-                        if (val && val !== "null" && typeof val === 'string' && val.trim() !== "") {
-                            models.push(val);
-                        }
-                    });
-                }
-            }
-
-            if (models.length > 0) {
-                const uniqueModels = [...new Set(models)].sort();
-                // 确保当前选中的模型也在列表中
-                const current = getChatCompletionModel();
-                if (current && !uniqueModels.includes(current)) {
-                    uniqueModels.unshift(current);
-                }
-                return uniqueModels;
-            }
-        } catch (e) {
-            TitaniaLogger.warn("从 ST DOM 获取模型列表失败", e);
-        }
-
-        // 如果都失败了，回退到只返回当前模型
-        const current = getChatCompletionModel();
-        return current ? [current] : ["gpt-3.5-turbo"];
-
-    } else {
-        // 自定义连接：尝试调用 /v1/models
-        if (!conn.url) return [conn.model || "gpt-3.5-turbo"];
-
-        try {
-            let endpoint = conn.url.trim().replace(/\/+$/, "");
-            if (!endpoint.endsWith("/models")) {
-                if (endpoint.endsWith("/v1")) endpoint += "/models";
-                else endpoint += "/v1/models";
-            }
-
-            const res = await fetch(endpoint, {
-                method: "GET",
-                headers: { "Authorization": `Bearer ${conn.key}` }
-            });
-
-            if (!res.ok) return [conn.model || "gpt-3.5-turbo"];
-
-            const json = await res.json();
-            if (Array.isArray(json.data)) {
-                return json.data.map(m => m.id).sort();
-            } else if (Array.isArray(json)) {
-                return json.map(m => m.id || m).sort();
-            }
-
-            return [conn.model || "gpt-3.5-turbo"];
-        } catch (e) {
-            TitaniaLogger.warn("获取模型列表失败", e);
-            return [conn.model || "gpt-3.5-turbo"];
-        }
-    }
-}
-
-/**
- * 规范化 API endpoint URL
- * @param {string} url - 原始 URL
- * @param {string} suffix - 需要的后缀 (如 "/chat/completions" 或 "/models")
- * @returns {string} 规范化后的 URL
- */
-export function normalizeEndpoint(url, suffix = "/chat/completions") {
-    if (!url) return "";
-    let endpoint = url.trim().replace(/\/+$/, "");
-
-    if (!endpoint.endsWith(suffix)) {
-        if (endpoint.endsWith("/v1")) {
-            endpoint += suffix;
-        } else {
-            endpoint += "/v1" + suffix;
-        }
-    }
-
-    return endpoint;
-}
-
-/**
+ * 验证当前连接配置是否有效
  * 发送聊天完成请求
  * @param {Array<{role: string, content: string}>} messages - 消息数组
  * @param {object} options - 请求选项
@@ -253,136 +140,27 @@ export async function sendChatRequestWithConnection(conn, messages, options = {}
         }
 
     } else {
-        // 使用自定义配置直接发送请求。
+        // 使用自定义配置：经 ST 后端代理发送（见 src/core/relayClient.js）。
         // 部分本地/自建端点无需 key，调用方可传 allowEmptyKey 放行（故事大纲即如此）。
         if (!conn.key && options.allowEmptyKey !== true) {
             throw new Error("配置缺失：请先去设置填 API Key！");
         }
 
-        const endpoint = normalizeEndpoint(conn.url, "/chat/completions");
-        if (!endpoint) {
+        if (!conn.url || !conn.url.trim()) {
             throw new Error("ERR_CONFIG: API URL 未设置");
         }
 
-        const buildHeaders = () => {
-            const headers = { "Content-Type": "application/json" };
-            if (conn.key) headers.Authorization = `Bearer ${conn.key}`;
-            return headers;
-        };
-
-        const requestBody = {
-            model: model,
-            messages: messages,
+        rawContent = await sendChatCompletion({
+            url: conn.url,
+            key: conn.key,
+            model,
+            messages,
             stream: useStream,
-            max_tokens: maxTokens,
-            temperature: temperature
-        };
-
-        if (useStream) {
-            const fetchOptions = {
-                method: "POST",
-                headers: buildHeaders(),
-                body: JSON.stringify(requestBody)
-            };
-
-            if (signal) {
-                fetchOptions.signal = signal;
-            }
-
-            const res = await fetch(endpoint, fetchOptions);
-
-            if (!res.ok) {
-                const errText = await res.text().catch(() => "");
-                throw new Error(`HTTP Error ${res.status}: ${res.statusText} - ${errText.substring(0, 100)}`);
-            }
-
-            if (!res.body) {
-                throw new Error("Stream Empty Body: 响应体为空");
-            }
-
-            // 使用 ST 的 SSE 解析器，避免手动按换行切分导致粘包/拆包问题
-            const eventStream = new EventSourceStream();
-            res.body.pipeThrough(eventStream);
-            const reader = eventStream.readable.getReader();
-            let chunkCount = 0;
-            let parseFailCount = 0;
-
-            while (true) {
-                if (signal?.aborted) {
-                    await reader.cancel();
-                    throw new DOMException('Request aborted', 'AbortError');
-                }
-
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                // EventSourceStream 返回 MessageEvent
-                const data = value.data;
-                if (data === "[DONE]") break;
-
-                // 尝试解析流式错误（兼容 ST 错误格式）
-                try {
-                    tryParseStreamingError(res, data, { quiet: true });
-                } catch (streamParseErr) {
-                    throw streamParseErr;
-                }
-
-                chunkCount++;
-
-                try {
-                    const json = JSON.parse(data);
-                    const chunk = json.choices?.[0]?.delta?.content || "";
-                    if (chunk) {
-                        rawContent += chunk;
-                        if (onProgress) onProgress(rawContent);
-                    }
-                } catch (e) {
-                    parseFailCount++;
-                    if (parseFailCount <= 3) {
-                        TitaniaLogger.warn(`流式 chunk 解析失败 (#${parseFailCount})`, {
-                            data: data.substring(0, 100),
-                            error: e.message
-                        });
-                    }
-                }
-            }
-
-            if (chunkCount === 0) {
-                throw new Error("Stream Empty: 未接收到任何数据");
-            }
-
-            if (parseFailCount > 0 && rawContent.length === 0) {
-                throw new Error(`Stream Parse Failed: 接收到 ${chunkCount} 个数据块，但全部解析失败`);
-            }
-
-        } else {
-            // 非流式请求
-            const fetchOptions = {
-                method: "POST",
-                headers: buildHeaders(),
-                body: JSON.stringify(requestBody)
-            };
-
-            if (signal) {
-                fetchOptions.signal = signal;
-            }
-
-            const res = await fetch(endpoint, fetchOptions);
-
-            if (!res.ok) {
-                const errText = await res.text().catch(() => "");
-                throw new Error(`HTTP Error ${res.status}: ${res.statusText} - ${errText.substring(0, 100)}`);
-            }
-
-            const jsonText = await res.text();
-            try {
-                const json = JSON.parse(jsonText);
-                rawContent = json.choices?.[0]?.message?.content || "";
-                if (onProgress) onProgress(rawContent);
-            } catch (jsonErr) {
-                throw new Error("Invalid JSON response");
-            }
-        }
+            maxTokens,
+            temperature,
+            signal,
+            onProgress,
+        });
     }
 
     return rawContent;
@@ -572,94 +350,3 @@ export function validateFeatureConnection(featureKey) {
     return { configured: true, valid: true };
 }
 
-/**
- * 根据 Profile ID 获取可用模型列表
- * @param {string} profileId - 方案 ID
- * @returns {Promise<string[]>} 模型 ID 列表
- */
-export async function getAvailableModelsForProfile(profileId) {
-    const data = getExtData();
-    const normalized = ensureMainApiProfiles(data.config || {});
-    const profiles = normalized.profiles;
-
-    const profile = profiles.find(p => p.id === profileId);
-    if (!profile) {
-        return ["gpt-3.5-turbo"];
-    }
-
-    if (profile.type === 'internal') {
-        // 对于 ST 内部连接，尝试从 DOM 中获取模型列表
-        try {
-            const selectors = [
-                "#model_openai_select",
-                "#model_claude_select",
-                "#model_openrouter_select",
-                "#model_mistral_select",
-                "#api_button_text_generation_webui_model",
-                ".model_select",
-                "select[id*='model']",
-            ];
-
-            let models = [];
-
-            for (const sel of selectors) {
-                const $sel = $(sel);
-                if ($sel.length > 0 && $sel.is("select")) {
-                    $sel.find("option").each(function () {
-                        const val = $(this).val();
-                        if (val && val !== "null" && typeof val === 'string' && val.trim() !== "") {
-                            models.push(val);
-                        }
-                    });
-                }
-            }
-
-            if (models.length > 0) {
-                const uniqueModels = [...new Set(models)].sort();
-                // 确保当前选中的模型也在列表中
-                const current = getChatCompletionModel();
-                if (current && !uniqueModels.includes(current)) {
-                    uniqueModels.unshift(current);
-                }
-                return uniqueModels;
-            }
-        } catch (e) {
-            TitaniaLogger.warn("从 ST DOM 获取模型列表失败", e);
-        }
-
-        // 如果都失败了，回退到只返回当前模型
-        const current = getChatCompletionModel();
-        return current ? [current] : ["gpt-3.5-turbo"];
-
-    } else {
-        // 自定义连接：尝试调用 /v1/models
-        if (!profile.url) return [profile.model || "gpt-3.5-turbo"];
-
-        try {
-            let endpoint = profile.url.trim().replace(/\/+$/, "");
-            if (!endpoint.endsWith("/models")) {
-                if (endpoint.endsWith("/v1")) endpoint += "/models";
-                else endpoint += "/v1/models";
-            }
-
-            const res = await fetch(endpoint, {
-                method: "GET",
-                headers: { "Authorization": `Bearer ${profile.key || ""}` }
-            });
-
-            if (!res.ok) return [profile.model || "gpt-3.5-turbo"];
-
-            const json = await res.json();
-            if (Array.isArray(json.data)) {
-                return json.data.map(m => m.id).sort();
-            } else if (Array.isArray(json)) {
-                return json.map(m => m.id || m).sort();
-            }
-
-            return [profile.model || "gpt-3.5-turbo"];
-        } catch (e) {
-            TitaniaLogger.warn("获取模型列表失败", e);
-            return [profile.model || "gpt-3.5-turbo"];
-        }
-    }
-}
