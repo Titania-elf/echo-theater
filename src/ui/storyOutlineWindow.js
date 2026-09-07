@@ -2047,9 +2047,11 @@ function isSceneUsed(plan, itemIndex, sceneIndex) {
 }
 
 // 发送某场景即推进进度：指针只前进不后退；发送到最后一条大纲时标记已抵达结局。
-// 只对当前正在编辑的方案生效（进度指针属于编辑态），发送其它方案的场景不影响。
+// 优先对当前正在编辑的方案生效；细纲窗口独立打开（无编辑态）时，对细纲来源方案生效，
+// 保证渐进续写面板跟着「发送场景」动。
 function advanceProgressOnSend(planId, itemIndex) {
-    if (!planId || planId !== editingPlanId) return;
+    if (!planId) return;
+    if (planId !== editingPlanId && planId !== getSceneSourcePlanId()) return;
     const plan = getPlans().find(p => p.id === planId);
     if (!plan) return;
     const total = Array.isArray(plan.items) ? plan.items.length : 0;
@@ -2058,7 +2060,7 @@ function advanceProgressOnSend(planId, itemIndex) {
     const nextIdx = Math.max(prev.itemIndex, Math.min(Number(itemIndex) || 0, total - 1));
     const reachedEnding = prev.reachedEnding || nextIdx >= total - 1;
     setPlanProgress(planId, { itemIndex: nextIdx, reachedEnding });
-    setEditingPlan(getPlans().find(p => p.id === planId));
+    if (editingPlanId === planId) setEditingPlan(getPlans().find(p => p.id === planId));
     refreshRollingProgressUI();
 }
 
@@ -2223,6 +2225,25 @@ export function openSceneHubWindow() {
             </div>
             <div class="t-window-body t-outline-body">
                 <div id="t-scene-hub-list" class="t-scene-hub-list"></div>
+                <div id="t-outline-rolling" class="t-outline-rolling t-outline-rolling--scene-hub" style="display:none;">
+                    <div class="t-outline-rolling-head">
+                        <span class="t-outline-rolling-title"><i class="fa-solid fa-forward-step"></i> 渐进续写</span>
+                        <div class="t-outline-rolling-head-right">
+                            <span id="t-outline-rolling-status" class="t-outline-rolling-status"></span>
+                            <button id="t-outline-rolling-outline-toggle" class="t-btn t-btn-xs" title="展开/收起大纲情节预览"><i class="fa-solid fa-map"></i></button>
+                        </div>
+                    </div>
+                    <div class="t-outline-rolling-bar"><div id="t-outline-rolling-bar-fill" class="t-outline-rolling-bar-fill"></div></div>
+                    <div id="t-outline-rolling-outline-preview" class="t-outline-rolling-outline-preview" style="display:none;"></div>
+                    <div class="t-outline-rolling-controls">
+                        <button id="t-outline-generate-next" class="t-btn t-btn-primary t-btn-xs"><i class="fa-solid fa-forward-step"></i> 生成下一段</button>
+                        <label class="t-outline-rolling-cursor">推进到
+                            <select id="t-outline-rolling-cursor-select" class="t-outline-select"></select>
+                        </label>
+                        <button id="t-outline-rolling-reset" class="t-btn t-btn-xs" title="回到开头重新推进"><i class="fa-solid fa-rotate-left"></i></button>
+                    </div>
+                    <div class="t-outline-rolling-hint">大纲当路标，结合最近正文一步步写到结局。发送场景会自动推进，也可手动指定当前进度。</div>
+                </div>
                 <div class="t-scene-hub-footer">
                     <label class="t-outline-mode" style="margin-right:auto;">
                         写入方式
@@ -2239,6 +2260,7 @@ export function openSceneHubWindow() {
 
     $("body").append(html);
     renderSceneHubWindow();
+    refreshRollingProgressUI();
 
     const $overlay = $("#t-scene-hub-overlay");
     $overlay.on("click", "#t-scene-hub-close", () => {
@@ -2268,6 +2290,87 @@ export function openSceneHubWindow() {
         sceneHubSelectedKey = "";
         $overlay.remove();
         if (window.toastr) toastr.success("已发送场景到输入框", "故事大纲");
+    });
+
+    // 渐进续写面板已随动线迁到本窗口（原在大纲生成主窗口）。
+    // 渐进续写依赖编辑态的大纲条目（outlineItems）；细纲窗口可能独立于主窗口打开，
+    // 这里先把来源方案加载进编辑器，进度条/指针下拉才有数据。
+    $overlay.on("click", "#t-outline-generate-next", async () => {
+        if (!editingPlanId) {
+            const sourceId = getSceneSourcePlanId();
+            const plan = sourceId ? getPlans().find(p => p.id === sourceId) : null;
+            if (!plan || !loadPlanToEditor(plan)) {
+                if (window.toastr) toastr.warning("请先生成或填写总纲，再渐进续写", "渐进续写");
+                return;
+            }
+            refreshSceneHubListIfOpen();
+        }
+        await generateNextRolling();
+        refreshSceneHubListIfOpen();
+    });
+
+    // 手动指定当前推进到的大纲条目（发送即推进之外的兜底纠偏）。
+    $overlay.on("change", "#t-outline-rolling-cursor-select", function () {
+        if (!editingPlanId) return;
+        const idx = Number($(this).val());
+        if (!Number.isFinite(idx)) return;
+        const plan = getPlans().find(p => p.id === editingPlanId);
+        const prev = getPlanProgress(plan);
+        // 手动往回拨时清掉"已抵达结局"，允许继续续写。
+        const reachedEnding = prev.reachedEnding && idx >= outlineItems.length - 1;
+        setPlanProgress(editingPlanId, { itemIndex: idx, reachedEnding });
+        if (editingPlanId) setEditingPlan(getPlans().find(p => p.id === editingPlanId));
+        refreshRollingProgressUI();
+    });
+
+    $overlay.on("click", "#t-outline-rolling-reset", () => {
+        if (!editingPlanId) return;
+        setPlanProgress(editingPlanId, { itemIndex: 0, reachedEnding: false });
+        setEditingPlan(getPlans().find(p => p.id === editingPlanId));
+        refreshRollingProgressUI();
+        refreshSceneHubListIfOpen();
+        if (window.toastr) toastr.info("已回到开头，可重新渐进续写", "渐进续写");
+    });
+
+    // 大纲情节预览：展开/收起 + 点击某条直接推进指针（与下拉等效的快捷纠偏）。
+    $overlay.on("click", "#t-outline-rolling-outline-toggle", () => {
+        toggleRollingOutlinePreview();
+    });
+
+    // 点条目主体 = 展开/收起该条完整情节（方案 A）。
+    $overlay.on("click", "#t-outline-rolling-outline-preview .t-rolling-outline-item", function (e) {
+        if ($(e.target).closest(".t-rolling-outline-jump").length > 0) return;
+        const idx = Number($(this).data("rolling-outline-idx"));
+        if (!Number.isFinite(idx)) return;
+        rollingPreviewExpandedIdx = rollingPreviewExpandedIdx === idx ? -1 : idx;
+        refreshRollingProgressUI();
+        // 展开后把该条滚进可视区
+        if (rollingPreviewExpandedIdx === idx) {
+            const $item = $("#t-outline-rolling-outline-preview .t-rolling-outline-item").filter((_, el) => Number($(el).data("rolling-outline-idx")) === idx);
+            $item[0]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+    });
+
+    // 右侧箭头按钮 = 拨进度指针到该条（与指针下拉同一套逻辑：往回拨清掉"已抵达结局"）。
+    $overlay.on("click", "#t-outline-rolling-outline-preview .t-rolling-outline-jump", function (e) {
+        e.stopPropagation();
+        const idx = Number($(this).data("rolling-outline-jump"));
+        if (!Number.isFinite(idx)) return;
+
+        let plan = editingPlanId ? getPlans().find(p => p.id === editingPlanId) : null;
+        if (!plan) {
+            const sourceId = getSceneSourcePlanId();
+            plan = sourceId ? getPlans().find(p => p.id === sourceId) : null;
+        }
+        if (!plan) return;
+        const total = Array.isArray(plan.items) ? plan.items.length : 0;
+        if (total <= 0 || idx < 0 || idx >= total) return;
+
+        const prev = getPlanProgress(plan);
+        const reachedEnding = prev.reachedEnding && idx >= total - 1;
+        setPlanProgress(plan.id, { itemIndex: idx, reachedEnding });
+        if (editingPlanId === plan.id) setEditingPlan(getPlans().find(p => p.id === plan.id));
+        refreshRollingProgressUI();
     });
 }
 
@@ -3318,26 +3421,36 @@ function updateGenerateAllScenesButtonState() {
     refreshRollingProgressUI();
 }
 
-// 刷新渐进续写面板：进度条、状态文案、条目下拉。无大纲或无编辑方案时隐藏整块。
+// 刷新渐进续写面板：进度条、状态文案、条目下拉。
+// 面板已迁到「细纲情节」窗口：优先显示细纲来源方案的进度；主窗口（大纲编辑）里
+// 该面板已不存在，$panel.length===0 时直接跳过。
 function refreshRollingProgressUI() {
     const $panel = $("#t-outline-rolling");
     if ($panel.length === 0) return;
 
-    const hasOutline = Array.isArray(outlineItems) && outlineItems.length > 0;
-    const plan = editingPlanId ? getPlans().find(p => p.id === editingPlanId) : null;
-    if (!hasOutline || !plan) {
+    // 细纲窗口独立打开时编辑态可能为空：用细纲来源方案兜底。
+    let plan = editingPlanId ? getPlans().find(p => p.id === editingPlanId) : null;
+    if (!plan) {
+        const sourceId = getSceneSourcePlanId();
+        plan = sourceId ? getPlans().find(p => p.id === sourceId) : null;
+    }
+
+    const outlineForPanel = (Array.isArray(outlineItems) && outlineItems.length > 0 && plan && plan.id === editingPlanId)
+        ? outlineItems
+        : (plan ? normalizeItems(plan.items || []) : []);
+    if (outlineForPanel.length === 0 || !plan) {
         $panel.hide();
         return;
     }
     $panel.show();
 
-    const total = outlineItems.length;
+    const total = outlineForPanel.length;
     const progress = getPlanProgress(plan);
     const stepNo = progress.itemIndex + 1;
     const pct = total > 0 ? Math.round((stepNo / total) * 100) : 0;
 
     $("#t-outline-rolling-bar-fill").css("width", `${progress.reachedEnding ? 100 : pct}%`);
-    const currentTitle = outlineItems[progress.itemIndex]?.title || "未命名";
+    const currentTitle = outlineForPanel[progress.itemIndex]?.title || "未命名";
     $("#t-outline-rolling-status").text(
         progress.reachedEnding
             ? `已抵达结局（${total}/${total}）`
@@ -3347,10 +3460,81 @@ function refreshRollingProgressUI() {
 
     const $select = $("#t-outline-rolling-cursor-select");
     if ($select.length) {
-        const options = outlineItems.map((it, idx) =>
+        const options = outlineForPanel.map((it, idx) =>
             `<option value="${idx}" ${idx === progress.itemIndex ? "selected" : ""}>${idx + 1}. ${escapeHtml((it.title || "未命名").slice(0, 16))}</option>`
         ).join("");
         $select.html(options).val(String(progress.itemIndex));
+    }
+
+    renderRollingOutlinePreview(outlineForPanel, progress.itemIndex, progress.reachedEnding);
+}
+
+// 渐进续写面板里的大纲情节预览：全部条目一屏纵列，按进度区分状态——
+// 已推进过的条目淡化+打勾，当前条目高亮，后续条目常显。
+// 交互划分（方案 A）：点条目主体 = 展开/收起该条完整情节（含伏笔），
+// 右侧箭头按钮 = 把进度指针拨到该条。展开状态存 rollingPreviewExpandedIdx，
+// 进度刷新重渲染时保留。title 属性兜底悬停预览。
+let rollingPreviewExpandedIdx = -1;
+
+function renderRollingOutlinePreview(outlineForPanel, currentItemIndex, reachedEnding) {
+    const $preview = $("#t-outline-rolling-outline-preview");
+    if ($preview.length === 0) return;
+    if ($preview.css("display") === "none") return;
+    if (rollingPreviewExpandedIdx >= outlineForPanel.length) rollingPreviewExpandedIdx = -1;
+
+    const rows = outlineForPanel.map((item, idx) => {
+        const state = idx < currentItemIndex ? "done"
+            : idx === currentItemIndex ? (reachedEnding ? "done" : "current")
+            : "todo";
+        const marker = state === "done"
+            ? '<i class="fa-solid fa-check"></i>'
+            : state === "current"
+                ? '<i class="fa-solid fa-location-dot"></i>'
+                : '<i class="fa-regular fa-circle"></i>';
+        const expanded = rollingPreviewExpandedIdx === idx;
+        // 展开态显示完整 plot 与伏笔；收起态 60 字摘要（title 兜底全文）。
+        const plotHtml = expanded
+            ? `<div class="t-rolling-outline-plot t-rolling-outline-plot--full">${escapeHtml(item.plot || "(空)")}</div>`
+            : `<div class="t-rolling-outline-plot">${escapeHtml(getBriefText(item.plot, 60))}</div>`;
+        const foreshadowing = String(item.foreshadowing || "").trim();
+        const foreshadowHtml = expanded && foreshadowing
+            ? `<div class="t-rolling-outline-foreshadow"><i class="fa-solid fa-seedling"></i> 伏笔：${escapeHtml(foreshadowing)}</div>`
+            : "";
+        return `
+            <div class="t-rolling-outline-item ${state} ${expanded ? "expanded" : ""}" data-rolling-outline-idx="${idx}" title="${escapeHtml(item.plot || "(空)")}">
+                <span class="t-rolling-outline-marker">${marker}</span>
+                <div class="t-rolling-outline-main">
+                    <div class="t-rolling-outline-title">${escapeHtml(item.time || "未设时间")} · ${escapeHtml(item.title || "未命名")}</div>
+                    ${plotHtml}
+                    ${foreshadowHtml}
+                </div>
+                <button class="t-rolling-outline-jump" data-rolling-outline-jump="${idx}" title="推进到第 ${idx + 1} 条"><i class="fa-solid fa-forward-step"></i></button>
+            </div>`;
+    }).join("");
+
+    $preview.html(rows);
+}
+
+// 渐进续写大纲预览的展开/收起（open 时随进度刷新重渲染）。收起时清掉单条展开态。
+function toggleRollingOutlinePreview(forceOpen) {
+    const $preview = $("#t-outline-rolling-outline-preview");
+    const $toggle = $("#t-outline-rolling-outline-toggle");
+    if ($preview.length === 0) return;
+    const willOpen = forceOpen === true ? true : $preview.css("display") === "none";
+    $preview.toggle(willOpen);
+    $toggle.toggleClass("active", willOpen);
+    if (willOpen) {
+        refreshRollingProgressUI();
+    } else {
+        rollingPreviewExpandedIdx = -1;
+    }
+}
+
+// 细纲窗口开着时刷新场景列表（渐进续写追加场景后同步展示）。
+function refreshSceneHubListIfOpen() {
+    if ($("#t-scene-hub-overlay").length > 0) {
+        renderSceneHubWindow();
+        refreshRollingProgressUI();
     }
 }
 
@@ -3535,7 +3719,11 @@ async function generateNextRolling() {
     let outcome = { appended: 0, reachedEnding: false, note: "" };
 
     try {
-        const storyInput = ($("#t-outline-story-input").val() || "").trim();
+        // 面板迁到细纲窗口后可能独立于主窗口打开：故事指令优先取输入框，主窗口不在时退回方案 instruction。
+        const $storyInput = $("#t-outline-story-input");
+        const storyInput = ($storyInput.length > 0
+            ? $storyInput.val() || ""
+            : getPlanInstruction(getPlans().find(p => p.id === editingPlanId))).trim();
         const params = getOutlineGenParams().scenes;
         await runGenerationFlow({
             label: "渐进续写",
@@ -3565,6 +3753,7 @@ async function generateNextRolling() {
                 if (editingPlanId) setEditingPlan(getPlans().find(p => p.id === editingPlanId));
                 outcome = { appended: res.appended, reachedEnding, note: parsed?.progress?.note || "" };
                 refreshRollingProgressUI();
+                refreshSceneHubListIfOpen();
             },
             reparseLabel: "重新解析并追加",
             successMessage: () => {
@@ -3579,6 +3768,7 @@ async function generateNextRolling() {
         stopResponseTimer();
         $btn.prop("disabled", false).html(originHtml || '<i class="fa-solid fa-forward-step"></i> 生成下一段');
         refreshRollingProgressUI();
+        refreshSceneHubListIfOpen();
     }
 }
 
@@ -3815,32 +4005,6 @@ function bindEvents() {
 
     $overlay.on("click", "#t-outline-generate-all-scenes", async () => {
         await generateAllScenes();
-    });
-
-    $overlay.on("click", "#t-outline-generate-next", async () => {
-        await generateNextRolling();
-    });
-
-    // 手动指定当前推进到的大纲条目（发送即推进之外的兜底纠偏）。
-    $overlay.on("change", "#t-outline-rolling-cursor-select", function () {
-        if (!editingPlanId) return;
-        const idx = Number($(this).val());
-        if (!Number.isFinite(idx)) return;
-        const plan = getPlans().find(p => p.id === editingPlanId);
-        const prev = getPlanProgress(plan);
-        // 手动往回拨时清掉"已抵达结局"，允许继续续写。
-        const reachedEnding = prev.reachedEnding && idx >= outlineItems.length - 1;
-        setPlanProgress(editingPlanId, { itemIndex: idx, reachedEnding });
-        if (editingPlanId) setEditingPlan(getPlans().find(p => p.id === editingPlanId));
-        refreshRollingProgressUI();
-    });
-
-    $overlay.on("click", "#t-outline-rolling-reset", () => {
-        if (!editingPlanId) return;
-        setPlanProgress(editingPlanId, { itemIndex: 0, reachedEnding: false });
-        setEditingPlan(getPlans().find(p => p.id === editingPlanId));
-        refreshRollingProgressUI();
-        if (window.toastr) toastr.info("已回到开头，可重新渐进续写", "渐进续写");
     });
 
     $overlay.on("click", "#t-outline-add-fab", () => {
@@ -4108,21 +4272,6 @@ export function openStoryOutlineWindow() {
                                 <i class="fa-solid fa-clapperboard"></i> 细纲生成
                             </button>
                         </div>
-                    </div>
-                    <div id="t-outline-rolling" class="t-outline-rolling" style="display:none;">
-                        <div class="t-outline-rolling-head">
-                            <span class="t-outline-rolling-title"><i class="fa-solid fa-forward-step"></i> 渐进续写</span>
-                            <span id="t-outline-rolling-status" class="t-outline-rolling-status"></span>
-                        </div>
-                        <div class="t-outline-rolling-bar"><div id="t-outline-rolling-bar-fill" class="t-outline-rolling-bar-fill"></div></div>
-                        <div class="t-outline-rolling-controls">
-                            <button id="t-outline-generate-next" class="t-btn t-btn-primary t-btn-xs"><i class="fa-solid fa-forward-step"></i> 生成下一段</button>
-                            <label class="t-outline-rolling-cursor">推进到
-                                <select id="t-outline-rolling-cursor-select" class="t-outline-select"></select>
-                            </label>
-                            <button id="t-outline-rolling-reset" class="t-btn t-btn-xs" title="回到开头重新推进"><i class="fa-solid fa-rotate-left"></i></button>
-                        </div>
-                        <div class="t-outline-rolling-hint">大纲当路标，结合最近正文一步步写到结局。发送场景会自动推进，也可手动指定当前进度。</div>
                     </div>
                     <select id="t-outline-insert-mode" class="t-outline-select" style="display:none;">
                         <option value="overwrite" ${draft.insertMode === "overwrite" ? "selected" : ""}>覆盖输入框</option>

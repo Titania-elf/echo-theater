@@ -1,6 +1,7 @@
 // src/ui/shared/apiConnectionEditor.js
 
 import { normalizeApiBaseUrl } from "../../core/apiProfileRegistry.js";
+import { fetchModelList } from "../../core/relayClient.js";
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -21,17 +22,9 @@ function uniqStrings(values) {
 }
 
 function defaultModelFetcher({ apiUrl, apiKey }) {
-    const headers = {};
-    if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
-    return fetch(`${apiUrl}/models`, { method: "GET", headers })
-        .then((res) => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
-        })
-        .then((json) => {
-            const list = Array.isArray(json?.data) ? json.data : (Array.isArray(json?.models) ? json.models : []);
-            return uniqStrings(list.map((item) => (typeof item === "string" ? item : item?.id)));
-        });
+    // 经 ST 后端代理拉取（见 src/core/relayClient.js）：解决中转站 CORS 锁死导致
+    // 浏览器直连预检失败、无法拉取模型列表的问题。
+    return fetchModelList({ url: apiUrl, key: apiKey });
 }
 
 function normalizeProfile(profile, idx = 0, defaultModel = "gpt-3.5-turbo") {

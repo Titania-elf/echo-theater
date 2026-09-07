@@ -1,5 +1,11 @@
 // src/core/embeddings.js
 // Embedding API 调用模块 - 用于向量化文本
+//
+// 已知限制：此处保持浏览器直连（本模块 fetch 与 loreReviewWindow 的
+// fetchEmbeddingModelListDraft/testEmbeddingConnectionDraft 均是）——ST 后端没有
+// 通用的 /v1/embeddings 代理路由可借（聊天走 /api/backends/chat-completions/*，
+// 但 embeddings 无对应端点）。若中转站未开 CORS，本功能会失败；请使用开放
+// 跨域的 embedding 服务或本地端点。
 
 import { getExtData } from "../utils/storage.js";
 import { TitaniaLogger } from "./logger.js";

@@ -761,7 +761,7 @@
     gap: 6px;
 }
 
-/* 渐进续写面板：进度条 + 生成下一段 + 手动指针 */
+/* 渐进续写面板：进度条 + 生成下一段 + 手动指针（现位于「细纲情节」窗口） */
 .t-outline-rolling {
     margin-top: 12px;
     padding: 12px;
@@ -773,11 +773,163 @@
     gap: 10px;
 }
 
+/* 在细纲窗口里夹在列表与发送栏之间：去掉顶部外边距，收紧与列表的间隔 */
+.t-outline-rolling--scene-hub {
+    margin-top: 8px;
+}
+
 .t-outline-rolling-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+}
+
+.t-outline-rolling-head-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+#t-outline-rolling-outline-toggle {
+    min-height: 26px;
+    padding: 0 8px;
+    border-radius: 8px;
+}
+
+#t-outline-rolling-outline-toggle.active {
+    border-color: var(--t-color-teal-strong);
+    box-shadow: 0 0 0 1px rgb(var(--t-accent-teal-rgb) / .25) inset;
+}
+
+/* 大纲情节预览：纵列条目，按推进状态着色 */
+.t-outline-rolling-outline-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: min(38vh, 360px);
+    overflow: auto;
+    padding: 6px;
+    border: 1px solid var(--t-color-border-glass);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.t-rolling-outline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.t-rolling-outline-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.t-rolling-outline-item.expanded {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.t-rolling-outline-marker {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.t-rolling-outline-main {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.t-rolling-outline-title {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.t-rolling-outline-plot {
+    font-size: 11px;
+    color: var(--t-glass-text-soft);
+    line-height: 1.45;
+}
+
+/* 展开后的完整情节：不截断，正常换行 */
+.t-rolling-outline-plot--full {
+    color: var(--t-glass-text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* 展开后的伏笔行 */
+.t-rolling-outline-foreshadow {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px dashed var(--t-color-border-glass);
+    font-size: 11px;
+    color: rgb(var(--t-accent-teal-rgb));
+    line-height: 1.45;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.t-rolling-outline-foreshadow i {
+    margin-top: 2px;
+    flex: 0 0 auto;
+}
+
+/* 右侧跳指针按钮：默认低调，hover 才显形 */
+.t-rolling-outline-jump {
+    flex: 0 0 auto;
+    min-height: 24px;
+    min-width: 26px;
+    padding: 0 5px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--t-glass-text-faint);
+    font-size: 11px;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+    align-self: center;
+}
+
+.t-rolling-outline-item:hover .t-rolling-outline-jump,
+.t-rolling-outline-jump:focus-visible {
+    opacity: 1;
+}
+
+.t-rolling-outline-jump:hover {
+    color: var(--t-color-teal-strong);
+    border-color: var(--t-color-border-glass);
+}
+
+/* 已推进过：淡化；当前条目：高亮左边条+文字提亮 */
+.t-rolling-outline-item.done {
+    opacity: 0.55;
+}
+
+.t-rolling-outline-item.done .t-rolling-outline-marker {
+    color: rgb(var(--t-accent-teal-rgb));
+}
+
+.t-rolling-outline-item.current {
+    background: rgb(var(--t-accent-teal-rgb) / .10);
+    box-shadow: -2px 0 0 0 var(--t-color-teal-strong);
+}
+
+.t-rolling-outline-item.current .t-rolling-outline-marker {
+    color: var(--t-color-teal-strong);
+}
+
+.t-rolling-outline-item.todo .t-rolling-outline-marker {
+    color: var(--t-glass-text-faint);
 }
 
 .t-outline-rolling-title {
