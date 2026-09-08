@@ -1327,7 +1327,6 @@ HUE_TOKENS = {
     (18, 26, 34): '--t-glass-nav-rgb',                 # #121a22 2 处：大纲导航钮 base+disabled
     (26, 26, 46): '--t-glass-pre-rgb',                 # #1a1a2e 2 处：设定审阅的 <pre> 块
     (30, 45, 58): '--t-accent-outline-btn-alt-rgb',     # #1e2d3a 1 处：全场景生成钮
-    (58, 62, 68): '--t-glass-scene-used-rgb',           # #3a3e44 1 处：已用场景
     (26, 42, 26): '--t-accent-fav-edit-fill-rgb',       # #1a2a1a 1 处：收藏工具栏编辑态底
     #   其描边是 6b-16 建的 --t-accent-fav-edit-border-rgb(#3a5a3a)。
     (25, 35, 25): '--t-accent-success-fill-rgb',        # #192319 1 处：生成完成通知底

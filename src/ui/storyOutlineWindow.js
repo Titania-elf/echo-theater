@@ -16,13 +16,9 @@ import {
 let outlineItems = [];
 let lastRawResponse = "";
 let rawResponseHistory = [];
-let sceneExpandedMap = {};
 let selectedRowIndex = -1;
 let desktopEditorIndex = -1;
 let isRawDialogOpen = false;
-let editorSubView = "outline";
-let sceneEditorItemIndex = -1;
-let mobileEditorSubView = "outline";
 let responseTimerStartAt = 0;
 let responseElapsedMs = 0;
 let responseTimerId = null;
@@ -46,7 +42,8 @@ const GEN_PARAMS_KEY = "story_outline_gen_params";
 function getGenParamDefaults() {
     return {
         outline: { temperature: 0.4, maxTokens: 20000, timeoutSec: 0 },
-        scenes: { temperature: 0.8, maxTokens: 60000, timeoutSec: 0 }
+        // scenes 存储键沿用旧名（细纲时代遗留），现服务剧情推进推荐；2~3 条候选用不到 60k。
+        scenes: { temperature: 0.8, maxTokens: 8000, timeoutSec: 0 }
     };
 }
 
@@ -83,7 +80,7 @@ function saveOutlineGenParams(params) {
     saveExtData();
 }
 
-// 渐进续写读取的酒馆正文楼层数（0=不读，仅用大纲与已生成细纲推进）。
+// 剧情推进读取的酒馆正文楼层数（0=不读，仅用大纲推进）。
 const ROLLING_CHAT_FLOORS_KEY = "story_outline_rolling_chat_floors";
 const ROLLING_CHAT_FLOORS_DEFAULT = 6;
 
@@ -106,7 +103,8 @@ let activePlanId = "";
 let editingPlanId = "";
 let editingPlanBaseline = "";
 let planItemCursorMap = {};
-let sceneHubSelectedKey = "";
+// 剧情推进窗口最近一批候选（生成时填充，点击卡片写入输入框后标记 used；不持久化）。
+let latestCandidates = [];
 let autoSavePlanTimer = null;
 let planRenameMode = false;
 let planRenameSnapshot = "";
@@ -414,7 +412,7 @@ function reportGenerationError(e, label, failMessage) {
     }
     if (isAbortError(e)) {
         if (isStreamingEnabled()) updateRawPreview("已终止生成");
-        if (window.toastr) toastr.info(`已终止${label === "故事细纲" ? "细纲" : "大纲"}生成`, label);
+        if (window.toastr) toastr.info(`已终止${label}生成`, label);
         return;
     }
     console.error(`Titania: ${label}生成失败`, e);
@@ -918,107 +916,31 @@ function getDefaultPromptTemplates() {
 [任务]
 请设计故事大纲，并严格按约定 JSON 返回。`
         },
-        scenes: {
-            system: `你是剧情分镜策划。基于输入“总纲 items”，为每个条目补全 scenes。
+        rolling: {
+            system: `你是剧情推进策划。完整故事大纲已给定（最后一条即结局）。你的职责是：结合"已经发生的剧情"，给出 2~3 个互不相同的候选剧情走向，供玩家挑选后作为下一回合的玩家输入来推进故事。
+
+[核心原则]
+1) 大纲是路标与终点约束：候选必须朝大纲结局的方向收束，可提前埋伏笔、控制节奏，但绝不跳步、不一次写到结局（除非当前已是最后一条大纲且剧情确实该收尾）。
+2) 承接已发生的剧情：候选必须自然衔接"已经发生的剧情"的最后状态，不重复已经写过的情节。
+3) 候选之间走向要有明显差异（不同的切入点/冲突/节奏），不是同一情节的措辞变体。
 
 [硬性要求]
 1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
 2) 只允许返回以下结构：
 {
-  "version": "1.2",
-  "items": [
+  "version": "1.4",
+  "candidates": [
     {
-      "index": 1,
-      "scenes": [
-        {
-          "scene_index": 1,
-          "scene_time": "时间点",
-          "scene_location": "地点",
-          "scene_goal": "本场目标",
-          "conflict": "冲突",
-          "key_beats": ["关键节点1", "关键节点2"],
-          "sendable_prompt": "可供扩写的场景摘要段落",
-          "notes": ""
-        }
-      ]
+      "title": "候选标题（8字以内）",
+      "text": "可直接作为玩家输入发送的剧情段落",
+      "item_index": 1
     }
   ]
 }
-3) items 数量必须与输入总纲一致；index 必须一一对应；不得缺失、不得新增、不得重排。
-4) 仅补全 scenes，禁止改写总纲主线含义。
-5) 每个 item 生成 3-5 个 scenes（默认 4 个，除非内容不足）。
-6) 每个 scene 必须包含 scene_goal、conflict、key_beats、sendable_prompt。
-7) key_beats 至少 2 条，单条不超过 24 字。
-8) sendable_prompt 必须融合 conflict 与 key_beats，120-220 字，中文，具体可延展，不写“请你/你需要”。
-9) 若信息不足，notes 填空字符串，不要编造额外字段。
-10) 输出语言使用中文。`,
-            user: `[角色设定]
-{{persona}}
-
-[用户设定]
-{{userDesc}}
-
-[世界书/设定]
-{{worldInfo}}
-
-[开场白]
-{{openingText}}
-
-[故事需求]
-{{storyInput}}
-
-[当前总纲 items]
-{{outlineItemsJson}}
-
-[任务]
-请对每个 item 一次性生成 scenes。
-保持总纲主线与顺序不变，只补全细纲内容。
-严格使用 version 1.2 的精简结构，仅返回 index 和 scenes，不要返回 time/title/plot/foreshadowing/story_summary。
-sendable_prompt 必须写成可供模型扩写/转述/润色的具体摘要段落，并融合 conflict 与 key_beats。
-只返回 JSON。`
-        },
-        rolling: {
-            system: `你是渐进式剧情推进策划。完整故事大纲已给定（最后一条即结局），你的职责是：结合"已经发生的剧情"，只生成"接下来 1~2 个场景"的细纲，让故事在大纲的暗中引导下自然、稳步地朝结局推进。
-
-[核心原则]
-1) 大纲是路标与终点约束：始终朝大纲结局收束，可提前埋伏笔、控制节奏，但绝不跳步、不一次写到结局。
-2) 承接已发生的剧情：新场景必须自然衔接"已发生的剧情"的最后状态，不重复已经写过的情节。
-3) 一次只推进一小步：只产出 1~2 个场景。仅当进度已到大纲最后一条、且剧情确实该收尾时，才允许写结局场景。
-
-[硬性要求]
-1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
-2) 只允许返回以下结构：
-{
-  "version": "1.3",
-  "items": [
-    {
-      "index": 1,
-      "scenes": [
-        {
-          "scene_index": 1,
-          "scene_time": "时间点",
-          "scene_location": "地点",
-          "scene_goal": "本场目标",
-          "conflict": "冲突",
-          "key_beats": ["关键节点1", "关键节点2"],
-          "sendable_prompt": "可供扩写的场景摘要段落",
-          "notes": ""
-        }
-      ]
-    }
-  ],
-  "progress": {
-    "current_item_index": 1,
-    "reached_ending": false,
-    "note": "一句话说明推进到哪、为什么"
-  }
-}
-3) index 必须是这些场景所归属的大纲条目序号（对应输入大纲里的 index），与大纲一一对应，不得新增大纲没有的 index。
-4) 本次总共只产出 1~2 个场景（可以都挂在同一个 index 下，或跨相邻两个 index）。
-5) 每个 scene 必须包含 scene_goal、conflict、key_beats、sendable_prompt；key_beats 至少 2 条，单条不超过 24 字。
-6) sendable_prompt 融合 conflict 与 key_beats，120-220 字，中文，具体可延展，写成可直接发给模型续写的场景摘要，不写"请你/你需要"。
-7) progress.current_item_index 填这批场景推进到的大纲条目序号；reached_ending 仅在确实抵达结局时为 true。
-8) 输出语言使用中文。`,
+3) candidates 数量必须为 2~3 个。
+4) text 是以玩家视角驱动剧情的指令式情节段落，120-220 字，中文，具体可延展，可直接发送给模型续写，不写"请你/你需要"。
+5) item_index 填该候选主要推进到的大纲条目序号（对应输入大纲里的 index），必须来自输入大纲，不得新增。
+6) 输出语言使用中文。`,
             user: `[角色设定]
 {{persona}}
 
@@ -1037,16 +959,12 @@ sendable_prompt 必须写成可供模型扩写/转述/润色的具体摘要段�
 [已经发生的剧情（最近正文，越靠后越新）]
 {{recentChat}}
 
-[已生成的细纲摘要]
-{{scenesSoFar}}
-
 [当前进度]
 {{progressHint}}
 
 [任务]
-只生成"接下来 1~2 个场景"的细纲，承接上面已发生的剧情，朝大纲结局稳步推进，不要一次写到结局。
-严格按 version 1.3 结构返回，并在 progress 里回报推进到的大纲条目与是否抵达结局。
-只返回 JSON。`
+请给出 2~3 个候选剧情走向：承接已发生的剧情，对齐当前大纲条目，彼此方向不同，朝结局稳步推进但不要跳到结局。
+严格按 version 1.4 结构返回。只返回 JSON。`
         }
     };
 }
@@ -1060,14 +978,16 @@ function getPromptTemplates() {
             system: String(raw?.outline?.system || defaults.outline.system),
             user: String(raw?.outline?.user || defaults.outline.user)
         },
-        scenes: {
-            system: String(raw?.scenes?.system || defaults.scenes.system),
-            user: String(raw?.scenes?.user || defaults.scenes.user)
-        },
-        rolling: {
-            system: String(raw?.rolling?.system || defaults.rolling.system),
-            user: String(raw?.rolling?.user || defaults.rolling.user)
-        }
+        // rolling：旧版(1.3, items/scenes 结构)模板与新解析器不兼容，检测到即重置为默认。
+        rolling: (() => {
+            const sys = String(raw?.rolling?.system || defaults.rolling.system);
+            const usr = String(raw?.rolling?.user || defaults.rolling.user);
+            if (sys.includes('"1.3"') || usr.includes("scenesSoFar")) {
+                console.info("[Titania] 检测到旧版渐进续写模板，已重置为剧情推进默认模板");
+                return JSON.parse(JSON.stringify(defaults.rolling));
+            }
+            return { system: sys, user: usr };
+        })()
     };
 }
 
@@ -1083,7 +1003,6 @@ function renderPromptTemplate(template, vars) {
 }
 
 function getPromptTemplateSection(templates, type) {
-    if (type === "scenes") return templates.scenes;
     if (type === "rolling") return templates.rolling;
     return templates.outline;
 }
@@ -1092,8 +1011,8 @@ function getUnknownPromptVars(text) {
     const known = new Set([
         "persona", "userDesc", "openingText", "storyInput", "outlineItemsJson",
         "worldInfo", "scenario", "dialogueExamples",
-        // 渐进续写专用变量
-        "recentChat", "scenesSoFar", "progressHint"
+        // 剧情推进专用变量
+        "recentChat", "progressHint"
     ]);
     const unknown = new Set();
     String(text || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
@@ -1115,9 +1034,8 @@ function buildPromptTemplateVars(ctx, userStoryInput, openingText, outlinePayloa
         worldInfo: rawWorldInfo || "(无)",
         scenario: String(ctx?.scenario || "").trim() || "(无)",
         dialogueExamples: String(ctx?.dialogueExamples || "").trim() || "(无)",
-        // 渐进续写专用；非续写场景为 "(无)"，模板里没引用就不影响。
+        // 剧情推进专用；非推荐场景为 "(无)"，模板里没引用就不影响。
         recentChat: String(extras?.recentChat || "").trim() || "(无)",
-        scenesSoFar: String(extras?.scenesSoFar || "").trim() || "(无)",
         progressHint: String(extras?.progressHint || "").trim() || "(无)"
     };
 }
@@ -1238,18 +1156,18 @@ export async function openPromptTemplateManager() {
 
                         <div class="t-form-group">
                             <label class="t-form-label">生成参数</label>
-                            <div class="t-outline-genparam-hint">分别控制大纲/细纲生成的采样与上限（渐进续写沿用细纲参数）。细纲过长被中途掐断时多为网关超时，建议调低 max_tokens 或用渐进续写分段生成。超时为客户端安全上限（0=不限制）。</div>
+                            <div class="t-outline-genparam-hint">分别控制大纲/剧情推荐的采样与上限。推荐结果被中途掐断时多为网关超时，建议调低 max_tokens。超时为客户端安全上限（0=不限制）。</div>
                             ${renderGenParamRow("outline", "大纲", settingsDraft.genParams.outline)}
-                            ${renderGenParamRow("scenes", "细纲/续写", settingsDraft.genParams.scenes)}
+                            ${renderGenParamRow("scenes", "剧情推荐", settingsDraft.genParams.scenes)}
                         </div>
 
                         <div class="t-form-group">
-                            <label class="t-form-label">渐进续写</label>
+                            <label class="t-form-label">剧情推进</label>
                             <label class="t-outline-mode t-outline-mode-source" style="margin-left:0;">
                                 读取最近正文楼层数
                                 <input id="t-outline-settings-rolling-floors" type="number" class="t-outline-select" value="${escapeHtml(settingsDraft.rollingChatFloors)}" min="0" max="50" step="1" style="width:80px;">
                             </label>
-                            <div class="t-outline-genparam-hint">渐进续写时读取酒馆最近 N 楼正文作为"已发生的剧情"（走下方聊天提取白名单过滤）。0=不读正文，仅靠大纲与已生成细纲推进。</div>
+                            <div class="t-outline-genparam-hint">剧情推荐时读取酒馆最近 N 楼正文作为"已发生的剧情"（走下方聊天提取白名单过滤）。0=不读正文，仅靠大纲推进。</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1281,12 +1199,11 @@ export async function openPromptTemplateManager() {
                             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                                 <select id="t-prompt-target" class="t-outline-select">
                                     <option value="outline">故事大纲</option>
-                                    <option value="scenes">细纲生成</option>
-                                    <option value="rolling">渐进续写</option>
+                                    <option value="rolling">剧情推进</option>
                                 </select>
                                 <button id="t-prompt-reset-current" class="t-btn t-btn-xs"><i class="fa-solid fa-rotate-left"></i> 恢复当前默认</button>
                             </div>
-                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>渐进续写额外变量：{{recentChat}} {{scenesSoFar}} {{progressHint}}</div>
+                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}} {{progressHint}}</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1524,12 +1441,10 @@ function buildPrompt(ctx, userStoryInput, openingText) {
     ];
 }
 
-// 大纲与细纲返回的 JSON 结构解析逻辑相同（都要求顶层 data.items 为数组）：
-// 三段尝试（原文 → ```代码块 → 第一个 {...}）+ 尾逗号修复。仅错误文案不同。
-function parseJsonItemsResponse(raw, failMessage = "返回格式无法解析为 JSON") {
-    if (!raw || typeof raw !== "string") {
-        throw new Error("模型返回为空");
-    }
+// 宽松 JSON 提取：三段尝试（原文 → ```代码块 → 第一个 {...}）+ 尾逗号修复。
+// 解析失败返回 null，由调用方决定报错文案。
+function tryParseLooseJsonObject(raw) {
+    if (!raw || typeof raw !== "string") return null;
 
     const attempts = [raw.trim()];
 
@@ -1543,12 +1458,21 @@ function parseJsonItemsResponse(raw, failMessage = "返回格式无法解析为 
         try {
             const fixed = content.replace(/,\s*([}\]])/g, "$1");
             const data = JSON.parse(fixed);
-            if (data && Array.isArray(data.items)) return data;
+            if (data && typeof data === "object") return data;
         } catch {
             // try next
         }
     }
+    return null;
+}
 
+// 大纲返回的 JSON 结构解析（要求顶层 data.items 为数组），错误文案可定制。
+function parseJsonItemsResponse(raw, failMessage = "返回格式无法解析为 JSON") {
+    if (!raw || typeof raw !== "string") {
+        throw new Error("模型返回为空");
+    }
+    const data = tryParseLooseJsonObject(raw);
+    if (data && Array.isArray(data.items)) return data;
     throw new Error(failMessage);
 }
 
@@ -1721,7 +1645,7 @@ function createDistinctPlanName(baseName = "") {
 }
 
 // 三种"新建方案"（沿用编辑器内容 / 空白 / 从来源分支）共用的落盘骨架：
-// 构造 plan → unshift → 设为 active，首个方案兼作细纲来源 → 存 → 标记为编辑态。
+// 构造 plan → unshift → 设为 active，首个方案兼作剧情推进来源 → 存 → 标记为编辑态。
 function insertPlan({ name, storyInput, instruction, items }) {
     const plans = getPlans();
     const now = Date.now();
@@ -1731,7 +1655,6 @@ function insertPlan({ name, storyInput, instruction, items }) {
         storyInput: storyInput || "",
         instruction: instruction || "",
         items: Array.isArray(items) ? items : [],
-        used_scene_keys: [],
         createdAt: now,
         updatedAt: now
     };
@@ -1891,7 +1814,6 @@ function openPlanCreationDialog() {
         loadPlanToEditor(created);
         renderPlanHub();
         showOutlineView("editor");
-        setEditorSubView("outline");
         updatePlanWorkflowUI();
     });
 }
@@ -2024,11 +1946,7 @@ function getCurrentInsertMode() {
     return $("#t-scene-hub-insert-mode").val() || $("#t-outline-insert-mode").val() || loadDraft().insertMode || "overwrite";
 }
 
-function getSceneUsageKey(itemIndex, sceneIndex) {
-    return `${itemIndex}:${sceneIndex}`;
-}
-
-// 渐进续写的进度指针（持久化在 plan 上）。itemIndex 指向当前推进到的大纲条目（0-based），
+// 剧情推进的进度指针（持久化在 plan 上）。itemIndex 指向当前推进到的大纲条目（0-based），
 // reachedEnding 标记是否已抵达结局。缺失时归零。
 function getPlanProgress(plan) {
     const raw = plan && typeof plan.progress === "object" ? plan.progress : null;
@@ -2052,14 +1970,9 @@ function setPlanProgress(planId, progress) {
     saveExtData();
 }
 
-function isSceneUsed(plan, itemIndex, sceneIndex) {
-    if (!plan || !Array.isArray(plan.used_scene_keys)) return false;
-    return plan.used_scene_keys.includes(getSceneUsageKey(itemIndex, sceneIndex));
-}
-
-// 发送某场景即推进进度：指针只前进不后退；发送到最后一条大纲时标记已抵达结局。
-// 优先对当前正在编辑的方案生效；细纲窗口独立打开（无编辑态）时，对细纲来源方案生效，
-// 保证渐进续写面板跟着「发送场景」动。
+// 写入候选即推进进度：指针只前进不后退；推进到最后一条大纲时标记已抵达结局。
+// 优先对当前正在编辑的方案生效；剧情推进窗口独立打开（无编辑态）时，对来源方案生效，
+// 保证进度面板跟着「点候选卡片」动。
 function advanceProgressOnSend(planId, itemIndex) {
     if (!planId) return;
     if (planId !== editingPlanId && planId !== getSceneSourcePlanId()) return;
@@ -2073,19 +1986,6 @@ function advanceProgressOnSend(planId, itemIndex) {
     setPlanProgress(planId, { itemIndex: nextIdx, reachedEnding });
     if (editingPlanId === planId) setEditingPlan(getPlans().find(p => p.id === planId));
     refreshRollingProgressUI();
-}
-
-function markSceneUsed(planId, itemIndex, sceneIndex) {
-    const plans = getPlans();
-    const plan = plans.find(p => p.id === planId);
-    if (!plan) return;
-    if (!Array.isArray(plan.used_scene_keys)) plan.used_scene_keys = [];
-    const key = getSceneUsageKey(itemIndex, sceneIndex);
-    if (!plan.used_scene_keys.includes(key)) {
-        plan.used_scene_keys.push(key);
-        plan.updatedAt = Date.now();
-        saveExtData();
-    }
 }
 
 function showOutlineView(view) {
@@ -2103,9 +2003,7 @@ function showOutlineView(view) {
 function loadPlanToEditor(plan) {
     if (!plan) return false;
     outlineItems = normalizeItems(plan.items || []);
-    sceneExpandedMap = {};
     selectedRowIndex = -1;
-    sceneEditorItemIndex = outlineItems.length > 0 ? 0 : -1;
     closeDesktopEditor();
     closeMobileEditor();
     const planInstruction = getPlanInstruction(plan);
@@ -2145,100 +2043,53 @@ function movePlanItemCursor(planId, delta, totalItems) {
     setPlanItemCursor(planId, current + (Number(delta) || 0), total);
 }
 
-function collectAllPlanScenes() {
-    const plans = getPlans();
-    const sourcePlanId = getSceneSourcePlanId();
-    const sourcePlan = plans.find(p => p.id === sourcePlanId) || null;
-    const rows = [];
-    if (!sourcePlan) return rows;
+// 渲染候选剧情卡片。空态区分"未选来源方案"与"尚未生成推荐"。
+function renderCandidates() {
+    const $list = $("#t-outline-candidates");
+    if ($list.length === 0) return;
 
-    [sourcePlan].forEach((plan) => {
-        const items = normalizeItems(plan?.items || []);
-        items.forEach((item, itemIndex) => {
-            const scenes = Array.isArray(item.scenes) ? item.scenes : [];
-            scenes.forEach((scene, sceneIndex) => {
-                rows.push({
-                    key: `${plan.id}:${itemIndex}:${sceneIndex}`,
-                    planId: plan.id,
-                    planName: plan.name || "未命名方案",
-                    itemIndex,
-                    sceneIndex,
-                    itemTitle: item.title || `条目${item.index}`,
-                    itemTime: item.time || "",
-                    scene,
-                    used: isSceneUsed(plan, itemIndex, sceneIndex)
-                });
-            });
-        });
-    });
-
-    rows.sort((a, b) => {
-        if (a.used !== b.used) return a.used ? 1 : -1;
-        if (a.planName !== b.planName) return String(a.planName).localeCompare(String(b.planName), "zh-CN");
-        if (a.itemIndex !== b.itemIndex) return a.itemIndex - b.itemIndex;
-        return a.sceneIndex - b.sceneIndex;
-    });
-
-    return rows.map((row, idx) => ({ ...row, number: idx + 1 }));
-}
-
-function renderSceneHubWindow() {
-    const rows = collectAllPlanScenes();
-    const $list = $("#t-scene-hub-list");
-    const $sendBtn = $("#t-scene-hub-send");
-    if ($list.length === 0 || $sendBtn.length === 0) return;
-
-    if (rows.length === 0) {
-        sceneHubSelectedKey = "";
+    if (latestCandidates.length === 0) {
         const sourcePlanId = getSceneSourcePlanId();
-        if (!sourcePlanId) {
-            $list.html('<div class="t-plan-empty">请先在方案页选择一个用于细纲情节的方案</div>');
-        } else {
-            $list.html('<div class="t-plan-empty">当前选中方案暂无可用细纲场景，请先生成细纲</div>');
-        }
-        $sendBtn.prop("disabled", true);
+        $list.html(sourcePlanId
+            ? '<div class="t-plan-empty">点击「推荐剧情」，生成 2~3 个候选剧情走向</div>'
+            : '<div class="t-plan-empty">请先在方案页选择一个用于剧情推进的方案</div>');
         return;
     }
 
-    if (!rows.some(r => r.key === sceneHubSelectedKey)) {
-        sceneHubSelectedKey = "";
-    }
-
-    const html = rows.map((row) => `
-        <div class="t-scene-hub-item ${row.used ? "used" : ""} ${sceneHubSelectedKey === row.key ? "active" : ""}" data-scene-key="${row.key}">
+    const html = latestCandidates.map((c, idx) => `
+        <div class="t-scene-hub-item ${c.used ? "used" : ""}" data-candidate-index="${idx}" title="点击写入输入框（不会自动发送）">
             <div class="t-scene-hub-head">
-                <span class="t-scene-hub-no">#${row.number}</span>
-                <span class="t-scene-hub-plan">${escapeHtml(row.planName)} / ${escapeHtml(row.itemTitle)}</span>
-                ${row.used ? '<span class="t-plan-used-tag">已使用</span>' : ""}
+                <span class="t-scene-hub-no">#${idx + 1}</span>
+                <span class="t-scene-hub-plan">${escapeHtml(c.title || `候选 ${idx + 1}`)}</span>
+                ${c.used ? '<span class="t-plan-used-tag">已写入</span>' : ""}
             </div>
-            <div class="t-scene-hub-meta">${escapeHtml(row.scene.scene_time || "未设时间")} · ${escapeHtml(row.scene.scene_location || "未设地点")}</div>
-            <div class="t-scene-hub-text">${escapeHtml(row.scene.sendable_prompt || row.scene.key_beats || "(空)")}</div>
+            <div class="t-scene-hub-meta">推进至大纲第 ${c.itemIndex} 条</div>
+            <div class="t-scene-hub-text">${escapeHtml(c.text)}</div>
         </div>
     `).join("");
 
     $list.html(html);
-    $sendBtn.prop("disabled", !sceneHubSelectedKey);
 }
 
+// 剧情推进窗口（旧名"细纲情节"/openSceneHubWindow，保留导出名以兼容入口按钮的动态导入）。
 export function openSceneHubWindow() {
     ensureCssLoaded();
     $("#t-scene-hub-overlay").remove();
-    sceneHubSelectedKey = "";
+    latestCandidates = [];
 
     const html = `
     <div id="t-scene-hub-overlay" class="t-overlay t-root">
         <div class="t-window t-story-outline-window">
             <div class="t-window-header">
-                <div class="t-window-title"><i class="fa-solid fa-clapperboard"></i> 细纲情节</div>
+                <div class="t-window-title"><i class="fa-solid fa-clapperboard"></i> 剧情推进</div>
                 <div class="t-window-controls">
                     <div class="t-window-close" id="t-scene-hub-close"><i class="fa-solid fa-times"></i></div>
                 </div>
             </div>
             <div class="t-window-body t-outline-body">
-                <div id="t-scene-hub-list" class="t-scene-hub-list"></div>
                 <div id="t-outline-rolling" class="t-outline-rolling t-outline-rolling--scene-hub" style="display:none;">
                     <div class="t-outline-rolling-head">
-                        <span class="t-outline-rolling-title"><i class="fa-solid fa-forward-step"></i> 渐进续写</span>
+                        <span class="t-outline-rolling-title"><i class="fa-solid fa-forward-step"></i> 剧情推进</span>
                         <div class="t-outline-rolling-head-right">
                             <span id="t-outline-rolling-status" class="t-outline-rolling-status"></span>
                             <button id="t-outline-rolling-outline-toggle" class="t-btn t-btn-xs" title="展开/收起大纲情节预览"><i class="fa-solid fa-map"></i></button>
@@ -2247,14 +2098,15 @@ export function openSceneHubWindow() {
                     <div class="t-outline-rolling-bar"><div id="t-outline-rolling-bar-fill" class="t-outline-rolling-bar-fill"></div></div>
                     <div id="t-outline-rolling-outline-preview" class="t-outline-rolling-outline-preview" style="display:none;"></div>
                     <div class="t-outline-rolling-controls">
-                        <button id="t-outline-generate-next" class="t-btn t-btn-primary t-btn-xs"><i class="fa-solid fa-forward-step"></i> 生成下一段</button>
+                        <button id="t-outline-generate-next" class="t-btn t-btn-primary t-btn-xs"><i class="fa-solid fa-forward-step"></i> 推荐剧情</button>
                         <label class="t-outline-rolling-cursor">推进到
                             <select id="t-outline-rolling-cursor-select" class="t-outline-select"></select>
                         </label>
                         <button id="t-outline-rolling-reset" class="t-btn t-btn-xs" title="回到开头重新推进"><i class="fa-solid fa-rotate-left"></i></button>
                     </div>
-                    <div class="t-outline-rolling-hint">大纲当路标，结合最近正文一步步写到结局。发送场景会自动推进，也可手动指定当前进度。</div>
+                    <div class="t-outline-rolling-hint">大纲当路标，结合最近正文一步步写到结局。点击候选卡片即写入输入框并自动推进进度，也可手动指定当前进度。</div>
                 </div>
+                <div id="t-outline-candidates" class="t-scene-hub-list"></div>
                 <div class="t-scene-hub-footer">
                     <label class="t-outline-mode" style="margin-right:auto;">
                         写入方式
@@ -2263,26 +2115,19 @@ export function openSceneHubWindow() {
                             <option value="append" ${getCurrentInsertMode() === "append" ? "selected" : ""}>追加到输入框</option>
                         </select>
                     </label>
-                    <button id="t-scene-hub-send" class="t-btn t-btn-primary" disabled><i class="fa-solid fa-paper-plane"></i> 发送场景</button>
+                    <span class="t-plan-source-note">点击候选卡片即按所选方式写入输入框（不会自动发送）</span>
                 </div>
             </div>
         </div>
     </div>`;
 
     $("body").append(html);
-    renderSceneHubWindow();
+    renderCandidates();
     refreshRollingProgressUI();
 
     const $overlay = $("#t-scene-hub-overlay");
     $overlay.on("click", "#t-scene-hub-close", () => {
         $overlay.remove();
-    });
-
-    $overlay.on("click", ".t-scene-hub-item", function () {
-        const key = String($(this).data("scene-key") || "").trim();
-        if (!key) return;
-        sceneHubSelectedKey = key;
-        renderSceneHubWindow();
     });
 
     $overlay.on("change", "#t-scene-hub-insert-mode", function () {
@@ -2291,43 +2136,45 @@ export function openSceneHubWindow() {
         saveDraft($("#t-outline-story-input").val() || "", mode);
     });
 
-    $overlay.on("click", "#t-scene-hub-send", () => {
-        const rows = collectAllPlanScenes();
-        const selected = rows.find(r => r.key === sceneHubSelectedKey);
-        if (!selected) return;
-        writePlotToInput(selected.scene?.sendable_prompt || "", getCurrentInsertMode());
-        markSceneUsed(selected.planId, selected.itemIndex, selected.sceneIndex);
-        advanceProgressOnSend(selected.planId, selected.itemIndex);
-        sceneHubSelectedKey = "";
-        $overlay.remove();
-        if (window.toastr) toastr.success("已发送场景到输入框", "故事大纲");
+    // 点击候选卡片：写入输入框 + 推进进度指针（itemIndex 为 1-based → 0-based）。
+    // 不关窗：其余候选仍可点，重新点「推荐剧情」即整批刷新。advanceProgressOnSend 只前进，
+    // 先点高条目再点低条目不会把指针拨回去。
+    $overlay.on("click", "#t-outline-candidates .t-scene-hub-item", function () {
+        const idx = Number($(this).data("candidate-index"));
+        const c = latestCandidates[idx];
+        if (!c || !String(c.text || "").trim()) return;
+        const planId = editingPlanId || getSceneSourcePlanId();
+        writePlotToInput(c.text, getCurrentInsertMode());
+        if (planId) advanceProgressOnSend(planId, c.itemIndex - 1);
+        c.used = true;
+        renderCandidates();
+        refreshRollingProgressUI();
+        if (window.toastr) toastr.success("已写入输入框（未自动发送），进度已推进", "剧情推进");
     });
 
-    // 渐进续写面板已随动线迁到本窗口（原在大纲生成主窗口）。
-    // 渐进续写依赖编辑态的大纲条目（outlineItems）；细纲窗口可能独立于主窗口打开，
+    // 推荐依赖编辑态的大纲条目（outlineItems）；本窗口可能独立于主窗口打开，
     // 这里先把来源方案加载进编辑器，进度条/指针下拉才有数据。
     $overlay.on("click", "#t-outline-generate-next", async () => {
         if (!editingPlanId) {
             const sourceId = getSceneSourcePlanId();
             const plan = sourceId ? getPlans().find(p => p.id === sourceId) : null;
             if (!plan || !loadPlanToEditor(plan)) {
-                if (window.toastr) toastr.warning("请先生成或填写总纲，再渐进续写", "渐进续写");
+                if (window.toastr) toastr.warning("请先生成或填写总纲，再推荐剧情", "剧情推进");
                 return;
             }
-            refreshSceneHubListIfOpen();
+            refreshRollingProgressUI();
         }
-        await generateNextRolling();
-        refreshSceneHubListIfOpen();
+        await generateRecommendations();
     });
 
-    // 手动指定当前推进到的大纲条目（发送即推进之外的兜底纠偏）。
+    // 手动指定当前推进到的大纲条目（点卡片推进之外的兜底纠偏）。
     $overlay.on("change", "#t-outline-rolling-cursor-select", function () {
         if (!editingPlanId) return;
         const idx = Number($(this).val());
         if (!Number.isFinite(idx)) return;
         const plan = getPlans().find(p => p.id === editingPlanId);
         const prev = getPlanProgress(plan);
-        // 手动往回拨时清掉"已抵达结局"，允许继续续写。
+        // 手动往回拨时清掉"已抵达结局"，允许继续推荐。
         const reachedEnding = prev.reachedEnding && idx >= outlineItems.length - 1;
         setPlanProgress(editingPlanId, { itemIndex: idx, reachedEnding });
         if (editingPlanId) setEditingPlan(getPlans().find(p => p.id === editingPlanId));
@@ -2339,8 +2186,7 @@ export function openSceneHubWindow() {
         setPlanProgress(editingPlanId, { itemIndex: 0, reachedEnding: false });
         setEditingPlan(getPlans().find(p => p.id === editingPlanId));
         refreshRollingProgressUI();
-        refreshSceneHubListIfOpen();
-        if (window.toastr) toastr.info("已回到开头，可重新渐进续写", "渐进续写");
+        if (window.toastr) toastr.info("已回到开头，可重新推荐剧情", "剧情推进");
     });
 
     // 大纲情节预览：展开/收起 + 点击某条直接推进指针（与下拉等效的快捷纠偏）。
@@ -2348,7 +2194,7 @@ export function openSceneHubWindow() {
         toggleRollingOutlinePreview();
     });
 
-    // 点条目主体 = 展开/收起该条完整情节（方案 A）。
+    // 点条目主体 = 展开/收起该条完整情节。
     $overlay.on("click", "#t-outline-rolling-outline-preview .t-rolling-outline-item", function (e) {
         if ($(e.target).closest(".t-rolling-outline-jump").length > 0) return;
         const idx = Number($(this).data("rolling-outline-idx"));
@@ -2385,65 +2231,10 @@ export function openSceneHubWindow() {
     });
 }
 
-export function openOutlineEntryDialog() {
-    ensureCssLoaded();
-    $("#t-outline-entry-dialog").remove();
-    const hasPlans = getPlans().length > 0;
-
-    const html = `
-    <div id="t-outline-entry-dialog" class="t-dialog-overlay t-dialog-overlay--outline t-root">
-        <div class="t-dialog-box">
-            <div class="t-dialog-header">
-                <span><i class="fa-solid fa-list-check"></i> 选择入口</span>
-                <div class="t-dialog-close" id="t-outline-entry-close"><i class="fa-solid fa-times"></i></div>
-            </div>
-            <div class="t-dialog-body t-dialog-body--tight t-outline-entry-form">
-                <button id="t-outline-entry-open-outline" class="t-btn t-btn-primary"><i class="fa-solid fa-list-check"></i> 故事大纲</button>
-                <button id="t-outline-entry-open-scenes" class="t-btn" ${hasPlans ? "" : "disabled"}><i class="fa-solid fa-clapperboard"></i> 细纲情节</button>
-                ${hasPlans ? "" : '<div class="t-plan-tip">请先至少保存一个方案后再使用细纲情节</div>'}
-            </div>
-        </div>
-    </div>`;
-
-    $("body").append(html);
-
-    const close = () => $("#t-outline-entry-dialog").remove();
-    $("#t-outline-entry-close").on("click", close);
-    $("#t-outline-entry-open-outline").on("click", () => {
-        close();
-        openStoryOutlineWindow();
-    });
-    $("#t-outline-entry-open-scenes").on("click", () => {
-        if (!hasPlans) return;
-        close();
-        openSceneHubWindow();
-    });
-}
-
 function renderPlanDetailCarousel(plan) {
     const items = normalizeItems(plan?.items || []);
     const itemCursor = getPlanItemCursor(plan?.id, items.length);
     const item = items[itemCursor] || null;
-    const scenes = Array.isArray(item?.scenes) ? item.scenes : [];
-    const sortedScenes = scenes
-        .map((scene, sceneIndex) => ({
-            scene,
-            sceneIndex,
-            used: isSceneUsed(plan, itemCursor, sceneIndex)
-        }))
-        .sort((a, b) => {
-            if (a.used === b.used) return a.scene.scene_index - b.scene.scene_index;
-            return a.used ? 1 : -1;
-        });
-
-    const sceneBlocks = sortedScenes.map(({ scene, sceneIndex, used }) => `
-        <div class="t-plan-scene ${used ? "used" : ""}">
-            <div class="t-plan-scene-head ${used ? "used" : ""}">场景 ${scene.scene_index} · ${escapeHtml(scene.scene_time || "未设时间")} · ${escapeHtml(scene.scene_location || "未设地点")} ${used ? '<span class="t-plan-used-tag">已使用</span>' : ""}</div>
-            <div class="t-plan-scene-text ${used ? "used" : ""}"><b>目标</b> ${escapeHtml(scene.scene_goal || "(空)")}</div>
-            <div class="t-plan-scene-text ${used ? "used" : ""}"><b>冲突</b> ${escapeHtml(scene.conflict || "(空)")}</div>
-            <div class="t-plan-scene-text ${used ? "used" : ""}"><b>关键节点</b><br>${escapeHtml(scene.key_beats || "(空)").replace(/\n/g, "<br>")}</div>
-        </div>
-    `).join("");
 
     if (!item) return '<div class="t-plan-empty">该方案为空</div>';
 
@@ -2456,7 +2247,6 @@ function renderPlanDetailCarousel(plan) {
                     <div class="t-plan-item-head">#${item.index} [${escapeHtml(item.time || "未设时间")}] ${escapeHtml(item.title || "未命名")}</div>
                     <div class="t-plan-item-text">${escapeHtml(item.plot || "(空)")}</div>
                     ${item.foreshadowing ? `<div class="t-plan-item-foreshadow">伏笔：${escapeHtml(item.foreshadowing)}</div>` : ""}
-                    <div class="t-plan-scenes-wrap">${sceneBlocks || '<div class="t-plan-scene-empty">暂无场景细纲</div>'}</div>
                 </div>
             </div>
             <button class="t-plan-item-nav-btn" data-action="plan-item-next" data-plan-id="${plan.id}" ${itemCursor >= items.length - 1 ? "disabled" : ""}>&gt;</button>
@@ -2547,15 +2337,15 @@ function renderPlanHub() {
                     <div class="t-plan-accordion-main">
                         <div class="t-plan-name">${escapeHtml(plan.name || "未命名方案")}</div>
                         <div class="t-plan-meta">${timeText} · ${items.length} 条</div>
-                        <div class="t-plan-tip">${isSource ? "当前细纲来源方案" : "单击选中方案"}</div>
+                        <div class="t-plan-tip">${isSource ? "当前剧情推进来源方案" : "单击选中方案"}</div>
                     </div>
                 </div>
                 <div class="t-plan-card-actions">
-                    <label class="t-plan-source-radio" title="选择后，细纲情节页将从该方案读取并使用场景内容">
+                    <label class="t-plan-source-radio" title="选择后，剧情推进页将从该方案读取大纲并生成推荐">
                         <input type="radio" class="t-choice-input t-choice-input--cyan-muted" name="t-plan-scene-source" data-action="set-scene-source" data-plan-id="${plan.id}" ${isSource ? "checked" : ""}>
-                        <span>作为细纲来源</span>
+                        <span>作为剧情推进来源</span>
                     </label>
-                    <div class="t-plan-source-note">说明：勾选后，细纲情节页会优先使用该方案中的场景。</div>
+                    <div class="t-plan-source-note">说明：勾选后，剧情推进页会基于该方案的大纲生成推荐。</div>
                     <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="delete-plan" data-plan-id="${plan.id}"><i class="fa-solid fa-trash"></i> 删除方案</button>
                 </div>
             </div>
@@ -2600,24 +2390,7 @@ function normalizeItems(items) {
         time: typeof item?.time === "string" ? item.time : "",
         title: typeof item?.title === "string" ? item.title : "",
         plot: typeof item?.plot === "string" ? item.plot : "",
-        foreshadowing: typeof item?.foreshadowing === "string" ? item.foreshadowing : "",
-        scenes: normalizeScenes(item?.scenes)
-    }));
-}
-
-function normalizeScenes(scenes) {
-    if (!Array.isArray(scenes)) return [];
-    return scenes.map((scene, idx) => ({
-        scene_index: idx + 1,
-        scene_time: typeof scene?.scene_time === "string" ? scene.scene_time : "",
-        scene_location: typeof scene?.scene_location === "string" ? scene.scene_location : "",
-        scene_goal: typeof scene?.scene_goal === "string" ? scene.scene_goal : "",
-        conflict: typeof scene?.conflict === "string" ? scene.conflict : "",
-        key_beats: Array.isArray(scene?.key_beats)
-            ? scene.key_beats.filter(Boolean).join("\n")
-            : (typeof scene?.key_beats === "string" ? scene.key_beats : ""),
-        sendable_prompt: typeof scene?.sendable_prompt === "string" ? scene.sendable_prompt : "",
-        notes: typeof scene?.notes === "string" ? scene.notes : ""
+        foreshadowing: typeof item?.foreshadowing === "string" ? item.foreshadowing : ""
     }));
 }
 
@@ -2631,21 +2404,7 @@ function createEmptyOutlineItem(index = 1) {
         time: "",
         title: "",
         plot: "",
-        foreshadowing: "",
-        scenes: []
-    };
-}
-
-function createEmptySceneItem(index = 1) {
-    return {
-        scene_index: Number(index) || 1,
-        scene_time: "",
-        scene_location: "",
-        scene_goal: "",
-        conflict: "",
-        key_beats: "",
-        sendable_prompt: "",
-        notes: ""
+        foreshadowing: ""
     };
 }
 
@@ -2676,9 +2435,7 @@ function appendOutlineItem() {
     outlineItems.push(createEmptyOutlineItem(nextIndex + 1));
     reindexItems();
 
-    sceneExpandedMap[nextIndex] = false;
     selectedRowIndex = nextIndex;
-    sceneEditorItemIndex = nextIndex;
 
     renderRows();
     renderDesktopEditor(nextIndex, "title");
@@ -2687,60 +2444,11 @@ function appendOutlineItem() {
     if (window.toastr) toastr.success("已新增大纲条目", "故事大纲");
 }
 
-function appendSceneItem() {
-    if (!ensureEditingPlanContext()) return;
-
-    const targetIndex = outlineItems.length;
-    const nextItem = createEmptyOutlineItem(targetIndex + 1);
-    nextItem.scenes = [createEmptySceneItem(1)];
-    outlineItems.push(nextItem);
-    reindexItems();
-    const targetItem = outlineItems[targetIndex];
-    if (!targetItem) return;
-    reindexScenes(targetItem);
-
-    sceneExpandedMap[targetIndex] = true;
-    selectedRowIndex = targetIndex;
-    sceneEditorItemIndex = targetIndex;
-
-    renderRows();
-    setEditorSubView("scene");
-    renderSceneEditorPage();
-
-    if (window.matchMedia("(max-width: 768px)").matches) {
-        openMobileEditor(targetIndex);
-        setMobileEditorSubView("scene");
-        renderMobileDrawerScenes(targetIndex);
-    } else {
-        setTimeout(() => {
-            const card = document.querySelector('#t-outline-scene-editor-page .t-scene-page-card[data-scene-index="0"]');
-            const input = card?.querySelector('[data-scene-page-field="scene_time"]');
-            if (input) {
-                input.focus();
-                if (typeof input.select === "function") input.select();
-            }
-        }, 0);
-    }
-
-    saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
-    if (window.toastr) toastr.success("已新增细纲条目", "故事大纲");
-}
-
-function reindexScenes(item) {
-    if (!item || !Array.isArray(item.scenes)) return;
-    item.scenes = item.scenes.map((scene, idx) => ({ ...scene, scene_index: idx + 1 }));
-}
-
 function deleteOutlineItemAt(index, options = {}) {
     const resolvedIndex = Number(index);
     if (Number.isNaN(resolvedIndex) || !outlineItems[resolvedIndex]) return false;
 
     outlineItems.splice(resolvedIndex, 1);
-    const nextMap = {};
-    outlineItems.forEach((_, idx) => {
-        nextMap[idx] = sceneExpandedMap[idx] || sceneExpandedMap[idx + 1] || false;
-    });
-    sceneExpandedMap = nextMap;
 
     if (selectedRowIndex === resolvedIndex) {
         selectedRowIndex = -1;
@@ -2752,14 +2460,6 @@ function deleteOutlineItemAt(index, options = {}) {
         closeDesktopEditor();
     } else if (desktopEditorIndex > resolvedIndex) {
         desktopEditorIndex -= 1;
-    }
-
-    if (outlineItems.length === 0) {
-        sceneEditorItemIndex = -1;
-    } else if (sceneEditorItemIndex > resolvedIndex) {
-        sceneEditorItemIndex -= 1;
-    } else if (sceneEditorItemIndex === resolvedIndex) {
-        sceneEditorItemIndex = Math.min(resolvedIndex, outlineItems.length - 1);
     }
 
     reindexItems();
@@ -2776,9 +2476,7 @@ function deleteOutlineItemAt(index, options = {}) {
 function clearEditorDraft() {
     const insertMode = $("#t-outline-insert-mode").val() || "overwrite";
     outlineItems = [];
-    sceneExpandedMap = {};
     selectedRowIndex = -1;
-    sceneEditorItemIndex = -1;
     closeDesktopEditor();
     closeMobileEditor();
     $("#t-outline-story-input").val("");
@@ -2956,40 +2654,17 @@ function ensureRawDialogForStreaming(title = "流式生成中...") {
     updateRawPreview(title);
 }
 
-function applyParsedScenes(parsed) {
-    const incomingItems = Array.isArray(parsed?.items) ? parsed.items : [];
-    for (let i = 0; i < outlineItems.length; i++) {
-        const source = incomingItems.find(x => Number(x?.index) === outlineItems[i].index) || incomingItems[i];
-        outlineItems[i].scenes = normalizeScenes(source?.scenes || []);
-        reindexScenes(outlineItems[i]);
-        sceneExpandedMap[i] = true;
-    }
-
-    renderRows();
-    const mobileIdx = getMobileDrawerIndex();
-    if (!Number.isNaN(mobileIdx) && mobileIdx >= 0 && outlineItems[mobileIdx]) {
-        renderMobileDrawerScenes(mobileIdx);
-    }
-    persistCurrentEditingPlan();
-    saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
-}
-
 function applyParsedOutline(parsed, storyInput, insertMode) {
     outlineItems = normalizeItems(parsed.items);
-    sceneExpandedMap = {};
     renderRows();
     persistCurrentEditingPlan();
-    // 重新生成大纲=路标重画，渐进续写进度归零。
+    // 重新生成大纲=路标重画，剧情推进进度归零。
     if (editingPlanId) {
         setPlanProgress(editingPlanId, { itemIndex: 0, reachedEnding: false });
         setEditingPlan(getPlans().find(p => p.id === editingPlanId));
     }
     refreshRollingProgressUI();
     saveDraft(storyInput, insertMode);
-}
-
-function parseAllScenesResponse(raw) {
-    return parseJsonItemsResponse(raw, "细纲返回格式无法解析为 JSON（缺少 items）");
 }
 
 function buildOutlinePayloadForPrompt() {
@@ -3000,19 +2675,6 @@ function buildOutlinePayloadForPrompt() {
         plot: item.plot || "",
         foreshadowing: item.foreshadowing || ""
     }));
-}
-
-function buildAllScenesPrompt(ctx, userStoryInput, openingText) {
-    const outlinePayload = buildOutlinePayloadForPrompt();
-    const templates = getPromptTemplates();
-    const vars = buildPromptTemplateVars(ctx, userStoryInput || "(空)", openingText, outlinePayload);
-    const sys = renderPromptTemplate(templates.scenes.system, vars);
-    const user = renderPromptTemplate(templates.scenes.user, vars);
-
-    return [
-        { role: "system", content: sys },
-        { role: "user", content: user }
-    ];
 }
 
 // 取最近 N 楼酒馆正文（走标签白名单过滤），越靠后越新，拼成给模型的"已发生的剧情"。
@@ -3027,28 +2689,12 @@ function collectRecentChatText(floors) {
         .join("\n\n");
 }
 
-// 汇总当前方案已生成的细纲场景，作为"已生成的细纲摘要"喂回模型，避免重复推进。
-function summarizeScenesSoFar() {
-    const lines = [];
-    outlineItems.forEach((item) => {
-        const scenes = Array.isArray(item.scenes) ? item.scenes : [];
-        scenes.forEach((scene) => {
-            const summary = String(scene.sendable_prompt || scene.scene_goal || scene.key_beats || "").trim();
-            if (summary) {
-                lines.push(`#${item.index}-${scene.scene_index} ${summary.slice(0, 120)}`);
-            }
-        });
-    });
-    return lines.join("\n");
-}
-
-// 组装渐进续写 prompt：完整大纲 + 最近正文 + 已生成细纲摘要 + 当前进度。
-function buildRollingPrompt(ctx, userStoryInput, openingText, progressHint) {
+// 组装剧情推荐 prompt：完整大纲 + 最近正文 + 当前进度。
+function buildRecommendationPrompt(ctx, userStoryInput, openingText, progressHint) {
     const outlinePayload = buildOutlinePayloadForPrompt();
     const templates = getPromptTemplates();
     const vars = buildPromptTemplateVars(ctx, userStoryInput || "(空)", openingText, outlinePayload, {
         recentChat: collectRecentChatText(getRollingChatFloors()),
-        scenesSoFar: summarizeScenesSoFar(),
         progressHint
     });
     const sys = renderPromptTemplate(templates.rolling.system, vars);
@@ -3060,67 +2706,37 @@ function buildRollingPrompt(ctx, userStoryInput, openingText, progressHint) {
     ];
 }
 
-// 解析渐进续写返回：复用 items 解析，progress 字段单独容错（缺失返回 null，由上层退回指针推进）。
-function parseRollingResponse(raw) {
-    const data = parseJsonItemsResponse(raw, "渐进续写返回格式无法解析为 JSON（缺少 items）");
-    let progress = null;
-    const rawProgress = data?.progress;
-    if (rawProgress && typeof rawProgress === "object") {
-        const idx = Number(rawProgress.current_item_index);
-        progress = {
-            currentItemIndex: Number.isFinite(idx) ? idx : null,
-            reachedEnding: rawProgress.reached_ending === true,
-            note: String(rawProgress.note || "").trim()
-        };
+// 解析剧情推荐返回（version 1.4 candidates 结构）。
+// item_index 为 1-based 大纲条目序号，缺失回退到当前进度指针那一条，并夹紧到合法范围。
+function parseRecommendationResponse(raw, fallbackItemIndex, totalItems) {
+    if (!raw || typeof raw !== "string") {
+        throw new Error("模型返回为空");
     }
-    return { items: Array.isArray(data.items) ? data.items : [], progress };
-}
-
-// 把新生成的场景"追加"到对应大纲条目（区别于 applyParsedScenes 的整体替换）。
-// index 按大纲条目序号匹配（1-based），匹配不到就落到当前进度指针那一条。
-function appendRollingScenes(parsed, fallbackItemIndex) {
-    const incomingItems = Array.isArray(parsed?.items) ? parsed.items : [];
-    let appended = 0;
-    let lastTouchedIdx = -1;
-
-    incomingItems.forEach((incoming) => {
-        const declaredIndex = Number(incoming?.index);
-        let targetIdx = outlineItems.findIndex((it) => it.index === declaredIndex);
-        if (targetIdx === -1) {
-            targetIdx = Math.min(Math.max(Number(fallbackItemIndex) || 0, 0), outlineItems.length - 1);
-        }
-        const target = outlineItems[targetIdx];
-        if (!target) return;
-        if (!Array.isArray(target.scenes)) target.scenes = [];
-        const newScenes = normalizeScenes(incoming?.scenes || []);
-        if (newScenes.length === 0) return;
-        target.scenes = target.scenes.concat(newScenes);
-        reindexScenes(target);
-        sceneExpandedMap[targetIdx] = true;
-        appended += newScenes.length;
-        lastTouchedIdx = targetIdx;
-    });
-
-    renderRows();
-    const mobileIdx = getMobileDrawerIndex();
-    if (!Number.isNaN(mobileIdx) && mobileIdx >= 0 && outlineItems[mobileIdx]) {
-        renderMobileDrawerScenes(mobileIdx);
+    const data = tryParseLooseJsonObject(raw);
+    const list = Array.isArray(data?.candidates) ? data.candidates : [];
+    const maxIdx = Math.max(Number(totalItems) || 1, 1);
+    const candidates = list.map((c) => {
+        const text = String(c?.text || "").trim();
+        if (!text) return null;
+        let idx = Number(c?.item_index);
+        if (!Number.isFinite(idx)) idx = (Number(fallbackItemIndex) || 0) + 1;
+        idx = Math.min(Math.max(Math.floor(idx), 1), maxIdx);
+        return { title: String(c?.title || "").trim(), text, itemIndex: idx };
+    }).filter(Boolean);
+    if (candidates.length === 0) {
+        throw new Error("剧情推荐返回格式无法解析为 JSON（缺少有效 candidates）");
     }
-    persistCurrentEditingPlan();
-    saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
-
-    return { appended, lastTouchedIdx };
+    return { candidates };
 }
 
 function renderRows() {
     const $tbody = $("#t-outline-tbody");
     if ($tbody.length === 0) return;
 
-    updateGenerateAllScenesButtonState();
+    refreshRollingProgressUI();
 
     if (outlineItems.length === 0) {
         selectedRowIndex = -1;
-        sceneEditorItemIndex = -1;
         closeDesktopEditor();
         $tbody.html(`
             <tr>
@@ -3131,28 +2747,10 @@ function renderRows() {
             </tr>
         `);
         renderMobileCards();
-        renderSceneEditorPage();
         return;
     }
 
-    const rows = outlineItems.map((item, idx) => {
-        const scenes = Array.isArray(item.scenes) ? item.scenes : [];
-        const sceneRows = scenes.length > 0
-            ? scenes.map((scene, sceneIdx) => `
-                <tr data-plot-index="${idx}" data-scene-index="${sceneIdx}">
-                    <td class="t-scene-col-index">${scene.scene_index}</td>
-                    <td>${escapeHtml(scene.scene_time || "(空)")}</td>
-                    <td>${escapeHtml(scene.scene_location || "(空)")}</td>
-                    <td>${escapeHtml(scene.scene_goal || "(空)")}</td>
-                    <td>${escapeHtml(scene.conflict || "(空)")}</td>
-                    <td>${escapeHtml(scene.key_beats || "(空)").replace(/\n/g, "<br>")}</td>
-                    <td>${escapeHtml(scene.sendable_prompt || "(空)")}</td>
-                    <td>${escapeHtml(scene.notes || "(空)")}</td>
-                </tr>
-            `).join("")
-            : `<tr><td colspan="8" class="t-outline-empty">暂无细纲，点击“细纲生成”</td></tr>`;
-
-        return `
+    const rows = outlineItems.map((item, idx) => `
             <tr data-index="${idx}">
                 <td class="t-outline-col-index">${item.index}</td>
                 <td data-label="时间" data-edit-field="time"><div class="t-cell-text">${escapeHtml(item.time || "(空)")}</div></td>
@@ -3166,43 +2764,13 @@ function renderRows() {
             <tr class="t-outline-op-row ${selectedRowIndex === idx ? "show" : ""}" data-op-parent="${idx}">
                 <td colspan="6">
                     <div class="t-outline-op-panel">
-                        <button class="t-btn t-btn-xs" data-action="toggle-scenes" title="展开/收起该行情节细纲">
-                            <i class="fa-solid fa-layer-group"></i> 展开细纲
-                        </button>
                         <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="delete" title="删除本行">
                             <i class="fa-solid fa-trash"></i> 删除
                         </button>
                     </div>
                 </td>
             </tr>
-            <tr class="t-outline-scene-row ${sceneExpandedMap[idx] ? "show" : ""}" data-scene-parent="${idx}">
-                <td colspan="6">
-                    <div class="t-outline-scene-wrap">
-                        <div class="t-outline-scene-header">
-                            <span><i class="fa-solid fa-clapperboard"></i> 情节 ${item.index} 细纲（场景）</span>
-                        </div>
-                        <div class="t-outline-scene-table-wrap">
-                            <table class="t-outline-scene-table">
-                                <thead>
-                                    <tr>
-                                        <th>序号</th>
-                                        <th>时间</th>
-                                        <th>地点</th>
-                                        <th>目标</th>
-                                        <th>冲突</th>
-                                        <th>关键节点</th>
-                                        <th>发送指令</th>
-                                        <th>备注</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${sceneRows}</tbody>
-                            </table>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join("");
+        `).join("");
 
     $tbody.html(rows);
     renderMobileCards();
@@ -3210,78 +2778,6 @@ function renderRows() {
     if (desktopEditorIndex >= 0 && outlineItems[desktopEditorIndex]) {
         renderDesktopEditor(desktopEditorIndex);
     }
-
-    renderSceneEditorPage();
-}
-
-function getSceneEditorTargetIndex() {
-    if (sceneEditorItemIndex >= 0 && outlineItems[sceneEditorItemIndex]) return sceneEditorItemIndex;
-    if (outlineItems.length > 0) return 0;
-    return -1;
-}
-
-function renderSceneEditorPage() {
-    const $container = $("#t-outline-scene-editor-page");
-    if ($container.length === 0) return;
-
-    const idx = getSceneEditorTargetIndex();
-    if (idx < 0 || !outlineItems[idx]) {
-        $container.html('<div class="t-outline-empty">暂无可编辑的大纲条目</div>');
-        return;
-    }
-
-    sceneEditorItemIndex = idx;
-    const item = outlineItems[idx];
-    const scenes = Array.isArray(item.scenes) ? item.scenes : [];
-    const sceneBlocks = scenes.map((scene, sceneIdx) => `
-        <div class="t-scene-page-card" data-scene-index="${sceneIdx}">
-            <div class="t-scene-page-title">场景 ${scene.scene_index}</div>
-            <label>时间</label>
-            <input class="t-outline-input" data-scene-page-field="scene_time" value="${escapeHtml(scene.scene_time)}">
-            <label>地点</label>
-            <input class="t-outline-input" data-scene-page-field="scene_location" value="${escapeHtml(scene.scene_location)}">
-            <label>目标</label>
-            <textarea class="t-outline-textarea" rows="2" data-scene-page-field="scene_goal">${escapeHtml(scene.scene_goal)}</textarea>
-            <label>冲突</label>
-            <textarea class="t-outline-textarea" rows="2" data-scene-page-field="conflict">${escapeHtml(scene.conflict)}</textarea>
-            <label>关键节点</label>
-            <textarea class="t-outline-textarea" rows="3" data-scene-page-field="key_beats">${escapeHtml(scene.key_beats)}</textarea>
-            <label>发送摘要</label>
-            <textarea class="t-outline-textarea" rows="3" data-scene-page-field="sendable_prompt">${escapeHtml(scene.sendable_prompt)}</textarea>
-            <label>备注</label>
-            <textarea class="t-outline-textarea" rows="2" data-scene-page-field="notes">${escapeHtml(scene.notes)}</textarea>
-            <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="scene-page-delete" data-scene-index="${sceneIdx}"><i class="fa-solid fa-trash"></i> 删除场景</button>
-        </div>
-    `).join("") || '<div class="t-outline-empty">暂无细纲场景，点击新增场景</div>';
-
-    $container.html(`
-        <div class="t-scene-page-head">
-            <div class="t-scene-page-main">#${item.index} [${escapeHtml(item.time || "未设时间")}] ${escapeHtml(item.title || "未命名")}</div>
-            <div class="t-scene-page-nav">
-                <button class="t-btn t-btn-xs" data-action="scene-page-prev"><i class="fa-solid fa-chevron-left"></i> 上一条</button>
-                <button class="t-btn t-btn-xs" data-action="scene-page-next">下一条 <i class="fa-solid fa-chevron-right"></i></button>
-            </div>
-        </div>
-        <div class="t-scene-page-actions">
-            <button class="t-btn t-btn-xs" data-action="scene-page-add"><i class="fa-solid fa-plus"></i> 新增场景</button>
-            <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="scene-page-delete-item"><i class="fa-solid fa-trash"></i> 删除细纲条目</button>
-        </div>
-        <div class="t-scene-page-list">${sceneBlocks}</div>
-    `);
-}
-
-function setEditorSubView(view) {
-    editorSubView = view === "scene" ? "scene" : "outline";
-    $("#t-outline-subview-outline").toggle(editorSubView === "outline");
-    $("#t-outline-subview-scene").toggle(editorSubView === "scene");
-    $("#t-editor-tab-outline").toggleClass("active", editorSubView === "outline");
-    $("#t-editor-tab-scene").toggleClass("active", editorSubView === "scene");
-
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-    if (isMobile) {
-        $("#t-outline-mobile-list").toggle(editorSubView === "outline");
-    }
-    syncAddFabVisibility();
 }
 
 function getBriefText(text, maxLen = 38) {
@@ -3299,20 +2795,16 @@ function renderMobileCards() {
         return;
     }
 
-    const cards = outlineItems.map((item, idx) => {
-        const sceneCount = Array.isArray(item.scenes) ? item.scenes.length : 0;
-        return `
+    const cards = outlineItems.map((item, idx) => `
             <div class="t-outline-mobile-card" data-index="${idx}">
                 <div class="t-outline-mobile-head">
                     <span class="idx">#${item.index}</span>
                     <span class="time">${escapeHtml(item.time || "未设时间")}</span>
-                    <span class="scene-count">细纲 ${sceneCount}</span>
                 </div>
                 <div class="t-outline-mobile-title">${escapeHtml(item.title || "未命名标题")}</div>
                 <div class="t-outline-mobile-plot">${escapeHtml(getBriefText(item.plot))}</div>
             </div>
-        `;
-    }).join("");
+        `).join("");
 
     $list.html(cards);
 }
@@ -3326,8 +2818,6 @@ function openMobileEditor(index) {
     $drawer.find("#t-mobile-field-title").val(item.title || "");
     $drawer.find("#t-mobile-field-plot").val(item.plot || "");
     $drawer.find("#t-mobile-field-foreshadowing").val(item.foreshadowing || "");
-    renderMobileDrawerScenes(index);
-    setMobileEditorSubView("outline");
     $drawer.addClass("show");
     syncAddFabVisibility();
 }
@@ -3335,14 +2825,6 @@ function openMobileEditor(index) {
 function closeMobileEditor() {
     $("#t-outline-mobile-drawer").removeClass("show").attr("data-index", "");
     syncAddFabVisibility();
-}
-
-function setMobileEditorSubView(view) {
-    mobileEditorSubView = view === "scene" ? "scene" : "outline";
-    $("#t-mobile-outline-view").toggle(mobileEditorSubView === "outline");
-    $("#t-mobile-scene-view").toggle(mobileEditorSubView === "scene");
-    $("#t-mobile-tab-outline").toggleClass("active", mobileEditorSubView === "outline");
-    $("#t-mobile-tab-scene").toggleClass("active", mobileEditorSubView === "scene");
 }
 
 function saveMobileEditor() {
@@ -3381,7 +2863,6 @@ function renderDesktopEditor(index, focusField = "") {
             <textarea id="t-desk-field-plot" class="t-outline-textarea" rows="4">${escapeHtml(item.plot)}</textarea>
             <label>伏笔</label>
             <textarea id="t-desk-field-foreshadowing" class="t-outline-textarea" rows="3">${escapeHtml(item.foreshadowing)}</textarea>
-            <div class="t-outline-empty" style="margin-top:6px;">细纲编辑请切换到上方“细纲编辑”页</div>
         </div>
         <div class="t-desk-editor-actions">
             <button class="t-btn t-btn-primary" id="t-desk-editor-save"><i class="fa-solid fa-check"></i> 保存</button>
@@ -3426,20 +2907,14 @@ function saveDesktopEditor() {
     saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
 }
 
-function updateGenerateAllScenesButtonState() {
-    const hasOutline = Array.isArray(outlineItems) && outlineItems.length > 0;
-    $("#t-outline-generate-all-scenes").prop("disabled", !hasOutline);
-    refreshRollingProgressUI();
-}
-
-// 刷新渐进续写面板：进度条、状态文案、条目下拉。
-// 面板已迁到「细纲情节」窗口：优先显示细纲来源方案的进度；主窗口（大纲编辑）里
-// 该面板已不存在，$panel.length===0 时直接跳过。
+// 刷新剧情推进面板：进度条、状态文案、条目下拉。
+// 面板在「剧情推进」窗口：优先显示剧情推进来源方案的进度；主窗口（大纲编辑）里
+// 该面板不存在，$panel.length===0 时直接跳过。
 function refreshRollingProgressUI() {
     const $panel = $("#t-outline-rolling");
     if ($panel.length === 0) return;
 
-    // 细纲窗口独立打开时编辑态可能为空：用细纲来源方案兜底。
+    // 剧情推进窗口独立打开时编辑态可能为空：用来源方案兜底。
     let plan = editingPlanId ? getPlans().find(p => p.id === editingPlanId) : null;
     if (!plan) {
         const sourceId = getSceneSourcePlanId();
@@ -3480,7 +2955,7 @@ function refreshRollingProgressUI() {
     renderRollingOutlinePreview(outlineForPanel, progress.itemIndex, progress.reachedEnding);
 }
 
-// 渐进续写面板里的大纲情节预览：全部条目一屏纵列，按进度区分状态——
+// 剧情推进面板里的大纲情节预览：全部条目一屏纵列，按进度区分状态——
 // 已推进过的条目淡化+打勾，当前条目高亮，后续条目常显。
 // 交互划分（方案 A）：点条目主体 = 展开/收起该条完整情节（含伏笔），
 // 右侧箭头按钮 = 把进度指针拨到该条。展开状态存 rollingPreviewExpandedIdx，
@@ -3526,7 +3001,7 @@ function renderRollingOutlinePreview(outlineForPanel, currentItemIndex, reachedE
     $preview.html(rows);
 }
 
-// 渐进续写大纲预览的展开/收起（open 时随进度刷新重渲染）。收起时清掉单条展开态。
+// 剧情推进大纲预览的展开/收起（open 时随进度刷新重渲染）。收起时清掉单条展开态。
 function toggleRollingOutlinePreview(forceOpen) {
     const $preview = $("#t-outline-rolling-outline-preview");
     const $toggle = $("#t-outline-rolling-outline-toggle");
@@ -3541,63 +3016,12 @@ function toggleRollingOutlinePreview(forceOpen) {
     }
 }
 
-// 细纲窗口开着时刷新场景列表（渐进续写追加场景后同步展示）。
-function refreshSceneHubListIfOpen() {
-    if ($("#t-scene-hub-overlay").length > 0) {
-        renderSceneHubWindow();
-        refreshRollingProgressUI();
-    }
-}
-
-function getMobileDrawerIndex() {
-    return Number($("#t-outline-mobile-drawer").attr("data-index"));
-}
-
-function renderMobileDrawerScenes(index) {
-    const item = outlineItems[index];
-    const $list = $("#t-mobile-scenes-list");
-    if (!item || $list.length === 0) return;
-
-    const scenes = Array.isArray(item.scenes) ? item.scenes : [];
-    $("#t-mobile-scene-count").text(String(scenes.length));
-
-    if (scenes.length === 0) {
-        $list.html('<div class="t-mobile-scene-empty">暂无细纲场景，可点击“生成细纲”或“新增场景”</div>');
-        return;
-    }
-
-    const html = scenes.map((scene, sceneIndex) => `
-        <div class="t-mobile-scene-card" data-scene-index="${sceneIndex}">
-            <div class="t-mobile-scene-title">场景 ${scene.scene_index}</div>
-            <label>时间</label>
-            <input class="t-outline-input" data-mobile-scene-field="scene_time" value="${escapeHtml(scene.scene_time)}">
-            <label>地点</label>
-            <input class="t-outline-input" data-mobile-scene-field="scene_location" value="${escapeHtml(scene.scene_location)}">
-            <label>目标</label>
-            <textarea class="t-outline-textarea" rows="2" data-mobile-scene-field="scene_goal">${escapeHtml(scene.scene_goal)}</textarea>
-            <label>冲突</label>
-            <textarea class="t-outline-textarea" rows="2" data-mobile-scene-field="conflict">${escapeHtml(scene.conflict)}</textarea>
-            <label>关键节点</label>
-            <textarea class="t-outline-textarea" rows="3" data-mobile-scene-field="key_beats">${escapeHtml(scene.key_beats)}</textarea>
-            <label>发送指令</label>
-            <textarea class="t-outline-textarea" rows="3" data-mobile-scene-field="sendable_prompt">${escapeHtml(scene.sendable_prompt)}</textarea>
-            <label>备注</label>
-            <textarea class="t-outline-textarea" rows="2" data-mobile-scene-field="notes">${escapeHtml(scene.notes)}</textarea>
-            <div class="t-mobile-scene-actions">
-                <button class="t-btn t-btn-xs t-plan-delete-btn" data-action="mobile-delete-scene" data-scene-index="${sceneIndex}"><i class="fa-solid fa-trash"></i> 删除场景</button>
-            </div>
-        </div>
-    `).join("");
-
-    $list.html(html);
-}
-
 /**
- * 大纲/细纲两个生成流程的公共骨架：计时器、流式预览、pushHistory、解析、
+ * 大纲/剧情推荐两个生成流程的公共骨架：计时器、流式预览、pushHistory、解析、
  * 失败回退可编辑对话框、中断包裹、按钮态恢复。差异点由 cfg 提供。
  *
  * @param {object} cfg
- * @param {string} cfg.label           toast 标题（"故事大纲"/"故事细纲"）
+ * @param {string} cfg.label           toast 标题（"故事大纲"/"剧情推进"）
  * @param {string} cfg.historyLabel    写入历史的类型标签
  * @param {string} cfg.streamingTitle  流式对话框标题
  * @param {string} cfg.doneTitle       完成时对话框标题
@@ -3609,7 +3033,7 @@ function renderMobileDrawerScenes(index) {
  * @param {(raw: string) => object} cfg.parse      解析函数
  * @param {(parsed: object) => void} cfg.apply     应用解析结果
  * @param {string} cfg.reparseLabel   回退对话框的重解析按钮文案
- * @param {(count: number) => string} cfg.successMessage
+ * @param {(fixed?: boolean) => string} cfg.successMessage  fixed=true 表示经可编辑对话框修复后成功
  * @param {() => void} [cfg.beforeButtonRestore]   收尾前的钩子
  */
 async function runGenerationFlow(cfg) {
@@ -3650,136 +3074,71 @@ async function runGenerationFlow(cfg) {
                 parseHint: "你可以直接修正 JSON 后点击按钮重新解析，无需重新请求模型。",
                 parseAction: async (editedText) => {
                     cfg.apply(cfg.parse(editedText));
-                    if (window.toastr) toastr.success(cfg.successMessage(outlineItems.length, true), cfg.label);
+                    if (window.toastr) toastr.success(cfg.successMessage(true), cfg.label);
                 }
             });
             throw parseError;
         }
 
-        if (window.toastr) toastr.success(cfg.successMessage(outlineItems.length, false), cfg.label);
+        if (window.toastr) toastr.success(cfg.successMessage(false), cfg.label);
     }, { timeoutSec: cfg.timeoutSec });
 }
 
-async function generateAllScenes() {
+// 剧情推荐：结合大纲(终点)+最近正文，生成 2~3 个候选剧情走向供玩家挑选。
+// 进度指针不在此推进——用户点击候选卡片写入输入框时才推进。
+async function generateRecommendations() {
     if (!ensureEditingPlanContext()) return;
     if (!Array.isArray(outlineItems) || outlineItems.length === 0) {
-        if (window.toastr) toastr.warning("请先生成或填写总纲", "故事细纲");
-        return;
-    }
-
-    const $buttons = $("#t-outline-generate-all-scenes");
-    const originTexts = [];
-    $buttons.each(function () {
-        originTexts.push($(this).html());
-        $(this).prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i>');
-    });
-
-    try {
-        const storyInput = ($("#t-outline-story-input").val() || "").trim();
-        const params = getOutlineGenParams().scenes;
-        await runGenerationFlow({
-            label: "故事细纲",
-            historyLabel: "细纲生成",
-            streamingTitle: "流式生成细纲中...",
-            doneTitle: "细纲生成完成",
-            failTitle: "细纲解析失败 - 可手动修复",
-            temperature: params.temperature,
-            maxTokens: params.maxTokens,
-            timeoutSec: params.timeoutSec,
-            buildMessages: (ctx, opening) => buildAllScenesPrompt(ctx, storyInput, opening),
-            parse: parseAllScenesResponse,
-            apply: applyParsedScenes,
-            reparseLabel: "重新解析细纲并应用",
-            successMessage: (count, fixed) => fixed
-                ? `修复成功，已应用 ${count} 条情节细纲`
-                : `已一次性生成 ${count} 条情节的细纲`
-        });
-    } catch (e) {
-        reportGenerationError(e, "故事细纲", "批量细纲生成失败");
-    } finally {
-        stopResponseTimer();
-        $buttons.each(function (idx) {
-            $(this).prop("disabled", false).html(originTexts[idx] || '<i class="fa-solid fa-wand-magic-sparkles"></i>');
-        });
-    }
-}
-
-// 渐进续写：结合大纲(终点)+最近正文，生成"接下来 1~2 个场景"，并推进进度指针。
-async function generateNextRolling() {
-    if (!ensureEditingPlanContext()) return;
-    if (!Array.isArray(outlineItems) || outlineItems.length === 0) {
-        if (window.toastr) toastr.warning("请先生成或填写总纲，再渐进续写", "渐进续写");
+        if (window.toastr) toastr.warning("请先生成或填写总纲，再推荐剧情", "剧情推进");
         return;
     }
 
     const plan = getPlans().find(p => p.id === editingPlanId);
     const progress = getPlanProgress(plan);
     if (progress.reachedEnding) {
-        if (window.toastr) toastr.info("已抵达结局。如需重写，可在进度条手动回退。", "渐进续写");
+        if (window.toastr) toastr.info("已抵达结局。如需重写，可在进度条手动回退。", "剧情推进");
         return;
     }
 
     const $btn = $("#t-outline-generate-next");
     const originHtml = $btn.html();
-    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 续写中...');
+    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 推荐中...');
 
     const total = outlineItems.length;
     const currentItem = outlineItems[progress.itemIndex];
     const progressHint = `当前推进到第 ${progress.itemIndex + 1}/${total} 条大纲（${currentItem?.title || "未命名"}）。距结局还有 ${total - 1 - progress.itemIndex} 条。请只推进一小步。`;
 
-    let outcome = { appended: 0, reachedEnding: false, note: "" };
-
     try {
-        // 面板迁到细纲窗口后可能独立于主窗口打开：故事指令优先取输入框，主窗口不在时退回方案 instruction。
+        // 面板独立于主窗口打开时输入框不在：故事指令退回方案 instruction。
         const $storyInput = $("#t-outline-story-input");
         const storyInput = ($storyInput.length > 0
             ? $storyInput.val() || ""
             : getPlanInstruction(getPlans().find(p => p.id === editingPlanId))).trim();
         const params = getOutlineGenParams().scenes;
         await runGenerationFlow({
-            label: "渐进续写",
-            historyLabel: "渐进续写",
-            streamingTitle: "流式渐进续写中...",
-            doneTitle: "渐进续写完成",
-            failTitle: "渐进续写解析失败 - 可手动修复",
+            label: "剧情推进",
+            historyLabel: "剧情推荐",
+            streamingTitle: "流式生成剧情推荐中...",
+            doneTitle: "剧情推荐完成",
+            failTitle: "剧情推荐解析失败 - 可手动修复",
             temperature: params.temperature,
             maxTokens: params.maxTokens,
             timeoutSec: params.timeoutSec,
-            buildMessages: (ctx, opening) => buildRollingPrompt(ctx, storyInput, opening, progressHint),
-            parse: parseRollingResponse,
+            buildMessages: (ctx, opening) => buildRecommendationPrompt(ctx, storyInput, opening, progressHint),
+            parse: (raw) => parseRecommendationResponse(raw, progress.itemIndex, total),
             apply: (parsed) => {
-                const res = appendRollingScenes(parsed, progress.itemIndex);
-                // 进度推进：优先用模型回报的 current_item_index（1-based → 0-based），
-                // 缺失则退回"追加落到的最后一条"，再退回原指针。
-                let nextIdx = progress.itemIndex;
-                const reported = parsed?.progress?.currentItemIndex;
-                if (Number.isFinite(reported)) {
-                    nextIdx = Math.min(Math.max(reported - 1, 0), total - 1);
-                } else if (res.lastTouchedIdx >= 0) {
-                    nextIdx = res.lastTouchedIdx;
-                }
-                const reachedEnding = parsed?.progress?.reachedEnding === true
-                    || (nextIdx >= total - 1 && parsed?.progress?.reachedEnding === true);
-                setPlanProgress(editingPlanId, { itemIndex: nextIdx, reachedEnding });
-                if (editingPlanId) setEditingPlan(getPlans().find(p => p.id === editingPlanId));
-                outcome = { appended: res.appended, reachedEnding, note: parsed?.progress?.note || "" };
-                refreshRollingProgressUI();
-                refreshSceneHubListIfOpen();
+                latestCandidates = parsed.candidates.map((c) => ({ ...c, used: false }));
+                renderCandidates();
             },
-            reparseLabel: "重新解析并追加",
-            successMessage: () => {
-                const tail = outcome.reachedEnding ? "，已抵达结局" : "";
-                const note = outcome.note ? `（${outcome.note}）` : "";
-                return `已续写 ${outcome.appended} 个场景${tail}${note}`;
-            }
+            reparseLabel: "重新解析并应用",
+            successMessage: () => `已生成 ${latestCandidates.length} 个候选剧情走向`
         });
     } catch (e) {
-        reportGenerationError(e, "渐进续写", "渐进续写失败");
+        reportGenerationError(e, "剧情推进", "剧情推荐失败");
     } finally {
         stopResponseTimer();
-        $btn.prop("disabled", false).html(originHtml || '<i class="fa-solid fa-forward-step"></i> 生成下一段');
+        $btn.prop("disabled", false).html(originHtml || '<i class="fa-solid fa-forward-step"></i> 推荐剧情');
         refreshRollingProgressUI();
-        refreshSceneHubListIfOpen();
     }
 }
 
@@ -3806,9 +3165,12 @@ async function generateOutline() {
             parse: parseOutlineResponse,
             apply: (parsed) => applyParsedOutline(parsed, storyInput, insertMode),
             reparseLabel: "重新解析大纲并应用",
-            successMessage: (count, fixed) => fixed
-                ? `修复成功，已生成 ${count} 条大纲`
-                : `已生成 ${count} 条大纲`
+            successMessage: (fixed) => {
+                const count = outlineItems.length;
+                return fixed
+                    ? `修复成功，已生成 ${count} 条大纲`
+                    : `已生成 ${count} 条大纲`;
+            }
         });
     } catch (e) {
         reportGenerationError(e, "故事大纲", "生成失败");
@@ -3884,7 +3246,6 @@ function bindEvents() {
         }
         loadPlanToEditor(plan);
         showOutlineView("editor");
-        setEditorSubView("outline");
         updatePlanWorkflowUI();
     });
 
@@ -3903,7 +3264,6 @@ function bindEvents() {
         loadPlanToEditor(created);
         renderPlanHub();
         showOutlineView("editor");
-        setEditorSubView("outline");
         updatePlanWorkflowUI();
         if (window.toastr) toastr.success(`已创建分支方案：${created.name}`, "故事大纲");
     });
@@ -3950,7 +3310,7 @@ function bindEvents() {
         activePlanId = planId;
         setActivePlanId(activePlanId);
         renderPlanHub();
-        if (window.toastr) toastr.success("已切换细纲情节来源方案", "故事大纲");
+        if (window.toastr) toastr.success("已切换剧情推进来源方案", "故事大纲");
     });
 
     $overlay.on("click", "[data-action='plan-item-prev']", function () {
@@ -4014,10 +3374,6 @@ function bindEvents() {
         await generateOutline();
     });
 
-    $overlay.on("click", "#t-outline-generate-all-scenes", async () => {
-        await generateAllScenes();
-    });
-
     $overlay.on("click", "#t-outline-add-fab", () => {
         const isOpen = $("#t-outline-add-sheet").hasClass("show");
         if (isOpen) closeAddItemSheet();
@@ -4030,11 +3386,6 @@ function bindEvents() {
 
     $overlay.on("click", "#t-outline-add-outline-item", () => {
         appendOutlineItem();
-        closeAddItemSheet();
-    });
-
-    $overlay.on("click", "#t-outline-add-scene-item", () => {
-        appendSceneItem();
         closeAddItemSheet();
     });
 
@@ -4072,24 +3423,6 @@ function bindEvents() {
         renderRows();
     });
 
-    $overlay.on("click", "#t-outline-tbody [data-action='toggle-scenes']", function () {
-        const rowIndex = Number($(this).closest("tr").data("index"));
-        const fallbackIndex = Number($(this).closest("tr").data("op-parent"));
-        const resolvedIndex = Number.isNaN(rowIndex) ? fallbackIndex : rowIndex;
-        if (Number.isNaN(resolvedIndex)) return;
-        sceneExpandedMap[resolvedIndex] = !sceneExpandedMap[resolvedIndex];
-        renderRows();
-    });
-
-    $overlay.on("click", "#t-editor-tab-outline", () => {
-        setEditorSubView("outline");
-    });
-
-    $overlay.on("click", "#t-editor-tab-scene", () => {
-        setEditorSubView("scene");
-        renderSceneEditorPage();
-    });
-
     $overlay.on("click", "#t-desk-editor-close", () => {
         closeDesktopEditor();
     });
@@ -4099,84 +3432,11 @@ function bindEvents() {
         if (window.toastr) toastr.success("已保存编辑", "故事大纲");
     });
 
-    $overlay.on("input", "#t-outline-scene-editor-page [data-scene-page-field]", function () {
-        const idx = getSceneEditorTargetIndex();
-        if (idx < 0 || !outlineItems[idx]) return;
-        const item = outlineItems[idx];
-        const sceneIndex = Number($(this).closest(".t-scene-page-card").data("scene-index"));
-        const field = $(this).data("scene-page-field");
-        if (Number.isNaN(sceneIndex) || !item.scenes?.[sceneIndex]) return;
-        item.scenes[sceneIndex][field] = $(this).val();
-        saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
-    });
-
-    $overlay.on("click", "#t-outline-scene-editor-page [data-action='scene-page-add']", () => {
-        const idx = getSceneEditorTargetIndex();
-        if (idx < 0 || !outlineItems[idx]) return;
-        const item = outlineItems[idx];
-        if (!Array.isArray(item.scenes)) item.scenes = [];
-        item.scenes.push(createEmptySceneItem(item.scenes.length + 1));
-        reindexScenes(item);
-        renderSceneEditorPage();
-        renderRows();
-        saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
-    });
-
-    $overlay.on("click", "#t-outline-scene-editor-page [data-action='scene-page-delete']", function () {
-        const idx = getSceneEditorTargetIndex();
-        if (idx < 0 || !outlineItems[idx]) return;
-        const item = outlineItems[idx];
-        const sceneIndex = Number($(this).data("scene-index"));
-        if (Number.isNaN(sceneIndex) || !item.scenes?.[sceneIndex]) return;
-        item.scenes.splice(sceneIndex, 1);
-        reindexScenes(item);
-        renderSceneEditorPage();
-        renderRows();
-        saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
-    });
-
-    $overlay.on("click", "#t-outline-scene-editor-page [data-action='scene-page-delete-item']", () => {
-        const idx = getSceneEditorTargetIndex();
-        if (idx < 0 || !outlineItems[idx]) return;
-        const itemTitle = String(outlineItems[idx]?.title || "").trim() || `#${idx + 1}`;
-        if (!window.confirm(`确认删除细纲条目「${itemTitle}」？`)) return;
-        const deleted = deleteOutlineItemAt(idx);
-        if (deleted && window.toastr) toastr.success("已删除细纲条目", "故事大纲");
-    });
-
-    $overlay.on("click", "#t-outline-scene-editor-page [data-action='scene-page-prev']", () => {
-        if (sceneEditorItemIndex > 0) {
-            sceneEditorItemIndex -= 1;
-            renderSceneEditorPage();
-        }
-    });
-
-    $overlay.on("click", "#t-outline-scene-editor-page [data-action='scene-page-next']", () => {
-        if (sceneEditorItemIndex < outlineItems.length - 1) {
-            sceneEditorItemIndex += 1;
-            renderSceneEditorPage();
-        }
-    });
-
-
-
-    $overlay.on("click", "#t-mobile-tab-outline", () => {
-        setMobileEditorSubView("outline");
-    });
-
-    $overlay.on("click", "#t-mobile-tab-scene", () => {
-        const index = getMobileDrawerIndex();
-        setMobileEditorSubView("scene");
-        if (!Number.isNaN(index)) renderMobileDrawerScenes(index);
-    });
-
     $overlay.on("click", "#t-outline-mobile-list .t-outline-mobile-card", function () {
         const index = Number($(this).data("index"));
         if (Number.isNaN(index) || !outlineItems[index]) return;
         openMobileEditor(index);
     });
-
-
 
     $overlay.on("click", "#t-mobile-drawer-close", () => {
         closeMobileEditor();
@@ -4187,51 +3447,10 @@ function bindEvents() {
         closeMobileEditor();
     });
 
-
-
     $overlay.on("click", "#t-mobile-drawer-delete", function () {
         const index = Number($("#t-outline-mobile-drawer").attr("data-index"));
         const deleted = deleteOutlineItemAt(index, { closeMobile: true });
-        if (deleted && window.toastr) toastr.success("已删除细纲条目", "故事大纲");
-    });
-
-    $overlay.on("click", "#t-mobile-add-scene", function () {
-        const plotIndex = getMobileDrawerIndex();
-        const item = outlineItems[plotIndex];
-        if (!item) return;
-        if (!Array.isArray(item.scenes)) item.scenes = [];
-        item.scenes.push(createEmptySceneItem(item.scenes.length + 1));
-        reindexScenes(item);
-        renderRows();
-        renderMobileDrawerScenes(plotIndex);
-        setMobileEditorSubView("scene");
-        saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
-    });
-
-    $overlay.on("input", "#t-mobile-scenes-list [data-mobile-scene-field]", function () {
-        const plotIndex = getMobileDrawerIndex();
-        const item = outlineItems[plotIndex];
-        if (!item || !Array.isArray(item.scenes)) return;
-        const sceneIndex = Number($(this).closest(".t-mobile-scene-card").data("scene-index"));
-        const field = $(this).data("mobile-scene-field");
-        if (Number.isNaN(sceneIndex) || !item.scenes[sceneIndex]) return;
-        item.scenes[sceneIndex][field] = $(this).val();
-        saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
-    });
-
-
-
-    $overlay.on("click", "#t-mobile-scenes-list [data-action='mobile-delete-scene']", function () {
-        const plotIndex = getMobileDrawerIndex();
-        const item = outlineItems[plotIndex];
-        if (!item || !Array.isArray(item.scenes)) return;
-        const sceneIndex = Number($(this).data("scene-index"));
-        if (Number.isNaN(sceneIndex)) return;
-        item.scenes.splice(sceneIndex, 1);
-        reindexScenes(item);
-        renderRows();
-        renderMobileDrawerScenes(plotIndex);
-        saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
+        if (deleted && window.toastr) toastr.success("已删除大纲条目", "故事大纲");
     });
 
 }
@@ -4251,13 +3470,10 @@ export function openStoryOutlineWindow() {
     }
     responseElapsedMs = 0;
     stopResponseTimer();
-    sceneExpandedMap = {};
     selectedRowIndex = -1;
     activePlanId = "";
     planItemCursorMap = {};
     setEditingPlan(null);
-    editorSubView = "outline";
-    sceneEditorItemIndex = -1;
     const defaultPlanName = createPlanName(getCurrentCharCardName());
 
     const html = `
@@ -4278,9 +3494,6 @@ export function openStoryOutlineWindow() {
                         <div class="t-outline-primary-actions">
                             <button id="t-outline-generate" class="t-btn t-btn-primary">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> 大纲生成
-                            </button>
-                            <button id="t-outline-generate-all-scenes" class="t-btn" disabled>
-                                <i class="fa-solid fa-clapperboard"></i> 细纲生成
                             </button>
                         </div>
                     </div>
@@ -4307,7 +3520,7 @@ export function openStoryOutlineWindow() {
                         <button id="t-hub-create-plan" class="t-btn t-btn-xs"><i class="fa-solid fa-plus"></i> 新建方案</button>
                         <button id="t-hub-create-branch" class="t-btn t-btn-xs"><i class="fa-solid fa-code-branch"></i> 新建分支</button>
                         <button id="t-hub-edit-plan" class="t-btn t-btn-xs t-hub-primary-action"><i class="fa-solid fa-wand-magic-sparkles"></i> 编辑&生成大纲</button>
-                        <button id="t-hub-view-detail" class="t-btn t-btn-xs"><i class="fa-solid fa-list"></i> 查看情节&细纲</button>
+                        <button id="t-hub-view-detail" class="t-btn t-btn-xs"><i class="fa-solid fa-list"></i> 查看情节</button>
                         <button id="t-hub-view-instruction" class="t-btn t-btn-xs"><i class="fa-solid fa-file-lines"></i> 故事指令</button>
                     </div>
                     <div id="t-outline-plan-list" class="t-outline-plan-list"></div>
@@ -4317,7 +3530,6 @@ export function openStoryOutlineWindow() {
                     <div class="t-editor-tabs">
                         <button id="t-outline-back-hub" class="t-btn t-btn-xs"><i class="fa-solid fa-arrow-left"></i> 返回方案页</button>
                         <button id="t-editor-tab-outline" class="t-btn t-btn-xs active"><i class="fa-solid fa-table"></i> 大纲编辑</button>
-                        <button id="t-editor-tab-scene" class="t-btn t-btn-xs"><i class="fa-solid fa-clapperboard"></i> 细纲编辑</button>
                     </div>
 
                     <div id="t-outline-subview-outline" class="t-outline-subview">
@@ -4339,19 +3551,11 @@ export function openStoryOutlineWindow() {
                         <div id="t-outline-desktop-editor" class="t-outline-desktop-editor"></div>
                     </div>
 
-                    <div id="t-outline-subview-scene" class="t-outline-subview" style="display:none;">
-                        <div id="t-outline-scene-editor-page" class="t-outline-scene-editor-page"></div>
-                    </div>
-
                     <div id="t-outline-mobile-list" class="t-outline-mobile-list"></div>
                     <div id="t-outline-mobile-drawer" class="t-outline-mobile-drawer" data-index="">
                         <div class="t-outline-mobile-drawer-head">
                             <span><i class="fa-solid fa-pen-to-square"></i> 编辑情节</span>
                             <button id="t-mobile-drawer-close" class="t-btn t-btn-xs"><i class="fa-solid fa-times"></i></button>
-                        </div>
-                        <div class="t-mobile-editor-tabs">
-                            <button id="t-mobile-tab-outline" class="t-btn t-btn-xs active"><i class="fa-solid fa-table"></i> 大纲</button>
-                            <button id="t-mobile-tab-scene" class="t-btn t-btn-xs"><i class="fa-solid fa-clapperboard"></i> 细纲</button>
                         </div>
                         <div class="t-outline-mobile-drawer-body">
                             <div id="t-mobile-outline-view">
@@ -4363,13 +3567,6 @@ export function openStoryOutlineWindow() {
                                 <textarea id="t-mobile-field-plot" class="t-outline-textarea" rows="5"></textarea>
                                 <label>伏笔</label>
                                 <textarea id="t-mobile-field-foreshadowing" class="t-outline-textarea" rows="3"></textarea>
-                            </div>
-                            <div id="t-mobile-scene-view" style="display:none;">
-                                <div class="t-mobile-scene-head">
-                                    <span><i class="fa-solid fa-clapperboard"></i> 场景细纲（<span id="t-mobile-scene-count">0</span>）</span>
-                                    <button id="t-mobile-add-scene" class="t-btn t-btn-xs"><i class="fa-solid fa-plus"></i> 新增场景</button>
-                                </div>
-                                <div id="t-mobile-scenes-list" class="t-mobile-scenes-list"></div>
                             </div>
                         </div>
                         <div class="t-outline-mobile-drawer-actions">
@@ -4384,7 +3581,6 @@ export function openStoryOutlineWindow() {
                         </button>
                         <div id="t-outline-add-sheet" class="t-outline-add-sheet t-root" role="menu" aria-label="新增条目类型">
                             <button id="t-outline-add-outline-item" class="t-btn" role="menuitem"><i class="fa-solid fa-table"></i> 新增大纲条目</button>
-                            <button id="t-outline-add-scene-item" class="t-btn" role="menuitem"><i class="fa-solid fa-clapperboard"></i> 新增细纲条目</button>
                         </div>
                     </div>
                 </div>

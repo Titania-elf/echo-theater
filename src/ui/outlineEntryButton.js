@@ -120,7 +120,7 @@ async function openMenu($btn) {
     const menuHtml = `
     <div id="${MENU_ID}" role="menu" aria-label="故事大纲入口">
         ${showOutlineActions ? `<button class="t-outline-entry-item" id="t-outline-entry-open-scenes" role="menuitem" ${canOpenScenes ? "" : "disabled"}>
-            <i class="fa-solid fa-clapperboard"></i> 发送细纲
+            <i class="fa-solid fa-clapperboard"></i> 剧情推进
         </button>` : ""}
         ${showTheater ? `<button class="t-outline-entry-item" id="t-outline-entry-open-theater" role="menuitem">
             <i class="fa-solid fa-masks-theater"></i> 回声小剧场
@@ -131,7 +131,7 @@ async function openMenu($btn) {
         ${rewriteEnabled ? '<button class="t-outline-entry-item" id="t-outline-entry-open-rewrite" role="menuitem"><i class="fa-solid fa-highlighter"></i> 文本改写</button>' : ''}
         ${loreEnabled ? '<button class="t-outline-entry-item" id="t-outline-entry-open-lore" role="menuitem"><i class="fa-solid fa-brain"></i> 设定维护＆聊天总结</button>' : ''}
         ${recallEnabled ? '<button class="t-outline-entry-item" id="t-outline-entry-open-recall" role="menuitem"><i class="fa-solid fa-lightbulb"></i> 记忆召回</button>' : ''}
-        ${hasPlans ? (hasSource ? "" : '<div class="t-outline-entry-tip">请先在方案页选择细纲情节来源方案</div>') : '<div class="t-outline-entry-tip">请先保存至少一个方案</div>'}
+        ${hasPlans ? (hasSource ? "" : '<div class="t-outline-entry-tip">请先在方案页选择剧情推进来源方案</div>') : '<div class="t-outline-entry-tip">请先保存至少一个方案</div>'}
     </div>`;
 
     $("body").append(menuHtml);
