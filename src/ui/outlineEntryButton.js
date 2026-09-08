@@ -72,7 +72,10 @@ async function openFeatureDirect(featureKey, canOpenScenes) {
         }
         case "lore": {
             const { showLoreReviewWindow } = await import("./loreReviewWindow.js");
-            showLoreReviewWindow();
+            showLoreReviewWindow().catch(e => {
+                console.error("[Titania] 设定集维护窗口打开失败:", e);
+                if (window.toastr) toastr.error(`设定集维护打开失败：${e.message}`, "Titania");
+            });
             return;
         }
         case "recall": {
@@ -184,7 +187,10 @@ async function openMenu($btn) {
         e.stopPropagation();
         closeMenu();
         const { showLoreReviewWindow } = await import("./loreReviewWindow.js");
-        showLoreReviewWindow();
+        showLoreReviewWindow().catch(e => {
+            console.error("[Titania] 设定集维护窗口打开失败:", e);
+            if (window.toastr) toastr.error(`设定集维护打开失败：${e.message}`, "Titania");
+        });
     });
 
     $("#t-outline-entry-open-recall").on("click", async (e) => {

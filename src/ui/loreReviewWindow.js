@@ -1102,10 +1102,19 @@ export async function showLoreReviewWindow() {
     </div>
     `;
 
-    $("body").append(html);
+    try {
+        $("body").append(html);
 
-    // 绑定事件（不需要等待异步数据）
-    bindEvents();
+        // 绑定事件（不需要等待异步数据）
+        bindEvents();
+    } catch (e) {
+        // 打开失败时必须移除已插入的 overlay：它 z-index 20000 全屏拦截点击，
+        // 若放任残留，用户会被锁死在蒙版里只能刷新页面（手机端无控制台可自救）。
+        $("#t-lore-review-overlay").remove();
+        TitaniaLogger.error("打开设定集维护窗口失败", e);
+        if (window.toastr) toastr.error(`窗口打开失败：${e.message}`, "Titania");
+        return;
+    }
 
     // === 第二阶段：异步加载数据，更新 UI ===
     // 使用 setTimeout(0) 确保 UI 先渲染，避免阻塞

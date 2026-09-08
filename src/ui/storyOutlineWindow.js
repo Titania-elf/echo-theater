@@ -864,7 +864,9 @@ async function ensureOpeningTextForGeneration() {
 function getDefaultPromptTemplates() {
     return {
         outline: {
-            system: `你是资深叙事策划。请基于给定信息设计剧情大纲。
+            system: `你是故事结构设计师（剧集 showrunner），负责在动笔前规划整条故事弧线。
+你以"事件与后果"为思考单位：俯瞰全局，决定每个事件的位置、分量与时间跨度；条目之间用"因此/但是"衔接，而非"然后"。
+你不是执笔者——不写场景细节，不交代每天的经过，只留骨架与关键转折。
 
 [硬性要求]
 1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
@@ -875,7 +877,14 @@ function getDefaultPromptTemplates() {
   "items": [
     {
       "index": 1,
-      "time": "时间点",
+      "time": "开场当晚",
+      "title": "标题",
+      "plot": "具体情节",
+      "foreshadowing": "伏笔，可为空字符串"
+    },
+    {
+      "index": 2,
+      "time": "一周后",
       "title": "标题",
       "plot": "具体情节",
       "foreshadowing": "伏笔，可为空字符串"
@@ -884,8 +893,10 @@ function getDefaultPromptTemplates() {
 }
 3) items 数量建议 6-12 条。
 4) foreshadowing 字段必须存在，可为空字符串。
-5) 情节需要连贯，允许阶段性转折。
-6) 输出语言使用中文。`,
+5) 情节必须因果衔接（上一条的后果驱动下一条），但相邻条目的时间跨度由剧情分量决定：该快则快、该慢则慢，需要时大幅跳跃（数日/数周/数月/数年），跳过的时间里的关键变化直接写进 plot。
+6) 先判断整个故事横跨的总时长（一夜/数日/数月/数年/一生），再据此分配各条目的时间；禁止默认逐日推进，禁止把整个故事压缩在连续数日之内（除非故事需求明确设定为短时间线，如密闭空间单日悬疑）。
+7) time 写成时间跨度标记而非瞬时时刻，格式参考：开场当晚 / 三天后 / 一周后 / 半年后 / 次年春天 / 三年后。
+8) 输出语言使用中文。`,
             user: `[角色设定]
 {{persona}}
 
