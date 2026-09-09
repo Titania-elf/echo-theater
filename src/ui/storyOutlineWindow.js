@@ -103,8 +103,11 @@ let activePlanId = "";
 let editingPlanId = "";
 let editingPlanBaseline = "";
 let planItemCursorMap = {};
-// 剧情推进窗口最近一批候选（生成时填充，点击卡片写入输入框后标记 used；不持久化）。
+// 剧情推进窗口最近一批候选的内存镜像：真身持久化在方案 plan.candidates 上，
+// 窗口打开时恢复；点击卡片写入输入框后标记 used 并落盘。latestCandidatesPlanId
+// 记录镜像来自哪个方案，用于大纲重生成等场景判断要不要同步清掉镜像。
 let latestCandidates = [];
+let latestCandidatesPlanId = "";
 let autoSavePlanTimer = null;
 let planRenameMode = false;
 let planRenameSnapshot = "";
@@ -865,6 +868,7 @@ function getDefaultPromptTemplates() {
             system: `你是故事结构设计师（剧集 showrunner），负责在动笔前规划整条故事弧线。
 你以"事件与后果"为思考单位：俯瞰全局，决定每个事件的位置、分量与时间跨度；条目之间用"因此/但是"衔接，而非"然后"。
 你不是执笔者——不写场景细节，不交代每天的经过，只留骨架与关键转折。
+plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观者视角、客观概述"发生了什么、导致了什么"，而不是正文或剧本。
 
 [硬性要求]
 1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
@@ -894,7 +898,13 @@ function getDefaultPromptTemplates() {
 5) 情节必须因果衔接（上一条的后果驱动下一条），但相邻条目的时间跨度由剧情分量决定：该快则快、该慢则慢，需要时大幅跳跃（数日/数周/数月/数年），跳过的时间里的关键变化直接写进 plot。
 6) 先判断整个故事横跨的总时长（一夜/数日/数月/数年/一生），再据此分配各条目的时间；禁止默认逐日推进，禁止把整个故事压缩在连续数日之内（除非故事需求明确设定为短时间线，如密闭空间单日悬疑）。
 7) time 写成时间跨度标记而非瞬时时刻，格式参考：开场当晚 / 三天后 / 一周后 / 半年后 / 次年春天 / 三年后。
-8) 输出语言使用中文。`,
+8) plot 一律用梗概体（客观概述）书写，这是文风硬约束：
+   - 只写"发生了什么事件、产生什么后果、人物处境或关系发生什么变化"，用陈述句；
+   - 禁止对白与台词（包括引号引用的原话），人物言语一律概括转述（如"当面拒绝并摊牌"，而非写出原话）；
+   - 禁止神态、动作、语气等表演性描写与心理活动渲染（如"颤抖着""苦笑着说""心中一沉"）；
+   - 正例：林然整理遗物时发现一张陌生合影，追问下母亲承认他有一个从未谋面的姐姐；两人爆发争吵，林然当晚离家。
+   - 反例：林然颤抖着拿起照片："这个人……是谁？"母亲苦笑着别过脸去："你有个姐姐。"他心中一沉，夺门而出。
+9) 输出语言使用中文。`,
             user: `[角色设定]
 {{persona}}
 
@@ -914,7 +924,7 @@ function getDefaultPromptTemplates() {
 {{storyInput}}
 
 [任务]
-请设计故事大纲，并严格按约定 JSON 返回。`
+请设计故事大纲（plot 用客观梗概体概述，不写对白与表演性细节），并严格按约定 JSON 返回。`
         },
         rolling: {
             system: `你是剧情推进策划。完整故事大纲已给定（最后一条即结局）。你的职责是：结合"已经发生的剧情"，给出 2~3 个互不相同的候选剧情走向，供玩家挑选后作为下一回合的玩家输入来推进故事。
@@ -1511,6 +1521,21 @@ function saveDraftStreamEnabledOnly(streamEnabled) {
     saveExtData();
 }
 
+// 只更新草稿的写入方式，保留其余字段。剧情推进窗口独立打开时编辑器不在 DOM，
+// 不能用 saveDraft 整体重写（storyInput/items 会被空值冲掉）。
+function saveDraftInsertModeOnly(insertMode) {
+    const data = getExtData();
+    const prev = data[DRAFT_KEY] && typeof data[DRAFT_KEY] === "object" ? data[DRAFT_KEY] : {};
+    data[DRAFT_KEY] = {
+        storyInput: typeof prev.storyInput === "string" ? prev.storyInput : "",
+        insertMode: insertMode === "append" ? "append" : "overwrite",
+        streamEnabled: prev.streamEnabled === true,
+        items: normalizeItems(prev.items),
+        updatedAt: Date.now()
+    };
+    saveExtData();
+}
+
 function loadDraft() {
     const draft = getDraft();
     if (!draft) {
@@ -1942,8 +1967,17 @@ function cancelPlanRename() {
     setPlanRenameMode(false);
 }
 
+// 写入方式解析链：剧情推进窗口的芯片（窗口开着时是唯一热源）→ 主窗口 select → 草稿。
+function resolveInsertMode() {
+    const mainMode = $("#t-outline-insert-mode").val();
+    if (mainMode === "append" || mainMode === "overwrite") return mainMode;
+    return loadDraft().insertMode === "append" ? "append" : "overwrite";
+}
+
 function getCurrentInsertMode() {
-    return $("#t-scene-hub-insert-mode").val() || $("#t-outline-insert-mode").val() || loadDraft().insertMode || "overwrite";
+    const chipMode = $("#t-scene-hub-insert-chip").attr("data-mode");
+    if (chipMode === "append" || chipMode === "overwrite") return chipMode;
+    return resolveInsertMode();
 }
 
 // 剧情推进的进度指针（持久化在 plan 上）。itemIndex 指向当前推进到的大纲条目（0-based），
@@ -1966,6 +2000,43 @@ function setPlanProgress(planId, progress) {
     if (!Number.isFinite(itemIndex) || itemIndex < 0) itemIndex = 0;
     if (totalItems > 0) itemIndex = Math.min(itemIndex, totalItems - 1);
     plan.progress = { itemIndex, reachedEnding: progress?.reachedEnding === true };
+    plan.updatedAt = Date.now();
+    saveExtData();
+}
+
+// 最近一批剧情推进候选（持久化在 plan.candidates 上，只留一批）：
+// 重新推荐整批覆盖，大纲重生成时清空；点击卡片写入后 used 标记一并落盘。
+function getPlanCandidates(plan) {
+    const items = plan && Array.isArray(plan.candidates?.items) ? plan.candidates.items : [];
+    return items
+        .map((c) => ({
+            title: String(c?.title || ""),
+            text: String(c?.text || ""),
+            itemIndex: Number(c?.itemIndex) || 1,
+            used: c?.used === true
+        }))
+        .filter((c) => c.text.trim());
+}
+
+function setPlanCandidates(planId, candidates, opts = {}) {
+    const plans = getPlans();
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+    const items = (Array.isArray(candidates) ? candidates : [])
+        .map((c) => ({
+            title: String(c?.title || ""),
+            text: String(c?.text || ""),
+            itemIndex: Number(c?.itemIndex) || 1,
+            used: c?.used === true
+        }))
+        .filter((c) => c.text.trim());
+    if (items.length === 0) {
+        delete plan.candidates;
+    } else {
+        // keepTimestamp：只更新 used 等标记时沿用原批次的生成时间。
+        const generatedAt = (opts.keepTimestamp && Number(plan.candidates?.generatedAt)) || Date.now();
+        plan.candidates = { items, generatedAt };
+    }
     plan.updatedAt = Date.now();
     saveExtData();
 }
@@ -2051,8 +2122,9 @@ function renderCandidates() {
     if (latestCandidates.length === 0) {
         const sourcePlanId = getSceneSourcePlanId();
         $list.html(sourcePlanId
-            ? '<div class="t-plan-empty">点击「推荐剧情」，生成 2~3 个候选剧情走向</div>'
+            ? '<div class="t-plan-empty">点击右下角「推荐剧情」，生成 2~3 个候选剧情走向</div>'
             : '<div class="t-plan-empty">请先在方案页选择一个用于剧情推进的方案</div>');
+        syncGenerateNextBtn();
         return;
     }
 
@@ -2069,13 +2141,27 @@ function renderCandidates() {
     `).join("");
 
     $list.html(html);
+    syncGenerateNextBtn();
+}
+
+// 主按钮已迁至 footer：有候选时是「换一批」（整批覆盖），无候选时是「推荐剧情」。
+// disabled 由 refreshRollingProgressUI 依据"已抵达结局"控制，这里只管文案。
+function syncGenerateNextBtn() {
+    const $btn = $("#t-outline-generate-next");
+    if ($btn.length === 0) return;
+    $btn.html(latestCandidates.length > 0
+        ? '<i class="fa-solid fa-rotate"></i> 换一批'
+        : '<i class="fa-solid fa-forward-step"></i> 推荐剧情');
 }
 
 // 剧情推进窗口（旧名"细纲情节"/openSceneHubWindow，保留导出名以兼容入口按钮的动态导入）。
 export function openSceneHubWindow() {
     ensureCssLoaded();
     $("#t-scene-hub-overlay").remove();
-    latestCandidates = [];
+    // 候选已持久化在推进方案上：打开窗口时恢复最近一批（含 used 标记），不再清空。
+    const restorePlan = getRollingPlan();
+    latestCandidates = restorePlan ? getPlanCandidates(restorePlan) : [];
+    latestCandidatesPlanId = restorePlan?.id || "";
 
     const html = `
     <div id="t-scene-hub-overlay" class="t-overlay t-root">
@@ -2098,24 +2184,20 @@ export function openSceneHubWindow() {
                     <div class="t-outline-rolling-bar"><div id="t-outline-rolling-bar-fill" class="t-outline-rolling-bar-fill"></div></div>
                     <div id="t-outline-rolling-outline-preview" class="t-outline-rolling-outline-preview" style="display:none;"></div>
                     <div class="t-outline-rolling-controls">
-                        <button id="t-outline-generate-next" class="t-btn t-btn-primary t-btn-xs"><i class="fa-solid fa-forward-step"></i> 推荐剧情</button>
                         <label class="t-outline-rolling-cursor">推进到
                             <select id="t-outline-rolling-cursor-select" class="t-outline-select"></select>
                         </label>
                         <button id="t-outline-rolling-reset" class="t-btn t-btn-xs" title="回到开头重新推进"><i class="fa-solid fa-rotate-left"></i></button>
                     </div>
-                    <div class="t-outline-rolling-hint">大纲当路标，结合最近正文一步步写到结局。点击候选卡片即写入输入框并自动推进进度，也可手动指定当前进度。</div>
+                    <div class="t-outline-rolling-hint">大纲当路标，结合最近正文一步步写到结局。点击候选卡片即按所选写入方式写入输入框（不会自动发送）并自动推进进度，也可手动指定当前进度。</div>
                 </div>
                 <div id="t-outline-candidates" class="t-scene-hub-list"></div>
                 <div class="t-scene-hub-footer">
-                    <label class="t-outline-mode" style="margin-right:auto;">
-                        写入方式
-                        <select id="t-scene-hub-insert-mode" class="t-outline-select">
-                            <option value="overwrite" ${getCurrentInsertMode() === "overwrite" ? "selected" : ""}>覆盖输入框</option>
-                            <option value="append" ${getCurrentInsertMode() === "append" ? "selected" : ""}>追加到输入框</option>
-                        </select>
-                    </label>
-                    <span class="t-plan-source-note">点击候选卡片即按所选方式写入输入框（不会自动发送）</span>
+                    <button id="t-scene-hub-insert-chip" class="t-insert-mode-chip" data-mode="${resolveInsertMode()}" title="点击切换写入方式：覆盖/追加（点击候选卡片时生效）">
+                        <i class="fa-solid fa-arrows-left-right"></i>
+                        <span class="t-insert-mode-chip-label">${resolveInsertMode() === "append" ? "追加" : "覆盖"}</span>
+                    </button>
+                    <button id="t-outline-generate-next" class="t-btn t-btn-primary t-btn-xs" title="基于大纲和最近正文推荐 2~3 个候选剧情走向"><i class="fa-solid fa-forward-step"></i> 推荐剧情</button>
                 </div>
             </div>
         </div>
@@ -2130,10 +2212,14 @@ export function openSceneHubWindow() {
         $overlay.remove();
     });
 
-    $overlay.on("change", "#t-scene-hub-insert-mode", function () {
-        const mode = String($(this).val() || "overwrite") === "append" ? "append" : "overwrite";
-        $("#t-outline-insert-mode").val(mode);
-        saveDraft($("#t-outline-story-input").val() || "", mode);
+    // 写入方式芯片：点击在覆盖/追加间循环。只补丁草稿的 insertMode 字段
+    // （旧 select 版本窗口独立打开时会把草稿指令冲成空串，见 saveDraftInsertModeOnly）。
+    $overlay.on("click", "#t-scene-hub-insert-chip", function () {
+        const next = getCurrentInsertMode() === "append" ? "overwrite" : "append";
+        $("#t-outline-insert-mode").val(next);
+        saveDraftInsertModeOnly(next);
+        $(this).attr("data-mode", next).find(".t-insert-mode-chip-label").text(next === "append" ? "追加" : "覆盖");
+        if (window.toastr) toastr.info(next === "append" ? "候选将追加到输入框末尾" : "候选将覆盖输入框内容", "写入方式");
     });
 
     // 点击候选卡片：写入输入框 + 推进进度指针（itemIndex 为 1-based → 0-based）。
@@ -2147,6 +2233,7 @@ export function openSceneHubWindow() {
         writePlotToInput(c.text, getCurrentInsertMode());
         if (planId) advanceProgressOnSend(planId, c.itemIndex - 1);
         c.used = true;
+        if (planId) setPlanCandidates(planId, latestCandidates, { keepTimestamp: true });
         renderCandidates();
         refreshRollingProgressUI();
         if (window.toastr) toastr.success("已写入输入框（未自动发送），进度已推进", "剧情推进");
@@ -2658,9 +2745,15 @@ function applyParsedOutline(parsed, storyInput, insertMode) {
     outlineItems = normalizeItems(parsed.items);
     renderRows();
     persistCurrentEditingPlan();
-    // 重新生成大纲=路标重画，剧情推进进度归零。
+    // 重新生成大纲=路标重画，剧情推进进度归零，旧候选指向的条目也失效，一并清空。
     if (editingPlanId) {
         setPlanProgress(editingPlanId, { itemIndex: 0, reachedEnding: false });
+        setPlanCandidates(editingPlanId, []);
+        if (latestCandidatesPlanId === editingPlanId) {
+            latestCandidates = [];
+            latestCandidatesPlanId = "";
+            renderCandidates();
+        }
         setEditingPlan(getPlans().find(p => p.id === editingPlanId));
     }
     refreshRollingProgressUI();
@@ -2907,6 +3000,16 @@ function saveDesktopEditor() {
     saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
 }
 
+// 剧情推进面板/候选当前依据的方案：优先编辑态，窗口独立打开（无编辑态）时用来源方案兜底。
+function getRollingPlan() {
+    let plan = editingPlanId ? getPlans().find(p => p.id === editingPlanId) : null;
+    if (!plan) {
+        const sourceId = getSceneSourcePlanId();
+        plan = sourceId ? getPlans().find(p => p.id === sourceId) : null;
+    }
+    return plan || null;
+}
+
 // 刷新剧情推进面板：进度条、状态文案、条目下拉。
 // 面板在「剧情推进」窗口：优先显示剧情推进来源方案的进度；主窗口（大纲编辑）里
 // 该面板不存在，$panel.length===0 时直接跳过。
@@ -2914,12 +3017,7 @@ function refreshRollingProgressUI() {
     const $panel = $("#t-outline-rolling");
     if ($panel.length === 0) return;
 
-    // 剧情推进窗口独立打开时编辑态可能为空：用来源方案兜底。
-    let plan = editingPlanId ? getPlans().find(p => p.id === editingPlanId) : null;
-    if (!plan) {
-        const sourceId = getSceneSourcePlanId();
-        plan = sourceId ? getPlans().find(p => p.id === sourceId) : null;
-    }
+    const plan = getRollingPlan();
 
     const outlineForPanel = (Array.isArray(outlineItems) && outlineItems.length > 0 && plan && plan.id === editingPlanId)
         ? outlineItems
@@ -3101,7 +3199,6 @@ async function generateRecommendations() {
     }
 
     const $btn = $("#t-outline-generate-next");
-    const originHtml = $btn.html();
     $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 推荐中...');
 
     const total = outlineItems.length;
@@ -3128,6 +3225,8 @@ async function generateRecommendations() {
             parse: (raw) => parseRecommendationResponse(raw, progress.itemIndex, total),
             apply: (parsed) => {
                 latestCandidates = parsed.candidates.map((c) => ({ ...c, used: false }));
+                latestCandidatesPlanId = editingPlanId;
+                setPlanCandidates(editingPlanId, latestCandidates);
                 renderCandidates();
             },
             reparseLabel: "重新解析并应用",
@@ -3137,8 +3236,9 @@ async function generateRecommendations() {
         reportGenerationError(e, "剧情推进", "剧情推荐失败");
     } finally {
         stopResponseTimer();
-        $btn.prop("disabled", false).html(originHtml || '<i class="fa-solid fa-forward-step"></i> 推荐剧情');
+        $btn.prop("disabled", false);
         refreshRollingProgressUI();
+        syncGenerateNextBtn();
     }
 }
 
@@ -3310,6 +3410,14 @@ function bindEvents() {
         activePlanId = planId;
         setActivePlanId(activePlanId);
         renderPlanHub();
+        // 剧情推进窗口若同时开着：候选镜像切到新来源方案自己的最近一批。
+        if ($("#t-scene-hub-overlay").length > 0) {
+            const rollingPlan = getRollingPlan();
+            latestCandidates = rollingPlan ? getPlanCandidates(rollingPlan) : [];
+            latestCandidatesPlanId = rollingPlan?.id || "";
+            renderCandidates();
+            refreshRollingProgressUI();
+        }
         if (window.toastr) toastr.success("已切换剧情推进来源方案", "故事大纲");
     });
 

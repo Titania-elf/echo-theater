@@ -453,6 +453,31 @@
     margin-top: 8px;
 }
 
+/* 写入方式芯片：低频切换控件，视觉弱化，点击在覆盖/追加间循环 */
+.t-insert-mode-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: auto;
+    padding: 4px 12px;
+    min-height: 24px;
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--t-color-text);
+    font-family: inherit;
+    font-size: var(--t-text-caption);
+    line-height: 1;
+    cursor: pointer;
+    transition: var(--t-transition-hover);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.t-insert-mode-chip:hover {
+    background: var(--t-color-surface-hover);
+    border-color: var(--t-color-accent-border-hover);
+}
+
 .t-opening-picker-list {
     border: 1px solid var(--t-color-border-cool);
     border-radius: 10px;
@@ -1285,15 +1310,6 @@
 
     .t-outline-plan-list {
         max-height: none;
-    }
-
-    .t-scene-hub-footer {
-        justify-content: stretch;
-    }
-
-    .t-scene-hub-footer .t-outline-mode {
-        width: 100%;
-        margin-right: 0 !important; /* override scene hub template inline margin-right:auto on mobile */
     }
 
     .t-plan-accordion-head {
