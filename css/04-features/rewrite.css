@@ -110,6 +110,8 @@
 
 #t-rewrite-overlay .t-rewrite-hit-tag.miss { border-color: rgb(var(--t-glass-miss-rgb) / .35); background: rgb(var(--t-glass-miss-rgb) / .12); color: var(--t-glass-text-soft); }
 
+#t-rewrite-overlay .t-rewrite-hit-tag--delete { border-color: rgb(var(--t-c-red-rgb) / .45); background: rgb(var(--t-c-red-rgb) / .12); color: rgb(var(--t-c-red-rgb)); font-weight: 700; }
+
 #t-rewrite-overlay .t-rewrite-match-text, #t-rewrite-overlay .t-rewrite-diff-text { font-size: 0.88em; line-height: 1.5; color: var(--t-glass-text); white-space: pre-wrap; word-break: break-word; }
 
 #t-rewrite-overlay .t-rewrite-hit-summary { font-size: 0.82em; color: var(--t-glass-tab-text-active); margin-bottom: 6px; }
@@ -305,13 +307,19 @@
 /* === 关键词规则 === */
     #t-rewrite-settings-overlay .t-rewrite-cat-kw-list { display: flex; flex-direction: column; gap: 4px; }
 
-#t-rewrite-settings-overlay .t-rewrite-kw-row { display: flex; gap: 4px; align-items: center; }
+#t-rewrite-settings-overlay .t-rewrite-kw-row { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 
 #t-rewrite-settings-overlay .t-rewrite-kw-row input { flex: 1; font-size: 0.82em; min-width: 80px; }
 
 #t-rewrite-settings-overlay .t-rewrite-kw-and { font-size: 0.78em; color: var(--t-glass-text-tertiary); font-weight: 700; white-space: nowrap; }
 
 #t-rewrite-settings-overlay .t-rewrite-kw-del { width: 28px; min-width: 28px; height: 28px; padding: 0; justify-content: center; }
+
+/* 动作下拉：定宽紧凑；片段输入仅“删除片段”时出现，占满剩余宽度 */
+#t-rewrite-settings-overlay .t-rewrite-kw-action { font-size: 0.78em; min-width: 84px; width: 84px; flex: 0 0 auto; }
+
+/* 片段输入盖过上面的 .t-rewrite-kw-row input { flex:1 }（多一层类名特异度即可，无需 !important） */
+#t-rewrite-settings-overlay .t-rewrite-kw-row input.t-rewrite-kw-fragment { flex: 2 1 160px; }
 
 @media (max-width: 1200px) {
     #t-rewrite-overlay .t-rewrite-window { width: min(1080px, 97vw); }

@@ -17289,6 +17289,8 @@ td[data-edit-field] .t-cell-editor {
 
 #t-rewrite-overlay .t-rewrite-hit-tag.miss { border-color: rgb(var(--t-glass-miss-rgb) / .35); background: rgb(var(--t-glass-miss-rgb) / .12); color: var(--t-glass-text-soft); }
 
+#t-rewrite-overlay .t-rewrite-hit-tag--delete { border-color: rgb(var(--t-c-red-rgb) / .45); background: rgb(var(--t-c-red-rgb) / .12); color: rgb(var(--t-c-red-rgb)); font-weight: 700; }
+
 #t-rewrite-overlay .t-rewrite-match-text, #t-rewrite-overlay .t-rewrite-diff-text { font-size: 0.88em; line-height: 1.5; color: var(--t-glass-text); white-space: pre-wrap; word-break: break-word; }
 
 #t-rewrite-overlay .t-rewrite-hit-summary { font-size: 0.82em; color: var(--t-glass-tab-text-active); margin-bottom: 6px; }
@@ -17484,13 +17486,19 @@ td[data-edit-field] .t-cell-editor {
 /* === \u5173\u952E\u8BCD\u89C4\u5219 === */
     #t-rewrite-settings-overlay .t-rewrite-cat-kw-list { display: flex; flex-direction: column; gap: 4px; }
 
-#t-rewrite-settings-overlay .t-rewrite-kw-row { display: flex; gap: 4px; align-items: center; }
+#t-rewrite-settings-overlay .t-rewrite-kw-row { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 
 #t-rewrite-settings-overlay .t-rewrite-kw-row input { flex: 1; font-size: 0.82em; min-width: 80px; }
 
 #t-rewrite-settings-overlay .t-rewrite-kw-and { font-size: 0.78em; color: var(--t-glass-text-tertiary); font-weight: 700; white-space: nowrap; }
 
 #t-rewrite-settings-overlay .t-rewrite-kw-del { width: 28px; min-width: 28px; height: 28px; padding: 0; justify-content: center; }
+
+/* \u52A8\u4F5C\u4E0B\u62C9\uFF1A\u5B9A\u5BBD\u7D27\u51D1\uFF1B\u7247\u6BB5\u8F93\u5165\u4EC5\u201C\u5220\u9664\u7247\u6BB5\u201D\u65F6\u51FA\u73B0\uFF0C\u5360\u6EE1\u5269\u4F59\u5BBD\u5EA6 */
+#t-rewrite-settings-overlay .t-rewrite-kw-action { font-size: 0.78em; min-width: 84px; width: 84px; flex: 0 0 auto; }
+
+/* \u7247\u6BB5\u8F93\u5165\u76D6\u8FC7\u4E0A\u9762\u7684 .t-rewrite-kw-row input { flex:1 }\uFF08\u591A\u4E00\u5C42\u7C7B\u540D\u7279\u5F02\u5EA6\u5373\u53EF\uFF0C\u65E0\u9700 !important\uFF09 */
+#t-rewrite-settings-overlay .t-rewrite-kw-row input.t-rewrite-kw-fragment { flex: 2 1 160px; }
 
 @media (max-width: 1200px) {
     #t-rewrite-overlay .t-rewrite-window { width: min(1080px, 97vw); }
@@ -26766,7 +26774,30 @@ function uniq(arr) {
 }
 function normalizeRuleAction(action) {
   const value = String(action || "").trim().toLowerCase();
-  return value === "delete" ? "delete" : "rewrite";
+  if (value === "delete") return "delete";
+  if (value === "delete_range") return "delete_range";
+  return "rewrite";
+}
+function actionLabel(action) {
+  const normalized = normalizeRuleAction(action);
+  if (normalized === "delete") return "\u5220\u9664";
+  if (normalized === "delete_range") return "\u5220\u7247\u6BB5";
+  return "\u6539\u5199";
+}
+function mergeUnitDeleteAction(matchedRules) {
+  let deleteAction = null;
+  let deleteFragment = "";
+  (Array.isArray(matchedRules) ? matchedRules : []).forEach((rule) => {
+    const action = normalizeRuleAction(rule?.action);
+    if (action === "delete") {
+      deleteAction = "delete";
+      deleteFragment = "";
+    } else if (action === "delete_range" && deleteAction !== "delete") {
+      deleteAction = "delete_range";
+      deleteFragment = String(rule?.fragment || "").trim();
+    }
+  });
+  return { deleteAction, deleteFragment };
 }
 function generateId(prefix) {
   const ts = Date.now().toString(36);
@@ -26792,10 +26823,16 @@ function normalizeCategory(cat) {
     bad_example: String(cat?.bad_example || "").trim(),
     good_example: String(cat?.good_example || "").trim(),
     guidance: String(cat?.guidance || "").trim(),
-    rules: (Array.isArray(cat?.rules) ? cat.rules : []).map((r) => ({
-      anchor: uniq(parseCommaList(r?.anchor || "").filter(Boolean)).join(", "),
-      extras: uniq(parseCommaList(r?.extras || "").filter(Boolean)).join(", ")
-    })).filter((r) => r.anchor && r.extras)
+    rules: (Array.isArray(cat?.rules) ? cat.rules : []).map((r) => {
+      const action = normalizeRuleAction(r?.action);
+      return {
+        anchor: uniq(parseCommaList(r?.anchor || "").filter(Boolean)).join(", "),
+        extras: uniq(parseCommaList(r?.extras || "").filter(Boolean)).join(", "),
+        action,
+        // 仅片段删除需要删除起点；其他动作不存，避免无谓字段
+        fragment: action === "delete_range" ? String(r?.fragment || "").trim() : ""
+      };
+    }).filter((r) => r.anchor && r.extras)
   };
 }
 function normalizeScheme(scheme) {
@@ -27156,7 +27193,9 @@ function evaluateUnitAgainstCategory(unitText, category) {
     if (evaluateUnitAgainstRule(unitText, rule)) {
       matchedRules.push({
         anchor: String(rule.anchor || ""),
-        extras: String(rule.extras || "")
+        extras: String(rule.extras || ""),
+        action: normalizeRuleAction(rule?.action),
+        fragment: String(rule?.fragment || "")
       });
     }
   });
@@ -27179,11 +27218,15 @@ function evaluateRules(payload, sourceText = null) {
         });
       }
     });
+    const allMatchedRules = matchedCategories.flatMap((c) => c.matchedRules);
+    const { deleteAction, deleteFragment } = mergeUnitDeleteAction(allMatchedRules);
     return {
       unitIndex: idx + 1,
       text: unit,
       hit: matchedCategories.length > 0,
-      matchedCategories
+      matchedCategories,
+      deleteAction,
+      deleteFragment
     };
   });
   const hitUnits = unitResults.filter((item) => item.hit);
@@ -27418,8 +27461,20 @@ function buildRewritePayload(data, sourceText) {
   const evaluated = evaluateRules(payload, sourceText || "");
   const targets = [];
   const catNames = /* @__PURE__ */ new Set();
+  const deleteUnits = [];
   evaluated.unitResults.forEach((unit) => {
     if (!unit.hit) return;
+    if (unit.deleteAction) {
+      deleteUnits.push({
+        unitIndex: unit.unitIndex,
+        text: unit.text,
+        deleteAction: unit.deleteAction,
+        deleteFragment: unit.deleteFragment || "",
+        ruleHint: unit.matchedCategories.map((c) => c.categoryName).join(" | ")
+      });
+      unit.matchedCategories.forEach((mc) => catNames.add(mc.categoryName));
+      return;
+    }
     unit.matchedCategories.forEach((mc) => {
       catNames.add(mc.categoryName);
       const allKeywords = mc.matchedRules.map((r) => [...parseCommaList(r.anchor), ...parseCommaList(r.extras)]).flat();
@@ -27436,7 +27491,8 @@ function buildRewritePayload(data, sourceText) {
       task_id: `rewrite_${Date.now()}`,
       targets
     },
-    hitCategoryCount: catNames.size
+    hitCategoryCount: catNames.size,
+    deleteUnits
   };
 }
 function getLatestAssistantMessageFromChat() {
@@ -27591,21 +27647,49 @@ function bindRewriteDecorationEvents() {
     setTimeout(refreshInlineRewriteEntry, 160);
   });
 }
-function applyRewriteToFullText(sourceText, evaluated, parsed, request = null) {
+function applyDeletesToUnit(unitText, deleteAction, fragment) {
+  const text = String(unitText || "");
+  if (deleteAction === "delete") return "";
+  if (deleteAction !== "delete_range") return text;
+  const frag = String(fragment || "").trim();
+  if (!frag) return text;
+  const idx = text.indexOf(frag);
+  if (idx < 0) return text;
+  const tail = text.slice(idx + frag.length);
+  const punct = /[。！？!?…]\s*$/.exec(tail);
+  const rawHead = text.slice(0, idx);
+  let cleanedHead = rawHead.replace(/[，、；,;]\s*$/, "");
+  const closedByQuote = /[”」』）)]\s*$/.test(cleanedHead);
+  let keptTail = punct && !closedByQuote ? punct[0] : "";
+  const openMatch = /[（(]\s*$/.exec(cleanedHead);
+  if (openMatch) {
+    const closeChar = cleanedHead.endsWith("\uFF08") ? "\uFF09" : ")";
+    cleanedHead = cleanedHead.replace(/[（(]\s*$/, closeChar);
+    keptTail = "";
+  }
+  return cleanedHead + keptTail;
+}
+function applyRewriteToFullText(sourceText, evaluated, parsed, request = null, deleteUnits = []) {
+  const deletes = (Array.isArray(deleteUnits) ? deleteUnits : []).map((unit) => ({
+    before: String(unit?.text || ""),
+    after: applyDeletesToUnit(unit?.text, unit?.deleteAction, unit?.deleteFragment)
+  })).filter((item) => item.before && item.after !== item.before);
   const map = new Map((parsed?.results || []).map((r) => [String(r.segment_id), String(r.rewritten_text || "")]));
   let rewritten = String(sourceText || "");
   let cursor = 0;
   let replaced = 0;
-  evaluated.unitResults.filter((u) => u.hit).forEach((unit) => {
+  const rewriteEntries = evaluated.unitResults.filter((u) => u.hit && !u.deleteAction).map((unit) => {
     const segmentId = `s_${unit.unitIndex}`;
-    const after = map.get(segmentId);
-    if (typeof after !== "string") return;
-    const before = String(unit.text || "");
-    if (!before) return;
-    const idx = rewritten.indexOf(before, cursor);
-    if (idx < 0) return;
-    rewritten = `${rewritten.slice(0, idx)}${after}${rewritten.slice(idx + before.length)}`;
-    cursor = idx + after.length;
+    return { before: String(unit.text || ""), after: map.get(segmentId) };
+  }).filter((item) => item.before && typeof item.after === "string" && item.after !== item.before);
+  const entries = [...deletes, ...rewriteEntries].map((item) => {
+    const idx = rewritten.indexOf(item.before, cursor);
+    return { ...item, idx };
+  }).filter((item) => item.idx >= 0).sort((a, b) => a.idx - b.idx);
+  entries.forEach((item) => {
+    if (item.idx < cursor) return;
+    rewritten = `${rewritten.slice(0, item.idx)}${item.after}${rewritten.slice(item.idx + item.before.length)}`;
+    cursor = item.idx + item.after.length;
     replaced += 1;
   });
   return { text: rewritten, replaced };
@@ -27775,14 +27859,20 @@ function normalizeRewriteResponseShape(parsed, payload) {
     results
   };
 }
-function buildDiffRowsFromResults(evaluated, payload, parsed) {
+function buildDiffRowsFromResults(evaluated, payload, parsed, deleteUnits = []) {
   const rewrittenMap = new Map(parsed.results.map((r) => [String(r.segment_id), String(r.rewritten_text || "")]));
-  const targetMap = new Map(payload.targets.map((t) => [t.segment_id, t]));
   return evaluated.unitResults.filter((u) => u.hit).map((u) => {
-    const segmentId = `s_${u.unitIndex}`;
-    const target = targetMap.get(segmentId);
-    const after = rewrittenMap.get(segmentId) || u.text;
     const categoryNames = Array.isArray(u.matchedCategories) ? u.matchedCategories.map((c) => c.categoryName).join(" | ") : "";
+    if (u.deleteAction) {
+      return {
+        before: u.text,
+        after: applyDeletesToUnit(u.text, u.deleteAction, u.deleteFragment),
+        ruleHint: categoryNames,
+        action: "delete"
+      };
+    }
+    const segmentId = `s_${u.unitIndex}`;
+    const after = rewrittenMap.get(segmentId) || u.text;
     return {
       before: u.text,
       after,
@@ -27791,7 +27881,7 @@ function buildDiffRowsFromResults(evaluated, payload, parsed) {
     };
   });
 }
-async function executeRewriteRequest({ data, latest, evaluated, request, rewriteCount, hitCategoryCount = 0, source = "manual", buttonSelector = "#t-rewrite-trigger", promptState = null }) {
+async function executeRewriteRequest({ data, latest, evaluated, request, rewriteCount, hitCategoryCount = 0, source = "manual", buttonSelector = "#t-rewrite-trigger", promptState = null, deleteUnits = [] }) {
   const apiUrl = String(data.api_url || "").trim();
   const apiKey = String(data.api_key || "").trim();
   const model = String(data.model || "").trim();
@@ -27852,10 +27942,10 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
       valid = validateRewriteResponse(parsed, request);
       if (!valid.ok) throw new Error(`\u8FD4\u56DE\u6821\u9A8C\u5931\u8D25: ${valid.reason}`);
     }
-    const rows = buildDiffRowsFromResults(evaluated, request, parsed);
+    const rows = buildDiffRowsFromResults(evaluated, request, parsed, deleteUnits);
     renderDiffRows(rows);
     const rewriteMarks = buildRewriteMarksFromRows(rows);
-    const applied = applyRewriteToFullText(latest.content, evaluated, parsed, request);
+    const applied = applyRewriteToFullText(latest.content, evaluated, parsed, request, deleteUnits);
     writeBackMessageContent(latest.msg, applied.text);
     if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
     latest.msg.extra.titania_rewrite_done = true;
@@ -27863,7 +27953,8 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
     await saveChatConditional();
     await reloadCurrentChat();
     scheduleApplyAllRewriteMarks(180);
-    setStatus(`\u6267\u884C\u5B8C\u6210\uFF1A\u6539\u5199 ${rewriteCount} \u6761\uFF0C\u5DF2\u56DE\u5199\u7B2C ${latest.index + 1} \u697C`, "ok");
+    const deleteCount = Array.isArray(deleteUnits) ? deleteUnits.length : 0;
+    setStatus(`\u6267\u884C\u5B8C\u6210\uFF1A\u6539\u5199 ${rewriteCount} \u6761${deleteCount > 0 ? `\uFF0C\u5220\u9664 ${deleteCount} \u6761` : ""}\uFF0C\u5DF2\u56DE\u5199\u7B2C ${latest.index + 1} \u697C`, "ok");
     success = true;
   } catch (e) {
     renderDiffRows([]);
@@ -27894,7 +27985,7 @@ async function runRewrite(options = {}) {
     setStatus("\u672A\u627E\u5230\u53EF\u6539\u5199\u7684\u6700\u65B0\u56DE\u590D\u697C\u5C42", "warn");
     return;
   }
-  const { evaluated, request, hitCategoryCount } = buildRewritePayload(data, latest.content);
+  const { evaluated, request, hitCategoryCount, deleteUnits } = buildRewritePayload(data, latest.content);
   renderMatchResult(evaluated, latest.content);
   if (!String(latest.content || "").trim()) {
     setStatus("\u6700\u65B0\u697C\u5C42\u5185\u5BB9\u4E3A\u7A7A\uFF0C\u65E0\u6CD5\u6539\u5199", "warn");
@@ -27902,10 +27993,27 @@ async function runRewrite(options = {}) {
   }
   const rewriteTargets = Array.isArray(request.targets) ? request.targets : [];
   const rewriteCount = rewriteTargets.length;
-  if (rewriteCount === 0) {
+  const deleteCount = Array.isArray(deleteUnits) ? deleteUnits.length : 0;
+  if (rewriteCount === 0 && deleteCount === 0) {
     setStatus("\u6CA1\u6709\u547D\u4E2D\u4EFB\u4F55\u5206\u7C7B\u89C4\u5219\u7684\u6587\u672C\u5355\u5143\uFF0C\u672A\u6267\u884C\u6539\u5199", "warn");
     renderDiffRows([]);
     return;
+  }
+  if (rewriteCount === 0) {
+    const rows = buildDiffRowsFromResults(evaluated, request, { results: [] }, deleteUnits);
+    renderDiffRows(rows);
+    const rewriteMarks = buildRewriteMarksFromRows(rows);
+    const applied = applyRewriteToFullText(latest.content, evaluated, { results: [] }, null, deleteUnits);
+    writeBackMessageContent(latest.msg, applied.text);
+    if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
+    latest.msg.extra.titania_rewrite_done = true;
+    latest.msg.extra.titania_rewrite_marks = rewriteMarks;
+    await saveChatConditional();
+    await reloadCurrentChat();
+    scheduleApplyAllRewriteMarks(180);
+    setStatus(`\u6267\u884C\u5B8C\u6210\uFF1A\u5220\u9664 ${deleteCount} \u6761\uFF08\u79BB\u7EBF\u5904\u7406\uFF0C\u672A\u8BF7\u6C42\u6A21\u578B\uFF09\uFF0C\u5DF2\u56DE\u5199\u7B2C ${latest.index + 1} \u697C`, "ok");
+    if (window.toastr) toastr.success(`\u5DF2\u6309\u5220\u9664\u89C4\u5219\u5904\u7406 ${deleteCount} \u6761`, "\u6587\u672C\u6539\u5199");
+    return true;
   }
   return executeRewriteRequest({
     data,
@@ -27915,7 +28023,8 @@ async function runRewrite(options = {}) {
     rewriteCount,
     hitCategoryCount,
     source: options.source || "manual",
-    buttonSelector: "#t-rewrite-trigger"
+    buttonSelector: "#t-rewrite-trigger",
+    deleteUnits
   });
 }
 async function runSelectedSentenceRewrite() {
@@ -28019,6 +28128,24 @@ function bindAutoTriggerEvents() {
   autoTriggerBound = true;
   eventSource.on(event_types.GENERATION_ENDED, onAutoTriggerRewrite);
 }
+function buildKwRowHtml(rule = {}) {
+  const action = normalizeRuleAction(rule?.action);
+  const fragment = String(rule?.fragment || "");
+  const isRange = action === "delete_range";
+  return `
+                <div class="t-rewrite-kw-row${isRange ? " t-rewrite-kw-row--range" : ""}">
+                    <input class="text_pole t-rewrite-kw-anchor" type="text" value="${escapeHtml5(rule?.anchor || "")}" placeholder="\u4E3B\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09">
+                    <span class="t-rewrite-kw-and">\u4E0E</span>
+                    <input class="text_pole t-rewrite-kw-extras" type="text" value="${escapeHtml5(rule?.extras || "")}" placeholder="\u9644\u52A0\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09">
+                    <select class="text_pole t-rewrite-kw-action" title="\u547D\u4E2D\u540E\u7684\u52A8\u4F5C">
+                        <option value="rewrite" ${!isRange && action !== "delete" ? "selected" : ""}>\u6539\u5199</option>
+                        <option value="delete" ${action === "delete" ? "selected" : ""}>\u5220\u9664\u6574\u53E5</option>
+                        <option value="delete_range" ${isRange ? "selected" : ""}>\u5220\u9664\u7247\u6BB5</option>
+                    </select>
+                    <input class="text_pole t-rewrite-kw-fragment" type="text" value="${escapeHtml5(fragment)}" placeholder="\u5220\u9664\u8D77\u70B9\u7247\u6BB5\uFF0C\u5220\u5230\u53E5\u5C3E\uFF08\u5982\uFF1A\u90A3\u7B11\u58F0\u50CF\uFF09" style="${isRange ? "" : "display:none;"}">
+                    <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="\u5220\u9664\u6B64\u5173\u952E\u8BCD\u89C4\u5219"><i class="fa-solid fa-xmark"></i></button>
+                </div>`;
+}
 function readCategoriesFromDom() {
   const categories = [];
   $("#t-rewrite-scheme-categories-list .t-rewrite-category-card").each((_, el) => {
@@ -28032,7 +28159,9 @@ function readCategoriesFromDom() {
     $card.find(".t-rewrite-kw-row").each((_2, kwEl) => {
       const anchor = String($(kwEl).find(".t-rewrite-kw-anchor").val() || "").trim();
       const extras = String($(kwEl).find(".t-rewrite-kw-extras").val() || "").trim();
-      if (anchor && extras) rules.push({ anchor, extras });
+      const action = normalizeRuleAction($(kwEl).find(".t-rewrite-kw-action").val() || "rewrite");
+      const fragment = action === "delete_range" ? String($(kwEl).find(".t-rewrite-kw-fragment").val() || "").trim() : "";
+      if (anchor && extras) rules.push({ anchor, extras, action, fragment });
     });
     categories.push({ id: id3 || generateId("cat"), name, bad_example, good_example, guidance, rules });
   });
@@ -28049,19 +28178,7 @@ function renderSchemeCategoriesList(scheme) {
   const html = categories.map((cat, idx) => {
     const rules = Array.isArray(cat.rules) ? cat.rules : [];
     const hasContent = String(cat.name || "").trim() || String(cat.bad_example || "").trim() || String(cat.good_example || "").trim() || String(cat.guidance || "").trim() || rules.length > 0;
-    const kwRows = rules.length > 0 ? rules.map((r) => `
-                <div class="t-rewrite-kw-row">
-                    <input class="text_pole t-rewrite-kw-anchor" type="text" value="${escapeHtml5(r.anchor || "")}" placeholder="\u4E3B\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09">
-                    <span class="t-rewrite-kw-and">\u4E0E</span>
-                    <input class="text_pole t-rewrite-kw-extras" type="text" value="${escapeHtml5(r.extras || "")}" placeholder="\u9644\u52A0\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09">
-                    <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="\u5220\u9664\u6B64\u5173\u952E\u8BCD\u89C4\u5219"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            `).join("") : `<div class="t-rewrite-kw-row">
-                <input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="\u4E3B\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09">
-                <span class="t-rewrite-kw-and">\u4E0E</span>
-                <input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="\u9644\u52A0\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09">
-                <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="\u5220\u9664"><i class="fa-solid fa-xmark"></i></button>
-            </div>`;
+    const kwRows = rules.length > 0 ? rules.map((r) => buildKwRowHtml(r)).join("") : buildKwRowHtml();
     const nameMissing = !String(cat.name || "").trim();
     const collapsedClass = hasContent ? " collapsed" : "";
     const emptyClass = !hasContent ? " t-rewrite-cat-empty" : "";
@@ -28094,7 +28211,7 @@ function renderSchemeCategoriesList(scheme) {
                         <textarea class="text_pole t-rewrite-cat-guidance" rows="2" placeholder="\u544A\u8BC9\u6A21\u578B\u5177\u4F53\u600E\u4E48\u6539">${escapeHtml5(cat.guidance || "")}</textarea>
                     </div>
                     <div class="t-rewrite-cat-field">
-                        <label>\u5173\u952E\u8BCD\u89C4\u5219<span class="t-rewrite-cat-field-hint">\uFF08\u4E3B\u8BCD AND \u9644\u52A0\u8BCD\u540C\u65F6\u547D\u4E2D\u624D\u751F\u6548\uFF0C\u547D\u4E2D\u4EFB\u4E00\u884C\u5373\u5F52\u7C7B\uFF09</span></label>
+                        <label>\u5173\u952E\u8BCD\u89C4\u5219<span class="t-rewrite-cat-field-hint">\uFF08\u4E3B\u8BCD AND \u9644\u52A0\u8BCD\u540C\u65F6\u547D\u4E2D\u624D\u751F\u6548\uFF1B\u52A8\u4F5C\u53EF\u9009\u6539\u5199/\u5220\u9664\u6574\u53E5/\u5220\u9664\u7247\u6BB5\uFF0C\u540C\u65F6\u547D\u4E2D\u65F6\u5220\u9664\u4F18\u5148\uFF09</span></label>
                         <div class="t-rewrite-cat-kw-list">${kwRows}</div>
                         <button class="t-btn t-btn--glass t-rewrite-cat-add-kw" type="button"><i class="fa-solid fa-plus"></i> \u6DFB\u52A0\u5173\u952E\u8BCD</button>
                     </div>
@@ -28219,10 +28336,10 @@ function renderMatchResult(result, sourceText = "") {
   const html = lastMatchResult.unitResults.map((item) => {
     const cls = item.hit ? "hit" : "miss";
     const tag = lastMatchResult.splitMode === "paragraph" ? "\u6BB5" : "\u53E5";
-    const tags = item.hit ? Array.isArray(item.matchedCategories) && item.matchedCategories.length > 0 ? item.matchedCategories.map((c) => {
+    const tags = item.hit ? (Array.isArray(item.matchedCategories) && item.matchedCategories.length > 0 ? item.matchedCategories.map((c) => {
       const keywords = c.matchedRules.map((r) => `${r.anchor} + ${r.extras}`).join(" | ");
       return `<span class="t-rewrite-hit-tag">\u3010${escapeHtml5(c.categoryName)}\u3011${escapeHtml5(keywords)}</span>`;
-    }).join("") : '<span class="t-rewrite-hit-tag">\u7528\u6237\u9009\u4E2D</span>' : lastMatchResult.sourceMode === "selected" ? '<span class="t-rewrite-hit-tag miss">\u672A\u9009\u4E2D</span>' : '<span class="t-rewrite-hit-tag miss">\u672A\u547D\u4E2D</span>';
+    }).join("") : '<span class="t-rewrite-hit-tag">\u7528\u6237\u9009\u4E2D</span>') + (item.deleteAction ? `<span class="t-rewrite-hit-tag t-rewrite-hit-tag--delete">${escapeHtml5(actionLabel(item.deleteAction))}</span>` : "") : lastMatchResult.sourceMode === "selected" ? '<span class="t-rewrite-hit-tag miss">\u672A\u9009\u4E2D</span>' : '<span class="t-rewrite-hit-tag miss">\u672A\u547D\u4E2D</span>';
     return `
             <div class="t-rewrite-match-row ${cls}">
                 <div class="t-rewrite-match-head">
@@ -28475,8 +28592,13 @@ function bindSettingsPanelEvents(connectionEditor = null) {
   $overlay.on("click", ".t-rewrite-cat-add-kw", (e) => {
     e.preventDefault();
     const $card = $(e.currentTarget).closest(".t-rewrite-category-card");
-    const newRow = $(`<div class="t-rewrite-kw-row"><input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="\u4E3B\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09"><span class="t-rewrite-kw-and">\u4E0E</span><input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="\u9644\u52A0\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF0C\u4EFB\u4E00\u547D\u4E2D\uFF09"><button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="\u5220\u9664"><i class="fa-solid fa-xmark"></i></button></div>`);
-    $card.find(".t-rewrite-cat-kw-list").append(newRow);
+    $card.find(".t-rewrite-cat-kw-list").append(buildKwRowHtml());
+  });
+  $overlay.on("change", ".t-rewrite-kw-action", function() {
+    const $row = $(this).closest(".t-rewrite-kw-row");
+    const isRange = normalizeRuleAction($(this).val()) === "delete_range";
+    $row.toggleClass("t-rewrite-kw-row--range", isRange);
+    $row.find(".t-rewrite-kw-fragment").toggle(isRange);
   });
   $overlay.on("click", ".t-rewrite-kw-del", (e) => {
     e.preventDefault();
@@ -28485,6 +28607,8 @@ function bindSettingsPanelEvents(connectionEditor = null) {
     if ($list.find(".t-rewrite-kw-row").length <= 1) {
       $row.find(".t-rewrite-kw-anchor").val("");
       $row.find(".t-rewrite-kw-extras").val("");
+      $row.find(".t-rewrite-kw-fragment").val("");
+      $row.find(".t-rewrite-kw-action").val("rewrite").trigger("change");
       return;
     }
     $row.remove();
@@ -29028,7 +29152,7 @@ function refreshButtons() {
     if (!buttonArea) continue;
     if (buttonArea.querySelector(`.${BTN_CLASS}`)) continue;
     const btn = document.createElement("div");
-    btn.className = `mes_button ${BTN_CLASS} fa-solid fa-angles-up`;
+    btn.className = `mes_button ${BTN_CLASS} fa-solid fa-comment-slash`;
     btn.title = "\u9690\u85CF\u6B64\u697C\u4EE5\u4E0A\u5168\u90E8\u65E7\u697C\uFF08\u518D\u70B9\u6062\u590D\uFF09";
     btn.setAttribute("tabindex", "0");
     buttonArea.appendChild(btn);

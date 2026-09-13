@@ -134,11 +134,34 @@ function uniq(arr) {
 
 function normalizeRuleAction(action) {
     const value = String(action || "").trim().toLowerCase();
-    return value === "delete" ? "delete" : "rewrite";
+    if (value === "delete") return "delete";
+    if (value === "delete_range") return "delete_range";
+    return "rewrite";
 }
 
 function actionLabel(action) {
-    return normalizeRuleAction(action) === "delete" ? "删除" : "改写";
+    const normalized = normalizeRuleAction(action);
+    if (normalized === "delete") return "删除";
+    if (normalized === "delete_range") return "删片段";
+    return "改写";
+}
+
+/* 命中归并：同一单元命中多条规则时取最强动作——整句删除 > 片段删除 > 改写。
+   返回 { deleteAction: "delete"|"delete_range"|null, deleteFragment }。 */
+function mergeUnitDeleteAction(matchedRules) {
+    let deleteAction = null;
+    let deleteFragment = "";
+    (Array.isArray(matchedRules) ? matchedRules : []).forEach((rule) => {
+        const action = normalizeRuleAction(rule?.action);
+        if (action === "delete") {
+            deleteAction = "delete";
+            deleteFragment = "";
+        } else if (action === "delete_range" && deleteAction !== "delete") {
+            deleteAction = "delete_range";
+            deleteFragment = String(rule?.fragment || "").trim();
+        }
+    });
+    return { deleteAction, deleteFragment };
 }
 
 function generateId(prefix) {
@@ -168,10 +191,16 @@ function normalizeCategory(cat) {
         bad_example: String(cat?.bad_example || "").trim(),
         good_example: String(cat?.good_example || "").trim(),
         guidance: String(cat?.guidance || "").trim(),
-        rules: (Array.isArray(cat?.rules) ? cat.rules : []).map(r => ({
-            anchor: uniq(parseCommaList(r?.anchor || "").filter(Boolean)).join(", "),
-            extras: uniq(parseCommaList(r?.extras || "").filter(Boolean)).join(", ")
-        })).filter(r => r.anchor && r.extras)
+        rules: (Array.isArray(cat?.rules) ? cat.rules : []).map(r => {
+            const action = normalizeRuleAction(r?.action);
+            return {
+                anchor: uniq(parseCommaList(r?.anchor || "").filter(Boolean)).join(", "),
+                extras: uniq(parseCommaList(r?.extras || "").filter(Boolean)).join(", "),
+                action,
+                // 仅片段删除需要删除起点；其他动作不存，避免无谓字段
+                fragment: action === "delete_range" ? String(r?.fragment || "").trim() : ""
+            };
+        }).filter(r => r.anchor && r.extras)
     };
 }
 
@@ -628,7 +657,9 @@ function evaluateUnitAgainstCategory(unitText, category) {
         if (evaluateUnitAgainstRule(unitText, rule)) {
             matchedRules.push({
                 anchor: String(rule.anchor || ""),
-                extras: String(rule.extras || "")
+                extras: String(rule.extras || ""),
+                action: normalizeRuleAction(rule?.action),
+                fragment: String(rule?.fragment || "")
             });
         }
     });
@@ -653,11 +684,16 @@ function evaluateRules(payload, sourceText = null) {
                 });
             }
         });
+        // 删除动作按全部命中规则归并（整句删除 > 片段删除 > 改写）
+        const allMatchedRules = matchedCategories.flatMap(c => c.matchedRules);
+        const { deleteAction, deleteFragment } = mergeUnitDeleteAction(allMatchedRules);
         return {
             unitIndex: idx + 1,
             text: unit,
             hit: matchedCategories.length > 0,
-            matchedCategories
+            matchedCategories,
+            deleteAction,
+            deleteFragment
         };
     });
 
@@ -940,8 +976,21 @@ function buildRewritePayload(data, sourceText) {
 
     const targets = [];
     const catNames = new Set();
+    const deleteUnits = [];
     evaluated.unitResults.forEach((unit) => {
         if (!unit.hit) return;
+        // 删除规则命中的单元离线处理，不发给模型
+        if (unit.deleteAction) {
+            deleteUnits.push({
+                unitIndex: unit.unitIndex,
+                text: unit.text,
+                deleteAction: unit.deleteAction,
+                deleteFragment: unit.deleteFragment || "",
+                ruleHint: unit.matchedCategories.map(c => c.categoryName).join(" | ")
+            });
+            unit.matchedCategories.forEach((mc) => catNames.add(mc.categoryName));
+            return;
+        }
         unit.matchedCategories.forEach((mc) => {
             catNames.add(mc.categoryName);
             const allKeywords = mc.matchedRules.map(r => [...parseCommaList(r.anchor), ...parseCommaList(r.extras)]).flat();
@@ -959,7 +1008,8 @@ function buildRewritePayload(data, sourceText) {
             task_id: `rewrite_${Date.now()}`,
             targets
         },
-        hitCategoryCount: catNames.size
+        hitCategoryCount: catNames.size,
+        deleteUnits
     };
 }
 
@@ -1145,28 +1195,84 @@ function bindRewriteDecorationEvents() {
     });
 }
 
-function applyRewriteToFullText(sourceText, evaluated, parsed, request = null) {
+/* 片段删除：从命中的字面片段删到单元末尾，保留句末标点，清理悬挂连接符。
+   例：「他笑了，那笑声像碎玻璃一样脆。」+ fragment「那笑声像」→「他笑了。」
+   片段不在单元内 → 原文不动（规则失配不误删）。 */
+function applyDeletesToUnit(unitText, deleteAction, fragment) {
+    const text = String(unitText || "");
+    if (deleteAction === "delete") return "";
+    if (deleteAction !== "delete_range") return text;
+    const frag = String(fragment || "").trim();
+    if (!frag) return text;
+    const idx = text.indexOf(frag);
+    if (idx < 0) return text;
+    const tail = text.slice(idx + frag.length);
+    const punct = /[。！？!?…]\s*$/.exec(tail);
+    const rawHead = text.slice(0, idx);
+    // head 末尾的悬挂连接符清理：直连的「，、；」裁掉
+    let cleanedHead = rawHead.replace(/[，、；,;]\s*$/, "");
+    // head 已以闭引号/闭括号收尾（“走吧。”那笑声像铃。）时不再拼句末标点，
+    // 避免产生「”。」这样的重复终止符
+    const closedByQuote = /[”」』）)]\s*$/.test(cleanedHead);
+    let keptTail = punct && !closedByQuote ? punct[0] : "";
+    // head 末尾是开括号（删除段带走了闭括号）时补回，保持配对
+    const openMatch = /[（(]\s*$/.exec(cleanedHead);
+    if (openMatch) {
+        const closeChar = cleanedHead.endsWith("（") ? "）" : ")";
+        cleanedHead = cleanedHead.replace(/[（(]\s*$/, closeChar);
+        keptTail = "";
+    }
+    return cleanedHead + keptTail;
+}
+
+/* 删除单元 → diff 行。片段删除展示删后结果，整句删除展示（已删除）。 */
+function buildDeleteDiffRows(deleteUnits = []) {
+    return (Array.isArray(deleteUnits) ? deleteUnits : []).map((unit) => ({
+        before: unit.text,
+        after: applyDeletesToUnit(unit.text, unit.deleteAction, unit.deleteFragment),
+        ruleHint: unit.ruleHint || "",
+        action: "delete"
+    }));
+}
+
+function applyRewriteToFullText(sourceText, evaluated, parsed, request = null, deleteUnits = []) {
+    // 删除单元先行：unit.text → 删除结果（整句为 ""）。与改写一样用 indexOf+cursor
+    // 逐个推进，同一句文本只消费一次。
+    const deletes = (Array.isArray(deleteUnits) ? deleteUnits : [])
+        .map((unit) => ({
+            before: String(unit?.text || ""),
+            after: applyDeletesToUnit(unit?.text, unit?.deleteAction, unit?.deleteFragment)
+        }))
+        .filter((item) => item.before && item.after !== item.before);
+
     const map = new Map((parsed?.results || []).map(r => [String(r.segment_id), String(r.rewritten_text || "")]));
     let rewritten = String(sourceText || "");
     let cursor = 0;
     let replaced = 0;
 
-    evaluated.unitResults
-        .filter(u => u.hit)
-        .forEach((unit) => {
+    // 合并两个来源后按原文出现顺序统一替换
+    const rewriteEntries = evaluated.unitResults
+        .filter(u => u.hit && !u.deleteAction)
+        .map((unit) => {
             const segmentId = `s_${unit.unitIndex}`;
-            const after = map.get(segmentId);
-            if (typeof after !== "string") return;
-            const before = String(unit.text || "");
-            if (!before) return;
+            return { before: String(unit.text || ""), after: map.get(segmentId) };
+        })
+        .filter((item) => item.before && typeof item.after === "string" && item.after !== item.before);
 
-            const idx = rewritten.indexOf(before, cursor);
-            if (idx < 0) return;
+    const entries = [...deletes, ...rewriteEntries]
+        .map((item) => {
+            const idx = rewritten.indexOf(item.before, cursor);
+            return { ...item, idx };
+        })
+        .filter((item) => item.idx >= 0)
+        .sort((a, b) => a.idx - b.idx);
 
-            rewritten = `${rewritten.slice(0, idx)}${after}${rewritten.slice(idx + before.length)}`;
-            cursor = idx + after.length;
-            replaced += 1;
-        });
+    entries.forEach((item) => {
+        if (item.idx < cursor) return; // 同位置重叠（同句既删又改的兜底，理论不发生：分流已互斥）
+        rewritten = `${rewritten.slice(0, item.idx)}${item.after}${rewritten.slice(item.idx + item.before.length)}`;
+        cursor = item.idx + item.after.length;
+        replaced += 1;
+    });
 
     return { text: rewritten, replaced };
 }
@@ -1370,19 +1476,26 @@ function normalizeRewriteResponseShape(parsed, payload) {
     };
 }
 
-function buildDiffRowsFromResults(evaluated, payload, parsed) {
+function buildDiffRowsFromResults(evaluated, payload, parsed, deleteUnits = []) {
     const rewrittenMap = new Map(parsed.results.map(r => [String(r.segment_id), String(r.rewritten_text || "")]));
-    const targetMap = new Map(payload.targets.map(t => [t.segment_id, t]));
 
+    // 行序 = unitResults 顺序：改写行与删除行同源遍历，天然对齐
     return evaluated.unitResults
         .filter(u => u.hit)
         .map((u) => {
-            const segmentId = `s_${u.unitIndex}`;
-            const target = targetMap.get(segmentId);
-            const after = rewrittenMap.get(segmentId) || u.text;
             const categoryNames = Array.isArray(u.matchedCategories)
                 ? u.matchedCategories.map(c => c.categoryName).join(" | ")
                 : "";
+            if (u.deleteAction) {
+                return {
+                    before: u.text,
+                    after: applyDeletesToUnit(u.text, u.deleteAction, u.deleteFragment),
+                    ruleHint: categoryNames,
+                    action: "delete"
+                };
+            }
+            const segmentId = `s_${u.unitIndex}`;
+            const after = rewrittenMap.get(segmentId) || u.text;
             return {
                 before: u.text,
                 after,
@@ -1392,7 +1505,7 @@ function buildDiffRowsFromResults(evaluated, payload, parsed) {
         });
 }
 
-async function executeRewriteRequest({ data, latest, evaluated, request, rewriteCount, hitCategoryCount = 0, source = "manual", buttonSelector = "#t-rewrite-trigger", promptState = null }) {
+async function executeRewriteRequest({ data, latest, evaluated, request, rewriteCount, hitCategoryCount = 0, source = "manual", buttonSelector = "#t-rewrite-trigger", promptState = null, deleteUnits = [] }) {
     const apiUrl = String(data.api_url || "").trim();
     const apiKey = String(data.api_key || "").trim();
     const model = String(data.model || "").trim();
@@ -1460,11 +1573,11 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
             if (!valid.ok) throw new Error(`返回校验失败: ${valid.reason}`);
         }
 
-        const rows = buildDiffRowsFromResults(evaluated, request, parsed);
+        const rows = buildDiffRowsFromResults(evaluated, request, parsed, deleteUnits);
         renderDiffRows(rows);
         const rewriteMarks = buildRewriteMarksFromRows(rows);
 
-        const applied = applyRewriteToFullText(latest.content, evaluated, parsed, request);
+        const applied = applyRewriteToFullText(latest.content, evaluated, parsed, request, deleteUnits);
         writeBackMessageContent(latest.msg, applied.text);
         if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
         latest.msg.extra.titania_rewrite_done = true;
@@ -1473,7 +1586,8 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
         await reloadCurrentChat();
         scheduleApplyAllRewriteMarks(180);
 
-        setStatus(`执行完成：改写 ${rewriteCount} 条，已回写第 ${latest.index + 1} 楼`, "ok");
+        const deleteCount = Array.isArray(deleteUnits) ? deleteUnits.length : 0;
+        setStatus(`执行完成：改写 ${rewriteCount} 条${deleteCount > 0 ? `，删除 ${deleteCount} 条` : ""}，已回写第 ${latest.index + 1} 楼`, "ok");
         success = true;
     } catch (e) {
         renderDiffRows([]);
@@ -1509,7 +1623,7 @@ async function runRewrite(options = {}) {
         return;
     }
 
-    const { evaluated, request, hitCategoryCount } = buildRewritePayload(data, latest.content);
+    const { evaluated, request, hitCategoryCount, deleteUnits } = buildRewritePayload(data, latest.content);
     renderMatchResult(evaluated, latest.content);
 
     if (!String(latest.content || "").trim()) {
@@ -1518,11 +1632,30 @@ async function runRewrite(options = {}) {
     }
     const rewriteTargets = Array.isArray(request.targets) ? request.targets : [];
     const rewriteCount = rewriteTargets.length;
+    const deleteCount = Array.isArray(deleteUnits) ? deleteUnits.length : 0;
 
-    if (rewriteCount === 0) {
+    if (rewriteCount === 0 && deleteCount === 0) {
         setStatus("没有命中任何分类规则的文本单元，未执行改写", "warn");
         renderDiffRows([]);
         return;
+    }
+
+    // 纯删除：不发给模型，离线直接应用（删除规则是字面匹配，确定性操作）
+    if (rewriteCount === 0) {
+        const rows = buildDiffRowsFromResults(evaluated, request, { results: [] }, deleteUnits);
+        renderDiffRows(rows);
+        const rewriteMarks = buildRewriteMarksFromRows(rows);
+        const applied = applyRewriteToFullText(latest.content, evaluated, { results: [] }, null, deleteUnits);
+        writeBackMessageContent(latest.msg, applied.text);
+        if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
+        latest.msg.extra.titania_rewrite_done = true;
+        latest.msg.extra.titania_rewrite_marks = rewriteMarks;
+        await saveChatConditional();
+        await reloadCurrentChat();
+        scheduleApplyAllRewriteMarks(180);
+        setStatus(`执行完成：删除 ${deleteCount} 条（离线处理，未请求模型），已回写第 ${latest.index + 1} 楼`, "ok");
+        if (window.toastr) toastr.success(`已按删除规则处理 ${deleteCount} 条`, "文本改写");
+        return true;
     }
 
     return executeRewriteRequest({
@@ -1533,7 +1666,8 @@ async function runRewrite(options = {}) {
         rewriteCount,
         hitCategoryCount,
         source: options.source || "manual",
-        buttonSelector: "#t-rewrite-trigger"
+        buttonSelector: "#t-rewrite-trigger",
+        deleteUnits
     });
 }
 
@@ -1658,6 +1792,27 @@ function bindAutoTriggerEvents() {
     eventSource.on(event_types.GENERATION_ENDED, onAutoTriggerRewrite);
 }
 
+/* 关键词规则行 markup：主词 与 附加词 + 动作下拉 + 片段输入（仅"删除片段"显示）。
+   三处复用（已保存规则渲染 / 空模板 / 添加按钮），保证控件集一致。 */
+function buildKwRowHtml(rule = {}) {
+    const action = normalizeRuleAction(rule?.action);
+    const fragment = String(rule?.fragment || "");
+    const isRange = action === "delete_range";
+    return `
+                <div class="t-rewrite-kw-row${isRange ? " t-rewrite-kw-row--range" : ""}">
+                    <input class="text_pole t-rewrite-kw-anchor" type="text" value="${escapeHtml(rule?.anchor || "")}" placeholder="主词（逗号分隔，任一命中）">
+                    <span class="t-rewrite-kw-and">与</span>
+                    <input class="text_pole t-rewrite-kw-extras" type="text" value="${escapeHtml(rule?.extras || "")}" placeholder="附加词（逗号分隔，任一命中）">
+                    <select class="text_pole t-rewrite-kw-action" title="命中后的动作">
+                        <option value="rewrite" ${!isRange && action !== "delete" ? "selected" : ""}>改写</option>
+                        <option value="delete" ${action === "delete" ? "selected" : ""}>删除整句</option>
+                        <option value="delete_range" ${isRange ? "selected" : ""}>删除片段</option>
+                    </select>
+                    <input class="text_pole t-rewrite-kw-fragment" type="text" value="${escapeHtml(fragment)}" placeholder="删除起点片段，删到句尾（如：那笑声像）" style="${isRange ? "" : "display:none;"}">
+                    <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除此关键词规则"><i class="fa-solid fa-xmark"></i></button>
+                </div>`;
+}
+
 function readCategoriesFromDom() {
     const categories = [];
     $("#t-rewrite-scheme-categories-list .t-rewrite-category-card").each((_, el) => {
@@ -1671,7 +1826,11 @@ function readCategoriesFromDom() {
         $card.find(".t-rewrite-kw-row").each((_, kwEl) => {
             const anchor = String($(kwEl).find(".t-rewrite-kw-anchor").val() || "").trim();
             const extras = String($(kwEl).find(".t-rewrite-kw-extras").val() || "").trim();
-            if (anchor && extras) rules.push({ anchor, extras });
+            const action = normalizeRuleAction($(kwEl).find(".t-rewrite-kw-action").val() || "rewrite");
+            const fragment = action === "delete_range"
+                ? String($(kwEl).find(".t-rewrite-kw-fragment").val() || "").trim()
+                : "";
+            if (anchor && extras) rules.push({ anchor, extras, action, fragment });
         });
         categories.push({ id: id || generateId("cat"), name, bad_example, good_example, guidance, rules });
     });
@@ -1693,20 +1852,8 @@ function renderSchemeCategoriesList(scheme) {
         const rules = Array.isArray(cat.rules) ? cat.rules : [];
         const hasContent = String(cat.name || "").trim() || String(cat.bad_example || "").trim() || String(cat.good_example || "").trim() || String(cat.guidance || "").trim() || rules.length > 0;
         const kwRows = rules.length > 0
-            ? rules.map(r => `
-                <div class="t-rewrite-kw-row">
-                    <input class="text_pole t-rewrite-kw-anchor" type="text" value="${escapeHtml(r.anchor || "")}" placeholder="主词（逗号分隔，任一命中）">
-                    <span class="t-rewrite-kw-and">与</span>
-                    <input class="text_pole t-rewrite-kw-extras" type="text" value="${escapeHtml(r.extras || "")}" placeholder="附加词（逗号分隔，任一命中）">
-                    <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除此关键词规则"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            `).join("")
-            : `<div class="t-rewrite-kw-row">
-                <input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="主词（逗号分隔，任一命中）">
-                <span class="t-rewrite-kw-and">与</span>
-                <input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="附加词（逗号分隔，任一命中）">
-                <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除"><i class="fa-solid fa-xmark"></i></button>
-            </div>`;
+            ? rules.map(r => buildKwRowHtml(r)).join("")
+            : buildKwRowHtml();
 
         const nameMissing = !String(cat.name || "").trim();
         const collapsedClass = hasContent ? " collapsed" : "";
@@ -1743,7 +1890,7 @@ function renderSchemeCategoriesList(scheme) {
                         <textarea class="text_pole t-rewrite-cat-guidance" rows="2" placeholder="告诉模型具体怎么改">${escapeHtml(cat.guidance || "")}</textarea>
                     </div>
                     <div class="t-rewrite-cat-field">
-                        <label>关键词规则<span class="t-rewrite-cat-field-hint">（主词 AND 附加词同时命中才生效，命中任一行即归类）</span></label>
+                        <label>关键词规则<span class="t-rewrite-cat-field-hint">（主词 AND 附加词同时命中才生效；动作可选改写/删除整句/删除片段，同时命中时删除优先）</span></label>
                         <div class="t-rewrite-cat-kw-list">${kwRows}</div>
                         <button class="t-btn t-btn--glass t-rewrite-cat-add-kw" type="button"><i class="fa-solid fa-plus"></i> 添加关键词</button>
                     </div>
@@ -1908,6 +2055,7 @@ function renderMatchResult(result, sourceText = "") {
                     return `<span class="t-rewrite-hit-tag">【${escapeHtml(c.categoryName)}】${escapeHtml(keywords)}</span>`;
                 }).join("")
                 : "<span class=\"t-rewrite-hit-tag\">用户选中</span>")
+                + (item.deleteAction ? `<span class="t-rewrite-hit-tag t-rewrite-hit-tag--delete">${escapeHtml(actionLabel(item.deleteAction))}</span>` : "")
             : (lastMatchResult.sourceMode === "selected"
                 ? "<span class=\"t-rewrite-hit-tag miss\">未选中</span>"
                 : "<span class=\"t-rewrite-hit-tag miss\">未命中</span>");
@@ -2185,8 +2333,15 @@ function bindSettingsPanelEvents(connectionEditor = null) {
     $overlay.on("click", ".t-rewrite-cat-add-kw", (e) => {
         e.preventDefault();
         const $card = $(e.currentTarget).closest(".t-rewrite-category-card");
-        const newRow = $(`<div class="t-rewrite-kw-row"><input class="text_pole t-rewrite-kw-anchor" type="text" value="" placeholder="主词（逗号分隔，任一命中）"><span class="t-rewrite-kw-and">与</span><input class="text_pole t-rewrite-kw-extras" type="text" value="" placeholder="附加词（逗号分隔，任一命中）"><button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除"><i class="fa-solid fa-xmark"></i></button></div>`);
-        $card.find(".t-rewrite-cat-kw-list").append(newRow);
+        $card.find(".t-rewrite-cat-kw-list").append(buildKwRowHtml());
+    });
+
+    // 动作下拉切换：仅"删除片段"显示片段输入
+    $overlay.on("change", ".t-rewrite-kw-action", function () {
+        const $row = $(this).closest(".t-rewrite-kw-row");
+        const isRange = normalizeRuleAction($(this).val()) === "delete_range";
+        $row.toggleClass("t-rewrite-kw-row--range", isRange);
+        $row.find(".t-rewrite-kw-fragment").toggle(isRange);
     });
 
     $overlay.on("click", ".t-rewrite-kw-del", (e) => {
@@ -2196,6 +2351,8 @@ function bindSettingsPanelEvents(connectionEditor = null) {
         if ($list.find(".t-rewrite-kw-row").length <= 1) {
             $row.find(".t-rewrite-kw-anchor").val("");
             $row.find(".t-rewrite-kw-extras").val("");
+            $row.find(".t-rewrite-kw-fragment").val("");
+            $row.find(".t-rewrite-kw-action").val("rewrite").trigger("change");
             return;
         }
         $row.remove();

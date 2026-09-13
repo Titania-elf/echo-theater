@@ -122,7 +122,7 @@ function refreshButtons() {
         if (buttonArea.querySelector(`.${BTN_CLASS}`)) continue;
 
         const btn = document.createElement("div");
-        btn.className = `mes_button ${BTN_CLASS} fa-solid fa-angles-up`;
+        btn.className = `mes_button ${BTN_CLASS} fa-solid fa-comment-slash`;
         btn.title = "隐藏此楼以上全部旧楼（再点恢复）";
         btn.setAttribute("tabindex", "0");
         buttonArea.appendChild(btn);
