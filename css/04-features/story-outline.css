@@ -116,85 +116,15 @@
 .t-editor-tabs {
     display: flex;
     gap: 8px;
+    align-items: center;
+}
+
+.t-editor-tabs .t-editor-tab-add {
+    margin-left: auto;
 }
 
 .t-outline-subview {
     min-height: 0;
-}
-
-.t-outline-fab-wrap {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    z-index: 20025;
-    display: none;
-}
-
-.t-outline-add-fab {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    border: 1px solid rgb(var(--t-accent-outline-btn-border-rgb) / .72);
-    background: linear-gradient(135deg, rgb(var(--t-accent-outline-btn-rgb) / .97), rgb(var(--t-accent-outline-btn-pale-rgb) / .97));
-    color: var(--t-color-text-strong);
-    box-shadow: 0 12px 24px rgb(var(--t-accent-outline-fab-glow-rgb) / .45);
-    font-size: 20px;
-    cursor: pointer;
-    transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
-}
-
-.t-outline-add-fab:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.04);
-}
-
-.t-outline-add-fab[aria-expanded="true"] {
-    transform: rotate(45deg);
-}
-
-.t-outline-add-sheet-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgb(var(--t-scrim-panel-rgb) / .45);
-    z-index: 20023;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.16s ease;
-}
-
-.t-outline-add-sheet-backdrop.show {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.t-outline-add-sheet {
-    position: absolute;
-    right: 0;
-    bottom: 62px;
-    min-width: 190px;
-    display: grid;
-    gap: 6px;
-    padding: 8px;
-    border: 1px solid var(--t-color-border-cool);
-    border-radius: 10px;
-    background: var(--t-glass-body);
-    box-shadow: 0 12px 28px var(--t-shadow-ink-44);
-    opacity: 0;
-    transform: translateY(8px);
-    pointer-events: none;
-    transition: opacity 0.16s ease, transform 0.16s ease;
-}
-
-.t-outline-add-sheet.show {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-
-.t-outline-add-sheet .t-btn {
-    width: 100%;
-    min-height: 36px;
-    justify-content: flex-start;
 }
 
 .t-outline-plan-list {
@@ -675,6 +605,11 @@
     gap: 6px;
 }
 
+/* 大纲生成页：参考来源与生成按钮同行，靠右对齐 */
+.t-outline-actions .t-outline-mode-source {
+    margin-left: auto;
+}
+
 /* 渐进续写面板：进度条 + 生成下一段 + 手动指针（现位于「细纲情节」窗口） */
 .t-outline-rolling {
     margin-top: 12px;
@@ -697,6 +632,22 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+}
+
+/* 剧情推进窗口标题右侧：快捷切换来源方案 */
+.t-scene-hub-plan-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    margin-right: 4px;
+}
+
+.t-scene-hub-plan-switch .t-outline-select {
+    max-width: 180px;
+    min-height: 28px;
+    padding: 2px 8px;
+    font-size: 12px;
 }
 
 .t-outline-rolling-head-right {
@@ -1142,60 +1093,12 @@
     display: none;
 }
 
-.t-outline-mobile-drawer {
-    display: none;
-}
-
-.t-outline-desktop-editor {
-    position: fixed;
-    top: 8vh;
-    right: 2vw;
-    width: min(440px, 42vw);
-    max-height: 84vh;
-    border: 1px solid var(--t-color-border-cool);
-    border-radius: 12px;
-    background: var(--t-glass-body);
-    box-shadow: 0 16px 40px var(--t-shadow-ink-45);
-    z-index: 20030;
-    display: none;
-    overflow: hidden;
-}
-
-.t-outline-desktop-editor.show {
-    display: flex;
-    flex-direction: column;
-}
-
-.t-desk-editor-head,
-.t-desk-editor-actions {
-    padding: 10px;
-    border-bottom: 1px solid var(--t-color-border-faint);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.t-desk-editor-actions {
-    border-top: 1px solid var(--t-color-border-faint);
-    border-bottom: none;
-}
-
-.t-desk-editor-head .title {
-    color: var(--t-glass-text-bright);
-    font-weight: 700;
-}
-
-.t-desk-editor-body {
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.t-desk-editor-body label {
-    color: var(--t-glass-text-secondary);
-    font-size: 12px;
+/* 行内编辑：单元格就地转为输入框 */
+td[data-edit-field] .t-cell-editor {
+    width: 100%;
+    min-width: 140px;
+    box-sizing: border-box;
+    resize: vertical;
 }
 
 @media (max-width: 768px) {
@@ -1399,38 +1302,11 @@
         display: none;
     }
 
-    .t-outline-desktop-editor,
-    .t-outline-desktop-editor.show {
-        display: none;
-    }
-
     .t-outline-mobile-list {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        padding-bottom: 110px;
-    }
-
-    .t-outline-fab-wrap {
-        right: 14px;
-        bottom: calc(14px + env(safe-area-inset-bottom));
-    }
-
-    .t-outline-add-fab {
-        width: 56px;
-        height: 56px;
-    }
-
-    .t-outline-add-sheet {
-        right: 0;
-        left: auto;
-        min-width: 218px;
-        bottom: 68px;
-        padding: 10px;
-    }
-
-    .t-outline-add-sheet .t-btn {
-        min-height: 40px;
+        padding-bottom: 16px;
     }
 
     .t-outline-mobile-empty {
@@ -1475,66 +1351,28 @@
         margin-bottom: 8px;
     }
 
-    .t-outline-mobile-drawer {
-        display: block;
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 20020;
-        background: var(--t-glass-body);
-        border-top: 1px solid var(--t-color-border-cool);
-        box-shadow: 0 -10px 30px var(--t-shadow-ink-45);
-        transition: transform 0.22s ease, visibility 0.22s ease;
-        max-height: 88vh;
-        border-top-left-radius: 14px;
-        border-top-right-radius: 14px;
-        overflow: hidden;
-        transform: translateY(110%);
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    .t-outline-mobile-drawer.show {
-        transform: translateY(0);
-        visibility: visible;
-        pointer-events: auto;
-    }
-
-    .t-outline-mobile-drawer-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 12px;
-        border-bottom: 1px solid var(--t-color-border-subtle);
-        color: var(--t-color-text);
-        font-weight: 600;
-    }
-
-    .t-outline-mobile-drawer-body {
-        padding: 10px 12px 4px;
-        max-height: 52vh;
-        overflow: auto;
+    .t-mobile-edit-form {
         display: flex;
         flex-direction: column;
         gap: 6px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed var(--t-color-border-subtle);
     }
 
-    .t-outline-mobile-drawer-body label {
+    .t-mobile-edit-form label {
         color: var(--t-glass-text-secondary);
         font-size: 12px;
     }
 
-    .t-outline-mobile-drawer-actions {
+    .t-mobile-edit-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 6px;
-        padding: 10px 12px 12px;
-        border-top: 1px solid var(--t-color-border-subtle);
-        background: var(--t-glass-field);
+        margin-top: 4px;
     }
 
-    .t-outline-mobile-drawer-actions .t-btn {
+    .t-mobile-edit-actions .t-btn {
         min-height: 40px;
     }
 

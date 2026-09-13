@@ -17682,85 +17682,15 @@ textarea.t-input {
 .t-editor-tabs {
     display: flex;
     gap: 8px;
+    align-items: center;
+}
+
+.t-editor-tabs .t-editor-tab-add {
+    margin-left: auto;
 }
 
 .t-outline-subview {
     min-height: 0;
-}
-
-.t-outline-fab-wrap {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    z-index: 20025;
-    display: none;
-}
-
-.t-outline-add-fab {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    border: 1px solid rgb(var(--t-accent-outline-btn-border-rgb) / .72);
-    background: linear-gradient(135deg, rgb(var(--t-accent-outline-btn-rgb) / .97), rgb(var(--t-accent-outline-btn-pale-rgb) / .97));
-    color: var(--t-color-text-strong);
-    box-shadow: 0 12px 24px rgb(var(--t-accent-outline-fab-glow-rgb) / .45);
-    font-size: 20px;
-    cursor: pointer;
-    transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
-}
-
-.t-outline-add-fab:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.04);
-}
-
-.t-outline-add-fab[aria-expanded="true"] {
-    transform: rotate(45deg);
-}
-
-.t-outline-add-sheet-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgb(var(--t-scrim-panel-rgb) / .45);
-    z-index: 20023;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.16s ease;
-}
-
-.t-outline-add-sheet-backdrop.show {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.t-outline-add-sheet {
-    position: absolute;
-    right: 0;
-    bottom: 62px;
-    min-width: 190px;
-    display: grid;
-    gap: 6px;
-    padding: 8px;
-    border: 1px solid var(--t-color-border-cool);
-    border-radius: 10px;
-    background: var(--t-glass-body);
-    box-shadow: 0 12px 28px var(--t-shadow-ink-44);
-    opacity: 0;
-    transform: translateY(8px);
-    pointer-events: none;
-    transition: opacity 0.16s ease, transform 0.16s ease;
-}
-
-.t-outline-add-sheet.show {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-
-.t-outline-add-sheet .t-btn {
-    width: 100%;
-    min-height: 36px;
-    justify-content: flex-start;
 }
 
 .t-outline-plan-list {
@@ -18241,6 +18171,11 @@ textarea.t-input {
     gap: 6px;
 }
 
+/* \u5927\u7EB2\u751F\u6210\u9875\uFF1A\u53C2\u8003\u6765\u6E90\u4E0E\u751F\u6210\u6309\u94AE\u540C\u884C\uFF0C\u9760\u53F3\u5BF9\u9F50 */
+.t-outline-actions .t-outline-mode-source {
+    margin-left: auto;
+}
+
 /* \u6E10\u8FDB\u7EED\u5199\u9762\u677F\uFF1A\u8FDB\u5EA6\u6761 + \u751F\u6210\u4E0B\u4E00\u6BB5 + \u624B\u52A8\u6307\u9488\uFF08\u73B0\u4F4D\u4E8E\u300C\u7EC6\u7EB2\u60C5\u8282\u300D\u7A97\u53E3\uFF09 */
 .t-outline-rolling {
     margin-top: 12px;
@@ -18263,6 +18198,22 @@ textarea.t-input {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+}
+
+/* \u5267\u60C5\u63A8\u8FDB\u7A97\u53E3\u6807\u9898\u53F3\u4FA7\uFF1A\u5FEB\u6377\u5207\u6362\u6765\u6E90\u65B9\u6848 */
+.t-scene-hub-plan-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    margin-right: 4px;
+}
+
+.t-scene-hub-plan-switch .t-outline-select {
+    max-width: 180px;
+    min-height: 28px;
+    padding: 2px 8px;
+    font-size: 12px;
 }
 
 .t-outline-rolling-head-right {
@@ -18708,60 +18659,12 @@ textarea.t-input {
     display: none;
 }
 
-.t-outline-mobile-drawer {
-    display: none;
-}
-
-.t-outline-desktop-editor {
-    position: fixed;
-    top: 8vh;
-    right: 2vw;
-    width: min(440px, 42vw);
-    max-height: 84vh;
-    border: 1px solid var(--t-color-border-cool);
-    border-radius: 12px;
-    background: var(--t-glass-body);
-    box-shadow: 0 16px 40px var(--t-shadow-ink-45);
-    z-index: 20030;
-    display: none;
-    overflow: hidden;
-}
-
-.t-outline-desktop-editor.show {
-    display: flex;
-    flex-direction: column;
-}
-
-.t-desk-editor-head,
-.t-desk-editor-actions {
-    padding: 10px;
-    border-bottom: 1px solid var(--t-color-border-faint);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.t-desk-editor-actions {
-    border-top: 1px solid var(--t-color-border-faint);
-    border-bottom: none;
-}
-
-.t-desk-editor-head .title {
-    color: var(--t-glass-text-bright);
-    font-weight: 700;
-}
-
-.t-desk-editor-body {
-    padding: 10px;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.t-desk-editor-body label {
-    color: var(--t-glass-text-secondary);
-    font-size: 12px;
+/* \u884C\u5185\u7F16\u8F91\uFF1A\u5355\u5143\u683C\u5C31\u5730\u8F6C\u4E3A\u8F93\u5165\u6846 */
+td[data-edit-field] .t-cell-editor {
+    width: 100%;
+    min-width: 140px;
+    box-sizing: border-box;
+    resize: vertical;
 }
 
 @media (max-width: 768px) {
@@ -18965,38 +18868,11 @@ textarea.t-input {
         display: none;
     }
 
-    .t-outline-desktop-editor,
-    .t-outline-desktop-editor.show {
-        display: none;
-    }
-
     .t-outline-mobile-list {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        padding-bottom: 110px;
-    }
-
-    .t-outline-fab-wrap {
-        right: 14px;
-        bottom: calc(14px + env(safe-area-inset-bottom));
-    }
-
-    .t-outline-add-fab {
-        width: 56px;
-        height: 56px;
-    }
-
-    .t-outline-add-sheet {
-        right: 0;
-        left: auto;
-        min-width: 218px;
-        bottom: 68px;
-        padding: 10px;
-    }
-
-    .t-outline-add-sheet .t-btn {
-        min-height: 40px;
+        padding-bottom: 16px;
     }
 
     .t-outline-mobile-empty {
@@ -19041,66 +18917,28 @@ textarea.t-input {
         margin-bottom: 8px;
     }
 
-    .t-outline-mobile-drawer {
-        display: block;
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 20020;
-        background: var(--t-glass-body);
-        border-top: 1px solid var(--t-color-border-cool);
-        box-shadow: 0 -10px 30px var(--t-shadow-ink-45);
-        transition: transform 0.22s ease, visibility 0.22s ease;
-        max-height: 88vh;
-        border-top-left-radius: 14px;
-        border-top-right-radius: 14px;
-        overflow: hidden;
-        transform: translateY(110%);
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    .t-outline-mobile-drawer.show {
-        transform: translateY(0);
-        visibility: visible;
-        pointer-events: auto;
-    }
-
-    .t-outline-mobile-drawer-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 12px;
-        border-bottom: 1px solid var(--t-color-border-subtle);
-        color: var(--t-color-text);
-        font-weight: 600;
-    }
-
-    .t-outline-mobile-drawer-body {
-        padding: 10px 12px 4px;
-        max-height: 52vh;
-        overflow: auto;
+    .t-mobile-edit-form {
         display: flex;
         flex-direction: column;
         gap: 6px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed var(--t-color-border-subtle);
     }
 
-    .t-outline-mobile-drawer-body label {
+    .t-mobile-edit-form label {
         color: var(--t-glass-text-secondary);
         font-size: 12px;
     }
 
-    .t-outline-mobile-drawer-actions {
+    .t-mobile-edit-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 6px;
-        padding: 10px 12px 12px;
-        border-top: 1px solid var(--t-color-border-subtle);
-        background: var(--t-glass-field);
+        margin-top: 4px;
     }
 
-    .t-outline-mobile-drawer-actions .t-btn {
+    .t-mobile-edit-actions .t-btn {
         min-height: 40px;
     }
 
@@ -27025,8 +26863,6 @@ async function openPromptTemplateManager() {
   const settingsDraft = {
     selectedProfileId: getOutlineSelectedProfileId(),
     customProfiles: getOutlineCustomProfiles(),
-    openingSourceMode: getOpeningSourceMode(),
-    openingSourceRef: getOpeningSourceRef(),
     chatTagWhitelist: getOutlineChatTagWhitelistRaw(),
     streamEnabled: loadDraft().streamEnabled === true,
     genParams: getOutlineGenParams(),
@@ -27127,18 +26963,6 @@ async function openPromptTemplateManager() {
                         </div>
 
                         <div class="t-form-group">
-                            <label class="t-form-label">\u53C2\u8003\u6765\u6E90</label>
-                            <label class="t-outline-mode t-outline-mode-source" style="margin-left:0; margin-bottom:8px;">
-                                \u6765\u6E90\u6A21\u5F0F
-                                <select id="t-outline-settings-opening-source-mode" class="t-outline-select">
-                                    <option value="auto_first">\u5F00\u573A\u767D</option>
-                                    <option value="chat_selected">\u804A\u5929\u8BB0\u5F55</option>
-                                </select>
-                            </label>
-                            <button id="t-outline-settings-opening-source-pick" class="t-btn t-btn-xs"><i class="fa-solid fa-list"></i> \u9009\u62E9\u6765\u6E90</button>
-                        </div>
-
-                        <div class="t-form-group">
                             <label class="t-form-label">\u804A\u5929\u63D0\u53D6\u767D\u540D\u5355</label>
                             <input id="t-outline-settings-chat-tag-whitelist" class="t-outline-select" type="text" placeholder="content, dialogue">
                         </div>
@@ -27229,12 +27053,8 @@ async function openPromptTemplateManager() {
   });
   outlineSettingsConnectionEditor.bind();
   outlineSettingsConnectionEditor.render();
-  const refreshOpeningSourceControlsDraft = () => {
-    const mode = settingsDraft.openingSourceMode === "chat_selected" ? "chat_selected" : "auto_first";
-    const whitelist = settingsDraft.chatTagWhitelist || "";
-    $("#t-outline-settings-opening-source-mode").val(mode);
-    $("#t-outline-settings-opening-source-pick").prop("disabled", false);
-    $("#t-outline-settings-chat-tag-whitelist").val(whitelist);
+  const refreshWhitelistControlDraft = () => {
+    $("#t-outline-settings-chat-tag-whitelist").val(settingsDraft.chatTagWhitelist || "");
   };
   const switchTab = (tab) => {
     const next = tab === "prompt" ? "prompt" : "runtime";
@@ -27262,8 +27082,8 @@ async function openPromptTemplateManager() {
     const type = String($("#t-prompt-target").val() || "outline");
     const section = getPromptTemplateSection(working, type);
     const currentStoryInput = String($("#t-outline-story-input").val() || "").trim();
-    const openingMode = settingsDraft.openingSourceMode;
-    const openingSourceRef = settingsDraft.openingSourceRef;
+    const openingMode = getOpeningSourceMode();
+    const openingSourceRef = getOpeningSourceRef();
     const opening = getOpeningTextForPreview(openingMode, openingSourceRef);
     const varsLocal = buildPromptTemplateVars(ctx, currentStoryInput, opening, outlinePayload);
     const renderedSys = renderPromptTemplate(section.system, varsLocal);
@@ -27276,7 +27096,7 @@ async function openPromptTemplateManager() {
   };
   const syncRuntimeSettings = () => {
     outlineSettingsConnectionEditor.render();
-    refreshOpeningSourceControlsDraft();
+    refreshWhitelistControlDraft();
     $("#t-outline-settings-stream-enabled").prop("checked", settingsDraft.streamEnabled === true);
   };
   switchTab("runtime");
@@ -27311,22 +27131,6 @@ async function openPromptTemplateManager() {
     preview();
     if (window.toastr) toastr.success("\u5DF2\u6062\u590D\u5F53\u524D\u6A21\u677F\u9ED8\u8BA4\u503C", "\u6545\u4E8B\u5927\u7EB2\u8BBE\u7F6E");
   });
-  $("#t-outline-settings-opening-source-mode").on("change", function() {
-    const mode = String($(this).val() || "auto_first") === "chat_selected" ? "chat_selected" : "auto_first";
-    settingsDraft.openingSourceMode = mode;
-    refreshOpeningSourceControlsDraft();
-    preview();
-  });
-  $("#t-outline-settings-opening-source-pick").on("click", async () => {
-    const mode = settingsDraft.openingSourceMode;
-    const sourceRef = settingsDraft.openingSourceRef;
-    const picked = mode === "chat_selected" ? await openOpeningSourcePickerDialog(sourceRef?.chatIndex ?? -1) : await openCardOpeningPickerDialog(sourceRef?.openingIndex ?? 0);
-    if (!picked) return;
-    settingsDraft.openingSourceRef = picked;
-    refreshOpeningSourceControlsDraft();
-    preview();
-    if (window.toastr) toastr.success("\u5DF2\u8BBE\u7F6E\u53C2\u8003\u6765\u6E90", "\u6545\u4E8B\u5927\u7EB2");
-  });
   $("#t-outline-settings-chat-tag-whitelist").on("input change", function() {
     settingsDraft.chatTagWhitelist = String($(this).val() || "").trim();
   });
@@ -27345,8 +27149,6 @@ async function openPromptTemplateManager() {
     settingsDraft.selectedProfileId = nextState.activeProfileId;
     saveOutlineSelectedProfileId(settingsDraft.selectedProfileId);
     saveOutlineCustomProfiles(settingsDraft.customProfiles);
-    setOpeningSourceMode(settingsDraft.openingSourceMode);
-    setOpeningSourceRef(settingsDraft.openingSourceRef);
     setOutlineChatTagWhitelistRaw(settingsDraft.chatTagWhitelist);
     saveOutlineGenParams(settingsDraft.genParams);
     saveRollingChatFloors(settingsDraft.rollingChatFloors);
@@ -27361,8 +27163,8 @@ async function openPromptTemplateManager() {
 function refreshOutlineOpeningSourceControls() {
   const mode = getOpeningSourceMode();
   const whitelist = getOutlineChatTagWhitelistRaw();
-  $("#t-outline-opening-source-mode, #t-outline-settings-opening-source-mode").val(mode);
-  $("#t-outline-opening-source-pick, #t-outline-settings-opening-source-pick").prop("disabled", false);
+  $("#t-outline-opening-source-mode").val(mode);
+  $("#t-outline-opening-source-pick").prop("disabled", false);
   $("#t-outline-chat-tag-whitelist, #t-outline-settings-chat-tag-whitelist").val(whitelist);
 }
 function buildPrompt(ctx, userStoryInput, openingText) {
@@ -27896,17 +27698,11 @@ function showOutlineView(view) {
   $("#t-outline-editor-view").toggle(currentView === "editor");
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
   $("#t-story-outline-overlay").toggleClass("t-outline-mobile-hub-compact", isMobile && currentView === "hub");
-  if (currentView === "hub") {
-    closeMobileEditor();
-  }
-  syncAddFabVisibility();
 }
 function loadPlanToEditor(plan) {
   if (!plan) return false;
   outlineItems = normalizeItems(plan.items || []);
   selectedRowIndex = -1;
-  closeDesktopEditor();
-  closeMobileEditor();
   const planInstruction = getPlanInstruction(plan);
   $("#t-outline-story-input").val(planInstruction);
   setEditingPlan(plan);
@@ -27979,6 +27775,11 @@ function openSceneHubWindow() {
         <div class="t-window t-story-outline-window">
             <div class="t-window-header">
                 <div class="t-window-title"><i class="fa-solid fa-clapperboard"></i> \u5267\u60C5\u63A8\u8FDB</div>
+                <div class="t-scene-hub-plan-switch">
+                    <label class="t-outline-rolling-cursor">\u65B9\u6848
+                        <select id="t-scene-hub-plan-select" class="t-outline-select"></select>
+                    </label>
+                </div>
                 <div class="t-window-controls">
                     <div class="t-window-close" id="t-scene-hub-close"><i class="fa-solid fa-times"></i></div>
                 </div>
@@ -28019,6 +27820,19 @@ function openSceneHubWindow() {
   const $overlay = $("#t-scene-hub-overlay");
   $overlay.on("click", "#t-scene-hub-close", () => {
     $overlay.remove();
+  });
+  $overlay.on("change", "#t-scene-hub-plan-select", function() {
+    const planId = String($(this).val() || "").trim();
+    if (!planId) return;
+    setSceneSourcePlanId(planId);
+    activePlanId = planId;
+    setActivePlanId(activePlanId);
+    const rollingPlan = getRollingPlan();
+    latestCandidates = rollingPlan ? getPlanCandidates(rollingPlan) : [];
+    latestCandidatesPlanId = rollingPlan?.id || "";
+    renderCandidates();
+    refreshRollingProgressUI();
+    if (window.toastr) toastr.success(`\u5DF2\u5207\u6362\uFF1A${rollingPlan?.name || "\u672A\u547D\u540D\u65B9\u6848"}`, "\u5267\u60C5\u63A8\u8FDB");
   });
   $overlay.on("click", "#t-scene-hub-insert-chip", function() {
     const next = getCurrentInsertMode() === "append" ? "overwrite" : "append";
@@ -28262,23 +28076,6 @@ function createEmptyOutlineItem(index = 1) {
     foreshadowing: ""
   };
 }
-function closeAddItemSheet() {
-  $("#t-outline-add-sheet").removeClass("show");
-  $("#t-outline-add-sheet-backdrop").removeClass("show");
-  $("#t-outline-add-fab").attr("aria-expanded", "false");
-}
-function openAddItemSheet() {
-  $("#t-outline-add-sheet").addClass("show");
-  $("#t-outline-add-sheet-backdrop").addClass("show");
-  $("#t-outline-add-fab").attr("aria-expanded", "true");
-}
-function syncAddFabVisibility() {
-  const inEditor = currentView === "editor";
-  const hasPlanContext = !!editingPlanId;
-  const drawerOpen = $("#t-outline-mobile-drawer").hasClass("show");
-  $("#t-outline-fab-wrap").toggle(inEditor && hasPlanContext && !drawerOpen);
-  if (!inEditor || drawerOpen) closeAddItemSheet();
-}
 function appendOutlineItem() {
   if (!ensureEditingPlanContext()) return;
   const nextIndex = outlineItems.length;
@@ -28286,11 +28083,11 @@ function appendOutlineItem() {
   reindexItems();
   selectedRowIndex = nextIndex;
   renderRows();
-  renderDesktopEditor(nextIndex, "title");
+  startInlineCellEdit(nextIndex, "title");
   saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
   if (window.toastr) toastr.success("\u5DF2\u65B0\u589E\u5927\u7EB2\u6761\u76EE", "\u6545\u4E8B\u5927\u7EB2");
 }
-function deleteOutlineItemAt(index, options = {}) {
+function deleteOutlineItemAt(index) {
   const resolvedIndex = Number(index);
   if (Number.isNaN(resolvedIndex) || !outlineItems[resolvedIndex]) return false;
   outlineItems.splice(resolvedIndex, 1);
@@ -28299,15 +28096,7 @@ function deleteOutlineItemAt(index, options = {}) {
   } else if (selectedRowIndex > resolvedIndex) {
     selectedRowIndex -= 1;
   }
-  if (desktopEditorIndex === resolvedIndex) {
-    closeDesktopEditor();
-  } else if (desktopEditorIndex > resolvedIndex) {
-    desktopEditorIndex -= 1;
-  }
   reindexItems();
-  if (options.closeMobile) {
-    closeMobileEditor();
-  }
   renderRows();
   saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
   return true;
@@ -28316,8 +28105,6 @@ function clearEditorDraft() {
   const insertMode = $("#t-outline-insert-mode").val() || "overwrite";
   outlineItems = [];
   selectedRowIndex = -1;
-  closeDesktopEditor();
-  closeMobileEditor();
   $("#t-outline-story-input").val("");
   $("#t-outline-plan-name").val("");
   planRenameMode = false;
@@ -28549,7 +28336,6 @@ function renderRows() {
   refreshRollingProgressUI();
   if (outlineItems.length === 0) {
     selectedRowIndex = -1;
-    closeDesktopEditor();
     $tbody.html(`
             <tr>
                 <td colspan="6" class="t-outline-empty">
@@ -28584,9 +28370,6 @@ function renderRows() {
         `).join("");
   $tbody.html(rows);
   renderMobileCards();
-  if (desktopEditorIndex >= 0 && outlineItems[desktopEditorIndex]) {
-    renderDesktopEditor(desktopEditorIndex);
-  }
 }
 function getBriefText(text, maxLen = 38) {
   const s = (text || "").replace(/\s+/g, " ").trim();
@@ -28612,92 +28395,85 @@ function renderMobileCards() {
         `).join("");
   $list.html(cards);
 }
-function openMobileEditor(index) {
+function toggleMobileCardEditor(index) {
+  const $card = $(`#t-outline-mobile-list .t-outline-mobile-card[data-index='${index}']`);
+  if ($card.length === 0) return;
+  if ($card.find(".t-mobile-edit-form").length > 0) {
+    renderMobileCards();
+    return;
+  }
   const item = outlineItems[index];
   if (!item) return;
-  const $drawer = $("#t-outline-mobile-drawer");
-  $drawer.attr("data-index", index);
-  $drawer.find("#t-mobile-field-time").val(item.time || "");
-  $drawer.find("#t-mobile-field-title").val(item.title || "");
-  $drawer.find("#t-mobile-field-plot").val(item.plot || "");
-  $drawer.find("#t-mobile-field-foreshadowing").val(item.foreshadowing || "");
-  $drawer.addClass("show");
-  syncAddFabVisibility();
-}
-function closeMobileEditor() {
-  $("#t-outline-mobile-drawer").removeClass("show").attr("data-index", "");
-  syncAddFabVisibility();
-}
-function saveMobileEditor() {
-  const $drawer = $("#t-outline-mobile-drawer");
-  const index = Number($drawer.attr("data-index"));
-  const item = outlineItems[index];
-  if (!item) return;
-  item.time = $drawer.find("#t-mobile-field-time").val() || "";
-  item.title = $drawer.find("#t-mobile-field-title").val() || "";
-  item.plot = $drawer.find("#t-mobile-field-plot").val() || "";
-  item.foreshadowing = $drawer.find("#t-mobile-field-foreshadowing").val() || "";
-  renderRows();
-  saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
-  if (window.toastr) toastr.success("\u5DF2\u4FDD\u5B58\u5F53\u524D\u60C5\u8282", "\u6545\u4E8B\u5927\u7EB2");
-}
-function renderDesktopEditor(index, focusField = "") {
-  const item = outlineItems[index];
-  const $panel = $("#t-outline-desktop-editor");
-  if (!item || $panel.length === 0) return;
-  desktopEditorIndex = index;
-  $panel.html(`
-        <div class="t-desk-editor-head">
-            <div class="title">\u7F16\u8F91\u60C5\u8282 #${item.index}</div>
-            <button class="t-btn t-btn-xs" id="t-desk-editor-close"><i class="fa-solid fa-times"></i></button>
-        </div>
-        <div class="t-desk-editor-body">
+  const $form = $(`
+        <div class="t-mobile-edit-form">
             <label>\u65F6\u95F4</label>
-            <input id="t-desk-field-time" class="t-outline-input" value="${escapeHtml4(item.time)}">
+            <input data-field="time" class="t-outline-input" placeholder="\u4F8B\u5982\uFF1A\u7B2C1\u5929\u591C\u665A">
             <label>\u6807\u9898</label>
-            <input id="t-desk-field-title" class="t-outline-input" value="${escapeHtml4(item.title)}">
+            <input data-field="title" class="t-outline-input" placeholder="\u4F8B\u5982\uFF1A\u4E0D\u901F\u4E4B\u5BA2">
             <label>\u60C5\u8282</label>
-            <textarea id="t-desk-field-plot" class="t-outline-textarea" rows="4">${escapeHtml4(item.plot)}</textarea>
+            <textarea data-field="plot" class="t-outline-textarea" rows="5"></textarea>
             <label>\u4F0F\u7B14</label>
-            <textarea id="t-desk-field-foreshadowing" class="t-outline-textarea" rows="3">${escapeHtml4(item.foreshadowing)}</textarea>
-        </div>
-        <div class="t-desk-editor-actions">
-            <button class="t-btn t-btn-primary" id="t-desk-editor-save"><i class="fa-solid fa-check"></i> \u4FDD\u5B58</button>
-        </div>
-    `);
-  $panel.addClass("show");
-  if (focusField) {
-    const targetMap = {
-      time: "#t-desk-field-time",
-      title: "#t-desk-field-title",
-      plot: "#t-desk-field-plot",
-      foreshadowing: "#t-desk-field-foreshadowing"
-    };
-    const selector = targetMap[focusField] || "";
-    if (selector) {
-      setTimeout(() => {
-        const el = document.querySelector(selector);
-        if (el) {
-          el.focus();
-          if (typeof el.select === "function") el.select();
-        }
-      }, 0);
+            <textarea data-field="foreshadowing" class="t-outline-textarea" rows="3"></textarea>
+            <div class="t-mobile-edit-actions">
+                <button class="t-btn t-btn-primary" data-action="mobile-edit-save"><i class="fa-solid fa-check"></i> \u4FDD\u5B58</button>
+                <button class="t-btn t-plan-delete-btn" data-action="mobile-edit-delete"><i class="fa-solid fa-trash"></i> \u5220\u9664\u672C\u6761</button>
+            </div>
+        </div>`);
+  $form.find("[data-field='time']").val(item.time || "");
+  $form.find("[data-field='title']").val(item.title || "");
+  $form.find("[data-field='plot']").val(item.plot || "");
+  $form.find("[data-field='foreshadowing']").val(item.foreshadowing || "");
+  $card.append($form);
+}
+function startInlineCellEdit(index, field) {
+  const item = outlineItems[index];
+  if (!item) return;
+  const $cell = $(`#t-outline-tbody tr[data-index='${index}'] td[data-edit-field='${field}']`);
+  if ($cell.length === 0 || $cell.find(".t-cell-editor").length > 0) return;
+  const isLong = field === "plot" || field === "foreshadowing";
+  const $editor = isLong ? $(`<textarea class="t-cell-editor t-outline-textarea" rows="4"></textarea>`) : $(`<input class="t-cell-editor t-outline-input">`);
+  $editor.val(item[field] || "");
+  $cell.empty().append($editor);
+  $editor.on("focusout", () => finishInlineCellEdit(index, field, false));
+  $editor.on("keydown", function(e) {
+    if (e.key === "Enter" && (!isLong || e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      finishInlineCellEdit(index, field, false);
+    } else if (e.key === "Escape") {
+      e.stopPropagation();
+      finishInlineCellEdit(index, field, true);
+    }
+  });
+  setTimeout(() => {
+    $editor.focus();
+    if (!isLong && typeof $editor[0].select === "function") $editor[0].select();
+  }, 0);
+}
+function finishInlineCellEdit(index, field, cancel) {
+  const $cell = $(`#t-outline-tbody tr[data-index='${index}'] td[data-edit-field='${field}']`);
+  const $editor = $cell.find(".t-cell-editor");
+  if ($editor.length === 0) return;
+  const item = outlineItems[index];
+  if (!item) {
+    renderRows();
+    return;
+  }
+  if (!cancel) {
+    const next = String($editor.val() || "");
+    if (next !== (item[field] || "")) {
+      item[field] = next;
+      saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
     }
   }
+  renderCellDisplay(index, field);
 }
-function closeDesktopEditor() {
-  desktopEditorIndex = -1;
-  $("#t-outline-desktop-editor").removeClass("show").empty();
-}
-function saveDesktopEditor() {
-  if (desktopEditorIndex < 0 || !outlineItems[desktopEditorIndex]) return;
-  const item = outlineItems[desktopEditorIndex];
-  item.time = $("#t-desk-field-time").val() || "";
-  item.title = $("#t-desk-field-title").val() || "";
-  item.plot = $("#t-desk-field-plot").val() || "";
-  item.foreshadowing = $("#t-desk-field-foreshadowing").val() || "";
-  renderRows();
-  saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
+function renderCellDisplay(index, field) {
+  const item = outlineItems[index];
+  const $cell = $(`#t-outline-tbody tr[data-index='${index}'] td[data-edit-field='${field}']`);
+  if (!item || $cell.length === 0) return;
+  const text = field === "plot" ? getBriefText(item.plot, 70) : field === "foreshadowing" ? getBriefText(item.foreshadowing, 52) : item[field] || "(\u7A7A)";
+  const longCls = field === "plot" || field === "foreshadowing" ? " t-cell-long" : "";
+  $cell.html(`<div class="t-cell-text${longCls}">${escapeHtml4(text)}</div>`);
 }
 function getRollingPlan() {
   let plan = editingPlanId ? getPlans().find((p) => p.id === editingPlanId) : null;
@@ -28714,9 +28490,23 @@ function refreshRollingProgressUI() {
   const outlineForPanel = Array.isArray(outlineItems) && outlineItems.length > 0 && plan && plan.id === editingPlanId ? outlineItems : plan ? normalizeItems(plan.items || []) : [];
   if (outlineForPanel.length === 0 || !plan) {
     $panel.hide();
-    return;
+  } else {
+    $panel.show();
   }
-  $panel.show();
+  const $planSelect = $("#t-scene-hub-plan-select");
+  if ($planSelect.length > 0) {
+    const allPlans = getPlans();
+    const sourceId = getSceneSourcePlanId() || editingPlanId;
+    if (allPlans.length > 0) {
+      $planSelect.html(allPlans.map(
+        (p) => `<option value="${p.id}" ${p.id === sourceId ? "selected" : ""}>${escapeHtml4(p.name || "\u672A\u547D\u540D\u65B9\u6848")}</option>`
+      ).join("")).val(String(sourceId));
+      $planSelect.closest(".t-scene-hub-plan-switch").show();
+    } else {
+      $planSelect.empty();
+      $planSelect.closest(".t-scene-hub-plan-switch").hide();
+    }
+  }
   const total = outlineForPanel.length;
   const progress = getPlanProgress(plan);
   const stepNo = progress.itemIndex + 1;
@@ -28917,8 +28707,6 @@ function bindEvents() {
     if (planRenameMode) {
       cancelPlanRename();
     }
-    closeDesktopEditor();
-    closeMobileEditor();
     renderPlanHub();
     showOutlineView("hub");
     updatePlanWorkflowUI();
@@ -29066,7 +28854,6 @@ function bindEvents() {
     renderPlanHub();
   });
   $overlay.on("click", "#t-story-outline-close", () => {
-    closeDesktopEditor();
     flushAutoSaveCurrentPlan();
     $("#t-story-outline-overlay").remove();
   });
@@ -29076,17 +28863,8 @@ function bindEvents() {
   $overlay.on("click", "#t-outline-generate", async () => {
     await generateOutline();
   });
-  $overlay.on("click", "#t-outline-add-fab", () => {
-    const isOpen = $("#t-outline-add-sheet").hasClass("show");
-    if (isOpen) closeAddItemSheet();
-    else openAddItemSheet();
-  });
-  $overlay.on("click", "#t-outline-add-sheet-backdrop", () => {
-    closeAddItemSheet();
-  });
-  $overlay.on("click", "#t-outline-add-outline-item", () => {
+  $overlay.on("click", "#t-outline-add-item", () => {
     appendOutlineItem();
-    closeAddItemSheet();
   });
   $overlay.on("click", "#t-outline-empty-create-first, #t-outline-mobile-create-first", () => {
     appendOutlineItem();
@@ -29096,6 +28874,19 @@ function bindEvents() {
   });
   $overlay.on("input", "#t-outline-story-input", function() {
     saveDraft($(this).val(), $("#t-outline-insert-mode").val());
+  });
+  $overlay.on("change", "#t-outline-opening-source-mode", function() {
+    setOpeningSourceMode(String($(this).val() || "auto_first"));
+    refreshOutlineOpeningSourceControls();
+  });
+  $overlay.on("click", "#t-outline-opening-source-pick", async () => {
+    const mode = getOpeningSourceMode();
+    const sourceRef = getOpeningSourceRef();
+    const picked = mode === "chat_selected" ? await openOpeningSourcePickerDialog(sourceRef?.chatIndex ?? -1) : await openCardOpeningPickerDialog(sourceRef?.openingIndex ?? 0);
+    if (!picked) return;
+    setOpeningSourceRef(mode === "chat_selected" ? { type: "chat", ...picked } : picked);
+    refreshOutlineOpeningSourceControls();
+    if (window.toastr) toastr.success("\u5DF2\u8BBE\u7F6E\u53C2\u8003\u6765\u6E90", "\u6545\u4E8B\u5927\u7EB2");
   });
   $overlay.on("click", "#t-outline-tbody [data-action='delete']", function() {
     const rowIndex = Number($(this).closest("tr").data("index"));
@@ -29109,7 +28900,7 @@ function bindEvents() {
     if ($cell.length > 0) {
       const idx2 = Number($(this).data("index"));
       if (Number.isNaN(idx2) || !outlineItems[idx2]) return;
-      renderDesktopEditor(idx2, String($cell.data("edit-field") || ""));
+      startInlineCellEdit(idx2, String($cell.data("edit-field") || ""));
       return;
     }
     const idx = Number($(this).data("index"));
@@ -29117,29 +28908,28 @@ function bindEvents() {
     selectedRowIndex = selectedRowIndex === idx ? -1 : idx;
     renderRows();
   });
-  $overlay.on("click", "#t-desk-editor-close", () => {
-    closeDesktopEditor();
-  });
-  $overlay.on("click", "#t-desk-editor-save", () => {
-    saveDesktopEditor();
-    if (window.toastr) toastr.success("\u5DF2\u4FDD\u5B58\u7F16\u8F91", "\u6545\u4E8B\u5927\u7EB2");
-  });
-  $overlay.on("click", "#t-outline-mobile-list .t-outline-mobile-card", function() {
+  $overlay.on("click", "#t-outline-mobile-list .t-outline-mobile-card", function(e) {
+    if ($(e.target).closest("button, input, textarea, label").length > 0) return;
     const index = Number($(this).data("index"));
     if (Number.isNaN(index) || !outlineItems[index]) return;
-    openMobileEditor(index);
+    toggleMobileCardEditor(index);
   });
-  $overlay.on("click", "#t-mobile-drawer-close", () => {
-    closeMobileEditor();
+  $overlay.on("click", "#t-outline-mobile-list [data-action='mobile-edit-save']", function() {
+    const $card = $(this).closest(".t-outline-mobile-card");
+    const index = Number($card.data("index"));
+    const item = outlineItems[index];
+    if (!item) return;
+    item.time = $card.find("[data-field='time']").val() || "";
+    item.title = $card.find("[data-field='title']").val() || "";
+    item.plot = $card.find("[data-field='plot']").val() || "";
+    item.foreshadowing = $card.find("[data-field='foreshadowing']").val() || "";
+    saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
+    renderRows();
+    if (window.toastr) toastr.success("\u5DF2\u4FDD\u5B58\u5F53\u524D\u60C5\u8282", "\u6545\u4E8B\u5927\u7EB2");
   });
-  $overlay.on("click", "#t-mobile-drawer-save", () => {
-    saveMobileEditor();
-    closeMobileEditor();
-  });
-  $overlay.on("click", "#t-mobile-drawer-delete", function() {
-    const index = Number($("#t-outline-mobile-drawer").attr("data-index"));
-    const deleted = deleteOutlineItemAt(index, { closeMobile: true });
-    if (deleted && window.toastr) toastr.success("\u5DF2\u5220\u9664\u5927\u7EB2\u6761\u76EE", "\u6545\u4E8B\u5927\u7EB2");
+  $overlay.on("click", "#t-outline-mobile-list [data-action='mobile-edit-delete']", function() {
+    const index = Number($(this).closest(".t-outline-mobile-card").data("index"));
+    if (deleteOutlineItemAt(index) && window.toastr) toastr.success("\u5DF2\u5220\u9664\u5927\u7EB2\u6761\u76EE", "\u6545\u4E8B\u5927\u7EB2");
   });
 }
 function openStoryOutlineWindow() {
@@ -29180,6 +28970,14 @@ function openStoryOutlineWindow() {
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> \u5927\u7EB2\u751F\u6210
                             </button>
                         </div>
+                        <label class="t-outline-mode t-outline-mode-source">
+                            \u53C2\u8003\u6765\u6E90
+                            <select id="t-outline-opening-source-mode" class="t-outline-select">
+                                <option value="auto_first">\u5F00\u573A\u767D</option>
+                                <option value="chat_selected">\u804A\u5929\u8BB0\u5F55</option>
+                            </select>
+                        </label>
+                        <button id="t-outline-opening-source-pick" class="t-btn t-btn-xs"><i class="fa-solid fa-list"></i> \u9009\u62E9\u6765\u6E90</button>
                     </div>
                     <select id="t-outline-insert-mode" class="t-outline-select" style="display:none;">
                         <option value="overwrite" ${draft.insertMode === "overwrite" ? "selected" : ""}>\u8986\u76D6\u8F93\u5165\u6846</option>
@@ -29214,6 +29012,7 @@ function openStoryOutlineWindow() {
                     <div class="t-editor-tabs">
                         <button id="t-outline-back-hub" class="t-btn t-btn-xs"><i class="fa-solid fa-arrow-left"></i> \u8FD4\u56DE\u65B9\u6848\u9875</button>
                         <button id="t-editor-tab-outline" class="t-btn t-btn-xs active"><i class="fa-solid fa-table"></i> \u5927\u7EB2\u7F16\u8F91</button>
+                        <button id="t-outline-add-item" class="t-btn t-btn-xs t-btn-primary t-editor-tab-add"><i class="fa-solid fa-plus"></i> \u65B0\u589E\u6761\u76EE</button>
                     </div>
 
                     <div id="t-outline-subview-outline" class="t-outline-subview">
@@ -29232,41 +29031,9 @@ function openStoryOutlineWindow() {
                                 <tbody id="t-outline-tbody"></tbody>
                             </table>
                         </div>
-                        <div id="t-outline-desktop-editor" class="t-outline-desktop-editor"></div>
                     </div>
 
                     <div id="t-outline-mobile-list" class="t-outline-mobile-list"></div>
-                    <div id="t-outline-mobile-drawer" class="t-outline-mobile-drawer" data-index="">
-                        <div class="t-outline-mobile-drawer-head">
-                            <span><i class="fa-solid fa-pen-to-square"></i> \u7F16\u8F91\u60C5\u8282</span>
-                            <button id="t-mobile-drawer-close" class="t-btn t-btn-xs"><i class="fa-solid fa-times"></i></button>
-                        </div>
-                        <div class="t-outline-mobile-drawer-body">
-                            <div id="t-mobile-outline-view">
-                                <label>\u65F6\u95F4</label>
-                                <input id="t-mobile-field-time" class="t-outline-input" placeholder="\u4F8B\u5982\uFF1A\u7B2C1\u5929\u591C\u665A">
-                                <label>\u6807\u9898</label>
-                                <input id="t-mobile-field-title" class="t-outline-input" placeholder="\u4F8B\u5982\uFF1A\u4E0D\u901F\u4E4B\u5BA2">
-                                <label>\u60C5\u8282</label>
-                                <textarea id="t-mobile-field-plot" class="t-outline-textarea" rows="5"></textarea>
-                                <label>\u4F0F\u7B14</label>
-                                <textarea id="t-mobile-field-foreshadowing" class="t-outline-textarea" rows="3"></textarea>
-                            </div>
-                        </div>
-                        <div class="t-outline-mobile-drawer-actions">
-                            <button id="t-mobile-drawer-save" class="t-btn t-btn-primary"><i class="fa-solid fa-check"></i> \u4FDD\u5B58</button>
-                            <button id="t-mobile-drawer-delete" class="t-btn t-plan-delete-btn"><i class="fa-solid fa-trash"></i> \u5220\u9664\u672C\u6761</button>
-                        </div>
-                    </div>
-                    <div id="t-outline-add-sheet-backdrop" class="t-outline-add-sheet-backdrop"></div>
-                    <div id="t-outline-fab-wrap" class="t-outline-fab-wrap" aria-live="polite">
-                        <button id="t-outline-add-fab" class="t-outline-add-fab" aria-expanded="false" aria-controls="t-outline-add-sheet" title="\u65B0\u589E\u6761\u76EE">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                        <div id="t-outline-add-sheet" class="t-outline-add-sheet t-root" role="menu" aria-label="\u65B0\u589E\u6761\u76EE\u7C7B\u578B">
-                            <button id="t-outline-add-outline-item" class="t-btn" role="menuitem"><i class="fa-solid fa-table"></i> \u65B0\u589E\u5927\u7EB2\u6761\u76EE</button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -29282,10 +29049,9 @@ function openStoryOutlineWindow() {
   bindEvents();
   renderPlanHub();
   showOutlineView(plans.length > 0 ? "hub" : "editor");
-  syncAddFabVisibility();
   refreshOutlineOpeningSourceControls();
 }
-var outlineItems, lastRawResponse, rawResponseHistory, selectedRowIndex, desktopEditorIndex, isRawDialogOpen, responseTimerStartAt, responseElapsedMs, responseTimerId, responseTimerRunning, activeOutlineAbortController, DRAFT_KEY, PLANS_KEY, ACTIVE_PLAN_KEY, SCENE_SOURCE_PLAN_KEY, PROMPT_TEMPLATES_KEY, OPENING_SOURCE_MODE_KEY, OPENING_SOURCE_REF_KEY, OUTLINE_CHAT_TAG_WHITELIST_KEY, RAW_HISTORY_KEY, OUTLINE_SELECTED_PROFILE_KEY, OUTLINE_CUSTOM_PROFILES_KEY, GEN_PARAMS_KEY, ROLLING_CHAT_FLOORS_KEY, ROLLING_CHAT_FLOORS_DEFAULT, currentView, activePlanId, editingPlanId, editingPlanBaseline, planItemCursorMap, latestCandidates, latestCandidatesPlanId, autoSavePlanTimer, planRenameMode, planRenameSnapshot, MAX_RAW_HISTORY, OUTLINE_ST_FOLLOW_ID, rollingPreviewExpandedIdx;
+var outlineItems, lastRawResponse, rawResponseHistory, selectedRowIndex, isRawDialogOpen, responseTimerStartAt, responseElapsedMs, responseTimerId, responseTimerRunning, activeOutlineAbortController, DRAFT_KEY, PLANS_KEY, ACTIVE_PLAN_KEY, SCENE_SOURCE_PLAN_KEY, PROMPT_TEMPLATES_KEY, OPENING_SOURCE_MODE_KEY, OPENING_SOURCE_REF_KEY, OUTLINE_CHAT_TAG_WHITELIST_KEY, RAW_HISTORY_KEY, OUTLINE_SELECTED_PROFILE_KEY, OUTLINE_CUSTOM_PROFILES_KEY, GEN_PARAMS_KEY, ROLLING_CHAT_FLOORS_KEY, ROLLING_CHAT_FLOORS_DEFAULT, currentView, activePlanId, editingPlanId, editingPlanBaseline, planItemCursorMap, latestCandidates, latestCandidatesPlanId, autoSavePlanTimer, planRenameMode, planRenameSnapshot, MAX_RAW_HISTORY, OUTLINE_ST_FOLLOW_ID, rollingPreviewExpandedIdx;
 var init_storyOutlineWindow = __esm({
   "src/ui/storyOutlineWindow.js"() {
     init_context();
@@ -29299,7 +29065,6 @@ var init_storyOutlineWindow = __esm({
     lastRawResponse = "";
     rawResponseHistory = [];
     selectedRowIndex = -1;
-    desktopEditorIndex = -1;
     isRawDialogOpen = false;
     responseTimerStartAt = 0;
     responseElapsedMs = 0;

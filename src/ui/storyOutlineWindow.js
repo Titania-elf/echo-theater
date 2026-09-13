@@ -17,7 +17,6 @@ let outlineItems = [];
 let lastRawResponse = "";
 let rawResponseHistory = [];
 let selectedRowIndex = -1;
-let desktopEditorIndex = -1;
 let isRawDialogOpen = false;
 let responseTimerStartAt = 0;
 let responseElapsedMs = 0;
@@ -1076,8 +1075,6 @@ export async function openPromptTemplateManager() {
     const settingsDraft = {
         selectedProfileId: getOutlineSelectedProfileId(),
         customProfiles: getOutlineCustomProfiles(),
-        openingSourceMode: getOpeningSourceMode(),
-        openingSourceRef: getOpeningSourceRef(),
         chatTagWhitelist: getOutlineChatTagWhitelistRaw(),
         streamEnabled: loadDraft().streamEnabled === true,
         genParams: getOutlineGenParams(),
@@ -1181,18 +1178,6 @@ export async function openPromptTemplateManager() {
                         </div>
 
                         <div class="t-form-group">
-                            <label class="t-form-label">参考来源</label>
-                            <label class="t-outline-mode t-outline-mode-source" style="margin-left:0; margin-bottom:8px;">
-                                来源模式
-                                <select id="t-outline-settings-opening-source-mode" class="t-outline-select">
-                                    <option value="auto_first">开场白</option>
-                                    <option value="chat_selected">聊天记录</option>
-                                </select>
-                            </label>
-                            <button id="t-outline-settings-opening-source-pick" class="t-btn t-btn-xs"><i class="fa-solid fa-list"></i> 选择来源</button>
-                        </div>
-
-                        <div class="t-form-group">
                             <label class="t-form-label">聊天提取白名单</label>
                             <input id="t-outline-settings-chat-tag-whitelist" class="t-outline-select" type="text" placeholder="content, dialogue">
                         </div>
@@ -1286,12 +1271,8 @@ export async function openPromptTemplateManager() {
     });
     outlineSettingsConnectionEditor.bind();
     outlineSettingsConnectionEditor.render();
-    const refreshOpeningSourceControlsDraft = () => {
-        const mode = settingsDraft.openingSourceMode === "chat_selected" ? "chat_selected" : "auto_first";
-        const whitelist = settingsDraft.chatTagWhitelist || "";
-        $("#t-outline-settings-opening-source-mode").val(mode);
-        $("#t-outline-settings-opening-source-pick").prop("disabled", false);
-        $("#t-outline-settings-chat-tag-whitelist").val(whitelist);
+    const refreshWhitelistControlDraft = () => {
+        $("#t-outline-settings-chat-tag-whitelist").val(settingsDraft.chatTagWhitelist || "");
     };
     const switchTab = (tab) => {
         const next = tab === "prompt" ? "prompt" : "runtime";
@@ -1319,8 +1300,8 @@ export async function openPromptTemplateManager() {
         const type = String($("#t-prompt-target").val() || "outline");
         const section = getPromptTemplateSection(working, type);
         const currentStoryInput = String($("#t-outline-story-input").val() || "").trim();
-        const openingMode = settingsDraft.openingSourceMode;
-        const openingSourceRef = settingsDraft.openingSourceRef;
+        const openingMode = getOpeningSourceMode();
+        const openingSourceRef = getOpeningSourceRef();
         const opening = getOpeningTextForPreview(openingMode, openingSourceRef);
         const varsLocal = buildPromptTemplateVars(ctx, currentStoryInput, opening, outlinePayload);
         const renderedSys = renderPromptTemplate(section.system, varsLocal);
@@ -1335,7 +1316,7 @@ export async function openPromptTemplateManager() {
 
     const syncRuntimeSettings = () => {
         outlineSettingsConnectionEditor.render();
-        refreshOpeningSourceControlsDraft();
+        refreshWhitelistControlDraft();
         $("#t-outline-settings-stream-enabled").prop("checked", settingsDraft.streamEnabled === true);
     };
 
@@ -1376,26 +1357,6 @@ export async function openPromptTemplateManager() {
         preview();
         if (window.toastr) toastr.success("已恢复当前模板默认值", "故事大纲设置");
     });
-    $("#t-outline-settings-opening-source-mode").on("change", function () {
-        const mode = String($(this).val() || "auto_first") === "chat_selected" ? "chat_selected" : "auto_first";
-        settingsDraft.openingSourceMode = mode;
-        refreshOpeningSourceControlsDraft();
-        preview();
-    });
-
-    $("#t-outline-settings-opening-source-pick").on("click", async () => {
-        const mode = settingsDraft.openingSourceMode;
-        const sourceRef = settingsDraft.openingSourceRef;
-        const picked = mode === "chat_selected"
-            ? await openOpeningSourcePickerDialog(sourceRef?.chatIndex ?? -1)
-            : await openCardOpeningPickerDialog(sourceRef?.openingIndex ?? 0);
-        if (!picked) return;
-        settingsDraft.openingSourceRef = picked;
-        refreshOpeningSourceControlsDraft();
-        preview();
-        if (window.toastr) toastr.success("已设置参考来源", "故事大纲");
-    });
-
     $("#t-outline-settings-chat-tag-whitelist").on("input change", function () {
         settingsDraft.chatTagWhitelist = String($(this).val() || "").trim();
     });
@@ -1417,8 +1378,6 @@ export async function openPromptTemplateManager() {
         settingsDraft.selectedProfileId = nextState.activeProfileId;
         saveOutlineSelectedProfileId(settingsDraft.selectedProfileId);
         saveOutlineCustomProfiles(settingsDraft.customProfiles);
-        setOpeningSourceMode(settingsDraft.openingSourceMode);
-        setOpeningSourceRef(settingsDraft.openingSourceRef);
         setOutlineChatTagWhitelistRaw(settingsDraft.chatTagWhitelist);
         saveOutlineGenParams(settingsDraft.genParams);
         saveRollingChatFloors(settingsDraft.rollingChatFloors);
@@ -1434,8 +1393,8 @@ export async function openPromptTemplateManager() {
 function refreshOutlineOpeningSourceControls() {
     const mode = getOpeningSourceMode();
     const whitelist = getOutlineChatTagWhitelistRaw();
-    $("#t-outline-opening-source-mode, #t-outline-settings-opening-source-mode").val(mode);
-    $("#t-outline-opening-source-pick, #t-outline-settings-opening-source-pick").prop("disabled", false);
+    $("#t-outline-opening-source-mode").val(mode);
+    $("#t-outline-opening-source-pick").prop("disabled", false);
     $("#t-outline-chat-tag-whitelist, #t-outline-settings-chat-tag-whitelist").val(whitelist);
 }
 
@@ -2065,18 +2024,12 @@ function showOutlineView(view) {
     $("#t-outline-editor-view").toggle(currentView === "editor");
     const isMobile = window.matchMedia("(max-width: 768px)").matches;
     $("#t-story-outline-overlay").toggleClass("t-outline-mobile-hub-compact", isMobile && currentView === "hub");
-    if (currentView === "hub") {
-        closeMobileEditor();
-    }
-    syncAddFabVisibility();
 }
 
 function loadPlanToEditor(plan) {
     if (!plan) return false;
     outlineItems = normalizeItems(plan.items || []);
     selectedRowIndex = -1;
-    closeDesktopEditor();
-    closeMobileEditor();
     const planInstruction = getPlanInstruction(plan);
     $("#t-outline-story-input").val(planInstruction);
     setEditingPlan(plan);
@@ -2168,6 +2121,11 @@ export function openSceneHubWindow() {
         <div class="t-window t-story-outline-window">
             <div class="t-window-header">
                 <div class="t-window-title"><i class="fa-solid fa-clapperboard"></i> 剧情推进</div>
+                <div class="t-scene-hub-plan-switch">
+                    <label class="t-outline-rolling-cursor">方案
+                        <select id="t-scene-hub-plan-select" class="t-outline-select"></select>
+                    </label>
+                </div>
                 <div class="t-window-controls">
                     <div class="t-window-close" id="t-scene-hub-close"><i class="fa-solid fa-times"></i></div>
                 </div>
@@ -2210,6 +2168,22 @@ export function openSceneHubWindow() {
     const $overlay = $("#t-scene-hub-overlay");
     $overlay.on("click", "#t-scene-hub-close", () => {
         $overlay.remove();
+    });
+
+    // 快捷切换推进来源方案：与方案页 set-scene-source 同一套流程——
+    // 切来源 + 设为当前方案 + 换候选为该方案自己的最近一批 + 刷进度条。
+    $overlay.on("change", "#t-scene-hub-plan-select", function () {
+        const planId = String($(this).val() || "").trim();
+        if (!planId) return;
+        setSceneSourcePlanId(planId);
+        activePlanId = planId;
+        setActivePlanId(activePlanId);
+        const rollingPlan = getRollingPlan();
+        latestCandidates = rollingPlan ? getPlanCandidates(rollingPlan) : [];
+        latestCandidatesPlanId = rollingPlan?.id || "";
+        renderCandidates();
+        refreshRollingProgressUI();
+        if (window.toastr) toastr.success(`已切换：${rollingPlan?.name || "未命名方案"}`, "剧情推进");
     });
 
     // 写入方式芯片：点击在覆盖/追加间循环。只补丁草稿的 insertMode 字段
@@ -2495,26 +2469,6 @@ function createEmptyOutlineItem(index = 1) {
     };
 }
 
-function closeAddItemSheet() {
-    $("#t-outline-add-sheet").removeClass("show");
-    $("#t-outline-add-sheet-backdrop").removeClass("show");
-    $("#t-outline-add-fab").attr("aria-expanded", "false");
-}
-
-function openAddItemSheet() {
-    $("#t-outline-add-sheet").addClass("show");
-    $("#t-outline-add-sheet-backdrop").addClass("show");
-    $("#t-outline-add-fab").attr("aria-expanded", "true");
-}
-
-function syncAddFabVisibility() {
-    const inEditor = currentView === "editor";
-    const hasPlanContext = !!editingPlanId;
-    const drawerOpen = $("#t-outline-mobile-drawer").hasClass("show");
-    $("#t-outline-fab-wrap").toggle(inEditor && hasPlanContext && !drawerOpen);
-    if (!inEditor || drawerOpen) closeAddItemSheet();
-}
-
 function appendOutlineItem() {
     if (!ensureEditingPlanContext()) return;
 
@@ -2525,13 +2479,13 @@ function appendOutlineItem() {
     selectedRowIndex = nextIndex;
 
     renderRows();
-    renderDesktopEditor(nextIndex, "title");
+    startInlineCellEdit(nextIndex, "title");
     saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
 
     if (window.toastr) toastr.success("已新增大纲条目", "故事大纲");
 }
 
-function deleteOutlineItemAt(index, options = {}) {
+function deleteOutlineItemAt(index) {
     const resolvedIndex = Number(index);
     if (Number.isNaN(resolvedIndex) || !outlineItems[resolvedIndex]) return false;
 
@@ -2543,17 +2497,7 @@ function deleteOutlineItemAt(index, options = {}) {
         selectedRowIndex -= 1;
     }
 
-    if (desktopEditorIndex === resolvedIndex) {
-        closeDesktopEditor();
-    } else if (desktopEditorIndex > resolvedIndex) {
-        desktopEditorIndex -= 1;
-    }
-
     reindexItems();
-
-    if (options.closeMobile) {
-        closeMobileEditor();
-    }
 
     renderRows();
     saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
@@ -2564,8 +2508,6 @@ function clearEditorDraft() {
     const insertMode = $("#t-outline-insert-mode").val() || "overwrite";
     outlineItems = [];
     selectedRowIndex = -1;
-    closeDesktopEditor();
-    closeMobileEditor();
     $("#t-outline-story-input").val("");
     $("#t-outline-plan-name").val("");
     planRenameMode = false;
@@ -2830,7 +2772,6 @@ function renderRows() {
 
     if (outlineItems.length === 0) {
         selectedRowIndex = -1;
-        closeDesktopEditor();
         $tbody.html(`
             <tr>
                 <td colspan="6" class="t-outline-empty">
@@ -2867,10 +2808,6 @@ function renderRows() {
 
     $tbody.html(rows);
     renderMobileCards();
-
-    if (desktopEditorIndex >= 0 && outlineItems[desktopEditorIndex]) {
-        renderDesktopEditor(desktopEditorIndex);
-    }
 }
 
 function getBriefText(text, maxLen = 38) {
@@ -2902,102 +2839,94 @@ function renderMobileCards() {
     $list.html(cards);
 }
 
-function openMobileEditor(index) {
+// 移动端：点卡片就地展开行内编辑表单，再点一次收起。
+function toggleMobileCardEditor(index) {
+    const $card = $(`#t-outline-mobile-list .t-outline-mobile-card[data-index='${index}']`);
+    if ($card.length === 0) return;
+    if ($card.find(".t-mobile-edit-form").length > 0) {
+        renderMobileCards();
+        return;
+    }
     const item = outlineItems[index];
     if (!item) return;
-    const $drawer = $("#t-outline-mobile-drawer");
-    $drawer.attr("data-index", index);
-    $drawer.find("#t-mobile-field-time").val(item.time || "");
-    $drawer.find("#t-mobile-field-title").val(item.title || "");
-    $drawer.find("#t-mobile-field-plot").val(item.plot || "");
-    $drawer.find("#t-mobile-field-foreshadowing").val(item.foreshadowing || "");
-    $drawer.addClass("show");
-    syncAddFabVisibility();
-}
-
-function closeMobileEditor() {
-    $("#t-outline-mobile-drawer").removeClass("show").attr("data-index", "");
-    syncAddFabVisibility();
-}
-
-function saveMobileEditor() {
-    const $drawer = $("#t-outline-mobile-drawer");
-    const index = Number($drawer.attr("data-index"));
-    const item = outlineItems[index];
-    if (!item) return;
-
-    item.time = $drawer.find("#t-mobile-field-time").val() || "";
-    item.title = $drawer.find("#t-mobile-field-title").val() || "";
-    item.plot = $drawer.find("#t-mobile-field-plot").val() || "";
-    item.foreshadowing = $drawer.find("#t-mobile-field-foreshadowing").val() || "";
-
-    renderRows();
-    saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
-    if (window.toastr) toastr.success("已保存当前情节", "故事大纲");
-}
-
-function renderDesktopEditor(index, focusField = "") {
-    const item = outlineItems[index];
-    const $panel = $("#t-outline-desktop-editor");
-    if (!item || $panel.length === 0) return;
-    desktopEditorIndex = index;
-
-    $panel.html(`
-        <div class="t-desk-editor-head">
-            <div class="title">编辑情节 #${item.index}</div>
-            <button class="t-btn t-btn-xs" id="t-desk-editor-close"><i class="fa-solid fa-times"></i></button>
-        </div>
-        <div class="t-desk-editor-body">
+    const $form = $(`
+        <div class="t-mobile-edit-form">
             <label>时间</label>
-            <input id="t-desk-field-time" class="t-outline-input" value="${escapeHtml(item.time)}">
+            <input data-field="time" class="t-outline-input" placeholder="例如：第1天夜晚">
             <label>标题</label>
-            <input id="t-desk-field-title" class="t-outline-input" value="${escapeHtml(item.title)}">
+            <input data-field="title" class="t-outline-input" placeholder="例如：不速之客">
             <label>情节</label>
-            <textarea id="t-desk-field-plot" class="t-outline-textarea" rows="4">${escapeHtml(item.plot)}</textarea>
+            <textarea data-field="plot" class="t-outline-textarea" rows="5"></textarea>
             <label>伏笔</label>
-            <textarea id="t-desk-field-foreshadowing" class="t-outline-textarea" rows="3">${escapeHtml(item.foreshadowing)}</textarea>
-        </div>
-        <div class="t-desk-editor-actions">
-            <button class="t-btn t-btn-primary" id="t-desk-editor-save"><i class="fa-solid fa-check"></i> 保存</button>
-        </div>
-    `);
+            <textarea data-field="foreshadowing" class="t-outline-textarea" rows="3"></textarea>
+            <div class="t-mobile-edit-actions">
+                <button class="t-btn t-btn-primary" data-action="mobile-edit-save"><i class="fa-solid fa-check"></i> 保存</button>
+                <button class="t-btn t-plan-delete-btn" data-action="mobile-edit-delete"><i class="fa-solid fa-trash"></i> 删除本条</button>
+            </div>
+        </div>`);
+    $form.find("[data-field='time']").val(item.time || "");
+    $form.find("[data-field='title']").val(item.title || "");
+    $form.find("[data-field='plot']").val(item.plot || "");
+    $form.find("[data-field='foreshadowing']").val(item.foreshadowing || "");
+    $card.append($form);
+}
 
-    $panel.addClass("show");
+// 桌面端：点单元格就地转为输入框，失焦/回车保存，Esc 取消。
+function startInlineCellEdit(index, field) {
+    const item = outlineItems[index];
+    if (!item) return;
+    const $cell = $(`#t-outline-tbody tr[data-index='${index}'] td[data-edit-field='${field}']`);
+    if ($cell.length === 0 || $cell.find(".t-cell-editor").length > 0) return;
+    const isLong = field === "plot" || field === "foreshadowing";
+    const $editor = isLong
+        ? $(`<textarea class="t-cell-editor t-outline-textarea" rows="4"></textarea>`)
+        : $(`<input class="t-cell-editor t-outline-input">`);
+    $editor.val(item[field] || "");
+    $cell.empty().append($editor);
+    $editor.on("focusout", () => finishInlineCellEdit(index, field, false));
+    $editor.on("keydown", function (e) {
+        if (e.key === "Enter" && (!isLong || e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            finishInlineCellEdit(index, field, false);
+        } else if (e.key === "Escape") {
+            e.stopPropagation();
+            finishInlineCellEdit(index, field, true);
+        }
+    });
+    setTimeout(() => {
+        $editor.focus();
+        if (!isLong && typeof $editor[0].select === "function") $editor[0].select();
+    }, 0);
+}
 
-    if (focusField) {
-        const targetMap = {
-            time: "#t-desk-field-time",
-            title: "#t-desk-field-title",
-            plot: "#t-desk-field-plot",
-            foreshadowing: "#t-desk-field-foreshadowing"
-        };
-        const selector = targetMap[focusField] || "";
-        if (selector) {
-            setTimeout(() => {
-                const el = document.querySelector(selector);
-                if (el) {
-                    el.focus();
-                    if (typeof el.select === "function") el.select();
-                }
-            }, 0);
+function finishInlineCellEdit(index, field, cancel) {
+    const $cell = $(`#t-outline-tbody tr[data-index='${index}'] td[data-edit-field='${field}']`);
+    const $editor = $cell.find(".t-cell-editor");
+    if ($editor.length === 0) return;
+    const item = outlineItems[index];
+    if (!item) {
+        renderRows();
+        return;
+    }
+    if (!cancel) {
+        const next = String($editor.val() || "");
+        if (next !== (item[field] || "")) {
+            item[field] = next;
+            saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
         }
     }
+    renderCellDisplay(index, field);
 }
 
-function closeDesktopEditor() {
-    desktopEditorIndex = -1;
-    $("#t-outline-desktop-editor").removeClass("show").empty();
-}
-
-function saveDesktopEditor() {
-    if (desktopEditorIndex < 0 || !outlineItems[desktopEditorIndex]) return;
-    const item = outlineItems[desktopEditorIndex];
-    item.time = $("#t-desk-field-time").val() || "";
-    item.title = $("#t-desk-field-title").val() || "";
-    item.plot = $("#t-desk-field-plot").val() || "";
-    item.foreshadowing = $("#t-desk-field-foreshadowing").val() || "";
-    renderRows();
-    saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
+function renderCellDisplay(index, field) {
+    const item = outlineItems[index];
+    const $cell = $(`#t-outline-tbody tr[data-index='${index}'] td[data-edit-field='${field}']`);
+    if (!item || $cell.length === 0) return;
+    const text = field === "plot" ? getBriefText(item.plot, 70)
+        : field === "foreshadowing" ? getBriefText(item.foreshadowing, 52)
+        : (item[field] || "(空)");
+    const longCls = (field === "plot" || field === "foreshadowing") ? " t-cell-long" : "";
+    $cell.html(`<div class="t-cell-text${longCls}">${escapeHtml(text)}</div>`);
 }
 
 // 剧情推进面板/候选当前依据的方案：优先编辑态，窗口独立打开（无编辑态）时用来源方案兜底。
@@ -3024,9 +2953,25 @@ function refreshRollingProgressUI() {
         : (plan ? normalizeItems(plan.items || []) : []);
     if (outlineForPanel.length === 0 || !plan) {
         $panel.hide();
-        return;
+    } else {
+        $panel.show();
     }
-    $panel.show();
+
+    // 剧情推进窗口顶部的方案下拉：随时快捷切换推进来源。
+    const $planSelect = $("#t-scene-hub-plan-select");
+    if ($planSelect.length > 0) {
+        const allPlans = getPlans();
+        const sourceId = getSceneSourcePlanId() || editingPlanId;
+        if (allPlans.length > 0) {
+            $planSelect.html(allPlans.map(p =>
+                `<option value="${p.id}" ${p.id === sourceId ? "selected" : ""}>${escapeHtml(p.name || "未命名方案")}</option>`
+            ).join("")).val(String(sourceId));
+            $planSelect.closest(".t-scene-hub-plan-switch").show();
+        } else {
+            $planSelect.empty();
+            $planSelect.closest(".t-scene-hub-plan-switch").hide();
+        }
+    }
 
     const total = outlineForPanel.length;
     const progress = getPlanProgress(plan);
@@ -3300,8 +3245,6 @@ function bindEvents() {
         if (planRenameMode) {
             cancelPlanRename();
         }
-        closeDesktopEditor();
-        closeMobileEditor();
         renderPlanHub();
         showOutlineView("hub");
         updatePlanWorkflowUI();
@@ -3469,7 +3412,6 @@ function bindEvents() {
     });
 
     $overlay.on("click", "#t-story-outline-close", () => {
-        closeDesktopEditor();
         flushAutoSaveCurrentPlan();
         $("#t-story-outline-overlay").remove();
     });
@@ -3482,19 +3424,8 @@ function bindEvents() {
         await generateOutline();
     });
 
-    $overlay.on("click", "#t-outline-add-fab", () => {
-        const isOpen = $("#t-outline-add-sheet").hasClass("show");
-        if (isOpen) closeAddItemSheet();
-        else openAddItemSheet();
-    });
-
-    $overlay.on("click", "#t-outline-add-sheet-backdrop", () => {
-        closeAddItemSheet();
-    });
-
-    $overlay.on("click", "#t-outline-add-outline-item", () => {
+    $overlay.on("click", "#t-outline-add-item", () => {
         appendOutlineItem();
-        closeAddItemSheet();
     });
 
     $overlay.on("click", "#t-outline-empty-create-first, #t-outline-mobile-create-first", () => {
@@ -3507,6 +3438,23 @@ function bindEvents() {
 
     $overlay.on("input", "#t-outline-story-input", function () {
         saveDraft($(this).val(), $("#t-outline-insert-mode").val());
+    });
+
+    $overlay.on("change", "#t-outline-opening-source-mode", function () {
+        setOpeningSourceMode(String($(this).val() || "auto_first"));
+        refreshOutlineOpeningSourceControls();
+    });
+
+    $overlay.on("click", "#t-outline-opening-source-pick", async () => {
+        const mode = getOpeningSourceMode();
+        const sourceRef = getOpeningSourceRef();
+        const picked = mode === "chat_selected"
+            ? await openOpeningSourcePickerDialog(sourceRef?.chatIndex ?? -1)
+            : await openCardOpeningPickerDialog(sourceRef?.openingIndex ?? 0);
+        if (!picked) return;
+        setOpeningSourceRef(mode === "chat_selected" ? { type: "chat", ...picked } : picked);
+        refreshOutlineOpeningSourceControls();
+        if (window.toastr) toastr.success("已设置参考来源", "故事大纲");
     });
 
     $overlay.on("click", "#t-outline-tbody [data-action='delete']", function () {
@@ -3522,7 +3470,7 @@ function bindEvents() {
         if ($cell.length > 0) {
             const idx = Number($(this).data("index"));
             if (Number.isNaN(idx) || !outlineItems[idx]) return;
-            renderDesktopEditor(idx, String($cell.data("edit-field") || ""));
+            startInlineCellEdit(idx, String($cell.data("edit-field") || ""));
             return;
         }
         const idx = Number($(this).data("index"));
@@ -3531,34 +3479,30 @@ function bindEvents() {
         renderRows();
     });
 
-    $overlay.on("click", "#t-desk-editor-close", () => {
-        closeDesktopEditor();
-    });
-
-    $overlay.on("click", "#t-desk-editor-save", () => {
-        saveDesktopEditor();
-        if (window.toastr) toastr.success("已保存编辑", "故事大纲");
-    });
-
-    $overlay.on("click", "#t-outline-mobile-list .t-outline-mobile-card", function () {
+    $overlay.on("click", "#t-outline-mobile-list .t-outline-mobile-card", function (e) {
+        if ($(e.target).closest("button, input, textarea, label").length > 0) return;
         const index = Number($(this).data("index"));
         if (Number.isNaN(index) || !outlineItems[index]) return;
-        openMobileEditor(index);
+        toggleMobileCardEditor(index);
     });
 
-    $overlay.on("click", "#t-mobile-drawer-close", () => {
-        closeMobileEditor();
+    $overlay.on("click", "#t-outline-mobile-list [data-action='mobile-edit-save']", function () {
+        const $card = $(this).closest(".t-outline-mobile-card");
+        const index = Number($card.data("index"));
+        const item = outlineItems[index];
+        if (!item) return;
+        item.time = $card.find("[data-field='time']").val() || "";
+        item.title = $card.find("[data-field='title']").val() || "";
+        item.plot = $card.find("[data-field='plot']").val() || "";
+        item.foreshadowing = $card.find("[data-field='foreshadowing']").val() || "";
+        saveDraft($("#t-outline-story-input").val(), $("#t-outline-insert-mode").val());
+        renderRows();
+        if (window.toastr) toastr.success("已保存当前情节", "故事大纲");
     });
 
-    $overlay.on("click", "#t-mobile-drawer-save", () => {
-        saveMobileEditor();
-        closeMobileEditor();
-    });
-
-    $overlay.on("click", "#t-mobile-drawer-delete", function () {
-        const index = Number($("#t-outline-mobile-drawer").attr("data-index"));
-        const deleted = deleteOutlineItemAt(index, { closeMobile: true });
-        if (deleted && window.toastr) toastr.success("已删除大纲条目", "故事大纲");
+    $overlay.on("click", "#t-outline-mobile-list [data-action='mobile-edit-delete']", function () {
+        const index = Number($(this).closest(".t-outline-mobile-card").data("index"));
+        if (deleteOutlineItemAt(index) && window.toastr) toastr.success("已删除大纲条目", "故事大纲");
     });
 
 }
@@ -3604,6 +3548,14 @@ export function openStoryOutlineWindow() {
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> 大纲生成
                             </button>
                         </div>
+                        <label class="t-outline-mode t-outline-mode-source">
+                            参考来源
+                            <select id="t-outline-opening-source-mode" class="t-outline-select">
+                                <option value="auto_first">开场白</option>
+                                <option value="chat_selected">聊天记录</option>
+                            </select>
+                        </label>
+                        <button id="t-outline-opening-source-pick" class="t-btn t-btn-xs"><i class="fa-solid fa-list"></i> 选择来源</button>
                     </div>
                     <select id="t-outline-insert-mode" class="t-outline-select" style="display:none;">
                         <option value="overwrite" ${draft.insertMode === "overwrite" ? "selected" : ""}>覆盖输入框</option>
@@ -3638,6 +3590,7 @@ export function openStoryOutlineWindow() {
                     <div class="t-editor-tabs">
                         <button id="t-outline-back-hub" class="t-btn t-btn-xs"><i class="fa-solid fa-arrow-left"></i> 返回方案页</button>
                         <button id="t-editor-tab-outline" class="t-btn t-btn-xs active"><i class="fa-solid fa-table"></i> 大纲编辑</button>
+                        <button id="t-outline-add-item" class="t-btn t-btn-xs t-btn-primary t-editor-tab-add"><i class="fa-solid fa-plus"></i> 新增条目</button>
                     </div>
 
                     <div id="t-outline-subview-outline" class="t-outline-subview">
@@ -3656,41 +3609,9 @@ export function openStoryOutlineWindow() {
                                 <tbody id="t-outline-tbody"></tbody>
                             </table>
                         </div>
-                        <div id="t-outline-desktop-editor" class="t-outline-desktop-editor"></div>
                     </div>
 
                     <div id="t-outline-mobile-list" class="t-outline-mobile-list"></div>
-                    <div id="t-outline-mobile-drawer" class="t-outline-mobile-drawer" data-index="">
-                        <div class="t-outline-mobile-drawer-head">
-                            <span><i class="fa-solid fa-pen-to-square"></i> 编辑情节</span>
-                            <button id="t-mobile-drawer-close" class="t-btn t-btn-xs"><i class="fa-solid fa-times"></i></button>
-                        </div>
-                        <div class="t-outline-mobile-drawer-body">
-                            <div id="t-mobile-outline-view">
-                                <label>时间</label>
-                                <input id="t-mobile-field-time" class="t-outline-input" placeholder="例如：第1天夜晚">
-                                <label>标题</label>
-                                <input id="t-mobile-field-title" class="t-outline-input" placeholder="例如：不速之客">
-                                <label>情节</label>
-                                <textarea id="t-mobile-field-plot" class="t-outline-textarea" rows="5"></textarea>
-                                <label>伏笔</label>
-                                <textarea id="t-mobile-field-foreshadowing" class="t-outline-textarea" rows="3"></textarea>
-                            </div>
-                        </div>
-                        <div class="t-outline-mobile-drawer-actions">
-                            <button id="t-mobile-drawer-save" class="t-btn t-btn-primary"><i class="fa-solid fa-check"></i> 保存</button>
-                            <button id="t-mobile-drawer-delete" class="t-btn t-plan-delete-btn"><i class="fa-solid fa-trash"></i> 删除本条</button>
-                        </div>
-                    </div>
-                    <div id="t-outline-add-sheet-backdrop" class="t-outline-add-sheet-backdrop"></div>
-                    <div id="t-outline-fab-wrap" class="t-outline-fab-wrap" aria-live="polite">
-                        <button id="t-outline-add-fab" class="t-outline-add-fab" aria-expanded="false" aria-controls="t-outline-add-sheet" title="新增条目">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                        <div id="t-outline-add-sheet" class="t-outline-add-sheet t-root" role="menu" aria-label="新增条目类型">
-                            <button id="t-outline-add-outline-item" class="t-btn" role="menuitem"><i class="fa-solid fa-table"></i> 新增大纲条目</button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -3707,6 +3628,5 @@ export function openStoryOutlineWindow() {
     bindEvents();
     renderPlanHub();
     showOutlineView(plans.length > 0 ? "hub" : "editor");
-    syncAddFabVisibility();
     refreshOutlineOpeningSourceControls();
 }
