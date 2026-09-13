@@ -95,16 +95,11 @@ export const CSS_LAYERS = [
             'workshop.css',    // ← dom.js 原先漏掉的文件(B1)
             'favs.css',
             'debug.css',
-            'lore-review.css',
-            'memory-recall.css',
             // story-outline 的 dialog 尺寸已通过组件修饰类隔离,不再依赖加载顺序。
             'story-outline.css',
             // 以下为从 JS 运行时注入迁出的样式。它们原先靠「注入得晚」无条件取胜，
             // 现在服从层叠顺序；因全部带 ID 作用域，位置对结果无影响。
             'outline-entry-menu.css',
-            // ⚠ 必须晚于 lore-review.css：清洗预览原先是运行时注入的，
-            //   层叠上晚于 lore-review.css，此顺序保持其原有优先级。
-            'cleaning-preview.css',
             'rewrite.css',
             // Phase 5b-11 从 src/core/api.js 的内联 style 迁出。
             // 选择器全库唯一（#t-confirm-* / .t-confirm-*），位置对层叠无影响。

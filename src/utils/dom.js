@@ -37,16 +37,16 @@ export function cssLinkId(file) {
 }
 
 /**
- * 按需确保某个功能 CSS 已加载（loreReviewWindow / storyOutlineWindow 使用）。
+ * 按需确保某个功能 CSS 已加载（storyOutlineWindow 使用）。
  *
- * 这是除 build.js 与 loadCssFiles 之外的第 3、4 处 CSS 加载点，原先各自硬编码
- * `css/lore-review.css` / `css/story-outline.css` 扁平路径，目录分层后会 404。
+ * 这是除 build.js 与 loadCssFiles 之外的又一处 CSS 加载点，原先硬编码
+ * `css/story-outline.css` 扁平路径，目录分层后会 404。
  * 现统一从 manifest 解析路径，且 id 与 loadCssFiles 一致 —— 于是开发模式下它
  * 天然成为空操作（文件已由 loadCssFiles 加载），打包模式下补一个 <link>。
  *
  * 打包模式下的后置 <link> 会改变 feature CSS 的加载顺序，因此 feature 规则必须
  * 自带作用域。story-outline 的 dialog 尺寸已由 `.t-dialog-overlay--outline`
- * 限定，不再随 lore/story 窗口的打开顺序变化。
+ * 限定，不再随窗口的打开顺序变化。
  */
 export function ensureFeatureCss(fileName) {
     const file = cssFileList().find(p => p.endsWith(`/${fileName}`));

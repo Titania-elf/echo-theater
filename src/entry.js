@@ -48,7 +48,6 @@ import {
     SCRIPTS_STORE_KEY
 } from "./core/scriptStore.js";
 import { initExtensionUpdate } from "./core/extensionUpdate.js";
-import { initSyncListener } from "./core/worldInfoManager.js";
 import { createFloatingButton, destroyFloatingButton, refreshFloatingTuck } from "./ui/floatingBtn.js";
 import { applyCustomCSS, applyFontSettings, applyUIFontScale } from "./ui/settingsWindow.js";
 import { applyUITheme } from "./ui/theme.js";
@@ -57,17 +56,6 @@ import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteE
 import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
 import { isInjectedTheaterMessage } from "./core/chatInjector.js";
 import { refreshOutlineEntryButton } from "./ui/outlineEntryButton.js";
-import {
-    checkUnsavedVectors,
-    hasUnsavedVectorsSync,
-    refreshUnsavedVectorsCache,
-    isUnsavedCacheInitialized,
-    getAllIndexedCharacters,
-    exportVectors,
-    importVectors,
-    clearCharacterVectors
-} from "./core/vectorStore.js";
-import { incrementAutoVectorizeCounter, getAutoVectorizeConfig } from "./core/summarizer.js";
 
 // --- 自动化监听逻辑 ---
 
@@ -209,15 +197,6 @@ function initCoreFeatures() {
     });
     void restoreContinuationForCurrentChat().catch(error => console.error("Titania: 初始续写历史恢复失败", error));
 
-    // 初始化世界书同步监听器
-    initSyncListener();
-
-    // 初始化向量索引未保存提醒
-    initVectorUnsavedWarning();
-
-    // 初始化自动向量化监听
-    initAutoVectorizeListener();
-
     // 初始化大纲发送区入口按钮
     initOutlineEntryButton();
 
@@ -262,90 +241,6 @@ function loadQueueConfig() {
 }
 
 /**
- * 初始化自动向量化监听器
- * 监听消息事件，根据配置自动触发向量化
- */
-function initAutoVectorizeListener() {
-    // 监听消息接收事件（AI 回复）
-    eventSource.on(event_types.MESSAGE_RECEIVED, onMessageForAutoVectorize);
-
-    // 监听消息发送事件（用户消息）
-    eventSource.on(event_types.MESSAGE_SENT, onMessageForAutoVectorize);
-
-    console.log("Titania: 自动向量化监听器已初始化");
-}
-
-/**
- * 消息事件处理函数 - 用于自动向量化
- */
-async function onMessageForAutoVectorize() {
-    const config = getAutoVectorizeConfig();
-
-    // 检查是否启用自动向量化
-    if (!config.enabled) return;
-
-    // 获取当前角色 ID
-    if (!SillyTavern || !SillyTavern.getContext) return;
-
-    let characterId;
-    try {
-        const context = SillyTavern.getContext();
-        characterId = context?.characterId?.toString();
-    } catch (e) {
-        console.warn("Titania: 获取角色 ID 失败", e);
-        return;
-    }
-
-    if (!characterId) return;
-
-    // 延迟执行，避免与其他操作冲突
-    setTimeout(async () => {
-        try {
-            await incrementAutoVectorizeCounter(characterId);
-        } catch (e) {
-            console.warn("Titania: 自动向量化检查失败", e);
-        }
-    }, 1000);
-}
-
-/**
- * 初始化向量索引未保存提醒
- * 当页面关闭/刷新时，如果有未导出的向量数据，提示用户
- */
-function initVectorUnsavedWarning() {
-    // 提前异步预热一次缓存，beforeunload 中只做同步判断
-    void refreshUnsavedVectorsCache();
-
-    window.addEventListener("focus", () => {
-        void refreshUnsavedVectorsCache();
-    });
-
-    document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-            void refreshUnsavedVectorsCache();
-        }
-    });
-
-    window.addEventListener('beforeunload', (e) => {
-        // beforeunload 中必须同步判断，不能执行异步逻辑
-        const hasUnsaved = hasUnsavedVectorsSync();
-
-        if (!isUnsavedCacheInitialized()) {
-            void refreshUnsavedVectorsCache();
-        }
-
-        if (hasUnsaved) {
-            // 浏览器标准做法：设置 returnValue 触发确认弹窗
-            e.preventDefault();
-            e.returnValue = '您有未导出的向量索引数据，关闭页面后这些数据可能丢失。是否确定离开？';
-            return e.returnValue;
-        }
-    });
-
-    console.log("Titania: 向量索引未保存提醒已初始化");
-}
-
-/**
  * 显示悬浮球
  */
 function showFloatingButton() {
@@ -361,32 +256,7 @@ function hideFloatingButton() {
     console.log("Titania: 悬浮球已隐藏");
 }
 
-async function buildVectorBackupData() {
-    const characterIds = await getAllIndexedCharacters();
-    const characters = [];
-    for (const characterId of characterIds) {
-        try {
-            const payload = await exportVectors(characterId);
-            characters.push(payload);
-        } catch (e) {
-            console.warn(`Titania: 导出角色 ${characterId} 向量失败`, e);
-        }
-    }
-    return {
-        version: 1,
-        characters
-    };
-}
-
-function countVectorItems(vectorData) {
-    if (!vectorData || !Array.isArray(vectorData.characters)) return { characters: 0, vectors: 0 };
-    const characters = vectorData.characters.length;
-    const vectors = vectorData.characters.reduce((sum, item) => sum + (Array.isArray(item?.vectors) ? item.vectors.length : 0), 0);
-    return { characters, vectors };
-}
-
 async function createFullBackupPayload(options = {}) {
-    const includeVectors = options.includeVectors !== false;
 
     // 剧本搬家后可能有改动还在落盘队列里。快照是从内存对象拷的，
     // 但先把队列清空能保证「备份里的内容 = 磁盘上的内容」，
@@ -417,14 +287,12 @@ async function createFullBackupPayload(options = {}) {
         delete extDataSnapshot[SCRIPTS_STORE_KEY];
     }
 
-    const vectorData = includeVectors ? await buildVectorBackupData() : { version: 1, characters: [] };
     return {
         type: "titania_theater_backup",
         version: "2.0",
         timestamp: new Date().toISOString(),
         auto_backup: options.autoBackup === true,
-        data: extDataSnapshot,
-        vectors: vectorData
+        data: extDataSnapshot
     };
 }
 
@@ -494,11 +362,10 @@ function bindDrawerBackupControls() {
         const oldHtml = $btn.html();
         $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 导出中...');
         try {
-            const exportData = await createFullBackupPayload({ includeVectors: true });
+            const exportData = await createFullBackupPayload();
             const filename = `titania_backup_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}.json`;
             downloadBackupPayload(exportData, filename);
-            const stats = countVectorItems(exportData.vectors);
-            if (window.toastr) toastr.success(`备份已导出（向量角色 ${stats.characters}，向量条目 ${stats.vectors}）`, "Titania Echo");
+            if (window.toastr) toastr.success("备份已导出", "Titania Echo");
         } catch (e) {
             console.error("Titania: 备份导出失败", e);
             if (window.toastr) toastr.error(e.message || "导出失败", "Titania Echo");
@@ -522,29 +389,24 @@ function bindDrawerBackupControls() {
             if (!importData.data || typeof importData.data !== "object") throw new Error("备份数据无效");
 
             const extDataPayload = importData.data;
-            const importVectorsData = importData.vectors && typeof importData.vectors === "object"
-                ? importData.vectors
-                : { version: 1, characters: [] };
-            const vectorStats = countVectorItems(importVectorsData);
 
             const confirmMsg = `确定要导入此备份吗？\n\n`
                 + `备份时间: ${importData.timestamp || "未知"}\n`
                 + `备份版本: ${String(importData.version || "1.0")}\n`
                 + `用户脚本: ${(extDataPayload.user_scripts || []).length} 个\n`
-                + `收藏内容: ${(extDataPayload.favs || []).length} 个\n`
-                + `向量角色: ${vectorStats.characters} 个\n\n`
+                + `收藏内容: ${(extDataPayload.favs || []).length} 个\n\n`
                 + `✅ 导入前将自动下载当前数据备份\n`
                 + `⚠️ 导入将覆盖当前所有设置！`;
 
             if (!confirm(confirmMsg)) return;
 
             try {
-                const currentSnapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+                const currentSnapshot = await createFullBackupPayload({ autoBackup: true });
                 const filename = `titania_auto_backup_${new Date().toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "_")}.json`;
                 downloadBackupPayload(currentSnapshot, filename);
                 if (window.toastr) toastr.info("已自动备份当前数据，请保存下载的文件", "Titania Echo");
-                // 下面 saveExtDataImmediate() 是真的网络写入，而且那时向量库已经清空了 ——
-                // 在 iOS 上被下载导航掀掉的话，会停在「旧向量已删、新设置没存上」的半截状态。
+                // 下面 saveExtDataImmediate() 是真的网络写入 ——
+                // 在 iOS 上被下载导航掀掉的话，会停在「设置没存上」的半截状态。
                 // 原因见 downloadBackupAndConfirm
                 await settleAfterDownload();
             } catch (backupErr) {
@@ -571,24 +433,10 @@ function bindDrawerBackupControls() {
                 delete currentData[SCRIPTS_STORE_KEY];
             }
 
-            const existingVectorCharacters = await getAllIndexedCharacters();
-            for (const charId of existingVectorCharacters) {
-                await clearCharacterVectors(charId);
-            }
-
-            const backupVectorCharacters = Array.isArray(importVectorsData.characters) ? importVectorsData.characters : [];
-            let importedVectorCount = 0;
-            for (const item of backupVectorCharacters) {
-                const charId = String(item?.characterId || "").trim();
-                if (!charId) continue;
-                const result = await importVectors(charId, item, false);
-                importedVectorCount += Number(result?.imported || 0);
-            }
-
             const saveSuccess = await saveExtDataImmediate();
             if (!saveSuccess) throw new Error("保存数据失败，请重试");
 
-            if (window.toastr) toastr.success(`备份已恢复（向量条目 ${importedVectorCount}）`, "Titania Echo");
+            if (window.toastr) toastr.success("备份已恢复", "Titania Echo");
             setTimeout(() => {
                 if (confirm("备份已恢复成功！是否立即刷新页面？")) {
                     location.reload();
@@ -803,7 +651,7 @@ async function runOneClickMigration($btn) {
         //    原因见 downloadBackupAndConfirm
         $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
         try {
-            const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+            const snapshot = await createFullBackupPayload({ autoBackup: true });
             const go = await downloadBackupAndConfirm(snapshot, backupFileName("before_favs_migration"), "搬家");
             if (!go) {
                 showFavsMigrationReport("已取消，未改动任何数据。备份文件已下载，可随时回来重试。", "#feca57");
@@ -1252,7 +1100,7 @@ async function runScriptsOneClick($btn) {
         //    会撞上 iOS 的下载导航问题（见 downloadBackupAndConfirm）
         $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> 正在备份...');
         try {
-            const snapshot = await createFullBackupPayload({ includeVectors: true, autoBackup: true });
+            const snapshot = await createFullBackupPayload({ autoBackup: true });
             const go = await downloadBackupAndConfirm(snapshot, backupFileName("before_scripts_migration"), "搬家");
             if (!go) {
                 showScriptsStorageReport("已取消，未改动任何数据。备份文件已下载，可随时回来重试。", "#feca57");
@@ -1489,8 +1337,6 @@ async function loadExtensionSettings() {
     $("#cfg-rewrite-entry-enabled").prop("checked", extData.rewrite_entry.enabled === true);
     $("#cfg-chat-inject-enabled").prop("checked", extData.chat_inject.enabled === true);
     $("#cfg-preset-persist-vars").prop("checked", extData.preset_macros.persist_variables === true);
-    $("#cfg-toolbar-lore-enabled").prop("checked", extData.quick_toolbar.enabled_items.lore === true);
-    $("#cfg-toolbar-recall-enabled").prop("checked", extData.quick_toolbar.enabled_items.recall === true);
 
     $("#cfg-float-edge-tuck").on("input", function () {
         const enabled = $(this).prop("checked") === true;
@@ -1575,30 +1421,6 @@ async function loadExtensionSettings() {
                 "Titania Echo"
             );
         }
-    });
-
-    $("#cfg-toolbar-lore-enabled").on("input", function () {
-        const enabled = $(this).prop("checked") === true;
-        const data = getExtData();
-        if (!data.quick_toolbar || typeof data.quick_toolbar !== "object") data.quick_toolbar = {};
-        if (!data.quick_toolbar.enabled_items || typeof data.quick_toolbar.enabled_items !== "object") {
-            data.quick_toolbar.enabled_items = {};
-        }
-        data.quick_toolbar.enabled_items.lore = enabled;
-        saveExtData();
-        if (window.toastr) toastr.success(enabled ? "提取设定快捷入口已启用" : "提取设定快捷入口已关闭", "Titania Echo");
-    });
-
-    $("#cfg-toolbar-recall-enabled").on("input", function () {
-        const enabled = $(this).prop("checked") === true;
-        const data = getExtData();
-        if (!data.quick_toolbar || typeof data.quick_toolbar !== "object") data.quick_toolbar = {};
-        if (!data.quick_toolbar.enabled_items || typeof data.quick_toolbar.enabled_items !== "object") {
-            data.quick_toolbar.enabled_items = {};
-        }
-        data.quick_toolbar.enabled_items.recall = enabled;
-        saveExtData();
-        if (window.toastr) toastr.success(enabled ? "记忆召回快捷入口已启用" : "记忆召回快捷入口已关闭", "Titania Echo");
     });
 
     // 4. 轻量版本更新检测

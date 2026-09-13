@@ -246,13 +246,6 @@
     }
 }
 
-/* lore-review.css */
-@keyframes t-spin {
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
 /* workshop.css */
 @keyframes t-ws-shimmer {
     0% {

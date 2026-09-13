@@ -42,14 +42,10 @@ function getEnabledFeatureList(data) {
     const showTheater = data?.outline_entry?.show_theater === true;
     const showOutlineActions = data?.outline_entry?.show_outline_actions === true;
     const rewriteEnabled = data?.rewrite_entry?.enabled === true;
-    const loreEnabled = toolbarItems.lore === true;
-    const recallEnabled = toolbarItems.recall === true;
     const features = [];
     if (showTheater) features.push("theater");
     if (showOutlineActions) features.push("outline_actions");
     if (rewriteEnabled) features.push("rewrite");
-    if (loreEnabled) features.push("lore");
-    if (recallEnabled) features.push("recall");
     return features;
 }
 
@@ -68,19 +64,6 @@ async function openFeatureDirect(featureKey, canOpenScenes) {
         case "rewrite": {
             const { openRewritePanelFromMenu } = await import("./rewriteEntryButton.js");
             openRewritePanelFromMenu();
-            return;
-        }
-        case "lore": {
-            const { showLoreReviewWindow } = await import("./loreReviewWindow.js");
-            showLoreReviewWindow().catch(e => {
-                console.error("[Titania] 设定集维护窗口打开失败:", e);
-                if (window.toastr) toastr.error(`设定集维护打开失败：${e.message}`, "Titania");
-            });
-            return;
-        }
-        case "recall": {
-            const { openRecallPanel } = await import("./memoryRecallPanel.js");
-            openRecallPanel();
             return;
         }
         default:
@@ -108,9 +91,6 @@ async function openMenu($btn) {
     closeMenu();
 
     const data = getExtData();
-    const toolbarItems = data?.quick_toolbar?.enabled_items || {};
-    const loreEnabled = toolbarItems.lore === true;
-    const recallEnabled = toolbarItems.recall === true;
     const rewriteEnabled = data?.rewrite_entry?.enabled === true;
     const showTheater = data?.outline_entry?.show_theater === true;
     const showOutlineActions = data?.outline_entry?.show_outline_actions === true;
@@ -129,8 +109,6 @@ async function openMenu($btn) {
             <i class="fa-solid fa-list-check"></i> 生成大纲
         </button>` : ""}
         ${rewriteEnabled ? '<button class="t-outline-entry-item" id="t-outline-entry-open-rewrite" role="menuitem"><i class="fa-solid fa-highlighter"></i> 文本改写</button>' : ''}
-        ${loreEnabled ? '<button class="t-outline-entry-item" id="t-outline-entry-open-lore" role="menuitem"><i class="fa-solid fa-brain"></i> 设定维护＆聊天总结</button>' : ''}
-        ${recallEnabled ? '<button class="t-outline-entry-item" id="t-outline-entry-open-recall" role="menuitem"><i class="fa-solid fa-lightbulb"></i> 记忆召回</button>' : ''}
         ${hasPlans ? (hasSource ? "" : '<div class="t-outline-entry-tip">请先在方案页选择剧情推进来源方案</div>') : '<div class="t-outline-entry-tip">请先保存至少一个方案</div>'}
     </div>`;
 
@@ -180,25 +158,6 @@ async function openMenu($btn) {
         closeMenu();
         const { openRewritePanelFromMenu } = await import("./rewriteEntryButton.js");
         openRewritePanelFromMenu();
-    });
-
-    $("#t-outline-entry-open-lore").on("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        closeMenu();
-        const { showLoreReviewWindow } = await import("./loreReviewWindow.js");
-        showLoreReviewWindow().catch(e => {
-            console.error("[Titania] 设定集维护窗口打开失败:", e);
-            if (window.toastr) toastr.error(`设定集维护打开失败：${e.message}`, "Titania");
-        });
-    });
-
-    $("#t-outline-entry-open-recall").on("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        closeMenu();
-        const { openRecallPanel } = await import("./memoryRecallPanel.js");
-        openRecallPanel();
     });
 
     setTimeout(() => {

@@ -1981,11 +1981,9 @@ export function openSettingsWindow() {
     const toolbarConfig = data.quick_toolbar || {};
     const enabledItems = toolbarConfig.enabled_items || {
         main: true,
-        lore: true,
         settings: true,
         favs: false,
-        scripts: false,
-        recall: false
+        scripts: false
     };
     const MAX_TOOLBAR_ITEMS = 5;
 
@@ -2313,9 +2311,6 @@ export function openSettingsWindow() {
             const btnId = $(this).data("btn-id");
             toolbarEnabledItems[btnId] = $(this).is(":checked");
         });
-        const prevEnabledItems = d.quick_toolbar?.enabled_items || {};
-        toolbarEnabledItems.lore = prevEnabledItems.lore === true;
-        toolbarEnabledItems.recall = prevEnabledItems.recall === true;
         toolbarEnabledItems.outline = false;
         toolbarEnabledItems.debug = false;
         d.quick_toolbar = {

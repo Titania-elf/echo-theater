@@ -83,7 +83,6 @@ export const defaultSettings = {
         whitelist: "",
         blacklist: "",
         // 只把角色发言注入剧本生成，跳过用户楼层。
-        // 只作用于剧本生成，总结和世界书提取照旧读全量历史
         ai_only: false
     },
     character_map: {},
@@ -178,16 +177,14 @@ export const defaultSettings = {
     quick_toolbar: {
         enabled: false,  // 是否启用快捷工具栏（禁用时点击悬浮球直接打开主窗口）
         // 各按钮的启用状态，按固定顺序排列
-        // 可用按钮: main(剧场), lore(设定提取), outline(故事大纲), settings(设置), favs(收藏夹), scripts(剧本管理), debug(调试), recall(记忆召回)
+        // 可用按钮: main(剧场), outline(故事大纲), settings(设置), favs(收藏夹), scripts(剧本管理), debug(调试)
         enabled_items: {
             main: true,      // 打开剧场
-            lore: false,     // 提取设定
             outline: false,  // 故事大纲
             settings: true,  // 设置
             favs: false,     // 收藏夹
             scripts: false,  // 剧本管理
-            debug: false,    // 提示词组成窗口
-            recall: false    // 记忆召回
+            debug: false     // 提示词组成窗口
         },
         max_items: 5  // 最多显示按钮数量
     },
@@ -230,41 +227,4 @@ export const defaultSettings = {
         selected_prompt_user: "返回 JSON schema：\n{{schema}}\n唯一合法示例：\n{\"task_id\":\"rewrite_selected_x\",\"results\":[{\"segment_id\":\"s_1\",\"rewritten_text\":\"示例文本\"}]}\n硬约束：\n1) targets 是用户手动选中的句子，只改写这些句子\n2) results 条目数必须等于 targets 条目数\n3) segment_id 必须来自 targets 且不重复\n4) rewritten_text 不能为空，且应能原位替换回上下文\n5) 不得输出任何 JSON 之外的内容\n\n输入数据：\n{{payload}}",
         prompt_json_rule: "JSON格式指令（谨慎修改）：\n- 只输出 JSON，不输出解释或 markdown\n- 顶层必须包含 task_id 和 results\n- results 每项必须包含 segment_id 和 rewritten_text\n- rewritten_text 中不能出现目标命中词（anchor / matched_extra）"
     },
-    // Embedding API 独立配置（用于向量化）
-    embedding_config: {
-        url: "",                          // API URL (如 https://api.openai.com/v1)
-        key: "",                          // API Key
-        model: "text-embedding-3-small",  // 默认模型
-        dimensions: null,                 // 向量维度（null 表示使用模型默认值）
-
-        // 文本清洗选项（向量化前处理）
-        text_cleaning: {
-            remove_html_tags: true,           // 移除 HTML 标签（保留文本内容）
-            remove_style_tags: true,          // 移除 <style> 标签及其内容
-            remove_thinking_tags: true,       // 移除 <thinking>/<think> 标签及内容
-            remove_ooc_tags: true,            // 移除 <ooc>/<OOC> 标签及内容
-            remove_system_tags: true,         // 移除 <system>/<note> 等系统标签及内容
-            remove_markdown: false,           // 移除 Markdown 格式（**粗体** 等）
-            remove_macro_residue: true,       // 移除宏残留 {{user}} {{char}} 等
-            remove_bracket_markers: true,     // 移除方括号标记 [System] [OOC] 等
-            remove_bracket_content: true,     // 移除方括号及其内容 [...] (全部)
-            custom_tags_to_remove: "",        // 自定义要移除的标签（逗号分隔，如 "internal,debug"）
-            min_text_length: 20               // 清洗后低于此长度的消息跳过向量化
-        },
-
-        // 自动向量化配置
-        auto_vectorize: {
-            enabled: false,               // 是否启用自动向量化
-            batch_threshold: 5,           // 累积多少条消息后触发向量化
-            notify_user: true             // 是否显示通知
-        }
-    },
-
-    // 智能总结功能配置
-    summarizer_config: {
-        selected_profile_id: null,   // 使用哪个 Chat API 方案（复用 profiles）
-        model_override: null,        // 模型覆盖
-        template: "structured",      // 模板类型: structured | narrative
-        use_vector_search: true      // 是否使用向量化语义检索增强
-    }
 };

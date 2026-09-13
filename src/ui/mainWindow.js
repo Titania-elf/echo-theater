@@ -25,7 +25,6 @@ import { handleGenerate, handleUserContinuation, renderGeneratedContent, execute
 import { openFavsWindow, saveFavorite, unsaveFavorite } from "./favsWindow.js";
 import { showDebugInfo, showDiagnosticsWindow } from "./debugWindow.js";
 import { openScriptManager, openEditor } from "./scriptManager.js";
-import { showLoreReviewWindow } from "./loreReviewWindow.js";
 import { openSettingsWindow } from "./settingsWindow.js";
 import { countContentStats } from "../utils/helpers.js";
 import { WORKSHOP_ORIGIN } from "../core/workshopApi.js";

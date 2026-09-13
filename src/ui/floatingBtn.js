@@ -3,11 +3,7 @@
 import { getExtData, saveExtData } from "../utils/storage.js";
 import { GlobalState } from "../core/state.js";
 import { openMainWindow } from "./mainWindow.js";
-// 移除静态导入，改为动态导入以避免启动时阻塞
-// import { showLoreReviewWindow } from "./loreReviewWindow.js";
 import { openSettingsWindow } from "./settingsWindow.js";
-// 移除静态导入，改为动态导入以避免启动时阻塞
-// import { openRecallPanel } from "./memoryRecallPanel.js";
 
 // 侧边菜单状态
 let slideMenuVisible = false;

@@ -435,8 +435,8 @@ function extractContent(text, whitelist = []) {
  * @param {string[]} whitelist - 白名单标签数组（可选）
  * @param {object[]} [blacklist] - 黑名单规则；缺省时自行从配置读取
  * @param {boolean} [aiOnly=false] - 只保留角色发言，跳过用户楼层。
- *   刻意不像 blacklist 那样缺省时回退读配置：总结（summarizer）和世界书提取
- *   （loreExtractor）需要完整对话，用户的动作也是情节。只有剧本生成那两处显式传 true。
+ *   刻意不像 blacklist 那样缺省时回退读配置：默认调用方需要完整对话，
+ *   用户的动作也是情节。只有剧本生成那两处显式传 true。
  */
 export function getChatHistory(limit, whitelist = [], blacklist = undefined, aiOnly = false) {
     if (typeof SillyTavern === 'undefined' || !SillyTavern.getContext) return "";
