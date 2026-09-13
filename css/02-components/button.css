@@ -224,3 +224,18 @@
     flex: 0 0 auto;
     line-height: 1;
 }
+
+/* 获取模型列表按钮（纯图标，无文字）。
+   三个调用方各自传不同的按钮类（t-tool-btn / t-btn--glass / t-btn-xs），
+   这里只负责“收成方形、图标居中、不被弹性布局拉长”，
+   配色与边框继续由各自的按钮类决定（不覆写视觉属性，R4）。 */
+.t-fetch-models-btn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    min-width: 34px;
+    padding-left: 0;
+    padding-right: 0;
+}

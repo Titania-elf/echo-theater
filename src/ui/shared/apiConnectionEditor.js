@@ -177,7 +177,7 @@ export function renderApiConnectionEditorHTML(options = {}) {
             <div class="t-form-group">
                 <label class="t-form-label">${escapeHtml(labels.model)}</label>
                 ${flags.showManualModelInput ? `<div style="display:flex; gap:10px; margin-bottom:8px;"><select id="${escapeHtml(ids.modelModeId || "")}" class="${escapeHtml(classes.select)}" style="width:auto; cursor:pointer;"><option value="list">获取列表</option><option value="manual">手动填写</option></select></div>` : ""}
-                <div id="${escapeHtml(ids.modelListWrapId || "")}" style="display:flex; gap:10px;"><select id="${escapeHtml(ids.modelId || "")}" class="${escapeHtml(classes.select)}" style="cursor:pointer;"></select><button id="${escapeHtml(ids.fetchModelsId || "")}" class="${escapeHtml(classes.button)}" title="获取模型列表">🔄 获取列表</button></div>
+                <div id="${escapeHtml(ids.modelListWrapId || "")}" style="display:flex; gap:10px;"><select id="${escapeHtml(ids.modelId || "")}" class="${escapeHtml(classes.select)}" style="cursor:pointer;"></select><button id="${escapeHtml(ids.fetchModelsId || "")}" class="${escapeHtml(classes.button)} t-fetch-models-btn" title="获取模型列表" aria-label="获取模型列表"><i class="fa-solid fa-rotate"></i></button></div>
                 ${flags.showManualModelInput ? `<div id="${escapeHtml(ids.modelManualWrapId || "")}" style="display:none;"><input id="${escapeHtml(ids.modelInputId || "")}" class="${escapeHtml(classes.input)}" placeholder="模型 ID，例如：gpt-4o"></div>` : ""}
                 <div id="${escapeHtml(ids.statusId || "")}" class="t-conn-hint">${escapeHtml(values.statusText)}</div>
             </div>
@@ -311,7 +311,7 @@ export function createApiConnectionEditor(options = {}) {
             $model.empty().append("<option selected>(ST 设置)</option>").prop("disabled", true);
             $modelMode.prop("disabled", true);
             $modelInput.prop("disabled", true).val("");
-            $fetchBtn.prop("disabled", true).text("🔄 获取列表");
+            $fetchBtn.prop("disabled", true).html('<i class="fa-solid fa-rotate"></i>');
             $modelListWrap.show();
             $modelManualWrap.hide();
             if ($urlHint.length) {
@@ -329,7 +329,7 @@ export function createApiConnectionEditor(options = {}) {
         $model.prop("disabled", false);
         $modelMode.prop("disabled", !showManualModelInput).val(modelInputMode);
         $modelInput.prop("disabled", modelInputMode !== "manual").val(profile.model || defaultModel);
-        $fetchBtn.prop("disabled", modelInputMode === "manual").text("🔄 获取列表");
+        $fetchBtn.prop("disabled", modelInputMode === "manual").html('<i class="fa-solid fa-rotate"></i>');
         $modelListWrap.toggle(modelInputMode !== "manual");
         $modelManualWrap.toggle(modelInputMode === "manual");
         if ($urlHint.length) $urlHint.hide();
@@ -373,7 +373,7 @@ export function createApiConnectionEditor(options = {}) {
 
         const requestVersion = ++modelRequestVersion;
         try {
-            $fetchBtn.prop("disabled", true).text("...");
+            $fetchBtn.prop("disabled", true).html('<i class="fa-solid fa-rotate fa-spin"></i>');
             setStatus(statusTexts.loading, "muted");
             const models = uniqStrings(await modelFetcher({ apiUrl, apiKey: profile.key, profile, state: { ...state } }));
             if (requestVersion !== modelRequestVersion || profile.id !== state.activeProfileId) return [];
@@ -405,7 +405,7 @@ export function createApiConnectionEditor(options = {}) {
             return [];
         } finally {
             if (requestVersion === modelRequestVersion) {
-                $fetchBtn.prop("disabled", false).text("🔄 获取列表");
+                $fetchBtn.prop("disabled", false).html('<i class="fa-solid fa-rotate"></i>');
             }
         }
     };

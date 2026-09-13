@@ -5241,6 +5241,21 @@ function loadCssFiles() {
     line-height: 1;
 }
 
+/* \u83B7\u53D6\u6A21\u578B\u5217\u8868\u6309\u94AE\uFF08\u7EAF\u56FE\u6807\uFF0C\u65E0\u6587\u5B57\uFF09\u3002
+   \u4E09\u4E2A\u8C03\u7528\u65B9\u5404\u81EA\u4F20\u4E0D\u540C\u7684\u6309\u94AE\u7C7B\uFF08t-tool-btn / t-btn--glass / t-btn-xs\uFF09\uFF0C
+   \u8FD9\u91CC\u53EA\u8D1F\u8D23\u201C\u6536\u6210\u65B9\u5F62\u3001\u56FE\u6807\u5C45\u4E2D\u3001\u4E0D\u88AB\u5F39\u6027\u5E03\u5C40\u62C9\u957F\u201D\uFF0C
+   \u914D\u8272\u4E0E\u8FB9\u6846\u7EE7\u7EED\u7531\u5404\u81EA\u7684\u6309\u94AE\u7C7B\u51B3\u5B9A\uFF08\u4E0D\u8986\u5199\u89C6\u89C9\u5C5E\u6027\uFF0CR4\uFF09\u3002 */
+.t-fetch-models-btn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    min-width: 34px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
 
 /* === 02-components/icon-button.css === */
 /* ============================================================
@@ -23492,7 +23507,7 @@ function renderApiConnectionEditorHTML(options = {}) {
             <div class="t-form-group">
                 <label class="t-form-label">${escapeHtml3(labels.model)}</label>
                 ${flags.showManualModelInput ? `<div style="display:flex; gap:10px; margin-bottom:8px;"><select id="${escapeHtml3(ids.modelModeId || "")}" class="${escapeHtml3(classes.select)}" style="width:auto; cursor:pointer;"><option value="list">\u83B7\u53D6\u5217\u8868</option><option value="manual">\u624B\u52A8\u586B\u5199</option></select></div>` : ""}
-                <div id="${escapeHtml3(ids.modelListWrapId || "")}" style="display:flex; gap:10px;"><select id="${escapeHtml3(ids.modelId || "")}" class="${escapeHtml3(classes.select)}" style="cursor:pointer;"></select><button id="${escapeHtml3(ids.fetchModelsId || "")}" class="${escapeHtml3(classes.button)}" title="\u83B7\u53D6\u6A21\u578B\u5217\u8868">\u{1F504} \u83B7\u53D6\u5217\u8868</button></div>
+                <div id="${escapeHtml3(ids.modelListWrapId || "")}" style="display:flex; gap:10px;"><select id="${escapeHtml3(ids.modelId || "")}" class="${escapeHtml3(classes.select)}" style="cursor:pointer;"></select><button id="${escapeHtml3(ids.fetchModelsId || "")}" class="${escapeHtml3(classes.button)} t-fetch-models-btn" title="\u83B7\u53D6\u6A21\u578B\u5217\u8868" aria-label="\u83B7\u53D6\u6A21\u578B\u5217\u8868"><i class="fa-solid fa-rotate"></i></button></div>
                 ${flags.showManualModelInput ? `<div id="${escapeHtml3(ids.modelManualWrapId || "")}" style="display:none;"><input id="${escapeHtml3(ids.modelInputId || "")}" class="${escapeHtml3(classes.input)}" placeholder="\u6A21\u578B ID\uFF0C\u4F8B\u5982\uFF1Agpt-4o"></div>` : ""}
                 <div id="${escapeHtml3(ids.statusId || "")}" class="t-conn-hint">${escapeHtml3(values.statusText)}</div>
             </div>
@@ -23611,7 +23626,7 @@ function createApiConnectionEditor(options = {}) {
       $model.empty().append("<option selected>(ST \u8BBE\u7F6E)</option>").prop("disabled", true);
       $modelMode.prop("disabled", true);
       $modelInput.prop("disabled", true).val("");
-      $fetchBtn.prop("disabled", true).text("\u{1F504} \u83B7\u53D6\u5217\u8868");
+      $fetchBtn.prop("disabled", true).html('<i class="fa-solid fa-rotate"></i>');
       $modelListWrap.show();
       $modelManualWrap.hide();
       if ($urlHint.length) {
@@ -23628,7 +23643,7 @@ function createApiConnectionEditor(options = {}) {
     $model.prop("disabled", false);
     $modelMode.prop("disabled", !showManualModelInput).val(modelInputMode);
     $modelInput.prop("disabled", modelInputMode !== "manual").val(profile.model || defaultModel);
-    $fetchBtn.prop("disabled", modelInputMode === "manual").text("\u{1F504} \u83B7\u53D6\u5217\u8868");
+    $fetchBtn.prop("disabled", modelInputMode === "manual").html('<i class="fa-solid fa-rotate"></i>');
     $modelListWrap.toggle(modelInputMode !== "manual");
     $modelManualWrap.toggle(modelInputMode === "manual");
     if ($urlHint.length) $urlHint.hide();
@@ -23667,7 +23682,7 @@ function createApiConnectionEditor(options = {}) {
     }
     const requestVersion = ++modelRequestVersion;
     try {
-      $fetchBtn.prop("disabled", true).text("...");
+      $fetchBtn.prop("disabled", true).html('<i class="fa-solid fa-rotate fa-spin"></i>');
       setStatus2(statusTexts.loading, "muted");
       const models = uniqStrings(await modelFetcher({ apiUrl, apiKey: profile.key, profile, state: { ...state } }));
       if (requestVersion !== modelRequestVersion || profile.id !== state.activeProfileId) return [];
@@ -23698,7 +23713,7 @@ function createApiConnectionEditor(options = {}) {
       return [];
     } finally {
       if (requestVersion === modelRequestVersion) {
-        $fetchBtn.prop("disabled", false).text("\u{1F504} \u83B7\u53D6\u5217\u8868");
+        $fetchBtn.prop("disabled", false).html('<i class="fa-solid fa-rotate"></i>');
       }
     }
   };
