@@ -911,6 +911,14 @@
     --t-glass-insert-rgb: 85 105 122;
     /* #55697a 2 处 —— 提示词插入槽的分隔线（底）与标签描边，同值同族。 */
     --t-glass-miss-rgb: 182 193 205;
+    /* 小说模式阅读纸感（暗色：暖黑纸面，降低长时间阅读疲劳）—— 04-features/reader.css 消费 */
+    --t-reader-bg: #161311;
+    --t-reader-topbar-bg: rgb(22 19 17 / .92);
+    --t-reader-text: #cfc6b8;
+    --t-reader-user-edge: #6b5f4d;
+    --t-reader-user-bg: rgb(107 95 77 / .10);
+    --t-reader-user-text: #a89c8a;
+    --t-reader-code-bg: #1d1916;
     /* 3 处 —— 改写窗「未命中」的标签底(.12) + 标签描边(.35) + 行描边(.28)。
        原本是 #b1bdc9 / #bdc7d2 / #b0bcc9 三个写法，合到一档最大合成 ΔE 1.0。
        跨 surface / border 两种角色共用一个 token 在这里是对的：

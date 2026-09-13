@@ -2214,6 +2214,11 @@ export function openSettingsWindow() {
             //   快照，拿它覆盖等于把用户点图标切好的主题按快照翻回去，
             //   那就是同一个 bug 换了条路径。
             ui_theme: getUITheme(),
+            // 小说模式的阅读偏好由阅读界面自身即时落盘（readerWindow.js），
+            // 这里必须原样带回，否则本整体替换会把它吃掉（同 ui_theme 的老坑）
+            reader: (getExtData()?.appearance?.reader && typeof getExtData().appearance.reader === "object")
+                ? getExtData().appearance.reader
+                : undefined,
             border_color: tempApp.border_color || "#90cdf4",
             bg_color: tempApp.bg_color || "#2b2b2b",
             border_opacity: tempApp.border_opacity !== undefined ? tempApp.border_opacity : 100,

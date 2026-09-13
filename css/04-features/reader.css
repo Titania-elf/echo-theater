@@ -1,0 +1,179 @@
+/* css/04-features/reader.css —— 小说模式：全屏沉浸阅读 */
+
+:root {
+    /* 阅读正文字号基准：实际值由 readerWindow.js 按用户调节写在 overlay 上（层级更近，覆盖此默认） */
+    --t-reader-font-size: 18px;
+}
+
+/* 覆写 .t-overlay 的居中布局：阅读要全幅画布 */
+.t-reader-overlay {
+    align-items: stretch;
+    justify-content: stretch;
+    background: var(--t-reader-bg);
+    backdrop-filter: none;
+}
+
+.t-reader-shell {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* —— 顶栏（沉浸模式下滑出视口）—— */
+.t-reader-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    background: var(--t-reader-topbar-bg);
+    border-bottom: 1px solid var(--t-color-border-faint);
+    flex-shrink: 0;
+    transition: transform 0.22s ease;
+    z-index: 2;
+}
+
+.t-reader-topbar-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--t-glass-text-bright);
+    font-weight: 700;
+}
+
+.t-reader-topbar-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.t-reader-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85em;
+    color: var(--t-glass-text-soft);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.t-reader-fontctl {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.t-reader-font-val {
+    font-size: 0.8em;
+    color: var(--t-glass-text-soft);
+    min-width: 38px;
+    text-align: center;
+}
+
+/* 沉浸模式：顶栏滑出，正文铺满 */
+body.t-reader-zen .t-reader-topbar {
+    transform: translateY(-100%);
+    margin-bottom: -42px; /* 抵占位，正文上移铺满 */
+    opacity: 0;
+}
+
+/* —— 正文 —— */
+.t-reader-scroll {
+    overflow-y: auto;
+    flex: 1;
+    background: var(--t-reader-bg);
+}
+
+.t-reader-page {
+    max-width: 42em;
+    margin: 0 auto;
+    padding: 48px 24px 30vh;
+    color: var(--t-reader-text);
+}
+
+/* 屏外楼层跳过渲染（几百楼长聊也不卡） */
+.t-reader-flow {
+    font-size: var(--t-reader-font-size, 18px);
+    line-height: 1.9;
+    text-indent: 2em;
+    margin: 0 0 0.2em;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
+    word-break: break-word;
+}
+
+.t-reader-flow p {
+    margin: 0 0 0.4em;
+}
+
+/* messageFormatting 产出的首段常带 <p>，缩进交给段落自身 */
+.t-reader-flow p:first-of-type {
+    text-indent: 2em;
+}
+
+/* 用户楼层：竖线 + 浅前景 + 微弱底色，不缩进（与 AI 正文区分形态） */
+.t-reader-flow--user {
+    border-left: 2px solid var(--t-reader-user-edge);
+    background: var(--t-reader-user-bg);
+    color: var(--t-reader-user-text);
+    padding: 0.4em 0.8em;
+    margin: 0.6em 0;
+    text-indent: 0;
+    border-radius: 0 6px 6px 0;
+}
+
+.t-reader-flow--user p:first-of-type {
+    text-indent: 0;
+}
+
+/* 卷分隔：居中装饰符留白 */
+.t-reader-sep {
+    text-align: center;
+    color: var(--t-glass-text-faint);
+    font-size: 1.1em;
+    margin: 2.2em 0;
+    letter-spacing: 1.2em;
+    text-indent: 1.2em; /* 抵消最后一个字符的 letter-spacing，保持视觉居中 */
+    user-select: none;
+}
+
+/* 阅读态下的代码块/引文：极简配色，不抢正文 */
+.t-reader-flow pre {
+    text-indent: 0;
+    background: var(--t-reader-code-bg);
+    border: 1px solid var(--t-color-border-faint);
+    border-radius: 8px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-size: 0.86em;
+    line-height: 1.6;
+    margin: 0.8em 0;
+}
+
+.t-reader-flow blockquote {
+    text-indent: 0;
+    border-left: 3px solid var(--t-color-border-strong);
+    color: var(--t-glass-text-soft);
+    padding: 0.1em 1em;
+    margin: 0.8em 0;
+}
+
+.t-reader-flow img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 0.5em 0;
+}
+
+/* 窄屏：页边距收紧 */
+@media screen and (max-width: 600px) {
+    .t-reader-page {
+        padding: 24px 14px 25vh;
+    }
+
+    .t-reader-topbar {
+        padding: 8px 10px;
+    }
+}

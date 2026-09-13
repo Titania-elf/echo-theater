@@ -121,7 +121,13 @@ export const defaultSettings = {
         size: 56,
         ui_font_scale: 100,
         ui_theme: "dark",          // 插件 UI 主题: dark | light（Phase 6c）
-        show_timer: true           // 是否显示生成计时统计
+        show_timer: true,          // 是否显示生成计时统计
+        // 小说模式阅读偏好（readerWindow.js 即时读写；settingsWindow 保存时原样带回）
+        reader: {
+            fontSize: 18,          // 正文字号 px（14–26）
+            showUser: true,        // 显示用户楼层
+            showHidden: false      // 显示被隐藏的楼层
+        }
     },
     director: {
         instruction: ""  // 自由编辑的导演指令

@@ -116,6 +116,9 @@ async function openMenu($btn) {
         <button class="t-outline-entry-item" id="t-outline-entry-jump-latest" role="menuitem">
             <i class="fa-solid fa-angles-down"></i> 跳到最新AI回复
         </button>` : ""}
+        ${floorNavEnabled ? `<button class="t-outline-entry-item" id="t-outline-entry-reader" role="menuitem">
+            <i class="fa-solid fa-book-open"></i> 小说模式
+        </button>` : ""}
         ${hasPlans ? (hasSource ? "" : '<div class="t-outline-entry-tip">请先在方案页选择剧情推进来源方案</div>') : '<div class="t-outline-entry-tip">请先保存至少一个方案</div>'}
     </div>`;
 
@@ -181,6 +184,14 @@ async function openMenu($btn) {
         closeMenu();
         const { jumpToLatestAiFloor } = await import("./floorNav.js");
         jumpToLatestAiFloor();
+    });
+
+    $("#t-outline-entry-reader").on("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenu();
+        const { openReaderWindow } = await import("./readerWindow.js");
+        openReaderWindow();
     });
 
     setTimeout(() => {
