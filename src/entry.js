@@ -54,6 +54,7 @@ import { applyUITheme } from "./ui/theme.js";
 import { initOutlineEntryButton } from "./ui/outlineEntryButton.js";
 import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteEntryButton.js";
 import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
+import { initFloorNav, refreshFloorNavButton } from "./ui/floorNav.js";
 import { isInjectedTheaterMessage } from "./core/chatInjector.js";
 import { refreshOutlineEntryButton } from "./ui/outlineEntryButton.js";
 
@@ -205,6 +206,9 @@ function initCoreFeatures() {
 
     // 初始化消息气泡上的小剧场注入入口
     initChatInjectButton();
+
+    // 初始化楼层快捷操作（跳转 + 批量隐藏旧楼）
+    initFloorNav();
 }
 
 /**
@@ -1336,6 +1340,7 @@ async function loadExtensionSettings() {
     $("#cfg-outline-actions-enabled").prop("checked", extData.outline_entry.show_outline_actions === true);
     $("#cfg-rewrite-entry-enabled").prop("checked", extData.rewrite_entry.enabled === true);
     $("#cfg-chat-inject-enabled").prop("checked", extData.chat_inject.enabled === true);
+    $("#cfg-floor-nav-enabled").prop("checked", extData.floor_nav?.enabled !== false);
     $("#cfg-preset-persist-vars").prop("checked", extData.preset_macros.persist_variables === true);
 
     $("#cfg-float-edge-tuck").on("input", function () {
@@ -1405,6 +1410,18 @@ async function loadExtensionSettings() {
         saveExtData();
         refreshChatInjectButton();
         if (window.toastr) toastr.success(enabled ? "小剧场注入入口已启用" : "小剧场注入入口已关闭", "Titania Echo");
+    });
+
+    $("#cfg-floor-nav-enabled").on("input", function () {
+        const enabled = $(this).prop("checked") === true;
+        const data = getExtData();
+        if (!data.floor_nav || typeof data.floor_nav !== "object") {
+            data.floor_nav = { enabled: true };
+        }
+        data.floor_nav.enabled = enabled;
+        saveExtData();
+        refreshFloorNavButton();
+        if (window.toastr) toastr.success(enabled ? "楼层快捷操作已启用" : "楼层快捷操作已关闭", "Titania Echo");
     });
 
     $("#cfg-preset-persist-vars").on("input", function () {

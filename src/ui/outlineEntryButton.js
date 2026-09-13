@@ -92,6 +92,7 @@ async function openMenu($btn) {
 
     const data = getExtData();
     const rewriteEnabled = data?.rewrite_entry?.enabled === true;
+    const floorNavEnabled = data?.floor_nav?.enabled !== false;
     const showTheater = data?.outline_entry?.show_theater === true;
     const showOutlineActions = data?.outline_entry?.show_outline_actions === true;
     const hasPlans = getSavedPlanCount() > 0;
@@ -109,6 +110,12 @@ async function openMenu($btn) {
             <i class="fa-solid fa-list-check"></i> 生成大纲
         </button>` : ""}
         ${rewriteEnabled ? '<button class="t-outline-entry-item" id="t-outline-entry-open-rewrite" role="menuitem"><i class="fa-solid fa-highlighter"></i> 文本改写</button>' : ''}
+        ${floorNavEnabled ? `<button class="t-outline-entry-item" id="t-outline-entry-jump-top" role="menuitem">
+            <i class="fa-solid fa-angles-up"></i> 回到顶楼
+        </button>
+        <button class="t-outline-entry-item" id="t-outline-entry-jump-latest" role="menuitem">
+            <i class="fa-solid fa-angles-down"></i> 跳到最新AI回复
+        </button>` : ""}
         ${hasPlans ? (hasSource ? "" : '<div class="t-outline-entry-tip">请先在方案页选择剧情推进来源方案</div>') : '<div class="t-outline-entry-tip">请先保存至少一个方案</div>'}
     </div>`;
 
@@ -158,6 +165,22 @@ async function openMenu($btn) {
         closeMenu();
         const { openRewritePanelFromMenu } = await import("./rewriteEntryButton.js");
         openRewritePanelFromMenu();
+    });
+
+    $("#t-outline-entry-jump-top").on("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenu();
+        const { jumpToTopFloor } = await import("./floorNav.js");
+        await jumpToTopFloor();
+    });
+
+    $("#t-outline-entry-jump-latest").on("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenu();
+        const { jumpToLatestAiFloor } = await import("./floorNav.js");
+        jumpToLatestAiFloor();
     });
 
     setTimeout(() => {

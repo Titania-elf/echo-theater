@@ -1999,7 +1999,7 @@ function openLivePanel() {
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-wave-square"></i> 实时响应</div>
                 <div class="t-window-controls">
-                    <div class="t-window-close" id="t-rewrite-live-close"><i class="fa-solid fa-times"></i></div>
+                    <div class="t-window-close t-rewrite-close" id="t-rewrite-live-close"><i class="fa-solid fa-times"></i></div>
                 </div>
             </div>
             <div class="t-window-body t-rewrite-live-body">
@@ -2265,7 +2265,7 @@ function openSettingsPanel() {
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-sliders"></i> 文本改写设置</div>
                 <div class="t-window-controls">
-                    <div class="t-window-close" id="t-rewrite-settings-close"><i class="fa-solid fa-times"></i></div>
+                    <div class="t-window-close t-rewrite-close" id="t-rewrite-settings-close"><i class="fa-solid fa-times"></i></div>
                 </div>
             </div>
 
@@ -2449,8 +2449,8 @@ function openPanel() {
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-highlighter"></i> 文本改写</div>
                 <div class="t-window-controls">
                     <button class="t-rewrite-head-text-btn" id="t-rewrite-open-live" type="button" title="打开实时响应">实时响应</button>
-                    <div class="t-window-close t-rewrite-settings-btn" id="t-rewrite-open-settings" title="打开设置"><i class="fa-solid fa-sliders"></i></div>
-                    <div class="t-window-close" id="t-rewrite-close"><i class="fa-solid fa-times"></i></div>
+                    <div class="t-window-close t-rewrite-close t-rewrite-settings-btn" id="t-rewrite-open-settings" title="打开设置"><i class="fa-solid fa-sliders"></i></div>
+                    <div class="t-window-close t-rewrite-close" id="t-rewrite-close"><i class="fa-solid fa-times"></i></div>
                 </div>
             </div>
 

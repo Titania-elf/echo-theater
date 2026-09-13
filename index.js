@@ -209,6 +209,10 @@ var init_defaults = __esm({
         speaker_name: "\u56DE\u58F0\u5C0F\u5267\u573A"
         // 仅界面显示用，narrator 类型不会把名字带进提示词
       },
+      // 楼层快捷操作（入口菜单跳转项 + 气泡批量隐藏按钮）
+      floor_nav: {
+        enabled: true
+      },
       // 导入预设的宏求值行为
       preset_macros: {
         // 预设里的 {{setvar::}} 等写入宏默认只在本次提示词构建内有效，构建完成后还原，
@@ -4517,6 +4521,63 @@ function loadCssFiles() {
      scriptManager \u7B49\u7A97\u53E3\u5728\u7A84\u5C4F\u5931\u53BB\u8FD9\u5904\u6536\u7D27\uFF0C\u662F\u8DE8 9 \u4E2A\u7A97\u53E3\u7684\u884C\u4E3A\u53D8\u66F4\u3002 */
 @media screen and (max-width: 600px) {
     .t-header {
+        padding: 10px;
+    }
+}
+
+/* \u2014\u2014 \u73BB\u7483\u7A97\u53E3\u5934\u90E8\uFF08.t-window-header \u65CF\uFF09\u2014\u2014
+   \u8FD9\u5957\u7C7B\u540D\u88AB chatInjectButton / rewriteEntryButton / storyOutlineWindow
+   \u7684\u7A97\u53E3\u5916\u58F3\u4F7F\u7528\uFF0C\u4F46\u6B64\u524D\u5168\u5E93\u96F6\u5B9A\u4E49\uFF1A\u5934\u90E8\u5185\u7684\u6807\u9898\u4E0E\u6309\u94AE\u533A\u7AD6\u5411\u5806\u53E0\u3001
+   \u65E0\u5206\u9694\u4E0E\u5185\u8FB9\u8DDD\u3002\u8FD9\u91CC\u8865\u4E0A\u4E0E .t-header \u540C\u6784\u7684\u6807\u51C6\u5E03\u5C40\u3002 */
+.t-window-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--t-color-border-strong);
+    background: var(--t-color-window-header);
+    flex-shrink: 0;
+}
+
+.t-window-title {
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.t-window-title i {
+    color: var(--t-color-accent);
+}
+
+.t-window-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.t-window-close {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    color: var(--t-color-text-muted);
+    transition: 0.2s;
+}
+
+.t-window-close:hover {
+    color: var(--t-color-text-strong);
+    background: var(--t-color-surface-hover);
+}
+
+@media screen and (max-width: 600px) {
+    .t-window-header {
         padding: 10px;
     }
 }
@@ -17152,9 +17213,9 @@ td[data-edit-field] .t-cell-editor {
 
 #t-rewrite-overlay .t-rewrite-title i { color: var(--t-color-accent); }
 
-#t-rewrite-overlay .t-window-close { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--t-color-surface-veil); border: 1px solid var(--t-color-border-faint); transition: all 0.18s ease; }
+#t-rewrite-overlay .t-rewrite-close { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--t-color-surface-veil); border: 1px solid var(--t-color-border-faint); transition: all 0.18s ease; }
 
-#t-rewrite-overlay .t-window-close:hover { background: var(--t-color-surface-hover); border-color: var(--t-color-accent-border-strong); }
+#t-rewrite-overlay .t-rewrite-close:hover { background: var(--t-color-surface-hover); border-color: var(--t-color-accent-border-strong); }
 
 #t-rewrite-overlay .t-rewrite-body { flex: 1; overflow: hidden; display: grid; grid-template-columns: minmax(340px, 0.92fr) minmax(440px, 1.08fr); gap: 16px; padding: 16px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgb(var(--t-accent-sky-rgb) / 0) 36%), radial-gradient(circle at 0% 100%, var(--t-color-brand-veil) 0%, rgb(var(--t-accent-brand-rgb) / 0) 32%), var(--t-glass-body); }
 
@@ -17525,9 +17586,7 @@ td[data-edit-field] .t-cell-editor {
 }
 
 @media (max-width: 420px) {
-    #t-rewrite-overlay .t-window-close,
- #t-rewrite-settings-overlay .t-window-close,
- #t-rewrite-live-overlay .t-window-close { width: 28px; height: 28px; border-radius: 8px; }
+    #t-rewrite-overlay .t-rewrite-close, #t-rewrite-settings-overlay .t-rewrite-close, #t-rewrite-live-overlay .t-rewrite-close { width: 28px; height: 28px; border-radius: 8px; }
     #t-rewrite-overlay #t-rewrite-trigger { height: 34px; min-height: 34px; font-size: 0.84em; padding: 0 12px; }
     #t-rewrite-overlay .t-rewrite-json-box { font-size: 0.72em; }
     #t-rewrite-overlay,
@@ -17607,7 +17666,7 @@ td[data-edit-field] .t-cell-editor {
     min-height: 300px;
 }
 
-#t-rewrite-settings-overlay .t-window-close {
+#t-rewrite-settings-overlay .t-rewrite-close {
     width: 30px;
     height: 30px;
     border-radius: 10px;
@@ -17618,7 +17677,7 @@ td[data-edit-field] .t-cell-editor {
     box-shadow: 0 8px 18px var(--t-shadow-ink-24);
 }
 
-#t-rewrite-settings-overlay .t-window-close:hover {
+#t-rewrite-settings-overlay .t-rewrite-close:hover {
     border-color: var(--t-color-accent-border-hover);
     background: linear-gradient(145deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover));
 }
@@ -28237,7 +28296,7 @@ function openLivePanel() {
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-wave-square"></i> \u5B9E\u65F6\u54CD\u5E94</div>
                 <div class="t-window-controls">
-                    <div class="t-window-close" id="t-rewrite-live-close"><i class="fa-solid fa-times"></i></div>
+                    <div class="t-window-close t-rewrite-close" id="t-rewrite-live-close"><i class="fa-solid fa-times"></i></div>
                 </div>
             </div>
             <div class="t-window-body t-rewrite-live-body">
@@ -28490,7 +28549,7 @@ function openSettingsPanel() {
             <div class="t-window-header t-rewrite-head">
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-sliders"></i> \u6587\u672C\u6539\u5199\u8BBE\u7F6E</div>
                 <div class="t-window-controls">
-                    <div class="t-window-close" id="t-rewrite-settings-close"><i class="fa-solid fa-times"></i></div>
+                    <div class="t-window-close t-rewrite-close" id="t-rewrite-settings-close"><i class="fa-solid fa-times"></i></div>
                 </div>
             </div>
 
@@ -28677,8 +28736,8 @@ function openPanel() {
                 <div class="t-window-title t-rewrite-title"><i class="fa-solid fa-highlighter"></i> \u6587\u672C\u6539\u5199</div>
                 <div class="t-window-controls">
                     <button class="t-rewrite-head-text-btn" id="t-rewrite-open-live" type="button" title="\u6253\u5F00\u5B9E\u65F6\u54CD\u5E94">\u5B9E\u65F6\u54CD\u5E94</button>
-                    <div class="t-window-close t-rewrite-settings-btn" id="t-rewrite-open-settings" title="\u6253\u5F00\u8BBE\u7F6E"><i class="fa-solid fa-sliders"></i></div>
-                    <div class="t-window-close" id="t-rewrite-close"><i class="fa-solid fa-times"></i></div>
+                    <div class="t-window-close t-rewrite-close t-rewrite-settings-btn" id="t-rewrite-open-settings" title="\u6253\u5F00\u8BBE\u7F6E"><i class="fa-solid fa-sliders"></i></div>
+                    <div class="t-window-close t-rewrite-close" id="t-rewrite-close"><i class="fa-solid fa-times"></i></div>
                 </div>
             </div>
 
@@ -28888,8 +28947,176 @@ var init_rewriteEntryButton = __esm({
   }
 });
 
-// src/ui/outlineEntryButton.js
+// src/ui/floorNav.js
+var floorNav_exports = {};
+__export(floorNav_exports, {
+  initFloorNav: () => initFloorNav,
+  jumpToLatestAiFloor: () => jumpToLatestAiFloor,
+  jumpToTopFloor: () => jumpToTopFloor,
+  refreshFloorNavButton: () => refreshFloorNavButton
+});
+import { eventSource as eventSource2, event_types as event_types2, showMoreMessages } from "../../../../script.js";
+import { hideChatMessageRange } from "../../../chats.js";
 function isEnabled2() {
+  return getExtData()?.floor_nav?.enabled !== false;
+}
+function getChat() {
+  try {
+    const chat2 = SillyTavern.getContext().chat;
+    return Array.isArray(chat2) ? chat2 : [];
+  } catch {
+    return [];
+  }
+}
+async function jumpToTopFloor() {
+  const chat2 = getChat();
+  if (chat2.length === 0) {
+    if (window.toastr) toastr.warning("\u5F53\u524D\u6CA1\u6709\u804A\u5929\u697C\u5C42", "Titania Echo");
+    return;
+  }
+  let prevFirstMesId = Number($("#chat .mes").first().attr("mesid"));
+  while (!document.querySelector('.mes[mesid="0"]')) {
+    try {
+      await showMoreMessages();
+    } catch (e) {
+      TitaniaLogger.warn("\u8865\u6E32\u67D3\u5386\u53F2\u697C\u5C42\u5931\u8D25", e?.message || String(e));
+      break;
+    }
+    if (document.querySelector('.mes[mesid="0"]')) break;
+    const nextFirstMesId = Number($("#chat .mes").first().attr("mesid"));
+    if (!Number.isFinite(nextFirstMesId) || nextFirstMesId >= prevFirstMesId) break;
+    prevFirstMesId = nextFirstMesId;
+  }
+  const top = document.querySelector('.mes[mesid="0"]');
+  if (top) {
+    top.scrollIntoView({ block: "start", behavior: "auto" });
+  } else {
+    if (window.toastr) toastr.warning("\u672A\u80FD\u5B9A\u4F4D\u5230\u9876\u697C", "Titania Echo");
+  }
+}
+function jumpToLatestAiFloor() {
+  const chat2 = getChat();
+  for (let i = chat2.length - 1; i >= 0; i--) {
+    if (chat2[i] && !chat2[i].is_user) {
+      const el = document.querySelector(`.mes[mesid="${i}"]`);
+      if (el) {
+        el.scrollIntoView({ block: "start", behavior: "auto" });
+        return;
+      }
+      break;
+    }
+  }
+  try {
+    SillyTavern.getContext().scrollChatToBottom();
+  } catch {
+    $("#chat").scrollTop($("#chat")[0]?.scrollHeight || 0);
+  }
+}
+function removeAllButtons() {
+  document.querySelectorAll(`#chat .${BTN_CLASS}`).forEach((node) => node.remove());
+}
+function refreshButtons() {
+  if (!isEnabled2()) {
+    removeAllButtons();
+    return;
+  }
+  const messages = document.querySelectorAll("#chat .mes");
+  for (const message of messages) {
+    const mesid = Number(message.getAttribute("mesid"));
+    if (!Number.isFinite(mesid) || mesid <= 0) continue;
+    const buttonArea = message.querySelector(".extraMesButtons");
+    if (!buttonArea) continue;
+    if (buttonArea.querySelector(`.${BTN_CLASS}`)) continue;
+    const btn = document.createElement("div");
+    btn.className = `mes_button ${BTN_CLASS} fa-solid fa-angles-up`;
+    btn.title = "\u9690\u85CF\u6B64\u697C\u4EE5\u4E0A\u5168\u90E8\u65E7\u697C\uFF08\u518D\u70B9\u6062\u590D\uFF09";
+    btn.setAttribute("tabindex", "0");
+    buttonArea.appendChild(btn);
+  }
+}
+function scheduleRefreshButtons(delay = 0) {
+  if (refreshQueued) return;
+  refreshQueued = true;
+  setTimeout(() => {
+    refreshQueued = false;
+    try {
+      refreshButtons();
+    } catch (e) {
+      TitaniaLogger.warn("\u697C\u5C42\u9690\u85CF\u6309\u94AE\u6302\u8F7D\u5931\u8D25", e?.message || String(e));
+    }
+  }, delay);
+}
+function refreshFloorNavButton() {
+  scheduleRefreshButtons(0);
+}
+async function onFloorHideClick(mesid) {
+  const chat2 = getChat();
+  const range = chat2.slice(0, mesid);
+  if (range.length === 0) return;
+  const allHidden = range.every((m) => m?.is_system === true);
+  if (!allHidden) {
+    const ok = window.confirm(
+      `\u5C06\u9690\u85CF\u7B2C 0 ~ ${mesid - 1} \u697C\uFF08\u5171 ${mesid} \u697C\uFF09\u3002
+
+\u9690\u85CF\u7684\u697C\u5C42\u53D8\u7070\u3001\u4E0D\u518D\u8FDB\u5165\u63D0\u793A\u8BCD\uFF08\u53EF\u7528\u539F\u751F\u773C\u775B\u56FE\u6807\u5355\u72EC\u6062\u590D\uFF0C\u6216\u518D\u70B9\u672C\u6309\u94AE\u5168\u90E8\u6062\u590D\uFF09\u3002
+
+\u786E\u8BA4\u9690\u85CF\uFF1F`
+    );
+    if (!ok) return;
+  }
+  try {
+    await hideChatMessageRange(0, mesid - 1, allHidden);
+    if (window.toastr) {
+      toastr.success(
+        allHidden ? `\u5DF2\u6062\u590D\u7B2C 0 ~ ${mesid - 1} \u697C` : `\u5DF2\u9690\u85CF\u7B2C 0 ~ ${mesid - 1} \u697C\uFF08\u672C\u697C\u53CA\u4EE5\u4E0B\u4E0D\u53D7\u5F71\u54CD\uFF09`,
+        "Titania Echo"
+      );
+    }
+  } catch (e) {
+    TitaniaLogger.warn("\u6279\u91CF\u9690\u85CF\u5931\u8D25", e?.message || String(e));
+    if (window.toastr) toastr.error(`\u6279\u91CF\u9690\u85CF\u5931\u8D25\uFF1A${e?.message || String(e)}`, "Titania Echo");
+  }
+}
+function initFloorNav() {
+  if (listenersBound) {
+    scheduleRefreshButtons(0);
+    return;
+  }
+  listenersBound = true;
+  $(document).on("click", `.${BTN_CLASS}`, function(event) {
+    event.stopPropagation();
+    const mesid = Number($(this).closest(".mes").attr("mesid"));
+    if (!Number.isFinite(mesid)) return;
+    void onFloorHideClick(mesid);
+  });
+  const rerenderEvents = [
+    event_types2.CHAT_CHANGED,
+    event_types2.CHARACTER_MESSAGE_RENDERED,
+    event_types2.USER_MESSAGE_RENDERED,
+    event_types2.MESSAGE_SWIPED,
+    event_types2.MESSAGE_DELETED,
+    event_types2.MORE_MESSAGES_LOADED
+  ];
+  for (const eventName of rerenderEvents) {
+    if (!eventName) continue;
+    eventSource2.on(eventName, () => scheduleRefreshButtons(0));
+  }
+  scheduleRefreshButtons(300);
+  TitaniaLogger.info("\u697C\u5C42\u5FEB\u6377\u64CD\u4F5C\u5DF2\u521D\u59CB\u5316");
+}
+var BTN_CLASS, listenersBound, refreshQueued;
+var init_floorNav = __esm({
+  "src/ui/floorNav.js"() {
+    init_storage();
+    init_logger();
+    BTN_CLASS = "titania-floorhide-btn";
+    listenersBound = false;
+    refreshQueued = false;
+  }
+});
+
+// src/ui/outlineEntryButton.js
+function isEnabled3() {
   const data = getExtData();
   return data?.outline_entry?.enabled === true;
 }
@@ -28959,6 +29186,7 @@ async function openMenu($btn) {
   closeMenu();
   const data = getExtData();
   const rewriteEnabled = data?.rewrite_entry?.enabled === true;
+  const floorNavEnabled = data?.floor_nav?.enabled !== false;
   const showTheater = data?.outline_entry?.show_theater === true;
   const showOutlineActions = data?.outline_entry?.show_outline_actions === true;
   const hasPlans = getSavedPlanCount() > 0;
@@ -28976,6 +29204,12 @@ async function openMenu($btn) {
             <i class="fa-solid fa-list-check"></i> \u751F\u6210\u5927\u7EB2
         </button>` : ""}
         ${rewriteEnabled ? '<button class="t-outline-entry-item" id="t-outline-entry-open-rewrite" role="menuitem"><i class="fa-solid fa-highlighter"></i> \u6587\u672C\u6539\u5199</button>' : ""}
+        ${floorNavEnabled ? `<button class="t-outline-entry-item" id="t-outline-entry-jump-top" role="menuitem">
+            <i class="fa-solid fa-angles-up"></i> \u56DE\u5230\u9876\u697C
+        </button>
+        <button class="t-outline-entry-item" id="t-outline-entry-jump-latest" role="menuitem">
+            <i class="fa-solid fa-angles-down"></i> \u8DF3\u5230\u6700\u65B0AI\u56DE\u590D
+        </button>` : ""}
         ${hasPlans ? hasSource ? "" : '<div class="t-outline-entry-tip">\u8BF7\u5148\u5728\u65B9\u6848\u9875\u9009\u62E9\u5267\u60C5\u63A8\u8FDB\u6765\u6E90\u65B9\u6848</div>' : '<div class="t-outline-entry-tip">\u8BF7\u5148\u4FDD\u5B58\u81F3\u5C11\u4E00\u4E2A\u65B9\u6848</div>'}
     </div>`;
   $("body").append(menuHtml);
@@ -29020,6 +29254,20 @@ async function openMenu($btn) {
     closeMenu();
     const { openRewritePanelFromMenu: openRewritePanelFromMenu2 } = await Promise.resolve().then(() => (init_rewriteEntryButton(), rewriteEntryButton_exports));
     openRewritePanelFromMenu2();
+  });
+  $("#t-outline-entry-jump-top").on("click", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeMenu();
+    const { jumpToTopFloor: jumpToTopFloor2 } = await Promise.resolve().then(() => (init_floorNav(), floorNav_exports));
+    await jumpToTopFloor2();
+  });
+  $("#t-outline-entry-jump-latest").on("click", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeMenu();
+    const { jumpToLatestAiFloor: jumpToLatestAiFloor2 } = await Promise.resolve().then(() => (init_floorNav(), floorNav_exports));
+    jumpToLatestAiFloor2();
   });
   setTimeout(() => {
     $(document).on("mousedown.titaniaOutlineMenu", (evt) => {
@@ -29072,7 +29320,7 @@ function ensureButton() {
   bindClick($btn);
 }
 function syncEntryButton2() {
-  if (!isEnabled2()) {
+  if (!isEnabled3()) {
     removeButton2();
     return;
   }
@@ -39675,7 +39923,7 @@ init_continuationStore();
 init_favsStore();
 init_scriptStore();
 import { extension_settings as extension_settings2 } from "../../../extensions.js";
-import { saveSettingsDebounced as saveSettingsDebounced2, eventSource as eventSource4, event_types as event_types4 } from "../../../../script.js";
+import { saveSettingsDebounced as saveSettingsDebounced2, eventSource as eventSource5, event_types as event_types5 } from "../../../../script.js";
 
 // src/core/extensionUpdate.js
 init_defaults();
@@ -39902,7 +40150,7 @@ init_rewriteEntryButton();
 
 // src/ui/chatInjectButton.js
 init_state();
-import { eventSource as eventSource3, event_types as event_types3 } from "../../../../script.js";
+import { eventSource as eventSource4, event_types as event_types4 } from "../../../../script.js";
 
 // src/core/chatInjector.js
 init_chatTagWhitelist();
@@ -39914,8 +40162,8 @@ import {
   addOneMessage,
   saveChatConditional as saveChatConditional3,
   reloadCurrentChat as reloadCurrentChat2,
-  eventSource as eventSource2,
-  event_types as event_types2,
+  eventSource as eventSource3,
+  event_types as event_types3,
   system_avatar
 } from "../../../../script.js";
 import { system_message_types } from "../../../system-messages.js";
@@ -40038,18 +40286,18 @@ async function injectTheaterToChat(options = {}) {
     if (appended) {
       chat.push(message);
       const messageId = chat.length - 1;
-      await eventSource2.emit(event_types2.MESSAGE_SENT, messageId);
+      await eventSource3.emit(event_types3.MESSAGE_SENT, messageId);
       addOneMessage(message);
-      await eventSource2.emit(event_types2.USER_MESSAGE_RENDERED, messageId);
+      await eventSource3.emit(event_types3.USER_MESSAGE_RENDERED, messageId);
       await saveChatConditional3();
       TitaniaLogger.info("\u5C0F\u5267\u573A\u5DF2\u8FFD\u52A0\u5230\u804A\u5929\u672B\u5C3E", { messageId, scriptName, visibleToAI });
       return { messageId, appended: true };
     }
     chat.splice(clamped, 0, message);
     await saveChatConditional3();
-    await eventSource2.emit(event_types2.MESSAGE_SENT, clamped);
+    await eventSource3.emit(event_types3.MESSAGE_SENT, clamped);
     await reloadCurrentChat2();
-    await eventSource2.emit(event_types2.USER_MESSAGE_RENDERED, clamped);
+    await eventSource3.emit(event_types3.USER_MESSAGE_RENDERED, clamped);
     scrollToMessage(clamped);
     TitaniaLogger.info("\u5C0F\u5267\u573A\u5DF2\u63D2\u5165\u804A\u5929", { messageId: clamped, scriptName, visibleToAI });
     return { messageId: clamped, appended: false };
@@ -40068,51 +40316,51 @@ function scrollToMessage(messageId) {
 
 // src/ui/chatInjectButton.js
 init_logger();
-var BTN_CLASS = "titania-inject-btn";
+var BTN_CLASS2 = "titania-inject-btn";
 var OVERLAY_ID2 = "t-chat-inject-overlay";
-var listenersBound = false;
-var refreshQueued = false;
+var listenersBound2 = false;
+var refreshQueued2 = false;
 var lastVisibleChoice = null;
 function escapeHtmlText3(str) {
   return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
-function isEnabled3() {
+function isEnabled4() {
   return getChatInjectConfig().enabled;
 }
-function removeAllButtons() {
-  document.querySelectorAll(`#chat .${BTN_CLASS}`).forEach((node) => node.remove());
+function removeAllButtons2() {
+  document.querySelectorAll(`#chat .${BTN_CLASS2}`).forEach((node) => node.remove());
 }
-function refreshButtons() {
-  if (!isEnabled3()) {
-    removeAllButtons();
+function refreshButtons2() {
+  if (!isEnabled4()) {
+    removeAllButtons2();
     return;
   }
   const messages = document.querySelectorAll("#chat .mes");
   for (const message of messages) {
     const buttonArea = message.querySelector(".extraMesButtons");
     if (!buttonArea) continue;
-    if (buttonArea.querySelector(`.${BTN_CLASS}`)) continue;
+    if (buttonArea.querySelector(`.${BTN_CLASS2}`)) continue;
     const btn = document.createElement("div");
-    btn.className = `mes_button ${BTN_CLASS} fa-solid fa-masks-theater`;
+    btn.className = `mes_button ${BTN_CLASS2} fa-solid fa-masks-theater`;
     btn.title = "\u6CE8\u5165\u5C0F\u5267\u573A\u5230\u6B64\u697C\u4E0B\u65B9";
     btn.setAttribute("tabindex", "0");
     buttonArea.appendChild(btn);
   }
 }
-function scheduleRefreshButtons(delay = 0) {
-  if (refreshQueued) return;
-  refreshQueued = true;
+function scheduleRefreshButtons2(delay = 0) {
+  if (refreshQueued2) return;
+  refreshQueued2 = true;
   setTimeout(() => {
-    refreshQueued = false;
+    refreshQueued2 = false;
     try {
-      refreshButtons();
+      refreshButtons2();
     } catch (e) {
       TitaniaLogger.warn("\u6CE8\u5165\u6309\u94AE\u6302\u8F7D\u5931\u8D25", e?.message || String(e));
     }
   }, delay);
 }
 function refreshChatInjectButton() {
-  scheduleRefreshButtons(0);
+  scheduleRefreshButtons2(0);
 }
 function collectInjectableItems() {
   const items = Array.isArray(GlobalState.sceneHistory?.items) ? GlobalState.sceneHistory.items : [];
@@ -40240,12 +40488,12 @@ function openInjectPickerWindow(mesid) {
   });
 }
 function initChatInjectButton() {
-  if (listenersBound) {
-    scheduleRefreshButtons(0);
+  if (listenersBound2) {
+    scheduleRefreshButtons2(0);
     return;
   }
-  listenersBound = true;
-  $(document).on("click", `.${BTN_CLASS}`, function(event) {
+  listenersBound2 = true;
+  $(document).on("click", `.${BTN_CLASS2}`, function(event) {
     event.stopPropagation();
     const mesid = Number($(this).closest(".mes").attr("mesid"));
     if (!Number.isFinite(mesid)) {
@@ -40255,22 +40503,23 @@ function initChatInjectButton() {
     openInjectPickerWindow(mesid);
   });
   const rerenderEvents = [
-    event_types3.CHAT_CHANGED,
-    event_types3.CHARACTER_MESSAGE_RENDERED,
-    event_types3.USER_MESSAGE_RENDERED,
-    event_types3.MESSAGE_SWIPED,
-    event_types3.MESSAGE_DELETED,
-    event_types3.MORE_MESSAGES_LOADED
+    event_types4.CHAT_CHANGED,
+    event_types4.CHARACTER_MESSAGE_RENDERED,
+    event_types4.USER_MESSAGE_RENDERED,
+    event_types4.MESSAGE_SWIPED,
+    event_types4.MESSAGE_DELETED,
+    event_types4.MORE_MESSAGES_LOADED
   ];
   for (const eventName of rerenderEvents) {
     if (!eventName) continue;
-    eventSource3.on(eventName, () => scheduleRefreshButtons(0));
+    eventSource4.on(eventName, () => scheduleRefreshButtons2(0));
   }
-  scheduleRefreshButtons(300);
+  scheduleRefreshButtons2(300);
   TitaniaLogger.info("\u5C0F\u5267\u573A\u6CE8\u5165\u5165\u53E3\u5DF2\u521D\u59CB\u5316");
 }
 
 // src/entry.js
+init_floorNav();
 init_outlineEntryButton();
 async function onGenerationEnded() {
   const extData = getExtData();
@@ -40348,14 +40597,15 @@ function initCoreFeatures() {
   }
   applyUIFontScale(extData.appearance?.ui_font_scale);
   applyUITheme(extData.appearance?.ui_theme);
-  eventSource4.on(event_types4.GENERATION_ENDED, onGenerationEnded);
-  eventSource4.on(event_types4.CHAT_CHANGED, () => {
+  eventSource5.on(event_types5.GENERATION_ENDED, onGenerationEnded);
+  eventSource5.on(event_types5.CHAT_CHANGED, () => {
     void restoreContinuationForCurrentChat().catch((error) => console.error("Titania: \u7EED\u5199\u5386\u53F2\u6062\u590D\u5931\u8D25", error));
   });
   void restoreContinuationForCurrentChat().catch((error) => console.error("Titania: \u521D\u59CB\u7EED\u5199\u5386\u53F2\u6062\u590D\u5931\u8D25", error));
   initOutlineEntryButton();
   initRewriteEntryButton();
   initChatInjectButton();
+  initFloorNav();
 }
 function loadQueueConfig() {
   try {
@@ -41121,6 +41371,7 @@ ${hydration.error}`,
   $("#cfg-outline-actions-enabled").prop("checked", extData.outline_entry.show_outline_actions === true);
   $("#cfg-rewrite-entry-enabled").prop("checked", extData.rewrite_entry.enabled === true);
   $("#cfg-chat-inject-enabled").prop("checked", extData.chat_inject.enabled === true);
+  $("#cfg-floor-nav-enabled").prop("checked", extData.floor_nav?.enabled !== false);
   $("#cfg-preset-persist-vars").prop("checked", extData.preset_macros.persist_variables === true);
   $("#cfg-float-edge-tuck").on("input", function() {
     const enabled = $(this).prop("checked") === true;
@@ -41183,6 +41434,17 @@ ${hydration.error}`,
     saveExtData();
     refreshChatInjectButton();
     if (window.toastr) toastr.success(enabled ? "\u5C0F\u5267\u573A\u6CE8\u5165\u5165\u53E3\u5DF2\u542F\u7528" : "\u5C0F\u5267\u573A\u6CE8\u5165\u5165\u53E3\u5DF2\u5173\u95ED", "Titania Echo");
+  });
+  $("#cfg-floor-nav-enabled").on("input", function() {
+    const enabled = $(this).prop("checked") === true;
+    const data = getExtData();
+    if (!data.floor_nav || typeof data.floor_nav !== "object") {
+      data.floor_nav = { enabled: true };
+    }
+    data.floor_nav.enabled = enabled;
+    saveExtData();
+    refreshFloorNavButton();
+    if (window.toastr) toastr.success(enabled ? "\u697C\u5C42\u5FEB\u6377\u64CD\u4F5C\u5DF2\u542F\u7528" : "\u697C\u5C42\u5FEB\u6377\u64CD\u4F5C\u5DF2\u5173\u95ED", "Titania Echo");
   });
   $("#cfg-preset-persist-vars").on("input", function() {
     const enabled = $(this).prop("checked") === true;

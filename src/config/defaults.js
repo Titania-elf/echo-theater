@@ -200,6 +200,10 @@ export const defaultSettings = {
         visible_to_ai: true,      // 注入时默认让 AI 看到；注入后可用气泡上的眼睛图标切换
         speaker_name: "回声小剧场" // 仅界面显示用，narrator 类型不会把名字带进提示词
     },
+    // 楼层快捷操作（入口菜单跳转项 + 气泡批量隐藏按钮）
+    floor_nav: {
+        enabled: true
+    },
     // 导入预设的宏求值行为
     preset_macros: {
         // 预设里的 {{setvar::}} 等写入宏默认只在本次提示词构建内有效，构建完成后还原，

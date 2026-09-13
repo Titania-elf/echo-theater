@@ -43,3 +43,60 @@
         padding: 10px;
     }
 }
+
+/* —— 玻璃窗口头部（.t-window-header 族）——
+   这套类名被 chatInjectButton / rewriteEntryButton / storyOutlineWindow
+   的窗口外壳使用，但此前全库零定义：头部内的标题与按钮区竖向堆叠、
+   无分隔与内边距。这里补上与 .t-header 同构的标准布局。 */
+.t-window-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--t-color-border-strong);
+    background: var(--t-color-window-header);
+    flex-shrink: 0;
+}
+
+.t-window-title {
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.t-window-title i {
+    color: var(--t-color-accent);
+}
+
+.t-window-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.t-window-close {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    color: var(--t-color-text-muted);
+    transition: 0.2s;
+}
+
+.t-window-close:hover {
+    color: var(--t-color-text-strong);
+    background: var(--t-color-surface-hover);
+}
+
+@media screen and (max-width: 600px) {
+    .t-window-header {
+        padding: 10px;
+    }
+}

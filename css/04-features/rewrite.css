@@ -34,9 +34,9 @@
 
 #t-rewrite-overlay .t-rewrite-title i { color: var(--t-color-accent); }
 
-#t-rewrite-overlay .t-window-close { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--t-color-surface-veil); border: 1px solid var(--t-color-border-faint); transition: all 0.18s ease; }
+#t-rewrite-overlay .t-rewrite-close { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--t-color-surface-veil); border: 1px solid var(--t-color-border-faint); transition: all 0.18s ease; }
 
-#t-rewrite-overlay .t-window-close:hover { background: var(--t-color-surface-hover); border-color: var(--t-color-accent-border-strong); }
+#t-rewrite-overlay .t-rewrite-close:hover { background: var(--t-color-surface-hover); border-color: var(--t-color-accent-border-strong); }
 
 #t-rewrite-overlay .t-rewrite-body { flex: 1; overflow: hidden; display: grid; grid-template-columns: minmax(340px, 0.92fr) minmax(440px, 1.08fr); gap: 16px; padding: 16px; background: radial-gradient(circle at 100% 0%, var(--t-color-accent-veil) 0%, rgb(var(--t-accent-sky-rgb) / 0) 36%), radial-gradient(circle at 0% 100%, var(--t-color-brand-veil) 0%, rgb(var(--t-accent-brand-rgb) / 0) 32%), var(--t-glass-body); }
 
@@ -348,7 +348,7 @@
 }
 
 @media (max-width: 420px) {
-    #t-rewrite-overlay .t-window-close, #t-rewrite-settings-overlay .t-window-close, #t-rewrite-live-overlay .t-window-close { width: 28px; height: 28px; border-radius: 8px; }
+    #t-rewrite-overlay .t-rewrite-close, #t-rewrite-settings-overlay .t-rewrite-close, #t-rewrite-live-overlay .t-rewrite-close { width: 28px; height: 28px; border-radius: 8px; }
     #t-rewrite-overlay #t-rewrite-trigger { height: 34px; min-height: 34px; font-size: 0.84em; padding: 0 12px; }
     #t-rewrite-overlay .t-rewrite-json-box { font-size: 0.72em; }
     #t-rewrite-overlay, #t-rewrite-settings-overlay, #t-rewrite-live-overlay { padding: max(6px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom)); }
@@ -415,7 +415,7 @@
     min-height: 300px;
 }
 
-#t-rewrite-settings-overlay .t-window-close {
+#t-rewrite-settings-overlay .t-rewrite-close {
     width: 30px;
     height: 30px;
     border-radius: 10px;
@@ -426,7 +426,7 @@
     box-shadow: 0 8px 18px var(--t-shadow-ink-24);
 }
 
-#t-rewrite-settings-overlay .t-window-close:hover {
+#t-rewrite-settings-overlay .t-rewrite-close:hover {
     border-color: var(--t-color-accent-border-hover);
     background: linear-gradient(145deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover));
 }

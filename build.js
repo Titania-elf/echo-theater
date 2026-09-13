@@ -139,7 +139,8 @@ const buildOptions = {
         '../../../sse-stream.js',
         '../../../tokenizers.js',
         '../../../system-messages.js',
-        '../../../RossAscends-mods.js'
+        '../../../RossAscends-mods.js',
+        '../../../chats.js'
     ],
 
     // 保留原始模块路径（相对于 dist 目录）
