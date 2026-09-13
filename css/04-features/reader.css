@@ -140,6 +140,22 @@ body.t-reader-zen .t-reader-topbar {
     user-select: none;
 }
 
+/* 引号去重：messageFormatting 把引号句包成 <q>“文本”</q>，引号字符
+   本身已在标签内（script.js:1850）。浏览器对 <q> 还会再自动生成一对，
+   酒馆用 .mes q:before/:after { content:'' } 清掉（style.css:1208），但那条
+   限定在 .mes 作用域内。阅读容器不在 .mes 下，必须自己重置，
+   否则显示成““文本””。 */
+.t-reader-flow q::before,
+.t-reader-flow q::after {
+    content: '';
+}
+
+/* 对话与叙述分色（酒馆用 .mes_text q + --SmartThemeQuoteColor 做同一件事，
+   阅读态改用自己的纸感色，避免跟宿主主题撞色） */
+.t-reader-flow q {
+    color: var(--t-reader-quote);
+}
+
 /* 阅读态下的代码块/引文：极简配色，不抢正文 */
 .t-reader-flow pre {
     text-indent: 0;

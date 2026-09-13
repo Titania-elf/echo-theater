@@ -294,6 +294,7 @@
     --t-reader-user-bg: rgb(176 154 114 / .12);   /* 深色: rgb(107 95 77 / .10) */
     --t-reader-user-text: #6f6250;   /* 深色: #a89c8a */
     --t-reader-code-bg: #efe8da;   /* 深色: #1d1916 */
+    --t-reader-quote: #2c4a52;   /* 深色: #ddd0bc */
     --t-glass-border-blue-rgb: 25 60 75;   /* 深色: 160 194 213 */
     --t-glass-border-blue-dim-rgb: 48 82 102;   /* 深色: 133 167 190 */
     --t-glass-locked-border-rgb: 175 186 193;   /* 深色: 52 61 67 */

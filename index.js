@@ -2967,6 +2967,7 @@ function loadCssFiles() {
     --t-reader-user-bg: rgb(107 95 77 / .10);
     --t-reader-user-text: #a89c8a;
     --t-reader-code-bg: #1d1916;
+    --t-reader-quote: #ddd0bc;
     /* 3 \u5904 \u2014\u2014 \u6539\u5199\u7A97\u300C\u672A\u547D\u4E2D\u300D\u7684\u6807\u7B7E\u5E95(.12) + \u6807\u7B7E\u63CF\u8FB9(.35) + \u884C\u63CF\u8FB9(.28)\u3002
        \u539F\u672C\u662F #b1bdc9 / #bdc7d2 / #b0bcc9 \u4E09\u4E2A\u5199\u6CD5\uFF0C\u5408\u5230\u4E00\u6863\u6700\u5927\u5408\u6210 \u0394E 1.0\u3002
        \u8DE8 surface / border \u4E24\u79CD\u89D2\u8272\u5171\u7528\u4E00\u4E2A token \u5728\u8FD9\u91CC\u662F\u5BF9\u7684\uFF1A
@@ -3496,6 +3497,7 @@ function loadCssFiles() {
     --t-reader-user-bg: rgb(176 154 114 / .12);   /* \u6DF1\u8272: rgb(107 95 77 / .10) */
     --t-reader-user-text: #6f6250;   /* \u6DF1\u8272: #a89c8a */
     --t-reader-code-bg: #efe8da;   /* \u6DF1\u8272: #1d1916 */
+    --t-reader-quote: #2c4a52;   /* \u6DF1\u8272: #ddd0bc */
     --t-glass-border-blue-rgb: 25 60 75;   /* \u6DF1\u8272: 160 194 213 */
     --t-glass-border-blue-dim-rgb: 48 82 102;   /* \u6DF1\u8272: 133 167 190 */
     --t-glass-locked-border-rgb: 175 186 193;   /* \u6DF1\u8272: 52 61 67 */
@@ -17857,6 +17859,22 @@ body.t-reader-zen .t-reader-topbar {
     letter-spacing: 1.2em;
     text-indent: 1.2em; /* \u62B5\u6D88\u6700\u540E\u4E00\u4E2A\u5B57\u7B26\u7684 letter-spacing\uFF0C\u4FDD\u6301\u89C6\u89C9\u5C45\u4E2D */
     user-select: none;
+}
+
+/* \u5F15\u53F7\u53BB\u91CD\uFF1AmessageFormatting \u628A\u5F15\u53F7\u53E5\u5305\u6210 <q>\u201C\u6587\u672C\u201D</q>\uFF0C\u5F15\u53F7\u5B57\u7B26
+   \u672C\u8EAB\u5DF2\u5728\u6807\u7B7E\u5185\uFF08script.js:1850\uFF09\u3002\u6D4F\u89C8\u5668\u5BF9 <q> \u8FD8\u4F1A\u518D\u81EA\u52A8\u751F\u6210\u4E00\u5BF9\uFF0C
+   \u9152\u9986\u7528 .mes q:before/:after { content:'' } \u6E05\u6389\uFF08style.css:1208\uFF09\uFF0C\u4F46\u90A3\u6761
+   \u9650\u5B9A\u5728 .mes \u4F5C\u7528\u57DF\u5185\u3002\u9605\u8BFB\u5BB9\u5668\u4E0D\u5728 .mes \u4E0B\uFF0C\u5FC5\u987B\u81EA\u5DF1\u91CD\u7F6E\uFF0C
+   \u5426\u5219\u663E\u793A\u6210\u201C\u201C\u6587\u672C\u201D\u201D\u3002 */
+.t-reader-flow q::before,
+.t-reader-flow q::after {
+    content: '';
+}
+
+/* \u5BF9\u8BDD\u4E0E\u53D9\u8FF0\u5206\u8272\uFF08\u9152\u9986\u7528 .mes_text q + --SmartThemeQuoteColor \u505A\u540C\u4E00\u4EF6\u4E8B\uFF0C
+   \u9605\u8BFB\u6001\u6539\u7528\u81EA\u5DF1\u7684\u7EB8\u611F\u8272\uFF0C\u907F\u514D\u8DDF\u5BBF\u4E3B\u4E3B\u9898\u649E\u8272\uFF09 */
+.t-reader-flow q {
+    color: var(--t-reader-quote);
 }
 
 /* \u9605\u8BFB\u6001\u4E0B\u7684\u4EE3\u7801\u5757/\u5F15\u6587\uFF1A\u6781\u7B80\u914D\u8272\uFF0C\u4E0D\u62A2\u6B63\u6587 */
