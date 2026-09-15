@@ -15,7 +15,7 @@ import { refreshRewriteEntryButton } from "./rewriteEntryButton.js";
 import { ensureMainApiProfiles } from "../core/apiProfileRegistry.js";
 import { createApiConnectionEditor, renderApiConnectionEditorHTML } from "./shared/apiConnectionEditor.js";
 import { renderLogEntriesHtml } from "./shared/logView.js";
-import { normalizeChatCompletionPreset, getPresetEntrySummary, ensurePromptManager, ensureTitaniaPresetEntries, createCustomPresetEntry, TITANIA_OUTPUT_CONTRACT, isTitaniaOutputContractEntry } from "../core/promptManager.js";
+import { normalizeChatCompletionPreset, serializeToChatCompletionPreset, getPresetEntrySummary, ensurePromptManager, ensureTitaniaPresetEntries, createCustomPresetEntry, TITANIA_OUTPUT_CONTRACT, isTitaniaOutputContractEntry } from "../core/promptManager.js";
 import {
     HEADER_ACTION_REGISTRY,
     HEADER_ACTION_MAX,
@@ -779,6 +779,7 @@ export function openSettingsWindow() {
                             </select>
                             <select id="t-prompt-preset-select" class="t-input" style="width:auto; min-width:210px; display:none;"></select>
                             <button id="t-prompt-import" class="t-tool-btn" title="导入 SillyTavern Chat Completion 预设"><i class="fa-solid fa-file-import"></i> 导入预设</button>
+                            <button id="t-prompt-export" class="t-tool-btn" title="导出当前预设为 JSON 文件（可重新导入，或给 SillyTavern 使用）" style="display:none;"><i class="fa-solid fa-file-export"></i> 导出</button>
                             <button id="t-prompt-delete" class="t-tool-btn" title="删除当前预设" style="display:none;"><i class="fa-solid fa-trash"></i> 删除</button>
                             <button id="t-prompt-reset-builtin" class="t-tool-btn" title="恢复当前内置方案默认值" style="display:none;"><i class="fa-solid fa-rotate-left"></i> 恢复默认</button>
                             <input type="file" id="t-prompt-file" accept=".json,application/json" style="display:none;">
@@ -1586,6 +1587,7 @@ export function openSettingsWindow() {
         });
         $select.val(tempPromptManager.active_preset_id);
         $("#t-prompt-delete").toggle(isPreset && !!$select.val());
+        $("#t-prompt-export").toggle(isPreset && !!$select.val());
         $("#t-prompt-reset-builtin").toggle(!isPreset);
         const scheme = isPreset
             ? tempPromptManager.presets.find(p => p.id === $select.val())
@@ -1965,6 +1967,28 @@ export function openSettingsWindow() {
             } finally { $(this).val(""); }
         };
         reader.readAsText(file);
+    });
+    $("#t-prompt-export").on("click", () => {
+        const preset = tempPromptManager.presets.find(p => p.id === tempPromptManager.active_preset_id);
+        if (!preset) return;
+        try {
+            const exported = serializeToChatCompletionPreset(preset);
+            const blob = new Blob([JSON.stringify(exported, null, 4)], { type: "application/json;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            // 文件名即预设名：重新导入时 normalizeChatCompletionPreset 用文件名建名，
+            // 与现有预设同名会走覆盖分支，实现干净的往返
+            const safeName = (preset.name || "导出预设").replace(/[\\/:*?"<>|]/g, "_").trim() || "导出预设";
+            a.href = url;
+            a.download = `${safeName}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            if (window.toastr) toastr.success(`已导出预设：${preset.name}`);
+        } catch (e) {
+            if (window.toastr) toastr.error(`预设导出失败：${e?.message || e}`, "Titania");
+        }
     });
     $("#t-prompt-delete").on("click", () => {
         const id = tempPromptManager.active_preset_id;

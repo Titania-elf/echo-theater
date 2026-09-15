@@ -358,7 +358,9 @@ const TITANIA_ENTRY_FACTORIES = {
 const TITANIA_ENTRY_KINDS = Object.keys(TITANIA_ENTRY_FACTORIES);
 
 function getTitaniaEntryKind(entry) {
-    if (entry?.id === "titania_output_contract") return "contract";
+    // source_identifier 分支：从导出 JSON 重新导入的预设，内部 id 会重新生成，
+    // 但导出时受管条目把内部 id 写进了 identifier（见 serializeToChatCompletionPreset）
+    if (entry?.id === "titania_output_contract" || entry?.source_identifier === "titania_output_contract") return "contract";
     if (entry?.id === "titania_script_instruction" || entry?.marker === "titaniaScript") return "instruction";
     return "";
 }
@@ -426,7 +428,12 @@ export function ensureTitaniaPresetEntries(preset) {
         if (kept.has(kind)) continue;
         kept.add(kind);
         if (kind === "contract") {
+            // 内容/名称归用户；但受管身份（必需、类型、角色）在每次过这里时校准，
+            // 导出再导入的条目会丢掉 required —— 这正是把它找回来的地方
             entry.readonly = false;
+            entry.required = true;
+            entry.type = "text";
+            entry.role = "system";
             entries.push(entry);
         } else {
             entries.push(TITANIA_ENTRY_FACTORIES[kind]());
@@ -516,6 +523,60 @@ export function normalizeChatCompletionPreset(preset, options = {}) {
             missing_definition_count: missingDefinitionCount,
             removed_marker_count: removedMarkerCount
         }
+    };
+}
+
+/**
+ * 将内部预设方案序列化回 SillyTavern Chat Completion 预设格式，
+ * 与 normalizeChatCompletionPreset 互为逆操作：
+ * 导出的 JSON 可以直接重新导入本插件（同名覆盖回原预设），
+ * 也能被 SillyTavern 的预设导入识别 —— prompts + prompt_order 是它的原生结构。
+ */
+export function serializeToChatCompletionPreset(preset) {
+    if (!preset || !Array.isArray(preset.entries)) throw new Error("预设数据无效");
+
+    const usedIdentifiers = new Set();
+    const prompts = [];
+    const order = [];
+    for (const entry of preset.entries) {
+        if (!entry) continue;
+        // 尽量沿用原 ST 标识符（重新导入 ST 时才能对上它认识的 marker）；
+        // 缺失时退回内部条目 id —— 尤其是受管条目（titania_output_contract 等），
+        // 重新导入本插件时靠 source_identifier 认祖归宗，否则会被当成普通条目再补一份
+        let identifier = String(entry.source_identifier || "").trim();
+        if (!identifier) identifier = String(entry.id || "").trim();
+        if (!identifier || usedIdentifiers.has(identifier)) identifier = createEntryId("titania");
+        usedIdentifiers.add(identifier);
+
+        const marker = String(entry.marker || "").trim();
+        const definition = {
+            identifier,
+            name: entry.name || "未命名条目",
+            role: MESSAGE_ROLES.includes(entry.role) ? entry.role : "user",
+            content: String(entry.content || "")
+        };
+        if (marker) {
+            // ST 的原生写法是 marker: true（marker 名即 identifier）；
+            // 插件专属 marker（titaniaScript）ST 不认识，用字符串形式留给本插件的导入器解析
+            if (marker === identifier) definition.marker = true;
+            else definition.marker = marker;
+            // 空内容的动态条目补上 {{marker}} 字面量：getMarkerNameFromContent 的兜底路径，
+            // 也让不支持 marker 字段的消费者还能看到占位符
+            if (!definition.content.trim()) definition.content = `{{${marker}}}`;
+        }
+        prompts.push(definition);
+        order.push({ identifier, enabled: entry.enabled !== false });
+    }
+
+    const modelSettings = preset.model_settings || {};
+    return {
+        name: preset.name || "导出预设",
+        prompts,
+        prompt_order: [{ character_id: 100001, order }],
+        model: modelSettings.model || "",
+        temperature: modelSettings.temperature,
+        top_p: modelSettings.top_p,
+        openai_max_tokens: modelSettings.max_tokens
     };
 }
 
