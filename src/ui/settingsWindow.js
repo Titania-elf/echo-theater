@@ -15,7 +15,7 @@ import { refreshRewriteEntryButton } from "./rewriteEntryButton.js";
 import { ensureMainApiProfiles } from "../core/apiProfileRegistry.js";
 import { createApiConnectionEditor, renderApiConnectionEditorHTML } from "./shared/apiConnectionEditor.js";
 import { renderLogEntriesHtml } from "./shared/logView.js";
-import { normalizeChatCompletionPreset, getPresetEntrySummary, ensurePromptManager, ensureTitaniaPresetEntries, createCustomPresetEntry } from "../core/promptManager.js";
+import { normalizeChatCompletionPreset, getPresetEntrySummary, ensurePromptManager, ensureTitaniaPresetEntries, createCustomPresetEntry, TITANIA_OUTPUT_CONTRACT, isTitaniaOutputContractEntry } from "../core/promptManager.js";
 import {
     HEADER_ACTION_REGISTRY,
     HEADER_ACTION_MAX,
@@ -1610,7 +1610,10 @@ export function openSettingsWindow() {
         };
         entries.forEach((entry, entryIndex) => {
             appendInsertSlot(entryIndex);
-            // 插件受管条目：内容锁定、不能禁用，但和普通条目一样可以拖动排序
+            // 插件受管条目：小剧场指令内容锁定；输出规范内容开放编辑，但和指令一样
+            // 不能禁用/删除，两者都和普通条目一样可以拖动排序
+            const sourceEntry = scheme.entries.find(item => item.id === entry.id);
+            const isContract = isTitaniaOutputContractEntry(sourceEntry);
             const isLocked = entry.readonly === true;
             const stateLabel = isLocked ? "插件内置" : (entry.required ? "必需" : (entry.enabled ? "已启用" : "已禁用"));
             const stateIcon = (isLocked || entry.required) ? "fa-lock" : (entry.enabled ? "fa-check" : "fa-xmark");
@@ -1622,6 +1625,7 @@ export function openSettingsWindow() {
                     <span class="t-prompt-entry-badge"></span>
                     <div class="t-prompt-entry-actions">
                         <button type="button" class="t-prompt-entry-toggle ${entry.enabled ? 'is-enabled' : ''} ${entry.required ? 'is-required' : ''}" title="${isLocked ? '插件内置条目，可以拖动排序，但不能编辑或禁用' : (entry.required ? '必需条目，不能禁用' : `${stateLabel}，点击切换状态`)}" aria-label="${stateLabel}" ${entry.required ? 'disabled' : ''}><i class="fa-solid ${stateIcon}"></i><span class="t-prompt-entry-toggle-label">${stateLabel}</span></button>
+                        ${isContract ? '<button type="button" class="t-prompt-entry-restore" title="恢复默认的内置规范内容" aria-label="恢复默认内容"><i class="fa-solid fa-rotate-left"></i></button>' : ''}
                         ${entry.custom ? '<button type="button" class="t-prompt-entry-delete" title="删除这个自定义条目" aria-label="删除条目"><i class="fa-solid fa-trash"></i></button>' : ''}
                     </div>
                 </div>
@@ -1639,6 +1643,13 @@ export function openSettingsWindow() {
             $row.find(".t-prompt-entry-toggle").on("click", function () {
                 if (entry.required) return;
                 updateEntry({ enabled: !entry.enabled });
+            });
+            $row.find(".t-prompt-entry-restore").on("click", function () {
+                const target = scheme.entries.find(item => item.id === entry.id);
+                if (!target) return;
+                target.content = TITANIA_OUTPUT_CONTRACT;
+                renderPromptManager();
+                if (window.toastr) toastr.success("已恢复「小剧场输出规范」的默认内容");
             });
             $row.find(".t-prompt-entry-delete").on("click", function () {
                 const index = scheme.entries.findIndex(item => item.id === entry.id);

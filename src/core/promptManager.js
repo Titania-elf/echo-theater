@@ -345,7 +345,8 @@ function createTitaniaOutputContractEntry() {
         marker: null,
         enabled: true,
         required: true,
-        readonly: true,
+        // 内容开放编辑；条目本身仍受管（不能禁用/删除），UI 提供「恢复默认」
+        readonly: false,
         content: TITANIA_OUTPUT_CONTRACT
     };
 }
@@ -362,6 +363,11 @@ function getTitaniaEntryKind(entry) {
     return "";
 }
 
+/** 供 UI 识别输出规范条目（「恢复默认」按钮只挂在这一条上） */
+export function isTitaniaOutputContractEntry(entry) {
+    return getTitaniaEntryKind(entry) === "contract";
+}
+
 // 逐字段比对，等价于旧实现里 JSON.stringify 的深比较（规范条目字段全为原始值）
 function isCanonicalEntry(entry, canonical) {
     if (!entry || typeof entry !== "object") return false;
@@ -372,7 +378,10 @@ function isCanonicalEntry(entry, canonical) {
 
 /**
  * 快速判断预设是否已满足 Titania 条目的全部不变量，命中则可跳过重建。
- * 不变量只剩两条：每种受管条目恰好一条，且字段与当前规范值一致。
+ *
+ * 输出规范条目已开放编辑：它的不变量只剩「恰好一条，且没带旧版的 readonly 锁」，
+ * 名称/角色/内容都归用户，不再和出厂值逐字段比对——否则每次加载都会把用户的
+ * 修改吃掉。小剧场指令仍是运行时动态条目，维持全字段规范比对。
  *
  * 位置刻意不在不变量里。以前要求「相邻且钉在队尾」，结果是把预设作者排在末位的
  * 收尾/越狱指令挤到中段，而末位指令的服从度最高 —— 那正是预设最吃重的位置。
@@ -384,7 +393,11 @@ function hasCanonicalTitaniaEntries(entries) {
         const kind = getTitaniaEntryKind(entry);
         if (!kind) continue;
         if (seen.has(kind)) return false;
-        if (!isCanonicalEntry(entry, TITANIA_ENTRY_FACTORIES[kind]())) return false;
+        if (kind === "contract") {
+            if (entry?.readonly === true) return false;
+        } else if (!isCanonicalEntry(entry, TITANIA_ENTRY_FACTORIES[kind]())) {
+            return false;
+        }
         seen.add(kind);
     }
     return seen.size === TITANIA_ENTRY_KINDS.length;
@@ -393,7 +406,8 @@ function hasCanonicalTitaniaEntries(entries) {
 /**
  * 补齐受管条目，同时保留用户排好的位置。
  *
- * 已存在的条目原地换成规范值（只修字段漂移，不动下标），重复副本丢弃，
+ * 已存在的条目保留用户版本：输出规范只剥掉旧版的 readonly 锁（字段原样），
+ * 小剧场指令原地换成规范值（只修字段漂移，不动下标）；重复副本丢弃，
  * 缺失的才补到队尾——且跳过尾部的 assistant 预填，让预填继续贴着生成点。
  */
 export function ensureTitaniaPresetEntries(preset) {
@@ -411,7 +425,12 @@ export function ensureTitaniaPresetEntries(preset) {
         }
         if (kept.has(kind)) continue;
         kept.add(kind);
-        entries.push(TITANIA_ENTRY_FACTORIES[kind]());
+        if (kind === "contract") {
+            entry.readonly = false;
+            entries.push(entry);
+        } else {
+            entries.push(TITANIA_ENTRY_FACTORIES[kind]());
+        }
     }
 
     let insertAt = entries.length;

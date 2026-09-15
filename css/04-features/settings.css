@@ -543,6 +543,12 @@
     border-color: rgb(var(--t-accent-red-soft-rgb) / .55);
 }
 
+/* 输出规范条目的「恢复默认」：用薄荷绿区分于删除的红色 */
+.t-prompt-entry-restore:hover:not(:disabled) {
+    color: var(--t-color-notify);
+    border-color: rgb(var(--t-accent-mint-rgb) / .55);
+}
+
 .t-prompt-entry-card.is-drag-over {
     border-color: var(--t-color-accent);
     box-shadow: 0 -3px 0 rgb(var(--t-accent-sky-rgb) / .75);
