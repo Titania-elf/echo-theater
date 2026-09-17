@@ -649,10 +649,10 @@ export function openSettingsWindow() {
                         <div id="style-unsaved-hint" class="t-set-unsaved-hint">
                             <i class="fa-solid fa-circle-exclamation"></i> 当前内容有修改，切换方案前请先保存
                         </div>
-                        <textarea id="set-dir-style" class="t-input" rows="6" placeholder="粘贴你喜欢的文笔段落...（最多1000字）" maxlength="1000"></textarea>
+                        <textarea id="set-dir-style" class="t-input" rows="6" placeholder="粘贴你喜欢的文笔段落...（字数不限）"></textarea>
                         <div style="display:flex; justify-content:space-between; margin-top:5px;">
                             <span style="font-size:0.75em; color:var(--t-color-text-faint);">方案数量: <span id="style-count">0</span>/10</span>
-                            <span id="style-char-count" style="font-size:0.75em; color:var(--t-color-text-faint);">0/1000</span>
+                            <span id="style-char-count" style="font-size:0.75em; color:var(--t-color-text-faint);">0 字</span>
                         </div>
                     </div>
                 </div>
@@ -1106,12 +1106,7 @@ export function openSettingsWindow() {
 
     const updateStyleCharCount = () => {
         const len = ($("#set-dir-style").val() || "").length;
-        $("#style-char-count").text(`${len}/1000`);
-        if (len > 900) {
-            $("#style-char-count").css("color", "#ff6b6b");
-        } else {
-            $("#style-char-count").css("color", "#666");
-        }
+        $("#style-char-count").text(`${len} 字`);
     };
 
     const saveCurrentStyleToMemory = () => {

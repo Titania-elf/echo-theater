@@ -1498,7 +1498,7 @@ export async function buildPromptCompositionPreview(options = {}) {
             directorSection += dirInstruction.trim() + "\n";
         }
         if (dStyle) {
-            directorSection += `文笔参考：模仿以下文风（不要复制原文）:\n<style_ref>\n${dStyle.substring(0, 1000)}\n</style_ref>\n`;
+            directorSection += `文笔参考：模仿以下文风（不要复制原文）:\n<style_ref>\n${dStyle}\n</style_ref>\n`;
         }
         if (directorSection) {
             const block = `[导演指令]\n（以下是写作风格和格式要求，请按此风格生成内容）\n${directorSection}\n`;
@@ -1873,7 +1873,7 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
             directorSection += dirInstruction.trim() + "\n";
         }
         if (dStyle) {
-            directorSection += `文笔参考：模仿以下文风（不要复制原文）:\n<style_ref>\n${dStyle.substring(0, 1000)}\n</style_ref>\n`;
+            directorSection += `文笔参考：模仿以下文风（不要复制原文）:\n<style_ref>\n${dStyle}\n</style_ref>\n`;
         }
         if (directorSection) {
             const block = `[导演指令]\n（以下是写作风格和格式要求，请按此风格生成内容）\n${directorSection}\n`;

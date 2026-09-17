@@ -299,6 +299,7 @@ function getWorldInfoConfig(extData) {
     return {
         cardSelections: wiConfig.card_selections && typeof wiConfig.card_selections === "object" ? wiConfig.card_selections : null,
         cardAutoActiveBooks: wiConfig.card_auto_active_books && typeof wiConfig.card_auto_active_books === "object" ? wiConfig.card_auto_active_books : null,
+        cardSchemes: wiConfig.card_schemes && typeof wiConfig.card_schemes === "object" ? wiConfig.card_schemes : null,
         legacySelections: wiConfig.char_selections && typeof wiConfig.char_selections === "object" ? wiConfig.char_selections : null,
         legacyAutoActiveBooks: wiConfig.char_auto_active_books && typeof wiConfig.char_auto_active_books === "object" ? wiConfig.char_auto_active_books : null
     };
@@ -383,6 +384,11 @@ export function readAutoActiveBooks(extData, ctx, charName) {
 
 /**
  * 写入当前卡的世界书配置。只写卡片键，旧的名字键原样保留（不删，便于回退）。
+ *
+ * selections 存的是**快照**而不是调用方的对象引用。世界书面板持有的工作副本会随着
+ * 用户勾选持续变化，直接存引用会让设置对象与工作副本变成同一个对象：勾选动作虽然
+ * 没点「保存」，却已经改掉了注入侧读到的值，等于绕过保存按钮生效。
+ *
  * @returns {string} 实际写入的卡片键
  */
 export function writeWorldInfoSelections(extData, ctx, selections, autoActiveBooks) {
@@ -392,8 +398,74 @@ export function writeWorldInfoSelections(extData, ctx, selections, autoActiveBoo
     if (!wiConfig.card_auto_active_books || typeof wiConfig.card_auto_active_books !== "object") wiConfig.card_auto_active_books = {};
 
     const cardKey = getCharacterCardKey(ctx);
-    wiConfig.card_selections[cardKey] = selections;
-    wiConfig.card_auto_active_books[cardKey] = Array.isArray(autoActiveBooks) ? autoActiveBooks : [];
+    wiConfig.card_selections[cardKey] = selections ? structuredClone(selections) : {};
+    wiConfig.card_auto_active_books[cardKey] = Array.isArray(autoActiveBooks) ? [...autoActiveBooks] : [];
+    return cardKey;
+}
+
+/**
+ * 方案里的勾选快照。只保留真正勾了条目的书——空数组不参与自动激活，
+ * 留着只会让快照与「实际注入的组合」产生无意义的差异。
+ */
+function normalizeSchemeSelections(selections) {
+    const out = {};
+    if (!selections || typeof selections !== "object") return out;
+    for (const bookName of Object.keys(selections)) {
+        const raw = selections[bookName];
+        const uids = Array.isArray(raw) ? raw.map(Number).filter(Number.isFinite) : [];
+        if (uids.length > 0) out[bookName] = uids;
+    }
+    return out;
+}
+
+function isValidSchemeItem(item) {
+    return Boolean(item && typeof item === "object" && typeof item.id === "string" && item.id);
+}
+
+/**
+ * 读取当前卡的世界书条目方案。
+ * @returns {{activeId: string, items: Array}} activeId 为空串表示未绑定方案，直接跟随当前勾选
+ */
+export function readWorldInfoSchemes(extData, ctx) {
+    const cfg = getWorldInfoConfig(extData);
+    const cardKey = getCharacterCardKey(ctx);
+    const stored = cfg.cardSchemes?.[cardKey];
+    if (!stored || typeof stored !== "object") return { activeId: "", items: [] };
+
+    const items = (Array.isArray(stored.items) ? stored.items : [])
+        .filter(isValidSchemeItem)
+        .map(item => ({
+            id: item.id,
+            name: String(item.name || "").trim() || "未命名方案",
+            selections: normalizeSchemeSelections(item.selections),
+            autoActiveBooks: Array.isArray(item.auto_active_books) ? item.auto_active_books.map(String) : []
+        }));
+
+    // 指向已被删掉的方案时解绑，免得下拉框停在一个不存在的值上
+    const activeId = items.some(item => item.id === stored.active_id) ? String(stored.active_id) : "";
+    return { activeId, items };
+}
+
+/**
+ * 写入当前卡的世界书条目方案（只写卡片键，与 writeWorldInfoSelections 同口径）。
+ * @returns {string} 实际写入的卡片键
+ */
+export function writeWorldInfoSchemes(extData, ctx, schemes) {
+    if (!extData.worldinfo || typeof extData.worldinfo !== "object") extData.worldinfo = {};
+    const wiConfig = extData.worldinfo;
+    if (!wiConfig.card_schemes || typeof wiConfig.card_schemes !== "object") wiConfig.card_schemes = {};
+
+    const cardKey = getCharacterCardKey(ctx);
+    const items = (Array.isArray(schemes?.items) ? schemes.items : [])
+        .filter(isValidSchemeItem)
+        .map(item => ({
+            id: item.id,
+            name: String(item.name || ""),
+            selections: normalizeSchemeSelections(item.selections),
+            auto_active_books: Array.isArray(item.autoActiveBooks) ? item.autoActiveBooks.map(String) : []
+        }));
+
+    wiConfig.card_schemes[cardKey] = { active_id: String(schemes?.activeId || ""), items };
     return cardKey;
 }
 

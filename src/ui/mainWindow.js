@@ -20,7 +20,7 @@ import {
     isFavoriteEligible,
     setCurrentGenerationResult
 } from "../core/state.js";
-import { getContextData, getActiveWorldInfoEntries, getAllWorldBookNames, getWorldInfoEntriesByBookName, getActiveWorldBookNames, readWorldInfoSelections, writeWorldInfoSelections } from "../core/context.js";
+import { getContextData, getActiveWorldInfoEntries, getAllWorldBookNames, getWorldInfoEntriesByBookName, getActiveWorldBookNames, readWorldInfoSelections, writeWorldInfoSelections, readWorldInfoSchemes, writeWorldInfoSchemes } from "../core/context.js";
 import { handleGenerate, handleUserContinuation, renderGeneratedContent, executeQueueGeneration, cancelQueueGeneration, cancelGeneration, getContinuationSessionStats, getContinuationBranches, copyContinuationBranchToCurrentChat, findContinuationRoundByContent, syncEditedContentToContinuationSession } from "../core/api.js";
 import { openFavsWindow, saveFavorite, unsaveFavorite } from "./favsWindow.js";
 import { showDebugInfo, showDiagnosticsWindow } from "./debugWindow.js";
@@ -2125,6 +2125,15 @@ async function openWorldInfoSelector() {
             </div>
         </div>
 
+        <div class="t-wi-scheme-bar">
+            <span class="t-wi-scheme-label">条目方案</span>
+            <select class="t-wi-scheme-select" id="t-wi-scheme-select" aria-label="选择条目方案"></select>
+            <button type="button" class="t-btn t-btn-xs" id="t-wi-scheme-add" title="把当前勾选的条目组合存为新方案"><i class="fa-solid fa-plus"></i></button>
+            <button type="button" class="t-btn t-btn-xs" id="t-wi-scheme-rename" title="重命名当前方案"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" class="t-btn t-btn-xs" id="t-wi-scheme-del" title="删除当前方案" style="color:var(--t-color-danger);"><i class="fa-solid fa-trash"></i></button>
+            <span class="t-wi-scheme-count" id="t-wi-scheme-count">0/20</span>
+        </div>
+
         <div class="t-panel-footer t-wi-footer">
             <span id="t-wi-stat">已选: 0/0</span>
             <button class="t-btn primary" id="t-wi-save" ${allBooks.length === 0 ? "disabled" : ""}>保存</button>
@@ -2163,6 +2172,184 @@ async function openWorldInfoSelector() {
         const activeCount = allBooks.filter(name => activeSet.has(name)).length;
         $q("#t-wi-active-count").text(activeCount);
     };
+
+    // --- 条目方案 ---
+    // 方案是 card_selections 的具名快照，不是新的注入层：切换=把快照写回
+    // card_selections / card_auto_active_books。注入侧（getContextData 与 api.js 的
+    // 两条构建路径）照旧只读那两个键，完全不需要知道方案的存在。
+    const MAX_WI_SCHEMES = 20;
+    let schemeState = readWorldInfoSchemes(data, ctx.stCtx);
+
+    /** 勾选的规范签名：丢掉空数组、拉平顺序，只用于比较有无未保存改动 */
+    const selectionsSignature = (selections) => {
+        const source = selections && typeof selections === "object" ? selections : {};
+        const normalized = {};
+        Object.keys(source).sort().forEach(bookName => {
+            const uids = Array.isArray(source[bookName])
+                ? source[bookName].map(Number).filter(Number.isFinite).sort((a, b) => a - b)
+                : [];
+            if (uids.length > 0) normalized[bookName] = uids;
+        });
+        return JSON.stringify(normalized);
+    };
+
+    let lastPersistedSignature = selectionsSignature(workingSelections);
+    const hasUnsavedSelectionChanges = () => selectionsSignature(workingSelections) !== lastPersistedSignature;
+
+    const getActiveScheme = () => schemeState.items.find(s => s.id === schemeState.activeId) || null;
+
+    const replaceWorkingSelections = (next) => {
+        Object.keys(workingSelections).forEach(bookName => delete workingSelections[bookName]);
+        Object.assign(workingSelections, structuredClone(next || {}));
+    };
+
+    const persistWorldInfo = (autoActiveBooks) => {
+        const autoActive = Array.isArray(autoActiveBooks) ? autoActiveBooks : getAutoActiveBooksFromSelections();
+        writeWorldInfoSelections(data, ctx.stCtx, workingSelections, autoActive);
+        writeWorldInfoSchemes(data, ctx.stCtx, schemeState);
+        lastPersistedSignature = selectionsSignature(workingSelections);
+        saveExtData();
+    };
+
+    // 只动方案、不碰 card_selections。删除/解绑方案时用：用户没有要求提交
+    // 此刻的勾选改动，就不该顺手替他保存
+    const persistSchemesOnly = () => {
+        writeWorldInfoSchemes(data, ctx.stCtx, schemeState);
+        saveExtData();
+    };
+
+    const renderSchemeBar = () => {
+        const options = ['<option value="">（未命名 · 跟随当前勾选）</option>'];
+        schemeState.items.forEach(scheme => {
+            const selected = scheme.id === schemeState.activeId ? "selected" : "";
+            options.push(`<option value="${escapeHtmlText(scheme.id)}" ${selected}>${escapeHtmlText(scheme.name)}</option>`);
+        });
+        $q("#t-wi-scheme-select").html(options.join(""));
+
+        const hasActive = Boolean(getActiveScheme());
+        $q("#t-wi-scheme-rename").prop("disabled", !hasActive).css("opacity", hasActive ? 1 : 0.5);
+        $q("#t-wi-scheme-del").prop("disabled", !hasActive).css("opacity", hasActive ? 1 : 0.5);
+        $q("#t-wi-scheme-count").text(`${schemeState.items.length}/${MAX_WI_SCHEMES}`);
+    };
+
+    const refreshAfterSelectionChange = () => {
+        refreshActiveState();
+        syncVisibleBooksByMode();
+        ensureCurrentBookInView();
+        renderBookList();
+        renderEntries();
+        syncEntryPaneHeader();
+        updateStat();
+        renderSchemeBar();
+        updateWorldInfoBadge();
+    };
+
+    const findSchemeByName = (name) => schemeState.items.find(s => s.name === name) || null;
+
+    // 切换方案：灌入快照并立即落盘 —— 选方案就是要它生效，不该再要求点一次保存
+    $q("#t-wi-scheme-select").on("change", function () {
+        const nextId = String($(this).val() || "");
+        if (nextId === schemeState.activeId) return;
+
+        const nextScheme = schemeState.items.find(s => s.id === nextId) || null;
+
+        if (nextScheme && hasUnsavedSelectionChanges()) {
+            const ok = window.confirm(`当前勾选有未保存的改动，切换到方案「${nextScheme.name}」会放弃这些改动。\n\n是否继续？`);
+            if (!ok) {
+                $(this).val(schemeState.activeId);
+                return;
+            }
+        }
+
+        schemeState.activeId = nextScheme ? nextScheme.id : "";
+
+        if (nextScheme) {
+            replaceWorkingSelections(nextScheme.selections);
+            persistWorldInfo(nextScheme.autoActiveBooks);
+        } else {
+            // 切到「未命名」只是解绑：当前勾选留在原地，也不提交未保存的改动
+            persistSchemesOnly();
+        }
+
+        refreshAfterSelectionChange();
+        if (window.toastr) {
+            toastr.success(nextScheme ? `已切换方案：${nextScheme.name}` : "已切换为未命名方案");
+        }
+    });
+
+    $q("#t-wi-scheme-add").on("click", () => {
+        if (schemeState.items.length >= MAX_WI_SCHEMES) {
+            if (window.toastr) toastr.warning(`最多只能保存 ${MAX_WI_SCHEMES} 个方案`);
+            return;
+        }
+
+        const autoActive = getAutoActiveBooksFromSelections();
+        if (autoActive.length === 0) {
+            if (window.toastr) toastr.warning("请先勾选至少一条条目，再存为方案");
+            return;
+        }
+
+        const input = window.prompt("请输入新方案的名称：", `方案 ${schemeState.items.length + 1}`);
+        if (!input || !input.trim()) return;
+
+        const name = input.trim();
+        if (findSchemeByName(name)) {
+            if (window.toastr) toastr.warning(`已存在同名方案「${name}」`);
+            return;
+        }
+
+        const newId = "wi_" + Date.now();
+        schemeState.items.push({
+            id: newId,
+            name,
+            selections: structuredClone(workingSelections),
+            autoActiveBooks: autoActive
+        });
+        schemeState.activeId = newId;
+
+        // 存方案的同时把当前勾选写盘：方案记录的就是此刻生效的组合
+        persistWorldInfo(autoActive);
+        renderSchemeBar();
+        updateWorldInfoBadge();
+        if (window.toastr) toastr.success(`已保存为新方案：${name}`);
+    });
+
+    $q("#t-wi-scheme-rename").on("click", () => {
+        const scheme = getActiveScheme();
+        if (!scheme) {
+            if (window.toastr) toastr.warning("请先选择一个方案");
+            return;
+        }
+
+        const input = window.prompt("请输入新的方案名称：", scheme.name);
+        if (!input || !input.trim()) return;
+
+        const name = input.trim();
+        if (name !== scheme.name && findSchemeByName(name)) {
+            if (window.toastr) toastr.warning(`已存在同名方案「${name}」`);
+            return;
+        }
+
+        const previousName = scheme.name;
+        scheme.name = name;
+        persistSchemesOnly();
+        renderSchemeBar();
+        if (window.toastr) toastr.success(`方案已重命名：${previousName} → ${name}`);
+    });
+
+    $q("#t-wi-scheme-del").on("click", () => {
+        const scheme = getActiveScheme();
+        if (!scheme) return;
+
+        const ok = window.confirm(`确定要删除方案「${scheme.name}」吗？\n\n条目勾选会保持不变，只删除这份方案记录。`);
+        if (!ok) return;
+
+        schemeState.items = schemeState.items.filter(s => s.id !== scheme.id);
+        schemeState.activeId = "";
+        persistSchemesOnly();
+        renderSchemeBar();
+        if (window.toastr) toastr.success(`方案「${scheme.name}」已删除`);
+    });
 
     const showEntryPreview = (title, content) => {
         $q(".t-wi-preview-modal").remove();
@@ -2525,10 +2712,23 @@ async function openWorldInfoSelector() {
     $q("#t-wi-save").on("click", () => {
         if (!currentBookName && !Object.keys(workingSelections).length) return;
 
-        writeWorldInfoSelections(data, ctx.stCtx, workingSelections, getAutoActiveBooksFromSelections());
-        saveExtData();
+        const autoActive = getAutoActiveBooksFromSelections();
+        const activeScheme = getActiveScheme();
+
+        // 保存即同步：方案名必须始终等于实际注入的组合，否则这个标签就在说谎
+        if (activeScheme) {
+            activeScheme.selections = structuredClone(workingSelections);
+            activeScheme.autoActiveBooks = autoActive;
+        }
+
+        persistWorldInfo(autoActive);
+        renderSchemeBar();
         updateWorldInfoBadge();
-        if (window.toastr) toastr.success("世界书设置已保存");
+        if (window.toastr) {
+            toastr.success(activeScheme
+                ? `世界书设置已保存，方案「${activeScheme.name}」已同步更新`
+                : "世界书设置已保存");
+        }
     });
 
     $q("#t-wi-close").on("click", closePanel);
@@ -2538,6 +2738,7 @@ async function openWorldInfoSelector() {
     ensureCurrentBookInView();
     renderBookList();
     syncEntryPaneHeader();
+    renderSchemeBar();
 
     if (currentBookName) {
         await loadBookEntries(currentBookName);

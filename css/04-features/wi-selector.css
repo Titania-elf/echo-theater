@@ -520,6 +520,56 @@
     word-break: break-word;
 }
 
+/* ===== 条目方案条 =====
+   把当前勾选的条目组合存成命名方案。夹在条目区与页脚之间：上面是「在编辑什么」，
+   下面是「已选多少 / 保存」，方案条正好是两者之间的那层桥。
+   flex-wrap 兜住窄屏：手机上选择框独占一行，按钮跟着换行。 */
+.t-wi-scheme-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border-top: 1px solid var(--t-color-border);
+    background: var(--t-color-surface);
+}
+
+.t-wi-scheme-label {
+    font-size: 0.85em;
+    color: var(--t-color-text-muted);
+    white-space: nowrap;
+}
+
+.t-wi-scheme-select {
+    flex: 1;
+    min-width: 120px;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--t-color-border-control);
+    border-radius: 6px;
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text-soft);
+    font-size: 12px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.t-wi-scheme-select:focus {
+    outline: none;
+    border-color: var(--t-color-accent-border-strong);
+}
+
+.t-wi-scheme-bar .t-btn.t-btn-xs {
+    flex: 0 0 auto;
+}
+
+.t-wi-scheme-count {
+    margin-left: auto;
+    font-size: 0.75em;
+    color: var(--t-color-text-faint);
+}
+
 /* `.t-wi-footer` 的基础视觉已迁至 02-components/panel.css 的 `.t-panel-footer`
    （与 .t-queue-footer / .t-ce-footer 逐字节相同，A13 重复组）。
    本文件只剩下方移动端的 padding 收紧。 */

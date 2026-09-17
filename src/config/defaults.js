@@ -139,6 +139,10 @@ export const defaultSettings = {
         card_selections: {},
         // { "card:<avatar>": ["世界书名", ...] } 需要额外激活的书（由选中条目推导）
         card_auto_active_books: {},
+        // { "card:<avatar>": { active_id, items: [{ id, name, selections, auto_active_books }] } }
+        // 条目方案。只是 card_selections 的具名快照：切换方案=把快照写回上面两个键，
+        // 注入侧照旧只读 card_selections，不感知方案的存在
+        card_schemes: {},
         // 旧的名字键配置，保留供读取回退（仅当该名字只有一张卡时才继承）
         char_selections: {}
     },
