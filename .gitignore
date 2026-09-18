@@ -4,6 +4,7 @@ node_modules/
 # === 其他 AI / 编辑器工具的本地目录 ===
 .kilo/
 .claude/
+.zcode/
 .idea/
 .vscode/
 
