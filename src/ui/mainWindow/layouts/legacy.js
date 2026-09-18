@@ -63,6 +63,7 @@ export function renderHtml(viewData) {
                         <i class="fa-solid fa-pen-nib"></i>
                         <span>编辑内容</span>
                     </div>
+                    <button class="t-tools-item" id="t-tool-illustrate" type="button" title="场景配图"><i class="fa-solid fa-image"></i><span>场景配图</span></button>
                     <div class="t-tools-item" id="t-tool-workshop-feedback" style="display:none;">
                         <i class="fa-regular fa-comment-dots"></i>
                         <span>评论工坊投稿</span>

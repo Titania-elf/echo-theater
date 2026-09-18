@@ -1,0 +1,107 @@
+.t-root.t-illustration-window {
+    position: fixed;
+    /* ST 移动端的 fixed body + html transform 会使 inset: 0 的容器高度塌缩。 */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 20060;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    box-sizing: border-box;
+}
+
+.t-illustration-panel {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    width: min(560px, 100%);
+    min-width: 0;
+    max-height: min(92vh, 100%);
+    max-height: min(92dvh, 100%);
+    background: var(--t-color-surface);
+    color: var(--t-color-text-strong);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: 14px;
+    box-shadow: var(--t-shadow-lg);
+    overflow: hidden;
+}
+
+.t-illustration-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.t-illustration-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.t-illustration-field textarea {
+    width: 100%;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.t-illustration-hint,
+.t-illustration-connection {
+    color: var(--t-color-text-secondary);
+    font-size: 0.9em;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.t-illustration-connection,
+.t-illustration-actions,
+.t-illustration-coordinates {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.t-illustration-details {
+    padding: 10px;
+    border: 1px solid var(--t-color-border-faint);
+    border-radius: 8px;
+}
+
+.t-illustration-details summary { cursor: pointer; }
+.t-illustration-details[open] > summary { margin-bottom: 10px; }
+.t-illustration-details .t-illustration-field + .t-illustration-field { margin-top: 10px; }
+.t-illustration-details blockquote { white-space: pre-wrap; margin: 10px 0; }
+.t-illustration-summary { line-height: 1.7; white-space: pre-wrap; }
+.t-illustration-character { margin-top: 12px; border: 1px solid var(--t-color-border-faint); border-radius: 8px; }
+.t-illustration-coordinates { margin-top: 8px; }
+.t-illustration-coordinates input { width: 80px; }
+.t-illustration-status { white-space: pre-wrap; line-height: 1.6; color: var(--t-color-text-secondary); }
+.t-illustration-candidates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 10px 0; }
+.t-illustration-candidate { min-width: 0; border: 1px solid var(--t-color-border-faint); padding: 8px; border-radius: 10px; }
+.t-illustration-candidate img { width: 100%; height: 160px; object-fit: contain; }
+.t-illustration-candidate p { font-size: 0.9em; line-height: 1.5; }
+.t-illustration-pending img { width: 100%; max-height: 360px; object-fit: contain; }
+.t-illustration-panel [hidden] { display: none; }
+.t-illustration-panel button:disabled { opacity: 0.5; cursor: default; }
+
+@media (max-width: 600px) {
+    .t-root.t-illustration-window {
+        padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+            max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    }
+    .t-illustration-panel { max-height: 100%; }
+    .t-illustration-body { padding: 12px; }
+}

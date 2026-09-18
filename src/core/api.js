@@ -995,6 +995,7 @@ export function renderGeneratedContent(content, scriptName = "场景", isStreami
         // 非流式阶段改为闲时检测，优先保证首屏响应
         scheduleInteractiveDetection(content, scriptName);
     }
+    window.dispatchEvent(new CustomEvent("titania:scene-rendered"));
 }
 
 let interactiveDetectionIdleHandle = null;
@@ -1385,10 +1386,14 @@ function showInteractiveFAB(scriptName, html, reasons) {
     );
 
     // 导出按钮
-    $("#t-fab-export").on("click", function (e) {
+    $("#t-fab-export").on("click", async function (e) {
         e.stopPropagation();
-        exportAsHtmlFile(html, scriptName);
-        if (window.toastr) toastr.success('HTML 已下载', 'Titania');
+        try {
+            await exportAsHtmlFile(html, scriptName);
+            if (window.toastr) toastr.success('HTML 已下载', 'Titania');
+        } catch (error) {
+            if (window.toastr) toastr.error(error.message || "HTML 导出失败", "Titania");
+        }
     }).hover(
         function () { $(this).css({ "background": "#383838" }); },
         function () { $(this).css({ "background": "#2a2a2a" }); }

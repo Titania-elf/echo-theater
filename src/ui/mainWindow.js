@@ -63,6 +63,17 @@ import {
     HISTORY_AI_ONLY_HINT
 } from "./mainWindow/topBar.js";
 import { toggleUITheme } from "./theme.js";
+import { createIllustrationTarget } from "../core/illustrationData.js";
+import { bindMainIllustrations, openIllustrationWindow } from "./illustrationWindow.js";
+
+function getMainIllustrationTarget() {
+    const result = getCurrentGenerationResult();
+    const view = continuationHistoryView;
+    const fallback = view
+        ? `${view.chatId}:${view.scriptId}:${view.branchKey}:${view.roundKey}`
+        : `legacy:${getCurrentContinuationSource().chatId}:${result?.scriptId || ""}`;
+    return createIllustrationTarget(result, fallback);
+}
 
 const SORT_MODE_LABELS = {
     default: "默认顺序",
@@ -1043,6 +1054,11 @@ export async function openMainWindow() {
     }
 
     // --- 事件监听绑定 ---
+    registerTeardown(bindMainIllustrations(getMainIllustrationTarget));
+    $("#t-tool-illustrate").on("click", () => {
+        try { openIllustrationWindow(getMainIllustrationTarget()); }
+        catch (error) { if (window.toastr) toastr.warning(error.message); }
+    });
 
     // 历史开关事件
     $("#t-use-history").on("change", function () {

@@ -1,6 +1,7 @@
 // src/utils/helpers.js
 
 import { getExtData } from "./storage.js";
+import { embedIllustrationsInHtml } from "../core/illustrationPortability.js";
 import { parseChatHistoryBlacklistInput, removeChatHistoryBlacklist } from "./chatHistoryBlacklist.js";
 
 /**
@@ -90,7 +91,7 @@ export function buildFullHtmlDocument(content, title = "Titania Echo - 互动场
         }
         a { color: #90cdf4; }
         img, video { max-width: 100%; height: auto; }
-        
+
         /* 用户自定义样式 */
     </style>
     ${styles}
@@ -166,9 +167,9 @@ export function openInNewWindow(html, scriptName = "互动场景") {
  * @param {string} html - HTML 内容
  * @param {string} scriptName - 剧本名称（用于文件名）
  */
-export function exportAsHtmlFile(html, scriptName = "场景") {
+export async function exportAsHtmlFile(html, scriptName = "场景") {
     console.log('[Titania] exportAsHtmlFile 被调用，原始HTML长度:', html?.length || 0);
-    const fullHtml = buildFullHtmlDocument(html, `${scriptName} - Titania Echo`);
+    const fullHtml = buildFullHtmlDocument(await embedIllustrationsInHtml(html), `${scriptName} - Titania Echo`);
     console.log('[Titania] 构建后完整HTML长度:', fullHtml?.length || 0);
     const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -187,7 +188,7 @@ export function exportAsHtmlFile(html, scriptName = "场景") {
     a.click();
     document.body.removeChild(a);
 
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 /**

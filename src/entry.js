@@ -56,6 +56,9 @@ import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteE
 import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
 import { initFloorNav, refreshFloorNavButton } from "./ui/floorNav.js";
 import { isInjectedTheaterMessage } from "./core/chatInjector.js";
+import { exportIllustrationBackup, restoreIllustrationBackup } from "./core/illustrationPortability.js";
+import { ILLUSTRATION_INDEX_KEY } from "./core/illustrationData.js";
+import { flushIllustrationWrites } from "./core/illustrationStore.js";
 import { refreshOutlineEntryButton } from "./ui/outlineEntryButton.js";
 
 // --- 自动化监听逻辑 ---
@@ -261,6 +264,7 @@ function hideFloatingButton() {
 }
 
 async function createFullBackupPayload(options = {}) {
+    await flushIllustrationWrites();
 
     // 剧本搬家后可能有改动还在落盘队列里。快照是从内存对象拷的，
     // 但先把队列清空能保证「备份里的内容 = 磁盘上的内容」，
@@ -296,6 +300,7 @@ async function createFullBackupPayload(options = {}) {
         version: "2.0",
         timestamp: new Date().toISOString(),
         auto_backup: options.autoBackup === true,
+        illustrations: await exportIllustrationBackup(extDataSnapshot.favs || []),
         data: extDataSnapshot
     };
 }
@@ -392,7 +397,7 @@ function bindDrawerBackupControls() {
             if (importData.type !== "titania_theater_backup") throw new Error("无效的备份文件格式");
             if (!importData.data || typeof importData.data !== "object") throw new Error("备份数据无效");
 
-            const extDataPayload = importData.data;
+            let extDataPayload = importData.data;
 
             const confirmMsg = `确定要导入此备份吗？\n\n`
                 + `备份时间: ${importData.timestamp || "未知"}\n`
@@ -420,8 +425,10 @@ function bindDrawerBackupControls() {
                 }
             }
 
+            extDataPayload = await restoreIllustrationBackup(importData.illustrations, extDataPayload);
             const currentData = getExtData();
             Object.assign(currentData, extDataPayload);
+            if (!Object.prototype.hasOwnProperty.call(extDataPayload, ILLUSTRATION_INDEX_KEY)) delete currentData[ILLUSTRATION_INDEX_KEY];
 
             // 导入的备份若是搬家之前做的，它没有 favs_index。Object.assign 不会删除
             // 目标上多出来的键，于是旧索引会残留下来，指向的却是上一批收藏的正文文件。

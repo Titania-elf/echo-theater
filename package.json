@@ -4,6 +4,7 @@
     "description": "沉浸式角色内心独白与平行世界演绎插件",
     "type": "module",
     "scripts": {
+        "test:illustration": "node --experimental-vm-modules --test --test-isolation=none tests/illustration.test.mjs",
         "build": "node build.js",
         "build:watch": "node build.js --watch",
         "prebuild": "node scripts/css-audit.js",
@@ -14,7 +15,8 @@
         "css:color-diff": "git diff --no-ext-diff --unified=100000 -- css/04-features/outline-entry-menu.css css/04-features/cleaning-preview.css css/04-features/st-embedded.css | node scripts/css-color-diff.js"
     },
     "devDependencies": {
-        "esbuild": "^0.24.0"
+        "esbuild": "^0.24.0",
+        "jsdom": "^29.1.1"
     },
     "keywords": [
         "sillytavern",

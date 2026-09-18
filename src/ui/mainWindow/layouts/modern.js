@@ -78,6 +78,7 @@ export function renderHtml(viewData) {
                     <button class="t-tools-icon" id="t-btn-like" type="button" title="收藏结果" aria-label="收藏结果">
                         <i class="fa-regular fa-heart"></i>
                     </button>
+                    <button class="t-tools-icon" id="t-tool-illustrate" type="button" title="场景配图" aria-label="场景配图"><i class="fa-solid fa-image"></i></button>
                     <button class="t-tools-icon" id="t-tool-workshop-feedback" type="button" title="评论工坊投稿" aria-label="评论工坊投稿" style="display:none;">
                         <i class="fa-regular fa-comment-dots"></i>
                     </button>

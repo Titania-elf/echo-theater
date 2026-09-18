@@ -103,6 +103,7 @@ export function verifyFavFiles(filePaths) {
 export function buildFavBody(fav) {
     const type = fav?.type === "chain" ? "chain" : "plain";
     const body = { v: FAV_BODY_VERSION, id: fav?.id, type };
+    if (fav?.illustration) body.illustration = fav.illustration;
 
     if (type === "chain") {
         const items = Array.isArray(fav?.items) ? fav.items : [];
@@ -414,6 +415,8 @@ export async function ensureFavBody(uiEntry) {
     if (!uiEntry._file) return uiEntry;
 
     const body = await readFavBody({ id: uiEntry.id, file: uiEntry._file, rev: uiEntry._rev });
+    if (body.illustration) uiEntry.illustration = body.illustration;
+    else delete uiEntry.illustration;
     if (body.type === "chain") {
         uiEntry.items = Array.isArray(body.items) ? body.items : [];
         // 正文文件里通常不存合并后的 html（getChainDisplayHtml 会按 items 重建），
@@ -626,6 +629,7 @@ function assembleFav(entry, body) {
     } else {
         fav.html = String(body?.html || "");
     }
+    if (body?.illustration) fav.illustration = body.illustration;
     return fav;
 }
 

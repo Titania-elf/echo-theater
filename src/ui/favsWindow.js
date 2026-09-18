@@ -16,6 +16,10 @@ import {
     getFullFavById
 } from "../core/favsStore.js";
 import { TitaniaLogger } from "../core/logger.js";
+import { createIllustrationTarget, illustrationFigure, resolveDisplayedFavoriteBranch } from "../core/illustrationData.js";
+import { readSceneIllustrations, selectedIllustration } from "../core/illustrationStore.js";
+import { openIllustrationWindow } from "./illustrationWindow.js";
+import { embedIllustrationsInHtml } from "../core/illustrationPortability.js";
 
 /* ------------------------------------------------------------------ *
  * 收藏读写的统一入口
@@ -251,7 +255,7 @@ function buildChainSegmentsHtml(chainItems) {
         const roundNo = Number(item?.round) || (idx + 1);
         const type = String(item?.type || (idx === 0 ? "initial" : "continuation"));
         const instruction = String(item?.instruction || "").trim() || (type === "initial" ? "（首次生成）" : "（自然续写）");
-        const html = String(item?.html || "").trim();
+        const html = String(item?.html || "").trim() + illustrationFigure(item?.illustration);
         const chipLabel = type === "initial" ? "首次生成" : `第 ${roundNo} 段续写`;
         const instructionLabel = type === "initial" ? "生成说明" : "续写指令";
 
@@ -299,7 +303,7 @@ function getChainDisplayHtml(item) {
 }
 
 function buildChainSignature(scriptId, rounds) {
-    const payload = `${String(scriptId || "")}|${(Array.isArray(rounds) ? rounds : []).map(r => `${r.round}#${String(r.type || "continuation").trim()}#${String(r.instruction || "").trim()}#${String(r.content || "").trim()}`).join("|")}`;
+    const payload = `${String(scriptId || "")}|${(Array.isArray(rounds) ? rounds : []).map(r => `${r.round}#${String(r.type || "continuation").trim()}#${String(r.instruction || "").trim()}#${String(r.content || r.html || "").trim()}${r.illustration ? `#image:${r.illustration.id}` : ""}`).join("|")}`;
     let hash = 0;
     for (let i = 0; i < payload.length; i++) {
         hash = (hash << 5) - hash + payload.charCodeAt(i);
@@ -605,7 +609,8 @@ export async function saveContinuationChainFavorite() {
     }
 
     const ctx = await getContextData();
-    const chainData = getContinuationRoundsForFav(scriptId);
+    const chainData = resolveDisplayedFavoriteBranch(currentResult, getContinuationRoundsForFav(scriptId),
+        GlobalState.continuationRuntime?.byScript?.[scriptId]?.archivedBranches || []);
     const rounds = Array.isArray(chainData?.rounds) ? chainData.rounds : [];
     const currentDisplayContent = String(currentResult?.content || "").trim();
 
@@ -617,7 +622,7 @@ export async function saveContinuationChainFavorite() {
             && String(round?.content || "").trim().length > 0
         )
         : (currentDisplayContent
-            ? [{ round: 1, type: "initial", instruction: "（首次生成）", content: currentDisplayContent, timestamp: Date.now() }]
+            ? [{ round: 1, type: "initial", instruction: "（首次生成）", content: currentDisplayContent, generationId: currentResult.generationId, status: currentResult.status, timestamp: Date.now() }]
             : []);
 
     if (normalizedRounds.length === 0) {
@@ -635,6 +640,14 @@ export async function saveContinuationChainFavorite() {
         timestamp: Number(item?.timestamp) || Date.now()
     })).filter(item => item.html.length > 0);
 
+    // 只归档各轮当前采用的图片；正文保持纯 HTML，图片候选存储独立于续写上下文。
+    await Promise.all(items.map(async item => {
+        if (!item.generationId) return;
+        const target = createIllustrationTarget({ ...item, scriptId });
+        const illustration = selectedIllustration(await readSceneIllustrations(target.sceneId));
+        if (illustration) item.illustration = illustration;
+    }));
+
     if (items.length === 0) {
         if (window.toastr) toastr.warning("续写内容为空，无法收藏");
         return false;
@@ -644,7 +657,7 @@ export async function saveContinuationChainFavorite() {
     const scriptName = String(chainData?.scriptName || script?.name || display?.scriptName || "场景");
     const branchKey = String(chainData?.branchKey || "").trim();
     const avatarSrc = getCurrentAvatarSrc();
-    const chainSignature = buildChainSignature(scriptId, normalizedRounds);
+    const chainSignature = buildChainSignature(scriptId, items);
 
     const data = getExtData();
     // 搬家前需要保证数组存在；收尾后 data.favs 已删除，此时由文件存储承载，不再重建它
@@ -918,6 +931,7 @@ export function openFavsWindow() {
                     </div>
                 </div>
                 <div class="t-read-actions">
+                    <button class="t-tool-btn" id="t-read-illustrate" title="场景配图" aria-label="场景配图"><i class="fa-solid fa-image"></i></button>
                     <button class="t-tool-btn" id="t-read-toggle-meta" title="展开全部段落信息" style="display:none;"><i class="fa-solid fa-circle-info"></i></button>
                     <button class="t-tool-btn t-read-inline-opt" id="t-read-rename" title="重命名"><i class="fa-solid fa-pen"></i></button>
                     <button class="t-tool-btn t-read-inline-opt" id="t-read-img" title="导出图片"><i class="fa-solid fa-camera"></i></button>
@@ -929,6 +943,7 @@ export function openFavsWindow() {
                             <button type="button" class="t-read-menu-opt" data-read-action="rename"><i class="fa-solid fa-pen"></i><span>重命名</span></button>
                             <button type="button" class="t-read-menu-opt" data-read-action="img"><i class="fa-solid fa-camera"></i><span>导出图片</span></button>
                             <button type="button" class="t-read-menu-opt" data-read-action="code"><i class="fa-solid fa-code"></i><span>复制 HTML</span></button>
+                            <button type="button" class="t-read-menu-opt" data-read-action="html"><i class="fa-solid fa-file-code"></i><span>导出 HTML（含配图）</span></button>
                             <div class="t-read-more-sep"></div>
                             <button type="button" class="danger" id="t-read-menu-del-segment" data-read-action="del-segment"><i class="fa-solid fa-scissors"></i><span>删除分组段落</span></button>
                             <button type="button" class="danger" data-read-action="del-one"><i class="fa-solid fa-trash"></i><span>删除此收藏</span></button>
@@ -1602,7 +1617,7 @@ export function openFavsWindow() {
             $("#t-read-toggle-meta").show();
             syncToggleMetaButton(false);
         } else {
-            currentViewingHtml = item.html;
+            currentViewingHtml = String(item.html || "") + illustrationFigure(item.illustration);
             $("#t-read-meta").text(item.title);
             $("#t-read-index").text(`${index + 1} / ${currentFilteredList.length}`);
             $("#t-read-menu-del-segment").hide();
@@ -1652,6 +1667,44 @@ export function openFavsWindow() {
     };
 
     // --- 工具栏抽屉 / 顶栏溢出菜单 ---
+    $("#t-read-illustrate").on("click", async () => {
+        const favorite = currentFilteredList[currentIndex];
+        if (!favorite) return;
+        try {
+            await ensureFavBody(favorite);
+            const segments = favorite.type === "chain" && favorite.items?.length ? favorite.items : [favorite];
+            const targets = segments.map((segment, index) => {
+                const content = String(segment.html || "");
+                const fallback = `favorite:${favorite.id}:${index}`;
+                const target = createIllustrationTarget({ ...segment, content, scriptId: favorite.scriptId, scriptName: favorite.scriptName || favorite.title }, fallback);
+                return {
+                    ...target,
+                    label: segments.length > 1 ? `第 ${index + 1} 段 · ${target.scriptName}` : target.scriptName,
+                    illustration: segment.illustration || null,
+                    async onSelected(image) {
+                        const fresh = await loadFavForWrite(favorite.id);
+                        if (!fresh) throw new Error("原收藏已被删除；图片已保存在配图记录中。");
+                        const destination = favorite.type === "chain" && fresh.items?.length ? fresh.items[index] : fresh;
+                        if (!destination || String(destination.html || "") !== content
+                            || String(destination.generationId || "") !== String(segment.generationId || "")) {
+                            throw new Error("原收藏内容已变化，图片已保留，请重新打开收藏后选择配图。");
+                        }
+                        if (image) destination.illustration = image;
+                        else delete destination.illustration;
+                        if (fresh.type === "chain") {
+                            fresh.chainSignature = buildChainSignature(fresh.scriptId, fresh.items);
+                            fresh.html = buildChainMergedHtml(fresh.items, { withStyles: true });
+                        }
+                        await putFav(fresh);
+                        if (!fresh.illustration) delete favorite.illustration;
+                        Object.assign(favorite, fresh);
+                        if (currentFavId === favorite.id && $("#t-fav-reader").length) await loadReaderItem(currentIndex);
+                    },
+                };
+            });
+            openIllustrationWindow(targets);
+        } catch (error) { if (window.toastr) toastr.error(error.message || "无法打开配图面板"); }
+    });
     // 抽屉与菜单只在移动端折叠：桌面端 CSS 忽略 hidden 属性，直接平铺
     const setFavDrawerOpen = (open) => {
         $("#t-fav-tools-drawer").prop("hidden", !open);
@@ -1694,6 +1747,10 @@ export function openFavsWindow() {
             "del-one": "#t-read-del-one"
         }[action];
 
+        if (action === "html" && currentViewingHtml) {
+            void exportAsHtmlFile(currentViewingHtml, currentViewingTitle)
+                .catch(error => { if (window.toastr) toastr.error(error.message || "导出失败"); });
+        }
         if (targetId) $(targetId).trigger("click");
     });
 
@@ -1893,17 +1950,13 @@ export function openFavsWindow() {
         }
     });
 
-    $("#t-read-code").on("click", () => {
-        // 直接使用保存的原始 HTML，而不是从 iframe 中提取
-        if (currentViewingHtml) {
-            navigator.clipboard.writeText(currentViewingHtml);
-            if (window.toastr) toastr.success("源码已复制");
-        } else {
-            const container = document.getElementById("t-read-content");
-            // 降级：从 Shadow DOM 中提取内容
-            const htmlCode = extractFromShadowDOM(container);
-            navigator.clipboard.writeText(htmlCode);
-            if (window.toastr) toastr.success("源码已复制");
+    $("#t-read-code").on("click", async () => {
+        const html = currentViewingHtml || extractFromShadowDOM(document.getElementById("t-read-content"));
+        try {
+            await navigator.clipboard.writeText(await embedIllustrationsInHtml(html));
+            if (window.toastr) toastr.success("源码已复制（包含配图）");
+        } catch (error) {
+            if (window.toastr) toastr.error(error.message || "复制失败，可以使用导出 HTML");
         }
     });
 
