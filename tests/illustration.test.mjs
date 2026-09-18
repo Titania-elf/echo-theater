@@ -291,6 +291,68 @@ test('panel can retry saving without paying for another image; new displayed sce
     action('close').click();
 });
 
+test('closing the panel leaves analysis and generation running in the background', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const store = await h.load('src/core/illustrationStore.js');
+    const data = await h.load('src/core/illustrationData.js');
+    let deliver = null;
+    h.window.CosmosVision.generate = (request, control) => {
+        h.state.generateCalls.push({ request, control });
+        return new Promise(resolve => { deliver = () => resolve({ requestId: control.requestId, draft: request.draft, images: [{ blob: png, mimeType: 'image/png', width: 1, height: 1, seed: 7 }] }); });
+    };
+    const target = data.createIllustrationTarget({ content: `<p>${story}</p>`, generationId: 'g-background', scriptName: '雨夜' });
+    ui.openIllustrationWindow(target);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    await waitFor(() => !action('prepare').disabled, 'API ready');
+    action('prepare').click();
+    await waitFor(() => !action('generate').disabled, 'draft ready');
+    action('generate').click();
+    await waitFor(() => deliver, 'generation started');
+    action('close').click();
+    assert.equal(h.document.querySelector('.t-illustration-window'), null);
+    // 关窗不再取消任务：供应方照常返回，图片在后台入库并成为当前配图。
+    deliver();
+    await waitFor(() => h.state.settings.illustration_index?.[target.sceneId], 'background save');
+    const record = await store.readSceneIllustrations(target.sceneId);
+    assert.equal(record.images.length, 1);
+    assert.equal(record.selectedId, record.images[0].id);
+    ui.openIllustrationWindow(target);
+    await waitFor(() => h.document.querySelector('.t-illustration-candidate img'), 'gallery after reopen');
+    assert.equal(h.document.querySelector(`[data-image-id="${record.images[0].id}"]`).textContent, '当前配图');
+    action('close').click();
+});
+
+test('reopening the panel reattaches to the running task and can still cancel it', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    let prepareControl = null;
+    h.window.CosmosVision.preparePrompt = (request, control) => {
+        h.state.prepareCalls.push({ request, control });
+        prepareControl = control;
+        return new Promise(() => {});
+    };
+    const target = data.createIllustrationTarget({ content: story, generationId: 'g-reattach' });
+    ui.openIllustrationWindow(target);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    const status = () => h.document.querySelector('[data-role="status"]').textContent;
+    await waitFor(() => !action('prepare').disabled, 'API ready');
+    action('prepare').click();
+    await waitFor(() => prepareControl, 'analysis started');
+    action('close').click();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    ui.openIllustrationWindow(target);
+    await waitFor(() => !action('cancel').hidden, 'cancel visible after reopen');
+    assert.match(status(), /正在分析剧场/);
+    assert.equal(h.document.querySelector('[data-field="text"]').disabled, true, 'task still occupies the panel');
+    action('cancel').click();
+    await waitFor(() => action('cancel').hidden, 'job cleared');
+    assert.match(status(), /已取消等待/);
+    assert.equal(h.document.querySelector('[data-field="text"]').disabled, false);
+    action('close').click();
+});
+
 test('main content renders the adopted image at the head of the theater content', async t => {
     const h = harness(); t.after(h.close);
     const ui = await h.load('src/ui/illustrationWindow.js');

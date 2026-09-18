@@ -21390,12 +21390,57 @@ var init_cosmosVisionBridge = __esm({
 function showError(error) {
   return error?.name === "AbortError" || error?.code === "ABORTED" ? "\u5DF2\u53D6\u6D88\u7B49\u5F85\u3002\u540E\u7AEF\u53EF\u80FD\u4ECD\u5728\u8BA1\u7B97\uFF1B\u9700\u8981\u65F6\u53EF\u91CD\u65B0\u53D1\u8D77\u3002" : String(error?.message || "\u914D\u56FE\u64CD\u4F5C\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002");
 }
+function sessionFor(sceneId, initialText) {
+  if (!sessions.has(sceneId)) {
+    sessions.set(sceneId, { text: initialText || "", request: "", participants: "", draft: null, pending: null, previousScenes: [], adopted: void 0, notice: "", job: null });
+  }
+  return sessions.get(sceneId);
+}
+function notifyView(sceneId) {
+  if (activeView?.sceneId === sceneId) activeView.sync();
+}
+function jobProgress(job) {
+  return (event) => {
+    job.status = PROGRESS_LABELS[event.stage] || "\u6B63\u5728\u5904\u7406\u2026";
+    notifyView(job.sceneId);
+  };
+}
+function startJob(current, currentTarget, kind, operation) {
+  if (current.job) return current.job;
+  const job = { sceneId: currentTarget.sceneId, kind, status: "", phase: "running", controller: new AbortController(), error: null };
+  current.job = job;
+  current.notice = "";
+  job.promise = Promise.resolve().then(() => operation(job)).catch((error) => {
+    job.error = error;
+    current.notice = showError(error);
+  }).finally(() => {
+    if (current.job === job) current.job = null;
+    if (activeView?.sceneId === job.sceneId) activeView.sync();
+    else notifyBackgroundResult(job);
+  });
+  notifyView(job.sceneId);
+  return job;
+}
+function notifyBackgroundResult(job) {
+  if (!window.toastr) return;
+  const titles = { prepare: "\u573A\u666F\u914D\u56FE\uFF1A\u753B\u9762\u5DF2\u9009\u597D\uFF0C\u91CD\u65B0\u6253\u5F00\u914D\u56FE\u9762\u677F\u5373\u53EF\u7EE7\u7EED\u3002", generate: "\u573A\u666F\u914D\u56FE\uFF1A\u56FE\u7247\u5DF2\u751F\u6210\u5E76\u4FDD\u5B58\u3002" };
+  if (job.error) window.toastr.warning(showError(job.error), "Titania Echo");
+  else if (titles[job.kind]) window.toastr.info(titles[job.kind], "Titania Echo");
+}
+async function persistPending(current, currentTarget) {
+  current.record = await saveGeneratedIllustration(currentTarget.sceneId, current.pending);
+  const image = selectedIllustration(current.record);
+  await currentTarget.onSelected?.(image);
+  current.adopted = image;
+  current.pending = null;
+  current.notice = "\u914D\u56FE\u5DF2\u4FDD\u5B58\u3002\u53EF\u5728\u4E0B\u65B9\u6311\u9009\u56FE\u7247\uFF0C\u6216\u6CBF\u7528\u63D0\u793A\u8BCD\u91CD\u65B0\u751F\u6210\u3002";
+  return current.record;
+}
 function openIllustrationWindow(targetOrTargets) {
-  if (closeActiveWindow?.() === false) return;
+  closeActiveWindow?.();
   const targets = Array.isArray(targetOrTargets) ? targetOrTargets : [targetOrTargets];
   if (!targets.length) return;
   const previousFocus = document.activeElement;
-  const adoptedSelections = /* @__PURE__ */ new Map();
   const root = document.createElement("div");
   root.className = "t-root t-illustration-window";
   root.innerHTML = `
@@ -21437,22 +21482,35 @@ function openIllustrationWindow(targetOrTargets) {
   const role = (name) => root.querySelector(`[data-role="${name}"]`);
   const action = (name) => root.querySelector(`[data-action="${name}"]`);
   targets.forEach((target2, index) => field("target").add(new Option(target2.label || target2.scriptName, String(index))));
-  let target = targets[0], session, controller = null, busy = false, saving = false, ready = false, disposed = false;
-  let selectionSequence = 0, detectionSequence = 0, pendingUrl = null;
+  let target = targets[0], session, localBusy = false, ready = false, disposed = false;
+  let selectionSequence = 0, detectionSequence = 0, pendingUrl = null, renderedDraft, renderedPending;
+  const isBusy = () => localBusy || Boolean(session?.job);
+  const view = { sceneId: "", sync: () => refreshFromState() };
+  activeView = view;
   function updateControls() {
+    const busy = isBusy();
+    const job = session?.job;
     root.querySelectorAll("input, textarea, select").forEach((el) => {
       el.disabled = busy;
     });
     for (const name of ["prepare", "alternate", "generate"]) action(name).disabled = busy || !ready || !session?.record || name !== "prepare" && !session?.draft;
     action("detect").disabled = busy;
-    action("close").disabled = saving;
-    action("cancel").hidden = !busy || saving;
+    action("cancel").hidden = !job || job.phase === "saving";
     action("save").hidden = !session?.pending;
     action("save").disabled = busy;
     root.querySelectorAll("[data-image-id]").forEach((el) => {
       el.disabled = busy;
     });
     field("target").disabled = busy || targets.length === 1;
+  }
+  function refreshFromState() {
+    if (disposed || !session) return;
+    role("status").textContent = session.job?.status || session.notice || (session.pending ? "\u4E0A\u6B21\u751F\u6210\u7684\u56FE\u7247\u5C1A\u672A\u4FDD\u5B58\uFF0C\u53EF\u4EE5\u7EE7\u7EED\u4FDD\u5B58\u3002" : "");
+    if (session.draft !== renderedDraft) {
+      renderedDraft = session.draft;
+      renderDraft();
+    }
+    renderGallery();
   }
   function renderDraft() {
     const draft = session?.draft;
@@ -21490,8 +21548,14 @@ function openIllustrationWindow(targetOrTargets) {
                 <p>${escapeIllustrationHtml(image.draft.scene.summary)}</p>
                 <div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="${escapeIllustrationHtml(image.id)}">${session.record.selectedId === image.id ? "\u5F53\u524D\u914D\u56FE" : "\u91C7\u7528\u8FD9\u5F20"}</button><a class="t-btn" href="${image.filePath}" download>\u4E0B\u8F7D</a></div>
             </article>`).join("")}</div><div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="">\u6682\u4E0D\u5C55\u793A\u914D\u56FE</button><button class="t-btn" type="button" data-action="export">\u5BFC\u51FA\u56FE\u6587 HTML</button></div>` : "";
-    if (pendingUrl) URL.revokeObjectURL(pendingUrl);
-    pendingUrl = session?.pending ? URL.createObjectURL(session.pending.image.blob) : null;
+    if (pendingUrl && session?.pending !== renderedPending) {
+      URL.revokeObjectURL(pendingUrl);
+      pendingUrl = null;
+    }
+    if (session?.pending && session.pending !== renderedPending) {
+      pendingUrl = URL.createObjectURL(session.pending.image.blob);
+    }
+    renderedPending = session?.pending || null;
     role("pending").hidden = !pendingUrl;
     if (pendingUrl) role("pending-image").src = pendingUrl;
     else role("pending-image").removeAttribute("src");
@@ -21525,9 +21589,9 @@ function openIllustrationWindow(targetOrTargets) {
     target = targets[index];
     const sequence = ++selectionSequence;
     const current = target;
-    if (!sessions.has(current.sceneId)) sessions.set(current.sceneId, { text: buildPromptTextFromTheater(current.content), request: "", participants: "", draft: null, pending: null, previousScenes: [] });
-    session = sessions.get(current.sceneId);
-    busy = true;
+    session = sessionFor(current.sceneId, buildPromptTextFromTheater(current.content));
+    view.sceneId = "";
+    localBusy = true;
     ready = false;
     field("text").value = session.text;
     field("request").value = session.request;
@@ -21538,60 +21602,39 @@ function openIllustrationWindow(targetOrTargets) {
       const record = await readSceneIllustrations(current.sceneId);
       if (disposed || sequence !== selectionSequence) return;
       if (Object.hasOwn(current, "illustration")) {
-        const adopted = adoptedSelections.has(current) ? adoptedSelections.get(current) : current.illustration;
+        const adopted = session.adopted === void 0 ? current.illustration : session.adopted;
         const saved = adopted ? normalizeSavedIllustration(adopted) : null;
         if (saved && !record.images.some((image) => image.id === saved.id)) record.images.push(saved);
         record.selectedId = saved?.id || null;
       }
       session.record = record;
       session.draft || (session.draft = selectedIllustration(record)?.draft || null);
-      role("status").textContent = session.pending ? "\u4E0A\u6B21\u751F\u6210\u7684\u56FE\u7247\u5C1A\u672A\u4FDD\u5B58\uFF0C\u53EF\u4EE5\u7EE7\u7EED\u4FDD\u5B58\u3002" : "";
       renderDraft();
       renderGallery();
     } catch (error) {
-      role("status").textContent = showError(error);
+      session.notice = showError(error);
       session.record = null;
     } finally {
       if (!disposed && sequence === selectionSequence) {
-        busy = false;
-        updateControls();
+        localBusy = false;
+        view.sceneId = current.sceneId;
+        refreshFromState();
         void detect();
       }
     }
   }
   async function run(operation) {
-    if (busy) return;
-    busy = true;
-    controller = new AbortController();
+    if (isBusy()) return;
+    localBusy = true;
     updateControls();
     try {
-      await operation(controller.signal);
+      await operation();
     } catch (error) {
-      if (!disposed) role("status").textContent = showError(error);
+      session.notice = showError(error);
     } finally {
-      busy = false;
-      saving = false;
-      controller = null;
-      if (!disposed) {
-        renderGallery();
-        updateControls();
-      }
+      localBusy = false;
+      refreshFromState();
     }
-  }
-  async function persistPending() {
-    saving = true;
-    updateControls();
-    role("status").textContent = "\u6B63\u5728\u4FDD\u5B58\u914D\u56FE\u2026";
-    session.record = await saveGeneratedIllustration(target.sceneId, session.pending);
-    await target.onSelected?.(selectedIllustration(session.record));
-    adoptedSelections.set(target, selectedIllustration(session.record));
-    session.pending = null;
-    role("status").textContent = "\u914D\u56FE\u5DF2\u4FDD\u5B58\u3002\u53EF\u5728\u4E0B\u65B9\u6311\u9009\u56FE\u7247\uFF0C\u6216\u6CBF\u7528\u63D0\u793A\u8BCD\u91CD\u65B0\u751F\u6210\u3002";
-  }
-  function progress(event) {
-    if (disposed) return;
-    const labels = { queued: "\u6B63\u5728\u6392\u961F\u2026", analyzing: "\u6B63\u5728\u5206\u6790\u5267\u573A\u3001\u9009\u62E9\u753B\u9762\u2026", generating: "\u6B63\u5728\u751F\u6210\u56FE\u7247\u2026", downloading: "\u6B63\u5728\u63A5\u6536\u56FE\u7247\u2026" };
-    role("status").textContent = labels[event.stage] || "\u6B63\u5728\u5904\u7406\u2026";
   }
   root.addEventListener("input", (event) => {
     if (!session) return;
@@ -21618,7 +21661,7 @@ function openIllustrationWindow(targetOrTargets) {
       return;
     }
     if (operation === "cancel") {
-      controller?.abort();
+      session?.job?.controller.abort();
       return;
     }
     if (operation === "detect") {
@@ -21626,72 +21669,89 @@ function openIllustrationWindow(targetOrTargets) {
       else void detect();
       return;
     }
+    const current = session, currentTarget = target;
     if (operation === "save") {
-      void run(persistPending);
+      void run(async () => {
+        await persistPending(current, currentTarget);
+      });
       return;
     }
     if (operation === "export") {
       void run(async () => {
-        await exportAsHtmlFile(target.content + illustrationFigure(selectedIllustration(session.record)), target.scriptName);
-        role("status").textContent = "\u56FE\u6587 HTML \u5DF2\u5BFC\u51FA\u3002";
+        await exportAsHtmlFile(currentTarget.content + illustrationFigure(selectedIllustration(current.record)), currentTarget.scriptName);
+        current.notice = "\u56FE\u6587 HTML \u5DF2\u5BFC\u51FA\u3002";
       });
       return;
     }
     if (operation === "prepare" || operation === "alternate") {
-      void run(async (signal) => {
-        if (session.pending) throw new Error("\u8BF7\u5148\u4FDD\u5B58\u4E0A\u6B21\u751F\u6210\u7684\u56FE\u7247\u3002");
-        role("status").textContent = "\u6B63\u5728\u5206\u6790\u5267\u573A\u3001\u9009\u62E9\u753B\u9762\u2026";
+      if (current.pending) {
+        role("status").textContent = "\u8BF7\u5148\u4FDD\u5B58\u4E0A\u6B21\u751F\u6210\u7684\u56FE\u7247\u3002";
+        return;
+      }
+      const imageSource = field("source").value;
+      const alternate = operation === "alternate";
+      startJob(current, currentTarget, "prepare", async (job) => {
+        job.status = PROGRESS_LABELS.analyzing;
+        notifyView(job.sceneId);
         const draft = await prepareTheaterIllustration({
           mode: "theater",
-          imageSource: field("source").value,
-          theaterText: session.text,
-          context: { mode: "provided", source: { client: "titania-theater", sceneId: target.sceneId }, participants: session.participants, history: [] },
-          specialRequest: session.request,
-          ...operation === "alternate" ? { previousScenes: session.previousScenes.slice(-6) } : {}
-        }, { signal, onProgress: progress });
-        session.draft = draft;
-        session.previousScenes.push(draft.scene);
-        renderDraft();
-        role("status").textContent = "\u753B\u9762\u5DF2\u9009\u597D\u3002\u53EF\u4EE5\u5C55\u5F00\u4FEE\u6539\u63D0\u793A\u8BCD\uFF0C\u518D\u751F\u6210\u56FE\u7247\u3002";
+          imageSource,
+          theaterText: current.text,
+          context: { mode: "provided", source: { client: "titania-theater", sceneId: currentTarget.sceneId }, participants: current.participants, history: [] },
+          specialRequest: current.request,
+          ...alternate ? { previousScenes: current.previousScenes.slice(-6) } : {}
+        }, { signal: job.controller.signal, onProgress: jobProgress(job) });
+        current.draft = draft;
+        current.previousScenes.push(draft.scene);
+        current.notice = "\u753B\u9762\u5DF2\u9009\u597D\u3002\u53EF\u4EE5\u5C55\u5F00\u4FEE\u6539\u63D0\u793A\u8BCD\uFF0C\u518D\u751F\u6210\u56FE\u7247\u3002";
       });
+      return;
     }
     if (operation === "generate") {
-      void run(async (signal) => {
-        if (session.pending) throw new Error("\u8BF7\u5148\u4FDD\u5B58\u4E0A\u6B21\u751F\u6210\u7684\u56FE\u7247\u3002");
-        session.draft = readDraft();
-        role("status").textContent = "\u6B63\u5728\u751F\u6210\u56FE\u7247\u2026";
-        session.pending = await generateTheaterIllustration(session.draft, { signal, onProgress: progress });
-        renderGallery();
-        await persistPending();
+      if (!current?.draft || current.pending) {
+        role("status").textContent = current?.pending ? "\u8BF7\u5148\u4FDD\u5B58\u4E0A\u6B21\u751F\u6210\u7684\u56FE\u7247\u3002" : "";
+        return;
+      }
+      let draft;
+      try {
+        draft = readDraft();
+      } catch (error) {
+        role("status").textContent = showError(error);
+        return;
+      }
+      current.draft = draft;
+      startJob(current, currentTarget, "generate", async (job) => {
+        job.status = PROGRESS_LABELS.generating;
+        notifyView(job.sceneId);
+        current.pending = await generateTheaterIllustration(draft, { signal: job.controller.signal, onProgress: jobProgress(job) });
+        job.phase = "saving";
+        job.status = "\u6B63\u5728\u4FDD\u5B58\u914D\u56FE\u2026";
+        notifyView(job.sceneId);
+        await persistPending(current, currentTarget);
       });
+      return;
     }
     if (button.hasAttribute("data-image-id")) {
       void run(async () => {
-        saving = true;
-        updateControls();
         const id3 = button.dataset.imageId || null;
-        const image = session.record.images.find((item) => item.id === id3);
-        session.record = await selectSceneIllustration(target.sceneId, id3, image);
-        await target.onSelected?.(selectedIllustration(session.record));
-        adoptedSelections.set(target, selectedIllustration(session.record));
-        if (image) {
-          session.draft = image.draft;
-          renderDraft();
-        }
-        role("status").textContent = id3 ? "\u5DF2\u66F4\u6362\u5F53\u524D\u914D\u56FE\u3002" : "\u5DF2\u9690\u85CF\u5F53\u524D\u914D\u56FE\uFF0C\u5DF2\u4FDD\u5B58\u7684\u56FE\u7247\u4ECD\u53EF\u91CD\u65B0\u91C7\u7528\u3002";
+        const image = current.record.images.find((item) => item.id === id3);
+        current.record = await selectSceneIllustration(currentTarget.sceneId, id3, image);
+        current.adopted = selectedIllustration(current.record);
+        await currentTarget.onSelected?.(current.adopted);
+        if (image) current.draft = image.draft;
+        current.notice = id3 ? "\u5DF2\u66F4\u6362\u5F53\u524D\u914D\u56FE\u3002" : "\u5DF2\u9690\u85CF\u5F53\u524D\u914D\u56FE\uFF0C\u5DF2\u4FDD\u5B58\u7684\u56FE\u7247\u4ECD\u53EF\u91CD\u65B0\u91C7\u7528\u3002";
       });
     }
   });
   function close() {
-    if (saving) return false;
-    if (session?.draft && !busy) {
+    if (session?.draft && !isBusy()) {
       try {
         session.draft = readDraft();
       } catch {
       }
     }
     disposed = true;
-    controller?.abort();
+    if (activeView === view) activeView = null;
     if (pendingUrl) URL.revokeObjectURL(pendingUrl);
     root.remove();
     window.removeEventListener("cosmos-vision:ready", detect);
@@ -21700,9 +21760,8 @@ function openIllustrationWindow(targetOrTargets) {
     if (previousFocus?.isConnected) previousFocus.focus();
     for (const [key, value] of sessions) {
       if (sessions.size <= 20) break;
-      if (!value.pending && key !== target.sceneId) sessions.delete(key);
+      if (!value.pending && !value.job && key !== target.sceneId) sessions.delete(key);
     }
-    return true;
   }
   closeActiveWindow = close;
   window.addEventListener("cosmos-vision:ready", detect);
@@ -21793,7 +21852,7 @@ function bindMainIllustrations(getTarget) {
     clearSceneIllustration(findSceneContentRoot(content));
   };
 }
-var sessions, closeActiveWindow, SCENE_ILLUSTRATION_SELECTOR;
+var PROGRESS_LABELS, sessions, activeView, closeActiveWindow, SCENE_ILLUSTRATION_SELECTOR;
 var init_illustrationWindow = __esm({
   "src/ui/illustrationWindow.js"() {
     init_chatInjector();
@@ -21801,7 +21860,9 @@ var init_illustrationWindow = __esm({
     init_illustrationStore();
     init_illustrationData();
     init_helpers();
+    PROGRESS_LABELS = { queued: "\u6B63\u5728\u6392\u961F\u2026", analyzing: "\u6B63\u5728\u5206\u6790\u5267\u573A\u3001\u9009\u62E9\u753B\u9762\u2026", generating: "\u6B63\u5728\u751F\u6210\u56FE\u7247\u2026", downloading: "\u6B63\u5728\u63A5\u6536\u56FE\u7247\u2026" };
     sessions = /* @__PURE__ */ new Map();
+    activeView = null;
     closeActiveWindow = null;
     SCENE_ILLUSTRATION_SELECTOR = "[data-titania-illustration],[data-titania-illustration-notice]";
   }

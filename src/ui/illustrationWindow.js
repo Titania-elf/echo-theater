@@ -4,7 +4,10 @@ import { readSceneIllustrations, saveGeneratedIllustration, selectSceneIllustrat
 import { escapeIllustrationHtml as escape, illustrationFigure, normalizeIllustrationDraft, normalizeSavedIllustration } from "../core/illustrationData.js";
 import { exportAsHtmlFile } from "../utils/helpers.js";
 
+const PROGRESS_LABELS = { queued: "正在排队…", analyzing: "正在分析剧场、选择画面…", generating: "正在生成图片…", downloading: "正在接收图片…" };
+// 会话与任务都放在模块级：面板关掉后选景与生图继续跑，重新打开同一场景能接着看进度和结果。
 const sessions = new Map();
+let activeView = null;
 let closeActiveWindow = null;
 
 function showError(error) {
@@ -13,13 +16,67 @@ function showError(error) {
         : String(error?.message || "配图操作失败，请重试。");
 }
 
+function sessionFor(sceneId, initialText) {
+    if (!sessions.has(sceneId)) {
+        sessions.set(sceneId, { text: initialText || "", request: "", participants: "", draft: null, pending: null, previousScenes: [], adopted: undefined, notice: "", job: null });
+    }
+    return sessions.get(sceneId);
+}
+
+function notifyView(sceneId) {
+    if (activeView?.sceneId === sceneId) activeView.sync();
+}
+
+function jobProgress(job) {
+    return event => {
+        job.status = PROGRESS_LABELS[event.stage] || "正在处理…";
+        notifyView(job.sceneId);
+    };
+}
+
+/** 后台任务：只在显式取消或刷新页面时结束，面板关闭不再中断，进度与结果都写回会话。 */
+function startJob(current, currentTarget, kind, operation) {
+    if (current.job) return current.job;
+    const job = { sceneId: currentTarget.sceneId, kind, status: "", phase: "running", controller: new AbortController(), error: null };
+    current.job = job;
+    current.notice = "";
+    job.promise = Promise.resolve()
+        .then(() => operation(job))
+        .catch(error => { job.error = error; current.notice = showError(error); })
+        .finally(() => {
+            if (current.job === job) current.job = null;
+            if (activeView?.sceneId === job.sceneId) activeView.sync();
+            else notifyBackgroundResult(job);
+        });
+    notifyView(job.sceneId);
+    return job;
+}
+
+/** 面板关着时任务照样跑完，用一条提示收尾，避免结果静默落在会话里。 */
+function notifyBackgroundResult(job) {
+    if (!window.toastr) return;
+    const titles = { prepare: "场景配图：画面已选好，重新打开配图面板即可继续。", generate: "场景配图：图片已生成并保存。" };
+    if (job.error) window.toastr.warning(showError(job.error), "Titania Echo");
+    else if (titles[job.kind]) window.toastr.info(titles[job.kind], "Titania Echo");
+}
+
+/** 生成成功后立即保存；面板关掉也继续，保存失败时图片留在会话里等「重试保存」。 */
+async function persistPending(current, currentTarget) {
+    current.record = await saveGeneratedIllustration(currentTarget.sceneId, current.pending);
+    const image = selectedIllustration(current.record);
+    await currentTarget.onSelected?.(image);
+    current.adopted = image;
+    current.pending = null;
+    current.notice = "配图已保存。可在下方挑选图片，或沿用提示词重新生成。";
+    return current.record;
+}
+
 /** target 为固定的正文快照；onSelected 可由收藏页注入，始终操作原收藏。 */
 export function openIllustrationWindow(targetOrTargets) {
-    if (closeActiveWindow?.() === false) return;
+    closeActiveWindow?.();
     const targets = Array.isArray(targetOrTargets) ? targetOrTargets : [targetOrTargets];
     if (!targets.length) return;
     const previousFocus = document.activeElement;
-    const adoptedSelections = new Map();
     const root = document.createElement("div");
     root.className = "t-root t-illustration-window";
     root.innerHTML = `
@@ -61,19 +118,36 @@ export function openIllustrationWindow(targetOrTargets) {
     const role = name => root.querySelector(`[data-role="${name}"]`);
     const action = name => root.querySelector(`[data-action="${name}"]`);
     targets.forEach((target, index) => field("target").add(new Option(target.label || target.scriptName, String(index))));
-    let target = targets[0], session, controller = null, busy = false, saving = false, ready = false, disposed = false;
-    let selectionSequence = 0, detectionSequence = 0, pendingUrl = null;
+    let target = targets[0], session, localBusy = false, ready = false, disposed = false;
+    let selectionSequence = 0, detectionSequence = 0, pendingUrl = null, renderedDraft, renderedPending;
+    const isBusy = () => localBusy || Boolean(session?.job);
+    // 后台任务通过 activeView 找到当前面板；面板不在时任务照常写会话。
+    const view = { sceneId: "", sync: () => refreshFromState() };
+    activeView = view;
 
     function updateControls() {
+        const busy = isBusy();
+        const job = session?.job;
         root.querySelectorAll("input, textarea, select").forEach(el => { el.disabled = busy; });
         for (const name of ["prepare", "alternate", "generate"]) action(name).disabled = busy || !ready || !session?.record || (name !== "prepare" && !session?.draft);
         action("detect").disabled = busy;
-        action("close").disabled = saving;
-        action("cancel").hidden = !busy || saving;
+        // 关闭面板不再中断任务，取消只对正在跑的后台任务有意义。
+        action("cancel").hidden = !job || job.phase === "saving";
         action("save").hidden = !session?.pending;
         action("save").disabled = busy;
         root.querySelectorAll("[data-image-id]").forEach(el => { el.disabled = busy; });
         field("target").disabled = busy || targets.length === 1;
+    }
+
+    /** 面板内容统一从会话重画；后台任务完成时也走这里。 */
+    function refreshFromState() {
+        if (disposed || !session) return;
+        role("status").textContent = session.job?.status
+            || session.notice
+            || (session.pending ? "上次生成的图片尚未保存，可以继续保存。" : "");
+        // 草稿换了才重画输入框：进度刷新不能冲掉用户正在编辑的提示词。
+        if (session.draft !== renderedDraft) { renderedDraft = session.draft; renderDraft(); }
+        renderGallery();
     }
 
     function renderDraft() {
@@ -114,8 +188,11 @@ export function openIllustrationWindow(targetOrTargets) {
                 <p>${escape(image.draft.scene.summary)}</p>
                 <div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="${escape(image.id)}">${session.record.selectedId === image.id ? "当前配图" : "采用这张"}</button><a class="t-btn" href="${image.filePath}" download>下载</a></div>
             </article>`).join("")}</div><div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="">暂不展示配图</button><button class="t-btn" type="button" data-action="export">导出图文 HTML</button></div>` : "";
-        if (pendingUrl) URL.revokeObjectURL(pendingUrl);
-        pendingUrl = session?.pending ? URL.createObjectURL(session.pending.image.blob) : null;
+        if (pendingUrl && session?.pending !== renderedPending) { URL.revokeObjectURL(pendingUrl); pendingUrl = null; }
+        if (session?.pending && session.pending !== renderedPending) {
+            pendingUrl = URL.createObjectURL(session.pending.image.blob);
+        }
+        renderedPending = session?.pending || null;
         role("pending").hidden = !pendingUrl;
         if (pendingUrl) role("pending-image").src = pendingUrl;
         else role("pending-image").removeAttribute("src");
@@ -152,9 +229,10 @@ export function openIllustrationWindow(targetOrTargets) {
         target = targets[index];
         const sequence = ++selectionSequence;
         const current = target;
-        if (!sessions.has(current.sceneId)) sessions.set(current.sceneId, { text: buildPromptTextFromTheater(current.content), request: "", participants: "", draft: null, pending: null, previousScenes: [] });
-        session = sessions.get(current.sceneId);
-        busy = true;
+        session = sessionFor(current.sceneId, buildPromptTextFromTheater(current.content));
+        // 读取记录期间不接受后台任务的界面同步，避免画到半截状态上。
+        view.sceneId = "";
+        localBusy = true;
         ready = false;
         field("text").value = session.text;
         field("request").value = session.request;
@@ -166,58 +244,38 @@ export function openIllustrationWindow(targetOrTargets) {
             if (disposed || sequence !== selectionSequence) return;
             // 收藏持有自己的采用图快照；浏览收藏不会被同源场景的后续换图改变。
             if (Object.hasOwn(current, "illustration")) {
-                const adopted = adoptedSelections.has(current) ? adoptedSelections.get(current) : current.illustration;
+                const adopted = session.adopted === undefined ? current.illustration : session.adopted;
                 const saved = adopted ? normalizeSavedIllustration(adopted) : null;
                 if (saved && !record.images.some(image => image.id === saved.id)) record.images.push(saved);
                 record.selectedId = saved?.id || null;
             }
             session.record = record;
             session.draft ||= selectedIllustration(record)?.draft || null;
-            role("status").textContent = session.pending ? "上次生成的图片尚未保存，可以继续保存。" : "";
             renderDraft();
             renderGallery();
         } catch (error) {
-            role("status").textContent = showError(error);
+            session.notice = showError(error);
             session.record = null;
         } finally {
             if (!disposed && sequence === selectionSequence) {
-                busy = false;
-                updateControls();
+                localBusy = false;
+                view.sceneId = current.sceneId;
+                refreshFromState();
                 void detect();
             }
         }
     }
 
     async function run(operation) {
-        if (busy) return;
-        busy = true;
-        controller = new AbortController();
+        if (isBusy()) return;
+        localBusy = true;
         updateControls();
-        try { await operation(controller.signal); }
-        catch (error) { if (!disposed) role("status").textContent = showError(error); }
+        try { await operation(); }
+        catch (error) { session.notice = showError(error); }
         finally {
-            busy = false;
-            saving = false;
-            controller = null;
-            if (!disposed) { renderGallery(); updateControls(); }
+            localBusy = false;
+            refreshFromState();
         }
-    }
-
-    async function persistPending() {
-        saving = true;
-        updateControls();
-        role("status").textContent = "正在保存配图…";
-        session.record = await saveGeneratedIllustration(target.sceneId, session.pending);
-        await target.onSelected?.(selectedIllustration(session.record));
-        adoptedSelections.set(target, selectedIllustration(session.record));
-        session.pending = null;
-        role("status").textContent = "配图已保存。可在下方挑选图片，或沿用提示词重新生成。";
-    }
-
-    function progress(event) {
-        if (disposed) return;
-        const labels = { queued: "正在排队…", analyzing: "正在分析剧场、选择画面…", generating: "正在生成图片…", downloading: "正在接收图片…" };
-        role("status").textContent = labels[event.stage] || "正在处理…";
     }
 
     root.addEventListener("input", event => {
@@ -238,80 +296,94 @@ export function openIllustrationWindow(targetOrTargets) {
         if (!button || button.disabled) return;
         const operation = button.dataset.action;
         if (operation === "close") { close(); return; }
-        if (operation === "cancel") { controller?.abort(); return; }
+        if (operation === "cancel") { session?.job?.controller.abort(); return; }
         if (operation === "detect") {
             if (!session?.record) void loadTarget(Number(field("target").value));
             else void detect();
             return;
         }
-        if (operation === "save") { void run(persistPending); return; }
+        const current = session, currentTarget = target;
+        if (operation === "save") {
+            void run(async () => { await persistPending(current, currentTarget); });
+            return;
+        }
         if (operation === "export") {
             void run(async () => {
-                await exportAsHtmlFile(target.content + illustrationFigure(selectedIllustration(session.record)), target.scriptName);
-                role("status").textContent = "图文 HTML 已导出。";
+                await exportAsHtmlFile(currentTarget.content + illustrationFigure(selectedIllustration(current.record)), currentTarget.scriptName);
+                current.notice = "图文 HTML 已导出。";
             });
             return;
         }
         if (operation === "prepare" || operation === "alternate") {
-            void run(async signal => {
-                if (session.pending) throw new Error("请先保存上次生成的图片。");
-                role("status").textContent = "正在分析剧场、选择画面…";
+            if (current.pending) { role("status").textContent = "请先保存上次生成的图片。"; return; }
+            // 来源与「换个画面」的历史在点击时固定，面板随后关掉也不影响这次任务。
+            const imageSource = field("source").value;
+            const alternate = operation === "alternate";
+            startJob(current, currentTarget, "prepare", async job => {
+                job.status = PROGRESS_LABELS.analyzing;
+                notifyView(job.sceneId);
                 const draft = await prepareTheaterIllustration({
-                    mode: "theater", imageSource: field("source").value, theaterText: session.text,
-                    context: { mode: "provided", source: { client: "titania-theater", sceneId: target.sceneId }, participants: session.participants, history: [] },
-                    specialRequest: session.request,
-                    ...(operation === "alternate" ? { previousScenes: session.previousScenes.slice(-6) } : {}),
-                }, { signal, onProgress: progress });
-                session.draft = draft;
-                session.previousScenes.push(draft.scene);
-                renderDraft();
-                role("status").textContent = "画面已选好。可以展开修改提示词，再生成图片。";
+                    mode: "theater", imageSource, theaterText: current.text,
+                    context: { mode: "provided", source: { client: "titania-theater", sceneId: currentTarget.sceneId }, participants: current.participants, history: [] },
+                    specialRequest: current.request,
+                    ...(alternate ? { previousScenes: current.previousScenes.slice(-6) } : {}),
+                }, { signal: job.controller.signal, onProgress: jobProgress(job) });
+                current.draft = draft;
+                current.previousScenes.push(draft.scene);
+                current.notice = "画面已选好。可以展开修改提示词，再生成图片。";
             });
+            return;
         }
         if (operation === "generate") {
-            void run(async signal => {
-                if (session.pending) throw new Error("请先保存上次生成的图片。");
-                session.draft = readDraft();
-                role("status").textContent = "正在生成图片…";
-                session.pending = await generateTheaterIllustration(session.draft, { signal, onProgress: progress });
-                renderGallery();
-                await persistPending();
+            if (!current?.draft || current.pending) {
+                role("status").textContent = current?.pending ? "请先保存上次生成的图片。" : "";
+                return;
+            }
+            let draft;
+            try { draft = readDraft(); } catch (error) { role("status").textContent = showError(error); return; }
+            current.draft = draft;
+            startJob(current, currentTarget, "generate", async job => {
+                job.status = PROGRESS_LABELS.generating;
+                notifyView(job.sceneId);
+                current.pending = await generateTheaterIllustration(draft, { signal: job.controller.signal, onProgress: jobProgress(job) });
+                job.phase = "saving";
+                job.status = "正在保存配图…";
+                notifyView(job.sceneId);
+                await persistPending(current, currentTarget);
             });
+            return;
         }
         if (button.hasAttribute("data-image-id")) {
             void run(async () => {
-                saving = true;
-                updateControls();
                 const id = button.dataset.imageId || null;
-                const image = session.record.images.find(item => item.id === id);
-                session.record = await selectSceneIllustration(target.sceneId, id, image);
-                await target.onSelected?.(selectedIllustration(session.record));
-                adoptedSelections.set(target, selectedIllustration(session.record));
-                if (image) { session.draft = image.draft; renderDraft(); }
-                role("status").textContent = id ? "已更换当前配图。" : "已隐藏当前配图，已保存的图片仍可重新采用。";
+                const image = current.record.images.find(item => item.id === id);
+                current.record = await selectSceneIllustration(currentTarget.sceneId, id, image);
+                current.adopted = selectedIllustration(current.record);
+                await currentTarget.onSelected?.(current.adopted);
+                if (image) current.draft = image.draft;
+                current.notice = id ? "已更换当前配图。" : "已隐藏当前配图，已保存的图片仍可重新采用。";
             });
         }
     });
 
     function close() {
-        if (saving) return false;
-        if (session?.draft && !busy) {
+        // 关闭只解除界面绑定：选景与生图在后台继续，结果留在会话里等下次打开。
+        if (session?.draft && !isBusy()) {
             try { session.draft = readDraft(); } catch { /* 未完成的输入不覆盖有效草稿。 */ }
         }
         disposed = true;
-        controller?.abort();
+        if (activeView === view) activeView = null;
         if (pendingUrl) URL.revokeObjectURL(pendingUrl);
         root.remove();
         window.removeEventListener("cosmos-vision:ready", detect);
         window.removeEventListener("cosmos-vision:capabilities-changed", detect);
         if (closeActiveWindow === close) closeActiveWindow = null;
         if (previousFocus?.isConnected) previousFocus.focus();
-        // 待保存图片保留在内存，关窗后可以重新打开继续保存；普通会话保持有界。
+        // 待保存图片与后台任务保留在内存，关窗后重新打开可以继续；普通会话保持有界。
         for (const [key, value] of sessions) {
             if (sessions.size <= 20) break;
-            if (!value.pending && key !== target.sceneId) sessions.delete(key);
+            if (!value.pending && !value.job && key !== target.sceneId) sessions.delete(key);
         }
-        return true;
     }
     closeActiveWindow = close;
     window.addEventListener("cosmos-vision:ready", detect);
