@@ -5,8 +5,6 @@ import { getExtData } from "../utils/storage.js";
 const BTN_ID = "titania-outline-entry-btn";
 const ANCHOR_SELECTOR = "#send_but";
 const MENU_ID = "titania-outline-entry-menu";
-const SCENE_PLANS_KEY = "story_outline_plans";
-const SCENE_SOURCE_PLAN_KEY = "story_outline_scene_source_plan_id";
 let observerBound = false;
 
 function isEnabled() {
@@ -26,17 +24,6 @@ function closeMenu() {
     $(window).off("scroll.titaniaOutlineMenu");
 }
 
-function getSavedPlanCount() {
-    const data = getExtData();
-    const plans = data?.[SCENE_PLANS_KEY];
-    return Array.isArray(plans) ? plans.length : 0;
-}
-
-function hasSceneSourcePlan() {
-    const data = getExtData();
-    return typeof data?.[SCENE_SOURCE_PLAN_KEY] === "string" && data[SCENE_SOURCE_PLAN_KEY].trim().length > 0;
-}
-
 function getEnabledFeatureList(data) {
     const toolbarItems = data?.quick_toolbar?.enabled_items || {};
     const showTheater = data?.outline_entry?.show_theater === true;
@@ -49,7 +36,7 @@ function getEnabledFeatureList(data) {
     return features;
 }
 
-async function openFeatureDirect(featureKey, canOpenScenes) {
+async function openFeatureDirect(featureKey) {
     switch (featureKey) {
         case "theater": {
             const { openMainWindow } = await import("./mainWindow.js");
@@ -78,10 +65,7 @@ async function tryOpenSingleFeatureDirect() {
     const features = getEnabledFeatureList(data);
     if (features.length !== 1) return false;
 
-    const hasPlans = getSavedPlanCount() > 0;
-    const hasSource = hasSceneSourcePlan();
-    const canOpenScenes = hasPlans && hasSource;
-    await openFeatureDirect(features[0], canOpenScenes);
+    await openFeatureDirect(features[0]);
     return true;
 }
 
@@ -95,14 +79,8 @@ async function openMenu($btn) {
     const floorNavEnabled = data?.floor_nav?.enabled !== false;
     const showTheater = data?.outline_entry?.show_theater === true;
     const showOutlineActions = data?.outline_entry?.show_outline_actions === true;
-    const hasPlans = getSavedPlanCount() > 0;
-    const hasSource = hasSceneSourcePlan();
-    const canOpenScenes = hasPlans && hasSource;
     const menuHtml = `
     <div id="${MENU_ID}" role="menu" aria-label="故事大纲入口">
-        ${showOutlineActions ? `<button class="t-outline-entry-item" id="t-outline-entry-open-scenes" role="menuitem" ${canOpenScenes ? "" : "disabled"}>
-            <i class="fa-solid fa-clapperboard"></i> 剧情推进
-        </button>` : ""}
         ${showTheater ? `<button class="t-outline-entry-item" id="t-outline-entry-open-theater" role="menuitem">
             <i class="fa-solid fa-masks-theater"></i> 回声小剧场
         </button>` : ""}
@@ -119,7 +97,6 @@ async function openMenu($btn) {
         ${floorNavEnabled ? `<button class="t-outline-entry-item" id="t-outline-entry-reader" role="menuitem">
             <i class="fa-solid fa-book-open"></i> 小说模式
         </button>` : ""}
-        ${hasPlans ? (hasSource ? "" : '<div class="t-outline-entry-tip">请先在方案页选择剧情推进来源方案</div>') : '<div class="t-outline-entry-tip">请先保存至少一个方案</div>'}
     </div>`;
 
     $("body").append(menuHtml);
@@ -140,15 +117,6 @@ async function openMenu($btn) {
             closeMenu();
             const { openStoryOutlineWindow } = await import("./storyOutlineWindow.js");
             openStoryOutlineWindow();
-        });
-
-        $("#t-outline-entry-open-scenes").on("click", async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!canOpenScenes) return;
-            closeMenu();
-            const { openSceneHubWindow } = await import("./storyOutlineWindow.js");
-            openSceneHubWindow();
         });
     }
 

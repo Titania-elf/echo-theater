@@ -54,6 +54,7 @@ import { applyUITheme } from "./ui/theme.js";
 import { initOutlineEntryButton } from "./ui/outlineEntryButton.js";
 import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteEntryButton.js";
 import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
+import { initSceneAdvanceBubble, refreshSceneAdvanceBubble } from "./ui/sceneAdvanceBubble.js";
 import { initFloorNav, refreshFloorNavButton } from "./ui/floorNav.js";
 import { isInjectedTheaterMessage } from "./core/chatInjector.js";
 import { exportIllustrationBackup, restoreIllustrationBackup } from "./core/illustrationPortability.js";
@@ -209,6 +210,9 @@ function initCoreFeatures() {
 
     // 初始化消息气泡上的小剧场注入入口
     initChatInjectButton();
+
+    // 初始化消息气泡上的剧情推进入口（与发送键菜单入口共用 show_outline_actions 开关）
+    initSceneAdvanceBubble();
 
     // 初始化楼层快捷操作（跳转 + 批量隐藏旧楼）
     initFloorNav();
@@ -1394,7 +1398,9 @@ async function loadExtensionSettings() {
         data.outline_entry.show_outline_actions = enabled;
         saveExtData();
         refreshOutlineEntryButton();
-        if (window.toastr) toastr.success(enabled ? "大纲生成入口已启用" : "大纲生成入口已关闭", "Titania Echo");
+        // 同一开关也管着气泡上的剧情推进入口（入口已从发送键菜单迁至气泡）
+        refreshSceneAdvanceBubble();
+        if (window.toastr) toastr.success(enabled ? "剧情推进入口已启用" : "剧情推进入口已关闭", "Titania Echo");
     });
 
     $("#cfg-rewrite-entry-enabled").on("input", function () {

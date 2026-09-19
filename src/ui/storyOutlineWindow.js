@@ -81,19 +81,20 @@ function saveOutlineGenParams(params) {
 
 // 剧情推进读取的酒馆正文楼层数（0=不读，仅用大纲推进）。
 const ROLLING_CHAT_FLOORS_KEY = "story_outline_rolling_chat_floors";
-const ROLLING_CHAT_FLOORS_DEFAULT = 6;
+const ROLLING_CHAT_FLOORS_DEFAULT = 3;
+const ROLLING_CHAT_FLOORS_MAX = 20;
 
 function getRollingChatFloors() {
     const data = getExtData();
     const raw = Number(data?.[ROLLING_CHAT_FLOORS_KEY]);
     if (!Number.isFinite(raw) || raw < 0) return ROLLING_CHAT_FLOORS_DEFAULT;
-    return Math.min(50, Math.floor(raw));
+    return Math.min(ROLLING_CHAT_FLOORS_MAX, Math.floor(raw));
 }
 
 function saveRollingChatFloors(n) {
     const data = getExtData();
     const raw = Number(n);
-    data[ROLLING_CHAT_FLOORS_KEY] = Number.isFinite(raw) && raw >= 0 ? Math.min(50, Math.floor(raw)) : ROLLING_CHAT_FLOORS_DEFAULT;
+    data[ROLLING_CHAT_FLOORS_KEY] = Number.isFinite(raw) && raw >= 0 ? Math.min(ROLLING_CHAT_FLOORS_MAX, Math.floor(raw)) : ROLLING_CHAT_FLOORS_DEFAULT;
     saveExtData();
 }
 
@@ -102,11 +103,6 @@ let activePlanId = "";
 let editingPlanId = "";
 let editingPlanBaseline = "";
 let planItemCursorMap = {};
-// 剧情推进窗口最近一批候选的内存镜像：真身持久化在方案 plan.candidates 上，
-// 窗口打开时恢复；点击卡片写入输入框后标记 used 并落盘。latestCandidatesPlanId
-// 记录镜像来自哪个方案，用于大纲重生成等场景判断要不要同步清掉镜像。
-let latestCandidates = [];
-let latestCandidatesPlanId = "";
 let autoSavePlanTimer = null;
 let planRenameMode = false;
 let planRenameSnapshot = "";
@@ -926,18 +922,25 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 请设计故事大纲（plot 用客观梗概体概述，不写对白与表演性细节），并严格按约定 JSON 返回。`
         },
         rolling: {
-            system: `你是剧情推进策划。完整故事大纲已给定（最后一条即结局）。你的职责是：结合"已经发生的剧情"，给出 2~3 个互不相同的候选剧情走向，供玩家挑选后作为下一回合的玩家输入来推进故事。
+            system: `你是剧情推进策划。完整故事大纲已给定（最后一条即结局）。你的职责是：自行判断故事目前推进到了大纲的哪一条，并给出 2~3 个候选剧情走向，供玩家挑选后作为下一回合的玩家输入来推进故事。
 
 [核心原则]
-1) 大纲是路标与终点约束：候选必须朝大纲结局的方向收束，可提前埋伏笔、控制节奏，但绝不跳步、不一次写到结局（除非当前已是最后一条大纲且剧情确实该收尾）。
-2) 承接已发生的剧情：候选必须自然衔接"已经发生的剧情"的最后状态，不重复已经写过的情节。
-3) 候选之间走向要有明显差异（不同的切入点/冲突/节奏），不是同一情节的措辞变体。
+1) 进度由你判断：先读"已经发生的剧情"，据此判断故事实际推进到了第几条大纲。
+   - 提供给你的正文只是故事**最近的片段**，不代表故事从头开始，不要默认从第一条起步。
+   - 定位方法：把正文里出现的具体事件、场景、人物状态与大纲条目逐条比对，取大纲中最后一个"其情节已经发生"、且"其后续尚未发生"的条目。
+   - 不要把大纲条目的先后顺序当成进度依据，也不要因为某条编号大就认为已经推进到那里。
+   - 正文信息不足以判断时，取最接近的一条并**宁可判得靠前**：跳过大纲里的情节比多走一步更难补救。
+2) 候选是"下一步"的不同走法：2~3 个候选从同一位置出发，推进到同一条或相邻的大纲条目；差别在于走向（切入点/冲突/节奏/态度），不是推进幅度的差别。不要用候选来跳过中间情节。
+3) 不得倒退：候选推进到的条目不得早于你判断的当前位置，也不要一次跨过多条。
+4) 承接已发生的剧情：候选必须自然衔接"已经发生的剧情"的最后状态，不重复已经写过的情节。
+5) 临近结局：若你判断故事已推进到最后一条大纲、或已经该收尾了，候选应当是收束与落地方向（把既有线索结清、给出结局），不要另起新的展开。
 
 [硬性要求]
 1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
 2) 只允许返回以下结构：
 {
-  "version": "1.4",
+  "version": "1.6",
+  "current_item_index": 1,
   "candidates": [
     {
       "title": "候选标题（8字以内）",
@@ -946,10 +949,11 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
     }
   ]
 }
-3) candidates 数量必须为 2~3 个。
-4) text 是以玩家视角驱动剧情的指令式情节段落，120-220 字，中文，具体可延展，可直接发送给模型续写，不写"请你/你需要"。
-5) item_index 填该候选主要推进到的大纲条目序号（对应输入大纲里的 index），必须来自输入大纲，不得新增。
-6) 输出语言使用中文。`,
+3) current_item_index 填你判断的"故事目前推进到第几条"（对应输入大纲里的 index）。确实无法判断时填 null，不要随便填 1。
+4) candidates 数量必须为 2~3 个。
+5) text 是以玩家视角驱动剧情的指令式情节段落，120-220 字，中文，具体可延展，可直接发送给模型续写，不写"请你/你需要"。
+6) item_index 填该候选推进到的大纲条目序号，必须来自输入大纲，不得新增；各候选相同或相邻都属于正常。
+7) 输出语言使用中文。`,
             user: `[角色设定]
 {{persona}}
 
@@ -965,15 +969,13 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 [完整故事大纲（路标，最后一条=结局）]
 {{outlineItemsJson}}
 
-[已经发生的剧情（最近正文，越靠后越新）]
+[已经发生的剧情（仅为最近正文片段，越靠后越新，不代表故事开头）]
 {{recentChat}}
 
-[当前进度]
-{{progressHint}}
-
 [任务]
-请给出 2~3 个候选剧情走向：承接已发生的剧情，对齐当前大纲条目，彼此方向不同，朝结局稳步推进但不要跳到结局。
-严格按 version 1.4 结构返回。只返回 JSON。`
+1) 先判断故事目前推进到了大纲的哪一条，填进 current_item_index（确实无法判断填 null）。
+2) 再给出 2~3 个候选剧情走向：都从该位置出发，承接已经发生的剧情，彼此方向不同，朝结局稳步推进但不要跳到结局。每个候选的 item_index 填它推进到的那一条（通常彼此相同或相邻）。
+严格按 version 1.6 结构返回。只返回 JSON。`
         }
     };
 }
@@ -987,12 +989,23 @@ function getPromptTemplates() {
             system: String(raw?.outline?.system || defaults.outline.system),
             user: String(raw?.outline?.user || defaults.outline.user)
         },
-        // rolling：旧版(1.3, items/scenes 结构)模板与新解析器不兼容，检测到即重置为默认。
+        // rolling：模板与解析器、提示词构造是同一条链上的东西，链条一变就必须重置，
+        // 否则用户存着的旧模板会继续按旧契约要求模型，产出解析不了或语义相反的结果。
+        //   1.3(items/scenes) → 1.4(candidates)：解析器结构不兼容。
+        //   1.4 → 1.5：进度改由模型自行判断，1.4 模板写死的「对齐当前大纲条目」与之
+        //              直接冲突，且它引用的 {{progressHint}} 已不再提供（会渲染成空）。
+        //   1.5 → 1.6：候选语义改为「同一步的不同走法」，并新增 current_item_index
+        //              回报；1.5 模板的「各候选可以指向不同的条目，不要照搬同一个值」
+        //              与新语义正好相反。
         rolling: (() => {
             const sys = String(raw?.rolling?.system || defaults.rolling.system);
             const usr = String(raw?.rolling?.user || defaults.rolling.user);
-            if (sys.includes('"1.3"') || usr.includes("scenesSoFar")) {
-                console.info("[Titania] 检测到旧版渐进续写模板，已重置为剧情推进默认模板");
+            const legacy = (sys.includes('"1.3"') || usr.includes("scenesSoFar")) ? "1.3"
+                : (sys.includes('"1.4"') || usr.includes("{{progressHint}}") || usr.includes("[当前进度]")) ? "1.4"
+                    : (sys.includes('"1.5"') || !sys.includes("current_item_index")) ? "1.5"
+                        : "";
+            if (legacy) {
+                console.info(`[Titania] 检测到旧版剧情推进模板（${legacy}），已重置为默认模板`);
                 return JSON.parse(JSON.stringify(defaults.rolling));
             }
             return { system: sys, user: usr };
@@ -1021,7 +1034,7 @@ function getUnknownPromptVars(text) {
         "persona", "userDesc", "openingText", "storyInput", "outlineItemsJson",
         "worldInfo", "scenario", "dialogueExamples",
         // 剧情推进专用变量
-        "recentChat", "progressHint"
+        "recentChat"
     ]);
     const unknown = new Set();
     String(text || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
@@ -1044,8 +1057,7 @@ function buildPromptTemplateVars(ctx, userStoryInput, openingText, outlinePayloa
         scenario: String(ctx?.scenario || "").trim() || "(无)",
         dialogueExamples: String(ctx?.dialogueExamples || "").trim() || "(无)",
         // 剧情推进专用；非推荐场景为 "(无)"，模板里没引用就不影响。
-        recentChat: String(extras?.recentChat || "").trim() || "(无)",
-        progressHint: String(extras?.progressHint || "").trim() || "(无)"
+        recentChat: String(extras?.recentChat || "").trim() || "(无)"
     };
 }
 
@@ -1172,9 +1184,9 @@ export async function openPromptTemplateManager() {
                             <label class="t-form-label">剧情推进</label>
                             <label class="t-outline-mode t-outline-mode-source" style="margin-left:0;">
                                 读取最近正文楼层数
-                                <input id="t-outline-settings-rolling-floors" type="number" class="t-outline-select" value="${escapeHtml(settingsDraft.rollingChatFloors)}" min="0" max="50" step="1" style="width:80px;">
+                                <input id="t-outline-settings-rolling-floors" type="number" class="t-outline-select" value="${escapeHtml(settingsDraft.rollingChatFloors)}" min="0" max="20" step="1" style="width:80px;">
                             </label>
-                            <div class="t-outline-genparam-hint">剧情推荐时读取酒馆最近 N 楼正文作为"已发生的剧情"（走下方聊天提取白名单过滤）。0=不读正文，仅靠大纲推进。</div>
+                            <div class="t-outline-genparam-hint">剧情推荐时读取酒馆最近 N 楼正文作为"已经发生的剧情"（走下方聊天提取白名单过滤）。模型据此自行判断故事推进到了大纲的哪一条。0=不读正文，仅靠大纲判断。</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1198,7 +1210,7 @@ export async function openPromptTemplateManager() {
                                 </select>
                                 <button id="t-prompt-reset-current" class="t-btn t-btn-xs"><i class="fa-solid fa-rotate-left"></i> 恢复当前默认</button>
                             </div>
-                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}} {{progressHint}}</div>
+                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}}</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1578,7 +1590,17 @@ function getPlanInstruction(plan) {
 }
 
 function createPlanPayloadFromEditor() {
-    const currentInstruction = String($("#t-outline-story-input").val() || "").trim();
+    // ⚠ 窗口关着时 #t-outline-story-input 不存在，$input.val() 是 undefined。
+    //   原先无条件 `String($input.val() || "")` 会把它读成空串，再经
+    //   persistCurrentEditingPlan 写回方案 —— 用户的「故事指令」被静默清空。
+    //   （同类事故见 saveDraftInsertModeOnly 的注释：窗口独立打开时会冲掉草稿指令。）
+    //   DOM 缺失时改为回落到方案里已存的值。
+    const $input = $("#t-outline-story-input");
+    const fallbackPlan = editingPlanId ? getPlans().find(p => p.id === editingPlanId) : null;
+    const currentInstruction = ($input.length > 0
+        ? String($input.val() || "")
+        : getPlanInstruction(fallbackPlan)
+    ).trim();
     return {
         storyInput: currentInstruction,
         instruction: currentInstruction,
@@ -1746,7 +1768,6 @@ function updatePlanWorkflowUI() {
     $("#t-outline-top").toggle(inEditor);
     $("#t-outline-hub-view").toggle(currentView === "hub");
     refreshPlanNameDisplay();
-    refreshRollingProgressUI();
 }
 
 function updatePlanHubActionState() {
@@ -1933,9 +1954,9 @@ function resolveInsertMode() {
     return loadDraft().insertMode === "append" ? "append" : "overwrite";
 }
 
+// 当前写入方式。原先还会先读「剧情推进」窗口那个覆盖/追加芯片的 data-mode，
+// 该窗口已删除，芯片不复存在，直接走草稿即可。
 function getCurrentInsertMode() {
-    const chipMode = $("#t-scene-hub-insert-chip").attr("data-mode");
-    if (chipMode === "append" || chipMode === "overwrite") return chipMode;
     return resolveInsertMode();
 }
 
@@ -2000,22 +2021,24 @@ function setPlanCandidates(planId, candidates, opts = {}) {
     saveExtData();
 }
 
-// 写入候选即推进进度：指针只前进不后退；推进到最后一条大纲时标记已抵达结局。
-// 优先对当前正在编辑的方案生效；剧情推进窗口独立打开（无编辑态）时，对来源方案生效，
-// 保证进度面板跟着「点候选卡片」动。
-function advanceProgressOnSend(planId, itemIndex) {
+// 用模型返回的 item_index 回写进度指针（点候选卡片时调用）。
+// 优先对当前正在编辑的方案生效；剧情推进窗口独立打开（无编辑态）时，对来源方案生效。
+//
+// ⚠ 这里是**可进可退**的赋值，不是旧实现那种 Math.max 的「只前进不后退」。
+//   旧版进度由 App 掌握、只允许往前走；现在判断权交给了模型——它从正文自行推断
+//   故事推进到哪条（见默认模板的「进度由你判断」），完全可能判出比记录的指针更靠
+//   前的条目。那时若仍把指针钉住不动，展示出来的进度就是错的。
+//   reachedEnding 也随之改为按当前值现算，不再粘滞。
+function applyProgressFromModel(planId, itemIndex) {
     if (!planId) return;
     if (planId !== editingPlanId && planId !== getSceneSourcePlanId()) return;
     const plan = getPlans().find(p => p.id === planId);
     if (!plan) return;
     const total = Array.isArray(plan.items) ? plan.items.length : 0;
     if (total <= 0) return;
-    const prev = getPlanProgress(plan);
-    const nextIdx = Math.max(prev.itemIndex, Math.min(Number(itemIndex) || 0, total - 1));
-    const reachedEnding = prev.reachedEnding || nextIdx >= total - 1;
-    setPlanProgress(planId, { itemIndex: nextIdx, reachedEnding });
+    const nextIdx = Math.min(Math.max(Number(itemIndex) || 0, 0), total - 1);
+    setPlanProgress(planId, { itemIndex: nextIdx, reachedEnding: nextIdx >= total - 1 });
     if (editingPlanId === planId) setEditingPlan(getPlans().find(p => p.id === planId));
-    refreshRollingProgressUI();
 }
 
 function showOutlineView(view) {
@@ -2037,7 +2060,6 @@ function loadPlanToEditor(plan) {
     saveDraft(planInstruction, $("#t-outline-insert-mode").val() || "overwrite");
     renderRows();
     refreshPlanNameDisplay();
-    refreshRollingProgressUI();
     return true;
 }
 
@@ -2065,231 +2087,6 @@ function movePlanItemCursor(planId, delta, totalItems) {
     if (!planId || total <= 0) return;
     const current = getPlanItemCursor(planId, total);
     setPlanItemCursor(planId, current + (Number(delta) || 0), total);
-}
-
-// 渲染候选剧情卡片。空态区分"未选来源方案"与"尚未生成推荐"。
-function renderCandidates() {
-    const $list = $("#t-outline-candidates");
-    if ($list.length === 0) return;
-
-    if (latestCandidates.length === 0) {
-        const sourcePlanId = getSceneSourcePlanId();
-        $list.html(sourcePlanId
-            ? '<div class="t-plan-empty">点击右下角「推荐剧情」，生成 2~3 个候选剧情走向</div>'
-            : '<div class="t-plan-empty">请先在方案页选择一个用于剧情推进的方案</div>');
-        syncGenerateNextBtn();
-        return;
-    }
-
-    const html = latestCandidates.map((c, idx) => `
-        <div class="t-scene-hub-item ${c.used ? "used" : ""}" data-candidate-index="${idx}" title="点击写入输入框（不会自动发送）">
-            <div class="t-scene-hub-head">
-                <span class="t-scene-hub-no">#${idx + 1}</span>
-                <span class="t-scene-hub-plan">${escapeHtml(c.title || `候选 ${idx + 1}`)}</span>
-                ${c.used ? '<span class="t-plan-used-tag">已写入</span>' : ""}
-            </div>
-            <div class="t-scene-hub-meta">推进至大纲第 ${c.itemIndex} 条</div>
-            <div class="t-scene-hub-text">${escapeHtml(c.text)}</div>
-        </div>
-    `).join("");
-
-    $list.html(html);
-    syncGenerateNextBtn();
-}
-
-// 主按钮已迁至 footer：有候选时是「换一批」（整批覆盖），无候选时是「推荐剧情」。
-// disabled 由 refreshRollingProgressUI 依据"已抵达结局"控制，这里只管文案。
-function syncGenerateNextBtn() {
-    const $btn = $("#t-outline-generate-next");
-    if ($btn.length === 0) return;
-    $btn.html(latestCandidates.length > 0
-        ? '<i class="fa-solid fa-rotate"></i> 换一批'
-        : '<i class="fa-solid fa-forward-step"></i> 推荐剧情');
-}
-
-// 剧情推进窗口（旧名"细纲情节"/openSceneHubWindow，保留导出名以兼容入口按钮的动态导入）。
-export function openSceneHubWindow() {
-    ensureCssLoaded();
-    $("#t-scene-hub-overlay").remove();
-    // 候选已持久化在推进方案上：打开窗口时恢复最近一批（含 used 标记），不再清空。
-    const restorePlan = getRollingPlan();
-    latestCandidates = restorePlan ? getPlanCandidates(restorePlan) : [];
-    latestCandidatesPlanId = restorePlan?.id || "";
-
-    const html = `
-    <div id="t-scene-hub-overlay" class="t-overlay t-root">
-        <div class="t-window t-story-outline-window">
-            <div class="t-window-header">
-                <div class="t-window-title"><i class="fa-solid fa-clapperboard"></i> 剧情推进</div>
-                <div class="t-scene-hub-plan-switch">
-                    <label class="t-outline-rolling-cursor">方案
-                        <select id="t-scene-hub-plan-select" class="t-outline-select"></select>
-                    </label>
-                </div>
-                <div class="t-window-controls">
-                    <div class="t-window-close" id="t-scene-hub-close"><i class="fa-solid fa-times"></i></div>
-                </div>
-            </div>
-            <div class="t-window-body t-outline-body">
-                <div id="t-outline-rolling" class="t-outline-rolling t-outline-rolling--scene-hub" style="display:none;">
-                    <div class="t-outline-rolling-head">
-                        <span class="t-outline-rolling-title"><i class="fa-solid fa-forward-step"></i> 剧情推进</span>
-                        <div class="t-outline-rolling-head-right">
-                            <span id="t-outline-rolling-status" class="t-outline-rolling-status"></span>
-                            <button id="t-outline-rolling-outline-toggle" class="t-btn t-btn-xs" title="展开/收起大纲情节预览"><i class="fa-solid fa-map"></i></button>
-                        </div>
-                    </div>
-                    <div class="t-outline-rolling-bar"><div id="t-outline-rolling-bar-fill" class="t-outline-rolling-bar-fill"></div></div>
-                    <div id="t-outline-rolling-outline-preview" class="t-outline-rolling-outline-preview" style="display:none;"></div>
-                    <div class="t-outline-rolling-controls">
-                        <label class="t-outline-rolling-cursor">推进到
-                            <select id="t-outline-rolling-cursor-select" class="t-outline-select"></select>
-                        </label>
-                        <button id="t-outline-rolling-reset" class="t-btn t-btn-xs" title="回到开头重新推进"><i class="fa-solid fa-rotate-left"></i></button>
-                    </div>
-                    <div class="t-outline-rolling-hint">大纲当路标，结合最近正文一步步写到结局。点击候选卡片即按所选写入方式写入输入框（不会自动发送）并自动推进进度，也可手动指定当前进度。</div>
-                </div>
-                <div id="t-outline-candidates" class="t-scene-hub-list"></div>
-                <div class="t-scene-hub-footer">
-                    <button id="t-scene-hub-insert-chip" class="t-insert-mode-chip" data-mode="${resolveInsertMode()}" title="点击切换写入方式：覆盖/追加（点击候选卡片时生效）">
-                        <i class="fa-solid fa-arrows-left-right"></i>
-                        <span class="t-insert-mode-chip-label">${resolveInsertMode() === "append" ? "追加" : "覆盖"}</span>
-                    </button>
-                    <button id="t-outline-generate-next" class="t-btn t-btn-primary t-btn-xs" title="基于大纲和最近正文推荐 2~3 个候选剧情走向"><i class="fa-solid fa-forward-step"></i> 推荐剧情</button>
-                </div>
-            </div>
-        </div>
-    </div>`;
-
-    $("body").append(html);
-    renderCandidates();
-    refreshRollingProgressUI();
-
-    const $overlay = $("#t-scene-hub-overlay");
-    $overlay.on("click", "#t-scene-hub-close", () => {
-        $overlay.remove();
-    });
-
-    // 快捷切换推进来源方案：与方案页 set-scene-source 同一套流程——
-    // 切来源 + 设为当前方案 + 换候选为该方案自己的最近一批 + 刷进度条。
-    $overlay.on("change", "#t-scene-hub-plan-select", function () {
-        const planId = String($(this).val() || "").trim();
-        if (!planId) return;
-        setSceneSourcePlanId(planId);
-        activePlanId = planId;
-        setActivePlanId(activePlanId);
-        const rollingPlan = getRollingPlan();
-        latestCandidates = rollingPlan ? getPlanCandidates(rollingPlan) : [];
-        latestCandidatesPlanId = rollingPlan?.id || "";
-        renderCandidates();
-        refreshRollingProgressUI();
-        if (window.toastr) toastr.success(`已切换：${rollingPlan?.name || "未命名方案"}`, "剧情推进");
-    });
-
-    // 写入方式芯片：点击在覆盖/追加间循环。只补丁草稿的 insertMode 字段
-    // （旧 select 版本窗口独立打开时会把草稿指令冲成空串，见 saveDraftInsertModeOnly）。
-    $overlay.on("click", "#t-scene-hub-insert-chip", function () {
-        const next = getCurrentInsertMode() === "append" ? "overwrite" : "append";
-        $("#t-outline-insert-mode").val(next);
-        saveDraftInsertModeOnly(next);
-        $(this).attr("data-mode", next).find(".t-insert-mode-chip-label").text(next === "append" ? "追加" : "覆盖");
-        if (window.toastr) toastr.info(next === "append" ? "候选将追加到输入框末尾" : "候选将覆盖输入框内容", "写入方式");
-    });
-
-    // 点击候选卡片：写入输入框 + 推进进度指针（itemIndex 为 1-based → 0-based）。
-    // 不关窗：其余候选仍可点，重新点「推荐剧情」即整批刷新。advanceProgressOnSend 只前进，
-    // 先点高条目再点低条目不会把指针拨回去。
-    $overlay.on("click", "#t-outline-candidates .t-scene-hub-item", function () {
-        const idx = Number($(this).data("candidate-index"));
-        const c = latestCandidates[idx];
-        if (!c || !String(c.text || "").trim()) return;
-        const planId = editingPlanId || getSceneSourcePlanId();
-        writePlotToInput(c.text, getCurrentInsertMode());
-        if (planId) advanceProgressOnSend(planId, c.itemIndex - 1);
-        c.used = true;
-        if (planId) setPlanCandidates(planId, latestCandidates, { keepTimestamp: true });
-        renderCandidates();
-        refreshRollingProgressUI();
-        if (window.toastr) toastr.success("已写入输入框（未自动发送），进度已推进", "剧情推进");
-    });
-
-    // 推荐依赖编辑态的大纲条目（outlineItems）；本窗口可能独立于主窗口打开，
-    // 这里先把来源方案加载进编辑器，进度条/指针下拉才有数据。
-    $overlay.on("click", "#t-outline-generate-next", async () => {
-        if (!editingPlanId) {
-            const sourceId = getSceneSourcePlanId();
-            const plan = sourceId ? getPlans().find(p => p.id === sourceId) : null;
-            if (!plan || !loadPlanToEditor(plan)) {
-                if (window.toastr) toastr.warning("请先生成或填写总纲，再推荐剧情", "剧情推进");
-                return;
-            }
-            refreshRollingProgressUI();
-        }
-        await generateRecommendations();
-    });
-
-    // 手动指定当前推进到的大纲条目（点卡片推进之外的兜底纠偏）。
-    $overlay.on("change", "#t-outline-rolling-cursor-select", function () {
-        if (!editingPlanId) return;
-        const idx = Number($(this).val());
-        if (!Number.isFinite(idx)) return;
-        const plan = getPlans().find(p => p.id === editingPlanId);
-        const prev = getPlanProgress(plan);
-        // 手动往回拨时清掉"已抵达结局"，允许继续推荐。
-        const reachedEnding = prev.reachedEnding && idx >= outlineItems.length - 1;
-        setPlanProgress(editingPlanId, { itemIndex: idx, reachedEnding });
-        if (editingPlanId) setEditingPlan(getPlans().find(p => p.id === editingPlanId));
-        refreshRollingProgressUI();
-    });
-
-    $overlay.on("click", "#t-outline-rolling-reset", () => {
-        if (!editingPlanId) return;
-        setPlanProgress(editingPlanId, { itemIndex: 0, reachedEnding: false });
-        setEditingPlan(getPlans().find(p => p.id === editingPlanId));
-        refreshRollingProgressUI();
-        if (window.toastr) toastr.info("已回到开头，可重新推荐剧情", "剧情推进");
-    });
-
-    // 大纲情节预览：展开/收起 + 点击某条直接推进指针（与下拉等效的快捷纠偏）。
-    $overlay.on("click", "#t-outline-rolling-outline-toggle", () => {
-        toggleRollingOutlinePreview();
-    });
-
-    // 点条目主体 = 展开/收起该条完整情节。
-    $overlay.on("click", "#t-outline-rolling-outline-preview .t-rolling-outline-item", function (e) {
-        if ($(e.target).closest(".t-rolling-outline-jump").length > 0) return;
-        const idx = Number($(this).data("rolling-outline-idx"));
-        if (!Number.isFinite(idx)) return;
-        rollingPreviewExpandedIdx = rollingPreviewExpandedIdx === idx ? -1 : idx;
-        refreshRollingProgressUI();
-        // 展开后把该条滚进可视区
-        if (rollingPreviewExpandedIdx === idx) {
-            const $item = $("#t-outline-rolling-outline-preview .t-rolling-outline-item").filter((_, el) => Number($(el).data("rolling-outline-idx")) === idx);
-            $item[0]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-        }
-    });
-
-    // 右侧箭头按钮 = 拨进度指针到该条（与指针下拉同一套逻辑：往回拨清掉"已抵达结局"）。
-    $overlay.on("click", "#t-outline-rolling-outline-preview .t-rolling-outline-jump", function (e) {
-        e.stopPropagation();
-        const idx = Number($(this).data("rolling-outline-jump"));
-        if (!Number.isFinite(idx)) return;
-
-        let plan = editingPlanId ? getPlans().find(p => p.id === editingPlanId) : null;
-        if (!plan) {
-            const sourceId = getSceneSourcePlanId();
-            plan = sourceId ? getPlans().find(p => p.id === sourceId) : null;
-        }
-        if (!plan) return;
-        const total = Array.isArray(plan.items) ? plan.items.length : 0;
-        if (total <= 0 || idx < 0 || idx >= total) return;
-
-        const prev = getPlanProgress(plan);
-        const reachedEnding = prev.reachedEnding && idx >= total - 1;
-        setPlanProgress(plan.id, { itemIndex: idx, reachedEnding });
-        if (editingPlanId === plan.id) setEditingPlan(getPlans().find(p => p.id === plan.id));
-        refreshRollingProgressUI();
-    });
 }
 
 function renderPlanDetailCarousel(plan) {
@@ -2691,14 +2488,8 @@ function applyParsedOutline(parsed, storyInput, insertMode) {
     if (editingPlanId) {
         setPlanProgress(editingPlanId, { itemIndex: 0, reachedEnding: false });
         setPlanCandidates(editingPlanId, []);
-        if (latestCandidatesPlanId === editingPlanId) {
-            latestCandidates = [];
-            latestCandidatesPlanId = "";
-            renderCandidates();
-        }
         setEditingPlan(getPlans().find(p => p.id === editingPlanId));
     }
-    refreshRollingProgressUI();
     saveDraft(storyInput, insertMode);
 }
 
@@ -2724,13 +2515,14 @@ function collectRecentChatText(floors) {
         .join("\n\n");
 }
 
-// 组装剧情推荐 prompt：完整大纲 + 最近正文 + 当前进度。
-function buildRecommendationPrompt(ctx, userStoryInput, openingText, progressHint) {
+// 组装剧情推荐 prompt：完整大纲 + 最近正文。
+// 刻意**不**下发「当前进度」——进度改由模型读正文自行判断（见默认模板的「进度由你判断」）。
+// 大纲一直是全量下发的（buildOutlinePayloadForPrompt 不截断），模型才有足够路标做判断。
+function buildRecommendationPrompt(ctx, userStoryInput, openingText) {
     const outlinePayload = buildOutlinePayloadForPrompt();
     const templates = getPromptTemplates();
     const vars = buildPromptTemplateVars(ctx, userStoryInput || "(空)", openingText, outlinePayload, {
-        recentChat: collectRecentChatText(getRollingChatFloors()),
-        progressHint
+        recentChat: collectRecentChatText(getRollingChatFloors())
     });
     const sys = renderPromptTemplate(templates.rolling.system, vars);
     const user = renderPromptTemplate(templates.rolling.user, vars);
@@ -2741,8 +2533,11 @@ function buildRecommendationPrompt(ctx, userStoryInput, openingText, progressHin
     ];
 }
 
-// 解析剧情推荐返回（version 1.4 candidates 结构）。
+// 解析剧情推荐返回（version 1.6 candidates 结构）。
 // item_index 为 1-based 大纲条目序号，缺失回退到当前进度指针那一条，并夹紧到合法范围。
+// current_item_index 是模型自己判断的「故事目前推进到第几条」，同样夹紧；
+// 模型填 null / 缺失 / 非法时返回 0，表示「它没判断出来」—— 调用方据此跳过回写，
+// 而不是把指针打到第一条（那会把已有的正确进度冲掉）。
 function parseRecommendationResponse(raw, fallbackItemIndex, totalItems) {
     if (!raw || typeof raw !== "string") {
         throw new Error("模型返回为空");
@@ -2750,6 +2545,7 @@ function parseRecommendationResponse(raw, fallbackItemIndex, totalItems) {
     const data = tryParseLooseJsonObject(raw);
     const list = Array.isArray(data?.candidates) ? data.candidates : [];
     const maxIdx = Math.max(Number(totalItems) || 1, 1);
+
     const candidates = list.map((c) => {
         const text = String(c?.text || "").trim();
         if (!text) return null;
@@ -2761,14 +2557,22 @@ function parseRecommendationResponse(raw, fallbackItemIndex, totalItems) {
     if (candidates.length === 0) {
         throw new Error("剧情推荐返回格式无法解析为 JSON（缺少有效 candidates）");
     }
-    return { candidates };
+
+    let currentItemIndex = 0;
+    const rawCurrent = data?.current_item_index;
+    if (rawCurrent !== null && rawCurrent !== undefined && String(rawCurrent).trim() !== "") {
+        const n = Number(rawCurrent);
+        if (Number.isFinite(n)) {
+            currentItemIndex = Math.min(Math.max(Math.floor(n), 1), maxIdx);
+        }
+    }
+
+    return { candidates, currentItemIndex };
 }
 
 function renderRows() {
     const $tbody = $("#t-outline-tbody");
     if ($tbody.length === 0) return;
-
-    refreshRollingProgressUI();
 
     if (outlineItems.length === 0) {
         selectedRowIndex = -1;
@@ -2939,126 +2743,6 @@ function getRollingPlan() {
     return plan || null;
 }
 
-// 刷新剧情推进面板：进度条、状态文案、条目下拉。
-// 面板在「剧情推进」窗口：优先显示剧情推进来源方案的进度；主窗口（大纲编辑）里
-// 该面板不存在，$panel.length===0 时直接跳过。
-function refreshRollingProgressUI() {
-    const $panel = $("#t-outline-rolling");
-    if ($panel.length === 0) return;
-
-    const plan = getRollingPlan();
-
-    const outlineForPanel = (Array.isArray(outlineItems) && outlineItems.length > 0 && plan && plan.id === editingPlanId)
-        ? outlineItems
-        : (plan ? normalizeItems(plan.items || []) : []);
-    if (outlineForPanel.length === 0 || !plan) {
-        $panel.hide();
-    } else {
-        $panel.show();
-    }
-
-    // 剧情推进窗口顶部的方案下拉：随时快捷切换推进来源。
-    const $planSelect = $("#t-scene-hub-plan-select");
-    if ($planSelect.length > 0) {
-        const allPlans = getPlans();
-        const sourceId = getSceneSourcePlanId() || editingPlanId;
-        if (allPlans.length > 0) {
-            $planSelect.html(allPlans.map(p =>
-                `<option value="${p.id}" ${p.id === sourceId ? "selected" : ""}>${escapeHtml(p.name || "未命名方案")}</option>`
-            ).join("")).val(String(sourceId));
-            $planSelect.closest(".t-scene-hub-plan-switch").show();
-        } else {
-            $planSelect.empty();
-            $planSelect.closest(".t-scene-hub-plan-switch").hide();
-        }
-    }
-
-    const total = outlineForPanel.length;
-    const progress = getPlanProgress(plan);
-    const stepNo = progress.itemIndex + 1;
-    const pct = total > 0 ? Math.round((stepNo / total) * 100) : 0;
-
-    $("#t-outline-rolling-bar-fill").css("width", `${progress.reachedEnding ? 100 : pct}%`);
-    const currentTitle = outlineForPanel[progress.itemIndex]?.title || "未命名";
-    $("#t-outline-rolling-status").text(
-        progress.reachedEnding
-            ? `已抵达结局（${total}/${total}）`
-            : `第 ${stepNo}/${total} 条 · ${currentTitle}`
-    );
-    $("#t-outline-generate-next").prop("disabled", progress.reachedEnding);
-
-    const $select = $("#t-outline-rolling-cursor-select");
-    if ($select.length) {
-        const options = outlineForPanel.map((it, idx) =>
-            `<option value="${idx}" ${idx === progress.itemIndex ? "selected" : ""}>${idx + 1}. ${escapeHtml((it.title || "未命名").slice(0, 16))}</option>`
-        ).join("");
-        $select.html(options).val(String(progress.itemIndex));
-    }
-
-    renderRollingOutlinePreview(outlineForPanel, progress.itemIndex, progress.reachedEnding);
-}
-
-// 剧情推进面板里的大纲情节预览：全部条目一屏纵列，按进度区分状态——
-// 已推进过的条目淡化+打勾，当前条目高亮，后续条目常显。
-// 交互划分（方案 A）：点条目主体 = 展开/收起该条完整情节（含伏笔），
-// 右侧箭头按钮 = 把进度指针拨到该条。展开状态存 rollingPreviewExpandedIdx，
-// 进度刷新重渲染时保留。title 属性兜底悬停预览。
-let rollingPreviewExpandedIdx = -1;
-
-function renderRollingOutlinePreview(outlineForPanel, currentItemIndex, reachedEnding) {
-    const $preview = $("#t-outline-rolling-outline-preview");
-    if ($preview.length === 0) return;
-    if ($preview.css("display") === "none") return;
-    if (rollingPreviewExpandedIdx >= outlineForPanel.length) rollingPreviewExpandedIdx = -1;
-
-    const rows = outlineForPanel.map((item, idx) => {
-        const state = idx < currentItemIndex ? "done"
-            : idx === currentItemIndex ? (reachedEnding ? "done" : "current")
-            : "todo";
-        const marker = state === "done"
-            ? '<i class="fa-solid fa-check"></i>'
-            : state === "current"
-                ? '<i class="fa-solid fa-location-dot"></i>'
-                : '<i class="fa-regular fa-circle"></i>';
-        const expanded = rollingPreviewExpandedIdx === idx;
-        // 展开态显示完整 plot 与伏笔；收起态 60 字摘要（title 兜底全文）。
-        const plotHtml = expanded
-            ? `<div class="t-rolling-outline-plot t-rolling-outline-plot--full">${escapeHtml(item.plot || "(空)")}</div>`
-            : `<div class="t-rolling-outline-plot">${escapeHtml(getBriefText(item.plot, 60))}</div>`;
-        const foreshadowing = String(item.foreshadowing || "").trim();
-        const foreshadowHtml = expanded && foreshadowing
-            ? `<div class="t-rolling-outline-foreshadow"><i class="fa-solid fa-seedling"></i> 伏笔：${escapeHtml(foreshadowing)}</div>`
-            : "";
-        return `
-            <div class="t-rolling-outline-item ${state} ${expanded ? "expanded" : ""}" data-rolling-outline-idx="${idx}" title="${escapeHtml(item.plot || "(空)")}">
-                <span class="t-rolling-outline-marker">${marker}</span>
-                <div class="t-rolling-outline-main">
-                    <div class="t-rolling-outline-title">${escapeHtml(item.time || "未设时间")} · ${escapeHtml(item.title || "未命名")}</div>
-                    ${plotHtml}
-                    ${foreshadowHtml}
-                </div>
-                <button class="t-rolling-outline-jump" data-rolling-outline-jump="${idx}" title="推进到第 ${idx + 1} 条"><i class="fa-solid fa-forward-step"></i></button>
-            </div>`;
-    }).join("");
-
-    $preview.html(rows);
-}
-
-// 剧情推进大纲预览的展开/收起（open 时随进度刷新重渲染）。收起时清掉单条展开态。
-function toggleRollingOutlinePreview(forceOpen) {
-    const $preview = $("#t-outline-rolling-outline-preview");
-    const $toggle = $("#t-outline-rolling-outline-toggle");
-    if ($preview.length === 0) return;
-    const willOpen = forceOpen === true ? true : $preview.css("display") === "none";
-    $preview.toggle(willOpen);
-    $toggle.toggleClass("active", willOpen);
-    if (willOpen) {
-        refreshRollingProgressUI();
-    } else {
-        rollingPreviewExpandedIdx = -1;
-    }
-}
-
 /**
  * 大纲/剧情推荐两个生成流程的公共骨架：计时器、流式预览、pushHistory、解析、
  * 失败回退可编辑对话框、中断包裹、按钮态恢复。差异点由 cfg 提供。
@@ -3137,18 +2821,13 @@ async function generateRecommendations() {
     }
 
     const plan = getPlans().find(p => p.id === editingPlanId);
-    const progress = getPlanProgress(plan);
-    if (progress.reachedEnding) {
-        if (window.toastr) toastr.info("已抵达结局。如需重写，可在进度条手动回退。", "剧情推进");
-        return;
-    }
-
-    const $btn = $("#t-outline-generate-next");
-    $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 推荐中...');
+    // 刻意不再因「进度指针已到结局」拦下推荐：指针现在只是展示，判断权已交给模型
+    // （它读全量大纲 + 正文自行判断该推进到哪条）。拿旧指针设卡会与模型判断相矛盾。
+    const fallbackItemIndex = getPlanProgress(plan).itemIndex;
 
     const total = outlineItems.length;
-    const currentItem = outlineItems[progress.itemIndex];
-    const progressHint = `当前推进到第 ${progress.itemIndex + 1}/${total} 条大纲（${currentItem?.title || "未命名"}）。距结局还有 ${total - 1 - progress.itemIndex} 条。请只推进一小步。`;
+    // apply 的回调发生在 successMessage 之前，用它把「本批候选数」带给提示文案
+    let generatedCandidateCount = 0;
 
     try {
         // 面板独立于主窗口打开时输入框不在：故事指令退回方案 instruction。
@@ -3166,24 +2845,24 @@ async function generateRecommendations() {
             temperature: params.temperature,
             maxTokens: params.maxTokens,
             timeoutSec: params.timeoutSec,
-            buildMessages: (ctx, opening) => buildRecommendationPrompt(ctx, storyInput, opening, progressHint),
-            parse: (raw) => parseRecommendationResponse(raw, progress.itemIndex, total),
+            buildMessages: (ctx, opening) => buildRecommendationPrompt(ctx, storyInput, opening),
+            parse: (raw) => parseRecommendationResponse(raw, fallbackItemIndex, total),
             apply: (parsed) => {
-                latestCandidates = parsed.candidates.map((c) => ({ ...c, used: false }));
-                latestCandidatesPlanId = editingPlanId;
-                setPlanCandidates(editingPlanId, latestCandidates);
-                renderCandidates();
+                generatedCandidateCount = parsed.candidates.length;
+                setPlanCandidates(editingPlanId, parsed.candidates);
+                // 生成时立刻把进度回写到模型判断的位置（currentItemIndex 为 1-based，
+                // 进度指针是 0-based）。为 0 表示模型没能判断出来，保留原指针不动。
+                if (parsed.currentItemIndex > 0) {
+                    applyProgressFromModel(editingPlanId, parsed.currentItemIndex - 1);
+                }
             },
             reparseLabel: "重新解析并应用",
-            successMessage: () => `已生成 ${latestCandidates.length} 个候选剧情走向`
+            successMessage: () => `已生成 ${generatedCandidateCount} 个候选剧情走向`
         });
     } catch (e) {
         reportGenerationError(e, "剧情推进", "剧情推荐失败");
     } finally {
         stopResponseTimer();
-        $btn.prop("disabled", false);
-        refreshRollingProgressUI();
-        syncGenerateNextBtn();
     }
 }
 
@@ -3353,14 +3032,6 @@ function bindEvents() {
         activePlanId = planId;
         setActivePlanId(activePlanId);
         renderPlanHub();
-        // 剧情推进窗口若同时开着：候选镜像切到新来源方案自己的最近一批。
-        if ($("#t-scene-hub-overlay").length > 0) {
-            const rollingPlan = getRollingPlan();
-            latestCandidates = rollingPlan ? getPlanCandidates(rollingPlan) : [];
-            latestCandidatesPlanId = rollingPlan?.id || "";
-            renderCandidates();
-            refreshRollingProgressUI();
-        }
         if (window.toastr) toastr.success("已切换剧情推进来源方案", "故事大纲");
     });
 
@@ -3630,3 +3301,108 @@ export function openStoryOutlineWindow() {
     showOutlineView(plans.length > 0 ? "hub" : "editor");
     refreshOutlineOpeningSourceControls();
 }
+
+/* ================================================================== *
+ * 无头（headless）剧情推进 API
+ *
+ * 供气泡剧情推进控制台（sceneAdvanceBubble.js）复用。候选与进度的事实来源是方案
+ * 对象本身（plan.candidates / plan.progress），不依赖任何窗口内存在。
+ * ================================================================== */
+
+/**
+ * 无头载入：只把方案灌进编辑态（outlineItems / editingPlanId / baseline），
+ * **不写 DOM、不落草稿、不触发自动保存**。
+ *
+ * 为什么不复用 loadPlanToEditor：它以「窗口开着」为前提 —— 把指令写进
+ * #t-outline-story-input 后，saveDraft → scheduleAutoSaveCurrentPlan 会在 260ms
+ * 后从 DOM 把内容读回并写进方案。气泡控制台只读大纲条目（喂给推荐提示词），
+ * 不生成也不编辑方案内容，走这条纯内存路径即可，且天然不碰方案。
+ */
+function loadPlanHeadless(plan) {
+    if (!plan) return false;
+    outlineItems = normalizeItems(plan.items || []);
+    selectedRowIndex = -1;
+    setEditingPlan(plan);
+    // 让 baseline 与「DOM 缺失时的编辑器内容」同形状，避免 hasEditingPlanChanges()
+    // 报出并不存在的未保存改动。
+    editingPlanBaseline = buildPlanBaseline({ storyInput: "", instruction: "", items: outlineItems });
+    return true;
+}
+
+/**
+ * 确保编辑器里载入的是「剧情推进来源方案」，让 generateRecommendations 拿得到
+ * outlineItems。气泡控制台没有窗口的「推荐剧情」前置逻辑，故在此补齐。
+ *
+ * 判据比窗口那版更严：不仅要求有编辑态，还要求 outlineItems 真的有内容 ——
+ * 气泡可以在任意时刻被点开（甚至从未打开过大纲窗口），此时 editingPlanId 可能
+ * 指向一个已空/已删的方案，只有「编辑态 == 来源方案且条目非空」才算就绪。
+ */
+export function ensureSceneSourceLoaded() {
+    const sourceId = getSceneSourcePlanId();
+    const plan = sourceId
+        ? getPlans().find(p => p.id === sourceId)
+        : getActivePlan();
+    if (!plan) return false;
+    if (editingPlanId === plan.id && Array.isArray(outlineItems) && outlineItems.length > 0) return true;
+    return loadPlanHeadless(plan);
+}
+
+/** 气泡控制台渲染所需的完整状态快照。 */
+export function getSceneAdvanceState() {
+    const plan = getRollingPlan();
+    const total = Array.isArray(plan?.items) ? plan.items.length : 0;
+    const progress = plan ? getPlanProgress(plan) : { itemIndex: 0, reachedEnding: false };
+    const candidates = plan ? getPlanCandidates(plan) : [];
+    return {
+        hasPlan: !!plan,
+        sourcePlanId: getSceneSourcePlanId(),
+        planId: plan?.id || "",
+        planName: plan?.name || "",
+        total,
+        progress,
+        reachedEnding: progress.reachedEnding,
+        candidates,
+        // 大纲情节预览用的完整条目（原「剧情推进」窗口的预览面板已迁至气泡浮层）
+        items: plan ? normalizeItems(plan.items || []) : [],
+        insertMode: getCurrentInsertMode(),
+        plans: getPlans().map(p => ({ id: p.id, name: p.name || "未命名方案" }))
+    };
+}
+
+/** 切换剧情推进来源方案。返回切换后的状态快照。 */
+export function switchSceneSourcePlan(planId) {
+    const id = String(planId || "").trim();
+    const plan = id ? getPlans().find(p => p.id === id) : null;
+    if (!plan) return getSceneAdvanceState();
+    setSceneSourcePlanId(id);
+    activePlanId = id;
+    setActivePlanId(activePlanId);
+    loadPlanHeadless(plan);   // 让 editingPlanId 跟着来源方案走，后续「推荐剧情」用它
+    return getSceneAdvanceState();
+}
+
+/** 在覆盖/追加间切换写入方式，返回切换后的模式。 */
+export function toggleSceneInsertMode() {
+    const next = getCurrentInsertMode() === "append" ? "overwrite" : "append";
+    $("#t-outline-insert-mode").val(next);   // 窗口开着时同步其 select；关着则 no-op
+    saveDraftInsertModeOnly(next);
+    return next;
+}
+
+/** 把候选标记为已写入并落盘（气泡点卡片后调用）。 */
+export function markSceneCandidateUsed(planId, index) {
+    const id = String(planId || "").trim();
+    const plan = id ? getPlans().find(p => p.id === id) : null;
+    if (!plan) return;
+    const candidates = getPlanCandidates(plan);
+    if (index < 0 || index >= candidates.length) return;
+    candidates[index] = { ...candidates[index], used: true };
+    setPlanCandidates(id, candidates, { keepTimestamp: true });
+}
+
+export {
+    generateRecommendations as generateSceneRecommendations,
+    writePlotToInput as writeSceneToInput,
+    applyProgressFromModel as applySceneProgress,
+    getCurrentInsertMode as getSceneInsertMode
+};

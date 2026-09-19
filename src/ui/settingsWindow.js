@@ -11,6 +11,7 @@ import { getScripts } from "../core/scriptStore.js";
 import { openScriptManager } from "./scriptManager.js";
 import { ensureOverlay } from "../utils/dom.js";
 import { refreshOutlineEntryButton } from "./outlineEntryButton.js";
+import { refreshSceneAdvanceBubble } from "./sceneAdvanceBubble.js";
 import { refreshRewriteEntryButton } from "./rewriteEntryButton.js";
 import { ensureMainApiProfiles } from "../core/apiProfileRegistry.js";
 import { createApiConnectionEditor, renderApiConnectionEditorHTML } from "./shared/apiConnectionEditor.js";
@@ -2381,6 +2382,7 @@ export function openSettingsWindow() {
         }
         createFloatingButton(); // 刷新悬浮球外观
         refreshOutlineEntryButton(); // 刷新发送区大纲入口
+        refreshSceneAdvanceBubble(); // 刷新气泡剧情推进入口（同一开关）
         refreshRewriteEntryButton(); // 刷新快捷栏改写入口
         applyCustomCSS(d.custom_css); // 应用自定义 CSS
         applyFontSettings(d.font_settings); // 应用字体设置
