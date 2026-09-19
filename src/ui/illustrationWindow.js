@@ -99,7 +99,6 @@ export function openIllustrationWindow(targetOrTargets) {
                 <div class="t-illustration-actions"><button class="t-btn primary" type="button" data-action="prepare">分析画面</button><button class="t-btn" type="button" data-action="alternate">换个画面</button></div>
                 <div data-role="draft" hidden>
                     <p class="t-illustration-summary" data-role="summary"></p>
-                    <details class="t-illustration-details"><summary>对应原文</summary><blockquote data-role="excerpt"></blockquote></details>
                     <details class="t-illustration-details"><summary>编辑绘画提示词</summary>
                         <label class="t-illustration-field">正向提示词<textarea class="t-input" data-field="positive" rows="5"></textarea></label>
                         <label class="t-illustration-field">负向提示词<textarea class="t-input" data-field="negative" rows="3"></textarea></label>
@@ -155,7 +154,6 @@ export function openIllustrationWindow(targetOrTargets) {
         role("draft").hidden = !draft;
         if (draft) {
             role("summary").textContent = draft.scene.summary;
-            role("excerpt").textContent = draft.scene.sourceExcerpt;
             field("positive").value = draft.prompts.positivePrompt;
             field("negative").value = draft.prompts.negativePrompt;
             role("characters").innerHTML = draft.prompts.characterPrompts.map((character, index) => `

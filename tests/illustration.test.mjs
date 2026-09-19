@@ -11,7 +11,7 @@ const png = new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCA
 const story = '深夜门口，两人隔着半开的门对视。';
 const draft = () => ({
     version: 1, imageSource: 'novelai', model: 'nai-test',
-    scene: { summary: '深夜门口的重逢。', sourceExcerpt: story },
+    scene: { summary: '深夜门口的重逢。' },
     prompts: { positivePrompt: 'two people, doorway, night', negativePrompt: '', characterPrompts: [{ positivePrompt: 'black hair', negativePrompt: '', position: { x: 0.3, y: 0.5 } }] },
 });
 const capabilities = () => ({
@@ -123,7 +123,7 @@ test('stable scene identity survives a reload; regenerated or edited text gets a
     assert.throws(() => data.createIllustrationTarget({ ...source, status: 'running' }), /已完成/);
 });
 
-test('bridge rejects missing API, unsupported version, invented excerpt and non-image payload', async t => {
+test('bridge rejects missing API, unsupported version, missing summary and non-image payload', async t => {
     const h = harness(); t.after(h.close);
     const bridge = await h.load('src/core/cosmosVisionBridge.js');
     const api = h.window.CosmosVision;
@@ -133,7 +133,8 @@ test('bridge rejects missing API, unsupported version, invented excerpt and non-
     await assert.rejects(bridge.getCosmosCapabilities(), /版本不兼容/);
     h.window.CosmosVision = api;
     const data = await h.load('src/core/illustrationData.js');
-    assert.throws(() => data.normalizeIllustrationDraft(draft(), '另一段正文'), /原文/);
+    // 画面描述缺失应拒绝；不再要求逐字摘录正文原文。
+    assert.throws(() => data.normalizeIllustrationDraft({ ...draft(), scene: {} }), /画面描述/);
     await assert.rejects(data.validateIllustrationBlob(new Blob(['<html>Error</html>'], { type: 'image/png' })), /格式不符/);
     const clean = data.normalizeIllustrationDraft({ ...draft(), apiKey: 'must-not-persist' });
     assert.equal('apiKey' in clean, false);

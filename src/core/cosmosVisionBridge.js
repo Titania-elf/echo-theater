@@ -66,7 +66,7 @@ export async function prepareTheaterIllustration(request, options = {}) {
         const source = capabilities.imageSources.find(item => item.id === request.imageSource);
         if (!source?.ready) throw illustrationError(source?.reason || "所选生图来源尚未配置。", "PROVIDER_NOT_CONFIGURED");
         if (options.signal?.aborted) throw abortError();
-        const draft = normalizeIllustrationDraft(await getApi().preparePrompt(request, requestControl(options)), request.theaterText);
+        const draft = normalizeIllustrationDraft(await getApi().preparePrompt(request, requestControl(options)));
         if (draft.imageSource !== request.imageSource) throw illustrationError("返回草稿的图像来源与请求不一致。");
         return draft;
     }, options.signal);
@@ -86,7 +86,7 @@ export async function generateTheaterIllustration(draft, options = {}) {
         }
         const actualDraft = normalizeIllustrationDraft(result.draft);
         if (actualDraft.imageSource !== normalized.imageSource || actualDraft.model !== normalized.model
-            || actualDraft.scene.sourceExcerpt !== normalized.scene.sourceExcerpt) throw illustrationError("生图结果来源、模型或选景原文不一致。");
+            || actualDraft.scene.summary !== normalized.scene.summary) throw illustrationError("生图结果来源、模型或画面描述不一致。");
         const image = result.images[0];
         await validateIllustrationBlob(image.blob);
         if (image.mimeType !== image.blob.type || ![image.width, image.height].every(n => Number.isInteger(n) && n > 0)) {

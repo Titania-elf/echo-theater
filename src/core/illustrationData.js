@@ -55,12 +55,8 @@ function requireText(value, label, allowEmpty = false) {
     return value.trim();
 }
 
-export function normalizeIllustrationDraft(value, theaterText) {
+export function normalizeIllustrationDraft(value) {
     if (value?.version !== 1 || !SOURCES.has(value.imageSource)) throw illustrationError("配图草稿版本或图像来源不受支持。");
-    const sourceExcerpt = requireText(value.scene?.sourceExcerpt, "画面原文");
-    if (typeof theaterText === "string" && !theaterText.includes(sourceExcerpt)) {
-        throw illustrationError("选景原文与当前剧场不一致，请重新分析画面。");
-    }
     if (!Array.isArray(value.prompts?.characterPrompts)) throw illustrationError("人物提示词应为数组。");
     const characterPrompts = value.prompts.characterPrompts.map(character => {
         const { x, y } = character?.position || {};
@@ -77,7 +73,7 @@ export function normalizeIllustrationDraft(value, theaterText) {
         version: 1,
         imageSource: value.imageSource,
         model: requireText(value.model, "模型标识"),
-        scene: { summary: requireText(value.scene.summary, "画面描述"), sourceExcerpt },
+        scene: { summary: requireText(value.scene?.summary, "画面描述") },
         prompts: {
             positivePrompt: requireText(value.prompts.positivePrompt, "正向提示词"),
             negativePrompt: requireText(value.prompts.negativePrompt, "负向提示词", true),
