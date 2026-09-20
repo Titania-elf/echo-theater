@@ -1029,8 +1029,8 @@
 
 .t-stats-hud {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 0;
+    left: 0;
     z-index: 100;
 
     /* 透明毛玻璃效果 */
@@ -1038,9 +1038,11 @@
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
 
-    /* 边框和圆角 */
+    /* 贴左上角：外侧两边不描边，仅内侧下角留圆角 */
     border: 1px solid var(--t-color-surface-hover-subtle);
-    border-radius: 4px;
+    border-top: none;
+    border-left: none;
+    border-radius: 0 0 4px 0;
 
     /* 内边距 - 更紧凑 */
     padding: 4px 8px;
@@ -1109,8 +1111,8 @@
 
 @media screen and (max-width: 600px) {
     .t-stats-hud {
-        top: 8px;
-        left: 8px;
+        top: 0;
+        left: 0;
         padding: 3px 6px;
         font-size: 9px;
         gap: 4px;

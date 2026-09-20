@@ -8,85 +8,8 @@
  * 共用的子窗口，不随主界面分叉，一律沿用 main-window.css 的新版样式。
  */
 
-#t-main-view.t-layout-legacy .t-tools-btn {
-    position: absolute;
-    top: 20px;
-    right: 25px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgb(var(--t-surface-rgb) / .6);
-    backdrop-filter: blur(4px);
-    color: var(--t-color-text-dim);
-    border: 1px solid var(--t-color-border-faint);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 100;
-    transition: all 0.2s;
-    opacity: 0.6;
-}
-
-#t-main-view.t-layout-legacy .t-tools-btn:hover {
-    opacity: 1;
-    background: var(--t-color-surface-high);
-    color: var(--t-color-text-strong);
-    transform: scale(1.05);
-}
-
-#t-main-view.t-layout-legacy .t-tools-btn.active {
-    opacity: 1;
-    background: var(--t-color-brand);
-    color: var(--t-color-text-on-accent);
-}
-
-#t-main-view.t-layout-legacy .t-tools-btn.zen-active {
-    opacity: 1;
-    background: transparent;
-    color: var(--t-color-brand);
-}
-
-#t-main-view.t-layout-legacy .t-tools-panel {
-    position: absolute;
-    top: 65px;
-    right: 25px;
-    background: var(--t-color-surface);
-    border: 1px solid var(--t-color-border-strong);
-    border-radius: 8px;
-    box-shadow: 0 5px 20px var(--t-shadow-ink-50);
-    z-index: 101;
-    min-width: 140px;
-    padding: 5px;
-    animation: t-fade-in 0.15s ease;
-}
-
-#t-main-view.t-layout-legacy .t-tools-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    color: var(--t-color-text-label);
-    font-size: 0.9em;
-    transition: all 0.2s;
-}
-
-#t-main-view.t-layout-legacy .t-tools-item:hover {
-    background: var(--t-color-surface-raised);
-    color: var(--t-color-text-strong);
-}
-
-#t-main-view.t-layout-legacy .t-tools-item i {
-    width: 18px;
-    text-align: center;
-    color: var(--t-color-text-muted);
-}
-
-#t-main-view.t-layout-legacy .t-tools-item:hover i {
-    color: var(--t-color-brand);
-}
+/* 内容区右上角工具栏：沿用新版的 .t-tools-rail / .t-tools-icon（见 main-window.css），
+   经典版不再自绘三点按钮 + 弹出面板。此处无需任何布局专属规则。 */
 
 #t-main-view.t-layout-legacy .t-bot-left {
     display: grid;

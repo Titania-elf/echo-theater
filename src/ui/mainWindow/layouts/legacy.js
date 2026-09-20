@@ -49,25 +49,20 @@ export function renderHtml(viewData) {
                     <span class="t-stats-sep">|</span>
                     <span class="t-stats-item"><span class="t-stats-label">耗时</span><span class="t-stats-value" id="t-stat-time">-</span></span>
                 </div>
-                <div class="t-tools-btn" id="t-btn-tools" title="内容工具"><i class="fa-solid fa-ellipsis-vertical"></i></div>
-                <div class="t-tools-panel" id="t-tools-panel" style="display:none;">
-                    <div class="t-tools-item" id="t-tool-zen">
+                <div class="t-tools-rail" id="t-tools-rail">
+                    <button class="t-tools-icon" id="t-tool-zen" type="button" title="沉浸阅读" aria-label="沉浸阅读">
                         <i class="fa-solid fa-expand"></i>
-                        <span>沉浸阅读</span>
-                    </div>
-                    <div class="t-tools-item" id="t-tool-continue">
+                    </button>
+                    <button class="t-tools-icon" id="t-tool-continue" type="button" title="主动续写" aria-label="主动续写">
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span>主动续写</span>
-                    </div>
-                    <div class="t-tools-item" id="t-tool-edit-content">
+                    </button>
+                    <button class="t-tools-icon" id="t-tool-edit-content" type="button" title="编辑内容" aria-label="编辑内容">
                         <i class="fa-solid fa-pen-nib"></i>
-                        <span>编辑内容</span>
-                    </div>
-                    <button class="t-tools-item" id="t-tool-illustrate" type="button" title="场景配图"><i class="fa-solid fa-image"></i><span>场景配图</span></button>
-                    <div class="t-tools-item" id="t-tool-workshop-feedback" style="display:none;">
+                    </button>
+                    <button class="t-tools-icon" id="t-tool-illustrate" type="button" title="场景配图" aria-label="场景配图"><i class="fa-solid fa-image"></i></button>
+                    <button class="t-tools-icon" id="t-tool-workshop-feedback" type="button" title="评论工坊投稿" aria-label="评论工坊投稿" style="display:none;">
                         <i class="fa-regular fa-comment-dots"></i>
-                        <span>评论工坊投稿</span>
-                    </div>
+                    </button>
                 </div>
                 <div class="t-content-area">
                     <!-- 翻页按钮移到内容区两侧 -->
@@ -141,42 +136,10 @@ export function renderHtml(viewData) {
 export function bindEvents(ctx) {
     const {
         closeWindow,
-        registerTeardown,
         runContinuation,
         openContinuationHistory,
         openContinuationComposer
     } = ctx;
-
-    const $toolsPanel = $("#t-tools-panel");
-    const $toolsBtn = $("#t-btn-tools");
-
-    const hideToolsPanel = () => {
-        $toolsPanel.hide();
-        $toolsBtn.removeClass("active");
-    };
-
-    // --- 弹出式内容工具面板 ---
-
-    $toolsBtn.on("click", function (e) {
-        e.stopPropagation();
-        const isVisible = $toolsPanel.is(":visible");
-        $toolsPanel.toggle(!isVisible);
-        $(this).toggleClass("active", !isVisible);
-    });
-
-    $(document).on("click.toolspanel", function (e) {
-        if (!$(e.target).closest("#t-tools-panel, #t-btn-tools").length) {
-            hideToolsPanel();
-        }
-    });
-
-    // 经典版所有工具入口都在面板内，点任一项都要收起面板。
-    // 委托到面板容器，避免与共享层已有的 #t-tool-zen / #t-tool-edit-content 绑定重复；
-    // 委托晚于直接绑定触发，故此时 t-zen-mode 已是切换后的状态，可直接读取。
-    $toolsPanel.on("click", ".t-tools-item", function () {
-        hideToolsPanel();
-        $toolsBtn.toggleClass("zen-active", $("#t-main-view").hasClass("t-zen-mode"));
-    });
 
     // --- 主动续写（经典版走完整编辑器） ---
 
@@ -200,11 +163,6 @@ export function bindEvents(ctx) {
         }
         closeWindow();
         handleGenerate(null, false);
-    });
-
-    // 关闭窗口时解绑本布局挂在 document 上的监听
-    registerTeardown(() => {
-        $(document).off("click.toolspanel");
     });
 }
 
