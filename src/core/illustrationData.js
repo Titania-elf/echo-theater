@@ -1,7 +1,9 @@
 // 配图 DTO 与纯数据操作；不依赖酒馆或 Cosmos 私有模块。
 export const ILLUSTRATION_INDEX_KEY = "illustration_index";
 export const MAX_IMAGE_BYTES = 32 * 1024 * 1024;
-const SOURCES = new Set(["novelai", "comfyui"]);
+/** v2 起草稿不再记图源与模型：新接口由供应方决定且不可覆盖，只记「交给哪个生图后端」。 */
+export const ILLUSTRATION_DRAFT_VERSION = 2;
+const BACKENDS = new Set(["cosmos"]);
 const MIME_EXTENSIONS = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
 export function illustrationError(message, code = "INVALID_RESPONSE") {
@@ -31,11 +33,16 @@ export function createIllustrationTarget(result, fallbackId = "") {
     const identity = String(result.generationId || fallbackId);
     if (!identity) throw illustrationError("这段内容缺少保存标识，请重新打开后再试。", "NO_CONTENT");
     return Object.freeze({
+        // ⚠ cardKey 只作为字段带上，**绝不能**进这个散列数组：
+        //   一改，illustration_index 里所有旧指针立刻变成孤儿，用户画廊全丢。
         sceneId: `scene-${illustrationHash(JSON.stringify([identity, result.scriptId || "", content]))}`,
         content,
         scriptId: String(result.scriptId || ""),
         scriptName: String(result.scriptName || "场景"),
         generationId: String(result.generationId || ""),
+        // 目标内容的角色卡身份，由调用方给：当前聊天里就取 getCharacterCardKey()，
+        // 收藏则取该收藏自己存下的。选景时**不要**现读，那会拿到当前聊天的角色。
+        cardKey: String(result.cardKey || ""),
     });
 }
 
@@ -55,8 +62,17 @@ function requireText(value, label, allowEmpty = false) {
     return value.trim();
 }
 
+/**
+ * 规范化配图草稿，并把 v1 旧草稿迁移成 v2。
+ *
+ * v1 的 imageSource / model 是「调用方指定图源与模型」时代的字段；新接口改由供应方决定
+ * 且不可覆盖，所以读旧数据时直接丢弃这两个字段，不校验其取值（能存下来的都已通过旧校验）。
+ * 本函数会在拿不到正文的读路径上被调用（存储读取、备份恢复、收藏渲染），因此
+ * 绝不能在这里校验 scene.sourceExcerpt —— 那会让所有旧记录渲染失败。
+ */
 export function normalizeIllustrationDraft(value) {
-    if (value?.version !== 1 || !SOURCES.has(value.imageSource)) throw illustrationError("配图草稿版本或图像来源不受支持。");
+    const version = Number(value?.version);
+    if (version !== 1 && version !== ILLUSTRATION_DRAFT_VERSION) throw illustrationError("配图草稿版本不受支持。");
     if (!Array.isArray(value.prompts?.characterPrompts)) throw illustrationError("人物提示词应为数组。");
     const characterPrompts = value.prompts.characterPrompts.map(character => {
         const { x, y } = character?.position || {};
@@ -69,17 +85,38 @@ export function normalizeIllustrationDraft(value) {
             position: { x, y },
         };
     });
+    const backend = version === 1 ? "cosmos" : requireText(value.backend, "生图后端");
+    if (!BACKENDS.has(backend)) throw illustrationError("配图草稿的生图后端不受支持。");
+    const summary = requireText(value.scene?.summary, "画面描述");
+    const excerpt = typeof value.scene?.sourceExcerpt === "string" ? value.scene.sourceExcerpt.trim() : "";
     return {
-        version: 1,
-        imageSource: value.imageSource,
-        model: requireText(value.model, "模型标识"),
-        scene: { summary: requireText(value.scene?.summary, "画面描述") },
+        version: ILLUSTRATION_DRAFT_VERSION,
+        backend,
+        scene: { summary, ...(excerpt ? { sourceExcerpt: excerpt } : {}) },
         prompts: {
             positivePrompt: requireText(value.prompts.positivePrompt, "正向提示词"),
             negativePrompt: requireText(value.prompts.negativePrompt, "负向提示词", true),
             characterPrompts,
         },
     };
+}
+
+/**
+ * 校验画面摘录确实是正文中连续、逐字一致的一段，用来抓模型凭空编造的引用。
+ * 只在选景产出时调用：读路径没有正文可用。
+ * 摘录缺省时不拦截（它现在是给用户看的对照片段，不是生图的必需输入）；
+ * 但一旦给出就必须对得上，否则说明模型在编原文。
+ *
+ * 错误码必须与 INVALID_RESPONSE 区分：那个码表示「格式坏了、重发一次可能就好了」，
+ * 会被选景器当成可重试的失败；摘录对不上是内容问题，该直接把话说明白给用户看。
+ */
+export function assertIllustrationExcerpt(draft, theaterText) {
+    const excerpt = draft?.scene?.sourceExcerpt;
+    if (!excerpt) return draft;
+    if (!String(theaterText ?? "").includes(excerpt)) {
+        throw illustrationError("画面摘录不是正文中的连续原文，请重新选景。", "EXCERPT_MISMATCH");
+    }
+    return draft;
 }
 
 export function illustrationExtension(mime) {

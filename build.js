@@ -136,6 +136,7 @@ const buildOptions = {
         '../../../custom-request.js',
         '../../../openai.js',
         '../../../macros.js',
+        '../../../variables.js',
         '../../../sse-stream.js',
         '../../../tokenizers.js',
         '../../../system-messages.js',

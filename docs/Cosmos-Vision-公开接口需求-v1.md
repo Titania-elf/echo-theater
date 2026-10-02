@@ -1,5 +1,9 @@
 # Cosmos Vision 公开接口需求：回声小剧场场景配图 v1
 
+> ⚠️ **历史文档，已被取代。** Cosmos Vision 的 `dev` 分支（提交 `85e5c59 feat: 添加对外API`）交付的是另一套更薄的接口，并未按本文实现：只有 `{ version, requestPrompt, generateImage }`，没有 `getCapabilities` / `preparePrompt` / `generate`，也没有选景、`imageSource`、`model`、`presetId`、`previousScenes`、`count` 与 `stage` 进度。
+>
+> 小剧场已据此重做：选景回到插件自有 LLM，生图改走 `generateImage`。当前实现与约定见 [小剧场-场景配图](./小剧场-场景配图.md)。本文保留仅供追溯当时的设计意图。
+
 状态：供两端独立开发的接口约定，2026-09-18。配套精确类型见 [cosmos-vision-public-api-v1.d.ts](./cosmos-vision-public-api-v1.d.ts)。小剧场端按本文实现；破坏性调整必须先同步这两份文件和调用方。
 
 ## 1. 交付目标与开发边界

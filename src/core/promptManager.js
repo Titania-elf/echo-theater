@@ -5,6 +5,10 @@ import { estimateTokens } from "../utils/helpers.js";
 // 不能从 utils/storage.js 取 getExtData —— storage.js 反过来 import 了本模块的
 // ensurePromptManager，会形成循环依赖。配置直接从 ST 的 extension_settings 读。
 import { extensionName } from "../config/defaults.js";
+// prompt_order 合并已搬到无依赖的 promptOrder.js，与「选景预设」模块共用。
+import { getPromptOrder } from "./promptOrder.js";
+// 变量沙箱与 STscript 变量宏求值：与「选景预设」链路共用同一份实现。
+import { beginVariableSandbox as beginSharedVariableSandbox } from "./stVariables.js";
 
 export const DEFAULT_CONTENT_PROMPT = "You are a creative engine. Output ONLY valid HTML content inside a <div> with Inline CSS. Do NOT use markdown code blocks. Language: Chinese.";
 
@@ -218,86 +222,6 @@ export function getPromptScheme(data, mode = "narrative") {
         systemEntry.content = defaultContent;
     }
     return scheme;
-}
-
-function getPromptOrder(preset) {
-    const groups = Array.isArray(preset?.prompt_order)
-        ? preset.prompt_order
-            .map(group => Array.isArray(group?.order) ? group.order : [])
-            .filter(order => order.length > 0)
-        : [];
-    const getIdentifier = item => String(item?.identifier || "").trim();
-    const getUniqueCount = order => new Set(order.map(getIdentifier).filter(Boolean)).size;
-    const referenceCount = groups.reduce((total, order) => total + order.length, 0);
-
-    if (groups.length === 0) {
-        return {
-            order: [],
-            stats: { group_count: 0, reference_count: 0, unique_count: 0, duplicate_count: 0, conflict_count: 0 }
-        };
-    }
-
-    // The most complete group defines the canonical order and duplicate enabled state.
-    // Other groups still contribute every identifier that is absent from this backbone.
-    let primaryIndex = 0;
-    for (let index = 1; index < groups.length; index++) {
-        if (getUniqueCount(groups[index]) > getUniqueCount(groups[primaryIndex])) primaryIndex = index;
-    }
-
-    const merged = [];
-    const mergedIdentifiers = new Set();
-    const enabledStates = new Map();
-
-    for (const order of groups) {
-        for (const item of order) {
-            const identifier = getIdentifier(item);
-            if (!identifier) continue;
-            if (!enabledStates.has(identifier)) enabledStates.set(identifier, new Set());
-            enabledStates.get(identifier).add(item?.enabled !== false);
-        }
-    }
-
-    const appendUnique = item => {
-        const identifier = getIdentifier(item);
-        if (!identifier || mergedIdentifiers.has(identifier)) return;
-        merged.push(item);
-        mergedIdentifiers.add(identifier);
-    };
-
-    groups[primaryIndex].forEach(appendUnique);
-
-    for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
-        if (groupIndex === primaryIndex) continue;
-        const order = groups[groupIndex];
-
-        for (let itemIndex = 0; itemIndex < order.length; itemIndex++) {
-            const item = order[itemIndex];
-            const identifier = getIdentifier(item);
-            if (!identifier || mergedIdentifiers.has(identifier)) continue;
-
-            const nextKnownIdentifier = order
-                .slice(itemIndex + 1)
-                .map(getIdentifier)
-                .find(candidate => mergedIdentifiers.has(candidate));
-            const insertAt = nextKnownIdentifier
-                ? merged.findIndex(candidate => getIdentifier(candidate) === nextKnownIdentifier)
-                : merged.length;
-
-            merged.splice(insertAt, 0, item);
-            mergedIdentifiers.add(identifier);
-        }
-    }
-
-    return {
-        order: merged,
-        stats: {
-            group_count: groups.length,
-            reference_count: referenceCount,
-            unique_count: merged.length,
-            duplicate_count: referenceCount - merged.length,
-            conflict_count: [...enabledStates.values()].filter(states => states.size > 1).length
-        }
-    };
 }
 
 function getMarkerNameFromContent(content) {
@@ -640,49 +564,15 @@ function safeSubstituteParams(content) {
 }
 
 /**
- * 变量沙箱：构建提示词前给 ST 的变量存储拍快照，构建完成后还原。
+ * 变量沙箱：把用户的「变量跨次留存」设置接上共用实现。
  *
- * 为什么需要：{{setvar::}} 这类写入宏会真的改 chat_metadata.variables，并且
- * setLocalVariable 结尾会 saveMetadataDebounced()（variables.js:79）落盘。很多预设
- * 拿变量当「提示词组装草稿纸」，一次构建就会写进几十个通用名变量（content、summary、
- * language、speed、thinking…），极易与主对话自己的变量撞名。
- *
- * 关键点：还原发生在提示词**构建完成之后**，所以提示词的展开结果与 ST 完全一致，
- * 被丢弃的只是构建过程中的记账副作用。
+ * 实现与全部理由都在 stVariables.js（选景链路用同一份）。这里只负责把
+ * preset_macros.persist_variables 翻译成 persist 选项。
  *
  * @returns {() => void} 还原函数
  */
 export function beginVariableSandbox() {
-    if (getPresetMacroConfig().persistVariables) return () => {};
-
-    let ctx = null;
-    try {
-        ctx = typeof SillyTavern !== "undefined" ? SillyTavern.getContext?.() : null;
-    } catch {
-        return () => {};
-    }
-    if (!ctx) return () => {};
-
-    // ctx.chatMetadata / ctx.extensionSettings 就是 chat_metadata / extension_settings 本体，
-    // 所以直接改它们的属性等价于改 ST 的存储，无需额外 import。
-    const chatMetadata = ctx.chatMetadata;
-    const extensionSettings = ctx.extensionSettings;
-    const localSnapshot = chatMetadata && typeof chatMetadata.variables === "object" && chatMetadata.variables
-        ? { ...chatMetadata.variables }
-        : null;
-    const globalStore = extensionSettings?.variables;
-    const globalSnapshot = globalStore && typeof globalStore.global === "object" && globalStore.global
-        ? { ...globalStore.global }
-        : null;
-
-    return () => {
-        try {
-            if (chatMetadata && localSnapshot) chatMetadata.variables = localSnapshot;
-            if (globalStore && globalSnapshot) globalStore.global = globalSnapshot;
-        } catch (e) {
-            console.warn("Titania: 变量沙箱还原失败", e);
-        }
-    };
+    return beginSharedVariableSandbox({ persist: getPresetMacroConfig().persistVariables });
 }
 
 function resolveEntryContent(entry, contentByEntry, runtimeContext) {

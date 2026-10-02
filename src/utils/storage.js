@@ -8,6 +8,8 @@ import { extension_settings } from "../../../extensions.js";
 import { saveSettingsDebounced, saveSettings } from "../../../../script.js";
 import { defaultSettings, extensionName } from "../config/defaults.js";
 import { ensurePromptManager } from "../core/promptManager.js";
+import { ensureCharacterProfiles } from "../core/characterProfiles.js";
+import { ensureIllustrationPresets } from "../core/illustrationPresets.js";
 
 // 获取扩展数据，如果不存在则初始化默认值
 export function getExtData() {
@@ -15,7 +17,10 @@ export function getExtData() {
         extension_settings[extensionName] = JSON.parse(JSON.stringify(defaultSettings));
     }
     const changed = ensurePromptManager(extension_settings[extensionName]);
-    if (changed) saveSettingsDebounced();
+    const profilesChanged = ensureCharacterProfiles(extension_settings[extensionName]);
+    // 选景预设的首次建立与旧「单块规范」迁移都在这里发生。
+    const presetsChanged = ensureIllustrationPresets(extension_settings[extensionName]);
+    if (changed || profilesChanged || presetsChanged) saveSettingsDebounced();
     return extension_settings[extensionName];
 }
 

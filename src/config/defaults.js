@@ -79,6 +79,13 @@ export const defaultSettings = {
     //   所有读取点都能处理 undefined（getScripts / describeCurrentScriptsFootprint /
     //   shouldDualWrite / migrateScriptsToFiles 等一律先 Array.isArray 判定）。
     favs: [],
+    // 人物外观档案（场景配图专用）。形状与迁移由 src/core/characterProfiles.js 负责，
+    // 这里只声明存在，免得全新安装少一个键。注意与下面的 appearance 区分：
+    // 那是悬浮球的 UI 皮肤，与角色外观无关。
+    character_profiles: {
+        version: 1,
+        entries: []
+    },
     history_extraction: {
         whitelist: "",
         blacklist: "",

@@ -20,7 +20,7 @@ import {
     isFavoriteEligible,
     setCurrentGenerationResult
 } from "../core/state.js";
-import { getContextData, getActiveWorldInfoEntries, getAllWorldBookNames, getWorldInfoEntriesByBookName, getActiveWorldBookNames, readWorldInfoSelections, writeWorldInfoSelections, readWorldInfoSchemes, writeWorldInfoSchemes } from "../core/context.js";
+import { getContextData, getActiveWorldInfoEntries, getAllWorldBookNames, getWorldInfoEntriesByBookName, getActiveWorldBookNames, readWorldInfoSelections, writeWorldInfoSelections, readWorldInfoSchemes, writeWorldInfoSchemes, getCharacterCardKey } from "../core/context.js";
 import { handleGenerate, handleUserContinuation, renderGeneratedContent, executeQueueGeneration, cancelQueueGeneration, cancelGeneration, getContinuationSessionStats, getContinuationBranches, copyContinuationBranchToCurrentChat, findContinuationRoundByContent, syncEditedContentToContinuationSession } from "../core/api.js";
 import { openFavsWindow, saveFavorite, unsaveFavorite } from "./favsWindow.js";
 import { showDebugInfo, showDiagnosticsWindow } from "./debugWindow.js";
@@ -72,7 +72,8 @@ function getMainIllustrationTarget() {
     const fallback = view
         ? `${view.chatId}:${view.scriptId}:${view.branchKey}:${view.roundKey}`
         : `legacy:${getCurrentContinuationSource().chatId}:${result?.scriptId || ""}`;
-    return createIllustrationTarget(result, fallback);
+    // 这里是当前聊天，取当前角色卡身份是正确的；配图面板读 target.cardKey，不自己现读。
+    return createIllustrationTarget({ ...result, cardKey: getCharacterCardKey() }, fallback);
 }
 
 const SORT_MODE_LABELS = {

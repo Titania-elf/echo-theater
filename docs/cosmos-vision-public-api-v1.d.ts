@@ -1,3 +1,9 @@
+/**
+ * ⚠️ 历史类型定义，已被取代。对方实际交付的是另一套薄接口（`{ version, requestPrompt, generateImage }`），
+ * 本文描述的 `getCapabilities` / `preparePrompt` / `generate` 从未实现。保留仅供追溯。
+ * 当前实现与约定见 ../docs/小剧场-场景配图.md。
+ */
+
 /** 回声小剧场 / Cosmos Vision 公开接口约定 1.0。与需求文档同时维护。 */
 export type ImageSource = 'novelai' | 'comfyui';
 export interface CharacterPrompt {

@@ -1,14 +1,23 @@
 import { buildPromptTextFromTheater } from "../core/chatInjector.js";
-import { getCosmosCapabilities, prepareTheaterIllustration, generateTheaterIllustration } from "../core/cosmosVisionBridge.js";
-import { readSceneIllustrations, saveGeneratedIllustration, selectSceneIllustration, selectedIllustration } from "../core/illustrationStore.js";
+import { detectIllustrationBackend, generateTheaterIllustration } from "../core/cosmosVisionBridge.js";
+import { selectIllustrationScene } from "../core/illustrationScene.js";
+import { composeProfileBlock, matchCharacterProfiles, readCharacterProfiles } from "../core/characterProfiles.js";
+import { getExtData } from "../utils/storage.js";
+import { openIllustrationSettingsWindow } from "./illustrationSettingsWindow.js";
+import { openCharacterProfileWindow } from "./characterProfileWindow.js";
+import { readSceneIllustrations, saveGeneratedIllustrations, selectSceneIllustration, selectedIllustration } from "../core/illustrationStore.js";
 import { escapeIllustrationHtml as escape, illustrationFigure, normalizeIllustrationDraft, normalizeSavedIllustration } from "../core/illustrationData.js";
 import { exportAsHtmlFile } from "../utils/helpers.js";
+import { claimFloatingWindow, releaseFloatingWindow } from "./shared/floatingWindow.js";
 
-const PROGRESS_LABELS = { queued: "正在排队…", analyzing: "正在分析剧场、选择画面…", generating: "正在生成图片…", downloading: "正在接收图片…" };
+// 选景跑在本插件自己的 LLM 上，生图才交给 Cosmos，所以只有这两个阶段；
+// 生图的百分比来自 ComfyUI 的步数回调，NovelAI 非流式则没有进度。
+const PROGRESS_LABELS = { selecting: "正在通读正文、选择画面…", generating: "正在生成图片…" };
+/** 流式过程图的更新间隔：帧率再高也不值得每帧都换 object URL 并触发重绘。 */
+const PREVIEW_THROTTLE_MS = 150;
 // 会话与任务都放在模块级：面板关掉后选景与生图继续跑，重新打开同一场景能接着看进度和结果。
 const sessions = new Map();
 let activeView = null;
-let closeActiveWindow = null;
 
 function showError(error) {
     return error?.name === "AbortError" || error?.code === "ABORTED"
@@ -18,7 +27,13 @@ function showError(error) {
 
 function sessionFor(sceneId, initialText) {
     if (!sessions.has(sceneId)) {
-        sessions.set(sceneId, { text: initialText || "", request: "", participants: "", draft: null, pending: null, previousScenes: [], adopted: undefined, notice: "", job: null });
+        sessions.set(sceneId, {
+            text: initialText || "", request: "", participants: "", draft: null, pending: null,
+            previewBlob: null, previousScenes: [], adopted: undefined, notice: "", job: null,
+            // 外观档案：profileIds 是勾选态，profileBlocks 记下我们插入过的那几块原文，
+            // 取消勾选时只移除仍逐字存在的那块 —— 用户改过的内容永不删除。
+            profileIds: [], profileBlocks: {}, profilesInitialized: false,
+        });
     }
     return sessions.get(sceneId);
 }
@@ -29,7 +44,9 @@ function notifyView(sceneId) {
 
 function jobProgress(job) {
     return event => {
-        job.status = PROGRESS_LABELS[event.stage] || "正在处理…";
+        const label = PROGRESS_LABELS[event.stage] || "正在处理…";
+        const percent = Number.isFinite(event.fraction) ? ` ${Math.round(event.fraction * 100)}%` : "";
+        job.status = `${label}${percent}`;
         notifyView(job.sceneId);
     };
 }
@@ -62,7 +79,7 @@ function notifyBackgroundResult(job) {
 
 /** 生成成功后立即保存；面板关掉也继续，保存失败时图片留在会话里等「重试保存」。 */
 async function persistPending(current, currentTarget) {
-    current.record = await saveGeneratedIllustration(currentTarget.sceneId, current.pending);
+    current.record = await saveGeneratedIllustrations(currentTarget.sceneId, current.pending);
     const image = selectedIllustration(current.record);
     await currentTarget.onSelected?.(image);
     current.adopted = image;
@@ -72,8 +89,12 @@ async function persistPending(current, currentTarget) {
 }
 
 /** target 为固定的正文快照；onSelected 可由收藏页注入，始终操作原收藏。 */
-export function openIllustrationWindow(targetOrTargets) {
-    closeActiveWindow?.();
+/**
+ * 打开场景配图面板。
+ * @param {object|object[]} targetOrTargets 固定的正文快照
+ * @param {number} [initialIndex] 初始选中的那一轮（从设置窗返回时用来回到同一轮）
+ */
+export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
     const targets = Array.isArray(targetOrTargets) ? targetOrTargets : [targetOrTargets];
     if (!targets.length) return;
     const previousFocus = document.activeElement;
@@ -83,23 +104,31 @@ export function openIllustrationWindow(targetOrTargets) {
         <section class="t-illustration-panel" role="dialog" aria-labelledby="t-illustration-title">
             <div class="t-panel-header">
                 <strong id="t-illustration-title">场景配图</strong>
-                <button type="button" class="t-btn" data-action="close" aria-label="关闭配图面板">关闭</button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button type="button" class="t-btn" data-action="profiles" title="人物外观档案" aria-label="人物外观档案"><i class="fa-solid fa-address-book"></i></button>
+                    <button type="button" class="t-btn" data-action="settings" title="场景配图设置：选景预设" aria-label="场景配图设置"><i class="fa-solid fa-gear"></i></button>
+                    <button type="button" class="t-btn" data-action="close" title="关闭配图面板" aria-label="关闭配图面板"><i class="fa-solid fa-xmark"></i></button>
+                </div>
             </div>
             <div class="t-illustration-body">
                 <label class="t-illustration-field">配图内容<select class="t-input" data-field="target"></select></label>
                 <p class="t-illustration-hint">为选中的这一轮剧场挑选一个画面。切换正文后，本次任务仍属于这里显示的内容。</p>
                 <div class="t-illustration-connection"><span data-role="connection">正在检测 Cosmos Vision…</span><button class="t-btn" type="button" data-action="detect">重新检测</button></div>
-                <label class="t-illustration-field">生图来源<select class="t-input" data-field="source"></select></label>
-                <p class="t-illustration-hint">画幅、画风和采样设置沿用 Cosmos Vision 的配置。</p>
+                <p class="t-illustration-hint">画面由本插件的 API 方案选出；画幅、画风、质量词与预设沿用 Cosmos Vision 的配置，不在这里选择。</p>
                 <label class="t-illustration-field">想画什么（可选）<textarea class="t-input" data-field="request" rows="2" placeholder="例如：画雨中重逢的瞬间，远景，偏冷色"></textarea></label>
                 <details class="t-illustration-details"><summary>正文与人物资料</summary>
                     <label class="t-illustration-field">本次配图素材<textarea class="t-input" data-field="text" rows="6"></textarea></label>
-                    <label class="t-illustration-field">人物外观等补充资料（可选）<textarea class="t-input" data-field="participants" rows="3" placeholder="可以补充发色、服装等信息；留空则根据正文选景。"></textarea></label>
+                    <div class="t-illustration-field">人物外观档案
+                        <div class="t-profile-chips" data-role="profiles"></div>
+                    </div>
+                    <label class="t-illustration-field">人物外观等补充资料（可选）<textarea class="t-input" data-field="participants" rows="3" placeholder="选中的外观档案会自动填到这里，也可以直接手写；留空则完全根据正文选景。"></textarea></label>
                 </details>
                 <div class="t-illustration-actions"><button class="t-btn primary" type="button" data-action="prepare">分析画面</button><button class="t-btn" type="button" data-action="alternate">换个画面</button></div>
                 <div data-role="draft" hidden>
                     <p class="t-illustration-summary" data-role="summary"></p>
+                    <p class="t-illustration-hint" data-role="excerpt" hidden></p>
                     <details class="t-illustration-details"><summary>编辑绘画提示词</summary>
+                        <p class="t-illustration-hint">这里只写「画面里有什么」。质量词、画师串、画风预设与 LoRA 触发词由 Cosmos Vision 追加，重复填写会叠加。</p>
                         <label class="t-illustration-field">正向提示词<textarea class="t-input" data-field="positive" rows="5"></textarea></label>
                         <label class="t-illustration-field">负向提示词<textarea class="t-input" data-field="negative" rows="3"></textarea></label>
                         <div data-role="characters"></div>
@@ -108,6 +137,7 @@ export function openIllustrationWindow(targetOrTargets) {
                 </div>
                 <div class="t-illustration-status" role="status" aria-live="polite" data-role="status"></div>
                 <div class="t-illustration-actions"><button class="t-btn" type="button" data-action="cancel" hidden>取消等待</button><button class="t-btn" type="button" data-action="save" hidden>重试保存</button></div>
+                <div class="t-illustration-preview" data-role="preview" hidden><p class="t-illustration-hint">生成中的过程图，仅供预览。</p><img alt="生成中的预览" data-role="preview-image"></div>
                 <div class="t-illustration-pending" data-role="pending" hidden><p>图片已生成，等待保存。</p><img alt="待保存的配图" data-role="pending-image"></div>
                 <div class="t-illustration-gallery" data-role="gallery"></div>
             </div>
@@ -119,6 +149,8 @@ export function openIllustrationWindow(targetOrTargets) {
     targets.forEach((target, index) => field("target").add(new Option(target.label || target.scriptName, String(index))));
     let target = targets[0], session, localBusy = false, ready = false, disposed = false;
     let selectionSequence = 0, detectionSequence = 0, pendingUrl = null, renderedDraft, renderedPending;
+    // 过程图与「已生成待保存」是两种状态：前者只预览，后者才启用「重试保存」。
+    let previewUrl = null, renderedPreviewBlob = null, previewUpdatedAt = 0;
     const isBusy = () => localBusy || Boolean(session?.job);
     // 后台任务通过 activeView 找到当前面板；面板不在时任务照常写会话。
     const view = { sceneId: "", sync: () => refreshFromState() };
@@ -134,6 +166,9 @@ export function openIllustrationWindow(targetOrTargets) {
         action("cancel").hidden = !job || job.phase === "saving";
         action("save").hidden = !session?.pending;
         action("save").disabled = busy;
+        // 勾选条不在 "input, textarea, select" 里，要单独禁用，
+        // 否则任务跑着也能改「人物资料」，字段会与在跑的请求分叉。
+        root.querySelectorAll("[data-profile-id]").forEach(el => { el.disabled = busy; });
         root.querySelectorAll("[data-image-id]").forEach(el => { el.disabled = busy; });
         field("target").disabled = busy || targets.length === 1;
     }
@@ -154,6 +189,9 @@ export function openIllustrationWindow(targetOrTargets) {
         role("draft").hidden = !draft;
         if (draft) {
             role("summary").textContent = draft.scene.summary;
+            const excerpt = draft.scene.sourceExcerpt || "";
+            role("excerpt").hidden = !excerpt;
+            role("excerpt").textContent = excerpt ? `原文摘录：${excerpt}` : "";
             field("positive").value = draft.prompts.positivePrompt;
             field("negative").value = draft.prompts.negativePrompt;
             role("characters").innerHTML = draft.prompts.characterPrompts.map((character, index) => `
@@ -175,7 +213,91 @@ export function openIllustrationWindow(targetOrTargets) {
             if (input.dataset.key === "x" || input.dataset.key === "y") character.position[input.dataset.key] = Number(input.value);
             else character[input.dataset.key] = input.value;
         });
-        return normalizeIllustrationDraft(draft, session.text);
+        return normalizeIllustrationDraft(draft);
+    }
+
+    /**
+     * 流式过程图只保留最新一帧，每换一帧都必须回收上一帧的 object URL，
+     * 否则长生成会一路泄漏 blob URL。与 session.pending 分开显示：
+     * 过程图只是预览，「重试保存」只对真正生成完的待保存图片开放。
+     */
+    function syncPreview() {
+        const blob = session?.previewBlob || null;
+        if (blob !== renderedPreviewBlob) {
+            if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+            if (blob) previewUrl = URL.createObjectURL(blob);
+            renderedPreviewBlob = blob;
+        }
+        role("preview").hidden = !previewUrl;
+        if (previewUrl) role("preview-image").src = previewUrl;
+        else role("preview-image").removeAttribute("src");
+    }
+
+    // --- 人物外观档案 ---
+
+    /**
+     * 档案改动「人物资料」时同步会话与 DOM。
+     * 面板里只有 loadTarget 会写这个字段（refreshFromState/renderDraft/renderGallery 都不碰），
+     * 所以程序化改值必须两处都写；且**不要**派发 input 事件 —— 那个监听器会把草稿清掉。
+     */
+    function syncParticipantsField() {
+        field("participants").value = session.participants;
+    }
+
+    function insertProfileBlock(current, entry) {
+        const block = composeProfileBlock(entry);
+        if (!block) return;
+        current.profileBlocks[entry.id] = block;
+        if (!current.profileIds.includes(entry.id)) current.profileIds.push(entry.id);
+        const text = String(current.participants || "").trim();
+        if (text.includes(block)) return;
+        current.participants = text ? `${text}\n\n${block}` : block;
+    }
+
+    /** 取消勾选：只有那一块仍逐字存在时才移除；用户已在块内改过就只取消勾选，不动文本。 */
+    function removeProfileBlock(current, id) {
+        const block = current.profileBlocks[id];
+        current.profileIds = current.profileIds.filter(item => item !== id);
+        if (!block || !String(current.participants || "").includes(block)) return;
+        current.participants = current.participants.replace(block, "").replace(/\n{3,}/g, "\n\n").trim();
+    }
+
+    function renderProfileChips() {
+        const holder = role("profiles");
+        const profiles = readCharacterProfiles(getExtData()).filter(entry => entry.enabled !== false);
+        holder.replaceChildren();
+        if (!profiles.length) {
+            const empty = document.createElement("span");
+            empty.className = "t-illustration-hint";
+            empty.textContent = "还没有外观档案。可以点「管理外观档案」新建一份，或直接在下方手填。";
+            holder.append(empty);
+            return;
+        }
+        for (const entry of profiles) {
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "t-profile-chip";
+            chip.dataset.profileId = entry.id;
+            // 一律 textContent：档案名与角色卡描述都可能含 HTML。
+            chip.textContent = entry.name || "未命名角色";
+            chip.classList.toggle("is-on", session.profileIds.includes(entry.id));
+            chip.disabled = isBusy();
+            chip.title = entry.cardKey ? `已绑定角色卡：${entry.cardKey.slice("card:".length)}` : "未绑定角色卡，靠触发词匹配";
+            holder.append(chip);
+        }
+    }
+
+    /** 会话首次建立时自动带入命中的档案；之后只由用户通过勾选条增删。 */
+    function applyAutoProfiles(current) {
+        if (current.profilesInitialized) return;
+        current.profilesInitialized = true;
+        const matched = matchCharacterProfiles(readCharacterProfiles(getExtData()), {
+            cardKey: target.cardKey,
+            // 只用正文匹配。把 participants 也算进去的话，档案自动填入后自己就成了
+            // 匹配依据，匹配不再幂等、且依赖操作顺序。
+            text: current.text,
+        });
+        for (const entry of matched) insertProfileBlock(current, entry);
     }
 
     function renderGallery() {
@@ -188,38 +310,27 @@ export function openIllustrationWindow(targetOrTargets) {
             </article>`).join("")}</div><div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="">暂不展示配图</button><button class="t-btn" type="button" data-action="export">导出图文 HTML</button></div>` : "";
         if (pendingUrl && session?.pending !== renderedPending) { URL.revokeObjectURL(pendingUrl); pendingUrl = null; }
         if (session?.pending && session.pending !== renderedPending) {
-            pendingUrl = URL.createObjectURL(session.pending.image.blob);
+            // 一批里可能有多张（Cosmos 的张数由它自己决定），预览显示采用的那张。
+            pendingUrl = URL.createObjectURL(session.pending.images[0].blob);
         }
         renderedPending = session?.pending || null;
         role("pending").hidden = !pendingUrl;
         if (pendingUrl) role("pending-image").src = pendingUrl;
         else role("pending-image").removeAttribute("src");
+        syncPreview();
         updateControls();
     }
 
-    async function detect() {
+    /**
+     * 探测生图后端。新接口没有能力协商，只能按方法存在性判断是否可用；
+     * 具体状态（未安装 / 旧版接口 / 就绪）与文案都由适配层给出。
+     */
+    function detect() {
         const sequence = ++detectionSequence;
-        ready = false;
-        updateControls();
-        try {
-            const capabilities = await getCosmosCapabilities();
-            if (disposed || sequence !== detectionSequence) return;
-            const previous = session?.draft?.imageSource || field("source").value || capabilities.defaultImageSource;
-            field("source").replaceChildren();
-            for (const source of capabilities.imageSources) {
-                const option = new Option(`${source.label}${source.ready ? "" : "（未配置）"}`, source.id);
-                option.disabled = !source.ready;
-                option.title = source.reason || "";
-                field("source").add(option);
-            }
-            field("source").value = capabilities.imageSources.some(item => item.id === previous && item.ready)
-                ? previous : (capabilities.imageSources.find(item => item.ready)?.id || "");
-            ready = Boolean(field("source").value);
-            role("connection").textContent = ready ? "Cosmos Vision 已连接" : "请先在 Cosmos Vision 配置一个生图来源。";
-        } catch (error) {
-            if (disposed || sequence !== detectionSequence) return;
-            role("connection").textContent = showError(error);
-        }
+        const state = detectIllustrationBackend();
+        if (disposed || sequence !== detectionSequence) return;
+        ready = state.ready;
+        role("connection").textContent = state.reason;
         updateControls();
     }
 
@@ -232,9 +343,12 @@ export function openIllustrationWindow(targetOrTargets) {
         view.sceneId = "";
         localBusy = true;
         ready = false;
+        // 首次进入这个场景时把命中的外观档案填进「人物资料」，之后交给勾选条。
+        applyAutoProfiles(session);
         field("text").value = session.text;
         field("request").value = session.request;
         field("participants").value = session.participants;
+        renderProfileChips();
         role("status").textContent = "正在读取配图记录…";
         renderDraft();
         try {
@@ -287,7 +401,6 @@ export function openIllustrationWindow(targetOrTargets) {
     });
     root.addEventListener("change", event => {
         if (event.target === field("target")) void loadTarget(Number(event.target.value));
-        if (event.target === field("source")) { session.draft = null; renderDraft(); }
     });
     root.addEventListener("click", event => {
         const button = event.target.closest("button");
@@ -300,7 +413,30 @@ export function openIllustrationWindow(targetOrTargets) {
             else void detect();
             return;
         }
+        if (operation === "settings") {
+            const index = Number(field("target").value) || 0;
+            // 设置窗/档案窗关掉后回到本面板，且回到同一轮：会话按 sceneId 复用，
+            // 草稿、人物资料、画廊与正在跑的任务都还在。
+            openIllustrationSettingsWindow({ onClose: () => openIllustrationWindow(targets, index) });
+            return;
+        }
+        if (operation === "profiles") {
+            const index = Number(field("target").value) || 0;
+            openCharacterProfileWindow({ onClose: () => openIllustrationWindow(targets, index) });
+            return;
+        }
         const current = session, currentTarget = target;
+        if (button.dataset.profileId) {
+            const id = button.dataset.profileId;
+            const entry = readCharacterProfiles(getExtData()).find(item => item.id === id);
+            if (!entry) return;
+            if (current.profileIds.includes(id)) removeProfileBlock(current, id);
+            else insertProfileBlock(current, entry);
+            syncParticipantsField();
+            renderProfileChips();
+            updateControls();
+            return;
+        }
         if (operation === "save") {
             void run(async () => { await persistPending(current, currentTarget); });
             return;
@@ -314,18 +450,19 @@ export function openIllustrationWindow(targetOrTargets) {
         }
         if (operation === "prepare" || operation === "alternate") {
             if (current.pending) { role("status").textContent = "请先保存上次生成的图片。"; return; }
-            // 来源与「换个画面」的历史在点击时固定，面板随后关掉也不影响这次任务。
-            const imageSource = field("source").value;
             const alternate = operation === "alternate";
+            // 素材与「换个画面」的历史在点击时固定，面板随后关掉也不影响这次任务。
+            const request = {
+                theaterText: current.text,
+                participants: current.participants,
+                specialRequest: current.request,
+                ...(alternate ? { previousScenes: current.previousScenes.slice(-6) } : {}),
+            };
             startJob(current, currentTarget, "prepare", async job => {
-                job.status = PROGRESS_LABELS.analyzing;
+                job.status = PROGRESS_LABELS.selecting;
                 notifyView(job.sceneId);
-                const draft = await prepareTheaterIllustration({
-                    mode: "theater", imageSource, theaterText: current.text,
-                    context: { mode: "provided", source: { client: "titania-theater", sceneId: currentTarget.sceneId }, participants: current.participants, history: [] },
-                    specialRequest: current.request,
-                    ...(alternate ? { previousScenes: current.previousScenes.slice(-6) } : {}),
-                }, { signal: job.controller.signal, onProgress: jobProgress(job) });
+                // 选景走本插件自己的 API 方案（默认跟随当前激活方案），不再依赖 Cosmos 的提示词 LLM。
+                const draft = await selectIllustrationScene(request, { signal: job.controller.signal });
                 current.draft = draft;
                 current.previousScenes.push(draft.scene);
                 current.notice = "画面已选好。可以展开修改提示词，再生成图片。";
@@ -343,11 +480,31 @@ export function openIllustrationWindow(targetOrTargets) {
             startJob(current, currentTarget, "generate", async job => {
                 job.status = PROGRESS_LABELS.generating;
                 notifyView(job.sceneId);
-                current.pending = await generateTheaterIllustration(draft, { signal: job.controller.signal, onProgress: jobProgress(job) });
-                job.phase = "saving";
-                job.status = "正在保存配图…";
-                notifyView(job.sceneId);
-                await persistPending(current, currentTarget);
+                try {
+                    const result = await generateTheaterIllustration(draft, {
+                        signal: job.controller.signal,
+                        onProgress: jobProgress(job),
+                        // NovelAI 流式会推过程图；非流式与 ComfyUI 不会走到这里。
+                        onStreamPreview: event => {
+                            if (!event.blob) return;
+                            const now = Date.now();
+                            if (now - previewUpdatedAt < PREVIEW_THROTTLE_MS) return;
+                            previewUpdatedAt = now;
+                            current.previewBlob = event.blob;
+                            notifyView(job.sceneId);
+                        },
+                    });
+                    // Cosmos 的张数由它自己的设置决定，调用方无法强制 1 张，所以成批入库。
+                    current.pending = { images: result.images, draft, createdAt: Date.now() };
+                    job.phase = "saving";
+                    job.status = "正在保存配图…";
+                    notifyView(job.sceneId);
+                    await persistPending(current, currentTarget);
+                    if (result.dropped) current.notice += ` 本次返回 ${result.images.length + result.dropped} 张，超过上限的 ${result.dropped} 张未保存。`;
+                } finally {
+                    // 过程图不跨任务留存，否则失败后旧帧会一直挂在界面上。
+                    current.previewBlob = null;
+                }
             });
             return;
         }
@@ -372,10 +529,12 @@ export function openIllustrationWindow(targetOrTargets) {
         disposed = true;
         if (activeView === view) activeView = null;
         if (pendingUrl) URL.revokeObjectURL(pendingUrl);
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
         root.remove();
-        window.removeEventListener("cosmos-vision:ready", detect);
-        window.removeEventListener("cosmos-vision:capabilities-changed", detect);
-        if (closeActiveWindow === close) closeActiveWindow = null;
+        // 新版公开接口只派发这一个事件；能力变化事件已经不存在了。
+        window.removeEventListener("cosmos-vision:api-ready", detect);
+        window.removeEventListener("titania:character-profiles-changed", profilesChanged);
+        releaseFloatingWindow(close);
         if (previousFocus?.isConnected) previousFocus.focus();
         // 待保存图片与后台任务保留在内存，关窗后重新打开可以继续；普通会话保持有界。
         for (const [key, value] of sessions) {
@@ -383,10 +542,13 @@ export function openIllustrationWindow(targetOrTargets) {
             if (!value.pending && !value.job && key !== target.sceneId) sessions.delete(key);
         }
     }
-    closeActiveWindow = close;
-    window.addEventListener("cosmos-vision:ready", detect);
-    window.addEventListener("cosmos-vision:capabilities-changed", detect);
-    void loadTarget(0);
+    claimFloatingWindow(close);
+    // Cosmos 加载完成会派发 api-ready；用户手动装好扩展后也能靠「重新检测」补上。
+    window.addEventListener("cosmos-vision:api-ready", detect);
+    // 档案管理窗口改完就通知面板重画勾选条，不必重开面板。
+    const profilesChanged = () => { if (!disposed) { renderProfileChips(); updateControls(); } };
+    window.addEventListener("titania:character-profiles-changed", profilesChanged);
+    void loadTarget(Math.min(Math.max(0, Number(initialIndex) || 0), targets.length - 1));
     action("close").focus();
 }
 

@@ -82,18 +82,51 @@ export async function uploadIllustrationBlob(blob, id = newIllustrationId()) {
     return payload.path;
 }
 
-// pending.id 在重试保存时保持不变，避免反复上传不同的图片文件。
-export async function saveGeneratedIllustration(sceneId, pending) {
-    pending.id ||= newIllustrationId();
-    pending.filePath ||= await uploadIllustrationBlob(pending.image.blob, pending.id);
-    const image = normalizeSavedIllustration({
-        ...pending.image, id: pending.id, filePath: pending.filePath,
-        draft: pending.draft, createdAt: pending.createdAt || Date.now(),
-    });
+/**
+ * 保存一批生成的图片，采用第一张。
+ *
+ * 必须成批保存：mutateScene 每次都会写一份新的不可变记录文件并落一次设置，
+ * 逐张调用会让一次多图生成产生 N 次记录写入。Cosmos 的返回张数由它自己决定，
+ * 调用方无法强制 1 张，所以多图是常态而非例外。
+ *
+ * pending.images[i].id 与 .filePath 在重试保存时保持不变，避免反复上传同一张图。
+ */
+export async function saveGeneratedIllustrations(sceneId, pending) {
+    const items = Array.isArray(pending?.images) ? pending.images : [];
+    if (!items.length) throw illustrationError("没有可保存的图片。", "SAVE_FAILED");
+
+    const saved = [];
+    for (const item of items) {
+        item.id ||= newIllustrationId();
+        item.filePath ||= await uploadIllustrationBlob(item.blob, item.id);
+        saved.push(normalizeSavedIllustration({
+            id: item.id,
+            filePath: item.filePath,
+            width: item.width,
+            height: item.height,
+            draft: pending.draft,
+            createdAt: pending.createdAt || Date.now(),
+        }));
+    }
+
+    const adoptedId = saved[0].id;
     return mutateScene(sceneId, record => {
-        if (!record.images.some(item => item.id === image.id)) record.images.push(image);
-        record.selectedId = image.id;
+        for (const image of saved) {
+            if (!record.images.some(existing => existing.id === image.id)) record.images.push(image);
+        }
+        record.selectedId = adoptedId;
     });
+}
+
+/** 单张保存：转发到批量版本，并把 id/filePath 回写到 pending 本身以保持旧调用方的契约。 */
+export async function saveGeneratedIllustration(sceneId, pending) {
+    try {
+        return await saveGeneratedIllustrations(sceneId, { ...pending, images: [pending.image] });
+    } finally {
+        // 保存失败时也要回写：重试保存靠这两个字段复用已上传的字节。
+        pending.id = pending.image.id;
+        pending.filePath = pending.image.filePath;
+    }
 }
 
 export function selectSceneIllustration(sceneId, imageId, savedImage = null) {

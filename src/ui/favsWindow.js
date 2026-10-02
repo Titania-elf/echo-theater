@@ -2,7 +2,7 @@
 
 import { getExtData, saveExtData } from "../utils/storage.js";
 import { GlobalState, syncFavIdToCurrentHistory, setFavsWindowOpen, getCurrentGenerationResult, isFavoriteEligible } from "../core/state.js";
-import { getContextData } from "../core/context.js";
+import { getContextData, getCharacterCardKey } from "../core/context.js";
 import { parseMeta, getSnippet, renderToShadowDOMReal, extractFromShadowDOM, canUseShadowDOM, detectInteractiveContent, openInNewWindow, exportAsHtmlFile } from "../utils/helpers.js";
 import { updateFavButtonUI } from "./mainWindow.js";
 import { getContinuationRoundsForFav } from "../core/api.js";
@@ -657,6 +657,10 @@ export async function saveContinuationChainFavorite() {
     const scriptName = String(chainData?.scriptName || script?.name || display?.scriptName || "场景");
     const branchKey = String(chainData?.branchKey || "").trim();
     const avatarSrc = getCurrentAvatarSrc();
+    // 收藏时记下角色卡身份：之后可能在别的聊天里打开这条收藏来配图，
+    // 那时再读 getCharacterCardKey() 只会拿到当前聊天的主角。注意 avatarSrc 是
+    // 从 DOM 刮出来的图片 URL，跟 card: 键用的头像文件名不是一回事，不能互相换算。
+    const cardKey = getCharacterCardKey();
     const chainSignature = buildChainSignature(scriptId, items);
 
     const data = getExtData();
@@ -699,6 +703,7 @@ export async function saveContinuationChainFavorite() {
             existingChain.date = new Date(now).toLocaleString();
             existingChain.html = mergedHtml;
             existingChain.avatar = avatarSrc;
+            existingChain.cardKey = cardKey;
             existingChain.branchKey = branchKey;
             existingChain.chainSignature = chainSignature;
             existingChain.items = items;
@@ -722,6 +727,7 @@ export async function saveContinuationChainFavorite() {
         date: new Date(now).toLocaleString(),
         html: mergedHtml,
         avatar: avatarSrc,
+        cardKey,
         branchKey,
         chainSignature,
         items
@@ -1676,7 +1682,9 @@ export function openFavsWindow() {
             const targets = segments.map((segment, index) => {
                 const content = String(segment.html || "");
                 const fallback = `favorite:${favorite.id}:${index}`;
-                const target = createIllustrationTarget({ ...segment, content, scriptId: favorite.scriptId, scriptName: favorite.scriptName || favorite.title }, fallback);
+                // cardKey 只有收藏顶层有（链式收藏的 segment 里没有角色信息），必须从这里取，
+                // 这样在别的聊天里打开这条收藏配图时，用的是它自己的角色外观档案。
+                const target = createIllustrationTarget({ ...segment, content, cardKey: favorite.cardKey || "", scriptId: favorite.scriptId, scriptName: favorite.scriptName || favorite.title }, fallback);
                 return {
                     ...target,
                     label: segments.length > 1 ? `第 ${index + 1} 段 · ${target.scriptName}` : target.scriptName,

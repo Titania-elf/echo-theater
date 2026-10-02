@@ -278,6 +278,62 @@ export function getCharacterCardKey(stCtx = null) {
 }
 
 /**
+ * 由头像文件名算出角色卡标识，规则与 getCharacterCardKey 完全一致。
+ * 界面里给档案选绑定角色卡时用它，别在 UI 里重写一遍推导。
+ * @param {string} avatar 角色卡头像文件名（可带扩展名）
+ * @returns {string} card: 前缀的键；头像为空时返回空串
+ */
+export function characterCardKeyFromAvatar(avatar) {
+    const file = String(avatar ?? "").trim();
+    if (!file) return "";
+    return CARD_KEY_PREFIX + file.replace(/\.[^/.]+$/, "");
+}
+
+/**
+ * 列出本地所有角色卡，供界面做绑定选择。
+ * @returns {Array<{cardKey:string,name:string,avatar:string}>}
+ */
+export function listCharacterCards() {
+    let ctx = null;
+    try {
+        if (typeof SillyTavern !== "undefined") ctx = SillyTavern.getContext?.();
+    } catch {
+        ctx = null;
+    }
+    const raw = ctx?.characters;
+    const list = Array.isArray(raw) ? raw : Object.values(raw || {});
+    return list
+        .map(card => ({
+            cardKey: characterCardKeyFromAvatar(card?.avatar),
+            name: String(card?.name ?? "").trim(),
+            avatar: String(card?.avatar ?? "").trim(),
+        }))
+        .filter(card => card.cardKey && card.name)
+        .sort((a, b) => a.name.localeCompare(b.name, "zh"));
+}
+
+/**
+ * 当前打开的角色卡描述原文，供「从当前角色卡导入」使用。
+ *
+ * 刻意读**原始** data.description 而不用 getContextData().persona：后者是宏展开后的
+ * 文本，会把 persona / 世界书内容一并拉进来。也不在这里跑 substituteParams。
+ * @returns {string}
+ */
+export function getCurrentCharacterDescription() {
+    let ctx = null;
+    try {
+        if (typeof SillyTavern !== "undefined") ctx = SillyTavern.getContext?.();
+    } catch {
+        ctx = null;
+    }
+    const charId = ctx?.characterId;
+    if (charId === undefined || charId === null) return "";
+    const card = ctx?.characters?.[charId];
+    const description = card?.data?.description ?? card?.description ?? "";
+    return typeof description === "string" ? description.trim() : "";
+}
+
+/**
  * 这个名字是否被多张卡共用。用于判断旧配置能否安全地认领给当前卡。
  * @param {object} ctx
  * @param {string} charName
