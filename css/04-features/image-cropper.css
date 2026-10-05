@@ -1,0 +1,118 @@
+/* ============================================================
+   04-features/image-cropper.css —— 悬浮球自定义图片的裁剪弹窗
+   （src/ui/imageCropper.js）
+
+   ── 分工 ──
+   弹窗外壳的定位/遮罩/z-index 来自组件层 .t-dialog-overlay，
+   面板的底/描边/圆角/投影来自 .t-dialog-panel，
+   标题栏与关闭按钮来自 .t-dialog-header / .t-dialog-close，
+   按钮来自 .t-btn / .t-btn--primary / .t-btn--ghost。
+   本文件只负责裁剪器自己的布局与取景框外观，故全部选择器都是自有类名
+   （审计 A5 只在规则顶层类命中 02-components 已定义的类时才检查视觉属性）。
+
+   ── z-index 一律不写 ──
+   取景框压在图片之上是靠 DOM 顺序（.t-crop-frame 排在 <img> 之后，
+   两者都是 positioned + z-index:auto），审计 A19 要求 z-index 走 var(--t-z-*)，
+   这里根本不需要。
+
+   ── 不写 @media ──
+   响应式全靠 min() 表达（审计 A18 把断点限定在 600/768/920）。
+   ============================================================ */
+
+.t-crop-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--t-space-lg);
+    width: min(360px, 92vw);
+    /* .t-dialog-panel 刻意不带尺寸约束（见 02-components/dialog.css 的说明），
+       这里补上，否则横屏等矮视口下按钮行会被顶出屏幕且无法滚动，
+       用户只能看到取景框却点不到「确定」。 */
+    max-height: 85vh;
+    overflow: auto;
+    padding: var(--t-space-lg);
+}
+
+/* 取景框：正方形。⚠ 不要给它加 border-radius: 50% —— 那会把
+   .t-crop-frame 的压暗层一起裁掉，圆外就完全不显示了。
+   圆角只取一点点，让四个暗角的外轮廓不那么硬。 */
+.t-crop-stage {
+    position: relative;
+    align-self: center;
+    width: min(320px, 72vw, 42vh);
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: var(--t-radius-container);
+    background: var(--t-color-surface-recess-deep);
+    cursor: grab;
+    /* 拖动时不带动页面滚动 */
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.t-crop-stage.is-dragging {
+    cursor: grabbing;
+}
+
+/* 位置与尺寸全部由 JS 按像素写内联样式（决定裁剪范围的就是它们）。
+   max-width/max-height 显式置 none：插件与宿主当前都没有全局 img 规则，
+   但第三方主题/扩展可能加，一条就足以把放大后的图片夹住。 */
+.t-crop-image {
+    position: absolute;
+    max-width: none;
+    max-height: none;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* 取景框本体 = 圆心留空 + 圆外压暗。
+   inset: 0 必须保持 —— 挖空直径要与输出正方形的内切圆严格一致，
+   否则预览会对用户说谎（看见的圆 ≠ 实际裁出的方）。
+   超大 spread 的 box-shadow 会被 .t-crop-stage 的 overflow 收边，
+   于是只剩圆外那一圈深色。 */
+.t-crop-frame {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--t-radius-circle);
+    box-shadow: 0 0 0 9999px var(--t-color-dialog-scrim-strongest);
+    border: 1px solid var(--t-color-border-glass);
+    pointer-events: none;
+}
+
+.t-crop-hint {
+    margin: 0;
+    text-align: center;
+    font-size: var(--t-font-size-sm);
+    color: var(--t-color-text-faint);
+}
+
+.t-crop-zoom-row {
+    display: flex;
+    align-items: center;
+    gap: var(--t-gap-inline);
+    color: var(--t-color-text-muted);
+}
+
+.t-crop-zoom {
+    flex: 1;
+}
+
+.t-crop-error {
+    margin: 0;
+    text-align: center;
+    font-size: var(--t-font-size-sm);
+    color: var(--t-color-danger);
+}
+
+.t-crop-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--t-gap-inline);
+}
+
+.t-crop-actions-right {
+    display: flex;
+    gap: var(--t-gap-inline);
+}

@@ -19533,6 +19533,127 @@ body.t-reader-zen .t-reader-topbar {
 }
 
 
+/* === 04-features/image-cropper.css === */
+/* ============================================================
+   04-features/image-cropper.css \u2014\u2014 \u60AC\u6D6E\u7403\u81EA\u5B9A\u4E49\u56FE\u7247\u7684\u88C1\u526A\u5F39\u7A97
+   \uFF08src/ui/imageCropper.js\uFF09
+
+   \u2500\u2500 \u5206\u5DE5 \u2500\u2500
+   \u5F39\u7A97\u5916\u58F3\u7684\u5B9A\u4F4D/\u906E\u7F69/z-index \u6765\u81EA\u7EC4\u4EF6\u5C42 .t-dialog-overlay\uFF0C
+   \u9762\u677F\u7684\u5E95/\u63CF\u8FB9/\u5706\u89D2/\u6295\u5F71\u6765\u81EA .t-dialog-panel\uFF0C
+   \u6807\u9898\u680F\u4E0E\u5173\u95ED\u6309\u94AE\u6765\u81EA .t-dialog-header / .t-dialog-close\uFF0C
+   \u6309\u94AE\u6765\u81EA .t-btn / .t-btn--primary / .t-btn--ghost\u3002
+   \u672C\u6587\u4EF6\u53EA\u8D1F\u8D23\u88C1\u526A\u5668\u81EA\u5DF1\u7684\u5E03\u5C40\u4E0E\u53D6\u666F\u6846\u5916\u89C2\uFF0C\u6545\u5168\u90E8\u9009\u62E9\u5668\u90FD\u662F\u81EA\u6709\u7C7B\u540D
+   \uFF08\u5BA1\u8BA1 A5 \u53EA\u5728\u89C4\u5219\u9876\u5C42\u7C7B\u547D\u4E2D 02-components \u5DF2\u5B9A\u4E49\u7684\u7C7B\u65F6\u624D\u68C0\u67E5\u89C6\u89C9\u5C5E\u6027\uFF09\u3002
+
+   \u2500\u2500 z-index \u4E00\u5F8B\u4E0D\u5199 \u2500\u2500
+   \u53D6\u666F\u6846\u538B\u5728\u56FE\u7247\u4E4B\u4E0A\u662F\u9760 DOM \u987A\u5E8F\uFF08.t-crop-frame \u6392\u5728 <img> \u4E4B\u540E\uFF0C
+   \u4E24\u8005\u90FD\u662F positioned + z-index:auto\uFF09\uFF0C\u5BA1\u8BA1 A19 \u8981\u6C42 z-index \u8D70 var(--t-z-*)\uFF0C
+   \u8FD9\u91CC\u6839\u672C\u4E0D\u9700\u8981\u3002
+
+   \u2500\u2500 \u4E0D\u5199 @media \u2500\u2500
+   \u54CD\u5E94\u5F0F\u5168\u9760 min() \u8868\u8FBE\uFF08\u5BA1\u8BA1 A18 \u628A\u65AD\u70B9\u9650\u5B9A\u5728 600/768/920\uFF09\u3002
+   ============================================================ */
+
+.t-crop-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--t-space-lg);
+    width: min(360px, 92vw);
+    /* .t-dialog-panel \u523B\u610F\u4E0D\u5E26\u5C3A\u5BF8\u7EA6\u675F\uFF08\u89C1 02-components/dialog.css \u7684\u8BF4\u660E\uFF09\uFF0C
+       \u8FD9\u91CC\u8865\u4E0A\uFF0C\u5426\u5219\u6A2A\u5C4F\u7B49\u77EE\u89C6\u53E3\u4E0B\u6309\u94AE\u884C\u4F1A\u88AB\u9876\u51FA\u5C4F\u5E55\u4E14\u65E0\u6CD5\u6EDA\u52A8\uFF0C
+       \u7528\u6237\u53EA\u80FD\u770B\u5230\u53D6\u666F\u6846\u5374\u70B9\u4E0D\u5230\u300C\u786E\u5B9A\u300D\u3002 */
+    max-height: 85vh;
+    overflow: auto;
+    padding: var(--t-space-lg);
+}
+
+/* \u53D6\u666F\u6846\uFF1A\u6B63\u65B9\u5F62\u3002\u26A0 \u4E0D\u8981\u7ED9\u5B83\u52A0 border-radius: 50% \u2014\u2014 \u90A3\u4F1A\u628A
+   .t-crop-frame \u7684\u538B\u6697\u5C42\u4E00\u8D77\u88C1\u6389\uFF0C\u5706\u5916\u5C31\u5B8C\u5168\u4E0D\u663E\u793A\u4E86\u3002
+   \u5706\u89D2\u53EA\u53D6\u4E00\u70B9\u70B9\uFF0C\u8BA9\u56DB\u4E2A\u6697\u89D2\u7684\u5916\u8F6E\u5ED3\u4E0D\u90A3\u4E48\u786C\u3002 */
+.t-crop-stage {
+    position: relative;
+    align-self: center;
+    width: min(320px, 72vw, 42vh);
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: var(--t-radius-container);
+    background: var(--t-color-surface-recess-deep);
+    cursor: grab;
+    /* \u62D6\u52A8\u65F6\u4E0D\u5E26\u52A8\u9875\u9762\u6EDA\u52A8 */
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.t-crop-stage.is-dragging {
+    cursor: grabbing;
+}
+
+/* \u4F4D\u7F6E\u4E0E\u5C3A\u5BF8\u5168\u90E8\u7531 JS \u6309\u50CF\u7D20\u5199\u5185\u8054\u6837\u5F0F\uFF08\u51B3\u5B9A\u88C1\u526A\u8303\u56F4\u7684\u5C31\u662F\u5B83\u4EEC\uFF09\u3002
+   max-width/max-height \u663E\u5F0F\u7F6E none\uFF1A\u63D2\u4EF6\u4E0E\u5BBF\u4E3B\u5F53\u524D\u90FD\u6CA1\u6709\u5168\u5C40 img \u89C4\u5219\uFF0C
+   \u4F46\u7B2C\u4E09\u65B9\u4E3B\u9898/\u6269\u5C55\u53EF\u80FD\u52A0\uFF0C\u4E00\u6761\u5C31\u8DB3\u4EE5\u628A\u653E\u5927\u540E\u7684\u56FE\u7247\u5939\u4F4F\u3002 */
+.t-crop-image {
+    position: absolute;
+    max-width: none;
+    max-height: none;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* \u53D6\u666F\u6846\u672C\u4F53 = \u5706\u5FC3\u7559\u7A7A + \u5706\u5916\u538B\u6697\u3002
+   inset: 0 \u5FC5\u987B\u4FDD\u6301 \u2014\u2014 \u6316\u7A7A\u76F4\u5F84\u8981\u4E0E\u8F93\u51FA\u6B63\u65B9\u5F62\u7684\u5185\u5207\u5706\u4E25\u683C\u4E00\u81F4\uFF0C
+   \u5426\u5219\u9884\u89C8\u4F1A\u5BF9\u7528\u6237\u8BF4\u8C0E\uFF08\u770B\u89C1\u7684\u5706 \u2260 \u5B9E\u9645\u88C1\u51FA\u7684\u65B9\uFF09\u3002
+   \u8D85\u5927 spread \u7684 box-shadow \u4F1A\u88AB .t-crop-stage \u7684 overflow \u6536\u8FB9\uFF0C
+   \u4E8E\u662F\u53EA\u5269\u5706\u5916\u90A3\u4E00\u5708\u6DF1\u8272\u3002 */
+.t-crop-frame {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--t-radius-circle);
+    box-shadow: 0 0 0 9999px var(--t-color-dialog-scrim-strongest);
+    border: 1px solid var(--t-color-border-glass);
+    pointer-events: none;
+}
+
+.t-crop-hint {
+    margin: 0;
+    text-align: center;
+    font-size: var(--t-font-size-sm);
+    color: var(--t-color-text-faint);
+}
+
+.t-crop-zoom-row {
+    display: flex;
+    align-items: center;
+    gap: var(--t-gap-inline);
+    color: var(--t-color-text-muted);
+}
+
+.t-crop-zoom {
+    flex: 1;
+}
+
+.t-crop-error {
+    margin: 0;
+    text-align: center;
+    font-size: var(--t-font-size-sm);
+    color: var(--t-color-danger);
+}
+
+.t-crop-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--t-gap-inline);
+}
+
+.t-crop-actions-right {
+    display: flex;
+    gap: var(--t-gap-inline);
+}
+
+
 /* === 04-features/st-embedded.css === */
 /* css/04-features/st-embedded.css \u2014\u2014 \u6CE8\u5165 SillyTavern DOM \u7684\u5143\u7D20
    ============================================================
@@ -19811,7 +19932,7 @@ var CSS_FILES;
 var init_dom = __esm({
   "src/utils/dom.js"() {
     init_defaults();
-    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/theme-light.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/form-controls.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "03-layout/utilities.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/wi-selector.css", "04-features/continuation.css", "04-features/queue.css", "04-features/content-editor.css", "04-features/illustration.css", "04-features/settings-drawer.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/rewrite.css", "04-features/reader.css", "04-features/confirm-dialog.css", "04-features/st-embedded.css"];
+    CSS_FILES = ["00-tokens/primitives.css", "00-tokens/semantic.css", "00-tokens/theme-dark.css", "00-tokens/theme-light.css", "00-tokens/legacy-aliases.css", "01-base/scope.css", "01-base/base.css", "01-base/scrollbar.css", "01-base/form-controls.css", "01-base/keyframes.css", "02-components/window.css", "02-components/panel.css", "02-components/settings-shell.css", "02-components/dialog.css", "02-components/button.css", "02-components/icon-button.css", "02-components/field.css", "02-components/choice-input.css", "02-components/radio-card.css", "02-components/_legacy.css", "03-layout/button-groups.css", "03-layout/utilities.css", "04-features/floating.css", "04-features/main-window.css", "04-features/main-window-legacy.css", "04-features/script-picker.css", "04-features/wi-selector.css", "04-features/continuation.css", "04-features/queue.css", "04-features/content-editor.css", "04-features/illustration.css", "04-features/settings-drawer.css", "04-features/settings.css", "04-features/manager.css", "04-features/workshop.css", "04-features/favs.css", "04-features/debug.css", "04-features/story-outline.css", "04-features/outline-entry-menu.css", "04-features/rewrite.css", "04-features/reader.css", "04-features/confirm-dialog.css", "04-features/image-cropper.css", "04-features/st-embedded.css"];
   }
 });
 
@@ -26360,6 +26481,348 @@ var init_debugWindow = __esm({
     init_helpers();
     init_logView();
     tokenCountRun = 0;
+  }
+});
+
+// src/ui/imageCropper.js
+function clampNumber(value, min, max, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+function closeImageCropper() {
+  shutdown(null);
+}
+function shutdown(result) {
+  sessionSeq += 1;
+  const session = activeSession;
+  activeSession = null;
+  if (session) session.dispose(result);
+}
+function openImageCropper(options = {}) {
+  const src = typeof options.src === "string" ? options.src : "";
+  const outputSize = Math.round(clampNumber(options.outputSize, 64, 2048, OUTPUT_SIZE_DEFAULT));
+  const quality = clampNumber(options.quality, 0.1, 1, OUTPUT_QUALITY_DEFAULT);
+  shutdown(null);
+  const seq = sessionSeq;
+  if (!src) return Promise.reject(new Error("\u6CA1\u6709\u53EF\u88C1\u526A\u7684\u56FE\u7247"));
+  return loadImage(src).then(
+    (image) => new Promise((resolve) => {
+      if (seq !== sessionSeq) {
+        resolve(null);
+        return;
+      }
+      activeSession = createSession({ image, outputSize, quality, resolve });
+    }),
+    (error) => {
+      if (seq !== sessionSeq) return null;
+      throw error;
+    }
+  );
+}
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      if (!image.naturalWidth || !image.naturalHeight) {
+        reject(new Error("\u8FD9\u5F20\u56FE\u7247\u6CA1\u6709\u53EF\u7528\u7684\u50CF\u7D20\u5C3A\u5BF8\uFF0C\u8BF7\u6362\u4E00\u5F20"));
+        return;
+      }
+      resolve(image);
+    };
+    image.onerror = () => {
+      reject(new Error("\u65E0\u6CD5\u8BFB\u53D6\u8FD9\u5F20\u56FE\u7247\uFF0C\u8BF7\u6362\u4E00\u5F20\uFF08\u9700\u8981\u6D4F\u89C8\u5668\u80FD\u89E3\u7801\u7684\u5E38\u89C1\u56FE\u7247\u683C\u5F0F\uFF09"));
+    };
+    image.src = src;
+  });
+}
+function createSession({ image, outputSize, quality, resolve }) {
+  let settled = false;
+  const $modal = $(`
+        <div id="t-crop-modal" class="t-dialog-overlay t-root">
+            <div class="t-crop-panel t-dialog-panel" role="dialog" aria-modal="true" aria-label="\u88C1\u526A\u56FE\u7247">
+                <div class="t-dialog-header">
+                    <span>\u88C1\u526A\u56FE\u7247</span>
+                    <span class="t-dialog-close" id="t-crop-close" role="button" tabindex="0" aria-label="\u53D6\u6D88">&times;</span>
+                </div>
+                <div class="t-crop-stage" id="t-crop-stage">
+                    <div class="t-crop-frame"></div>
+                </div>
+                <p class="t-crop-hint">\u62D6\u52A8\u56FE\u7247\u8C03\u6574\u4F4D\u7F6E\uFF0C\u6EDA\u8F6E\u6216\u53CC\u6307\u7F29\u653E</p>
+                <div class="t-crop-zoom-row">
+                    <i class="fa-solid fa-image" aria-hidden="true"></i>
+                    <input type="range" class="t-crop-zoom" id="t-crop-zoom" min="100" max="400" step="1" value="100" aria-label="\u7F29\u653E">
+                    <i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i>
+                </div>
+                <p class="t-crop-error" id="t-crop-error" style="display:none"></p>
+                <div class="t-crop-actions">
+                    <button type="button" class="t-btn t-btn--ghost" id="t-crop-reset">\u91CD\u7F6E</button>
+                    <span class="t-crop-actions-right">
+                        <button type="button" class="t-btn t-btn--ghost" id="t-crop-cancel">\u53D6\u6D88</button>
+                        <button type="button" class="t-btn t-btn--primary" id="t-crop-confirm">\u786E\u5B9A</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+    `);
+  const $stage = $modal.find("#t-crop-stage");
+  const $zoom = $modal.find("#t-crop-zoom");
+  const $error = $modal.find("#t-crop-error");
+  const $confirm = $modal.find("#t-crop-confirm");
+  const stage = $stage[0];
+  image.className = "t-crop-image";
+  image.alt = "";
+  image.draggable = false;
+  $stage.prepend(image);
+  ensureOverlay();
+  $("#t-overlay").append($modal);
+  const naturalW = image.naturalWidth;
+  const naturalH = image.naturalHeight;
+  let stageSize = 0;
+  let baseScale = 1;
+  const state = { scale: SCALE_MIN, panNatX: 0, panNatY: 0 };
+  let drag = null;
+  let pinch = null;
+  function measure() {
+    stageSize = stage.getBoundingClientRect().width || parseFloat(window.getComputedStyle(stage).width) || 1;
+    baseScale = Math.max(stageSize / naturalW, stageSize / naturalH);
+  }
+  function metrics() {
+    const k = baseScale * state.scale;
+    return { k, dispW: naturalW * k, dispH: naturalH * k, srcSize: stageSize / k };
+  }
+  function clampPan() {
+    const { srcSize } = metrics();
+    const limitX = Math.max(0, (naturalW - srcSize) / 2);
+    const limitY = Math.max(0, (naturalH - srcSize) / 2);
+    state.panNatX = Math.min(limitX, Math.max(-limitX, state.panNatX));
+    state.panNatY = Math.min(limitY, Math.max(-limitY, state.panNatY));
+  }
+  function render() {
+    clampPan();
+    const { k, dispW, dispH } = metrics();
+    image.style.width = `${dispW}px`;
+    image.style.height = `${dispH}px`;
+    image.style.left = `${(stageSize - dispW) / 2 + state.panNatX * k}px`;
+    image.style.top = `${(stageSize - dispH) / 2 + state.panNatY * k}px`;
+  }
+  function syncZoom() {
+    $zoom.val(String(Math.round(state.scale * 100)));
+  }
+  function setScale(next) {
+    state.scale = Math.min(SCALE_MAX, Math.max(SCALE_MIN, next));
+    render();
+    syncZoom();
+  }
+  function reset() {
+    state.scale = SCALE_MIN;
+    state.panNatX = 0;
+    state.panNatY = 0;
+    render();
+    syncZoom();
+  }
+  function beginDrag(clientX, clientY) {
+    drag = { x: clientX, y: clientY, panX: state.panNatX, panY: state.panNatY };
+    $stage.addClass("is-dragging");
+  }
+  function moveDrag(clientX, clientY) {
+    if (!drag) return;
+    const { k } = metrics();
+    state.panNatX = drag.panX + (clientX - drag.x) / k;
+    state.panNatY = drag.panY + (clientY - drag.y) / k;
+    render();
+  }
+  function endDrag() {
+    drag = null;
+    $stage.removeClass("is-dragging");
+  }
+  function touchDistance(a, b) {
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  }
+  function touchMid(a, b) {
+    return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+  }
+  function onTouchStart(e) {
+    const touches = e.touches;
+    if (touches.length >= 2) {
+      endDrag();
+      pinch = {
+        dist: touchDistance(touches[0], touches[1]),
+        mid: touchMid(touches[0], touches[1]),
+        scale: state.scale,
+        panX: state.panNatX,
+        panY: state.panNatY
+      };
+    } else if (touches.length === 1) {
+      pinch = null;
+      beginDrag(touches[0].clientX, touches[0].clientY);
+    }
+    e.preventDefault();
+  }
+  function onTouchMove(e) {
+    const touches = e.touches;
+    if (pinch && touches.length >= 2) {
+      const dist = touchDistance(touches[0], touches[1]);
+      const mid = touchMid(touches[0], touches[1]);
+      const ratio = pinch.dist > 0 ? dist / pinch.dist : 1;
+      state.scale = Math.min(SCALE_MAX, Math.max(SCALE_MIN, pinch.scale * ratio));
+      const { k } = metrics();
+      state.panNatX = pinch.panX + (mid.x - pinch.mid.x) / k;
+      state.panNatY = pinch.panY + (mid.y - pinch.mid.y) / k;
+      render();
+      syncZoom();
+    } else if (drag && touches.length === 1) {
+      moveDrag(touches[0].clientX, touches[0].clientY);
+    }
+    e.preventDefault();
+  }
+  function onTouchEnd(e) {
+    const touches = e.touches;
+    if (!touches.length) {
+      endDrag();
+      pinch = null;
+    } else if (touches.length === 1) {
+      pinch = null;
+      beginDrag(touches[0].clientX, touches[0].clientY);
+    }
+    e.preventDefault();
+  }
+  function onWheel(e) {
+    e.preventDefault();
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1;
+    setScale(state.scale * Math.exp(-e.deltaY * unit * WHEEL_ZOOM_RATE));
+  }
+  function onResize() {
+    measure();
+    render();
+  }
+  function toDataUrlSafe(canvas, mime, q) {
+    try {
+      return q === void 0 ? canvas.toDataURL(mime) : canvas.toDataURL(mime, q);
+    } catch (err) {
+      return "";
+    }
+  }
+  function buildCroppedDataUrl() {
+    const { srcSize } = metrics();
+    const srcX = naturalW / 2 - state.panNatX - srcSize / 2;
+    const srcY = naturalH / 2 - state.panNatY - srcSize / 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = outputSize;
+    canvas.height = outputSize;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("\u5F53\u524D\u6D4F\u89C8\u5668\u4E0D\u652F\u6301 canvas\uFF0C\u65E0\u6CD5\u5BFC\u51FA\u88C1\u526A\u7ED3\u679C");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(image, srcX, srcY, srcSize, srcSize, 0, 0, outputSize, outputSize);
+    let dataUrl = toDataUrlSafe(canvas, "image/webp", quality);
+    if (!dataUrl.startsWith("data:image/webp")) {
+      dataUrl = toDataUrlSafe(canvas, "image/png");
+    }
+    if (!dataUrl || dataUrl === "data:,") throw new Error("\u65E0\u6CD5\u5BFC\u51FA\u88C1\u526A\u7ED3\u679C");
+    return dataUrl;
+  }
+  function unbind() {
+    $(document).off(".titaniaCrop");
+    $(window).off(".titaniaCrop");
+    $stage.off(".titaniaCrop");
+    $modal.off(".titaniaCrop");
+    stage.removeEventListener("wheel", onWheel);
+    stage.removeEventListener("touchstart", onTouchStart);
+    stage.removeEventListener("touchmove", onTouchMove);
+    stage.removeEventListener("touchend", onTouchEnd);
+    stage.removeEventListener("touchcancel", onTouchEnd);
+  }
+  function finish(result) {
+    if (settled) return;
+    settled = true;
+    if (activeSession === session) activeSession = null;
+    unbind();
+    $modal.remove();
+    resolve(result);
+  }
+  function showError2(message) {
+    $error.text(message).css("display", "");
+  }
+  const session = { dispose: (result) => finish(result) };
+  $stage.on("mousedown.titaniaCrop", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    beginDrag(e.clientX, e.clientY);
+  });
+  $(document).on("mousemove.titaniaCrop", (e) => {
+    if (drag) moveDrag(e.clientX, e.clientY);
+  });
+  $(document).on("mouseup.titaniaCrop", () => {
+    if (drag) endDrag();
+  });
+  stage.addEventListener("wheel", onWheel, { passive: false });
+  stage.addEventListener("touchstart", onTouchStart, { passive: false });
+  stage.addEventListener("touchmove", onTouchMove, { passive: false });
+  stage.addEventListener("touchend", onTouchEnd, { passive: false });
+  stage.addEventListener("touchcancel", onTouchEnd, { passive: false });
+  $(window).on("resize.titaniaCrop orientationchange.titaniaCrop", onResize);
+  $zoom.on("input.titaniaCrop", function() {
+    setScale((parseFloat(this.value) || 100) / 100);
+  });
+  $modal.find("#t-crop-reset").on("click.titaniaCrop", reset);
+  $modal.find("#t-crop-cancel").on("click.titaniaCrop", () => finish(null));
+  $modal.find("#t-crop-close").on("click.titaniaCrop", () => finish(null));
+  $modal.find("#t-crop-close").on("keydown.titaniaCrop", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      finish(null);
+    }
+  });
+  $confirm.on("click.titaniaCrop", () => {
+    try {
+      finish(buildCroppedDataUrl());
+    } catch (err) {
+      showError2(err?.message || "\u88C1\u526A\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5");
+    }
+  });
+  $modal.on("click.titaniaCrop", (e) => {
+    if (e.target === $modal[0]) finish(null);
+  });
+  $(document).on("keydown.titaniaCrop", (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      finish(null);
+      return;
+    }
+    if (e.key === "Tab") trapTab(e);
+  });
+  function trapTab(e) {
+    const focusables = $modal.find("button, input, [tabindex]:not([tabindex='-1'])").filter(":visible").toArray();
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    const inside = $modal[0].contains(active);
+    if (e.shiftKey && (!inside || active === first)) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && (!inside || active === last)) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+  measure();
+  reset();
+  $confirm[0].focus();
+  return session;
+}
+var OUTPUT_SIZE_DEFAULT, OUTPUT_QUALITY_DEFAULT, SCALE_MIN, SCALE_MAX, WHEEL_ZOOM_RATE, activeSession, sessionSeq;
+var init_imageCropper = __esm({
+  "src/ui/imageCropper.js"() {
+    init_dom();
+    OUTPUT_SIZE_DEFAULT = 512;
+    OUTPUT_QUALITY_DEFAULT = 0.92;
+    SCALE_MIN = 1;
+    SCALE_MAX = 4;
+    WHEEL_ZOOM_RATE = 15e-4;
+    activeSession = null;
+    sessionSeq = 0;
   }
 });
 
@@ -33431,7 +33894,11 @@ function openSettingsWindow() {
                         </div>
                         <div id="box-image" style="display:${tempApp.type === "image" ? "block" : "none"}">
                             <input class="is-hidden" type="file" id="p-file-input" accept="image/*">
-                            <div class="t-upload-card" id="btn-upload-card" title="\u70B9\u51FB\u66F4\u6362\u56FE\u7247"><i class="fa-solid fa-camera fa-2x"></i><span>\u70B9\u51FB\u4E0A\u4F20</span></div>
+                            <div class="t-set-inline-group" style="align-items:center;">
+                                <div class="t-upload-card" id="btn-upload-card" title="\u70B9\u51FB\u66F4\u6362\u56FE\u7247"><i class="fa-solid fa-camera fa-2x"></i><span>\u70B9\u51FB\u4E0A\u4F20</span></div>
+                                <button type="button" class="t-btn t-btn--ghost" id="btn-recrop" style="display:none;">\u91CD\u65B0\u88C1\u526A</button>
+                            </div>
+                            <p class="t-set-note">\u4E0A\u4F20\u540E\u53EF\u62D6\u52A8\u3001\u7F29\u653E\uFF0C\u81EA\u884C\u51B3\u5B9A\u60AC\u6D6E\u7403\u91CC\u663E\u793A\u56FE\u7247\u7684\u54EA\u4E00\u90E8\u5206</p>
                         </div>
                     </div>
                     
@@ -34068,19 +34535,50 @@ function openSettingsWindow() {
     tempApp.content = $(this).val();
     renderPreview();
   });
+  const applyImageMode = () => {
+    tempApp.type = "image";
+    $("input[name='p-type'][value='image']").prop("checked", true);
+    $("#box-emoji").hide();
+    $("#box-image").show();
+  };
+  let lastPickedFile = null;
+  const syncRecropButton = () => {
+    $("#btn-recrop").css("display", lastPickedFile ? "" : "none");
+  };
+  const openCropperFor = async (file) => {
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const cropped = await openImageCropper({ src: objectUrl });
+      if (!cropped) return false;
+      tempApp.content = cropped;
+      applyImageMode();
+      renderPreview();
+      return true;
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
   $("#btn-upload-card").on("click", () => $("#p-file-input").click());
+  $("#btn-recrop").on("click", async () => {
+    if (!lastPickedFile) return;
+    try {
+      await openCropperFor(lastPickedFile);
+    } catch (e) {
+      alert(e?.message || "\u56FE\u7247\u5904\u7406\u5931\u8D25");
+    }
+  });
   $("#p-file-input").on("change", async function() {
-    const file = this.files[0];
+    const file = this.files && this.files[0];
     if (!file) return;
     try {
-      tempApp.content = await fileToBase64(file);
-      tempApp.type = "image";
-      $("input[name='p-type'][value='image']").prop("checked", true);
-      $("#box-emoji").hide();
-      $("#box-image").show();
-      renderPreview();
+      if (await openCropperFor(file)) {
+        lastPickedFile = file;
+        syncRecropButton();
+      }
     } catch (e) {
-      alert("Fail");
+      alert(e?.message || "\u65E0\u6CD5\u8BFB\u53D6\u8FD9\u5F20\u56FE\u7247");
+    } finally {
+      this.value = "";
     }
   });
   $("#btn-test-anim").on("click", () => playAnimationPreview());
@@ -35083,11 +35581,13 @@ function openSettingsWindow() {
   });
   $("#btn-open-mgr").on("click", () => {
     document.getElementById("t-prompt-editor-modal")?.remove();
+    closeImageCropper();
     $("#t-settings-view").remove();
     openScriptManager();
   });
   $("#t-set-close").on("click", () => {
     document.getElementById("t-prompt-editor-modal")?.remove();
+    closeImageCropper();
     $("#t-settings-view").remove();
     const $mainView2 = $("#t-main-view");
     if ($mainView2.length > 0) {
@@ -35219,6 +35719,7 @@ function openSettingsWindow() {
     };
     saveExtData();
     document.getElementById("t-prompt-editor-modal")?.remove();
+    closeImageCropper();
     $("#t-settings-view").remove();
     const $mainViewOnSave = $("#t-main-view");
     if ($mainViewOnSave.length > 0) {
@@ -35251,6 +35752,7 @@ var init_settingsWindow = __esm({
     init_logger();
     init_defaults();
     init_helpers();
+    init_imageCropper();
     init_floatingBtn();
     init_scriptData();
     init_scriptStore();

@@ -5,6 +5,7 @@ import { GlobalState } from "../core/state.js";
 import { TitaniaLogger } from "../core/logger.js";
 import { defaultSettings } from "../config/defaults.js";
 import { fileToBase64 } from "../utils/helpers.js";
+import { openImageCropper, closeImageCropper } from "./imageCropper.js";
 import { createFloatingButton } from "./floatingBtn.js";
 import { loadScripts } from "../core/scriptData.js";
 import { getScripts } from "../core/scriptStore.js";
@@ -299,7 +300,11 @@ export function openSettingsWindow() {
                         </div>
                         <div id="box-image" style="display:${tempApp.type === 'image' ? 'block' : 'none'}">
                             <input class="is-hidden" type="file" id="p-file-input" accept="image/*">
-                            <div class="t-upload-card" id="btn-upload-card" title="点击更换图片"><i class="fa-solid fa-camera fa-2x"></i><span>点击上传</span></div>
+                            <div class="t-set-inline-group" style="align-items:center;">
+                                <div class="t-upload-card" id="btn-upload-card" title="点击更换图片"><i class="fa-solid fa-camera fa-2x"></i><span>点击上传</span></div>
+                                <button type="button" class="t-btn t-btn--ghost" id="btn-recrop" style="display:none;">重新裁剪</button>
+                            </div>
+                            <p class="t-set-note">上传后可拖动、缩放，自行决定悬浮球里显示图片的哪一部分</p>
                         </div>
                     </div>
                     
@@ -964,20 +969,68 @@ export function openSettingsWindow() {
         tempApp.content = $(this).val();
         renderPreview();
     });
+    // 上传图片后自动切到图片模式，避免 data URI 被当成文本。
+    // 确认裁剪与「重新裁剪」两条路径都必须走这里：只改 tempApp.type 而不动单选按钮
+    // 与两个 box 的显隐，会留下「类型是 image 但 emoji 仍被选中」的不一致状态。
+    const applyImageMode = () => {
+        tempApp.type = 'image';
+        $("input[name='p-type'][value='image']").prop("checked", true);
+        $("#box-emoji").hide();
+        $("#box-image").show();
+    };
+
+    // 原图只留在内存里，且存 File 对象而不是 data URI —— 一张 20MB 的照片转成
+    // base64 会多留一份 27MB 级的字符串，而 File 只是个句柄。
+    // 刻意**不**放进 tempApp：保存时 d.appearance 是整体替换，放进去就会被带进
+    // settings.json（见下方保存逻辑的字段白名单）。
+    let lastPickedFile = null;
+
+    const syncRecropButton = () => {
+        // ⚠ 用 .css("display","") 而不是 .is-hidden / .show()：utilities.css 记录过
+        //   jQuery 3 的 showHide() 对被样式表隐藏的元素会退回 getDefaultDisplay()，
+        //   这里要的正是「撤掉内联 display，回到样式表的值」。
+        $("#btn-recrop").css("display", lastPickedFile ? "" : "none");
+    };
+
+    /** @returns {Promise<boolean>} 是否确认了裁剪（取消为 false） */
+    const openCropperFor = async (file) => {
+        const objectUrl = URL.createObjectURL(file);
+        try {
+            const cropped = await openImageCropper({ src: objectUrl });
+            if (!cropped) return false; // 用户取消，tempApp.content 保持原样
+            tempApp.content = cropped;
+            applyImageMode();
+            renderPreview();
+            return true;
+        } finally {
+            URL.revokeObjectURL(objectUrl);
+        }
+    };
+
     $("#btn-upload-card").on("click", () => $("#p-file-input").click());
+    $("#btn-recrop").on("click", async () => {
+        if (!lastPickedFile) return;
+        try {
+            await openCropperFor(lastPickedFile);
+        } catch (e) {
+            alert(e?.message || "图片处理失败");
+        }
+    });
     $("#p-file-input").on("change", async function () {
-        const file = this.files[0];
+        const file = this.files && this.files[0];
         if (!file) return;
         try {
-            tempApp.content = await fileToBase64(file);
-            // 上传图片后自动切到图片模式，避免 data URI 被当成文本
-            tempApp.type = 'image';
-            $("input[name='p-type'][value='image']").prop("checked", true);
-            $("#box-emoji").hide();
-            $("#box-image").show();
-            renderPreview();
+            // 用户取消裁剪时不认这张原图：「重新裁剪」应继续指向上一张已确认的图，
+            // 而不是指向一个他从未确认过的文件。
+            if (await openCropperFor(file)) {
+                lastPickedFile = file;
+                syncRecropButton();
+            }
         } catch (e) {
-            alert("Fail");
+            alert(e?.message || "无法读取这张图片");
+        } finally {
+            // 放 finally：否则同一个文件重选不会再触发 change
+            this.value = "";
         }
     });
     $("#btn-test-anim").on("click", () => playAnimationPreview());
@@ -2193,11 +2246,13 @@ export function openSettingsWindow() {
 
     $("#btn-open-mgr").on("click", () => {
         document.getElementById("t-prompt-editor-modal")?.remove();
+        closeImageCropper();
         $("#t-settings-view").remove();
         openScriptManager();
     });
     $("#t-set-close").on("click", () => {
         document.getElementById("t-prompt-editor-modal")?.remove();
+        closeImageCropper();
         $("#t-settings-view").remove();
         // 如果主窗口存在则显示它，否则关闭整个 overlay
         const $mainView = $("#t-main-view");
@@ -2371,6 +2426,7 @@ export function openSettingsWindow() {
 
         saveExtData();
         document.getElementById("t-prompt-editor-modal")?.remove();
+        closeImageCropper();
         $("#t-settings-view").remove();
         // 如果主窗口存在则显示它，否则关闭整个 overlay
         const $mainViewOnSave = $("#t-main-view");
