@@ -87,8 +87,8 @@ export function normalizeIllustrationDraft(value) {
     });
     const backend = version === 1 ? "cosmos" : requireText(value.backend, "生图后端");
     if (!BACKENDS.has(backend)) throw illustrationError("配图草稿的生图后端不受支持。");
-    // 摘要不是必填：选景的输出契约已收窄到只要求 positivePrompt（见 illustrationPresets.js
-    // 的托管条目「输出格式」），模型正常情况下不会再返回画面描述。老记录里它还在，照读。
+    // 摘要不在这里硬性校验：托管条目的「输出格式」要求模型返回 summary，但旧存档、
+    // 备份与用户自写的预设里它可能是空的 —— 这是读路径，必须容得下，只做类型收敛。
     // ⚠ 这里刻意让它恒为字符串而不是缺键：消费端写的是 `textContent = draft.scene.summary`，
     //   拿到 undefined 会被渲染成字面量 "undefined"。
     const summary = typeof value.scene?.summary === "string" ? value.scene.summary.trim() : "";

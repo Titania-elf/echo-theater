@@ -14,6 +14,29 @@ import {
 import { claimFloatingWindow, isFloatingWindowDisplaced, releaseFloatingWindow } from "./shared/floatingWindow.js";
 
 /**
+ * 四个素材占位符各自装什么。
+ *
+ * 逐行说明写在这里、由 PLACEHOLDER_NAMES 驱动渲染，是为了两件事绑在一起：
+ * 以后往 illustrationPresets 加占位符，说明里漏不掉（只会少一句描述，不会整条不显示）。
+ */
+const PLACEHOLDER_HELP = {
+    theater_text: "配图面板里「本次配图素材」的内容，也就是本轮正文。",
+    participants: "配图面板里「人物外观等补充资料」的内容；命中的外观档案会自动填到这里。",
+    special_request: "配图面板里「想画什么」的内容。",
+    previous_scenes: "点过「换个画面」时，此前已经选过的画面。",
+};
+
+/** 渲染成「占位符 — 说明」的若干行。展开时值为空的占位符，整行会连标题一起消失。 */
+function placeholderHelpLines() {
+    return PLACEHOLDER_NAMES
+        .map(name => {
+            const help = PLACEHOLDER_HELP[name];
+            return `<br><code>{{${name}}}</code>${help ? ` — ${help}` : ""}`;
+        })
+        .join("");
+}
+
+/**
  * 打开场景配图设置窗口。
  * @param {object} [options]
  * @param {() => void} [options.onClose] 用户主动关闭后回调（用于回到配图面板）
@@ -32,12 +55,7 @@ export function openIllustrationSettingsWindow(options = {}) {
             <div class="t-profile-body">
                 <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:8px;">选景预设</div>
                 <p class="t-illustration-hint">
-                    预设决定送给选景模型的消息。条目按顺序拼成消息，素材靠占位符进入：
-                    ${PLACEHOLDER_NAMES.map(name => `<code>{{${name}}}</code>`).join(" ")}
-                    <br>选景用的是小剧场当前的 API 方案（设置 → API 连接），与本预设相互独立。
-                    <strong>变量宏会展开</strong>：<code>{{setvar::名::值}}</code>、<code>{{getvar::名}}</code>
-                    等 10 个 STscript 变量宏可用，跨条目共享，且只在本次选景内有效——选景结束后变量会还原，
-                    不写进你的聊天存档。<strong>{{char}}、{{user}} 这类读当前聊天的宏不会展开。</strong>
+                    素材靠占位符进入消息，只有这四个：${placeholderHelpLines()}
                 </p>
                 <div class="t-profile-actions">
                     <select class="t-input" data-role="preset-select" style="width:auto; min-width:180px;"></select>

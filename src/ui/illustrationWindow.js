@@ -188,7 +188,7 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         const draft = session?.draft;
         role("draft").hidden = !draft;
         if (draft) {
-            // 摘要可能为空：选景的输出契约只要求正面提示词，模型不再返回画面描述。
+            // 摘要可能为空：用户自写的预设未必要求模型返回它，旧存档里也没有。
             // 该 <p> 是常显的，不隐藏就会在面板上留一个空行。
             const summary = draft.scene.summary || "";
             role("summary").hidden = !summary;
@@ -307,7 +307,7 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
     function renderGallery() {
         const images = session?.record?.images || [];
         role("gallery").innerHTML = images.length ? `<strong>已保存的配图</strong><div class="t-illustration-candidates">${images.map(image => {
-            // 摘要可能为空（输出契约只要求正面提示词），此时不出那个 <p>，免得留个空行。
+            // 摘要可能为空（用户自写的预设未必要求模型返回它），此时不出那个 <p>，免得留个空行。
             const summary = image.draft.scene.summary || "";
             return `
             <article class="t-illustration-candidate">
@@ -472,8 +472,8 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                 // 选景走本插件自己的 API 方案（默认跟随当前激活方案），不再依赖 Cosmos 的提示词 LLM。
                 const draft = await selectIllustrationScene(request, { signal: job.controller.signal });
                 current.draft = draft;
-                // 连同正面提示词一起存：摘要现在通常为空，formatPreviousScenes 要回落到它
-                // 才能拼出「已经选过的画面」。draft.scene 本身不含这个字段。
+                // 连同正面提示词一起存：用户自写的预设可能不返回摘要，formatPreviousScenes
+                // 要回落到它才能拼出「已经选过的画面」。draft.scene 本身不含这个字段。
                 current.previousScenes.push({ ...draft.scene, positivePrompt: draft.prompts.positivePrompt });
                 current.notice = "画面已选好。可以展开修改提示词，再生成图片。";
             });

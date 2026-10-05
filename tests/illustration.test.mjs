@@ -63,6 +63,8 @@ function harness() {
         llmHandler: () => sceneReply(),
         // 角色身份桩：默认没有角色卡（等同群聊/无卡），用例按需覆盖。
         cardKey: '', cards: [], characterDescription: '',
+        // 用户设定（Persona）桩：默认空，用例按需覆盖。
+        userPersona: { name: '', description: '' },
         // 确认框：默认放行，用例可改成 false 来测「用户点了取消」。
         confirmResult: true, promptResult: null,
         // STscript 变量存储桩。选景的变量沙箱会经 SillyTavern.getContext() 快照/还原它们，
@@ -114,6 +116,7 @@ function harness() {
         getCharacterCardKey: () => state.cardKey,
         listCharacterCards: () => state.cards,
         getCurrentCharacterDescription: () => state.characterDescription,
+        getCurrentUserPersona: () => state.userPersona,
         // STscript 变量宏桩：正则与 ST variables.js 的 getVariableMacros() 逐条一致，
         // handler 打到 state 的假存储上。用例只需 set/get 两族，其余保留是为了让
         // applyVariableMacros 面对的是真实形状（10 条平铺的 {regex, replace}），
@@ -178,7 +181,7 @@ function harness() {
         // 选景走插件自有 LLM：这里只桩掉连接层，不引入 ST 宿主模块。
         [path.join(project, 'src/core/connection.js'), 'export const { getActiveConnection, sendChatRequestWithConnection } = __environment;'],
         // 角色身份来自 ST 上下文；夹具里同样桩掉，避免拉进 world-info.js 等宿主模块。
-        [path.join(project, 'src/core/context.js'), 'export const { getCharacterCardKey, listCharacterCards, getCurrentCharacterDescription } = __environment;'],
+        [path.join(project, 'src/core/context.js'), 'export const { getCharacterCardKey, listCharacterCards, getCurrentCharacterDescription, getCurrentUserPersona } = __environment;'],
         [path.join(project, 'src/utils/helpers.js'), 'export const getSnippet = x => x; export const parseMeta = () => ({ char: "角色", script: "剧本" }); export const exportAsHtmlFile = async () => {};'],
         ['host:script', 'export const getRequestHeaders = () => ({ "Content-Type": "application/json" });'],
         // 变量宏来自 ST 的 variables.js（真源码里写成 '../../../variables.js'，按打包后的
@@ -1115,6 +1118,10 @@ test('importing a tavern preset appends the managed illustration entries', async
     assert.equal(managed.find(entry => entry.id === 'prompt').enabled, true,
         '只剩一份提示词规范，没有互斥关系，默认就该启用');
     assert.equal(managed.at(-1).id, 'format', '输出格式必须排在最后');
+    // 契约必须同时要 summary 与 positivePrompt：只有提示词时，「换个画面」排除旧画面
+    // 就只能拿英文提示词去比，效果退化。摘要曾经被摘掉过，这条断言防止再被顺手删掉。
+    assert.match(managed.find(entry => entry.id === 'format').content, /"summary"/,
+        '输出格式必须要求模型返回画面摘要');
     assert.equal(managed.find(entry => entry.id === 'material').role, 'user');
     // 补完之后这份预设必须真的能用来选景（这正是补条目的目的）
     assert.equal(P.validatePresetForSelection(read).ok, true);
@@ -1360,6 +1367,43 @@ test('a favorite carries its own character key so illustrating it elsewhere pick
     assert.equal(chip().classList.contains('is-on'), true);
     assert.match(field('participants').value, /银发红瞳/);
     h.document.querySelector('[data-action="close"]').click();
+});
+
+test('appearance profiles import the user persona as an unbound, name-keyed entry', async t => {
+    const h = harness(); t.after(h.close);
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    const core = await h.load('src/core/characterProfiles.js');
+
+    profiles.openCharacterProfileWindow();
+    const root = h.document.querySelector('.t-profile-window');
+    const status = () => root.querySelector('[data-role="status"]').textContent;
+    const entries = () => h.state.settings.character_profiles.entries;
+    const importPersona = () => root.querySelector('[data-action="import-persona"]').click();
+
+    // 角色卡描述常带 HTML，用户设定同样会带（ST 的人设框就是富文本），导入时要剥掉。
+    h.state.userPersona = { name: '林晚', description: '<p>黑长直，<b>左眼下有颗小痣</b>。</p>' };
+    importPersona();
+    assert.equal(entries().length, 1);
+    assert.equal(entries()[0].name, '林晚');
+    assert.equal(entries()[0].content, '黑长直，左眼下有颗小痣。');
+    assert.equal(entries()[0].keywords.join(','), '林晚', '名字要写成触发词，否则这条档案永远不会自己命中');
+    assert.equal(entries()[0].cardKey, '', '用户设定不属于任何一张角色卡，不能绑卡');
+    assert.match(status(), /林晚/);
+
+    // 没有启用的人设：只给一句说明，不要建出一份空档案。
+    h.state.userPersona = { name: '林晚', description: '   ' };
+    importPersona();
+    assert.equal(entries().length, 1, '空人设不该产生档案');
+    assert.match(status(), /没有启用中/);
+
+    // 单字名字：档案照进，但规范化会把触发词裁掉（单字几乎命中任何正文），
+    // 界面必须如实说明，否则用户只会看到「导入了却永远不生效」。
+    h.state.userPersona = { name: '晚', description: '黑长直。' };
+    importPersona();
+    assert.equal(entries().length, 2);
+    assert.match(status(), /触发词/);
+    core.ensureCharacterProfiles(h.state.settings);
+    assert.equal(entries()[1].keywords.length, 0, '单字触发词确实会被规范化剔除，所以那句提示是必要的');
 });
 
 test('every returned image becomes a candidate, with the first adopted', async t => {

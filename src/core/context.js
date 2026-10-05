@@ -134,6 +134,8 @@ export async function getContextData() {
     try {
         data.userName = ctx.substituteParams("{{user}}") || "User";
         data.charName = ctx.substituteParams("{{char}}") || "Char";
+        // ⚠ 命名与实际相反，别按字面读：persona 装的是角色卡描述（{{description}}），
+        //   userDesc 装的才是用户人设（{{persona}}）。改这两行前先看清楚宏。
         data.userDesc = ctx.substituteParams("{{persona}}") || "";
         data.persona = ctx.substituteParams("{{description}}") || "";
         const character = ctx.characterId !== undefined ? ctx.characters?.[ctx.characterId] : null;
@@ -331,6 +333,28 @@ export function getCurrentCharacterDescription() {
     const card = ctx?.characters?.[charId];
     const description = card?.data?.description ?? card?.description ?? "";
     return typeof description === "string" ? description.trim() : "";
+}
+
+/**
+ * 当前生效的用户设定（ST 的 Persona），供「从用户设定导入」使用。
+ *
+ * 与 getCurrentCharacterDescription 同理，读**原始**文本、不跑 substituteParams：
+ * 宏展开会把角色卡与世界书内容一并拉进来，导入的草稿就脏了。
+ * 名字取 name1 —— ST 选中人设时会把用户名同步成人设名，所以它等同于 {{user}}。
+ * @returns {{name: string, description: string}}
+ */
+export function getCurrentUserPersona() {
+    let ctx = null;
+    try {
+        if (typeof SillyTavern !== "undefined") ctx = SillyTavern.getContext?.();
+    } catch {
+        ctx = null;
+    }
+    const description = ctx?.powerUserSettings?.persona_description;
+    return {
+        name: String(ctx?.name1 ?? "").trim(),
+        description: typeof description === "string" ? description.trim() : "",
+    };
 }
 
 /**

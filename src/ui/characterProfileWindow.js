@@ -6,9 +6,9 @@
 import { getExtData, saveExtData } from "../utils/storage.js";
 import {
     CHARACTER_PROFILES_KEY, CARD_KEY_PREFIX, CHARACTER_PROFILES_VERSION, MAX_PROFILE_BLOCK_CHARS,
-    createCharacterProfile, readCharacterProfiles,
+    MIN_KEYWORD_LENGTH, createCharacterProfile, readCharacterProfiles,
 } from "../core/characterProfiles.js";
-import { getCharacterCardKey, getCurrentCharacterDescription, listCharacterCards } from "../core/context.js";
+import { getCharacterCardKey, getCurrentCharacterDescription, getCurrentUserPersona, listCharacterCards } from "../core/context.js";
 import { claimFloatingWindow, isFloatingWindowDisplaced, releaseFloatingWindow } from "./shared/floatingWindow.js";
 
 /** 通知配图面板重画勾选条。本窗口不监听这个事件，否则自己每改一次就整体重画、输入框失焦。 */
@@ -45,11 +45,13 @@ export function openCharacterProfileWindow(options = {}) {
                 <p class="t-illustration-hint">
                     为角色写一次外观，之后进这个角色的配图会自动带上。绑定角色卡后在该角色的聊天里必中；
                     没绑定的靠触发词在正文里匹配。档案只描述「画面里有什么」——质量词、画师串与预设仍由 Cosmos Vision 追加。
+                    <br>你自己（用户设定）也能这么记一份：导入后不绑卡，靠名字在正文里匹配。
                     <br>群聊里没有单一角色卡，绑定不会生效，请用触发词，或到配图面板里手动勾选。
                 </p>
                 <div class="t-profile-actions">
                     <button type="button" class="t-btn primary" data-action="add" title="新建一条外观档案" aria-label="新建档案"><i class="fa-solid fa-plus"></i></button>
                     <button type="button" class="t-btn" data-action="import" title="从当前打开的角色卡导入描述" aria-label="从当前角色卡导入"><i class="fa-solid fa-id-card"></i></button>
+                    <button type="button" class="t-btn" data-action="import-persona" title="从当前用户设定（Persona）导入描述" aria-label="从当前用户设定导入"><i class="fa-solid fa-user"></i></button>
                     <span class="t-illustration-hint" data-role="status"></span>
                 </div>
                 <div class="t-profile-list" data-role="list"></div>
@@ -234,7 +236,7 @@ export function openCharacterProfileWindow(options = {}) {
         if (!items.length) {
             const empty = document.createElement("p");
             empty.className = "t-illustration-hint";
-            empty.textContent = "还没有档案。点「新建档案」，或用「从当前角色卡导入」把当前角色卡的描述拉进来当草稿。";
+            empty.textContent = "还没有档案。点「新建档案」，或用上面两个导入按钮把当前角色卡 / 用户设定的描述拉进来当草稿。";
             list.append(empty);
             return;
         }
@@ -258,6 +260,25 @@ export function openCharacterProfileWindow(options = {}) {
             : "已导入描述，但当前是群聊，无法绑定角色卡。";
     }
 
+    function importFromPersona() {
+        const { name, description } = getCurrentUserPersona();
+        const content = stripHtml(description);
+        if (!content) {
+            role("status").textContent = "当前没有启用中的用户设定（Persona）可导入。";
+            return;
+        }
+        // 用户设定不属于任何一张角色卡，所以不填 cardKey —— 绑上去会在别的角色的聊天里
+        // 也强行带入。名字才是它该用的匹配依据。
+        const label = name || "我";
+        const created = { ...createCharacterProfile(label), content, keywords: name ? [name] : [] };
+        writeEntries(list => list.push(created), true);
+        // 短于下限的名字会被规范化当场剔除（单字几乎命中任何正文），明说一句，
+        // 免得用户以为导入失败了 —— 档案本身是进去了的。
+        role("status").textContent = name.length < MIN_KEYWORD_LENGTH
+            ? `已导入「${label}」的用户设定，但名字短于 ${MIN_KEYWORD_LENGTH} 字，没能写成触发词，请手动补一个。`
+            : `已导入「${label}」的用户设定，触发词已填好，可在下面继续精简。`;
+    }
+
     root.addEventListener("click", event => {
         const button = event.target.closest("button");
         if (!button || button.disabled) return;
@@ -265,6 +286,7 @@ export function openCharacterProfileWindow(options = {}) {
         if (operation === "close") { close(); return; }
         if (operation === "add") { writeEntries(list => list.push(createCharacterProfile("新档案")), true); return; }
         if (operation === "import") { importFromCard(); return; }
+        if (operation === "import-persona") { importFromPersona(); return; }
     });
 
     function close() {
