@@ -242,8 +242,12 @@ test('backend is detected by method presence rather than version, and unusable p
 
     h.window.CosmosVision = api;
     const data = await h.load('src/core/illustrationData.js');
-    // 画面描述缺失应拒绝；摘录是可选的，不再强制。
-    assert.throws(() => data.normalizeIllustrationDraft({ ...draft(), scene: {} }), /画面描述/);
+    // 画面描述不再是必填：输出契约只要求 positivePrompt，模型不会再返回 summary。
+    // 但它仍要落成字符串（消费端会直接赋给 textContent），而 positivePrompt 依旧是硬要求。
+    const noSummary = data.normalizeIllustrationDraft({ ...draft(), scene: {} });
+    assert.equal(noSummary.scene.summary, '', '缺 summary 应落成空串而不是 undefined');
+    assert.throws(() => data.normalizeIllustrationDraft({ ...draft(), prompts: { ...draft().prompts, positivePrompt: '' } }),
+        /正向提示词/, '正向提示词仍然必填 —— 它是这次契约的全部意义');
     await assert.rejects(data.validateIllustrationBlob(new Blob(['<html>Error</html>'], { type: 'image/png' })), /格式不符/);
     const clean = data.normalizeIllustrationDraft({ ...draft(), apiKey: 'must-not-persist' });
     assert.equal('apiKey' in clean, false);
@@ -621,6 +625,35 @@ test('excerpt mismatch is rejected at selection time but never on read paths', a
     assert.ok(data.normalizeSavedIllustration({ id: 'i', filePath: '/user/files/titania-illustration-a1.png', draft: draftV1(), width: 1, height: 1, createdAt: 0 }));
 });
 
+test('a reply carrying only the positive prompt is a complete, usable draft', async t => {
+    const h = harness(); t.after(h.close);
+    const data = await h.load('src/core/illustrationData.js');
+    const scene = await h.load('src/core/illustrationScene.js');
+
+    // 托管条目的「输出格式」现在只要求这一个字段，模型不会再给摘要、摘录、
+    // 负向词与人物分段提示词 —— 整条链路必须照常走通。
+    const minimal = scene.draftFromSceneReply('{"positivePrompt":"two people, doorway, night"}', '深夜门口，两人对视。');
+    assert.equal(minimal.prompts.positivePrompt, 'two people, doorway, night');
+    assert.equal(minimal.scene.summary, '', '摘要落成空串，供渲染端判空');
+    assert.equal('sourceExcerpt' in minimal.scene, false);
+    assert.equal(minimal.prompts.negativePrompt, '', '缺省负向词落成空串');
+    // ⚠ 不写 deepEqual(…, [])：草稿来自 vm 沙箱，数组原型与测试侧不同，严格深比较会挂。
+    assert.equal(minimal.prompts.characterPrompts.length, 0, '缺省人物分段落成空数组');
+    // 空数组必须能原样发给 Cosmos（契约要求它始终是数组）
+    assert.ok(Array.isArray(minimal.prompts.characterPrompts));
+
+    // 空摘要不能在图题里留壳：illustrationFigure 是图库/收藏/导出/正文共用的唯一产出点
+    const saved = { id: 'i1', filePath: '/user/files/titania-illustration-a1.png', draft: minimal, width: 10, height: 10, createdAt: 0 };
+    const html = data.illustrationFigure(saved);
+    assert.equal(html.includes('<figcaption'), false, '摘要为空时不该输出空的图题块');
+    assert.match(html, /alt="配图"/, 'alt 回落到通用文案，而不是留空让读屏跳过');
+    // 有摘要时图题照旧
+    assert.match(data.illustrationFigure({ ...saved, draft: draft() }), /<figcaption[^>]*>深夜门口的重逢。<\/figcaption>/);
+
+    // 旧草稿（带完整摘要）也要继续能渲染，字段仍是可选的而不是被删掉
+    assert.ok(data.illustrationFigure({ ...saved, draft: draftV1() }).includes('深夜门口的重逢。'));
+});
+
 test('image bytes are sniffed and measured in pure JS, without DOM decoding APIs', async t => {
     const h = harness(); t.after(h.close);
     const bytes = await h.load('src/core/imageBytes.js');
@@ -762,7 +795,7 @@ test('the panel header entry opens the illustration settings window and closes t
     // 预设工具条停在夹具播下的那份预设，条目已经铺出来。
     assert.equal(panel.querySelector('[data-role="preset-select"]').value, 'test-preset');
     assert.match(panel.querySelector('[data-role="preset-select"]').selectedOptions[0].textContent, /测试预设/);
-    assert.ok(panel.querySelectorAll('[data-entry-id]').length >= 5, '条目应已渲染');
+    assert.ok(panel.querySelectorAll('[data-entry-id]').length >= 4, '条目应已渲染');
     // 夹具那份预设是能选景的（素材条目带 {{theater_text}}）。
     assert.match(panel.querySelector('[data-role="validation"]').textContent, /可以选景/);
     // 人物外观档案的入口不在设置窗里，它在配图面板顶栏。
@@ -940,6 +973,14 @@ test('placeholder substitution is single-pass and drops only the lines it emptie
     assert.match(full, /【本次额外要求】\n冷色/);
     assert.match(full, /1\. 上一幕/);
 
+    // 摘要为空时要回落到正面提示词：输出契约只要求 positivePrompt，模型不再给摘要，
+    // 不回落的话「已经选过的画面」整块会连同标题一起消失。
+    const promptOnly = userOf({ theaterText: '正文', previousScenes: [{ summary: '', positivePrompt: 'two people, doorway, night' }] });
+    assert.match(promptOnly, /已经选过的画面/);
+    assert.match(promptOnly, /1\. two people, doorway, night/);
+    // 三者全空时仍然整块消失，不留孤立标题
+    assert.equal(userOf({ theaterText: '正文', previousScenes: [{ summary: '', positivePrompt: '' }] }), '【小剧场正文】\n正文');
+
     // 单趟替换：正文里字面出现的占位符与 $ 模式都不能被二次处理
     assert.ok(userOf({ theaterText: '她说 {{char}} 走了' }).includes('{{char}}'));
     assert.equal(P.renderEntryContent('{{theater_text}}', { theater_text: 'a$&b$1c' }), 'a$&b$1c');
@@ -1067,13 +1108,13 @@ test('importing a tavern preset appends the managed illustration entries', async
     assert.equal(imported.find(entry => entry.name === '空条目').content, '', '空内容不能被改写成 {{marker}}');
     assert.equal(read.name, '某人的预设');
 
-    // 末尾补上小剧场那一套：四段规范 + 两条按图源的提示词规范 + 素材
+    // 末尾补上小剧场那一套：选景要求 + 图源无关的提示词规范 + 素材 + 输出格式
     const managed = read.entries.filter(entry => entry.managed);
-    assert.equal(managed.map(entry => entry.id).join(','), 'select,comfyui,nai,material,format',
-        '托管条目：选景要求 → 两条图源规范 → 素材 → 输出格式（契约压在最末）');
-    assert.equal(managed.find(entry => entry.id === 'comfyui').enabled, false, '两条图源规范默认停用');
+    assert.equal(managed.map(entry => entry.id).join(','), 'select,prompt,material,format',
+        '托管条目：选景要求 → 生图提示词规范 → 素材 → 输出格式（契约压在最末）');
+    assert.equal(managed.find(entry => entry.id === 'prompt').enabled, true,
+        '只剩一份提示词规范，没有互斥关系，默认就该启用');
     assert.equal(managed.at(-1).id, 'format', '输出格式必须排在最后');
-    assert.equal(managed.find(entry => entry.id === 'nai').enabled, false);
     assert.equal(managed.find(entry => entry.id === 'material').role, 'user');
     // 补完之后这份预设必须真的能用来选景（这正是补条目的目的）
     assert.equal(P.validatePresetForSelection(read).ok, true);

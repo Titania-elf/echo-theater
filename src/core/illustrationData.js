@@ -87,7 +87,11 @@ export function normalizeIllustrationDraft(value) {
     });
     const backend = version === 1 ? "cosmos" : requireText(value.backend, "生图后端");
     if (!BACKENDS.has(backend)) throw illustrationError("配图草稿的生图后端不受支持。");
-    const summary = requireText(value.scene?.summary, "画面描述");
+    // 摘要不是必填：选景的输出契约已收窄到只要求 positivePrompt（见 illustrationPresets.js
+    // 的托管条目「输出格式」），模型正常情况下不会再返回画面描述。老记录里它还在，照读。
+    // ⚠ 这里刻意让它恒为字符串而不是缺键：消费端写的是 `textContent = draft.scene.summary`，
+    //   拿到 undefined 会被渲染成字面量 "undefined"。
+    const summary = typeof value.scene?.summary === "string" ? value.scene.summary.trim() : "";
     const excerpt = typeof value.scene?.sourceExcerpt === "string" ? value.scene.sourceExcerpt.trim() : "";
     return {
         version: ILLUSTRATION_DRAFT_VERSION,
@@ -167,5 +171,10 @@ export function illustrationFigure(value) {
     let image;
     try { image = normalizeSavedIllustration(value); } catch { return ""; }
     const caption = escapeIllustrationHtml(image.draft.scene.summary);
-    return `<figure data-titania-illustration="${escapeIllustrationHtml(image.id)}" style="margin:24px auto;text-align:center;max-width:100%"><a href="${image.filePath}" target="_blank" rel="noopener"><img src="${image.filePath}" alt="${caption}" width="${image.width}" height="${image.height}" loading="lazy" style="display:block;max-width:100%;height:auto;max-height:80vh;object-fit:contain;margin:auto;border-radius:12px"></a><figcaption style="margin-top:10px;font-size:0.9em;line-height:1.6">${caption}</figcaption></figure>`;
+    // 摘要为空就不出 <figcaption> —— 它带着 margin-top:10px 与行高，空着会白占一行。
+    // alt 回落成「配图」而不是空串：这是一张有内容的插图，空 alt 会让读屏软件整个跳过它。
+    const captionHtml = caption
+        ? `<figcaption style="margin-top:10px;font-size:0.9em;line-height:1.6">${caption}</figcaption>`
+        : "";
+    return `<figure data-titania-illustration="${escapeIllustrationHtml(image.id)}" style="margin:24px auto;text-align:center;max-width:100%"><a href="${image.filePath}" target="_blank" rel="noopener"><img src="${image.filePath}" alt="${caption || "配图"}" width="${image.width}" height="${image.height}" loading="lazy" style="display:block;max-width:100%;height:auto;max-height:80vh;object-fit:contain;margin:auto;border-radius:12px"></a>${captionHtml}</figure>`;
 }

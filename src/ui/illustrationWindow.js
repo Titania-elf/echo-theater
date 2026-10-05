@@ -188,7 +188,11 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         const draft = session?.draft;
         role("draft").hidden = !draft;
         if (draft) {
-            role("summary").textContent = draft.scene.summary;
+            // 摘要可能为空：选景的输出契约只要求正面提示词，模型不再返回画面描述。
+            // 该 <p> 是常显的，不隐藏就会在面板上留一个空行。
+            const summary = draft.scene.summary || "";
+            role("summary").hidden = !summary;
+            role("summary").textContent = summary;
             const excerpt = draft.scene.sourceExcerpt || "";
             role("excerpt").hidden = !excerpt;
             role("excerpt").textContent = excerpt ? `原文摘录：${excerpt}` : "";
@@ -302,12 +306,16 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
 
     function renderGallery() {
         const images = session?.record?.images || [];
-        role("gallery").innerHTML = images.length ? `<strong>已保存的配图</strong><div class="t-illustration-candidates">${images.map(image => `
+        role("gallery").innerHTML = images.length ? `<strong>已保存的配图</strong><div class="t-illustration-candidates">${images.map(image => {
+            // 摘要可能为空（输出契约只要求正面提示词），此时不出那个 <p>，免得留个空行。
+            const summary = image.draft.scene.summary || "";
+            return `
             <article class="t-illustration-candidate">
-                <a href="${image.filePath}" target="_blank" rel="noopener"><img src="${image.filePath}" loading="lazy" alt="${escape(image.draft.scene.summary)}"></a>
-                <p>${escape(image.draft.scene.summary)}</p>
+                <a href="${image.filePath}" target="_blank" rel="noopener"><img src="${image.filePath}" loading="lazy" alt="${escape(summary || "配图")}"></a>
+                ${summary ? `<p>${escape(summary)}</p>` : ""}
                 <div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="${escape(image.id)}">${session.record.selectedId === image.id ? "当前配图" : "采用这张"}</button><a class="t-btn" href="${image.filePath}" download>下载</a></div>
-            </article>`).join("")}</div><div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="">暂不展示配图</button><button class="t-btn" type="button" data-action="export">导出图文 HTML</button></div>` : "";
+            </article>`;
+        }).join("")}</div><div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="">暂不展示配图</button><button class="t-btn" type="button" data-action="export">导出图文 HTML</button></div>` : "";
         if (pendingUrl && session?.pending !== renderedPending) { URL.revokeObjectURL(pendingUrl); pendingUrl = null; }
         if (session?.pending && session.pending !== renderedPending) {
             // 一批里可能有多张（Cosmos 的张数由它自己决定），预览显示采用的那张。
@@ -464,7 +472,9 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                 // 选景走本插件自己的 API 方案（默认跟随当前激活方案），不再依赖 Cosmos 的提示词 LLM。
                 const draft = await selectIllustrationScene(request, { signal: job.controller.signal });
                 current.draft = draft;
-                current.previousScenes.push(draft.scene);
+                // 连同正面提示词一起存：摘要现在通常为空，formatPreviousScenes 要回落到它
+                // 才能拼出「已经选过的画面」。draft.scene 本身不含这个字段。
+                current.previousScenes.push({ ...draft.scene, positivePrompt: draft.prompts.positivePrompt });
                 current.notice = "画面已选好。可以展开修改提示词，再生成图片。";
             });
             return;
