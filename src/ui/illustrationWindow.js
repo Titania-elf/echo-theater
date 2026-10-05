@@ -475,7 +475,11 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                 // 连同正面提示词一起存：用户自写的预设可能不返回摘要，formatPreviousScenes
                 // 要回落到它才能拼出「已经选过的画面」。draft.scene 本身不含这个字段。
                 current.previousScenes.push({ ...draft.scene, positivePrompt: draft.prompts.positivePrompt });
-                current.notice = "画面已选好。可以展开修改提示词，再生成图片。";
+                // 摘录被丢弃时说一句：面板上没有摘录行，既可能是模型没给，也可能是它编的
+                // 那段对不上正文，不区分的话用户只会以为这个功能坏了。
+                current.notice = draft.excerptDropped
+                    ? "画面已选好，但模型给的原文摘录与正文对不上，已丢弃。可以展开修改提示词，再生成图片。"
+                    : "画面已选好。可以展开修改提示词，再生成图片。";
             });
             return;
         }

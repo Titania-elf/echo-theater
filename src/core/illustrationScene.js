@@ -17,7 +17,7 @@ import { getActiveConnection, sendChatRequestWithConnection } from "./connection
 import { extractJsonObject } from "./llmJson.js";
 import { buildIllustrationMessages } from "./illustrationPresets.js";
 import { applyVariableMacros, beginVariableSandbox } from "./stVariables.js";
-import { assertIllustrationExcerpt, illustrationError, normalizeIllustrationDraft } from "./illustrationData.js";
+import { illustrationError, normalizeIllustrationDraft, sanitizeIllustrationExcerpt } from "./illustrationData.js";
 
 const RETRY_NUDGE = "上一条回复不是合法的 JSON。请只输出那个 JSON 对象本身，不要任何解释文字或代码围栏。";
 
@@ -58,8 +58,15 @@ export function draftFromSceneReply(raw, theaterText) {
             })),
         },
     });
-    // 摘录对不上说明模型在编原文；不必因为它废掉整次选景，但要当场拦下来。
-    return assertIllustrationExcerpt(draft, theaterText);
+    // 摘录对不上时只是丢掉它，不废掉整次选景（见 sanitizeIllustrationExcerpt）。
+    const hasExcerpt = Boolean(draft.scene.sourceExcerpt);
+    const sanitized = sanitizeIllustrationExcerpt(draft, theaterText);
+    // 区分「模型给了但对不上」与「模型压根没给」：面板上两者都表现为没有摘录行，
+    // 不明说一句的话，用户只会以为这个功能坏了。
+    // ⚠ 这个键不在草稿 DTO 里 —— normalizeIllustrationDraft 不产出它，落盘时会被白名单
+    //   丢掉，它只是给本次界面用的一次性信号。
+    if (hasExcerpt && !sanitized.scene.sourceExcerpt) sanitized.excerptDropped = true;
+    return sanitized;
 }
 
 /**
@@ -111,9 +118,8 @@ export async function selectIllustrationScene(request, options = {}) {
     try {
         return draftFromSceneReply(raw, theaterText);
     } catch (error) {
-        // 只有「格式坏了」值得重发一次：NO_SCENE 是有效结论，
-        // EXCERPT_MISMATCH 是内容问题，重发同一段提示词并不能可靠修好它，
-        // 都直接抛给用户看明白。
+        // 只有「格式坏了」值得重发一次：NO_SCENE 是有效结论，直接抛给用户看明白。
+        // （摘录对不上已经不算失败了，见 sanitizeIllustrationExcerpt。）
         if (error?.code !== "INVALID_RESPONSE" || options.signal?.aborted) throw error;
         raw = await send([...messages, { role: "user", content: RETRY_NUDGE }]);
         return draftFromSceneReply(raw, theaterText);

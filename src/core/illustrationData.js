@@ -106,21 +106,23 @@ export function normalizeIllustrationDraft(value) {
 }
 
 /**
- * 校验画面摘录确实是正文中连续、逐字一致的一段，用来抓模型凭空编造的引用。
+ * 把对不上的画面摘录丢掉，草稿的其余部分原样留下。
  * 只在选景产出时调用：读路径没有正文可用。
- * 摘录缺省时不拦截（它现在是给用户看的对照片段，不是生图的必需输入）；
- * 但一旦给出就必须对得上，否则说明模型在编原文。
  *
- * 错误码必须与 INVALID_RESPONSE 区分：那个码表示「格式坏了、重发一次可能就好了」，
- * 会被选景器当成可重试的失败；摘录对不上是内容问题，该直接把话说明白给用户看。
+ * 摘录是**给用户核对画面选得对不对**的对照片段，不是生图的必需输入，所以对不上时只是丢弃、
+ * 不判失败 —— 模型改写一句引文太容易了（加省略号、调语序、动个标点），为它废掉整次已经
+ * 付过费的选景不划算。缺省时同样不拦。
+ *
+ * ⚠ 本函数自己不报信：调用方要靠比对前后有没有 sourceExcerpt 才知道丢没丢
+ *   （见 illustrationScene.draftFromSceneReply 的 excerptDropped）。这里刻意不编一个
+ *   替代品填上去 —— 显示一段模型没从正文里抄来的「原文」比不显示更坏。
  */
-export function assertIllustrationExcerpt(draft, theaterText) {
+export function sanitizeIllustrationExcerpt(draft, theaterText) {
     const excerpt = draft?.scene?.sourceExcerpt;
-    if (!excerpt) return draft;
-    if (!String(theaterText ?? "").includes(excerpt)) {
-        throw illustrationError("画面摘录不是正文中的连续原文，请重新选景。", "EXCERPT_MISMATCH");
-    }
-    return draft;
+    if (!excerpt || String(theaterText ?? "").includes(excerpt)) return draft;
+    const scene = { ...draft.scene };
+    delete scene.sourceExcerpt;
+    return { ...draft, scene };
 }
 
 export function illustrationExtension(mime) {

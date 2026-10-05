@@ -245,7 +245,7 @@ test('backend is detected by method presence rather than version, and unusable p
 
     h.window.CosmosVision = api;
     const data = await h.load('src/core/illustrationData.js');
-    // 画面描述不再是必填：输出契约只要求 positivePrompt，模型不会再返回 summary。
+    // 画面描述不在这里硬性校验：读路径拿不到正文，也容不下旧记录与自写预设的空摘要。
     // 但它仍要落成字符串（消费端会直接赋给 textContent），而 positivePrompt 依旧是硬要求。
     const noSummary = data.normalizeIllustrationDraft({ ...draft(), scene: {} });
     assert.equal(noSummary.scene.summary, '', '缺 summary 应落成空串而不是 undefined');
@@ -613,19 +613,64 @@ test('v1 drafts migrate on read so existing records and backups keep rendering',
     assert.throws(() => data.normalizeIllustrationDraft({ ...draft(), backend: 'other' }), /后端不受支持/);
 });
 
-test('excerpt mismatch is rejected at selection time but never on read paths', async t => {
+test('an excerpt that does not match the text is dropped rather than failing the selection', async t => {
     const h = harness(); t.after(h.close);
     const data = await h.load('src/core/illustrationData.js');
     const text = '深夜门口，两人隔着半开的门对视。';
 
-    assert.equal(data.assertIllustrationExcerpt({ scene: { sourceExcerpt: '两人隔着半开的门对视' } }, text) ? 'ok' : 'x', 'ok');
-    assert.throws(() => data.assertIllustrationExcerpt({ scene: { sourceExcerpt: '两人在雨中拥抱' } }, text), /不是正文中的连续原文/);
-    // 摘录是可选的：模型没给就不拦，它只是给用户看的对照片段。
-    assert.ok(data.assertIllustrationExcerpt({ scene: {} }, text));
+    // 对得上：原样留下。
+    const kept = { scene: { sourceExcerpt: '两人隔着半开的门对视' }, prompts: { positivePrompt: 'x' } };
+    assert.equal(data.sanitizeIllustrationExcerpt(kept, text), kept, '对得上就不该产生新对象');
+
+    // 对不上：只丢掉摘录，草稿其余部分原样留下 —— 模型改写一句引文太容易了，
+    // 为它废掉整次已经付过费的选景不划算。
+    const dropped = data.sanitizeIllustrationExcerpt(
+        { scene: { summary: '重逢', sourceExcerpt: '两人在雨中拥抱' }, prompts: { positivePrompt: 'two people' } }, text);
+    assert.equal('sourceExcerpt' in dropped.scene, false, '编造的摘录必须被丢掉');
+    assert.equal(dropped.scene.summary, '重逢', '摘要等其余字段不受影响');
+    assert.equal(dropped.prompts.positivePrompt, 'two people', '提示词不受影响');
+    // 不能就地改掉传进来的草稿：调用方还握着原对象。
+    const borrowed = { scene: { sourceExcerpt: '两人在雨中拥抱' } };
+    data.sanitizeIllustrationExcerpt(borrowed, text);
+    assert.equal(borrowed.scene.sourceExcerpt, '两人在雨中拥抱', 'sanitize 必须是纯函数');
+
+    // 模型没给摘录时同样不拦 —— 它只是给用户核对的对照片段。
+    assert.ok(data.sanitizeIllustrationExcerpt({ scene: {} }, text));
 
     // 关键：读路径拿不到正文，所以校验绝不能进 normalize，否则所有旧记录都会渲染失败。
     assert.ok(data.normalizeIllustrationDraft({ ...draft(), scene: { summary: 'x', sourceExcerpt: '正文里根本没有这句' } }));
     assert.ok(data.normalizeSavedIllustration({ id: 'i', filePath: '/user/files/titania-illustration-a1.png', draft: draftV1(), width: 1, height: 1, createdAt: 0 }));
+});
+
+test('the panel says so when an invented excerpt was dropped instead of pretending none was given', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    const status = () => h.document.querySelector('[data-role="status"]').textContent;
+    const excerptLine = () => h.document.querySelector('[data-role="excerpt"]');
+
+    ui.openIllustrationWindow(data.createIllustrationTarget({ content: story, generationId: 'g-excerpt-note' }));
+    await waitFor(() => !action('prepare').disabled, 'API ready');
+
+    // 模型编了一段正文里没有的摘录：选景照常成功，但要说清是「被丢了」而不是「没给」。
+    h.state.llmHandler = () => sceneReply({ sourceExcerpt: '正文里根本没有这句' });
+    action('prepare').click();
+    await waitFor(() => /画面已选好/.test(status()), 'scene selected');
+    assert.match(status(), /原文摘录与正文对不上，已丢弃/);
+    assert.equal(excerptLine().hidden, true, '丢弃后不显示摘录行');
+    action('close').click();
+
+    // 摘录正常时不加这句废话，并且真的把摘录显示出来。
+    h.state.llmHandler = () => sceneReply();
+    ui.openIllustrationWindow(data.createIllustrationTarget({ content: story, generationId: 'g-excerpt-ok' }));
+    await waitFor(() => !action('prepare').disabled, 'API ready again');
+    action('prepare').click();
+    await waitFor(() => /画面已选好/.test(status()), 'scene selected again');
+    assert.equal(/已丢弃/.test(status()), false, '没丢就不该提');
+    assert.equal(excerptLine().hidden, false, '摘录行应显示');
+    assert.equal(excerptLine().textContent, `原文摘录：${excerpt}`);
+    action('close').click();
 });
 
 test('a reply carrying only the positive prompt is a complete, usable draft', async t => {
@@ -633,8 +678,8 @@ test('a reply carrying only the positive prompt is a complete, usable draft', as
     const data = await h.load('src/core/illustrationData.js');
     const scene = await h.load('src/core/illustrationScene.js');
 
-    // 托管条目的「输出格式」现在只要求这一个字段，模型不会再给摘要、摘录、
-    // 负向词与人物分段提示词 —— 整条链路必须照常走通。
+    // 托管条目的「输出格式」要的是三个字段，但模型完全可能只给正提示词（不听话、
+    // 或用户换了自写预设）—— 整条链路必须照常走通，缺的部分各有着落。
     const minimal = scene.draftFromSceneReply('{"positivePrompt":"two people, doorway, night"}', '深夜门口，两人对视。');
     assert.equal(minimal.prompts.positivePrompt, 'two people, doorway, night');
     assert.equal(minimal.scene.summary, '', '摘要落成空串，供渲染端判空');
@@ -700,7 +745,7 @@ test('tolerant JSON extraction repairs packaging but never silently invents data
     assert.equal(shape(''), 'null');
 });
 
-test('scene selection reports NO_SCENE, repairs one bad reply, and refuses invented excerpts', async t => {
+test('scene selection reports NO_SCENE, repairs one bad reply, and drops invented excerpts', async t => {
     const h = harness(); t.after(h.close);
     const scene = await h.load('src/core/illustrationScene.js');
     const text = '深夜门口，两人隔着半开的门对视。雨还在下。';
@@ -719,11 +764,25 @@ test('scene selection reports NO_SCENE, repairs one bad reply, and refuses inven
     await assert.rejects(scene.selectIllustrationScene({ theaterText: text }), error => error.code === 'INVALID_RESPONSE');
     assert.equal(calls, 2);
 
-    // 编造的原文摘录是内容问题，重发同一段提示词并不能可靠修好，所以不重试。
+    // 编造的原文摘录只丢掉摘录本身，不废掉整次选景，也不重发 —— 画面本身是好的，
+    // 重发同一段提示词修不好一句引文，而这一次调用已经付过费了。
     calls = 0;
     h.state.llmHandler = () => { calls += 1; return sceneReply({ sourceExcerpt: '正文里根本没有这句' }); };
-    await assert.rejects(scene.selectIllustrationScene({ theaterText: text }), error => error.code === 'EXCERPT_MISMATCH');
-    assert.equal(calls, 1);
+    const invented = await scene.selectIllustrationScene({ theaterText: text });
+    assert.equal(calls, 1, '不该为一句引文重发');
+    assert.equal('sourceExcerpt' in invented.scene, false, '编造的摘录应被丢掉');
+    assert.equal(invented.prompts.positivePrompt, 'two people, doorway, night', '画面本身照常留用');
+    assert.equal(invented.scene.summary, '深夜门口的重逢。');
+    // 界面据此说一句「摘录对不上，已丢弃」—— 不说的话，用户分不清是模型没给还是被丢了。
+    assert.equal(invented.excerptDropped, true, '丢弃摘录时要留下信号供界面说明');
+
+    // 摘录对得上时不带这个信号，否则界面会对每次正常的选景都多嘴一句。
+    h.state.llmHandler = () => sceneReply();
+    const clean = await scene.selectIllustrationScene({ theaterText: text });
+    assert.equal('excerptDropped' in clean, false, '正常选景不该带丢弃信号');
+    // 信号是给界面的一次性提示，不属于草稿 DTO：落盘时会被白名单丢掉。
+    const data = await h.load('src/core/illustrationData.js');
+    assert.equal('excerptDropped' in data.normalizeIllustrationDraft(invented), false, '丢弃信号不得进存档');
 
     await assert.rejects(scene.selectIllustrationScene({ theaterText: '   ' }), error => error.code === 'NO_CONTENT');
 });
@@ -1118,10 +1177,11 @@ test('importing a tavern preset appends the managed illustration entries', async
     assert.equal(managed.find(entry => entry.id === 'prompt').enabled, true,
         '只剩一份提示词规范，没有互斥关系，默认就该启用');
     assert.equal(managed.at(-1).id, 'format', '输出格式必须排在最后');
-    // 契约必须同时要 summary 与 positivePrompt：只有提示词时，「换个画面」排除旧画面
-    // 就只能拿英文提示词去比，效果退化。摘要曾经被摘掉过，这条断言防止再被顺手删掉。
-    assert.match(managed.find(entry => entry.id === 'format').content, /"summary"/,
-        '输出格式必须要求模型返回画面摘要');
+    // 契约必须同时要 summary、sourceExcerpt 与 positivePrompt：后两个都曾被摘掉过 ——
+    // 只有提示词时「换个画面」排除旧画面只能拿英文提示词去比，面板上也没有原文可供核对。
+    const contract = managed.find(entry => entry.id === 'format').content;
+    assert.match(contract, /"summary"/, '输出格式必须要求模型返回画面摘要');
+    assert.match(contract, /"sourceExcerpt"/, '输出格式必须要求模型返回原文摘录');
     assert.equal(managed.find(entry => entry.id === 'material').role, 'user');
     // 补完之后这份预设必须真的能用来选景（这正是补条目的目的）
     assert.equal(P.validatePresetForSelection(read).ok, true);
