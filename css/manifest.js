@@ -85,7 +85,7 @@ export const CSS_LAYERS = [
             'continuation.css',     // .t-cont-* / .t-continuation-*  主动续写
             'queue.css',            // .t-queue-*  队列设置窗口与进度条
             'content-editor.css',   // .t-ce-*   内容编辑器
-            'illustration.css',     // 场景配图面板、候选图与正文配图
+            'illustration.css',     // 场景配图面板、候选图、主界面配图按钮与灯箱
             // ST 扩展设置抽屉 + 更新弹窗。原先一半在 settings.css 前 273 行、
             // 一半在 settings.html 的内联 <style> 里（缺陷 B10），Phase 4g 合并至此。
             // 内联 <style> 原在 body,层叠上晚于 head 注入的插件 CSS;这里的选择器

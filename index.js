@@ -1053,6 +1053,13 @@ async function validateIllustrationBlob(blob) {
 function isIllustrationPath(path) {
   return typeof path === "string" && /^\/user\/files\/titania-illustration-[a-zA-Z0-9-]+\.(png|jpg|webp)$/.test(path);
 }
+function collectIllustrationPaths(value, result = /* @__PURE__ */ new Set()) {
+  if (typeof value === "string") {
+    for (const match of value.matchAll(/\/user\/files\/titania-illustration-[a-zA-Z0-9-]+\.(?:png|jpg|webp)/g)) result.add(match[0]);
+  } else if (Array.isArray(value)) value.forEach((item) => collectIllustrationPaths(item, result));
+  else if (value && typeof value === "object") Object.values(value).forEach((item) => collectIllustrationPaths(item, result));
+  return result;
+}
 function normalizeSavedIllustration(value) {
   if (!value || !isIllustrationPath(value.filePath)) throw illustrationError("\u914D\u56FE\u6587\u4EF6\u8DEF\u5F84\u65E0\u6548\u3002");
   const width = Number(value.width), height = Number(value.height);
@@ -1135,6 +1142,12 @@ function mutateScene(sceneId, mutate) {
       throw illustrationError("\u56FE\u7247\u5DF2\u751F\u6210\uFF0C\u4F46\u914D\u56FE\u8BB0\u5F55\u4FDD\u5B58\u5931\u8D25\u3002\u8BF7\u70B9\u51FB\u91CD\u8BD5\u4FDD\u5B58\u3002", "SAVE_FAILED");
     }
     cache.set(`${file}:${rev}`, structuredClone(record));
+    if (oldPointer?.file && oldPointer.file !== file) {
+      try {
+        await deleteUserFile(oldPointer.file, { label: "\u573A\u666F\u8BB0\u5F55" });
+      } catch {
+      }
+    }
     window.dispatchEvent(new CustomEvent("titania:illustrations-changed", { detail: { sceneId } }));
     return record;
   });
@@ -1207,6 +1220,29 @@ function selectSceneIllustration(sceneId, imageId, savedImage = null) {
 async function flushIllustrationWrites() {
   await Promise.all([...writes.values()]);
 }
+async function deleteSceneIllustrations(sceneId, targets, options = {}) {
+  const list = (Array.isArray(targets) ? targets : []).filter((target) => target && target.id);
+  if (!list.length) throw illustrationError("\u6CA1\u6709\u8981\u5220\u9664\u7684\u914D\u56FE\u3002", "INVALID_ARGS");
+  const removeIds = new Set(list.map((target) => String(target.id)));
+  const record = await mutateScene(sceneId, (current) => {
+    current.images = current.images.filter((image) => !removeIds.has(String(image.id)));
+    if (current.selectedId !== null && !current.images.some((image) => image.id === current.selectedId)) {
+      current.selectedId = current.images.length ? current.images[0].id : null;
+    }
+  });
+  const paths = [...new Set(list.map((target) => String(target.filePath || "")).filter(Boolean))];
+  const referenced = typeof options.collectReferenced === "function" ? new Set(await options.collectReferenced(paths)) : new Set(paths);
+  const deletedFiles = [], keptReferenced = [], failedFiles = [];
+  for (const path of paths) {
+    if (referenced.has(path)) {
+      keptReferenced.push(path);
+      continue;
+    }
+    if (await deleteUserFile(path, { label: "\u914D\u56FE\u6587\u4EF6" })) deletedFiles.push(path);
+    else failedFiles.push(path);
+  }
+  return { record, removedIds: [...removeIds], removedPaths: paths, deletedFiles, keptReferenced, failedFiles };
+}
 var writes, cache, writeTail;
 var init_illustrationStore = __esm({
   "src/core/illustrationStore.js"() {
@@ -1220,13 +1256,6 @@ var init_illustrationStore = __esm({
 });
 
 // src/core/illustrationPortability.js
-function collectPaths(value, result = /* @__PURE__ */ new Set()) {
-  if (typeof value === "string") {
-    for (const match of value.matchAll(/\/user\/files\/titania-illustration-[a-zA-Z0-9-]+\.(?:png|jpg|webp)/g)) result.add(match[0]);
-  } else if (Array.isArray(value)) value.forEach((item) => collectPaths(item, result));
-  else if (value && typeof value === "object") Object.values(value).forEach((item) => collectPaths(item, result));
-  return result;
-}
 function replaceIllustrationPaths(value, replacements) {
   if (typeof value === "string") {
     return value.replace(/\/user\/files\/titania-illustration-[a-zA-Z0-9-]+\.(?:png|jpg|webp)/g, (path) => replacements[path] || path);
@@ -1249,7 +1278,7 @@ async function exportIllustrationBackup(favorites = []) {
   for (const sceneId of Object.keys(getExtData()[ILLUSTRATION_INDEX_KEY] || {})) {
     scenes.push(await readSceneIllustrations(sceneId));
   }
-  const paths = collectPaths([scenes, favorites]);
+  const paths = collectIllustrationPaths([scenes, favorites]);
   if (!scenes.length && !paths.size) return void 0;
   const assets = {};
   for (const path of paths) assets[path] = await blobToIllustrationDataUrl(await loadAsset(path));
@@ -1264,7 +1293,7 @@ function decodeIllustrationDataUrl(value) {
 }
 async function restoreIllustrationBackup(bundle, data) {
   const next = structuredClone(data);
-  const referenced = collectPaths(next.favs || []);
+  const referenced = collectIllustrationPaths(next.favs || []);
   if (!bundle) {
     if (referenced.size || Object.keys(next[ILLUSTRATION_INDEX_KEY] || {}).length) throw illustrationError("\u5907\u4EFD\u542B\u914D\u56FE\u5F15\u7528\u4F46\u7F3A\u5C11\u56FE\u7247\u6587\u4EF6\uFF0C\u65E0\u6CD5\u5B8C\u6574\u6062\u590D\u3002");
     delete next[ILLUSTRATION_INDEX_KEY];
@@ -1278,7 +1307,7 @@ async function restoreIllustrationBackup(bundle, data) {
     record.images.forEach(normalizeSavedIllustration);
     if (record.selectedId !== null && !record.images.some((image) => image.id === record.selectedId)) throw illustrationError("\u5907\u4EFD\u7F3A\u5C11\u5F53\u524D\u91C7\u7528\u7684\u56FE\u7247\u3002");
   }
-  collectPaths(bundle.scenes, referenced);
+  collectIllustrationPaths(bundle.scenes, referenced);
   for (const path of referenced) if (!Object.hasOwn(bundle.assets, path)) throw illustrationError("\u5907\u4EFD\u4E2D\u7F3A\u5C11\u88AB\u5F15\u7528\u7684\u914D\u56FE\uFF0C\u5DF2\u505C\u6B62\u6062\u590D\u3002");
   for (const [path, encoded] of Object.entries(bundle.assets)) {
     if (!isIllustrationPath(path)) throw illustrationError("\u5907\u4EFD\u5305\u542B\u4E0D\u652F\u6301\u7684\u56FE\u7247\u8DEF\u5F84\u3002");
@@ -1298,7 +1327,7 @@ async function restoreIllustrationBackup(bundle, data) {
 }
 async function embedIllustrationsInHtml(html) {
   const replacements = {};
-  for (const path of collectPaths(String(html || ""))) replacements[path] = await blobToIllustrationDataUrl(await loadAsset(path));
+  for (const path of collectIllustrationPaths(String(html || ""))) replacements[path] = await blobToIllustrationDataUrl(await loadAsset(path));
   return replaceIllustrationPaths(String(html || ""), replacements);
 }
 var init_illustrationPortability = __esm({
@@ -13769,6 +13798,12 @@ textarea.t-input {
 .t-illustration-candidate { min-width: 0; border: 1px solid var(--t-color-border-faint); padding: 8px; border-radius: 10px; }
 .t-illustration-candidate img { width: 100%; height: 160px; object-fit: contain; }
 .t-illustration-candidate p { font-size: 0.9em; line-height: 1.5; }
+
+/* \u56FE\u5E93\u7684\u300C\u7BA1\u7406\u300D\u591A\u9009\u6001\uFF1A\u5DE5\u5177\u680F + \u52FE\u9009 + \u9009\u4E2D\u9AD8\u4EAE */
+.t-illustration-gallery-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.t-illustration-select-count { color: var(--t-color-text-muted); font-size: 0.9em; }
+.t-illustration-select { display: flex; align-items: center; gap: 6px; font-size: 0.85em; color: var(--t-color-text-secondary); }
+.t-illustration-candidate.is-selected { border-color: var(--t-color-danger-border); background: var(--t-color-danger-soft); }
 .t-illustration-pending img { width: 100%; max-height: 360px; object-fit: contain; }
 .t-illustration-preview img { width: 100%; max-height: 360px; object-fit: contain; }
 .t-illustration-panel [hidden] { display: none; }
@@ -13935,6 +13970,129 @@ textarea.t-input {
     background: var(--t-color-surface-code);
     color: var(--t-color-text);
 }
+
+/* \u2500\u2500 \u4E3B\u754C\u9762\u914D\u56FE\u6309\u94AE\uFF08\u5185\u5BB9\u533A\u5E95\u90E8\u4E2D\u95F4\uFF09 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+   \u6302\u5728 .t-content-wrapper \u91CC\uFF1A\u5B83\u662F\u5B9A\u4F4D\u7956\u5148\uFF08position:relative\uFF09\u4E14\u4E0D\u6EDA\u52A8\u3002
+   \u26A0 \u4E0D\u8981\u632A\u8FDB .t-content-area \u2014\u2014 \u90A3\u662F\u6EDA\u52A8\u5BB9\u5668\uFF0C\u6309\u94AE\u4F1A\u8DDF\u7740\u6B63\u6587\u6EDA\u8D70\u3002
+   \u5E95\u90E8\u4E2D\u95F4\u662F\u552F\u4E00\u7A7A\u95F2\u5904\uFF1A\u9875\u7801\u5728\u53F3\u4E0B\u3001\u7FFB\u9875\u7BAD\u5934\u5728\u4E24\u4FA7\u3001\u7EED\u5199\u680F\u5728\u5BB9\u5668\u4E4B\u5916\u3002 */
+
+.t-illustration-badge {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    /* \u6C34\u5E73\u5C45\u4E2D\u9760 transform\u3002\u5165\u573A\u52A8\u753B\u7528 t-fade-in-centered\uFF0C\u5B83\u628A translateX(-50%)
+       \u5199\u8FDB\u4E86\u4E24\u4E2A\u5173\u952E\u5E27\uFF0C\u6240\u4EE5\u52A8\u753B\u4E0D\u4F1A\u628A\u5C45\u4E2D\u51B2\u6389\u3001\u7ED3\u675F\u6001\u4E5F\u4E0E\u8FD9\u91CC\u4E00\u81F4\u3002 */
+    transform: translateX(-50%);
+    z-index: var(--t-z-sticky);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-circle);
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text-secondary);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+}
+
+.t-illustration-badge[hidden] { display: none; }
+
+.t-illustration-badge[data-state="error"] {
+    border-color: var(--t-color-danger-border);
+    color: var(--t-color-danger);
+}
+
+.t-illustration-badge-icon { font-size: 15px; line-height: 1; }
+
+/* \u4E00\u6B21\u6027\u5165\u573A\uFF1A\u53EA\u5728\u65B0\u56FE\u51FA\u73B0\u65F6\u6302\u4E0A\uFF0C\u64AD\u5B8C\u7531\u811A\u672C\u6458\u6389\uFF0C\u4E0D\u5FAA\u73AF\u3002 */
+.t-illustration-badge.is-entering { animation: t-fade-in-centered 0.28s ease-out; }
+
+/* \u2500\u2500 \u914D\u56FE\u706F\u7BB1 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+   \u4E0D\u5360\u6D6E\u5C42\u540D\u989D\uFF0C\u6240\u4EE5\u80FD\u4E0E\u914D\u56FE\u9762\u677F\u5E76\u5B58\u3002
+   \u26A0 \u5B83\u5FC5\u987B\u6302\u5728 #t-overlay \u8FD9\u7C7B\u5BB9\u5668\u4E0A\uFF1A.t-content-wrapper \u5E26
+     transform: translateZ(0) + overflow:hidden\uFF0C\u4F1A\u628A fixed \u540E\u4EE3\u88C1\u6389\u3002 */
+
+.t-illustration-lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: var(--t-z-window);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+        max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+
+.t-illustration-lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+}
+
+/* \u821E\u53F0\u662F\u6EDA\u52A8\u5BB9\u5668\uFF1A\u6A2A\u56FE\u7F29\u5230\u5BBD\u5EA6\u5185\uFF0C\u7AD6\u56FE\u4FDD\u6301\u539F\u5C3A\u5BF8\u7EB5\u5411\u6EDA\u52A8\u3002 */
+.t-illustration-lightbox-stage {
+    position: relative;
+    max-width: 100%;
+    max-height: calc(100dvh - 150px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--t-radius-panel);
+}
+
+.t-illustration-lightbox-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    /* \u523B\u610F\u4E0D\u8BBE max-height\uFF1A\u8BBE\u4E86\u4F1A\u628A\u957F\u7AD6\u56FE\u538B\u6210\u770B\u4E0D\u6E05\u7684\u4E00\u6761\u3002
+       \u821E\u53F0\u7684 max-height + overflow \u5DF2\u7ECF\u8D1F\u8D23\u88C5\u4E0B\u5B83\u3002 */
+    border-radius: var(--t-radius-panel);
+}
+
+.t-illustration-lightbox-caption {
+    position: relative;
+    margin: 0;
+    max-width: 42em;
+    text-align: center;
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: var(--t-color-text-secondary);
+}
+
+.t-illustration-lightbox-actions {
+    position: relative;
+    display: flex;
+    gap: 8px;
+}
+
+.t-illustration-lightbox-close {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-circle);
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text);
+    cursor: pointer;
+}
+
+.t-illustration-lightbox [hidden] { display: none; }
 
 @media (max-width: 600px) {
     .t-root.t-illustration-window {
@@ -24473,6 +24631,273 @@ var init_characterProfileWindow = __esm({
   }
 });
 
+// src/core/illustrationReferences.js
+async function forEachLimited(items, limit, worker) {
+  const queue = [...items];
+  const runners = Array.from({ length: Math.min(limit, queue.length) }, async () => {
+    while (queue.length) await worker(queue.shift());
+  });
+  await Promise.all(runners);
+}
+async function findReferencedIllustrationPaths(paths, options = {}) {
+  const candidates = new Set([...paths].map((path) => String(path || "")).filter(Boolean));
+  const referenced = /* @__PURE__ */ new Set();
+  const favoriteReferenced = /* @__PURE__ */ new Set();
+  let incomplete = false;
+  if (!candidates.size) return { referenced, favoriteReferenced, incomplete };
+  const settled = () => referenced.size >= candidates.size;
+  const scan = (value, fromFavorite) => {
+    for (const path of collectIllustrationPaths(value)) {
+      if (!candidates.has(path)) continue;
+      referenced.add(path);
+      if (fromFavorite) favoriteReferenced.add(path);
+    }
+  };
+  for (const sceneId of Object.keys(getExtData()[ILLUSTRATION_INDEX_KEY] || {})) {
+    if (settled()) break;
+    try {
+      scan(await readSceneIllustrations(sceneId), false);
+    } catch {
+      incomplete = true;
+    }
+  }
+  if (!settled()) {
+    if (isFavsMigrated()) {
+      const entries = listFavsForUi() || [];
+      const targets = entries.filter((entry) => String(entry?.id) !== String(options.excludeFavoriteId ?? ""));
+      await forEachLimited(targets, FAVORITE_SCAN_CONCURRENCY, async (entry) => {
+        if (settled()) return;
+        try {
+          scan(await ensureFavBody(entry), true);
+        } catch {
+          incomplete = true;
+        }
+      });
+    } else {
+      scan(getExtData().favs || [], true);
+    }
+  }
+  if (incomplete) {
+    for (const path of candidates) referenced.add(path);
+  }
+  return { referenced, favoriteReferenced, incomplete };
+}
+var FAVORITE_SCAN_CONCURRENCY;
+var init_illustrationReferences = __esm({
+  "src/core/illustrationReferences.js"() {
+    init_storage();
+    init_illustrationData();
+    init_illustrationStore();
+    init_favsStore();
+    FAVORITE_SCAN_CONCURRENCY = 8;
+  }
+});
+
+// src/ui/illustrationBadge.js
+function deriveBadgeMode({ image, activity, error } = {}) {
+  if (activity && BUSY_PHASES.has(activity.phase)) return MODE_BUSY;
+  if (image) return MODE_IMAGE;
+  if (activity?.phase === "error" || error) return MODE_ERROR;
+  return MODE_HIDDEN;
+}
+function createIllustrationBadge({ container, onActivate } = {}) {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.className = "t-illustration-badge";
+  element.setAttribute("data-titania-illustration-badge", "");
+  element.hidden = true;
+  const icon = document.createElement("i");
+  icon.className = `t-illustration-badge-icon ${ICON_IMAGE}`;
+  element.append(icon);
+  container?.append(element);
+  let state = { mode: MODE_HIDDEN, image: null, activity: null, error: "" };
+  let animatedImageId = null;
+  let animationTimer = 0;
+  function stopEntrance() {
+    if (animationTimer) {
+      clearTimeout(animationTimer);
+      animationTimer = 0;
+    }
+    element.classList.remove("is-entering");
+  }
+  function playEntrance() {
+    stopEntrance();
+    void element.offsetWidth;
+    element.classList.add("is-entering");
+    animationTimer = setTimeout(stopEntrance, ENTRANCE_FALLBACK_MS);
+  }
+  element.addEventListener("animationend", stopEntrance);
+  element.addEventListener("click", () => {
+    if (state.mode !== MODE_HIDDEN) onActivate?.(state);
+  });
+  function update(next = {}) {
+    const image = next.image || null;
+    const activity = next.activity || null;
+    const error = String(next.error || "");
+    const mode = deriveBadgeMode({ image, activity, error });
+    state = { mode, image, activity, error };
+    element.dataset.state = mode;
+    element.hidden = mode === MODE_HIDDEN;
+    let text = "";
+    if (mode === MODE_BUSY) {
+      icon.className = `t-illustration-badge-icon ${ICON_BUSY}`;
+      text = activity?.message || "\u6B63\u5728\u914D\u56FE\u2026";
+    } else if (mode === MODE_IMAGE) {
+      icon.className = `t-illustration-badge-icon ${ICON_IMAGE}`;
+      text = "\u67E5\u770B\u914D\u56FE";
+    } else if (mode === MODE_ERROR) {
+      icon.className = `t-illustration-badge-icon ${ICON_ERROR}`;
+      text = error || activity?.message || "\u914D\u56FE\u8BFB\u53D6\u5931\u8D25\uFF0C\u53EF\u6253\u5F00\u573A\u666F\u914D\u56FE\u9762\u677F\u91CD\u8BD5\u3002";
+    }
+    if (mode !== MODE_HIDDEN) {
+      element.title = text;
+      element.setAttribute("aria-label", text);
+    } else {
+      element.removeAttribute("title");
+      element.removeAttribute("aria-label");
+    }
+    if (mode === MODE_IMAGE && image?.id && image.id !== animatedImageId) playEntrance();
+    if (image?.id) animatedImageId = image.id;
+    return state;
+  }
+  function destroy() {
+    stopEntrance();
+    element.removeEventListener("animationend", stopEntrance);
+    element.remove();
+  }
+  return { element, update, destroy };
+}
+var MODE_HIDDEN, MODE_BUSY, MODE_IMAGE, MODE_ERROR, BUSY_PHASES, ICON_BUSY, ICON_IMAGE, ICON_ERROR, ENTRANCE_FALLBACK_MS;
+var init_illustrationBadge = __esm({
+  "src/ui/illustrationBadge.js"() {
+    MODE_HIDDEN = "hidden";
+    MODE_BUSY = "busy";
+    MODE_IMAGE = "image";
+    MODE_ERROR = "error";
+    BUSY_PHASES = /* @__PURE__ */ new Set(["selecting", "generating", "saving"]);
+    ICON_BUSY = "fa-solid fa-spinner fa-spin";
+    ICON_IMAGE = "fa-solid fa-image";
+    ICON_ERROR = "fa-solid fa-triangle-exclamation";
+    ENTRANCE_FALLBACK_MS = 400;
+  }
+});
+
+// src/ui/illustrationLightbox.js
+function openIllustrationLightbox({ image = null, container = null, onSwap = null, onClose = null } = {}) {
+  const root = document.createElement("div");
+  root.className = "t-root t-illustration-lightbox";
+  root.setAttribute("role", "dialog");
+  root.setAttribute("aria-modal", "true");
+  root.setAttribute("aria-label", "\u573A\u666F\u914D\u56FE");
+  root.tabIndex = -1;
+  const backdrop = document.createElement("div");
+  backdrop.className = "t-illustration-lightbox-backdrop";
+  const stage = document.createElement("div");
+  stage.className = "t-illustration-lightbox-stage";
+  const img = document.createElement("img");
+  img.className = "t-illustration-lightbox-image";
+  img.alt = "";
+  stage.append(img);
+  const caption = document.createElement("p");
+  caption.className = "t-illustration-lightbox-caption";
+  caption.hidden = true;
+  const actions = document.createElement("div");
+  actions.className = "t-illustration-lightbox-actions";
+  const swap = document.createElement("button");
+  swap.type = "button";
+  swap.className = "t-btn";
+  swap.textContent = "\u6362\u4E00\u5F20";
+  actions.append(swap);
+  const closeButton = document.createElement("button");
+  closeButton.type = "button";
+  closeButton.className = "t-illustration-lightbox-close";
+  closeButton.title = "\u5173\u95ED";
+  closeButton.setAttribute("aria-label", "\u5173\u95ED");
+  const closeIcon = document.createElement("i");
+  closeIcon.className = CLOSE_ICON;
+  closeButton.append(closeIcon);
+  root.append(backdrop, stage, caption, actions, closeButton);
+  (container || document.body).append(root);
+  let disposed = false;
+  let renderedId = "";
+  const restoreFocus = document.activeElement;
+  function onKeydown(event) {
+    if (event.key !== "Escape") return;
+    event.stopPropagation();
+    close();
+  }
+  function close() {
+    if (disposed) return;
+    disposed = true;
+    document.removeEventListener("keydown", onKeydown, true);
+    root.remove();
+    if (restoreFocus?.isConnected) restoreFocus.focus?.();
+    onClose?.();
+  }
+  function update(next) {
+    if (disposed) return;
+    if (!next) {
+      close();
+      return;
+    }
+    if (next.id && next.id === renderedId) return;
+    renderedId = next.id || "";
+    img.src = next.filePath || "";
+    if (next.width) img.width = next.width;
+    if (next.height) img.height = next.height;
+    const summary = next.draft?.scene?.summary || "";
+    img.alt = summary || "\u914D\u56FE";
+    caption.textContent = summary;
+    caption.hidden = !summary;
+  }
+  backdrop.addEventListener("click", close);
+  closeButton.addEventListener("click", close);
+  swap.addEventListener("click", () => onSwap?.());
+  document.addEventListener("keydown", onKeydown, true);
+  update(image);
+  closeButton.focus?.();
+  return { element: root, update, close };
+}
+var CLOSE_ICON;
+var init_illustrationLightbox = __esm({
+  "src/ui/illustrationLightbox.js"() {
+    CLOSE_ICON = "fa-solid fa-xmark";
+  }
+});
+
+// src/core/illustrationActivity.js
+function setIllustrationActivity(sceneId, phase, message = "") {
+  const key = String(sceneId || "");
+  if (!key) return;
+  const text = String(message || "");
+  if (phase === "idle") activities.delete(key);
+  else activities.set(key, { sceneId: key, phase, message: text, at: Date.now() });
+  if (globalThis.window?.dispatchEvent) {
+    window.dispatchEvent(new CustomEvent(ILLUSTRATION_ACTIVITY_EVENT, { detail: { sceneId: key, phase, message: text } }));
+  }
+}
+function clearIllustrationActivity(sceneId) {
+  setIllustrationActivity(sceneId, "idle");
+}
+function getIllustrationActivity(sceneId) {
+  return activities.get(String(sceneId || "")) || null;
+}
+function subscribeIllustrationActivity(handler) {
+  const target = globalThis.window;
+  if (!target?.addEventListener) return () => {
+  };
+  target.addEventListener(ILLUSTRATION_ACTIVITY_EVENT, handler);
+  return () => target.removeEventListener(ILLUSTRATION_ACTIVITY_EVENT, handler);
+}
+var ILLUSTRATION_ACTIVITY_EVENT, ILLUSTRATION_ACTIVITY_PHASES, activities;
+var init_illustrationActivity = __esm({
+  "src/core/illustrationActivity.js"() {
+    ILLUSTRATION_ACTIVITY_EVENT = "titania:illustration-activity";
+    ILLUSTRATION_ACTIVITY_PHASES = Object.freeze(["selecting", "generating", "saving", "error", "idle"]);
+    activities = /* @__PURE__ */ new Map();
+  }
+});
+
 // src/ui/illustrationWindow.js
 function showError(error) {
   return error?.name === "AbortError" || error?.code === "ABORTED" ? "\u5DF2\u53D6\u6D88\u7B49\u5F85\u3002\u540E\u7AEF\u53EF\u80FD\u4ECD\u5728\u8BA1\u7B97\uFF1B\u9700\u8981\u65F6\u53EF\u91CD\u65B0\u53D1\u8D77\u3002" : String(error?.message || "\u914D\u56FE\u64CD\u4F5C\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002");
@@ -24505,11 +24930,15 @@ function sessionFor(sceneId, initialText) {
 function notifyView(sceneId) {
   if (activeView?.sceneId === sceneId) activeView.sync();
 }
+function activityPhaseFor(kind) {
+  return kind === "prepare" ? "selecting" : "generating";
+}
 function jobProgress(job) {
   return (event) => {
     const label = PROGRESS_LABELS[event.stage] || "\u6B63\u5728\u5904\u7406\u2026";
     const percent = Number.isFinite(event.fraction) ? ` ${Math.round(event.fraction * 100)}%` : "";
     job.status = `${label}${percent}`;
+    setIllustrationActivity(job.sceneId, activityPhaseFor(job.kind), job.status);
     notifyView(job.sceneId);
   };
 }
@@ -24518,11 +24947,16 @@ function startJob(current, currentTarget, kind, operation) {
   const job = { sceneId: currentTarget.sceneId, kind, status: "", phase: "running", controller: new AbortController(), error: null };
   current.job = job;
   current.notice = "";
+  const phase = activityPhaseFor(kind);
+  setIllustrationActivity(job.sceneId, phase, PROGRESS_LABELS[phase] || "");
   job.promise = Promise.resolve().then(() => operation(job)).catch((error) => {
     job.error = error;
     current.notice = showError(error);
+    if (error?.name === "AbortError" || error?.code === "ABORTED") clearIllustrationActivity(job.sceneId);
+    else setIllustrationActivity(job.sceneId, "error", current.notice);
   }).finally(() => {
     if (current.job === job) current.job = null;
+    if (!job.error) clearIllustrationActivity(job.sceneId);
     if (activeView?.sceneId === job.sceneId) activeView.sync();
     else notifyBackgroundResult(job);
   });
@@ -24536,12 +24970,19 @@ function notifyBackgroundResult(job) {
   else if (titles[job.kind]) window.toastr.info(titles[job.kind], "Titania Echo");
 }
 async function persistPending(current, currentTarget) {
-  current.record = await saveGeneratedIllustrations(currentTarget.sceneId, current.pending);
+  setIllustrationActivity(currentTarget.sceneId, "saving", "\u6B63\u5728\u4FDD\u5B58\u914D\u56FE\u2026");
+  try {
+    current.record = await saveGeneratedIllustrations(currentTarget.sceneId, current.pending);
+  } catch (error) {
+    setIllustrationActivity(currentTarget.sceneId, "error", showError(error));
+    throw error;
+  }
   const image = selectedIllustration(current.record);
   await currentTarget.onSelected?.(image);
   current.adopted = image;
   current.pending = null;
   current.notice = "\u914D\u56FE\u5DF2\u4FDD\u5B58\u3002\u53EF\u5728\u4E0B\u65B9\u6311\u9009\u56FE\u7247\uFF0C\u6216\u6CBF\u7528\u63D0\u793A\u8BCD\u91CD\u65B0\u751F\u6210\u3002";
+  clearIllustrationActivity(currentTarget.sceneId);
   return current.record;
 }
 function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
@@ -24608,6 +25049,8 @@ function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
   let unsubscribeBackends = () => {
   };
   let selectionSequence = 0, detectionSequence = 0, pendingUrl = null, renderedDraft, renderedPending;
+  let managing = false;
+  const selectedImageIds = /* @__PURE__ */ new Set();
   let previewUrl = null, renderedPreviewBlob = null, previewUpdatedAt = 0;
   const isBusy = () => localBusy || Boolean(session?.job);
   const view = { sceneId: "", sync: () => refreshFromState() };
@@ -24626,9 +25069,11 @@ function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
     root.querySelectorAll("[data-profile-id]").forEach((el) => {
       el.disabled = busy;
     });
-    root.querySelectorAll("[data-image-id]").forEach((el) => {
+    root.querySelectorAll("[data-image-id], [data-manage-control]").forEach((el) => {
       el.disabled = busy;
     });
+    const bulk = root.querySelector('[data-action="delete-selected-images"]');
+    if (bulk) bulk.disabled = busy || selectedImageIds.size === 0;
     field("target").disabled = busy || targets.length === 1;
   }
   function refreshFromState() {
@@ -24743,13 +25188,23 @@ ${block}` : block;
   }
   function renderGallery() {
     const images = session?.record?.images || [];
-    role("gallery").innerHTML = images.length ? `<strong>\u5DF2\u4FDD\u5B58\u7684\u914D\u56FE</strong><div class="t-illustration-candidates">${images.map((image) => {
+    for (const id3 of [...selectedImageIds]) if (!images.some((image) => image.id === id3)) selectedImageIds.delete(id3);
+    const toolbar = managing ? `<div class="t-illustration-gallery-bar">
+                    <span class="t-illustration-select-count">\u5DF2\u9009\u62E9 ${selectedImageIds.size} \u5F20</span>
+                    <button class="t-btn" type="button" data-manage-control data-action="select-all-images">\u5168\u9009</button>
+                    <button class="t-btn" type="button" data-manage-control data-action="deselect-all-images">\u53D6\u6D88\u5168\u9009</button>
+                    <button class="t-btn t-btn-danger" type="button" data-manage-control data-action="delete-selected-images" ${selectedImageIds.size ? "" : "disabled"}>\u5220\u9664\u9009\u4E2D</button>
+                    <button class="t-btn" type="button" data-manage-control data-action="exit-manage-images">\u9000\u51FA\u7BA1\u7406</button>
+                </div>` : `<div class="t-illustration-gallery-bar"><button class="t-btn" type="button" data-manage-control data-action="enter-manage-images">\u7BA1\u7406</button></div>`;
+    role("gallery").innerHTML = images.length ? `<strong>\u5DF2\u4FDD\u5B58\u7684\u914D\u56FE</strong>${toolbar}<div class="t-illustration-candidates">${images.map((image) => {
       const summary = image.draft.scene.summary || "";
+      const picked = selectedImageIds.has(image.id);
       return `
-            <article class="t-illustration-candidate">
+            <article class="t-illustration-candidate${picked ? " is-selected" : ""}">
+                ${managing ? `<label class="t-illustration-select"><input type="checkbox" data-select-image-id="${escapeIllustrationHtml(image.id)}" ${picked ? "checked" : ""}> \u9009\u62E9</label>` : ""}
                 <a href="${image.filePath}" target="_blank" rel="noopener"><img src="${image.filePath}" loading="lazy" alt="${escapeIllustrationHtml(summary || "\u914D\u56FE")}"></a>
                 ${summary ? `<p>${escapeIllustrationHtml(summary)}</p>` : ""}
-                <div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="${escapeIllustrationHtml(image.id)}">${session.record.selectedId === image.id ? "\u5F53\u524D\u914D\u56FE" : "\u91C7\u7528\u8FD9\u5F20"}</button><a class="t-btn" href="${image.filePath}" download>\u4E0B\u8F7D</a></div>
+                <div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="${escapeIllustrationHtml(image.id)}">${session.record.selectedId === image.id ? "\u5F53\u524D\u914D\u56FE" : "\u91C7\u7528\u8FD9\u5F20"}</button><a class="t-btn" href="${image.filePath}" download>\u4E0B\u8F7D</a>${managing ? "" : `<button class="t-btn t-btn-danger" type="button" data-action="delete-image" data-image-id="${escapeIllustrationHtml(image.id)}" title="\u5220\u9664\u8FD9\u5F20\u914D\u56FE" aria-label="\u5220\u9664\u8FD9\u5F20\u914D\u56FE"><i class="fa-solid fa-trash"></i></button>`}</div>
             </article>`;
     }).join("")}</div><div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="">\u6682\u4E0D\u5C55\u793A\u914D\u56FE</button><button class="t-btn" type="button" data-action="export">\u5BFC\u51FA\u56FE\u6587 HTML</button></div>` : "";
     if (pendingUrl && session?.pending !== renderedPending) {
@@ -24765,6 +25220,42 @@ ${block}` : block;
     else role("pending-image").removeAttribute("src");
     syncPreview();
     updateControls();
+  }
+  async function deleteImages(targets2) {
+    if (!targets2.length) return;
+    const current = session, currentTarget = target;
+    const ids = new Set(targets2.map((item) => String(item.id)));
+    const wasAdopted = ids.has(String(current.record?.selectedId));
+    role("status").textContent = "\u6B63\u5728\u68C0\u67E5\u56FE\u7247\u5F15\u7528\u2026";
+    let reference;
+    try {
+      reference = await findReferencedIllustrationPaths(targets2.map((item) => item.filePath), {
+        excludeFavoriteId: currentTarget.favoriteId
+      });
+    } finally {
+      if (!disposed) role("status").textContent = "";
+    }
+    const lines = [targets2.length > 1 ? `\u786E\u5B9A\u5220\u9664\u9009\u4E2D\u7684 ${targets2.length} \u5F20\u914D\u56FE\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\u3002` : "\u786E\u5B9A\u5220\u9664\u8FD9\u5F20\u914D\u56FE\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\u3002"];
+    if (reference.favoriteReferenced.size) lines.push(`\u5176\u4E2D ${reference.favoriteReferenced.size} \u5F20\u4ECD\u88AB\u6536\u85CF\u5F15\u7528\uFF0C\u56FE\u7247\u6587\u4EF6\u4F1A\u4FDD\u7559\u3002`);
+    if (wasAdopted) lines.push("\u8FD9\u662F\u5F53\u524D\u91C7\u7528\u7684\u914D\u56FE\uFF0C\u5220\u9664\u540E\u4F1A\u6539\u7528\u5269\u4F59\u7684\u7B2C\u4E00\u5F20\u3002");
+    if (reference.incomplete) lines.push("\u6709\u6536\u85CF\u6B63\u6587\u8BFB\u53D6\u5931\u8D25\uFF0C\u4E3A\u907F\u514D\u8BEF\u5220\uFF0C\u672C\u6B21\u4E0D\u4F1A\u5220\u9664\u4EFB\u4F55\u56FE\u7247\u6587\u4EF6\u3002");
+    if (!confirm(lines.join(""))) return;
+    if (Object.hasOwn(currentTarget, "illustration") && wasAdopted) {
+      const remaining = current.record.images.filter((image) => !ids.has(String(image.id)));
+      await currentTarget.onSelected?.(remaining[0] || null);
+    }
+    const result = await deleteSceneIllustrations(currentTarget.sceneId, targets2, {
+      collectReferenced: (paths) => findReferencedIllustrationPaths(paths).then((found) => found.referenced)
+    });
+    current.record = result.record;
+    current.adopted = selectedIllustration(result.record);
+    selectedImageIds.clear();
+    managing = false;
+    const bits = [`\u5DF2\u5220\u9664 ${result.removedIds.length} \u5F20\u914D\u56FE`];
+    if (result.deletedFiles.length) bits.push(`\u5220\u9664\u6587\u4EF6 ${result.deletedFiles.length} \u4E2A`);
+    if (result.keptReferenced.length) bits.push(`${result.keptReferenced.length} \u4E2A\u6587\u4EF6\u4ECD\u88AB\u5F15\u7528\u5DF2\u4FDD\u7559`);
+    if (result.failedFiles.length) bits.push(`${result.failedFiles.length} \u4E2A\u6587\u4EF6\u5220\u9664\u5931\u8D25`);
+    current.notice = `${bits.join("\uFF0C")}\u3002`;
   }
   function renderCapabilities() {
     const caps = activeCapabilities;
@@ -24807,6 +25298,8 @@ ${block}` : block;
     const sequence = ++selectionSequence;
     const current = target;
     session = sessionFor(current.sceneId, buildPromptTextFromTheater(current.content));
+    managing = false;
+    selectedImageIds.clear();
     activeBackendId = resolveActiveBackendId(getExtData());
     view.sceneId = "";
     localBusy = true;
@@ -24871,7 +25364,16 @@ ${block}` : block;
       void loadTarget(Number(event.target.value));
       return;
     }
-    if (event.target === field("size")) session.size = event.target.value;
+    if (event.target === field("size")) {
+      session.size = event.target.value;
+      return;
+    }
+    const selectId = event.target.dataset?.selectImageId;
+    if (selectId) {
+      if (event.target.checked) selectedImageIds.add(selectId);
+      else selectedImageIds.delete(selectId);
+      renderGallery();
+    }
   });
   root.addEventListener("click", (event) => {
     const button = event.target.closest("button");
@@ -24922,6 +25424,39 @@ ${block}` : block;
       void run(async () => {
         await exportAsHtmlFile(currentTarget.content + illustrationFigure(selectedIllustration(current.record)), currentTarget.scriptName);
         current.notice = "\u56FE\u6587 HTML \u5DF2\u5BFC\u51FA\u3002";
+      });
+      return;
+    }
+    if (operation === "delete-image") {
+      void run(async () => {
+        const id3 = button.dataset.imageId;
+        const image = current.record?.images.find((item) => String(item.id) === String(id3));
+        if (image) await deleteImages([image]);
+      });
+      return;
+    }
+    if (operation === "enter-manage-images") {
+      managing = true;
+      selectedImageIds.clear();
+      renderGallery();
+      return;
+    }
+    if (operation === "exit-manage-images") {
+      managing = false;
+      selectedImageIds.clear();
+      renderGallery();
+      return;
+    }
+    if (operation === "select-all-images" || operation === "deselect-all-images") {
+      selectedImageIds.clear();
+      if (operation === "select-all-images") (current.record?.images || []).forEach((image) => selectedImageIds.add(image.id));
+      renderGallery();
+      return;
+    }
+    if (operation === "delete-selected-images") {
+      void run(async () => {
+        const targets2 = (current.record?.images || []).filter((image) => selectedImageIds.has(image.id));
+        if (targets2.length) await deleteImages(targets2);
       });
       return;
     }
@@ -25041,42 +25576,47 @@ ${block}` : block;
   void loadTarget(Math.min(Math.max(0, Number(initialIndex) || 0), targets.length - 1));
   action("close").focus();
 }
-function findSceneContentRoot(container) {
-  return container.querySelector(".t-shadow-host")?.shadowRoot?.querySelector(".t-shadow-content") || container;
-}
-function clearSceneIllustration(root) {
-  root?.querySelectorAll(SCENE_ILLUSTRATION_SELECTOR).forEach((node) => node.remove());
-}
-function hasSceneIllustration(root) {
-  return Boolean(root?.querySelector(SCENE_ILLUSTRATION_SELECTOR));
-}
-function buildSceneIllustrationNotice(message) {
-  const notice = document.createElement("p");
-  notice.setAttribute("data-titania-illustration-notice", "");
-  notice.style.cssText = "margin:16px 0;text-align:center;font-size:13px;opacity:0.75";
-  notice.textContent = message;
-  return notice;
-}
 function bindMainIllustrations(getTarget) {
   const content = document.getElementById("t-output-content");
   if (!content) return () => {
   };
-  let disposed = false, sequence = 0, timer;
+  const container = content.closest(".t-content-wrapper") || content.parentElement || document.body;
+  const overlay = document.getElementById("t-overlay");
+  let disposed = false, sequence = 0, timer, lightbox = null;
   let currentKey = "", currentImage = null, currentError = "";
-  function draw() {
-    const root = findSceneContentRoot(content);
-    if (!root) return;
-    clearSceneIllustration(root);
-    if (currentImage) {
-      const holder = document.createElement("div");
-      holder.innerHTML = illustrationFigure(currentImage);
-      const figure = holder.firstElementChild;
-      if (figure) {
-        root.prepend(figure);
-        return;
-      }
+  const badge = createIllustrationBadge({ container, onActivate: activate });
+  function openPanel2() {
+    try {
+      openIllustrationWindow(getTarget());
+    } catch (error) {
+      if (window.toastr) window.toastr.warning(showError(error), "Titania Echo");
     }
-    if (currentError) root.prepend(buildSceneIllustrationNotice(currentError));
+  }
+  function openLightbox() {
+    lightbox = openIllustrationLightbox({
+      image: currentImage,
+      container: overlay || document.body,
+      onSwap: openPanel2,
+      onClose: () => {
+        lightbox = null;
+      }
+    });
+  }
+  function activate(state) {
+    if (state.mode === "image") openLightbox();
+    else openPanel2();
+  }
+  function draw() {
+    if (disposed) return;
+    badge.update({
+      image: currentImage,
+      error: currentError,
+      activity: currentKey ? getIllustrationActivity(currentKey) : null
+    });
+    if (lightbox) {
+      if (currentImage) lightbox.update(currentImage);
+      else lightbox.close();
+    }
   }
   const refresh = async (force = false) => {
     let target;
@@ -25086,45 +25626,44 @@ function bindMainIllustrations(getTarget) {
       target = null;
     }
     const key = target?.sceneId || "";
-    if (!force && key === currentKey && (!key || hasSceneIllustration(findSceneContentRoot(content)))) return;
-    if (force || key !== currentKey) {
-      currentKey = key;
-      currentImage = null;
-      currentError = "";
-      const request = ++sequence;
-      if (key) {
-        try {
-          const record = await readSceneIllustrations(key);
-          if (disposed || request !== sequence) return;
-          currentImage = selectedIllustration(record);
-        } catch {
-          if (disposed || request !== sequence) return;
-          currentError = "\u914D\u56FE\u8BFB\u53D6\u5931\u8D25\uFF0C\u53EF\u6253\u5F00\u573A\u666F\u914D\u56FE\u9762\u677F\u91CD\u8BD5\u3002";
-        }
-      } else if (disposed || request !== sequence) return;
-    }
-    if (!disposed) draw();
+    if (!force && key === currentKey) return;
+    currentKey = key;
+    currentImage = null;
+    currentError = "";
+    const request = ++sequence;
+    if (key) {
+      try {
+        const record = await readSceneIllustrations(key);
+        if (disposed || request !== sequence) return;
+        currentImage = selectedIllustration(record);
+      } catch {
+        if (disposed || request !== sequence) return;
+        currentError = "\u914D\u56FE\u8BFB\u53D6\u5931\u8D25\uFF0C\u53EF\u6253\u5F00\u573A\u666F\u914D\u56FE\u9762\u677F\u91CD\u8BD5\u3002";
+      }
+    } else if (disposed || request !== sequence) return;
+    draw();
   };
   const schedule = () => {
     clearTimeout(timer);
     timer = setTimeout(() => void refresh(), 80);
   };
-  const observer = new MutationObserver(schedule);
-  observer.observe(content, { childList: true, subtree: true });
   window.addEventListener("titania:scene-rendered", schedule);
   const changed = () => void refresh(true);
   window.addEventListener("titania:illustrations-changed", changed);
+  const unsubscribeActivity = subscribeIllustrationActivity(() => draw());
   void refresh(true);
   return () => {
     disposed = true;
     clearTimeout(timer);
-    observer.disconnect();
     window.removeEventListener("titania:scene-rendered", schedule);
     window.removeEventListener("titania:illustrations-changed", changed);
-    clearSceneIllustration(findSceneContentRoot(content));
+    unsubscribeActivity();
+    lightbox?.close();
+    lightbox = null;
+    badge.destroy();
   };
 }
-var PROGRESS_LABELS, PREVIEW_THROTTLE_MS, PANEL_HELP, sessions, activeView, SCENE_ILLUSTRATION_SELECTOR;
+var PROGRESS_LABELS, PREVIEW_THROTTLE_MS, PANEL_HELP, sessions, activeView;
 var init_illustrationWindow = __esm({
   "src/ui/illustrationWindow.js"() {
     init_chatInjector();
@@ -25136,10 +25675,14 @@ var init_illustrationWindow = __esm({
     init_illustrationSettingsWindow();
     init_characterProfileWindow();
     init_illustrationStore();
+    init_illustrationReferences();
     init_illustrationData();
     init_helpers();
     init_floatingWindow();
     init_helpPopover();
+    init_illustrationBadge();
+    init_illustrationLightbox();
+    init_illustrationActivity();
     PROGRESS_LABELS = { selecting: "\u6B63\u5728\u901A\u8BFB\u6B63\u6587\u3001\u9009\u62E9\u753B\u9762\u2026", generating: "\u6B63\u5728\u751F\u6210\u56FE\u7247\u2026" };
     PREVIEW_THROTTLE_MS = 150;
     PANEL_HELP = [
@@ -25177,7 +25720,6 @@ var init_illustrationWindow = __esm({
     ];
     sessions = /* @__PURE__ */ new Map();
     activeView = null;
-    SCENE_ILLUSTRATION_SELECTOR = "[data-titania-illustration],[data-titania-illustration-notice]";
   }
 });
 
@@ -26412,6 +26954,9 @@ function openFavsWindow() {
           ...target,
           label: segments.length > 1 ? `\u7B2C ${index + 1} \u6BB5 \xB7 ${target.scriptName}` : target.scriptName,
           illustration: segment.illustration || null,
+          // 删除时要用它把这个收藏排除在引用扫描之外 —— 我们马上就会清掉它的
+          // 快照，扫进去的话那个文件会永远留着成为孤儿。主界面来的目标没有这个字段。
+          favoriteId: favorite.id,
           async onSelected(image) {
             const fresh = await loadFavForWrite(favorite.id);
             if (!fresh) throw new Error("\u539F\u6536\u85CF\u5DF2\u88AB\u5220\u9664\uFF1B\u56FE\u7247\u5DF2\u4FDD\u5B58\u5728\u914D\u56FE\u8BB0\u5F55\u4E2D\u3002");

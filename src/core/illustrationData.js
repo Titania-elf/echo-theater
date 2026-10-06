@@ -160,6 +160,26 @@ export function isIllustrationPath(path) {
     return typeof path === "string" && /^\/user\/files\/titania-illustration-[a-zA-Z0-9-]+\.(png|jpg|webp)$/.test(path);
 }
 
+/**
+ * 递归收集一个值里出现过的所有配图路径。
+ *
+ * 为什么要递归而不是只看 filePath 字段：路径会嵌在任意深度 —— 收藏体里是
+ * `illustration.filePath`，链式收藏里在 `items[].illustration.filePath`，
+ * 导出的 HTML 里则是一整段字符串。备份导出与删除前的引用计数都需要这份能力，
+ * **只留这一份实现**：两处各写一套迟早会漂移，而漂移的代价是删掉仍在用的图。
+ *
+ * @param {*} value 任意值
+ * @param {Set<string>} [result] 累积集合（递归时传入）
+ * @returns {Set<string>}
+ */
+export function collectIllustrationPaths(value, result = new Set()) {
+    if (typeof value === "string") {
+        for (const match of value.matchAll(/\/user\/files\/titania-illustration-[a-zA-Z0-9-]+\.(?:png|jpg|webp)/g)) result.add(match[0]);
+    } else if (Array.isArray(value)) value.forEach(item => collectIllustrationPaths(item, result));
+    else if (value && typeof value === "object") Object.values(value).forEach(item => collectIllustrationPaths(item, result));
+    return result;
+}
+
 export function normalizeSavedIllustration(value) {
     if (!value || !isIllustrationPath(value.filePath)) throw illustrationError("配图文件路径无效。");
     const width = Number(value.width), height = Number(value.height);
@@ -178,7 +198,16 @@ export function escapeIllustrationHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 }
 
-// 内联布局使 Shadow DOM、收藏和独立 HTML 使用同一份配图标记。
+/**
+ * 配图标记的唯一产出点：`<figure data-titania-illustration>` + `<img>` + 可选图题。
+ * 内联布局，使收藏阅读页、独立导出的 HTML 与正文渲染共用同一份标记。
+ *
+ * ⚠ **不要删这个函数。** 主界面从 5.4 起不再把图插进正文（改为底部按钮 + 灯箱，
+ * 见 illustrationWindow.js 的 bindMainIllustrations），但它仍有两个消费者：
+ *   - `illustrationWindow.js` 的「导出图文 HTML」
+ *   - `favsWindow.js` 的收藏链式分段与收藏阅读页
+ * 删掉会让收藏页和导出一起坏，而且测试未必拦得住。新增消费者时记得也考虑导出侧。
+ */
 export function illustrationFigure(value) {
     if (!value) return "";
     let image;

@@ -1,5 +1,5 @@
 import { getExtData, saveExtDataImmediate } from "../utils/storage.js";
-import { fetchTextFile, uploadTextFile } from "../utils/userFiles.js";
+import { fetchTextFile, uploadTextFile, deleteUserFile } from "../utils/userFiles.js";
 import { getRequestHeaders } from "../../../../script.js";
 import {
     ILLUSTRATION_INDEX_KEY, illustrationError, illustrationExtension, illustrationHash,
@@ -50,6 +50,13 @@ function mutateScene(sceneId, mutate) {
             throw illustrationError("图片已生成，但配图记录保存失败。请点击重试保存。", "SAVE_FAILED");
         }
         cache.set(`${file}:${rev}`, structuredClone(record));
+        // 回收被本次改写取代的旧记录文件。
+        // 位置刻意在**指针提交成功之后**：saveExtDataImmediate 失败时上面已经回滚指针并
+        // 抛错，那条路径根本走不到这里 —— 提前删就会把仍在使用的记录删掉。
+        // 删失败只留孤儿（占空间、不可读），绝不影响本次保存，所以吞掉。
+        if (oldPointer?.file && oldPointer.file !== file) {
+            try { await deleteUserFile(oldPointer.file, { label: "场景记录" }); } catch { /* 见上 */ }
+        }
         window.dispatchEvent(new CustomEvent("titania:illustrations-changed", { detail: { sceneId } }));
         return record;
     });
@@ -143,4 +150,57 @@ export function selectSceneIllustration(sceneId, imageId, savedImage = null) {
 
 export async function flushIllustrationWrites() {
     await Promise.all([...writes.values()]);
+}
+
+/**
+ * 删除若干张已保存的配图：先从记录里摘掉并修好 selectedId，再删掉不再被任何场景
+ * 记录或收藏引用的图片文件。
+ *
+ * ⚠ targets 用 `{id, filePath}[]` 而不是 `id[]`：面板里那个对象可能来自 loadTarget
+ *   注入的收藏快照，只存在于内存副本里，mutateScene 重读记录时根本看不到它。
+ *   带着路径过来，即使记录里没有它也仍能把文件删掉（同 selectSceneIllustration
+ *   的 savedImage 先例）。
+ *
+ * 三步的**顺序是承重的**（理由同 favsStore.removeFavsByIds：宁可留孤儿，也不要留悬空指针）：
+ *   ① 先改记录 —— mutateScene 指针提交失败会回滚并抛错，那时一个文件都还没删
+ *   ② 再算引用 —— 必须晚于 ①，此刻当前记录已不再引用它们，答案才正确
+ *   ③ 最后删字节 —— 仍被引用的跳过，失败如实上报
+ *
+ * @param {string} sceneId
+ * @param {Array<{id:string, filePath:string}>} targets
+ * @param {object} [options]
+ * @param {(paths:string[]) => Promise<Iterable<string>>} [options.collectReferenced]
+ *   由调用方注入的引用查询（见 illustrationReferences.js）。**缺省时保守地把全部路径
+ *   当成仍被引用 —— 只删记录、不删任何文件**：忘了接线宁可留孤儿文件，也不能毁掉收藏。
+ * @returns {Promise<{record:object,removedIds:string[],removedPaths:string[],deletedFiles:string[],keptReferenced:string[],failedFiles:string[]}>}
+ */
+export async function deleteSceneIllustrations(sceneId, targets, options = {}) {
+    const list = (Array.isArray(targets) ? targets : []).filter(target => target && target.id);
+    if (!list.length) throw illustrationError("没有要删除的配图。", "INVALID_ARGS");
+    const removeIds = new Set(list.map(target => String(target.id)));
+
+    const record = await mutateScene(sceneId, current => {
+        current.images = current.images.filter(image => !removeIds.has(String(image.id)));
+        // ⚠ selectedId 必须在**同一次** mutate 里修好：readSceneIllustrations 见到
+        //   「selectedId 非空却没有对应图片」会抛「当前配图记录不完整」，
+        //   整条场景记录随之不可读 —— 画廊、主界面按钮、导出、备份会一起坏。
+        //   接到剩余第一张；一张不剩就置空（等于「暂不展示配图」）。
+        if (current.selectedId !== null && !current.images.some(image => image.id === current.selectedId)) {
+            current.selectedId = current.images.length ? current.images[0].id : null;
+        }
+    });
+
+    const paths = [...new Set(list.map(target => String(target.filePath || "")).filter(Boolean))];
+    const referenced = typeof options.collectReferenced === "function"
+        ? new Set(await options.collectReferenced(paths))
+        : new Set(paths);
+
+    const deletedFiles = [], keptReferenced = [], failedFiles = [];
+    for (const path of paths) {
+        if (referenced.has(path)) { keptReferenced.push(path); continue; }
+        // deleteUserFile 从不抛；它把「本来就不存在」也算成功。
+        if (await deleteUserFile(path, { label: "配图文件" })) deletedFiles.push(path);
+        else failedFiles.push(path);
+    }
+    return { record, removedIds: [...removeIds], removedPaths: paths, deletedFiles, keptReferenced, failedFiles };
 }

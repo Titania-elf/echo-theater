@@ -58,7 +58,15 @@ async function waitFor(check, label = 'condition') {
 }
 
 function harness() {
-    const dom = new JSDOM('<!doctype html><body><div id="t-output-content"></div></body>', { url: 'http://localhost:8000/' });
+    // 结构与真实主界面一致：#t-overlay > #t-main-view > .t-content-wrapper > #t-output-content。
+    // 配图按钮挂在 .t-content-wrapper（定位祖先），灯箱挂在 #t-overlay，
+    // 所以这两层都得在，否则测不到真实路径。
+    const dom = new JSDOM(
+        '<!doctype html><body><div id="t-overlay"><div id="t-main-view">'
+        + '<div class="t-content-wrapper"><div id="t-output-content"></div></div>'
+        + '</div></div></body>',
+        { url: 'http://localhost:8000/' },
+    );
     const state = {
         settings: seededPresets(), files: new Map(), uploads: 0, saveFails: false,
         generateCalls: [], llmCalls: [],
@@ -102,6 +110,9 @@ function harness() {
             if (!state.files.has(file)) throw new Error('Missing record');
             return state.files.get(file).text();
         },
+        // 真删。原先桩成空操作，于是「文件到底删没删」根本测不了。
+        // 返回 true 即使文件本来就不在 —— 与真实现的 404 也算成功一致。
+        deleteUserFile: async filePath => { state.files.delete(filePath); return true; },
         buildPromptTextFromTheater: html => {
             const document = new window.DOMParser().parseFromString(html, 'text/html');
             document.querySelectorAll('style,script').forEach(node => node.remove());
@@ -181,7 +192,7 @@ function harness() {
     });
     const sources = new Map([
         [path.join(project, 'src/utils/storage.js'), 'export const { getExtData, saveExtData, saveExtDataImmediate } = __environment;'],
-        [path.join(project, 'src/utils/userFiles.js'), 'export const { uploadTextFile, fetchTextFile } = __environment; export const utf8ByteLength = x => x.length; export const deleteUserFile = async () => {}; export const verifyUserFiles = async () => true;'],
+        [path.join(project, 'src/utils/userFiles.js'), 'export const { uploadTextFile, fetchTextFile, deleteUserFile } = __environment; export const utf8ByteLength = x => x.length; export const verifyUserFiles = async () => true;'],
         [path.join(project, 'src/core/chatInjector.js'), 'export const { buildPromptTextFromTheater } = __environment;'],
         [path.join(project, 'src/core/logger.js'), 'export const TitaniaLogger = { warn() {}, error() {}, info() {} };'],
         // 选景走插件自有 LLM：这里只桩掉连接层，不引入 ST 宿主模块。
@@ -566,39 +577,62 @@ test('reopening the panel reattaches to the running task and can still cancel it
     action('close').click();
 });
 
-test('main content renders the adopted image at the head of the theater content', async t => {
+test('the adopted image lives in a badge and a lightbox, never in the prose', async t => {
     const h = harness(); t.after(h.close);
     const ui = await h.load('src/ui/illustrationWindow.js');
     const data = await h.load('src/core/illustrationData.js');
     const store = await h.load('src/core/illustrationStore.js');
     const content = `<p>清晨，雨还没停。</p><p>${story}</p><p>她合上门。</p>`;
-    const target = data.createIllustrationTarget({ content, generationId: 'g-inline', scriptId: 'script-inline' });
+    const target = data.createIllustrationTarget({ content, generationId: 'g-badge', scriptId: 'script-badge' });
     const record = await store.saveGeneratedIllustration(target.sceneId, { draft: draft(), image: { blob: png, width: 1, height: 1 } });
     const picture = store.selectedIllustration(record);
-    // 正文在 Shadow DOM 里渲染，配图要跟着正文一起渲染在开头。
     const container = h.document.getElementById('t-output-content');
     const host = h.document.createElement('div');
     host.className = 't-shadow-host';
     host.attachShadow({ mode: 'open' }).innerHTML = `<div class="t-shadow-content">${content}</div>`;
     container.append(host);
+
     const unbind = ui.bindMainIllustrations(() => target);
     t.after(unbind);
-    const shadowContent = host.shadowRoot.querySelector('.t-shadow-content');
-    await waitFor(() => shadowContent.querySelector('[data-titania-illustration]'), 'illustration at the head');
-    const figure = shadowContent.querySelector('[data-titania-illustration]');
-    assert.equal(figure.getAttribute('data-titania-illustration'), picture.id);
-    assert.equal(shadowContent.firstElementChild, figure);
-    assert.equal(figure.nextElementSibling.textContent, '清晨，雨还没停。');
-    // 流式重绘会重建整块正文，配图要按缓存补回开头
+    const badge = () => h.document.querySelector('.t-illustration-badge');
+    const lightbox = () => h.document.querySelector('.t-illustration-lightbox');
+
+    await waitFor(() => badge() && !badge().hidden, 'badge shown');
+    assert.equal(badge().dataset.state, 'image');
+    // 按钮必须挂在定位祖先里，否则 absolute 定位会跑到别处。
+    assert.equal(badge().parentElement.classList.contains('t-content-wrapper'), true);
+
+    // 本次改动的全部意义：正文里不再有任何配图元素。
+    assert.equal(host.shadowRoot.querySelector('.t-shadow-content [data-titania-illustration]'), null);
+    assert.equal(container.querySelector('[data-titania-illustration]'), null);
+
+    badge().click();
+    await waitFor(() => lightbox(), 'lightbox opened');
+    assert.equal(lightbox().querySelector('.t-illustration-lightbox-image').getAttribute('src'), picture.filePath);
+    assert.equal(lightbox().querySelector('.t-illustration-lightbox-caption').textContent, draft().scene.summary);
+
+    // 三路关闭各走一遍。
+    h.document.dispatchEvent(new h.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(lightbox(), null, 'Esc 应关掉灯箱');
+    badge().click();
+    await waitFor(() => lightbox(), 'lightbox reopened');
+    lightbox().querySelector('.t-illustration-lightbox-backdrop').click();
+    assert.equal(lightbox(), null, '点遮罩应关掉灯箱');
+    badge().click();
+    await waitFor(() => lightbox(), 'lightbox reopened again');
+    lightbox().querySelector('.t-illustration-lightbox-close').click();
+    assert.equal(lightbox(), null, '关闭按钮应关掉灯箱');
+
+    // 流式重绘重建整块正文后：正文里仍然没有图，按钮还在且不重复。
     container.innerHTML = '';
     const nextHost = h.document.createElement('div');
     nextHost.className = 't-shadow-host';
     nextHost.attachShadow({ mode: 'open' }).innerHTML = `<div class="t-shadow-content">${content}</div>`;
     container.append(nextHost);
     h.window.dispatchEvent(new h.window.CustomEvent('titania:scene-rendered'));
-    const nextContent = nextHost.shadowRoot.querySelector('.t-shadow-content');
-    await waitFor(() => nextContent.querySelector('[data-titania-illustration]'), 'restored illustration');
-    assert.equal(nextContent.firstElementChild, nextContent.querySelector('[data-titania-illustration]'));
+    await new Promise(resolve => setTimeout(resolve, 150));   // 越过 80ms 防抖
+    assert.equal(h.document.querySelectorAll('.t-illustration-badge').length, 1, '重绘后按钮不能重复');
+    assert.equal(nextHost.shadowRoot.querySelector('.t-shadow-content [data-titania-illustration]'), null);
 });
 
 test('HTML exports embed image bytes and reject missing files instead of silently breaking images', async t => {
@@ -719,7 +753,8 @@ test('a reply carrying only the positive prompt is a complete, usable draft', as
     // 空数组必须能原样发给 Cosmos（契约要求它始终是数组）
     assert.ok(Array.isArray(minimal.prompts.characterPrompts));
 
-    // 空摘要不能在图题里留壳：illustrationFigure 是图库/收藏/导出/正文共用的唯一产出点
+    // 空摘要不能在图题里留壳：illustrationFigure 是收藏与导出共用的唯一产出点
+    //（主界面从 5.4 起改用底部按钮 + 灯箱，不再走这条标记）
     const saved = { id: 'i1', filePath: '/user/files/titania-illustration-a1.png', draft: minimal, width: 10, height: 10, createdAt: 0 };
     const html = data.illustrationFigure(saved);
     assert.equal(html.includes('<figcaption'), false, '摘要为空时不该输出空的图题块');
@@ -1866,4 +1901,409 @@ test('the settings and profile windows carry the same help affordance', async t 
     profiles.openCharacterProfileWindow();
     assert.ok(h.document.querySelector('.t-profile-window .t-help-popover'), '档案窗顶栏应有问号');
     h.document.querySelector('.t-profile-window [data-action="close"]').click();
+});
+
+/* ---------- 主界面配图按钮与灯箱 ---------- */
+
+test('badge mode derivation prefers the image over a stale job error', async t => {
+    const h = harness(); t.after(h.close);
+    const badge = await h.load('src/ui/illustrationBadge.js');
+    assert.equal(badge.deriveBadgeMode({}), 'hidden');
+    assert.equal(badge.deriveBadgeMode({ activity: { phase: 'generating' } }), 'busy');
+    assert.equal(badge.deriveBadgeMode({ activity: { phase: 'selecting' } }), 'busy');
+    assert.equal(badge.deriveBadgeMode({ activity: { phase: 'saving' } }), 'busy');
+    assert.equal(badge.deriveBadgeMode({ image: { id: 'a' } }), 'image');
+    assert.equal(badge.deriveBadgeMode({ error: '读不出来了' }), 'error');
+    assert.equal(badge.deriveBadgeMode({ activity: { phase: 'error', message: '炸了' } }), 'error');
+    // 有图时让图胜出：否则一次后台任务失败会让「看图」这个入口永久消失。
+    assert.equal(
+        badge.deriveBadgeMode({ image: { id: 'a' }, activity: { phase: 'error' }, error: '炸了' }),
+        'image',
+    );
+    // 任务在跑时图先让位，转圈比看图重要。
+    assert.equal(badge.deriveBadgeMode({ image: { id: 'a' }, activity: { phase: 'generating' } }), 'busy');
+});
+
+test('the badge stays hidden with nothing to show, and follows background job progress', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const activity = await h.load('src/core/illustrationActivity.js');
+    const target = data.createIllustrationTarget({ content: story, generationId: 'g-badge-state' });
+    const unbind = ui.bindMainIllustrations(() => target);
+    t.after(unbind);
+    const el = () => h.document.querySelector('.t-illustration-badge');
+    await waitFor(() => el(), 'badge created');
+
+    // 没图、没任务、没错误 —— 什么都不显示，不占界面。
+    assert.equal(el().hidden, true);
+    assert.equal(el().dataset.state, 'hidden');
+
+    // 关窗后台跑任务时，按钮是用户唯一能看到进度的地方。
+    activity.setIllustrationActivity(target.sceneId, 'generating', '正在生成图片… 42%');
+    await waitFor(() => !el().hidden && el().dataset.state === 'busy', 'busy state');
+    assert.match(el().getAttribute('aria-label'), /正在生成图片… 42%/);
+    assert.match(el().querySelector('i').className, /fa-spinner/);
+
+    activity.clearIllustrationActivity(target.sceneId);
+    await waitFor(() => el().hidden, 'hidden again');
+
+    // 进行态是**纯图标钮**：文案只走 title / aria-label，没有可见文字节点。
+    assert.equal(el().textContent.trim(), '');
+});
+
+test('badge click opens the panel while busy, and the lightbox when there is an image', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const store = await h.load('src/core/illustrationStore.js');
+    const activity = await h.load('src/core/illustrationActivity.js');
+    const target = data.createIllustrationTarget({ content: story, generationId: 'g-badge-click' });
+    const unbind = ui.bindMainIllustrations(() => target);
+    t.after(unbind);
+    const el = () => h.document.querySelector('.t-illustration-badge');
+    await waitFor(() => el(), 'badge created');
+
+    // 忙时点它去面板：那里能看进度、能取消。
+    activity.setIllustrationActivity(target.sceneId, 'selecting', '正在通读正文、选择画面…');
+    await waitFor(() => el().dataset.state === 'busy', 'busy');
+    el().click();
+    await waitFor(() => h.document.querySelector('.t-illustration-window'), 'panel opened');
+    h.document.querySelector('.t-illustration-window [data-action="close"]').click();
+    activity.clearIllustrationActivity(target.sceneId);
+
+    // 有图时点它开灯箱。
+    await store.saveGeneratedIllustration(target.sceneId, { draft: draft(), image: { blob: png, width: 1, height: 1 } });
+    await waitFor(() => el().dataset.state === 'image', 'image state');
+    el().click();
+    await waitFor(() => h.document.querySelector('.t-illustration-lightbox'), 'lightbox opened');
+});
+
+test('a failed record read turns the badge into an error that opens the panel', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const target = data.createIllustrationTarget({ content: story, generationId: 'g-badge-error' });
+    // 索引指向一个不存在的记录文件 —— 读取会抛，落到错误态。
+    h.state.settings.illustration_index = { [target.sceneId]: { file: '/user/files/titania-scene-missing.json', rev: 1 } };
+    const unbind = ui.bindMainIllustrations(() => target);
+    t.after(unbind);
+    const el = () => h.document.querySelector('.t-illustration-badge');
+    await waitFor(() => el() && el().dataset.state === 'error', 'error state');
+    assert.match(el().getAttribute('title'), /配图读取失败/);
+    assert.match(el().querySelector('i').className, /fa-triangle-exclamation/);
+
+    // 错误文案本身就写着「可打开场景配图面板重试」，点它就照做。
+    el().click();
+    await waitFor(() => h.document.querySelector('.t-illustration-window'), 'panel opened');
+});
+
+test('panel jobs publish their phase to the badge channel and clear it when done', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const activity = await h.load('src/core/illustrationActivity.js');
+    const target = data.createIllustrationTarget({ content: story, generationId: 'g-badge-wire' });
+
+    const phases = [];
+    t.after(activity.subscribeIllustrationActivity(event => phases.push(event.detail.phase)));
+
+    ui.openIllustrationWindow(target);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    await waitFor(() => !action('prepare').disabled);
+    action('prepare').click();
+    await waitFor(() => activity.getIllustrationActivity(target.sceneId)?.phase === 'selecting', 'selecting published');
+    await waitFor(() => !action('generate').disabled);
+    action('generate').click();
+    await waitFor(() => h.state.settings.illustration_index?.[target.sceneId], 'saved');
+    // 存完必须清掉，否则按钮会一直转。
+    await waitFor(() => activity.getIllustrationActivity(target.sceneId) === null, 'cleared');
+    assert.deepEqual(phases.filter(p => p !== 'idle'), ['selecting', 'generating', 'saving']);
+    action('close').click();
+});
+
+test('the entrance animation plays once per image, not on every update', async t => {
+    const h = harness(); t.after(h.close);
+    const badgeModule = await h.load('src/ui/illustrationBadge.js');
+    const badge = badgeModule.createIllustrationBadge({ container: h.document.querySelector('.t-content-wrapper') });
+    t.after(() => badge.destroy());
+    const image = { id: 'img-1', filePath: '/user/files/titania-illustration-a.png', width: 1, height: 1, draft: draft() };
+
+    badge.update({ image });
+    assert.equal(badge.element.classList.contains('is-entering'), true, '第一次出现应播入场');
+    // jsdom 不触发 animationend，靠 400ms 兜底摘类。
+    await new Promise(resolve => setTimeout(resolve, 450));
+    assert.equal(badge.element.classList.contains('is-entering'), false);
+
+    // 同一张图再更新不该重播 —— 流式期间按钮会藏了又现。
+    badge.update({ image });
+    assert.equal(badge.element.classList.contains('is-entering'), false, '同一张图不该重播');
+    badge.update({ image: null, activity: { phase: 'generating' } });
+    badge.update({ image });
+    assert.equal(badge.element.classList.contains('is-entering'), false, '藏了再现也不该重播');
+
+    // 换成另一张才重播。
+    badge.update({ image: { ...image, id: 'img-2' } });
+    assert.equal(badge.element.classList.contains('is-entering'), true, '换图应重播');
+
+    // 进行态与错误态从不播动画。
+    badge.destroy();
+    const other = badgeModule.createIllustrationBadge({ container: h.document.querySelector('.t-content-wrapper') });
+    t.after(() => other.destroy());
+    other.update({ activity: { phase: 'generating', message: '正在生成图片…' } });
+    assert.equal(other.element.classList.contains('is-entering'), false);
+    other.update({ error: '读不出来了' });
+    assert.equal(other.element.classList.contains('is-entering'), false);
+});
+
+test('favorites and HTML export still render the figure into the prose', async t => {
+    const h = harness(); t.after(h.close);
+    const data = await h.load('src/core/illustrationData.js');
+    const store = await h.load('src/core/illustrationStore.js');
+    const record = await store.saveGeneratedIllustration('scene-fig', { draft: draft(), image: { blob: png, width: 1, height: 1 } });
+    const picture = store.selectedIllustration(record);
+    // 走产品路径断言，而不是在测试里直接调 illustrationFigure ——
+    // 主界面那条注入路径删掉之后，这个函数只剩收藏与导出两个消费者，删不得。
+    const figure = data.illustrationFigure(picture);
+    assert.match(figure, /^<figure data-titania-illustration="/);
+    assert.match(figure, new RegExp(picture.filePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.match(figure, /<figcaption/);
+    // 没有图时产出空串，调用方（收藏分段 / 导出）靠它决定要不要拼这一段。
+    assert.equal(data.illustrationFigure(null), '');
+    assert.equal(data.illustrationFigure(undefined), '');
+});
+
+/* ---------- 配图删除与引用计数 ---------- */
+
+/** 种一条「已搬家」的收藏，正文里带上给定的配图快照。 */
+function seedFavorite(h, { id = 'f1', illustration = null } = {}) {
+    const file = `/user/files/titania-fav-${id}.json`;
+    const body = { v: 1, id, type: 'plain', html: '<p>收藏正文</p>' };
+    if (illustration) body.illustration = illustration;
+    h.state.files.set(file, new Blob([JSON.stringify(body)], { type: 'application/json' }));
+    h.state.settings.favs_index = { version: 1, migratedAt: 1, entries: [{ id, type: 'plain', file, rev: 1 }] };
+    return file;
+}
+
+test('the reference scanner unions scene records and favorites, and fails safe when a read breaks', async t => {
+    const h = harness(); t.after(h.close);
+    const store = await h.load('src/core/illustrationStore.js');
+    const refs = await h.load('src/core/illustrationReferences.js');
+    const B = '/user/files/titania-illustration-bbb.png';
+    const C = '/user/files/titania-illustration-ccc.png';
+
+    const record = await store.saveGeneratedIllustration('scene-ref', { draft: draft(), image: { blob: png, width: 1, height: 1 } });
+    const inScene = store.selectedIllustration(record).filePath;
+    seedFavorite(h, { id: 'f-1', illustration: { id: 'snap', filePath: B, draft: draft(), width: 1, height: 1, createdAt: 1 } });
+
+    const found = await refs.findReferencedIllustrationPaths([inScene, B, C]);
+    assert.deepEqual([...found.referenced].sort(), [B, inScene].sort());
+    assert.deepEqual([...found.favoriteReferenced], [B], '要能区分"是收藏引用的"，确认框据此措辞');
+    assert.equal(found.referenced.has(C), false);
+    assert.equal(found.incomplete, false);
+
+    // 打开面板所在的收藏要被排除：那个快照马上就要被清掉，算进去文件就永远留着成孤儿。
+    const excluded = await refs.findReferencedIllustrationPaths([B], { excludeFavoriteId: 'f-1' });
+    assert.equal(excluded.referenced.has(B), false);
+
+    // 收藏正文读不出来时保守处理：证明不了"没人用"就不删字节。
+    h.state.files.delete('/user/files/titania-fav-f-1.json');
+    const broken = await refs.findReferencedIllustrationPaths([C]);
+    assert.equal(broken.incomplete, true);
+    assert.equal(broken.referenced.has(C), true, '读不全时全部按被引用处理');
+});
+
+test('deleting images repairs selectedId, keeps referenced files, and only then removes bytes', async t => {
+    const h = harness(); t.after(h.close);
+    const store = await h.load('src/core/illustrationStore.js');
+    const record = await store.saveGeneratedIllustrations('scene-del', {
+        draft: draft(), createdAt: Date.now(),
+        images: [{ blob: png, width: 1, height: 1 }, { blob: png, width: 1, height: 1 }],
+    });
+    const [first, second] = record.images;
+    assert.equal(record.selectedId, first.id, '第一张自动采用');
+
+    const result = await store.deleteSceneIllustrations('scene-del', [first], {
+        collectReferenced: async () => [first.filePath],
+    });
+    assert.deepEqual([...result.removedIds], [first.id]);
+    assert.deepEqual([...result.keptReferenced], [first.filePath]);
+    assert.deepEqual([...result.deletedFiles], []);
+    assert.equal(result.record.selectedId, second.id, '采用图被删后自动接到剩余第一张');
+    assert.equal(h.state.files.has(first.filePath), true, '仍被引用就不能删文件');
+
+    const last = await store.deleteSceneIllustrations('scene-del', [second], { collectReferenced: async () => [] });
+    assert.equal(last.record.selectedId, null, '一张不剩就置空');
+    assert.deepEqual([...last.deletedFiles], [second.filePath]);
+    assert.equal(h.state.files.has(second.filePath), false, '无人引用就该真的删掉');
+    // ⚠ 这条是整件事的关键：悬空的 selectedId 会让 readSceneIllustrations 抛错，
+    //   画廊、主界面按钮、导出、备份会一起坏。
+    assert.equal((await store.readSceneIllustrations('scene-del')).images.length, 0, '记录仍必须可读');
+
+    // 没注入引用查询时保守到底：只删记录，一个文件都不碰。
+    const safe = await store.saveGeneratedIllustration('scene-safe', { draft: draft(), image: { blob: png, width: 1, height: 1 } });
+    const picture = store.selectedIllustration(safe);
+    await store.deleteSceneIllustrations('scene-safe', [{ id: picture.id, filePath: picture.filePath }]);
+    assert.equal(h.state.files.has(picture.filePath), true, '未接线时宁可留孤儿也不能删文件');
+});
+
+test('rewriting a scene record reclaims the file it supersedes, but never on a failed commit', async t => {
+    const h = harness(); t.after(h.close);
+    const store = await h.load('src/core/illustrationStore.js');
+    await store.saveGeneratedIllustration('scene-gc', { draft: draft(), image: { blob: png, width: 1, height: 1 } });
+    const oldFile = h.state.settings.illustration_index['scene-gc'].file;
+    assert.equal(h.state.files.has(oldFile), true);
+
+    await store.saveGeneratedIllustration('scene-gc', { draft: draft(), image: { blob: png, width: 1, height: 1 } });
+    const newFile = h.state.settings.illustration_index['scene-gc'].file;
+    assert.notEqual(newFile, oldFile);
+    assert.equal(h.state.files.has(oldFile), false, '被取代的旧记录要回收，否则会一直堆积');
+    assert.equal(h.state.files.has(newFile), true);
+
+    // 提交失败时指针会回滚 —— 那时旧记录仍是"正在用的那份"，提前删就等于删掉它。
+    h.state.saveFails = true;
+    await assert.rejects(store.saveGeneratedIllustration('scene-gc', { draft: draft(), image: { blob: png, width: 1, height: 1 } }));
+    h.state.saveFails = false;
+    assert.equal(h.state.settings.illustration_index['scene-gc'].file, newFile);
+    assert.equal(h.state.files.has(newFile), true, '提交失败绝不该回收旧记录');
+});
+
+test('the delete button removes an image instead of adopting it', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const store = await h.load('src/core/illustrationStore.js');
+    const target = data.createIllustrationTarget({ content: story, generationId: 'g-del-ui' });
+    const record = await store.saveGeneratedIllustrations(target.sceneId, {
+        draft: draft(), createdAt: Date.now(),
+        images: [{ blob: png, width: 1, height: 1 }, { blob: png, width: 1, height: 1 }],
+    });
+    const [first, second] = record.images;
+    ui.openIllustrationWindow(target);
+    const button = id => h.document.querySelector(`[data-action="delete-image"][data-image-id="${id}"]`);
+    await waitFor(() => button(first.id), 'delete button rendered');
+
+    // ⚠ 回归：这个按钮同时带 data-image-id，派发若按属性存在性走就会变成「采用这张」。
+    button(first.id).click();
+    await waitFor(() => !button(first.id), 'removed from gallery');
+    const after = await store.readSceneIllustrations(target.sceneId);
+    assert.equal(after.images.some(image => image.id === first.id), false, '删掉而不是采用');
+    assert.equal(after.selectedId, second.id);
+
+    // 取消确认框：一个字都不动。
+    h.state.confirmResult = false;
+    button(second.id).click();
+    await new Promise(resolve => setTimeout(resolve, 40));
+    const unchanged = await store.readSceneIllustrations(target.sceneId);
+    assert.deepEqual(Array.from(unchanged.images, image => image.id), [second.id]);
+    h.state.confirmResult = true;
+    h.document.querySelector('[data-action="close"]').click();
+});
+
+test('manage mode batches deletes and disables the action at zero selection', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const store = await h.load('src/core/illustrationStore.js');
+    const target = data.createIllustrationTarget({ content: story, generationId: 'g-manage' });
+    await store.saveGeneratedIllustrations(target.sceneId, {
+        draft: draft(), createdAt: Date.now(),
+        images: [{ blob: png, width: 1, height: 1 }, { blob: png, width: 1, height: 1 }],
+    });
+    ui.openIllustrationWindow(target);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    const count = () => h.document.querySelector('.t-illustration-select-count')?.textContent || '';
+    await waitFor(() => action('enter-manage-images'), 'gallery rendered');
+
+    action('enter-manage-images').click();
+    await waitFor(() => action('select-all-images'), 'manage bar');
+    assert.equal(action('delete-selected-images').disabled, true, '一张没选时批量删除应禁用');
+    assert.equal(h.document.querySelectorAll('[data-select-image-id]').length, 2, '管理模式才出勾选框');
+    assert.equal(h.document.querySelectorAll('[data-action="delete-image"]').length, 0, '管理模式下不给两个删除入口');
+
+    const box = h.document.querySelector('[data-select-image-id]');
+    box.checked = true;
+    box.dispatchEvent(new h.window.Event('change', { bubbles: true }));
+    await waitFor(() => action('delete-selected-images').disabled === false, 'enabled after one');
+    assert.match(count(), /已选择 1 张/);
+
+    action('select-all-images').click();
+    await waitFor(() => /已选择 2 张/.test(count()), 'all selected');
+    action('delete-selected-images').click();
+    await waitFor(() => !h.document.querySelector('.t-illustration-candidate'), 'all gone');
+    assert.equal((await store.readSceneIllustrations(target.sceneId)).images.length, 0);
+    h.document.querySelector('[data-action="close"]').click();
+});
+
+test('a file a favorite still points at survives deletion, and backup export keeps working', async t => {
+    const h = harness(); t.after(h.close);
+    const store = await h.load('src/core/illustrationStore.js');
+    const refs = await h.load('src/core/illustrationReferences.js');
+    const portability = await h.load('src/core/illustrationPortability.js');
+    const record = await store.saveGeneratedIllustrations('scene-fav', {
+        draft: draft(), createdAt: Date.now(),
+        images: [{ blob: png, width: 1, height: 1 }, { blob: png, width: 1, height: 1 }],
+    });
+    const [kept, gone] = record.images;
+    seedFavorite(h, { id: 'f-x', illustration: { id: 'snap', filePath: kept.filePath, draft: draft(), width: 1, height: 1, createdAt: 1 } });
+
+    const result = await store.deleteSceneIllustrations('scene-fav', [kept, gone], {
+        collectReferenced: async paths => (await refs.findReferencedIllustrationPaths(paths)).referenced,
+    });
+    assert.deepEqual([...result.keptReferenced], [kept.filePath]);
+    assert.deepEqual([...result.deletedFiles], [gone.filePath]);
+    assert.equal(h.state.files.has(kept.filePath), true, '收藏还在用它，文件必须留');
+
+    // 最终判据：删完之后整个备份导出仍然成功。少一个被引用的文件它就会抛
+    // 「已停止导出以免遗漏图片」并把整次备份废掉 —— 这才是引用计数存在的理由。
+    const favorites = [{ id: 'f-x', illustration: { filePath: kept.filePath } }];
+    const bundle = await portability.exportIllustrationBackup(favorites);
+    assert.ok(bundle.assets[kept.filePath], '被引用的文件必须还在，否则这行之前的导出就已抛错');
+});
+
+test('deleting from a favorite clears its snapshot so the image cannot come back', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const store = await h.load('src/core/illustrationStore.js');
+    const target = data.createIllustrationTarget({ content: story, generationId: 'g-fav-del' });
+    const record = await store.saveGeneratedIllustration(target.sceneId, { draft: draft(), image: { blob: png, width: 1, height: 1 } });
+    const picture = store.selectedIllustration(record);
+
+    let writtenBack = 'unset';
+    // 收藏目标：自带一份快照，并且带 favoriteId（引用扫描要把它排除掉）。
+    ui.openIllustrationWindow({
+        ...target,
+        illustration: picture,
+        favoriteId: 'fav-9',
+        onSelected: async image => { writtenBack = image; },
+    });
+    const button = () => h.document.querySelector('[data-action="delete-image"]');
+    await waitFor(() => button(), 'delete button');
+    button().click();
+    await waitFor(() => writtenBack !== 'unset', 'favorite written back');
+    // 一张不剩 → 写回 null；favsWindow 对 null 的处理是删掉快照字段，
+    // 于是下次 loadTarget 的 Object.hasOwn(current,"illustration") 为假，不会再注入（不复活）。
+    assert.equal(writtenBack, null);
+    assert.equal(h.state.files.has(picture.filePath), false, '快照已清，文件就该删掉');
+    h.document.querySelector('[data-action="close"]').click();
+});
+
+test('the manage controls are disabled while a job is running', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const store = await h.load('src/core/illustrationStore.js');
+    const target = data.createIllustrationTarget({ content: story, generationId: 'g-busy' });
+    await store.saveGeneratedIllustration(target.sceneId, { draft: draft(), image: { blob: png, width: 1, height: 1 } });
+    // 让选景挂住不返回，制造「忙」。
+    h.state.llmHandler = () => new Promise(() => { });
+    ui.openIllustrationWindow(target);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    await waitFor(() => !action('prepare').disabled);
+    action('prepare').click();
+    await waitFor(() => action('prepare').disabled, 'job started');
+    assert.equal(action('enter-manage-images').disabled, true, '忙时管理按钮也要禁用');
+    assert.equal(h.document.querySelector('[data-action="delete-image"]').disabled, true, '单张删除同样要禁用');
+    h.document.querySelector('[data-action="close"]').click();
 });

@@ -6,11 +6,18 @@ import { composeProfileBlock, matchCharacterProfiles, readCharacterProfiles } fr
 import { getExtData } from "../utils/storage.js";
 import { openIllustrationSettingsWindow } from "./illustrationSettingsWindow.js";
 import { openCharacterProfileWindow } from "./characterProfileWindow.js";
-import { readSceneIllustrations, saveGeneratedIllustrations, selectSceneIllustration, selectedIllustration } from "../core/illustrationStore.js";
+import { deleteSceneIllustrations, readSceneIllustrations, saveGeneratedIllustrations, selectSceneIllustration, selectedIllustration } from "../core/illustrationStore.js";
+import { findReferencedIllustrationPaths } from "../core/illustrationReferences.js";
 import { escapeIllustrationHtml as escape, illustrationFigure, normalizeIllustrationDraft, normalizeSavedIllustration } from "../core/illustrationData.js";
 import { exportAsHtmlFile } from "../utils/helpers.js";
 import { claimFloatingWindow, releaseFloatingWindow } from "./shared/floatingWindow.js";
 import { createHelpTip } from "./shared/helpPopover.js";
+import { createIllustrationBadge } from "./illustrationBadge.js";
+import { openIllustrationLightbox } from "./illustrationLightbox.js";
+import {
+    clearIllustrationActivity, getIllustrationActivity,
+    setIllustrationActivity, subscribeIllustrationActivity,
+} from "../core/illustrationActivity.js";
 
 // 选景跑在本插件自己的 LLM 上，生图才交给 Cosmos，所以只有这两个阶段；
 // 生图的百分比来自 ComfyUI 的步数回调，NovelAI 非流式则没有进度。
@@ -88,11 +95,18 @@ function notifyView(sceneId) {
     if (activeView?.sceneId === sceneId) activeView.sync();
 }
 
+/** 任务类型 → 进行态阶段。选景与生图在主界面按钮上是两种说法。 */
+function activityPhaseFor(kind) {
+    return kind === "prepare" ? "selecting" : "generating";
+}
+
 function jobProgress(job) {
     return event => {
         const label = PROGRESS_LABELS[event.stage] || "正在处理…";
         const percent = Number.isFinite(event.fraction) ? ` ${Math.round(event.fraction * 100)}%` : "";
         job.status = `${label}${percent}`;
+        // 关窗后台跑时，主界面那个按钮是用户唯一能看到进度的地方。
+        setIllustrationActivity(job.sceneId, activityPhaseFor(job.kind), job.status);
         notifyView(job.sceneId);
     };
 }
@@ -103,11 +117,20 @@ function startJob(current, currentTarget, kind, operation) {
     const job = { sceneId: currentTarget.sceneId, kind, status: "", phase: "running", controller: new AbortController(), error: null };
     current.job = job;
     current.notice = "";
+    const phase = activityPhaseFor(kind);
+    setIllustrationActivity(job.sceneId, phase, PROGRESS_LABELS[phase] || "");
     job.promise = Promise.resolve()
         .then(() => operation(job))
-        .catch(error => { job.error = error; current.notice = showError(error); })
+        .catch(error => {
+            job.error = error;
+            current.notice = showError(error);
+            // 取消不是失败：把按钮收回静止，别让它一直转着。
+            if (error?.name === "AbortError" || error?.code === "ABORTED") clearIllustrationActivity(job.sceneId);
+            else setIllustrationActivity(job.sceneId, "error", current.notice);
+        })
         .finally(() => {
             if (current.job === job) current.job = null;
+            if (!job.error) clearIllustrationActivity(job.sceneId);
             if (activeView?.sceneId === job.sceneId) activeView.sync();
             else notifyBackgroundResult(job);
         });
@@ -125,12 +148,22 @@ function notifyBackgroundResult(job) {
 
 /** 生成成功后立即保存；面板关掉也继续，保存失败时图片留在会话里等「重试保存」。 */
 async function persistPending(current, currentTarget) {
-    current.record = await saveGeneratedIllustrations(currentTarget.sceneId, current.pending);
+    // 这里自报进行态，因为它也能从「重试保存」那条独立路径进来（不经过 startJob）。
+    setIllustrationActivity(currentTarget.sceneId, "saving", "正在保存配图…");
+    try {
+        current.record = await saveGeneratedIllustrations(currentTarget.sceneId, current.pending);
+    } catch (error) {
+        setIllustrationActivity(currentTarget.sceneId, "error", showError(error));
+        throw error;
+    }
     const image = selectedIllustration(current.record);
     await currentTarget.onSelected?.(image);
     current.adopted = image;
     current.pending = null;
     current.notice = "配图已保存。可在下方挑选图片，或沿用提示词重新生成。";
+    // 清掉进行态：保存成功后 mutateScene 会派发 titania:illustrations-changed，
+    // 按钮随之换成「有图」的样子。
+    clearIllustrationActivity(currentTarget.sceneId);
     return current.record;
 }
 
@@ -206,6 +239,10 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
     let activeBackendId = "cosmos", activeCapabilities = null;
     let unsubscribeBackends = () => { };
     let selectionSequence = 0, detectionSequence = 0, pendingUrl = null, renderedDraft, renderedPending;
+    // 「管理」多选态的 UI 状态。放面板局部而不是 session：它们是临时的界面状态，
+    // 关窗即弃，不该跟着会话留存。loadTarget 时会重置。
+    let managing = false;
+    const selectedImageIds = new Set();
     // 过程图与「已生成待保存」是两种状态：前者只预览，后者才启用「重试保存」。
     let previewUrl = null, renderedPreviewBlob = null, previewUpdatedAt = 0;
     const isBusy = () => localBusy || Boolean(session?.job);
@@ -226,7 +263,13 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         // 勾选条不在 "input, textarea, select" 里，要单独禁用，
         // 否则任务跑着也能改「人物资料」，字段会与在跑的请求分叉。
         root.querySelectorAll("[data-profile-id]").forEach(el => { el.disabled = busy; });
-        root.querySelectorAll("[data-image-id]").forEach(el => { el.disabled = busy; });
+        // 管理模式的工具栏按钮不带 data-image-id，要单独禁；勾选框已被上面那条
+        // "input, textarea, select" 覆盖。
+        root.querySelectorAll("[data-image-id], [data-manage-control]").forEach(el => { el.disabled = busy; });
+        // ⚠ 批量删除的禁用态还要看勾选数，不能只跟 busy 走 —— 上面那条 forEach 会把
+        //   渲染时写下的 disabled 一并冲掉，于是"一张没选"时按钮又变成可点的了。
+        const bulk = root.querySelector('[data-action="delete-selected-images"]');
+        if (bulk) bulk.disabled = busy || selectedImageIds.size === 0;
         field("target").disabled = busy || targets.length === 1;
     }
 
@@ -365,14 +408,29 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
 
     function renderGallery() {
         const images = session?.record?.images || [];
-        role("gallery").innerHTML = images.length ? `<strong>已保存的配图</strong><div class="t-illustration-candidates">${images.map(image => {
+        // 后台任务可能同时增删图片，把已经不在的勾选剔掉，免得计数虚高、删除时报"找不到"。
+        for (const id of [...selectedImageIds]) if (!images.some(image => image.id === id)) selectedImageIds.delete(id);
+
+        const toolbar = managing
+            ? `<div class="t-illustration-gallery-bar">
+                    <span class="t-illustration-select-count">已选择 ${selectedImageIds.size} 张</span>
+                    <button class="t-btn" type="button" data-manage-control data-action="select-all-images">全选</button>
+                    <button class="t-btn" type="button" data-manage-control data-action="deselect-all-images">取消全选</button>
+                    <button class="t-btn t-btn-danger" type="button" data-manage-control data-action="delete-selected-images" ${selectedImageIds.size ? "" : "disabled"}>删除选中</button>
+                    <button class="t-btn" type="button" data-manage-control data-action="exit-manage-images">退出管理</button>
+                </div>`
+            : `<div class="t-illustration-gallery-bar"><button class="t-btn" type="button" data-manage-control data-action="enter-manage-images">管理</button></div>`;
+
+        role("gallery").innerHTML = images.length ? `<strong>已保存的配图</strong>${toolbar}<div class="t-illustration-candidates">${images.map(image => {
             // 摘要可能为空（用户自写的预设未必要求模型返回它），此时不出那个 <p>，免得留个空行。
             const summary = image.draft.scene.summary || "";
+            const picked = selectedImageIds.has(image.id);
             return `
-            <article class="t-illustration-candidate">
+            <article class="t-illustration-candidate${picked ? " is-selected" : ""}">
+                ${managing ? `<label class="t-illustration-select"><input type="checkbox" data-select-image-id="${escape(image.id)}" ${picked ? "checked" : ""}> 选择</label>` : ""}
                 <a href="${image.filePath}" target="_blank" rel="noopener"><img src="${image.filePath}" loading="lazy" alt="${escape(summary || "配图")}"></a>
                 ${summary ? `<p>${escape(summary)}</p>` : ""}
-                <div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="${escape(image.id)}">${session.record.selectedId === image.id ? "当前配图" : "采用这张"}</button><a class="t-btn" href="${image.filePath}" download>下载</a></div>
+                <div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="${escape(image.id)}">${session.record.selectedId === image.id ? "当前配图" : "采用这张"}</button><a class="t-btn" href="${image.filePath}" download>下载</a>${managing ? "" : `<button class="t-btn t-btn-danger" type="button" data-action="delete-image" data-image-id="${escape(image.id)}" title="删除这张配图" aria-label="删除这张配图"><i class="fa-solid fa-trash"></i></button>`}</div>
             </article>`;
         }).join("")}</div><div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="">暂不展示配图</button><button class="t-btn" type="button" data-action="export">导出图文 HTML</button></div>` : "";
         if (pendingUrl && session?.pending !== renderedPending) { URL.revokeObjectURL(pendingUrl); pendingUrl = null; }
@@ -386,6 +444,60 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         else role("pending-image").removeAttribute("src");
         syncPreview();
         updateControls();
+    }
+
+    /**
+     * 删除若干张配图：先报清后果，再写回收藏快照，最后才真删。
+     *
+     * ⚠ 顺序：收藏写回必须**早于** deleteSceneIllustrations —— 引用扫描不能把
+     *   我们马上要清掉的那个收藏算进去，否则那个文件会永远留着成为孤儿。
+     *   写回抛错时直接中止，此时什么都还没删。
+     */
+    async function deleteImages(targets) {
+        if (!targets.length) return;
+        const current = session, currentTarget = target;
+        const ids = new Set(targets.map(item => String(item.id)));
+        const wasAdopted = ids.has(String(current.record?.selectedId));
+
+        role("status").textContent = "正在检查图片引用…";
+        let reference;
+        try {
+            reference = await findReferencedIllustrationPaths(targets.map(item => item.filePath), {
+                excludeFavoriteId: currentTarget.favoriteId,
+            });
+        } finally {
+            if (!disposed) role("status").textContent = "";
+        }
+
+        const lines = [targets.length > 1
+            ? `确定删除选中的 ${targets.length} 张配图？此操作不可撤销。`
+            : "确定删除这张配图？此操作不可撤销。"];
+        if (reference.favoriteReferenced.size) lines.push(`其中 ${reference.favoriteReferenced.size} 张仍被收藏引用，图片文件会保留。`);
+        if (wasAdopted) lines.push("这是当前采用的配图，删除后会改用剩余的第一张。");
+        if (reference.incomplete) lines.push("有收藏正文读取失败，为避免误删，本次不会删除任何图片文件。");
+        if (!confirm(lines.join(""))) return;
+
+        // 收藏快照：采用图被删时要跟着更新/清掉，否则下次 loadTarget 会把它重新注入，图"复活"。
+        // 传 null 走 favsWindow 的 delete 分支，快照字段直接消失。
+        if (Object.hasOwn(currentTarget, "illustration") && wasAdopted) {
+            const remaining = current.record.images.filter(image => !ids.has(String(image.id)));
+            await currentTarget.onSelected?.(remaining[0] || null);
+        }
+
+        const result = await deleteSceneIllustrations(currentTarget.sceneId, targets, {
+            collectReferenced: paths => findReferencedIllustrationPaths(paths).then(found => found.referenced),
+        });
+        current.record = result.record;
+        current.adopted = selectedIllustration(result.record);
+        // ⚠ 刻意**不**把 session.draft 换成接位那张的草稿：删除不是采用，
+        //   静默替换用户改过的提示词很意外。
+        selectedImageIds.clear();
+        managing = false;
+        const bits = [`已删除 ${result.removedIds.length} 张配图`];
+        if (result.deletedFiles.length) bits.push(`删除文件 ${result.deletedFiles.length} 个`);
+        if (result.keptReferenced.length) bits.push(`${result.keptReferenced.length} 个文件仍被引用已保留`);
+        if (result.failedFiles.length) bits.push(`${result.failedFiles.length} 个文件删除失败`);
+        current.notice = `${bits.join("，")}。`;
     }
 
     /**
@@ -448,6 +560,9 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         const sequence = ++selectionSequence;
         const current = target;
         session = sessionFor(current.sceneId, buildPromptTextFromTheater(current.content));
+        // 换轮次时退出管理模式：勾选是上一轮的，留着只会误删。
+        managing = false;
+        selectedImageIds.clear();
         // 后端可能在设置窗里被换过，每次载入重新读一次；探测在 finally 里做。
         activeBackendId = resolveActiveBackendId(getExtData());
         // 读取记录期间不接受后台任务的界面同步，避免画到半截状态上。
@@ -514,7 +629,14 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
     root.addEventListener("change", event => {
         if (event.target === field("target")) { void loadTarget(Number(event.target.value)); return; }
         // 画幅是会话级的，不进草稿 —— 与「想画什么」「人物资料」同一种输入。
-        if (event.target === field("size")) session.size = event.target.value;
+        if (event.target === field("size")) { session.size = event.target.value; return; }
+        // 多选：重画一次以更新计数与「删除选中」的禁用态。
+        const selectId = event.target.dataset?.selectImageId;
+        if (selectId) {
+            if (event.target.checked) selectedImageIds.add(selectId);
+            else selectedImageIds.delete(selectId);
+            renderGallery();
+        }
     });
     root.addEventListener("click", event => {
         const button = event.target.closest("button");
@@ -559,6 +681,32 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
             void run(async () => {
                 await exportAsHtmlFile(currentTarget.content + illustrationFigure(selectedIllustration(current.record)), currentTarget.scriptName);
                 current.notice = "图文 HTML 已导出。";
+            });
+            return;
+        }
+        // ⚠ 删除相关的分支必须全部排在最下面那个 `hasAttribute("data-image-id")` 处理器**之前**：
+        //   那个处理器按属性存在性派发，不是按 data-action 相等。单张删除按钮同时带着
+        //   data-image-id（那样 updateControls 才会在忙时禁用它），一旦落到它手里就成了「采用这张」。
+        if (operation === "delete-image") {
+            void run(async () => {
+                const id = button.dataset.imageId;
+                const image = current.record?.images.find(item => String(item.id) === String(id));
+                if (image) await deleteImages([image]);
+            });
+            return;
+        }
+        if (operation === "enter-manage-images") { managing = true; selectedImageIds.clear(); renderGallery(); return; }
+        if (operation === "exit-manage-images") { managing = false; selectedImageIds.clear(); renderGallery(); return; }
+        if (operation === "select-all-images" || operation === "deselect-all-images") {
+            selectedImageIds.clear();
+            if (operation === "select-all-images") (current.record?.images || []).forEach(image => selectedImageIds.add(image.id));
+            renderGallery();
+            return;
+        }
+        if (operation === "delete-selected-images") {
+            void run(async () => {
+                const targets = (current.record?.images || []).filter(image => selectedImageIds.has(image.id));
+                if (targets.length) await deleteImages(targets);
             });
             return;
         }
@@ -686,94 +834,108 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
     action("close").focus();
 }
 
-const SCENE_ILLUSTRATION_SELECTOR = "[data-titania-illustration],[data-titania-illustration-notice]";
-
-/** 正文内容根：优先 Shadow DOM 内容节点，回退到光 DOM 容器。 */
-function findSceneContentRoot(container) {
-    return container.querySelector(".t-shadow-host")?.shadowRoot?.querySelector(".t-shadow-content") || container;
-}
-
-function clearSceneIllustration(root) {
-    root?.querySelectorAll(SCENE_ILLUSTRATION_SELECTOR).forEach(node => node.remove());
-}
-
-function hasSceneIllustration(root) {
-    return Boolean(root?.querySelector(SCENE_ILLUSTRATION_SELECTOR));
-}
-
-function buildSceneIllustrationNotice(message) {
-    const notice = document.createElement("p");
-    notice.setAttribute("data-titania-illustration-notice", "");
-    notice.style.cssText = "margin:16px 0;text-align:center;font-size:13px;opacity:0.75";
-    notice.textContent = message;
-    return notice;
-}
-
 /**
- * 采用的配图放在正文开头，与正文一同渲染。
- * 流式重绘会连配图一起清掉，这里按缓存补回；原始正文与续写输入始终是纯文本。
+ * 主界面的配图入口：内容区底部中间那个按钮 + 灯箱。
+ *
+ * 图片**不再插进正文**。正文往往是自带底色的卡片（内置预设就要求模型输出
+ * 「羊皮纸纹理背景」这类 CSS），插在开头只会把正文顶出屏幕。采用图改为只在按钮里
+ * 体现，点开灯箱看大图。
+ *
+ * 收藏页与导出 HTML **仍然是图文一体** —— 它们直接用 illustrationFigure
+ * （见 illustrationData.js 上那条「不可删」的注释）。
+ *
+ * ⚠ 灯箱要挂 #t-overlay，不能挂 .t-content-wrapper：后者带 transform: translateZ(0)
+ *   与 overflow: hidden，会把 position:fixed 的后代整个裁掉。
+ *   按钮正相反，必须挂进 .t-content-wrapper —— 它是定位祖先且不滚动。
  */
 export function bindMainIllustrations(getTarget) {
     const content = document.getElementById("t-output-content");
-    if (!content) return () => {};
-    let disposed = false, sequence = 0, timer;
+    if (!content) return () => { };
+    // 定位祖先。夹具里可能没有 .t-content-wrapper，所以留一条回落。
+    const container = content.closest(".t-content-wrapper") || content.parentElement || document.body;
+    const overlay = document.getElementById("t-overlay");
+    let disposed = false, sequence = 0, timer, lightbox = null;
     let currentKey = "", currentImage = null, currentError = "";
 
+    const badge = createIllustrationBadge({ container, onActivate: activate });
+
+    function openPanel() {
+        try { openIllustrationWindow(getTarget()); }
+        catch (error) { if (window.toastr) window.toastr.warning(showError(error), "Titania Echo"); }
+    }
+
+    function openLightbox() {
+        lightbox = openIllustrationLightbox({
+            image: currentImage,
+            container: overlay || document.body,
+            onSwap: openPanel,
+            onClose: () => { lightbox = null; },
+        });
+    }
+
+    /** busy 与 error 都去面板：那里能看进度、能取消、能重试保存。 */
+    function activate(state) {
+        if (state.mode === "image") openLightbox();
+        else openPanel();
+    }
+
     function draw() {
-        const root = findSceneContentRoot(content);
-        if (!root) return;
-        clearSceneIllustration(root);
-        if (currentImage) {
-            const holder = document.createElement("div");
-            holder.innerHTML = illustrationFigure(currentImage);
-            const figure = holder.firstElementChild;
-            if (figure) {
-                // 配图放在正文开头，跟着正文一起渲染。
-                root.prepend(figure);
-                return;
-            }
+        if (disposed) return;
+        badge.update({
+            image: currentImage,
+            error: currentError,
+            activity: currentKey ? getIllustrationActivity(currentKey) : null,
+        });
+        // 灯箱开着时跟着换图；图没了就关掉，别留一张已不属于这一轮的图。
+        if (lightbox) {
+            if (currentImage) lightbox.update(currentImage);
+            else lightbox.close();
         }
-        if (currentError) root.prepend(buildSceneIllustrationNotice(currentError));
     }
 
     const refresh = async (force = false) => {
         let target;
         try { target = getTarget(); } catch { target = null; }
         const key = target?.sceneId || "";
-        // 同一轮次且配图仍在正文里时无需重画；流式重绘清掉配图后由这里补回。
-        if (!force && key === currentKey && (!key || hasSceneIllustration(findSceneContentRoot(content)))) return;
-        if (force || key !== currentKey) {
-            currentKey = key;
-            currentImage = null;
-            currentError = "";
-            const request = ++sequence;
-            if (key) {
-                try {
-                    const record = await readSceneIllustrations(key);
-                    if (disposed || request !== sequence) return;
-                    currentImage = selectedIllustration(record);
-                } catch {
-                    if (disposed || request !== sequence) return;
-                    currentError = "配图读取失败，可打开场景配图面板重试。";
-                }
-            } else if (disposed || request !== sequence) return;
-        }
-        if (!disposed) draw();
+        // 同一轮次算过一次就不再重算 —— 流式期间这个函数会被高频触发而配图并没变。
+        // 记录变化（采用 / 隐藏 / 重新生成）走 titania:illustrations-changed（force）进来。
+        if (!force && key === currentKey) return;
+        currentKey = key;
+        currentImage = null;
+        currentError = "";
+        const request = ++sequence;
+        if (key) {
+            try {
+                const record = await readSceneIllustrations(key);
+                if (disposed || request !== sequence) return;
+                currentImage = selectedIllustration(record);
+            } catch {
+                if (disposed || request !== sequence) return;
+                currentError = "配图读取失败，可打开场景配图面板重试。";
+            }
+        } else if (disposed || request !== sequence) return;
+        draw();
     };
+
+    // ⚠ 这 80ms 防抖是承重的，别删：翻页时内容先渲染并派发 titania:scene-rendered，
+    //   generation result 之后才更新，同步刷新会读到上一轮的 target。
     const schedule = () => { clearTimeout(timer); timer = setTimeout(() => void refresh(), 80); };
-    const observer = new MutationObserver(schedule);
-    observer.observe(content, { childList: true, subtree: true });
-    // Shadow DOM 更新不会冒泡到宿主观察器；渲染器显式通知完成/流式状态。
+    // 换轮次一律经过 renderGeneratedContent，它必然派发这个事件 —— 所以它是场景切换
+    // 的可靠信号，原先那个 MutationObserver 的独有价值（Shadow DOM 内部变化）正是它覆盖的。
     window.addEventListener("titania:scene-rendered", schedule);
     const changed = () => void refresh(true);
     window.addEventListener("titania:illustrations-changed", changed);
+    const unsubscribeActivity = subscribeIllustrationActivity(() => draw());
     void refresh(true);
+
     return () => {
         disposed = true;
         clearTimeout(timer);
-        observer.disconnect();
         window.removeEventListener("titania:scene-rendered", schedule);
         window.removeEventListener("titania:illustrations-changed", changed);
-        clearSceneIllustration(findSceneContentRoot(content));
+        unsubscribeActivity();
+        lightbox?.close();
+        lightbox = null;
+        badge.destroy();
     };
 }

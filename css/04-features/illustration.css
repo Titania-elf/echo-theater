@@ -93,6 +93,12 @@
 .t-illustration-candidate { min-width: 0; border: 1px solid var(--t-color-border-faint); padding: 8px; border-radius: 10px; }
 .t-illustration-candidate img { width: 100%; height: 160px; object-fit: contain; }
 .t-illustration-candidate p { font-size: 0.9em; line-height: 1.5; }
+
+/* 图库的「管理」多选态：工具栏 + 勾选 + 选中高亮 */
+.t-illustration-gallery-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.t-illustration-select-count { color: var(--t-color-text-muted); font-size: 0.9em; }
+.t-illustration-select { display: flex; align-items: center; gap: 6px; font-size: 0.85em; color: var(--t-color-text-secondary); }
+.t-illustration-candidate.is-selected { border-color: var(--t-color-danger-border); background: var(--t-color-danger-soft); }
 .t-illustration-pending img { width: 100%; max-height: 360px; object-fit: contain; }
 .t-illustration-preview img { width: 100%; max-height: 360px; object-fit: contain; }
 .t-illustration-panel [hidden] { display: none; }
@@ -259,6 +265,129 @@
     background: var(--t-color-surface-code);
     color: var(--t-color-text);
 }
+
+/* ── 主界面配图按钮（内容区底部中间） ──────────────────────────────
+   挂在 .t-content-wrapper 里：它是定位祖先（position:relative）且不滚动。
+   ⚠ 不要挪进 .t-content-area —— 那是滚动容器，按钮会跟着正文滚走。
+   底部中间是唯一空闲处：页码在右下、翻页箭头在两侧、续写栏在容器之外。 */
+
+.t-illustration-badge {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    /* 水平居中靠 transform。入场动画用 t-fade-in-centered，它把 translateX(-50%)
+       写进了两个关键帧，所以动画不会把居中冲掉、结束态也与这里一致。 */
+    transform: translateX(-50%);
+    z-index: var(--t-z-sticky);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-circle);
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text-secondary);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+}
+
+.t-illustration-badge[hidden] { display: none; }
+
+.t-illustration-badge[data-state="error"] {
+    border-color: var(--t-color-danger-border);
+    color: var(--t-color-danger);
+}
+
+.t-illustration-badge-icon { font-size: 15px; line-height: 1; }
+
+/* 一次性入场：只在新图出现时挂上，播完由脚本摘掉，不循环。 */
+.t-illustration-badge.is-entering { animation: t-fade-in-centered 0.28s ease-out; }
+
+/* ── 配图灯箱 ──────────────────────────────────────────────────────
+   不占浮层名额，所以能与配图面板并存。
+   ⚠ 它必须挂在 #t-overlay 这类容器上：.t-content-wrapper 带
+     transform: translateZ(0) + overflow:hidden，会把 fixed 后代裁掉。 */
+
+.t-illustration-lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: var(--t-z-window);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+        max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+
+.t-illustration-lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+}
+
+/* 舞台是滚动容器：横图缩到宽度内，竖图保持原尺寸纵向滚动。 */
+.t-illustration-lightbox-stage {
+    position: relative;
+    max-width: 100%;
+    max-height: calc(100dvh - 150px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--t-radius-panel);
+}
+
+.t-illustration-lightbox-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    /* 刻意不设 max-height：设了会把长竖图压成看不清的一条。
+       舞台的 max-height + overflow 已经负责装下它。 */
+    border-radius: var(--t-radius-panel);
+}
+
+.t-illustration-lightbox-caption {
+    position: relative;
+    margin: 0;
+    max-width: 42em;
+    text-align: center;
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: var(--t-color-text-secondary);
+}
+
+.t-illustration-lightbox-actions {
+    position: relative;
+    display: flex;
+    gap: 8px;
+}
+
+.t-illustration-lightbox-close {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-circle);
+    background: var(--t-color-surface-elevated);
+    color: var(--t-color-text);
+    cursor: pointer;
+}
+
+.t-illustration-lightbox [hidden] { display: none; }
 
 @media (max-width: 600px) {
     .t-root.t-illustration-window {

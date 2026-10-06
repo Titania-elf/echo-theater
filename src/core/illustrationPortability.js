@@ -1,20 +1,12 @@
 import { getExtData } from "../utils/storage.js";
 import { uploadTextFile } from "../utils/userFiles.js";
 import {
-    ILLUSTRATION_INDEX_KEY, MAX_IMAGE_BYTES, illustrationError, illustrationHash,
-    isIllustrationPath, newIllustrationId, normalizeSavedIllustration, validateIllustrationBlob,
+    ILLUSTRATION_INDEX_KEY, MAX_IMAGE_BYTES, collectIllustrationPaths as collectPaths, illustrationError,
+    illustrationHash, isIllustrationPath, newIllustrationId, normalizeSavedIllustration, validateIllustrationBlob,
 } from "./illustrationData.js";
 import {
     blobToIllustrationDataUrl, flushIllustrationWrites, readSceneIllustrations, uploadIllustrationBlob,
 } from "./illustrationStore.js";
-
-function collectPaths(value, result = new Set()) {
-    if (typeof value === "string") {
-        for (const match of value.matchAll(/\/user\/files\/titania-illustration-[a-zA-Z0-9-]+\.(?:png|jpg|webp)/g)) result.add(match[0]);
-    } else if (Array.isArray(value)) value.forEach(item => collectPaths(item, result));
-    else if (value && typeof value === "object") Object.values(value).forEach(item => collectPaths(item, result));
-    return result;
-}
 
 export function replaceIllustrationPaths(value, replacements) {
     if (typeof value === "string") {

@@ -1689,6 +1689,9 @@ export function openFavsWindow() {
                     ...target,
                     label: segments.length > 1 ? `第 ${index + 1} 段 · ${target.scriptName}` : target.scriptName,
                     illustration: segment.illustration || null,
+                    // 删除时要用它把这个收藏排除在引用扫描之外 —— 我们马上就会清掉它的
+                    // 快照，扫进去的话那个文件会永远留着成为孤儿。主界面来的目标没有这个字段。
+                    favoriteId: favorite.id,
                     async onSelected(image) {
                         const fresh = await loadFavForWrite(favorite.id);
                         if (!fresh) throw new Error("原收藏已被删除；图片已保存在配图记录中。");
