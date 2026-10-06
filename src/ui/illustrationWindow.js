@@ -1,5 +1,6 @@
 import { buildPromptTextFromTheater } from "../core/chatInjector.js";
 import { detectIllustrationBackend, generateTheaterIllustration } from "../core/cosmosVisionBridge.js";
+import { resolveActiveBackendId, subscribeBackendReady } from "../core/illustrationBackends/registry.js";
 import { selectIllustrationScene } from "../core/illustrationScene.js";
 import { composeProfileBlock, matchCharacterProfiles, readCharacterProfiles } from "../core/characterProfiles.js";
 import { getExtData } from "../utils/storage.js";
@@ -9,12 +10,54 @@ import { readSceneIllustrations, saveGeneratedIllustrations, selectSceneIllustra
 import { escapeIllustrationHtml as escape, illustrationFigure, normalizeIllustrationDraft, normalizeSavedIllustration } from "../core/illustrationData.js";
 import { exportAsHtmlFile } from "../utils/helpers.js";
 import { claimFloatingWindow, releaseFloatingWindow } from "./shared/floatingWindow.js";
+import { createHelpTip } from "./shared/helpPopover.js";
 
 // 选景跑在本插件自己的 LLM 上，生图才交给 Cosmos，所以只有这两个阶段；
 // 生图的百分比来自 ComfyUI 的步数回调，NovelAI 非流式则没有进度。
 const PROGRESS_LABELS = { selecting: "正在通读正文、选择画面…", generating: "正在生成图片…" };
 /** 流式过程图的更新间隔：帧率再高也不值得每帧都换 object URL 并触发重绘。 */
 const PREVIEW_THROTTLE_MS = 150;
+
+/**
+ * 顶栏问号里的**静态**说明：永远成立的那些解释性文字。
+ *
+ * 条件性的提示一律留在原地 —— 「当前后端把人物位置固定在画面中心」「这次没用上分人物
+ * 提示词」「保存失败请重试」只在该出现的那一刻出现；收进这里等于用户最需要看到它时看不到。
+ * 判断标准：这句话对任何一轮配图都成立吗？成立才放这里。
+ */
+const PANEL_HELP = [
+    {
+        heading: "怎么用",
+        lines: [
+            "选一轮剧场内容 → 「分析画面」挑出适合落笔的瞬间 → 可以改提示词 → 「生成图片」。",
+            "「换个画面」会重新选景，并把此前选过的画面作为排除参考。",
+            "切换正文不改变任务归属：正在跑的那次仍属于发起时的那一轮内容。",
+        ],
+    },
+    {
+        heading: "提示词只写「画面里有什么」",
+        lines: [
+            "质量词、画师串、画风预设、LoRA 触发词与画幅采样器一律由生图后端追加，这里再写一遍就会重复叠加。",
+            "所以面板里显示的提示词不等于最终发给后端的内容。",
+            "画面张数与图源同样由后端决定：用哪个模型、出几张，小剧场都无法指定。",
+        ],
+    },
+    {
+        heading: "生图后端",
+        lines: [
+            "在「场景配图设置」里切换；顶栏下方的状态行显示它当前是否可用。",
+            "草稿落盘时会记下当时用的后端，所以换后端重画不用重新选景。",
+            "后端卸载后，已保存图片的浏览、采用、下载与导出都不受影响，只有再点「生成图片」才会报错。",
+        ],
+    },
+    {
+        heading: "人物外观档案",
+        lines: [
+            "顶栏的通讯录图标。为角色记一次外观，之后进这个角色的配图会自动带上。",
+            "命中的档案会填进「人物资料」并预勾选；你手打的内容永远不会被覆盖。",
+        ],
+    },
+];
 // 会话与任务都放在模块级：面板关掉后选景与生图继续跑，重新打开同一场景能接着看进度和结果。
 const sessions = new Map();
 let activeView = null;
@@ -30,6 +73,9 @@ function sessionFor(sceneId, initialText) {
         sessions.set(sceneId, {
             text: initialText || "", request: "", participants: "", draft: null, pending: null,
             previewBlob: null, previousScenes: [], adopted: undefined, notice: "", job: null,
+            // 画幅：只给支持指定画幅的后端显示。与 request/participants 同为会话级
+            //（草稿 DTO 不记它，刷新页面后重开会丢）。
+            size: "",
             // 外观档案：profileIds 是勾选态，profileBlocks 记下我们插入过的那几块原文，
             // 取消勾选时只移除仍逐字存在的那块 —— 用户改过的内容永不删除。
             profileIds: [], profileBlocks: {}, profilesInitialized: false,
@@ -104,7 +150,7 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         <section class="t-illustration-panel" role="dialog" aria-labelledby="t-illustration-title">
             <div class="t-panel-header">
                 <strong id="t-illustration-title">场景配图</strong>
-                <div style="display:flex; align-items:center; gap:8px;">
+                <div class="t-panel-header-actions" data-role="header-actions">
                     <button type="button" class="t-btn" data-action="profiles" title="人物外观档案" aria-label="人物外观档案"><i class="fa-solid fa-address-book"></i></button>
                     <button type="button" class="t-btn" data-action="settings" title="场景配图设置：选景预设" aria-label="场景配图设置"><i class="fa-solid fa-gear"></i></button>
                     <button type="button" class="t-btn" data-action="close" title="关闭配图面板" aria-label="关闭配图面板"><i class="fa-solid fa-xmark"></i></button>
@@ -112,9 +158,7 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
             </div>
             <div class="t-illustration-body">
                 <label class="t-illustration-field">配图内容<select class="t-input" data-field="target"></select></label>
-                <p class="t-illustration-hint">为选中的这一轮剧场挑选一个画面。切换正文后，本次任务仍属于这里显示的内容。</p>
-                <div class="t-illustration-connection"><span data-role="connection">正在检测 Cosmos Vision…</span><button class="t-btn" type="button" data-action="detect">重新检测</button></div>
-                <p class="t-illustration-hint">画面由本插件的 API 方案选出；画幅、画风、质量词与预设沿用 Cosmos Vision 的配置，不在这里选择。</p>
+                <div class="t-illustration-connection"><span data-role="connection">正在检测生图后端…</span><button class="t-btn" type="button" data-action="detect">重新检测</button></div>
                 <label class="t-illustration-field">想画什么（可选）<textarea class="t-input" data-field="request" rows="2" placeholder="例如：画雨中重逢的瞬间，远景，偏冷色"></textarea></label>
                 <details class="t-illustration-details"><summary>正文与人物资料</summary>
                     <label class="t-illustration-field">本次配图素材<textarea class="t-input" data-field="text" rows="6"></textarea></label>
@@ -128,10 +172,16 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                     <p class="t-illustration-summary" data-role="summary"></p>
                     <p class="t-illustration-hint" data-role="excerpt" hidden></p>
                     <details class="t-illustration-details"><summary>编辑绘画提示词</summary>
-                        <p class="t-illustration-hint">这里只写「画面里有什么」。质量词、画师串、画风预设与 LoRA 触发词由 Cosmos Vision 追加，重复填写会叠加。</p>
+                        <label class="t-illustration-field" data-role="size-field" hidden>画幅<select class="t-input" data-field="size">
+                            <option value="">默认（由后端决定）</option>
+                            <option value="portrait">竖幅</option>
+                            <option value="landscape">横幅</option>
+                        </select></label>
                         <label class="t-illustration-field">正向提示词<textarea class="t-input" data-field="positive" rows="5"></textarea></label>
                         <label class="t-illustration-field">负向提示词<textarea class="t-input" data-field="negative" rows="3"></textarea></label>
+                        <p class="t-illustration-hint" data-role="negative-hint" hidden></p>
                         <div data-role="characters"></div>
+                        <p class="t-illustration-hint" data-role="characters-hint" hidden></p>
                     </details>
                     <button class="t-btn primary" type="button" data-action="generate">生成图片</button>
                 </div>
@@ -146,8 +196,15 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
     const field = name => root.querySelector(`[data-field="${name}"]`);
     const role = name => root.querySelector(`[data-role="${name}"]`);
     const action = name => root.querySelector(`[data-action="${name}"]`);
+    // 静态说明统一收进顶栏的问号，界面本身只留操作。
+    const help = createHelpTip({ title: "场景配图", sections: PANEL_HELP });
+    role("header-actions").insertBefore(help.root, action("close"));
     targets.forEach((target, index) => field("target").add(new Option(target.label || target.scriptName, String(index))));
     let target = targets[0], session, localBusy = false, ready = false, disposed = false;
+    // 当前生图后端由设置决定；能力（人物位置 / 负面词 / 指定画幅）由适配层按后端推导，
+    // 未就绪时为 null —— 那表示「还不知道」，界面保持原样而不是瞎猜。
+    let activeBackendId = "cosmos", activeCapabilities = null;
+    let unsubscribeBackends = () => { };
     let selectionSequence = 0, detectionSequence = 0, pendingUrl = null, renderedDraft, renderedPending;
     // 过程图与「已生成待保存」是两种状态：前者只预览，后者才启用「重试保存」。
     let previewUrl = null, renderedPreviewBlob = null, previewUpdatedAt = 0;
@@ -205,6 +262,8 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                     <div class="t-illustration-coordinates">${["x", "y"].map(axis => `<label>${axis.toUpperCase()} <input class="t-input" type="number" min="0" max="1" step="0.05" data-character="${index}" data-key="${axis}" value="${character.position[axis]}"></label>`).join("")}</div>
                 </fieldset>`).join("");
         }
+        // characters 的 innerHTML 会把 X/Y 节点整个重建，所以能力收起要在这之后再做一遍。
+        renderCapabilities();
         updateControls();
     }
 
@@ -330,15 +389,57 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
     }
 
     /**
-     * 探测生图后端。新接口没有能力协商，只能按方法存在性判断是否可用；
-     * 具体状态（未安装 / 旧版接口 / 就绪）与文案都由适配层给出。
+     * 按当前后端的能力收起 / 标注对不上的控件。
+     *
+     * 只在**就绪**时降级 —— 后端还没装好就说「它不支持人物位置」是瞎猜，
+     * 而且用户往往想先把提示词写好再去装插件。
+     * 位置值本身留在草稿里不动，切回支持它的后端就还在。
+     */
+    function renderCapabilities() {
+        const caps = activeCapabilities;
+        const coordinates = root.querySelectorAll(".t-illustration-coordinates");
+        if (!caps) {
+            role("size-field").hidden = true;
+            role("negative-hint").hidden = true;
+            role("characters-hint").hidden = true;
+            role("characters").hidden = false;
+            coordinates.forEach(node => { node.hidden = false; });
+            return;
+        }
+        role("size-field").hidden = !caps.size;
+        coordinates.forEach(node => { node.hidden = !caps.characterPositions; });
+        role("characters").hidden = !caps.characterPrompts;
+
+        // 分人物提示词与人物位置是两件事：整块不支持时别提位置，免得说了半句。
+        const characterHint = !caps.characterPrompts
+            ? "当前生图后端不支持分人物提示词，这一部分不会进入提示词。"
+            : !caps.characterPositions
+                ? "当前生图后端把人物位置固定在画面中心，X / Y 不会生效。"
+                : "";
+        role("characters-hint").hidden = !characterHint;
+        role("characters-hint").textContent = characterHint;
+
+        const negativeHint = caps.negativePrompt
+            ? ""
+            : "当前生图后端在 NovelAI 下使用你渠道配置的负向词，这里填写的不会生效。";
+        role("negative-hint").hidden = !negativeHint;
+        role("negative-hint").textContent = negativeHint;
+    }
+
+    /**
+     * 探测当前生图后端。后端由设置决定，状态与文案（未安装 / 旧版接口 /
+     * 没配好 / 已连接）由适配层给出。
      */
     function detect() {
         const sequence = ++detectionSequence;
-        const state = detectIllustrationBackend();
+        // 每次都重读设置：在设置窗里换过后端，回到面板点「重新检测」就能生效。
+        activeBackendId = resolveActiveBackendId(getExtData());
+        const state = detectIllustrationBackend(activeBackendId);
         if (disposed || sequence !== detectionSequence) return;
         ready = state.ready;
+        activeCapabilities = state.ready ? state.capabilities : null;
         role("connection").textContent = state.reason;
+        renderCapabilities();
         updateControls();
     }
 
@@ -347,6 +448,8 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         const sequence = ++selectionSequence;
         const current = target;
         session = sessionFor(current.sceneId, buildPromptTextFromTheater(current.content));
+        // 后端可能在设置窗里被换过，每次载入重新读一次；探测在 finally 里做。
+        activeBackendId = resolveActiveBackendId(getExtData());
         // 读取记录期间不接受后台任务的界面同步，避免画到半截状态上。
         view.sceneId = "";
         localBusy = true;
@@ -356,6 +459,7 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         field("text").value = session.text;
         field("request").value = session.request;
         field("participants").value = session.participants;
+        field("size").value = session.size || "";
         renderProfileChips();
         role("status").textContent = "正在读取配图记录…";
         renderDraft();
@@ -408,7 +512,9 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         }
     });
     root.addEventListener("change", event => {
-        if (event.target === field("target")) void loadTarget(Number(event.target.value));
+        if (event.target === field("target")) { void loadTarget(Number(event.target.value)); return; }
+        // 画幅是会话级的，不进草稿 —— 与「想画什么」「人物资料」同一种输入。
+        if (event.target === field("size")) session.size = event.target.value;
     });
     root.addEventListener("click", event => {
         const button = event.target.closest("button");
@@ -490,6 +596,9 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
             }
             let draft;
             try { draft = readDraft(); } catch (error) { role("status").textContent = showError(error); return; }
+            // 分派依据是草稿自己记的 backend。用户换了后端设置就重新盖章 ——
+            // 提示词是后端无关的（只有内容、没有风格），所以换后端重画不必重新选景。
+            if (draft.backend !== activeBackendId) draft = normalizeIllustrationDraft({ ...draft, backend: activeBackendId });
             current.draft = draft;
             startJob(current, currentTarget, "generate", async job => {
                 job.status = PROGRESS_LABELS.generating;
@@ -498,7 +607,8 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                     const result = await generateTheaterIllustration(draft, {
                         signal: job.controller.signal,
                         onProgress: jobProgress(job),
-                        // NovelAI 流式会推过程图；非流式与 ComfyUI 不会走到这里。
+                        size: current.size || undefined,
+                        // 只有流式的后端会推过程图（Cosmos + NovelAI）；其余不会走到这里。
                         onStreamPreview: event => {
                             if (!event.blob) return;
                             const now = Date.now();
@@ -508,13 +618,20 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                             notifyView(job.sceneId);
                         },
                     });
-                    // Cosmos 的张数由它自己的设置决定，调用方无法强制 1 张，所以成批入库。
-                    current.pending = { images: result.images, draft, createdAt: Date.now() };
+                    // 张数由后端自己决定（Cosmos 按它的 imageCount，柏宝绘一次一张），成批入库。
+                    // seed 是后端报回来的实际种子，存下来才能照原样复现这一张。
+                    current.pending = { images: result.images, draft, seed: result.seed, createdAt: Date.now() };
                     job.phase = "saving";
                     job.status = "正在保存配图…";
                     notifyView(job.sceneId);
                     await persistPending(current, currentTarget);
                     if (result.dropped) current.notice += ` 本次返回 ${result.images.length + result.dropped} 张，超过上限的 ${result.dropped} 张未保存。`;
+                    // 用户填了分人物提示词、后端却没用上（通常是模型/后端不支持）：如实说一句，
+                    // 否则他只会以为画面画错了。不降级把角色拼进正向提示词 —— 那会画出多份重叠躯干。
+                    const wantsCharacters = draft.prompts.characterPrompts.some(character => character.positivePrompt.trim());
+                    if (wantsCharacters && result.applied?.characters === false) {
+                        current.notice += " 本次未使用分人物提示词（当前后端或模型不支持），画面按整幅描述生成。";
+                    }
                 } finally {
                     // 过程图不跨任务留存，否则失败后旧帧会一直挂在界面上。
                     current.previewBlob = null;
@@ -545,8 +662,10 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         if (pendingUrl) URL.revokeObjectURL(pendingUrl);
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         root.remove();
-        // 新版公开接口只派发这一个事件；能力变化事件已经不存在了。
-        window.removeEventListener("cosmos-vision:api-ready", detect);
+        // 退掉所有已注册后端的就绪事件，别让关掉的面板继续被通知。
+        unsubscribeBackends();
+        // 说明气泡打开时在 document 上挂了关闭监听，随窗口一起收掉，否则会一直累积。
+        help.close();
         window.removeEventListener("titania:character-profiles-changed", profilesChanged);
         releaseFloatingWindow(close);
         if (previousFocus?.isConnected) previousFocus.focus();
@@ -557,8 +676,9 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         }
     }
     claimFloatingWindow(close);
-    // Cosmos 加载完成会派发 api-ready；用户手动装好扩展后也能靠「重新检测」补上。
-    window.addEventListener("cosmos-vision:api-ready", detect);
+    // 订阅**所有**已注册后端的就绪事件：插件加载顺序不固定，我们可能比它先跑起来。
+    // 用户手动装好后也能靠「重新检测」补上。
+    unsubscribeBackends = subscribeBackendReady(() => detect());
     // 档案管理窗口改完就通知面板重画勾选条，不必重开面板。
     const profilesChanged = () => { if (!disposed) { renderProfileChips(); updateControls(); } };
     window.addEventListener("titania:character-profiles-changed", profilesChanged);

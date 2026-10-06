@@ -86,8 +86,8 @@ export async function uploadIllustrationBlob(blob, id = newIllustrationId()) {
  * 保存一批生成的图片，采用第一张。
  *
  * 必须成批保存：mutateScene 每次都会写一份新的不可变记录文件并落一次设置，
- * 逐张调用会让一次多图生成产生 N 次记录写入。Cosmos 的返回张数由它自己决定，
- * 调用方无法强制 1 张，所以多图是常态而非例外。
+ * 逐张调用会让一次多图生成产生 N 次记录写入。返回张数由后端自己决定
+ * （Cosmos 按它的 imageCount，柏宝绘一次一张），所以多图是常态而非例外。
  *
  * pending.images[i].id 与 .filePath 在重试保存时保持不变，避免反复上传同一张图。
  */
@@ -105,6 +105,8 @@ export async function saveGeneratedIllustrations(sceneId, pending) {
             width: item.width,
             height: item.height,
             draft: pending.draft,
+            // 后端报回来的实际种子（柏宝绘会给，Cosmos 不给）。存下来才能照原样复现这一张。
+            seed: pending.seed,
             createdAt: pending.createdAt || Date.now(),
         }));
     }

@@ -10,6 +10,7 @@ import { defaultSettings, extensionName } from "../config/defaults.js";
 import { ensurePromptManager } from "../core/promptManager.js";
 import { ensureCharacterProfiles } from "../core/characterProfiles.js";
 import { ensureIllustrationPresets } from "../core/illustrationPresets.js";
+import { ensureIllustrationBackend } from "../core/illustrationBackends/registry.js";
 
 // 获取扩展数据，如果不存在则初始化默认值
 export function getExtData() {
@@ -20,7 +21,9 @@ export function getExtData() {
     const profilesChanged = ensureCharacterProfiles(extension_settings[extensionName]);
     // 选景预设的首次建立与旧「单块规范」迁移都在这里发生。
     const presetsChanged = ensureIllustrationPresets(extension_settings[extensionName]);
-    if (changed || profilesChanged || presetsChanged) saveSettingsDebounced();
+    // 当前生图后端的首次建立（老用户没有这个键，补一个默认后端）。
+    const backendChanged = ensureIllustrationBackend(extension_settings[extensionName]);
+    if (changed || profilesChanged || presetsChanged || backendChanged) saveSettingsDebounced();
     return extension_settings[extensionName];
 }
 

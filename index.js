@@ -1082,13 +1082,14 @@ function illustrationFigure(value) {
   const captionHtml = caption ? `<figcaption style="margin-top:10px;font-size:0.9em;line-height:1.6">${caption}</figcaption>` : "";
   return `<figure data-titania-illustration="${escapeIllustrationHtml(image.id)}" style="margin:24px auto;text-align:center;max-width:100%"><a href="${image.filePath}" target="_blank" rel="noopener"><img src="${image.filePath}" alt="${caption || "\u914D\u56FE"}" width="${image.width}" height="${image.height}" loading="lazy" style="display:block;max-width:100%;height:auto;max-height:80vh;object-fit:contain;margin:auto;border-radius:12px"></a>${captionHtml}</figure>`;
 }
-var ILLUSTRATION_INDEX_KEY, MAX_IMAGE_BYTES, ILLUSTRATION_DRAFT_VERSION, BACKENDS, MIME_EXTENSIONS;
+var ILLUSTRATION_INDEX_KEY, MAX_IMAGE_BYTES, ILLUSTRATION_DRAFT_VERSION, ILLUSTRATION_BACKEND_IDS, BACKENDS, MIME_EXTENSIONS;
 var init_illustrationData = __esm({
   "src/core/illustrationData.js"() {
     ILLUSTRATION_INDEX_KEY = "illustration_index";
     MAX_IMAGE_BYTES = 32 * 1024 * 1024;
     ILLUSTRATION_DRAFT_VERSION = 2;
-    BACKENDS = /* @__PURE__ */ new Set(["cosmos"]);
+    ILLUSTRATION_BACKEND_IDS = ["cosmos", "baibai"];
+    BACKENDS = new Set(ILLUSTRATION_BACKEND_IDS);
     MIME_EXTENSIONS = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
   }
 });
@@ -1181,6 +1182,8 @@ async function saveGeneratedIllustrations(sceneId, pending) {
       width: item.width,
       height: item.height,
       draft: pending.draft,
+      // 后端报回来的实际种子（柏宝绘会给，Cosmos 不给）。存下来才能照原样复现这一张。
+      seed: pending.seed,
       createdAt: pending.createdAt || Date.now()
     }));
   }
@@ -3876,6 +3879,408 @@ highly detailed, extremely detailed, intricate details
   }
 });
 
+// src/core/imageBytes.js
+function startsWith(bytes, sequence, offset = 0) {
+  if (bytes.length < offset + sequence.length) return false;
+  for (let index = 0; index < sequence.length; index++) {
+    if (bytes[offset + index] !== sequence[index]) return false;
+  }
+  return true;
+}
+function readUint16BE(bytes, offset) {
+  return bytes[offset] << 8 | bytes[offset + 1];
+}
+function readUint32BE(bytes, offset) {
+  return (bytes[offset] << 24 | bytes[offset + 1] << 16 | bytes[offset + 2] << 8 | bytes[offset + 3]) >>> 0;
+}
+function readUint16LE(bytes, offset) {
+  return bytes[offset] | bytes[offset + 1] << 8;
+}
+function readUint24LE(bytes, offset) {
+  return bytes[offset] | bytes[offset + 1] << 8 | bytes[offset + 2] << 16;
+}
+function positiveSize(width, height) {
+  const valid = Number.isInteger(width) && Number.isInteger(height) && width > 0 && height > 0;
+  return valid ? { width, height } : null;
+}
+function sniffImageMime(bytes) {
+  if (!(bytes instanceof Uint8Array)) return null;
+  if (startsWith(bytes, PNG_SIGNATURE)) return MIME_PNG;
+  if (startsWith(bytes, JPEG_SIGNATURE)) return MIME_JPEG;
+  if (startsWith(bytes, RIFF_SIGNATURE) && startsWith(bytes, WEBP_SIGNATURE, 8)) return MIME_WEBP;
+  return null;
+}
+function readPngSize(bytes) {
+  if (bytes.length < 24) return null;
+  if (!startsWith(bytes, [73, 72, 68, 82], 12)) return null;
+  return positiveSize(readUint32BE(bytes, 16), readUint32BE(bytes, 20));
+}
+function readJpegSize(bytes) {
+  let offset = 2;
+  while (offset + 3 < bytes.length) {
+    if (bytes[offset] !== 255) {
+      offset += 1;
+      continue;
+    }
+    const marker = bytes[offset + 1];
+    if (marker === 255) {
+      offset += 1;
+      continue;
+    }
+    if (marker === 1 || marker >= 208 && marker <= 215) {
+      offset += 2;
+      continue;
+    }
+    if (marker === 217 || marker === 218) return null;
+    if (offset + 3 >= bytes.length) return null;
+    const length = readUint16BE(bytes, offset + 2);
+    if (length < 2) return null;
+    const isSof = marker >= 192 && marker <= 207 && marker !== 196 && marker !== 200 && marker !== 204;
+    if (isSof) {
+      if (offset + 8 >= bytes.length) return null;
+      return positiveSize(readUint16BE(bytes, offset + 7), readUint16BE(bytes, offset + 5));
+    }
+    offset += 2 + length;
+  }
+  return null;
+}
+function readWebpSize(bytes) {
+  if (bytes.length < 16) return null;
+  const chunk = String.fromCharCode(bytes[12], bytes[13], bytes[14], bytes[15]);
+  if (chunk === "VP8X") {
+    if (bytes.length < 30) return null;
+    return positiveSize(readUint24LE(bytes, 24) + 1, readUint24LE(bytes, 27) + 1);
+  }
+  if (chunk === "VP8L") {
+    if (bytes.length < 25 || bytes[20] !== 47) return null;
+    const bits = (bytes[21] | bytes[22] << 8 | bytes[23] << 16 | bytes[24] << 24) >>> 0;
+    return positiveSize((bits & 16383) + 1, (bits >>> 14 & 16383) + 1);
+  }
+  if (chunk === "VP8 ") {
+    if (bytes.length < 30 || !startsWith(bytes, WEBP_VP8_START_CODE, 23)) return null;
+    return positiveSize(readUint16LE(bytes, 26) & 16383, readUint16LE(bytes, 28) & 16383);
+  }
+  return null;
+}
+function readImageSize(bytes) {
+  if (!(bytes instanceof Uint8Array)) return null;
+  const mime = sniffImageMime(bytes);
+  if (mime === MIME_PNG) return readPngSize(bytes);
+  if (mime === MIME_JPEG) return readJpegSize(bytes);
+  if (mime === MIME_WEBP) return readWebpSize(bytes);
+  return null;
+}
+function dataUrlToBlob(dataUrl, { maxBytes = Infinity } = {}) {
+  const match = typeof dataUrl === "string" ? DATA_URL_PATTERN.exec(dataUrl.trim()) : null;
+  if (!match) throw new Error("\u8FD4\u56DE\u7684\u4E0D\u662F\u53EF\u8BC6\u522B\u7684\u56FE\u7247 data URL\u3002");
+  const [, mimeType, base64] = match;
+  const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  const byteLength = Math.floor(base64.length * 3 / 4) - padding;
+  if (byteLength <= 0) throw new Error("\u8FD4\u56DE\u7684\u56FE\u7247\u6570\u636E\u662F\u7A7A\u7684\u3002");
+  if (byteLength > maxBytes) throw new Error(`\u56FE\u7247\u8D85\u8FC7 ${Math.round(maxBytes / (1024 * 1024))} MB\uFF0C\u65E0\u6CD5\u4FDD\u5B58\u3002`);
+  let binary;
+  try {
+    binary = atob(base64);
+  } catch {
+    throw new Error("\u8FD4\u56DE\u7684\u56FE\u7247\u6570\u636E\u4E0D\u662F\u5408\u6CD5\u7684 base64\u3002");
+  }
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+  return new Blob([bytes], { type: mimeType });
+}
+async function inspectImageBlob(blob) {
+  if (!(blob instanceof Blob) || !blob.size) return null;
+  const prefixLength = Math.min(blob.size, IMAGE_PREFIX_BYTES);
+  const prefix = new Uint8Array(await blob.slice(0, prefixLength).arrayBuffer());
+  const mimeType = sniffImageMime(prefix);
+  if (!mimeType) return null;
+  let size = readImageSize(prefix);
+  if (!size && blob.size > prefixLength) {
+    size = readImageSize(new Uint8Array(await blob.arrayBuffer()));
+  }
+  if (!size) return null;
+  const typed = blob.type === mimeType ? blob : new Blob([blob], { type: mimeType });
+  return { blob: typed, mimeType, width: size.width, height: size.height };
+}
+var PNG_SIGNATURE, RIFF_SIGNATURE, WEBP_SIGNATURE, JPEG_SIGNATURE, WEBP_VP8_START_CODE, MIME_PNG, MIME_JPEG, MIME_WEBP, IMAGE_PREFIX_BYTES, DATA_URL_PATTERN;
+var init_imageBytes = __esm({
+  "src/core/imageBytes.js"() {
+    PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
+    RIFF_SIGNATURE = [82, 73, 70, 70];
+    WEBP_SIGNATURE = [87, 69, 66, 80];
+    JPEG_SIGNATURE = [255, 216, 255];
+    WEBP_VP8_START_CODE = [157, 1, 42];
+    MIME_PNG = "image/png";
+    MIME_JPEG = "image/jpeg";
+    MIME_WEBP = "image/webp";
+    IMAGE_PREFIX_BYTES = 1024 * 1024;
+    DATA_URL_PATTERN = /^data:(image\/(?:png|jpeg|webp));base64,([\s\S]*)$/;
+  }
+});
+
+// src/core/illustrationBackends/baibai.js
+function deriveCapabilities(status) {
+  return Object.freeze({
+    characterPrompts: status?.supportsCharacters === true,
+    // 它把每个角色提示词的位置硬编码成画面中心（nai.ts 里 centers: [{x:0.5,y:0.5}]），
+    // 调用方没有任何办法指定。位置仍然留在草稿里，切回 Cosmos 就能用。
+    characterPositions: false,
+    // characters[] 只有 {name, tag, nl}，没有逐角色负向词。
+    characterNegative: false,
+    // NAI 忽略 negative（用它自己渠道配置的负向词）；只有 ComfyUI 会填进工作流。
+    negativePrompt: status?.backend === "comfyui",
+    size: true,
+    // 一次一张，没有 count 参数。
+    batch: false,
+    streamPreview: false
+  });
+}
+function probe() {
+  const api = globalThis.window?.STBaiBaiImage;
+  if (!api) return { ready: false, status: "missing", reason: "\u672A\u68C0\u6D4B\u5230\u67CF\u5B9D\u7ED8\uFF0C\u8BF7\u5B89\u88C5\u5E76\u542F\u7528\u8BE5\u6269\u5C55\u3002" };
+  if (Number(api.apiVersion) !== 1) {
+    const seen = api.apiVersion === void 0 ? "\u672A\u77E5" : String(api.apiVersion);
+    return { ready: false, status: "legacy", reason: `\u67CF\u5B9D\u7ED8\u7684\u516C\u5F00\u63A5\u53E3\u7248\u672C\u662F ${seen}\uFF0C\u672C\u63D2\u4EF6\u53EA\u8BA4 1\uFF0C\u8BF7\u5347\u7EA7\u67CF\u5B9D\u7ED8\u3002` };
+  }
+  if (typeof api.generate !== "function") {
+    return { ready: false, status: "unsupported", reason: "\u67CF\u5B9D\u7ED8\u6CA1\u6709\u63D0\u4F9B\u751F\u56FE\u63A5\u53E3\u3002" };
+  }
+  let status;
+  try {
+    status = api.getBackendStatus();
+  } catch {
+    return { ready: false, status: "not_configured", reason: "\u67CF\u5B9D\u7ED8\u8FD8\u6CA1\u6709\u5C31\u7EEA\uFF0C\u8BF7\u7A0D\u540E\u5728\u5B83\u7684\u8BBE\u7F6E\u91CC\u68C0\u67E5\u51FA\u56FE\u540E\u7AEF\u3002" };
+  }
+  if (!status || typeof status !== "object") {
+    return { ready: false, status: "unsupported", reason: "\u67CF\u5B9D\u7ED8\u6CA1\u6709\u8FD4\u56DE\u540E\u7AEF\u72B6\u6001\u3002" };
+  }
+  const detail = { provider: status.backend, model: status.model };
+  const capabilities = deriveCapabilities(status);
+  if (status.configured !== true) {
+    const reason = typeof status.reason === "string" && status.reason.trim() ? status.reason.trim() : "\u67CF\u5B9D\u7ED8\u8FD8\u6CA1\u6709\u914D\u7F6E\u597D\u51FA\u56FE\u540E\u7AEF\uFF0C\u8BF7\u5148\u5728\u5B83\u7684\u8BBE\u7F6E\u91CC\u5B8C\u6210\u914D\u7F6E\u3002";
+    return { ready: false, status: "not_configured", reason, capabilities, detail };
+  }
+  const provider = PROVIDER_LABELS[status.backend] || status.backend || "\u672A\u77E5\u540E\u7AEF";
+  const model = typeof status.model === "string" && status.model.trim() ? ` \xB7 ${status.model.trim()}` : "";
+  return { ready: true, status: "ready", reason: `\u67CF\u5B9D\u7ED8\u5DF2\u8FDE\u63A5\uFF08${provider}${model}\uFF09\u3002`, capabilities, detail };
+}
+function buildCharacters(characterPrompts) {
+  if (!Array.isArray(characterPrompts)) return [];
+  return characterPrompts.filter((character) => typeof character?.positivePrompt === "string" && character.positivePrompt.trim()).map((character, index) => ({ name: `\u89D2\u8272${index + 1}`, tag: character.positivePrompt.trim() }));
+}
+function progressFraction(progress) {
+  const max = Number(progress?.max);
+  const attempt = Number(progress?.attempt);
+  return Number.isFinite(max) && max > 0 && Number.isFinite(attempt) ? Math.min(1, Math.max(0, attempt / max)) : void 0;
+}
+function translateError(error) {
+  const code = typeof error?.code === "string" ? error.code : "";
+  if (code === "aborted") return Object.assign(new Error("\u914D\u56FE\u4EFB\u52A1\u5DF2\u53D6\u6D88\u3002"), { name: "AbortError", code: "ABORTED" });
+  const [pluginCode, lead] = ERROR_MAP[code] || ["GENERATION_FAILED", ""];
+  const detail = typeof error?.message === "string" && error.message.trim() ? error.message.trim() : "";
+  const message = lead && detail ? `${lead}\uFF08${detail}\uFF09` : lead || detail || "\u67CF\u5B9D\u7ED8\u751F\u6210\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002";
+  return Object.assign(new Error(message), { code: pluginCode });
+}
+async function generate(draft, options = {}) {
+  const api = globalThis.window?.STBaiBaiImage;
+  if (typeof api?.generate !== "function") {
+    throw Object.assign(new Error("\u67CF\u5B9D\u7ED8\u5C1A\u672A\u5C31\u7EEA\u3002"), { code: "NOT_READY" });
+  }
+  const characters = buildCharacters(draft.prompts.characterPrompts);
+  const request = {
+    prompt: draft.prompts.positivePrompt,
+    // NAI 下它会忽略这个字段；照发即可，切到 ComfyUI 时就有用。
+    negative: draft.prompts.negativePrompt,
+    // ⚠ 必须显式传 false：它的默认是 true，会把图也存进它自己的图库。
+    //   本插件的收藏、备份与图文导出都依赖自己的 /user/files 存储，不要两份。
+    save: false
+  };
+  if (characters.length) request.characters = characters;
+  if (options.size) request.size = options.size;
+  if (options.seed !== void 0 && options.seed !== null && Number.isFinite(Number(options.seed))) {
+    request.seed = Number(options.seed);
+  }
+  let result;
+  try {
+    result = await api.generate(request, {
+      signal: options.signal,
+      onProgress: (progress) => {
+        if (options.signal?.aborted) return;
+        try {
+          options.onProgress?.({ stage: "generating", fraction: progressFraction(progress) });
+        } catch {
+        }
+      }
+    });
+  } catch (error) {
+    throw translateError(error);
+  }
+  let blob;
+  try {
+    blob = dataUrlToBlob(result?.dataUrl, { maxBytes: MAX_IMAGE_BYTES });
+  } catch (error) {
+    throw Object.assign(new Error(error?.message || "\u67CF\u5B9D\u7ED8\u6CA1\u6709\u8FD4\u56DE\u56FE\u7247\u3002"), { code: "GENERATION_FAILED" });
+  }
+  return {
+    blobs: [blob],
+    seed: result?.seed,
+    // 不推断：它明说这次到底用上没有。传了 characters 但这里是 false = 被丢弃了
+    //（通常用户在用 ComfyUI），界面要如实告诉用户。
+    applied: { characters: result?.charactersApplied === true }
+  };
+}
+var READY_EVENTS, PROVIDER_LABELS, ERROR_MAP, baibaiBackend;
+var init_baibai = __esm({
+  "src/core/illustrationBackends/baibai.js"() {
+    init_illustrationData();
+    init_imageBytes();
+    READY_EVENTS = ["st-baibai-image:ready", "st-baibai-image:changed"];
+    PROVIDER_LABELS = { nai: "NovelAI", comfyui: "ComfyUI" };
+    ERROR_MAP = {
+      not_configured: ["NOT_READY", "\u67CF\u5B9D\u7ED8\u8FD8\u6CA1\u6709\u914D\u7F6E\u597D\u51FA\u56FE\u540E\u7AEF"],
+      invalid_args: ["INVALID_ARGS", "\u67CF\u5B9D\u7ED8\u62D2\u7EDD\u4E86\u8FD9\u6B21\u8BF7\u6C42"],
+      rate_limited: ["RATE_LIMITED", "\u67CF\u5B9D\u7ED8\u8BF7\u6C42\u8FC7\u4E8E\u9891\u7E41\u6216\u989D\u5EA6\u4E0D\u8DB3\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5"],
+      backend_error: ["GENERATION_FAILED", ""]
+    };
+    baibaiBackend = {
+      id: "baibai",
+      label: "\u67CF\u5B9D\u7ED8",
+      readyEvents: READY_EVENTS,
+      probe,
+      generate
+    };
+  }
+});
+
+// src/core/illustrationBackends/cosmos.js
+function probe2() {
+  const api = globalThis.window?.CosmosVision;
+  if (!api) return { ready: false, status: "missing", reason: "\u672A\u68C0\u6D4B\u5230 Cosmos Vision\uFF0C\u8BF7\u5B89\u88C5\u5E76\u542F\u7528\u8BE5\u6269\u5C55\u3002" };
+  if (typeof api.generateImage !== "function") {
+    if (typeof api.preparePrompt === "function" || api.apiVersion) {
+      return { ready: false, status: "legacy", reason: "\u68C0\u6D4B\u5230\u65E7\u7248 Cosmos Vision \u63A5\u53E3\uFF0C\u8BF7\u5347\u7EA7\u5230\u63D0\u4F9B generateImage \u7684\u7248\u672C\u3002" };
+    }
+    return { ready: false, status: "unsupported", reason: "Cosmos Vision \u6CA1\u6709\u63D0\u4F9B\u751F\u56FE\u63A5\u53E3\u3002" };
+  }
+  return { ready: true, status: "ready", reason: "Cosmos Vision \u5DF2\u8FDE\u63A5\u3002", capabilities: CAPABILITIES };
+}
+async function generate2(draft, options = {}) {
+  const api = globalThis.window?.CosmosVision;
+  if (typeof api?.generateImage !== "function") {
+    const state = probe2();
+    throw Object.assign(new Error(state.reason), { code: "NOT_READY" });
+  }
+  const result = await api.generateImage({
+    // 只给「画面里有什么」。质量词、UC 词、画风预设与 LoRA 触发词由 Cosmos 追加，
+    // 这里再写一遍就会重复叠加 —— v1 需求与联调清单都点名过这条。
+    prompts: {
+      positivePrompt: draft.prompts.positivePrompt,
+      negativePrompt: draft.prompts.negativePrompt,
+      characterPrompts: draft.prompts.characterPrompts
+    },
+    requestId: newIllustrationId(),
+    signal: options.signal,
+    // 每次调用各有独立回调闭包，事件不会串任务，所以不做 requestId 过滤
+    // （Cosmos 缺省会自增 requestId，硬比会误伤合法事件）。
+    onProgress: (progress) => {
+      if (options.signal?.aborted) return;
+      const max = Number(progress?.max);
+      const value = Number(progress?.value);
+      const fraction = Number.isFinite(max) && max > 0 && Number.isFinite(value) ? Math.min(1, Math.max(0, value / max)) : void 0;
+      try {
+        options.onProgress?.({ stage: "generating", fraction });
+      } catch {
+      }
+    },
+    onStreamPreview: (event) => {
+      if (options.signal?.aborted) return;
+      try {
+        options.onStreamPreview?.({ blob: event?.previewBlob, isFinal: Boolean(event?.isFinal) });
+      } catch {
+      }
+    }
+  });
+  return { blobs: Array.isArray(result?.imageBlobs) ? result.imageBlobs : [] };
+}
+var CAPABILITIES, cosmosBackend;
+var init_cosmos = __esm({
+  "src/core/illustrationBackends/cosmos.js"() {
+    init_illustrationData();
+    CAPABILITIES = Object.freeze({
+      characterPrompts: true,
+      characterPositions: true,
+      characterNegative: true,
+      negativePrompt: true,
+      size: false,
+      batch: true,
+      streamPreview: true
+    });
+    cosmosBackend = {
+      id: "cosmos",
+      label: "Cosmos Vision",
+      // 它准备好的广播事件。界面订阅所有后端的这一份，任何一个就绪都会重新探测。
+      readyEvents: ["cosmos-vision:api-ready"],
+      probe: probe2,
+      generate: generate2
+    };
+  }
+});
+
+// src/core/illustrationBackends/registry.js
+function statusToErrorCode(status) {
+  return status === "legacy" || status === "unsupported" ? "UNSUPPORTED_API" : "NOT_READY";
+}
+function listIllustrationBackends() {
+  return [...ADAPTERS.values()];
+}
+function getIllustrationBackend(id3) {
+  return ADAPTERS.get(String(id3 ?? "")) || null;
+}
+function subscribeBackendReady(handler) {
+  const target = globalThis.window;
+  if (!target?.addEventListener) return () => {
+  };
+  const events = listIllustrationBackends().flatMap((adapter) => adapter.readyEvents || []);
+  for (const name of events) target.addEventListener(name, handler);
+  return () => {
+    for (const name of events) target.removeEventListener(name, handler);
+  };
+}
+function resolveActiveBackendId(data) {
+  const id3 = data?.[ILLUSTRATION_BACKEND_KEY]?.active_id;
+  return ADAPTERS.has(id3) ? id3 : DEFAULT_BACKEND_ID;
+}
+function ensureIllustrationBackend(data) {
+  if (!data || typeof data !== "object") return false;
+  const current = data[ILLUSTRATION_BACKEND_KEY];
+  if (current && current.version === ILLUSTRATION_BACKEND_VERSION && ADAPTERS.has(current.active_id)) return false;
+  data[ILLUSTRATION_BACKEND_KEY] = {
+    version: ILLUSTRATION_BACKEND_VERSION,
+    active_id: resolveActiveBackendId(data)
+  };
+  return true;
+}
+var EMPTY_CAPABILITIES, DEFAULT_BACKEND_ID, ADAPTERS, ILLUSTRATION_BACKEND_KEY, ILLUSTRATION_BACKEND_VERSION;
+var init_registry = __esm({
+  "src/core/illustrationBackends/registry.js"() {
+    init_baibai();
+    init_cosmos();
+    EMPTY_CAPABILITIES = Object.freeze({
+      characterPrompts: false,
+      characterPositions: false,
+      characterNegative: false,
+      negativePrompt: false,
+      size: false,
+      batch: false,
+      streamPreview: false
+    });
+    DEFAULT_BACKEND_ID = "cosmos";
+    ADAPTERS = new Map([cosmosBackend, baibaiBackend].map((adapter) => [adapter.id, adapter]));
+    ILLUSTRATION_BACKEND_KEY = "illustration_backend";
+    ILLUSTRATION_BACKEND_VERSION = 1;
+  }
+});
+
 // src/utils/storage.js
 import { extension_settings } from "../../../extensions.js";
 import { saveSettingsDebounced, saveSettings } from "../../../../script.js";
@@ -3886,7 +4291,8 @@ function getExtData() {
   const changed = ensurePromptManager(extension_settings[extensionName]);
   const profilesChanged = ensureCharacterProfiles(extension_settings[extensionName]);
   const presetsChanged = ensureIllustrationPresets(extension_settings[extensionName]);
-  if (changed || profilesChanged || presetsChanged) saveSettingsDebounced();
+  const backendChanged = ensureIllustrationBackend(extension_settings[extensionName]);
+  if (changed || profilesChanged || presetsChanged || backendChanged) saveSettingsDebounced();
   return extension_settings[extensionName];
 }
 function saveExtData() {
@@ -3907,6 +4313,7 @@ var init_storage = __esm({
     init_promptManager();
     init_characterProfiles();
     init_illustrationPresets();
+    init_registry();
   }
 });
 
@@ -6828,6 +7235,14 @@ function loadCssFiles() {
     align-items: center;
     border-radius: var(--t-radius-panel) var(--t-radius-panel) 0 0;
     flex-shrink: 0;
+}
+
+/* \u9876\u680F\u53F3\u4FA7\u90A3\u4E00\u7C07\u6309\u94AE\u3002\u653E\u5728\u8FD9\u91CC\u800C\u4E0D\u662F\u5404\u7A97\u53E3\u5185\u8054\uFF0C\u662F\u56E0\u4E3A\u4E09\u4E2A\u914D\u56FE\u7A97\u53E3\u7684\u9876\u680F\u90FD\u8981\u7528\uFF0C
+   \u800C\u4E14\u95EE\u53F7\u6C14\u6CE1\u8981\u9760\u5B83\u505A\u5B9A\u4F4D\u53C2\u7167\uFF08.t-help \u662F position: relative\uFF09\u3002 */
+.t-panel-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .t-panel-footer {
@@ -13446,6 +13861,80 @@ textarea.t-input {
 .t-profile-toggle.is-on { border-color: var(--t-color-brand); color: var(--t-color-brand); }
 .t-profile-order { color: var(--t-color-text-muted); font-size: 0.8em; }
 .t-profile-card-header .t-btn { margin-left: auto; }
+
+/* \u2500\u2500 \u9876\u680F\u95EE\u53F7\uFF1A\u9759\u6001\u8BF4\u660E\u6536\u5728\u4E00\u5904\uFF08\u4E09\u4E2A\u914D\u56FE\u7A97\u53E3\u5171\u7528\uFF09 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+   \u6C14\u6CE1\u6302\u5728\u6309\u94AE\u5BB9\u5668\u4E0A\u505A\u7EDD\u5BF9\u5B9A\u4F4D\uFF0C\u6240\u4EE5\u5BB9\u5668\u5FC5\u987B\u6709 position: relative\u3002
+   \u5934\u90E8\u672C\u8EAB\u6CA1\u6709 overflow: hidden\uFF0C\u6C14\u6CE1\u4E0D\u4F1A\u88AB\u88C1\u6389\uFF1Bz-index \u8981\u9AD8\u8FC7\u7A97\u53E3\u5185\u5BB9\u3002 */
+
+.t-help {
+    position: relative;
+    display: inline-flex;
+}
+
+.t-help-popover {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 20;
+    /* \u8BF4\u660E\u662F\u6210\u6BB5\u7684\uFF0C\u7ED9\u5BBD\u4E00\u70B9\u4F46\u522B\u628A\u7A97\u53E3\u6491\u7834\uFF1B\u7A84\u5C4F\u9760 vw \u515C\u5E95\u3002 */
+    width: min(430px, 76vw);
+    max-height: min(60vh, 460px);
+    overflow-y: auto;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    text-align: left;
+    background: var(--t-color-surface-elevated);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-panel);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    color: var(--t-color-text-secondary);
+    font-size: 0.85em;
+    line-height: 1.6;
+    font-weight: normal;
+}
+
+.t-help-title {
+    color: var(--t-color-accent);
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.t-help-section + .t-help-section { margin-top: 10px; }
+
+.t-help-heading {
+    color: var(--t-color-text-label);
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.t-help-lines,
+.t-help-terms {
+    margin: 0;
+    padding-left: 1.2em;
+}
+
+.t-help-terms {
+    padding-left: 0;
+}
+
+.t-help-lines > li + li,
+.t-help-terms > dd + dt { margin-top: 4px; }
+
+.t-help-terms > dt {
+    font-weight: normal;
+    margin-top: 6px;
+}
+
+.t-help-terms > dd {
+    margin: 0 0 0 1.2em;
+}
+
+.t-help code {
+    padding: 1px 4px;
+    border-radius: var(--t-radius-inline);
+    background: var(--t-color-surface-code);
+    color: var(--t-color-text);
+}
 
 @media (max-width: 600px) {
     .t-root.t-illustration-window {
@@ -22405,145 +22894,42 @@ var init_chatInjector = __esm({
   }
 });
 
-// src/core/imageBytes.js
-function startsWith(bytes, sequence, offset = 0) {
-  if (bytes.length < offset + sequence.length) return false;
-  for (let index = 0; index < sequence.length; index++) {
-    if (bytes[offset + index] !== sequence[index]) return false;
-  }
-  return true;
-}
-function readUint16BE(bytes, offset) {
-  return bytes[offset] << 8 | bytes[offset + 1];
-}
-function readUint32BE(bytes, offset) {
-  return (bytes[offset] << 24 | bytes[offset + 1] << 16 | bytes[offset + 2] << 8 | bytes[offset + 3]) >>> 0;
-}
-function readUint16LE(bytes, offset) {
-  return bytes[offset] | bytes[offset + 1] << 8;
-}
-function readUint24LE(bytes, offset) {
-  return bytes[offset] | bytes[offset + 1] << 8 | bytes[offset + 2] << 16;
-}
-function positiveSize(width, height) {
-  const valid = Number.isInteger(width) && Number.isInteger(height) && width > 0 && height > 0;
-  return valid ? { width, height } : null;
-}
-function sniffImageMime(bytes) {
-  if (!(bytes instanceof Uint8Array)) return null;
-  if (startsWith(bytes, PNG_SIGNATURE)) return MIME_PNG;
-  if (startsWith(bytes, JPEG_SIGNATURE)) return MIME_JPEG;
-  if (startsWith(bytes, RIFF_SIGNATURE) && startsWith(bytes, WEBP_SIGNATURE, 8)) return MIME_WEBP;
-  return null;
-}
-function readPngSize(bytes) {
-  if (bytes.length < 24) return null;
-  if (!startsWith(bytes, [73, 72, 68, 82], 12)) return null;
-  return positiveSize(readUint32BE(bytes, 16), readUint32BE(bytes, 20));
-}
-function readJpegSize(bytes) {
-  let offset = 2;
-  while (offset + 3 < bytes.length) {
-    if (bytes[offset] !== 255) {
-      offset += 1;
-      continue;
-    }
-    const marker = bytes[offset + 1];
-    if (marker === 255) {
-      offset += 1;
-      continue;
-    }
-    if (marker === 1 || marker >= 208 && marker <= 215) {
-      offset += 2;
-      continue;
-    }
-    if (marker === 217 || marker === 218) return null;
-    if (offset + 3 >= bytes.length) return null;
-    const length = readUint16BE(bytes, offset + 2);
-    if (length < 2) return null;
-    const isSof = marker >= 192 && marker <= 207 && marker !== 196 && marker !== 200 && marker !== 204;
-    if (isSof) {
-      if (offset + 8 >= bytes.length) return null;
-      return positiveSize(readUint16BE(bytes, offset + 7), readUint16BE(bytes, offset + 5));
-    }
-    offset += 2 + length;
-  }
-  return null;
-}
-function readWebpSize(bytes) {
-  if (bytes.length < 16) return null;
-  const chunk = String.fromCharCode(bytes[12], bytes[13], bytes[14], bytes[15]);
-  if (chunk === "VP8X") {
-    if (bytes.length < 30) return null;
-    return positiveSize(readUint24LE(bytes, 24) + 1, readUint24LE(bytes, 27) + 1);
-  }
-  if (chunk === "VP8L") {
-    if (bytes.length < 25 || bytes[20] !== 47) return null;
-    const bits = (bytes[21] | bytes[22] << 8 | bytes[23] << 16 | bytes[24] << 24) >>> 0;
-    return positiveSize((bits & 16383) + 1, (bits >>> 14 & 16383) + 1);
-  }
-  if (chunk === "VP8 ") {
-    if (bytes.length < 30 || !startsWith(bytes, WEBP_VP8_START_CODE, 23)) return null;
-    return positiveSize(readUint16LE(bytes, 26) & 16383, readUint16LE(bytes, 28) & 16383);
-  }
-  return null;
-}
-function readImageSize(bytes) {
-  if (!(bytes instanceof Uint8Array)) return null;
-  const mime = sniffImageMime(bytes);
-  if (mime === MIME_PNG) return readPngSize(bytes);
-  if (mime === MIME_JPEG) return readJpegSize(bytes);
-  if (mime === MIME_WEBP) return readWebpSize(bytes);
-  return null;
-}
-async function inspectImageBlob(blob) {
-  if (!(blob instanceof Blob) || !blob.size) return null;
-  const prefixLength = Math.min(blob.size, IMAGE_PREFIX_BYTES);
-  const prefix = new Uint8Array(await blob.slice(0, prefixLength).arrayBuffer());
-  const mimeType = sniffImageMime(prefix);
-  if (!mimeType) return null;
-  let size = readImageSize(prefix);
-  if (!size && blob.size > prefixLength) {
-    size = readImageSize(new Uint8Array(await blob.arrayBuffer()));
-  }
-  if (!size) return null;
-  const typed = blob.type === mimeType ? blob : new Blob([blob], { type: mimeType });
-  return { blob: typed, mimeType, width: size.width, height: size.height };
-}
-var PNG_SIGNATURE, RIFF_SIGNATURE, WEBP_SIGNATURE, JPEG_SIGNATURE, WEBP_VP8_START_CODE, MIME_PNG, MIME_JPEG, MIME_WEBP, IMAGE_PREFIX_BYTES;
-var init_imageBytes = __esm({
-  "src/core/imageBytes.js"() {
-    PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
-    RIFF_SIGNATURE = [82, 73, 70, 70];
-    WEBP_SIGNATURE = [87, 69, 66, 80];
-    JPEG_SIGNATURE = [255, 216, 255];
-    WEBP_VP8_START_CODE = [157, 1, 42];
-    MIME_PNG = "image/png";
-    MIME_JPEG = "image/jpeg";
-    MIME_WEBP = "image/webp";
-    IMAGE_PREFIX_BYTES = 1024 * 1024;
-  }
-});
-
 // src/core/cosmosVisionBridge.js
 function abortError() {
   return Object.assign(new Error("\u914D\u56FE\u4EFB\u52A1\u5DF2\u53D6\u6D88\u3002"), { name: "AbortError", code: "ABORTED" });
 }
-function detectIllustrationBackend() {
-  const api = globalThis.window?.CosmosVision;
-  if (!api) return { ready: false, status: "missing", reason: "\u672A\u68C0\u6D4B\u5230 Cosmos Vision\uFF0C\u8BF7\u5B89\u88C5\u5E76\u542F\u7528\u8BE5\u6269\u5C55\u3002" };
-  if (typeof api.generateImage !== "function") {
-    if (typeof api.preparePrompt === "function" || api.apiVersion) {
-      return { ready: false, status: "legacy", reason: "\u68C0\u6D4B\u5230\u65E7\u7248 Cosmos Vision \u63A5\u53E3\uFF0C\u8BF7\u5347\u7EA7\u5230\u63D0\u4F9B generateImage \u7684\u7248\u672C\u3002" };
-    }
-    return { ready: false, status: "unsupported", reason: "Cosmos Vision \u6CA1\u6709\u63D0\u4F9B\u751F\u56FE\u63A5\u53E3\u3002" };
+function detectIllustrationBackend(backendId = DEFAULT_BACKEND_ID) {
+  const adapter = getIllustrationBackend(backendId);
+  if (!adapter) {
+    return {
+      ready: false,
+      status: "unsupported",
+      reason: `\u672A\u5B89\u88C5\u751F\u56FE\u540E\u7AEF\u300C${backendId}\u300D\u3002`,
+      capabilities: EMPTY_CAPABILITIES,
+      detail: {}
+    };
   }
-  return { ready: true, status: "ready", reason: "Cosmos Vision \u5DF2\u8FDE\u63A5\u3002" };
-}
-function requireBackend() {
-  const state = detectIllustrationBackend();
-  if (!state.ready) throw illustrationError(state.reason, state.status === "legacy" ? "UNSUPPORTED_API" : "NOT_READY");
-  return globalThis.window.CosmosVision;
+  let state;
+  try {
+    state = adapter.probe() || {};
+  } catch {
+    return {
+      ready: false,
+      status: "unsupported",
+      reason: `\u63A2\u6D4B ${adapter.label} \u65F6\u51FA\u9519\u3002`,
+      capabilities: EMPTY_CAPABILITIES,
+      detail: {}
+    };
+  }
+  const ready = Boolean(state.ready);
+  return {
+    ready,
+    status: state.status || (ready ? "ready" : "unsupported"),
+    reason: state.reason || "",
+    // 没就绪就不谈能力：界面据此收起控件，而不是拿一份半可信的列表去渲染。
+    capabilities: ready && state.capabilities ? state.capabilities : EMPTY_CAPABILITIES,
+    detail: state.detail || {}
+  };
 }
 function runAbortableIllustrationTask(task, signal) {
   if (signal?.aborted) return Promise.reject(abortError());
@@ -22562,6 +22948,7 @@ function runAbortableIllustrationTask(task, signal) {
 function normalizeBackendError(error, signal) {
   if (signal?.aborted) return abortError();
   if (error?.name === "AbortError" || error?.code === "ABORTED") return abortError();
+  if (typeof error?.code === "string" && PLUGIN_ERROR_CODES.has(error.code)) return error;
   const message = typeof error?.message === "string" && error.message.trim();
   return illustrationError(message || "\u751F\u56FE\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002", "GENERATION_FAILED");
 }
@@ -22577,55 +22964,54 @@ async function readGeneratedImages(blobs) {
 }
 async function generateTheaterIllustration(draft, options = {}) {
   return runAbortableIllustrationTask(async () => {
-    const api = requireBackend();
-    const requestId = newIllustrationId();
+    const backendId = draft?.backend;
+    const adapter = getIllustrationBackend(backendId);
+    if (!adapter) throw illustrationError(`\u914D\u56FE\u8349\u7A3F\u7684\u751F\u56FE\u540E\u7AEF\u300C${backendId}\u300D\u4E0D\u53D7\u652F\u6301\u3002`, "UNSUPPORTED_API");
+    const state = detectIllustrationBackend(backendId);
+    if (!state.ready) throw illustrationError(state.reason, statusToErrorCode(state.status));
     let result;
     try {
-      result = await api.generateImage({
-        // 只给「画面里有什么」。质量词、UC 词、画风预设与 LoRA 触发词由 Cosmos 追加，
-        // 这里再写一遍就会重复叠加 —— v1 需求与联调清单都点名过这条。
-        prompts: {
-          positivePrompt: draft.prompts.positivePrompt,
-          negativePrompt: draft.prompts.negativePrompt,
-          characterPrompts: draft.prompts.characterPrompts
-        },
-        requestId,
+      result = await adapter.generate(draft, {
         signal: options.signal,
-        // 每次调用各有独立回调闭包，事件不会串任务，所以不做 requestId 过滤
-        // （Cosmos 缺省会自增 requestId，硬比会误伤合法事件）。
-        onProgress: (progress) => {
-          if (options.signal?.aborted) return;
-          const max = Number(progress?.max);
-          const value = Number(progress?.value);
-          const fraction = Number.isFinite(max) && max > 0 && Number.isFinite(value) ? Math.min(1, Math.max(0, value / max)) : void 0;
-          try {
-            options.onProgress?.({ stage: "generating", fraction });
-          } catch {
-          }
-        },
-        onStreamPreview: (event) => {
-          if (options.signal?.aborted) return;
-          try {
-            options.onStreamPreview?.({ blob: event?.previewBlob, isFinal: Boolean(event?.isFinal) });
-          } catch {
-          }
-        }
+        onProgress: options.onProgress,
+        onStreamPreview: options.onStreamPreview,
+        size: options.size,
+        seed: options.seed
       });
     } catch (error) {
       throw normalizeBackendError(error, options.signal);
     }
-    const blobs = Array.isArray(result?.imageBlobs) ? result.imageBlobs : [];
+    const blobs = Array.isArray(result?.blobs) ? result.blobs : [];
     if (!blobs.length) throw illustrationError("\u751F\u56FE\u63A5\u53E3\u6CA1\u6709\u8FD4\u56DE\u56FE\u7247\u3002", "GENERATION_FAILED");
     const kept = blobs.slice(0, MAX_ILLUSTRATION_BATCH);
-    return { images: await readGeneratedImages(kept), dropped: blobs.length - kept.length };
+    return {
+      images: await readGeneratedImages(kept),
+      dropped: blobs.length - kept.length,
+      seed: result?.seed,
+      applied: result?.applied
+    };
   }, options.signal);
 }
-var MAX_ILLUSTRATION_BATCH;
+var MAX_ILLUSTRATION_BATCH, PLUGIN_ERROR_CODES;
 var init_cosmosVisionBridge = __esm({
   "src/core/cosmosVisionBridge.js"() {
     init_imageBytes();
     init_illustrationData();
+    init_registry();
     MAX_ILLUSTRATION_BATCH = 8;
+    PLUGIN_ERROR_CODES = /* @__PURE__ */ new Set([
+      "ABORTED",
+      "GENERATION_FAILED",
+      "NOT_READY",
+      "UNSUPPORTED_API",
+      "INVALID_ARGS",
+      "RATE_LIMITED",
+      "SAVE_FAILED",
+      "LLM_NOT_CONFIGURED",
+      "INVALID_RESPONSE",
+      "NO_CONTENT",
+      "NO_SCENE"
+    ]);
   }
 });
 
@@ -23095,7 +23481,7 @@ var init_llmJson = __esm({
 });
 
 // src/core/illustrationScene.js
-function draftFromSceneReply(raw, theaterText) {
+function draftFromSceneReply(raw, theaterText, backendId = "cosmos") {
   const parsed = extractJsonObject(raw);
   if (!parsed) throw illustrationError("\u6A21\u578B\u6CA1\u6709\u8FD4\u56DE\u53EF\u89E3\u6790\u7684\u753B\u9762\u4FE1\u606F\uFF0C\u8BF7\u91CD\u8BD5\u6216\u6362\u4E00\u4E2A\u6A21\u578B\u3002", "INVALID_RESPONSE");
   if (String(parsed.error || "").trim() === "NO_SCENE") {
@@ -23108,7 +23494,9 @@ function draftFromSceneReply(raw, theaterText) {
   const characters = Array.isArray(parsed.characters) ? parsed.characters : Array.isArray(parsed.characterPrompts) ? parsed.characterPrompts : [];
   const draft = normalizeIllustrationDraft({
     version: 2,
-    backend: "cosmos",
+    // 草稿记下这次交给哪个后端。提示词本身是后端无关的（只有内容、没有风格），
+    // 所以换个后端重画不必重新选景。
+    backend: backendId,
     scene,
     prompts: {
       positivePrompt: parsed.positivePrompt,
@@ -23139,6 +23527,7 @@ async function selectIllustrationScene(request, options = {}) {
   const conn = getActiveConnection();
   if (!conn) throw illustrationError("\u8BF7\u5148\u5728\u8BBE\u7F6E\u91CC\u914D\u7F6E API \u65B9\u6848\u3002", "LLM_NOT_CONFIGURED");
   const data = getExtData();
+  const backendId = resolveActiveBackendId(data);
   const messages = buildMessages(request, data);
   const send = (extra) => sendChatRequestWithConnection(conn, extra, {
     signal: options.signal,
@@ -23149,17 +23538,18 @@ async function selectIllustrationScene(request, options = {}) {
   });
   let raw = await send(messages);
   try {
-    return draftFromSceneReply(raw, theaterText);
+    return draftFromSceneReply(raw, theaterText, backendId);
   } catch (error) {
     if (error?.code !== "INVALID_RESPONSE" || options.signal?.aborted) throw error;
     raw = await send([...messages, { role: "user", content: RETRY_NUDGE }]);
-    return draftFromSceneReply(raw, theaterText);
+    return draftFromSceneReply(raw, theaterText, backendId);
   }
 }
 var RETRY_NUDGE;
 var init_illustrationScene = __esm({
   "src/core/illustrationScene.js"() {
     init_storage();
+    init_registry();
     init_connection();
     init_llmJson();
     init_illustrationPresets();
@@ -23198,12 +23588,117 @@ var init_floatingWindow = __esm({
   }
 });
 
+// src/ui/shared/helpPopover.js
+function buildSection(section) {
+  const block = document.createElement("div");
+  block.className = "t-help-section";
+  if (section.heading) {
+    const heading = document.createElement("div");
+    heading.className = "t-help-heading";
+    heading.textContent = section.heading;
+    block.append(heading);
+  }
+  if (Array.isArray(section.terms) && section.terms.length) {
+    const list = document.createElement("dl");
+    list.className = "t-help-terms";
+    for (const item of section.terms) {
+      const term = document.createElement("dt");
+      const code = document.createElement("code");
+      code.textContent = item.term;
+      term.append(code);
+      const text = document.createElement("dd");
+      text.textContent = item.text;
+      list.append(term, text);
+    }
+    block.append(list);
+  }
+  if (Array.isArray(section.lines) && section.lines.length) {
+    const list = document.createElement("ul");
+    list.className = "t-help-lines";
+    for (const line of section.lines) {
+      const entry = document.createElement("li");
+      entry.textContent = line;
+      list.append(entry);
+    }
+    block.append(list);
+  }
+  return block;
+}
+function createHelpTip({ label = "\u4F7F\u7528\u8BF4\u660E", title = "\u4F7F\u7528\u8BF4\u660E", sections = [], action = "" } = {}) {
+  const root = document.createElement("span");
+  root.className = "t-help";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "t-btn";
+  button.title = label;
+  button.setAttribute("aria-label", label);
+  button.setAttribute("aria-expanded", "false");
+  if (action) button.dataset.action = action;
+  const icon = document.createElement("i");
+  icon.className = "fa-solid fa-circle-question";
+  button.append(icon);
+  const popover = document.createElement("div");
+  popover.className = "t-help-popover";
+  popover.hidden = true;
+  const heading = document.createElement("div");
+  heading.className = "t-help-title";
+  heading.textContent = title;
+  popover.append(heading);
+  for (const section of sections) popover.append(buildSection(section));
+  root.append(button, popover);
+  let open = false;
+  function onDocumentClick(event) {
+    if (!root.contains(event.target)) setOpen(false);
+  }
+  function onKeydown(event) {
+    if (event.key === "Escape") setOpen(false);
+  }
+  function setOpen(next) {
+    if (open === next) return;
+    open = next;
+    popover.hidden = !next;
+    button.setAttribute("aria-expanded", String(next));
+    if (next) {
+      document.addEventListener("click", onDocumentClick, true);
+      document.addEventListener("keydown", onKeydown);
+    } else {
+      document.removeEventListener("click", onDocumentClick, true);
+      document.removeEventListener("keydown", onKeydown);
+    }
+  }
+  button.addEventListener("click", () => setOpen(!open));
+  return { root, close: () => setOpen(false) };
+}
+var init_helpPopover = __esm({
+  "src/ui/shared/helpPopover.js"() {
+  }
+});
+
 // src/ui/illustrationSettingsWindow.js
-function placeholderHelpLines() {
-  return PLACEHOLDER_NAMES.map((name) => {
-    const help = PLACEHOLDER_HELP[name];
-    return `<br><code>{{${name}}}</code>${help ? ` \u2014 ${help}` : ""}`;
-  }).join("");
+function helpSections() {
+  return [
+    {
+      heading: "\u751F\u56FE\u540E\u7AEF",
+      lines: [
+        "\u56FE\u7247\u7531\u88C5\u4E86\u7684\u5916\u90E8\u63D2\u4EF6\u6765\u753B\u3002\u8FD9\u91CC\u9009\u7684\u662F\u5168\u5C40\u9ED8\u8BA4\uFF0C\u573A\u666F\u914D\u56FE\u9762\u677F\u6309\u5B83\u51B3\u5B9A\u8FD9\u6B21\u4EA4\u7ED9\u8C01\u3002",
+        "\u8349\u7A3F\u843D\u76D8\u65F6\u4F1A\u8BB0\u4E0B\u5F53\u65F6\u7528\u7684\u540E\u7AEF\uFF0C\u6240\u4EE5\u6362\u540E\u7AEF\u91CD\u753B\u4E0D\u7528\u91CD\u65B0\u9009\u666F\uFF1B\u540E\u7AEF\u5378\u8F7D\u540E\u65E7\u8BB0\u5F55\u7167\u6837\u80FD\u770B\u3001\u80FD\u5BFC\u51FA\u3002"
+      ],
+      terms: listIllustrationBackends().map((backend) => ({ term: backend.label, text: BACKEND_HELP[backend.id] || "" }))
+    },
+    {
+      heading: "\u7D20\u6750\u5360\u4F4D\u7B26",
+      lines: ["\u7D20\u6750\u9760\u5360\u4F4D\u7B26\u8FDB\u5165\u6D88\u606F\uFF0C\u53EA\u6709\u8FD9\u56DB\u4E2A\uFF1A"],
+      terms: PLACEHOLDER_NAMES.map((name) => ({ term: `{{${name}}}`, text: PLACEHOLDER_HELP[name] || "" }))
+    },
+    {
+      heading: "\u9009\u666F\u9884\u8BBE",
+      lines: [
+        "\u6CA1\u6709\u5185\u7F6E\u9884\u8BBE\uFF0C\u4E00\u5F8B\u9760\u300C\u5BFC\u5165\u300D\u6216\u300C\u65B0\u5EFA\u300D\u3002\u5BFC\u5165\u8BA4\u4E24\u79CD\u6587\u4EF6\uFF1A\u9152\u9986\u7684 Chat Completion \u9884\u8BBE\uFF0C\u4EE5\u53CA\u672C\u63D2\u4EF6\u5BFC\u51FA\u7684\u9009\u666F\u9884\u8BBE\u3002",
+        "\u5BFC\u5165\u65F6\u4F1A\u4E22\u5F03\u4E0A\u4E0B\u6587\u6CE8\u5165\u7C7B\u6761\u76EE\uFF08chatHistory\u3001worldInfoBefore \u8FD9\u7C7B\uFF09\u2014\u2014 \u9009\u666F\u8FD9\u6761\u94FE\u8DEF\u4E0D\u80FD\u628A\u5F53\u524D\u804A\u5929\u585E\u8FDB\u6765\u3002",
+        "\u6761\u76EE\u6309\u987A\u5E8F\u62FC\u6210\u6D88\u606F\uFF0C\u53EF\u62D6\u52A8\u6392\u5E8F\u3002\u672B\u5C3E\u90A3\u51E0\u6761\u5E26 \u21BA \u7684\u662F\u5C0F\u5267\u573A\u81EA\u5DF1\u7684\uFF1A\u53EF\u6539\u5199\u3001\u53EF\u505C\u7528\u3001\u53EF\u6392\u5E8F\uFF0C\u4F46\u4E0D\u80FD\u5220\u3002"
+      ]
+    }
+  ];
 }
 function openIllustrationSettingsWindow(options = {}) {
   const { onClose } = options;
@@ -23213,13 +23708,17 @@ function openIllustrationSettingsWindow(options = {}) {
         <section class="t-profile-panel" role="dialog" aria-labelledby="t-illustration-settings-title">
             <div class="t-panel-header">
                 <strong id="t-illustration-settings-title">\u573A\u666F\u914D\u56FE\u8BBE\u7F6E</strong>
-                <button type="button" class="t-btn" data-action="close" title="\u5173\u95ED\u8BBE\u7F6E" aria-label="\u5173\u95ED\u8BBE\u7F6E"><i class="fa-solid fa-xmark"></i></button>
+                <div class="t-panel-header-actions" data-role="header-actions">
+                    <button type="button" class="t-btn" data-action="close" title="\u5173\u95ED\u8BBE\u7F6E" aria-label="\u5173\u95ED\u8BBE\u7F6E"><i class="fa-solid fa-xmark"></i></button>
+                </div>
             </div>
             <div class="t-profile-body">
-                <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:8px;">\u9009\u666F\u9884\u8BBE</div>
-                <p class="t-illustration-hint">
-                    \u7D20\u6750\u9760\u5360\u4F4D\u7B26\u8FDB\u5165\u6D88\u606F\uFF0C\u53EA\u6709\u8FD9\u56DB\u4E2A\uFF1A${placeholderHelpLines()}
-                </p>
+                <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:8px;">\u751F\u56FE\u540E\u7AEF</div>
+                <div class="t-profile-actions">
+                    <select class="t-input" data-role="backend-select" style="width:auto; min-width:180px;"></select>
+                </div>
+                <p class="t-illustration-hint" data-role="backend-validation"></p>
+                <div style="font-weight:bold; color:var(--t-color-accent); margin:14px 0 8px;">\u9009\u666F\u9884\u8BBE</div>
                 <div class="t-profile-actions">
                     <select class="t-input" data-role="preset-select" style="width:auto; min-width:180px;"></select>
                     <button type="button" class="t-btn primary" data-action="new-preset" title="\u65B0\u5EFA\u9884\u8BBE\uFF08\u81EA\u52A8\u5E26\u4E0A\u5C0F\u5267\u573A\u7684\u9009\u666F\u6761\u76EE\uFF09" aria-label="\u65B0\u5EFA\u9884\u8BBE"><i class="fa-solid fa-plus"></i></button>
@@ -23237,6 +23736,8 @@ function openIllustrationSettingsWindow(options = {}) {
   document.body.append(root);
   const role = (name) => root.querySelector(`[data-role="${name}"]`);
   const action = (name) => root.querySelector(`[data-action="${name}"]`);
+  const help = createHelpTip({ title: "\u573A\u666F\u914D\u56FE\u8BBE\u7F6E", sections: helpSections() });
+  role("header-actions").insertBefore(help.root, action("close"));
   let disposed = false;
   let draggedId = "";
   const expandedIds = /* @__PURE__ */ new Set();
@@ -23290,6 +23791,24 @@ function openIllustrationSettingsWindow(options = {}) {
     live.entries.splice(Math.min(Math.max(0, position), live.entries.length), 0, entry);
     expandedIds.add(entry.id);
     commit();
+  }
+  function renderBackend() {
+    const data = getExtData();
+    ensureIllustrationBackend(data);
+    const active = resolveActiveBackendId(data);
+    const select = role("backend-select");
+    select.replaceChildren();
+    for (const backend of listIllustrationBackends()) {
+      const option = document.createElement("option");
+      option.value = backend.id;
+      option.textContent = backend.label;
+      select.append(option);
+    }
+    select.value = active;
+    const state2 = detectIllustrationBackend(active);
+    const node = role("backend-validation");
+    node.textContent = state2.reason;
+    node.style.color = state2.ready ? "" : "var(--t-color-danger, #e06c75)";
   }
   function renderToolbar() {
     const presets = listPresets(getExtData());
@@ -23510,6 +24029,7 @@ function openIllustrationSettingsWindow(options = {}) {
   }
   function render() {
     if (disposed) return;
+    renderBackend();
     renderToolbar();
     renderValidation();
     if (activePreset()) renderEntries();
@@ -23522,6 +24042,12 @@ function openIllustrationSettingsWindow(options = {}) {
     for (const entry of preset.entries) expandedIds.add(entry.id);
     commit();
   }
+  role("backend-select").addEventListener("change", (event) => {
+    const data = getExtData();
+    ensureIllustrationBackend(data);
+    data[ILLUSTRATION_BACKEND_KEY].active_id = event.target.value;
+    commit();
+  });
   role("preset-select").addEventListener("change", (event) => {
     state().active_preset_id = event.target.value;
     commit();
@@ -23610,6 +24136,7 @@ function openIllustrationSettingsWindow(options = {}) {
     disposed = true;
     const displaced = isFloatingWindowDisplaced();
     releaseFloatingWindow(close);
+    help.close();
     root.remove();
     if (!displaced) onClose?.();
   }
@@ -23618,17 +24145,24 @@ function openIllustrationSettingsWindow(options = {}) {
   action("close").focus();
   return close;
 }
-var PLACEHOLDER_HELP;
+var PLACEHOLDER_HELP, BACKEND_HELP;
 var init_illustrationSettingsWindow = __esm({
   "src/ui/illustrationSettingsWindow.js"() {
     init_storage();
+    init_cosmosVisionBridge();
+    init_registry();
     init_illustrationPresets();
     init_floatingWindow();
+    init_helpPopover();
     PLACEHOLDER_HELP = {
       theater_text: "\u914D\u56FE\u9762\u677F\u91CC\u300C\u672C\u6B21\u914D\u56FE\u7D20\u6750\u300D\u7684\u5185\u5BB9\uFF0C\u4E5F\u5C31\u662F\u672C\u8F6E\u6B63\u6587\u3002",
       participants: "\u914D\u56FE\u9762\u677F\u91CC\u300C\u4EBA\u7269\u5916\u89C2\u7B49\u8865\u5145\u8D44\u6599\u300D\u7684\u5185\u5BB9\uFF1B\u547D\u4E2D\u7684\u5916\u89C2\u6863\u6848\u4F1A\u81EA\u52A8\u586B\u5230\u8FD9\u91CC\u3002",
       special_request: "\u914D\u56FE\u9762\u677F\u91CC\u300C\u60F3\u753B\u4EC0\u4E48\u300D\u7684\u5185\u5BB9\u3002",
       previous_scenes: "\u70B9\u8FC7\u300C\u6362\u4E2A\u753B\u9762\u300D\u65F6\uFF0C\u6B64\u524D\u5DF2\u7ECF\u9009\u8FC7\u7684\u753B\u9762\u3002"
+    };
+    BACKEND_HELP = {
+      cosmos: "\u652F\u6301\u4E00\u6B21\u51FA\u591A\u5F20\uFF0C\u4EBA\u7269\u4F4D\u7F6E\u53EF\u7528\u3002\u753B\u5E45\u3001\u753B\u98CE\u4E0E\u8D28\u91CF\u8BCD\u5728\u5B83\u90A3\u8FB9\u914D\u7F6E\u3002",
+      baibai: "\u4E00\u6B21\u51FA\u4E00\u5F20\uFF0C\u4EBA\u7269\u4F4D\u7F6E\u56FA\u5B9A\u5728\u753B\u9762\u4E2D\u5FC3\uFF1BNovelAI \u4E0B\u4E0D\u4F7F\u7528\u8FD9\u91CC\u586B\u7684\u8D1F\u5411\u63D0\u793A\u8BCD\u3002"
     };
   }
 });
@@ -23651,15 +24185,11 @@ function openCharacterProfileWindow(options = {}) {
         <section class="t-profile-panel" role="dialog" aria-labelledby="t-profile-title">
             <div class="t-panel-header">
                 <strong id="t-profile-title">\u4EBA\u7269\u5916\u89C2\u6863\u6848</strong>
-                <button type="button" class="t-btn" data-action="close" title="\u5173\u95ED\u6863\u6848\u7BA1\u7406" aria-label="\u5173\u95ED\u6863\u6848\u7BA1\u7406"><i class="fa-solid fa-xmark"></i></button>
+                <div class="t-panel-header-actions" data-role="header-actions">
+                    <button type="button" class="t-btn" data-action="close" title="\u5173\u95ED\u6863\u6848\u7BA1\u7406" aria-label="\u5173\u95ED\u6863\u6848\u7BA1\u7406"><i class="fa-solid fa-xmark"></i></button>
+                </div>
             </div>
             <div class="t-profile-body">
-                <p class="t-illustration-hint">
-                    \u4E3A\u89D2\u8272\u5199\u4E00\u6B21\u5916\u89C2\uFF0C\u4E4B\u540E\u8FDB\u8FD9\u4E2A\u89D2\u8272\u7684\u914D\u56FE\u4F1A\u81EA\u52A8\u5E26\u4E0A\u3002\u7ED1\u5B9A\u89D2\u8272\u5361\u540E\u5728\u8BE5\u89D2\u8272\u7684\u804A\u5929\u91CC\u5FC5\u4E2D\uFF1B
-                    \u6CA1\u7ED1\u5B9A\u7684\u9760\u89E6\u53D1\u8BCD\u5728\u6B63\u6587\u91CC\u5339\u914D\u3002\u6863\u6848\u53EA\u63CF\u8FF0\u300C\u753B\u9762\u91CC\u6709\u4EC0\u4E48\u300D\u2014\u2014\u8D28\u91CF\u8BCD\u3001\u753B\u5E08\u4E32\u4E0E\u9884\u8BBE\u4ECD\u7531 Cosmos Vision \u8FFD\u52A0\u3002
-                    <br>\u4F60\u81EA\u5DF1\uFF08\u7528\u6237\u8BBE\u5B9A\uFF09\u4E5F\u80FD\u8FD9\u4E48\u8BB0\u4E00\u4EFD\uFF1A\u5BFC\u5165\u540E\u4E0D\u7ED1\u5361\uFF0C\u9760\u540D\u5B57\u5728\u6B63\u6587\u91CC\u5339\u914D\u3002
-                    <br>\u7FA4\u804A\u91CC\u6CA1\u6709\u5355\u4E00\u89D2\u8272\u5361\uFF0C\u7ED1\u5B9A\u4E0D\u4F1A\u751F\u6548\uFF0C\u8BF7\u7528\u89E6\u53D1\u8BCD\uFF0C\u6216\u5230\u914D\u56FE\u9762\u677F\u91CC\u624B\u52A8\u52FE\u9009\u3002
-                </p>
                 <div class="t-profile-actions">
                     <button type="button" class="t-btn primary" data-action="add" title="\u65B0\u5EFA\u4E00\u6761\u5916\u89C2\u6863\u6848" aria-label="\u65B0\u5EFA\u6863\u6848"><i class="fa-solid fa-plus"></i></button>
                     <button type="button" class="t-btn" data-action="import" title="\u4ECE\u5F53\u524D\u6253\u5F00\u7684\u89D2\u8272\u5361\u5BFC\u5165\u63CF\u8FF0" aria-label="\u4ECE\u5F53\u524D\u89D2\u8272\u5361\u5BFC\u5165"><i class="fa-solid fa-id-card"></i></button>
@@ -23672,6 +24202,8 @@ function openCharacterProfileWindow(options = {}) {
   document.body.append(root);
   const role = (name) => root.querySelector(`[data-role="${name}"]`);
   const action = (name) => root.querySelector(`[data-action="${name}"]`);
+  const help = createHelpTip({ title: "\u4EBA\u7269\u5916\u89C2\u6863\u6848", sections: PROFILE_HELP });
+  role("header-actions").insertBefore(help.root, action("close"));
   let disposed = false;
   let draggedId = "";
   function writeEntries(mutate, rerender = false) {
@@ -23890,6 +24422,7 @@ function openCharacterProfileWindow(options = {}) {
     disposed = true;
     const displaced = isFloatingWindowDisplaced();
     releaseFloatingWindow(close);
+    help.close();
     root.remove();
     if (!displaced) onClose?.();
   }
@@ -23898,12 +24431,45 @@ function openCharacterProfileWindow(options = {}) {
   action("close").focus();
   return close;
 }
+var PROFILE_HELP;
 var init_characterProfileWindow = __esm({
   "src/ui/characterProfileWindow.js"() {
     init_storage();
     init_characterProfiles();
     init_context();
     init_floatingWindow();
+    init_helpPopover();
+    PROFILE_HELP = [
+      {
+        heading: "\u5E72\u4EC0\u4E48\u7528\u7684",
+        lines: [
+          "\u4E3A\u89D2\u8272\u5199\u4E00\u6B21\u5916\u89C2\uFF0C\u4E4B\u540E\u8FDB\u8FD9\u4E2A\u89D2\u8272\u7684\u914D\u56FE\u4F1A\u81EA\u52A8\u5E26\u4E0A \u2014\u2014 \u6B63\u6587\u6CA1\u5199\u53D1\u8272\u670D\u88C5\u65F6\uFF0C\u753B\u9762\u624D\u4E0D\u4F1A\u98D8\u3002",
+          "\u6863\u6848\u53EA\u63CF\u8FF0\u300C\u753B\u9762\u91CC\u6709\u4EC0\u4E48\u300D\u3002\u8D28\u91CF\u8BCD\u3001\u753B\u5E08\u4E32\u4E0E\u9884\u8BBE\u4ECD\u7531\u751F\u56FE\u540E\u7AEF\u8FFD\u52A0\uFF0C\u5199\u5728\u8FD9\u91CC\u4F1A\u91CD\u590D\u53E0\u52A0\u3002"
+        ]
+      },
+      {
+        heading: "\u4EC0\u4E48\u65F6\u5019\u4F1A\u88AB\u7528\u4E0A",
+        lines: [
+          "\u7ED1\u5B9A\u4E86\u89D2\u8272\u5361\u7684\uFF1A\u8FDB\u8FD9\u4E2A\u89D2\u8272\u7684\u4EFB\u4F55\u804A\u5929\u90FD\u5FC5\u4E2D\uFF0C\u7ED1\u5B9A\u7528\u7684\u662F\u89D2\u8272\u5361\u8EAB\u4EFD\uFF08\u57FA\u4E8E\u5934\u50CF\u6587\u4EF6\u540D\uFF09\u3002",
+          "\u6CA1\u7ED1\u5B9A\u7684\u3001\u6216\u7ED1\u5B9A\u6CA1\u547D\u4E2D\u7684\uFF1A\u6309\u89E6\u53D1\u8BCD\u5728\u672C\u8F6E\u6B63\u6587\u91CC\u5339\u914D\uFF0C\u89E6\u53D1\u8BCD\u81F3\u5C11\u4E24\u4E2A\u5B57\u7B26\u3002",
+          "\u5355\u6B21\u6700\u591A\u81EA\u52A8\u5E26\u5165 4 \u6761\u3002\u547D\u4E2D\u7684\u4F1A\u586B\u8FDB\u914D\u56FE\u9762\u677F\u7684\u300C\u4EBA\u7269\u8D44\u6599\u300D\u5E76\u9884\u52FE\u9009\uFF0C\u4F60\u624B\u6253\u7684\u5185\u5BB9\u6C38\u8FDC\u4E0D\u4F1A\u88AB\u8986\u76D6\u3002"
+        ]
+      },
+      {
+        heading: "\u4F60\u81EA\u5DF1\uFF08\u7528\u6237\u8BBE\u5B9A\uFF09",
+        lines: [
+          "\u7528\u300C\u4ECE\u5F53\u524D\u7528\u6237\u8BBE\u5B9A\u5BFC\u5165\u300D\u4E5F\u80FD\u8FD9\u4E48\u8BB0\u4E00\u4EFD\uFF1A\u5BFC\u5165\u540E\u4E0D\u7ED1\u5361\uFF0C\u9760\u540D\u5B57\u5728\u6B63\u6587\u91CC\u5339\u914D\u3002",
+          "\u60F3\u8BA9\u5B83\u5728\u67D0\u4E2A\u89D2\u8272\u90A3\u513F\u5FC5\u4E2D\uFF0C\u5BFC\u5165\u540E\u81EA\u5DF1\u5728\u4E0B\u62C9\u91CC\u9009\u4E00\u5F20\u5361\u5373\u53EF\u3002"
+        ]
+      },
+      {
+        heading: "\u7FA4\u804A",
+        lines: [
+          "\u7FA4\u804A\u91CC\u6CA1\u6709\u5355\u4E00\u89D2\u8272\u5361\uFF0C\u7ED1\u5B9A\u4E0D\u4F1A\u751F\u6548\uFF08{{char}} \u4E0D\u6307\u5411\u5177\u4F53\u6210\u5458\uFF09\u3002\u8BF7\u7528\u89E6\u53D1\u8BCD\u5339\u914D\uFF0C\u6216\u5230\u914D\u56FE\u9762\u677F\u91CC\u624B\u52A8\u52FE\u9009\u3002",
+          "\u4E00\u5BF9\u4E00\u91CC\u7ED1\u5B9A\u7684\u6863\u6848\u4E0D\u4F1A\u8DDF\u7740\u89D2\u8272\u8FDB\u7FA4\u3002"
+        ]
+      }
+    ];
   }
 });
 
@@ -23924,6 +24490,9 @@ function sessionFor(sceneId, initialText) {
       adopted: void 0,
       notice: "",
       job: null,
+      // 画幅：只给支持指定画幅的后端显示。与 request/participants 同为会话级
+      //（草稿 DTO 不记它，刷新页面后重开会丢）。
+      size: "",
       // 外观档案：profileIds 是勾选态，profileBlocks 记下我们插入过的那几块原文，
       // 取消勾选时只移除仍逐字存在的那块 —— 用户改过的内容永不删除。
       profileIds: [],
@@ -23985,7 +24554,7 @@ function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         <section class="t-illustration-panel" role="dialog" aria-labelledby="t-illustration-title">
             <div class="t-panel-header">
                 <strong id="t-illustration-title">\u573A\u666F\u914D\u56FE</strong>
-                <div style="display:flex; align-items:center; gap:8px;">
+                <div class="t-panel-header-actions" data-role="header-actions">
                     <button type="button" class="t-btn" data-action="profiles" title="\u4EBA\u7269\u5916\u89C2\u6863\u6848" aria-label="\u4EBA\u7269\u5916\u89C2\u6863\u6848"><i class="fa-solid fa-address-book"></i></button>
                     <button type="button" class="t-btn" data-action="settings" title="\u573A\u666F\u914D\u56FE\u8BBE\u7F6E\uFF1A\u9009\u666F\u9884\u8BBE" aria-label="\u573A\u666F\u914D\u56FE\u8BBE\u7F6E"><i class="fa-solid fa-gear"></i></button>
                     <button type="button" class="t-btn" data-action="close" title="\u5173\u95ED\u914D\u56FE\u9762\u677F" aria-label="\u5173\u95ED\u914D\u56FE\u9762\u677F"><i class="fa-solid fa-xmark"></i></button>
@@ -23993,9 +24562,7 @@ function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
             </div>
             <div class="t-illustration-body">
                 <label class="t-illustration-field">\u914D\u56FE\u5185\u5BB9<select class="t-input" data-field="target"></select></label>
-                <p class="t-illustration-hint">\u4E3A\u9009\u4E2D\u7684\u8FD9\u4E00\u8F6E\u5267\u573A\u6311\u9009\u4E00\u4E2A\u753B\u9762\u3002\u5207\u6362\u6B63\u6587\u540E\uFF0C\u672C\u6B21\u4EFB\u52A1\u4ECD\u5C5E\u4E8E\u8FD9\u91CC\u663E\u793A\u7684\u5185\u5BB9\u3002</p>
-                <div class="t-illustration-connection"><span data-role="connection">\u6B63\u5728\u68C0\u6D4B Cosmos Vision\u2026</span><button class="t-btn" type="button" data-action="detect">\u91CD\u65B0\u68C0\u6D4B</button></div>
-                <p class="t-illustration-hint">\u753B\u9762\u7531\u672C\u63D2\u4EF6\u7684 API \u65B9\u6848\u9009\u51FA\uFF1B\u753B\u5E45\u3001\u753B\u98CE\u3001\u8D28\u91CF\u8BCD\u4E0E\u9884\u8BBE\u6CBF\u7528 Cosmos Vision \u7684\u914D\u7F6E\uFF0C\u4E0D\u5728\u8FD9\u91CC\u9009\u62E9\u3002</p>
+                <div class="t-illustration-connection"><span data-role="connection">\u6B63\u5728\u68C0\u6D4B\u751F\u56FE\u540E\u7AEF\u2026</span><button class="t-btn" type="button" data-action="detect">\u91CD\u65B0\u68C0\u6D4B</button></div>
                 <label class="t-illustration-field">\u60F3\u753B\u4EC0\u4E48\uFF08\u53EF\u9009\uFF09<textarea class="t-input" data-field="request" rows="2" placeholder="\u4F8B\u5982\uFF1A\u753B\u96E8\u4E2D\u91CD\u9022\u7684\u77AC\u95F4\uFF0C\u8FDC\u666F\uFF0C\u504F\u51B7\u8272"></textarea></label>
                 <details class="t-illustration-details"><summary>\u6B63\u6587\u4E0E\u4EBA\u7269\u8D44\u6599</summary>
                     <label class="t-illustration-field">\u672C\u6B21\u914D\u56FE\u7D20\u6750<textarea class="t-input" data-field="text" rows="6"></textarea></label>
@@ -24009,10 +24576,16 @@ function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                     <p class="t-illustration-summary" data-role="summary"></p>
                     <p class="t-illustration-hint" data-role="excerpt" hidden></p>
                     <details class="t-illustration-details"><summary>\u7F16\u8F91\u7ED8\u753B\u63D0\u793A\u8BCD</summary>
-                        <p class="t-illustration-hint">\u8FD9\u91CC\u53EA\u5199\u300C\u753B\u9762\u91CC\u6709\u4EC0\u4E48\u300D\u3002\u8D28\u91CF\u8BCD\u3001\u753B\u5E08\u4E32\u3001\u753B\u98CE\u9884\u8BBE\u4E0E LoRA \u89E6\u53D1\u8BCD\u7531 Cosmos Vision \u8FFD\u52A0\uFF0C\u91CD\u590D\u586B\u5199\u4F1A\u53E0\u52A0\u3002</p>
+                        <label class="t-illustration-field" data-role="size-field" hidden>\u753B\u5E45<select class="t-input" data-field="size">
+                            <option value="">\u9ED8\u8BA4\uFF08\u7531\u540E\u7AEF\u51B3\u5B9A\uFF09</option>
+                            <option value="portrait">\u7AD6\u5E45</option>
+                            <option value="landscape">\u6A2A\u5E45</option>
+                        </select></label>
                         <label class="t-illustration-field">\u6B63\u5411\u63D0\u793A\u8BCD<textarea class="t-input" data-field="positive" rows="5"></textarea></label>
                         <label class="t-illustration-field">\u8D1F\u5411\u63D0\u793A\u8BCD<textarea class="t-input" data-field="negative" rows="3"></textarea></label>
+                        <p class="t-illustration-hint" data-role="negative-hint" hidden></p>
                         <div data-role="characters"></div>
+                        <p class="t-illustration-hint" data-role="characters-hint" hidden></p>
                     </details>
                     <button class="t-btn primary" type="button" data-action="generate">\u751F\u6210\u56FE\u7247</button>
                 </div>
@@ -24027,8 +24600,13 @@ function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
   const field = (name) => root.querySelector(`[data-field="${name}"]`);
   const role = (name) => root.querySelector(`[data-role="${name}"]`);
   const action = (name) => root.querySelector(`[data-action="${name}"]`);
+  const help = createHelpTip({ title: "\u573A\u666F\u914D\u56FE", sections: PANEL_HELP });
+  role("header-actions").insertBefore(help.root, action("close"));
   targets.forEach((target2, index) => field("target").add(new Option(target2.label || target2.scriptName, String(index))));
   let target = targets[0], session, localBusy = false, ready = false, disposed = false;
+  let activeBackendId = "cosmos", activeCapabilities = null;
+  let unsubscribeBackends = () => {
+  };
   let selectionSequence = 0, detectionSequence = 0, pendingUrl = null, renderedDraft, renderedPending;
   let previewUrl = null, renderedPreviewBlob = null, previewUpdatedAt = 0;
   const isBusy = () => localBusy || Boolean(session?.job);
@@ -24081,6 +24659,7 @@ function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                     <div class="t-illustration-coordinates">${["x", "y"].map((axis) => `<label>${axis.toUpperCase()} <input class="t-input" type="number" min="0" max="1" step="0.05" data-character="${index}" data-key="${axis}" value="${character.position[axis]}"></label>`).join("")}</div>
                 </fieldset>`).join("");
     }
+    renderCapabilities();
     updateControls();
   }
   function readDraft() {
@@ -24187,12 +24766,40 @@ ${block}` : block;
     syncPreview();
     updateControls();
   }
+  function renderCapabilities() {
+    const caps = activeCapabilities;
+    const coordinates = root.querySelectorAll(".t-illustration-coordinates");
+    if (!caps) {
+      role("size-field").hidden = true;
+      role("negative-hint").hidden = true;
+      role("characters-hint").hidden = true;
+      role("characters").hidden = false;
+      coordinates.forEach((node) => {
+        node.hidden = false;
+      });
+      return;
+    }
+    role("size-field").hidden = !caps.size;
+    coordinates.forEach((node) => {
+      node.hidden = !caps.characterPositions;
+    });
+    role("characters").hidden = !caps.characterPrompts;
+    const characterHint = !caps.characterPrompts ? "\u5F53\u524D\u751F\u56FE\u540E\u7AEF\u4E0D\u652F\u6301\u5206\u4EBA\u7269\u63D0\u793A\u8BCD\uFF0C\u8FD9\u4E00\u90E8\u5206\u4E0D\u4F1A\u8FDB\u5165\u63D0\u793A\u8BCD\u3002" : !caps.characterPositions ? "\u5F53\u524D\u751F\u56FE\u540E\u7AEF\u628A\u4EBA\u7269\u4F4D\u7F6E\u56FA\u5B9A\u5728\u753B\u9762\u4E2D\u5FC3\uFF0CX / Y \u4E0D\u4F1A\u751F\u6548\u3002" : "";
+    role("characters-hint").hidden = !characterHint;
+    role("characters-hint").textContent = characterHint;
+    const negativeHint = caps.negativePrompt ? "" : "\u5F53\u524D\u751F\u56FE\u540E\u7AEF\u5728 NovelAI \u4E0B\u4F7F\u7528\u4F60\u6E20\u9053\u914D\u7F6E\u7684\u8D1F\u5411\u8BCD\uFF0C\u8FD9\u91CC\u586B\u5199\u7684\u4E0D\u4F1A\u751F\u6548\u3002";
+    role("negative-hint").hidden = !negativeHint;
+    role("negative-hint").textContent = negativeHint;
+  }
   function detect() {
     const sequence = ++detectionSequence;
-    const state = detectIllustrationBackend();
+    activeBackendId = resolveActiveBackendId(getExtData());
+    const state = detectIllustrationBackend(activeBackendId);
     if (disposed || sequence !== detectionSequence) return;
     ready = state.ready;
+    activeCapabilities = state.ready ? state.capabilities : null;
     role("connection").textContent = state.reason;
+    renderCapabilities();
     updateControls();
   }
   async function loadTarget(index) {
@@ -24200,6 +24807,7 @@ ${block}` : block;
     const sequence = ++selectionSequence;
     const current = target;
     session = sessionFor(current.sceneId, buildPromptTextFromTheater(current.content));
+    activeBackendId = resolveActiveBackendId(getExtData());
     view.sceneId = "";
     localBusy = true;
     ready = false;
@@ -24207,6 +24815,7 @@ ${block}` : block;
     field("text").value = session.text;
     field("request").value = session.request;
     field("participants").value = session.participants;
+    field("size").value = session.size || "";
     renderProfileChips();
     role("status").textContent = "\u6B63\u5728\u8BFB\u53D6\u914D\u56FE\u8BB0\u5F55\u2026";
     renderDraft();
@@ -24258,7 +24867,11 @@ ${block}` : block;
     }
   });
   root.addEventListener("change", (event) => {
-    if (event.target === field("target")) void loadTarget(Number(event.target.value));
+    if (event.target === field("target")) {
+      void loadTarget(Number(event.target.value));
+      return;
+    }
+    if (event.target === field("size")) session.size = event.target.value;
   });
   root.addEventListener("click", (event) => {
     const button = event.target.closest("button");
@@ -24346,6 +24959,7 @@ ${block}` : block;
         role("status").textContent = showError(error);
         return;
       }
+      if (draft.backend !== activeBackendId) draft = normalizeIllustrationDraft({ ...draft, backend: activeBackendId });
       current.draft = draft;
       startJob(current, currentTarget, "generate", async (job) => {
         job.status = PROGRESS_LABELS.generating;
@@ -24354,7 +24968,8 @@ ${block}` : block;
           const result = await generateTheaterIllustration(draft, {
             signal: job.controller.signal,
             onProgress: jobProgress(job),
-            // NovelAI 流式会推过程图；非流式与 ComfyUI 不会走到这里。
+            size: current.size || void 0,
+            // 只有流式的后端会推过程图（Cosmos + NovelAI）；其余不会走到这里。
             onStreamPreview: (event2) => {
               if (!event2.blob) return;
               const now = Date.now();
@@ -24364,12 +24979,16 @@ ${block}` : block;
               notifyView(job.sceneId);
             }
           });
-          current.pending = { images: result.images, draft, createdAt: Date.now() };
+          current.pending = { images: result.images, draft, seed: result.seed, createdAt: Date.now() };
           job.phase = "saving";
           job.status = "\u6B63\u5728\u4FDD\u5B58\u914D\u56FE\u2026";
           notifyView(job.sceneId);
           await persistPending(current, currentTarget);
           if (result.dropped) current.notice += ` \u672C\u6B21\u8FD4\u56DE ${result.images.length + result.dropped} \u5F20\uFF0C\u8D85\u8FC7\u4E0A\u9650\u7684 ${result.dropped} \u5F20\u672A\u4FDD\u5B58\u3002`;
+          const wantsCharacters = draft.prompts.characterPrompts.some((character) => character.positivePrompt.trim());
+          if (wantsCharacters && result.applied?.characters === false) {
+            current.notice += " \u672C\u6B21\u672A\u4F7F\u7528\u5206\u4EBA\u7269\u63D0\u793A\u8BCD\uFF08\u5F53\u524D\u540E\u7AEF\u6216\u6A21\u578B\u4E0D\u652F\u6301\uFF09\uFF0C\u753B\u9762\u6309\u6574\u5E45\u63CF\u8FF0\u751F\u6210\u3002";
+          }
         } finally {
           current.previewBlob = null;
         }
@@ -24400,7 +25019,8 @@ ${block}` : block;
     if (pendingUrl) URL.revokeObjectURL(pendingUrl);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     root.remove();
-    window.removeEventListener("cosmos-vision:api-ready", detect);
+    unsubscribeBackends();
+    help.close();
     window.removeEventListener("titania:character-profiles-changed", profilesChanged);
     releaseFloatingWindow(close);
     if (previousFocus?.isConnected) previousFocus.focus();
@@ -24410,7 +25030,7 @@ ${block}` : block;
     }
   }
   claimFloatingWindow(close);
-  window.addEventListener("cosmos-vision:api-ready", detect);
+  unsubscribeBackends = subscribeBackendReady(() => detect());
   const profilesChanged = () => {
     if (!disposed) {
       renderProfileChips();
@@ -24504,11 +25124,12 @@ function bindMainIllustrations(getTarget) {
     clearSceneIllustration(findSceneContentRoot(content));
   };
 }
-var PROGRESS_LABELS, PREVIEW_THROTTLE_MS, sessions, activeView, SCENE_ILLUSTRATION_SELECTOR;
+var PROGRESS_LABELS, PREVIEW_THROTTLE_MS, PANEL_HELP, sessions, activeView, SCENE_ILLUSTRATION_SELECTOR;
 var init_illustrationWindow = __esm({
   "src/ui/illustrationWindow.js"() {
     init_chatInjector();
     init_cosmosVisionBridge();
+    init_registry();
     init_illustrationScene();
     init_characterProfiles();
     init_storage();
@@ -24518,8 +25139,42 @@ var init_illustrationWindow = __esm({
     init_illustrationData();
     init_helpers();
     init_floatingWindow();
+    init_helpPopover();
     PROGRESS_LABELS = { selecting: "\u6B63\u5728\u901A\u8BFB\u6B63\u6587\u3001\u9009\u62E9\u753B\u9762\u2026", generating: "\u6B63\u5728\u751F\u6210\u56FE\u7247\u2026" };
     PREVIEW_THROTTLE_MS = 150;
+    PANEL_HELP = [
+      {
+        heading: "\u600E\u4E48\u7528",
+        lines: [
+          "\u9009\u4E00\u8F6E\u5267\u573A\u5185\u5BB9 \u2192 \u300C\u5206\u6790\u753B\u9762\u300D\u6311\u51FA\u9002\u5408\u843D\u7B14\u7684\u77AC\u95F4 \u2192 \u53EF\u4EE5\u6539\u63D0\u793A\u8BCD \u2192 \u300C\u751F\u6210\u56FE\u7247\u300D\u3002",
+          "\u300C\u6362\u4E2A\u753B\u9762\u300D\u4F1A\u91CD\u65B0\u9009\u666F\uFF0C\u5E76\u628A\u6B64\u524D\u9009\u8FC7\u7684\u753B\u9762\u4F5C\u4E3A\u6392\u9664\u53C2\u8003\u3002",
+          "\u5207\u6362\u6B63\u6587\u4E0D\u6539\u53D8\u4EFB\u52A1\u5F52\u5C5E\uFF1A\u6B63\u5728\u8DD1\u7684\u90A3\u6B21\u4ECD\u5C5E\u4E8E\u53D1\u8D77\u65F6\u7684\u90A3\u4E00\u8F6E\u5185\u5BB9\u3002"
+        ]
+      },
+      {
+        heading: "\u63D0\u793A\u8BCD\u53EA\u5199\u300C\u753B\u9762\u91CC\u6709\u4EC0\u4E48\u300D",
+        lines: [
+          "\u8D28\u91CF\u8BCD\u3001\u753B\u5E08\u4E32\u3001\u753B\u98CE\u9884\u8BBE\u3001LoRA \u89E6\u53D1\u8BCD\u4E0E\u753B\u5E45\u91C7\u6837\u5668\u4E00\u5F8B\u7531\u751F\u56FE\u540E\u7AEF\u8FFD\u52A0\uFF0C\u8FD9\u91CC\u518D\u5199\u4E00\u904D\u5C31\u4F1A\u91CD\u590D\u53E0\u52A0\u3002",
+          "\u6240\u4EE5\u9762\u677F\u91CC\u663E\u793A\u7684\u63D0\u793A\u8BCD\u4E0D\u7B49\u4E8E\u6700\u7EC8\u53D1\u7ED9\u540E\u7AEF\u7684\u5185\u5BB9\u3002",
+          "\u753B\u9762\u5F20\u6570\u4E0E\u56FE\u6E90\u540C\u6837\u7531\u540E\u7AEF\u51B3\u5B9A\uFF1A\u7528\u54EA\u4E2A\u6A21\u578B\u3001\u51FA\u51E0\u5F20\uFF0C\u5C0F\u5267\u573A\u90FD\u65E0\u6CD5\u6307\u5B9A\u3002"
+        ]
+      },
+      {
+        heading: "\u751F\u56FE\u540E\u7AEF",
+        lines: [
+          "\u5728\u300C\u573A\u666F\u914D\u56FE\u8BBE\u7F6E\u300D\u91CC\u5207\u6362\uFF1B\u9876\u680F\u4E0B\u65B9\u7684\u72B6\u6001\u884C\u663E\u793A\u5B83\u5F53\u524D\u662F\u5426\u53EF\u7528\u3002",
+          "\u8349\u7A3F\u843D\u76D8\u65F6\u4F1A\u8BB0\u4E0B\u5F53\u65F6\u7528\u7684\u540E\u7AEF\uFF0C\u6240\u4EE5\u6362\u540E\u7AEF\u91CD\u753B\u4E0D\u7528\u91CD\u65B0\u9009\u666F\u3002",
+          "\u540E\u7AEF\u5378\u8F7D\u540E\uFF0C\u5DF2\u4FDD\u5B58\u56FE\u7247\u7684\u6D4F\u89C8\u3001\u91C7\u7528\u3001\u4E0B\u8F7D\u4E0E\u5BFC\u51FA\u90FD\u4E0D\u53D7\u5F71\u54CD\uFF0C\u53EA\u6709\u518D\u70B9\u300C\u751F\u6210\u56FE\u7247\u300D\u624D\u4F1A\u62A5\u9519\u3002"
+        ]
+      },
+      {
+        heading: "\u4EBA\u7269\u5916\u89C2\u6863\u6848",
+        lines: [
+          "\u9876\u680F\u7684\u901A\u8BAF\u5F55\u56FE\u6807\u3002\u4E3A\u89D2\u8272\u8BB0\u4E00\u6B21\u5916\u89C2\uFF0C\u4E4B\u540E\u8FDB\u8FD9\u4E2A\u89D2\u8272\u7684\u914D\u56FE\u4F1A\u81EA\u52A8\u5E26\u4E0A\u3002",
+          "\u547D\u4E2D\u7684\u6863\u6848\u4F1A\u586B\u8FDB\u300C\u4EBA\u7269\u8D44\u6599\u300D\u5E76\u9884\u52FE\u9009\uFF1B\u4F60\u624B\u6253\u7684\u5185\u5BB9\u6C38\u8FDC\u4E0D\u4F1A\u88AB\u8986\u76D6\u3002"
+        ]
+      }
+    ];
     sessions = /* @__PURE__ */ new Map();
     activeView = null;
     SCENE_ILLUSTRATION_SELECTOR = "[data-titania-illustration],[data-titania-illustration-notice]";
@@ -42383,11 +43038,11 @@ function archiveContinuationBranch(entry) {
     archivedAt: Date.now()
   }, ...entry.archivedBranches.filter((item) => String(item?.branchKey || "") !== branchKey)].slice(0, CONTINUATION_ARCHIVED_BRANCH_MAX);
 }
-function findContinuationRoundAnchor(scriptId, probe = {}) {
+function findContinuationRoundAnchor(scriptId, probe3 = {}) {
   const entry = getContinuationRuntimeStore()[scriptId];
   if (!entry) return null;
-  const wantedId = String(probe.generationId || "").trim();
-  const wantedContent = String(probe.content || "").trim();
+  const wantedId = String(probe3.generationId || "").trim();
+  const wantedContent = String(probe3.content || "").trim();
   if (!wantedId && !wantedContent) return null;
   const activeBranchKey = String(entry.branchKey || "").trim();
   const candidates = [

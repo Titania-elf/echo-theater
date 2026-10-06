@@ -10,6 +10,43 @@ import {
 } from "../core/characterProfiles.js";
 import { getCharacterCardKey, getCurrentCharacterDescription, getCurrentUserPersona, listCharacterCards } from "../core/context.js";
 import { claimFloatingWindow, isFloatingWindowDisplaced, releaseFloatingWindow } from "./shared/floatingWindow.js";
+import { createHelpTip } from "./shared/helpPopover.js";
+
+/**
+ * 顶栏问号里的**静态**说明：这档案是干什么的、什么时候会被用上。
+ * 条件性的东西留在原位 —— 命中数、字数计数、空列表提示都只在当时有意义。
+ */
+const PROFILE_HELP = [
+    {
+        heading: "干什么用的",
+        lines: [
+            "为角色写一次外观，之后进这个角色的配图会自动带上 —— 正文没写发色服装时，画面才不会飘。",
+            "档案只描述「画面里有什么」。质量词、画师串与预设仍由生图后端追加，写在这里会重复叠加。",
+        ],
+    },
+    {
+        heading: "什么时候会被用上",
+        lines: [
+            "绑定了角色卡的：进这个角色的任何聊天都必中，绑定用的是角色卡身份（基于头像文件名）。",
+            "没绑定的、或绑定没命中的：按触发词在本轮正文里匹配，触发词至少两个字符。",
+            "单次最多自动带入 4 条。命中的会填进配图面板的「人物资料」并预勾选，你手打的内容永远不会被覆盖。",
+        ],
+    },
+    {
+        heading: "你自己（用户设定）",
+        lines: [
+            "用「从当前用户设定导入」也能这么记一份：导入后不绑卡，靠名字在正文里匹配。",
+            "想让它在某个角色那儿必中，导入后自己在下拉里选一张卡即可。",
+        ],
+    },
+    {
+        heading: "群聊",
+        lines: [
+            "群聊里没有单一角色卡，绑定不会生效（{{char}} 不指向具体成员）。请用触发词匹配，或到配图面板里手动勾选。",
+            "一对一里绑定的档案不会跟着角色进群。",
+        ],
+    },
+];
 
 /** 通知配图面板重画勾选条。本窗口不监听这个事件，否则自己每改一次就整体重画、输入框失焦。 */
 function notifyProfilesChanged() {
@@ -39,15 +76,11 @@ export function openCharacterProfileWindow(options = {}) {
         <section class="t-profile-panel" role="dialog" aria-labelledby="t-profile-title">
             <div class="t-panel-header">
                 <strong id="t-profile-title">人物外观档案</strong>
-                <button type="button" class="t-btn" data-action="close" title="关闭档案管理" aria-label="关闭档案管理"><i class="fa-solid fa-xmark"></i></button>
+                <div class="t-panel-header-actions" data-role="header-actions">
+                    <button type="button" class="t-btn" data-action="close" title="关闭档案管理" aria-label="关闭档案管理"><i class="fa-solid fa-xmark"></i></button>
+                </div>
             </div>
             <div class="t-profile-body">
-                <p class="t-illustration-hint">
-                    为角色写一次外观，之后进这个角色的配图会自动带上。绑定角色卡后在该角色的聊天里必中；
-                    没绑定的靠触发词在正文里匹配。档案只描述「画面里有什么」——质量词、画师串与预设仍由 Cosmos Vision 追加。
-                    <br>你自己（用户设定）也能这么记一份：导入后不绑卡，靠名字在正文里匹配。
-                    <br>群聊里没有单一角色卡，绑定不会生效，请用触发词，或到配图面板里手动勾选。
-                </p>
                 <div class="t-profile-actions">
                     <button type="button" class="t-btn primary" data-action="add" title="新建一条外观档案" aria-label="新建档案"><i class="fa-solid fa-plus"></i></button>
                     <button type="button" class="t-btn" data-action="import" title="从当前打开的角色卡导入描述" aria-label="从当前角色卡导入"><i class="fa-solid fa-id-card"></i></button>
@@ -61,6 +94,9 @@ export function openCharacterProfileWindow(options = {}) {
 
     const role = name => root.querySelector(`[data-role="${name}"]`);
     const action = name => root.querySelector(`[data-action="${name}"]`);
+    // 静态说明统一收进顶栏的问号，界面本身只留操作。
+    const help = createHelpTip({ title: "人物外观档案", sections: PROFILE_HELP });
+    role("header-actions").insertBefore(help.root, action("close"));
     let disposed = false;
     let draggedId = "";
 
@@ -295,6 +331,8 @@ export function openCharacterProfileWindow(options = {}) {
         // 被别的窗口顶掉时不要回面板，否则会「顶掉 → 回面板 → 面板又顶掉」来回打乒乓。
         const displaced = isFloatingWindowDisplaced();
         releaseFloatingWindow(close);
+        // 说明气泡打开时在 document 上挂了关闭监听，随窗口一起收掉。
+        help.close();
         root.remove();
         if (!displaced) onClose?.();
     }

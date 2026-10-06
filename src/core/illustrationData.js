@@ -3,7 +3,18 @@ export const ILLUSTRATION_INDEX_KEY = "illustration_index";
 export const MAX_IMAGE_BYTES = 32 * 1024 * 1024;
 /** v2 起草稿不再记图源与模型：新接口由供应方决定且不可覆盖，只记「交给哪个生图后端」。 */
 export const ILLUSTRATION_DRAFT_VERSION = 2;
-const BACKENDS = new Set(["cosmos"]);
+/**
+ * 认得的生图后端 id。
+ *
+ * ⚠ **只增不删。** 这是读路径的校验白名单（normalizeIllustrationDraft 会拦）：删掉一个 id，
+ * 所有存着该 id 的旧记录都会在 normalizeSavedIllustration 抛错，整条场景记录随之失效 ——
+ * 画廊、导出、备份一起坏，而用户只是升级了一下插件。要停用一个后端就把它留在列表里、
+ * 由适配器报「未安装」，别从这里删。
+ *
+ * 必须与 illustrationBackends/registry.js 的注册表一致，有测试盯着这一条。
+ */
+export const ILLUSTRATION_BACKEND_IDS = ["cosmos", "baibai"];
+const BACKENDS = new Set(ILLUSTRATION_BACKEND_IDS);
 const MIME_EXTENSIONS = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
 export function illustrationError(message, code = "INVALID_RESPONSE") {

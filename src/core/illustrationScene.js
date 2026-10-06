@@ -13,6 +13,7 @@
 // 本插件若也写这些就是重复叠加，因此默认规范里明令禁止，用户改动规范时也应守住这条。
 
 import { getExtData } from "../utils/storage.js";
+import { resolveActiveBackendId } from "./illustrationBackends/registry.js";
 import { getActiveConnection, sendChatRequestWithConnection } from "./connection.js";
 import { extractJsonObject } from "./llmJson.js";
 import { buildIllustrationMessages } from "./illustrationPresets.js";
@@ -25,9 +26,10 @@ const RETRY_NUDGE = "上一条回复不是合法的 JSON。请只输出那个 JS
  * 把模型回复解析成配图草稿。
  * @param {string} raw 模型原始回复
  * @param {string} theaterText 用于校验原文摘录
+ * @param {string} [backendId] 这次草稿交给哪个生图后端；缺省为默认后端
  * @returns {object} 规范化后的草稿
  */
-export function draftFromSceneReply(raw, theaterText) {
+export function draftFromSceneReply(raw, theaterText, backendId = "cosmos") {
     const parsed = extractJsonObject(raw);
     if (!parsed) throw illustrationError("模型没有返回可解析的画面信息，请重试或换一个模型。", "INVALID_RESPONSE");
     if (String(parsed.error || "").trim() === "NO_SCENE") {
@@ -46,7 +48,9 @@ export function draftFromSceneReply(raw, theaterText) {
 
     const draft = normalizeIllustrationDraft({
         version: 2,
-        backend: "cosmos",
+        // 草稿记下这次交给哪个后端。提示词本身是后端无关的（只有内容、没有风格），
+        // 所以换个后端重画不必重新选景。
+        backend: backendId,
         scene,
         prompts: {
             positivePrompt: parsed.positivePrompt,
@@ -105,6 +109,8 @@ export async function selectIllustrationScene(request, options = {}) {
     // 消息按当前生效的选景预设构造；预设里没有 {{theater_text}} 时这里会先抛错，
     // 不会拿一份没有正文的提示词去出图并计费。
     const data = getExtData();
+    // 盖的是**当前设置**选中的后端：草稿一旦落盘就固定下来，之后换设置不会改旧记录。
+    const backendId = resolveActiveBackendId(data);
     const messages = buildMessages(request, data);
     const send = extra => sendChatRequestWithConnection(conn, extra, {
         signal: options.signal,
@@ -116,12 +122,12 @@ export async function selectIllustrationScene(request, options = {}) {
 
     let raw = await send(messages);
     try {
-        return draftFromSceneReply(raw, theaterText);
+        return draftFromSceneReply(raw, theaterText, backendId);
     } catch (error) {
         // 只有「格式坏了」值得重发一次：NO_SCENE 是有效结论，直接抛给用户看明白。
         // （摘录对不上已经不算失败了，见 sanitizeIllustrationExcerpt。）
         if (error?.code !== "INVALID_RESPONSE" || options.signal?.aborted) throw error;
         raw = await send([...messages, { role: "user", content: RETRY_NUDGE }]);
-        return draftFromSceneReply(raw, theaterText);
+        return draftFromSceneReply(raw, theaterText, backendId);
     }
 }

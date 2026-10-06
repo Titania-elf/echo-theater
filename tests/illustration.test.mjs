@@ -23,7 +23,10 @@ const seededPresets = () => ({
 });
 
 const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const png = new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9yQAAAAASUVORK5CYII=', 'base64')], { type: 'image/png' });
+const PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9yQAAAAASUVORK5CYII=';
+const png = new Blob([Buffer.from(PNG_BASE64, 'base64')], { type: 'image/png' });
+// 柏宝绘回的是 data URL 而不是 Blob。同一份字节造两个形状，保证两条路走的是同一套嗅探与校验。
+const pngDataUrl = `data:image/png;base64,${PNG_BASE64}`;
 const story = '深夜门口，两人隔着半开的门对视。';
 const excerpt = '两人隔着半开的门对视';
 // v2 草稿：新接口的图源与模型由供应方决定且不可覆盖，草稿只记交给哪个生图后端。
@@ -71,6 +74,9 @@ function harness() {
         // 用例可以预置内容来验证「构建后必须还原」。
         chatMetadata: { variables: {} },
         extensionSettings: { variables: { global: {} } },
+        // 柏宝绘桩的可调项：状态、错误、返回的 dataUrl、种子与 charactersApplied。
+        baibaiStatus: { backend: 'nai', configured: true, model: 'nai-diffusion-4-5-full', supportsCharacters: true, reason: '' },
+        baibaiCalls: [], baibaiError: null, baibaiDataUrl: null, baibaiSeed: 12345, baibaiCharactersApplied: true,
     };
     const { window } = dom;
     window.URL.createObjectURL = URL.createObjectURL;
@@ -211,7 +217,30 @@ function harness() {
             return { requestId: options.requestId, imageBlobs: [png], prompts: options.prompts };
         },
     };
-    return { ...state, state, load, window, document: window.document, close: () => window.close() };
+    // 柏宝绘的公开接口（API v1）。它与 Cosmos 的四处差异都体现在这里：
+    // 回 dataUrl 而不是 Blob、一次一张、位置由它固定在居中、NAI 下不吃 negative。
+    const baibai = () => ({
+        apiVersion: 1,
+        pluginVersion: '0.3.0',
+        capabilities: { globalApi: true, characterLibrary: true, generate: true, saveToGallery: true, events: true },
+        getBackendStatus: () => ({ apiVersion: 1, pluginVersion: '0.3.0', ...state.baibaiStatus }),
+        generate: async (request, options = {}) => {
+            state.baibaiCalls.push({ request, options });
+            if (state.baibaiError) throw Object.assign(new Error(state.baibaiError.message), { code: state.baibaiError.code });
+            if (options.signal?.aborted) throw Object.assign(new Error('已取消'), { name: 'AbortError', code: 'aborted' });
+            return {
+                apiVersion: 1, pluginVersion: '0.3.0',
+                dataUrl: state.baibaiDataUrl ?? pngDataUrl,
+                format: 'png', path: null, seed: state.baibaiSeed,
+                backend: state.baibaiStatus.backend,
+                charactersApplied: state.baibaiCharactersApplied,
+            };
+        },
+    });
+    window.STBaiBaiImage = baibai();
+    // 用例删掉全局对象模拟「没装」之后，靠这个把桩装回去。
+    const installBaibai = () => { window.STBaiBaiImage = baibai(); return window.STBaiBaiImage; };
+    return { ...state, state, load, window, document: window.document, installBaibai, close: () => window.close() };
 }
 
 test('stable scene identity survives a reload; regenerated or edited text gets a separate attachment', async t => {
@@ -810,9 +839,18 @@ test('illustration modules never reach into global generation state or the live 
     const stripped = file => readFileSync(path.join(project, file), 'utf8')
         .replace(/\/\/[^\n]*/g, '')
         .replace(/\/\*[\s\S]*?\*\//g, '');
-    for (const file of ['src/core/illustrationScene.js', 'src/core/cosmosVisionBridge.js', 'src/ui/illustrationWindow.js']) {
+    for (const file of [
+        'src/core/illustrationScene.js', 'src/core/cosmosVisionBridge.js', 'src/ui/illustrationWindow.js',
+        'src/core/illustrationBackends/registry.js', 'src/core/illustrationBackends/cosmos.js',
+        'src/core/illustrationBackends/baibai.js',
+    ]) {
         assert.equal(/cancelGeneration|GlobalState/.test(stripped(file)), false, `${file} 不应引用全局生成状态`);
     }
+    // 柏宝绘的角色库按**当前聊天**作用域：在 B 聊天给 A 的收藏配图时它会返回 B 的角色，
+    // 正是这条铁律要挡的东西。所以那套接口一律不碰，人物外观只由插件自己的
+    // character_profiles 维护（它的 getCharacters 拿到的也是当前聊天的库，帮不上忙）。
+    assert.equal(/getCharacters/.test(stripped('src/core/illustrationBackends/baibai.js')), false,
+        'baibai.js 不应读柏宝绘的角色库');
     // 配图面板只能读 target.cardKey，绝不能现读当前聊天的角色身份 ——
     // 那会在 B 聊天给 A 的收藏配图时，把 B 的角色档案套到 A 的画面上。
     assert.equal(/getContextData|getCharacterCardKey/.test(stripped('src/ui/illustrationWindow.js')), false,
@@ -820,7 +858,8 @@ test('illustration modules never reach into global generation state or the live 
     // 选景只跑 STscript 变量宏（预设在条目里 setvar、后段 getvar，不求值它们整份预设就是死的），
     // 但绝不走 ST 的全套宏引擎：那会连带展开 {{char}} / {{user}} / {{description}}，
     // 同样是在读当前聊天，会串到别的收藏上。
-    for (const file of ['src/core/illustrationPresets.js', 'src/ui/illustrationSettingsWindow.js', 'src/core/illustrationScene.js']) {
+    for (const file of ['src/core/illustrationPresets.js', 'src/ui/illustrationSettingsWindow.js', 'src/core/illustrationScene.js',
+        'src/core/illustrationBackends/registry.js']) {
         assert.equal(/substituteParams|evaluateMacros|resolveMacro/.test(stripped(file)), false,
             `${file} 不应调用 ST 的全套宏引擎`);
         assert.equal(/getContextData|getCharacterCardKey/.test(stripped(file)), false,
@@ -1518,4 +1557,313 @@ test('streaming preview frames are shown but are not mistaken for a saved image'
     await waitFor(() => h.state.settings.illustration_index?.[target.sceneId], 'saved');
     await waitFor(() => preview().hidden, 'preview cleared');
     action('close').click();
+});
+
+/* ---------- 外部生图后端注册表与柏宝绘 ---------- */
+
+/** 同一份内容，只把后端换成柏宝绘 —— 提示词本身是后端无关的。 */
+const baibaiDraft = () => ({ ...draft(), backend: 'baibai' });
+
+test('the accepted backend ids and the registry stay in sync', async t => {
+    const h = harness(); t.after(h.close);
+    const data = await h.load('src/core/illustrationData.js');
+    const registry = await h.load('src/core/illustrationBackends/registry.js');
+    // illustrationData 的白名单是**读路径**的校验，registry 是分派表。只加一边 =
+    // 草稿「选得出、存得下、读不回」，而且整条场景记录会跟着失效，所以两边必须一致。
+    assert.deepEqual([...registry.listIllustrationBackendIds()].sort(), [...data.ILLUSTRATION_BACKEND_IDS].sort());
+    // 认得出的 id 能过校验，认不出的仍然拦下。
+    assert.equal(data.normalizeIllustrationDraft(baibaiDraft()).backend, 'baibai');
+    assert.throws(() => data.normalizeIllustrationDraft({ ...draft(), backend: 'nope' }), /生图后端不受支持/);
+});
+
+test('baibai readiness follows its api version and backend status, and drives capabilities', async t => {
+    const h = harness(); t.after(h.close);
+    const bridge = await h.load('src/core/cosmosVisionBridge.js');
+
+    delete h.window.STBaiBaiImage;
+    assert.equal(bridge.detectIllustrationBackend('baibai').status, 'missing');
+
+    // apiVersion 是它**公开数据结构**的版本，与插件版本分开；不是 1 就不认。
+    h.window.STBaiBaiImage = { apiVersion: 2, getBackendStatus: () => ({}), generate: () => { } };
+    const legacy = bridge.detectIllustrationBackend('baibai');
+    assert.equal(legacy.status, 'legacy');
+    assert.equal(legacy.ready, false);
+    assert.match(legacy.reason, /2/);
+
+    // 还没配好后端：reason 是它给的人话，直接拿来展示。
+    h.installBaibai();
+    h.state.baibaiStatus = { backend: 'nai', configured: false, model: '', supportsCharacters: true, reason: '还没有填写 NovelAI 的密钥' };
+    const unconfigured = bridge.detectIllustrationBackend('baibai');
+    assert.equal(unconfigured.status, 'not_configured');
+    assert.equal(unconfigured.ready, false);
+    assert.equal(unconfigured.reason, '还没有填写 NovelAI 的密钥');
+
+    h.state.baibaiStatus = { backend: 'nai', configured: true, model: 'nai-diffusion-4-5-full', supportsCharacters: true, reason: '' };
+    const ready = bridge.detectIllustrationBackend('baibai');
+    assert.equal(ready.ready, true);
+    assert.equal(ready.capabilities.characterPrompts, true);
+    // 位置由它自己固定在画面中心，调用方改不了；characters 也没有逐角色负向词。
+    assert.equal(ready.capabilities.characterPositions, false);
+    assert.equal(ready.capabilities.characterNegative, false);
+    // NAI 下 negative 会被忽略 —— 界面据此提示用户「这里填的不会生效」。
+    assert.equal(ready.capabilities.negativePrompt, false);
+    assert.equal(ready.capabilities.size, true);
+    // 一次一张，没有 count 参数。
+    assert.equal(ready.capabilities.batch, false);
+    assert.match(ready.reason, /NovelAI/);
+
+    // ComfyUI 下 negative 才有效，但人物提示词恒不支持（supportsCharacters 只看模型）。
+    h.state.baibaiStatus = { backend: 'comfyui', configured: true, model: '默认工作流', supportsCharacters: false, reason: '' };
+    const comfy = bridge.detectIllustrationBackend('baibai');
+    assert.equal(comfy.capabilities.negativePrompt, true);
+    assert.equal(comfy.capabilities.characterPrompts, false);
+});
+
+test('a dataUrl from baibai joins the shared blob pipeline, and its own gallery is never written to', async t => {
+    const h = harness(); t.after(h.close);
+    const bridge = await h.load('src/core/cosmosVisionBridge.js');
+    const controller = new AbortController();
+    const result = await bridge.generateTheaterIllustration(baibaiDraft(), { size: 'landscape', signal: controller.signal });
+
+    // 回的是 dataUrl，解码后照样走同一条嗅探 + 校验路径（类型靠嗅探补齐，尺寸靠头部解析）。
+    assert.equal(result.images.length, 1);
+    assert.equal(result.images[0].blob.type, 'image/png');
+    assert.deepEqual([result.images[0].width, result.images[0].height], [1, 1]);
+    // 它报回来的实际种子要透传出去，才能照原样复现这一张。
+    assert.equal(result.seed, 12345);
+
+    const { request, options } = h.state.baibaiCalls[0];
+    assert.equal(request.prompt, draft().prompts.positivePrompt);
+    // NAI 下它自己会忽略 negative，但仍然照发 —— 切到 ComfyUI 时就有效。
+    assert.equal(request.negative, draft().prompts.negativePrompt);
+    // ⚠ 它的默认是 true，会把图也存进自己的图库；本插件的收藏、备份与图文导出
+    //   都依赖自己的 /user/files 存储，必须显式关掉。
+    assert.equal(request.save, false);
+    assert.equal(request.size, 'landscape');
+    // name 必须非空（它会把空名字的项直接丢掉），但只作标识、不进提示词。
+    assert.equal(request.characters[0].name, '角色1');
+    assert.equal(request.characters[0].tag, 'black hair');
+    assert.equal(options.signal, controller.signal);
+
+    // 没填分人物提示词时压根不发这个字段，别塞一个空数组过去。
+    const bare = baibaiDraft();
+    bare.prompts.characterPrompts = [{ positivePrompt: '', negativePrompt: '', position: { x: 0.5, y: 0.5 } }];
+    await bridge.generateTheaterIllustration(bare);
+    assert.equal('characters' in h.state.baibaiCalls[1].request, false);
+
+    // 不是图片的 data URL 要被挡下，别把错误页当配图存下去。
+    h.state.baibaiDataUrl = `data:image/png;base64,${Buffer.from('<html>oops</html>').toString('base64')}`;
+    await assert.rejects(bridge.generateTheaterIllustration(baibaiDraft()), /不是可识别的图片/);
+});
+
+test('baibai errors are mapped by code alone, never by message text', async t => {
+    const h = harness(); t.after(h.close);
+    const bridge = await h.load('src/core/cosmosVisionBridge.js');
+    for (const [code, expected] of [['rate_limited', 'RATE_LIMITED'], ['not_configured', 'NOT_READY'], ['invalid_args', 'INVALID_ARGS'], ['backend_error', 'GENERATION_FAILED']]) {
+        h.state.baibaiError = { code, message: `供应方原文 ${code}` };
+        await assert.rejects(bridge.generateTheaterIllustration(baibaiDraft()), error => error.code === expected);
+    }
+    // ⚠ 反向验证：文案写着「额度不足」，但 code 是 backend_error ——
+    //   必须按 code 走。它的文档明说文案是中文、会随版本改，匹配文案必然误判。
+    h.state.baibaiError = { code: 'backend_error', message: '额度不足' };
+    await assert.rejects(
+        bridge.generateTheaterIllustration(baibaiDraft()),
+        error => error.code === 'GENERATION_FAILED' && /额度不足/.test(error.message),
+    );
+    // 原文照留，用户才有排查线索。
+    h.state.baibaiError = { code: 'invalid_args', message: 'bad size' };
+    await assert.rejects(
+        bridge.generateTheaterIllustration(baibaiDraft()),
+        error => error.code === 'INVALID_ARGS' && /bad size/.test(error.message),
+    );
+});
+
+test('dispatch follows the draft own backend, not the current setting', async t => {
+    const h = harness(); t.after(h.close);
+    const bridge = await h.load('src/core/cosmosVisionBridge.js');
+
+    // 设置里选的是柏宝绘，但草稿记的是 cosmos —— 必须走 cosmos（草稿说了算）。
+    h.state.settings.illustration_backend = { version: 1, active_id: 'baibai' };
+    await bridge.generateTheaterIllustration(draft());
+    assert.equal(h.state.generateCalls.length, 1);
+    assert.equal(h.state.baibaiCalls.length, 0);
+
+    // 反向：设置是 cosmos，草稿记 baibai —— 走柏宝绘。
+    h.state.settings.illustration_backend = { version: 1, active_id: 'cosmos' };
+    await bridge.generateTheaterIllustration(baibaiDraft());
+    assert.equal(h.state.generateCalls.length, 1);
+    assert.equal(h.state.baibaiCalls.length, 1);
+});
+
+test('scene selection stamps whichever backend the settings currently pick', async t => {
+    const h = harness(); t.after(h.close);
+    const scene = await h.load('src/core/illustrationScene.js');
+
+    h.state.settings.illustration_backend = { version: 1, active_id: 'baibai' };
+    assert.equal((await scene.selectIllustrationScene({ theaterText: story })).backend, 'baibai');
+
+    // 老用户没有这个键（或它认不出来）时回落默认后端，而不是抛错。
+    h.state.settings.illustration_backend = { version: 1, active_id: 'removed-backend' };
+    assert.equal((await scene.selectIllustrationScene({ theaterText: story })).backend, 'cosmos');
+});
+
+test('the seed reported by the backend is stored with the image, and omitted when absent', async t => {
+    const h = harness(); t.after(h.close);
+    const store = await h.load('src/core/illustrationStore.js');
+
+    const saved = await store.saveGeneratedIllustrations('scene-seed', {
+        draft: baibaiDraft(), seed: 987654, createdAt: Date.now(),
+        images: [{ blob: png, width: 1, height: 1 }],
+    });
+    assert.equal(saved.images[0].seed, 987654);
+    // 从记录文件读回来也要还在。
+    assert.equal((await store.readSceneIllustrations('scene-seed')).images[0].seed, 987654);
+
+    // 后端不报种子时不留空字段（Cosmos 就是这种）。
+    const none = await store.saveGeneratedIllustrations('scene-noseed', {
+        draft: draft(), createdAt: Date.now(), images: [{ blob: png, width: 1, height: 1 }],
+    });
+    assert.equal('seed' in none.images[0], false);
+});
+
+test('the panel hides what the active backend cannot honor, and restores it after a switch', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    h.state.settings.illustration_backend = { version: 1, active_id: 'baibai' };
+    ui.openIllustrationWindow(data.createIllustrationTarget({ content: story, generationId: 'g-caps' }));
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    const node = name => h.document.querySelector(`[data-role="${name}"]`);
+    await waitFor(() => !action('prepare').disabled);
+    action('prepare').click();
+    await waitFor(() => !action('generate').disabled);
+
+    // 柏宝绘 + NAI：位置用不上，负面词不生效，画幅可以选。
+    assert.equal(h.document.querySelector('.t-illustration-coordinates').hidden, true);
+    assert.equal(node('negative-hint').hidden, false);
+    assert.equal(node('size-field').hidden, false);
+    assert.match(node('characters-hint').textContent, /画面中心/);
+
+    // 切回 cosmos 再检测：位置编辑器回来，负面词提示消失。位置值本身没被删掉。
+    h.state.settings.illustration_backend = { version: 1, active_id: 'cosmos' };
+    action('detect').click();
+    await waitFor(() => h.document.querySelector('.t-illustration-coordinates').hidden === false, 'positions restored');
+    assert.equal(node('negative-hint').hidden, true);
+    assert.equal(node('characters-hint').hidden, true);
+    action('close').click();
+});
+
+test('a backend that drops the character prompts says so instead of letting the user guess', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    h.state.settings.illustration_backend = { version: 1, active_id: 'baibai' };
+    // ComfyUI：它会把 characters 静默丢掉，并用 charactersApplied 如实回报。
+    h.state.baibaiStatus = { backend: 'comfyui', configured: true, model: '默认工作流', supportsCharacters: false, reason: '' };
+    h.state.baibaiCharactersApplied = false;
+    const target = data.createIllustrationTarget({ content: story, generationId: 'g-applied' });
+    ui.openIllustrationWindow(target);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    await waitFor(() => !action('prepare').disabled);
+    action('prepare').click();
+    await waitFor(() => !action('generate').disabled);
+    // 不支持分人物提示词时整块收起。
+    assert.equal(h.document.querySelector('[data-role="characters"]').hidden, true);
+    action('generate').click();
+    await waitFor(() => h.state.settings.illustration_index?.[target.sceneId], 'saved');
+    await waitFor(() => /未使用分人物提示词/.test(h.document.querySelector('[data-role="status"]').textContent), 'notice shown');
+    action('close').click();
+});
+
+test('the settings window switches the active backend and persists it immediately', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationSettingsWindow.js');
+    ui.openIllustrationSettingsWindow();
+    const select = h.document.querySelector('[data-role="backend-select"]');
+    assert.deepEqual([...select.options].map(option => option.value), ['cosmos', 'baibai']);
+    assert.equal(select.value, 'cosmos', '没设过时默认选 cosmos');
+
+    select.value = 'baibai';
+    select.dispatchEvent(new h.window.Event('change', { bubbles: true }));
+    assert.equal(h.state.settings.illustration_backend.active_id, 'baibai');
+    // 状态行显示的是**选中那个后端**的就绪情况，切过去立刻知道能不能用。
+    assert.match(h.document.querySelector('[data-role="backend-validation"]').textContent, /柏宝绘/);
+
+    // 没装的要如实报「未检测到」，而不是默不作声。
+    delete h.window.STBaiBaiImage;
+    select.dispatchEvent(new h.window.Event('change', { bubbles: true }));
+    assert.match(h.document.querySelector('[data-role="backend-validation"]').textContent, /未检测到柏宝绘/);
+    h.document.querySelector('[data-action="close"]').click();
+});
+
+test('a backend that is gone still lets old records be read, adopted and exported', async t => {
+    const h = harness(); t.after(h.close);
+    const store = await h.load('src/core/illustrationStore.js');
+    const portability = await h.load('src/core/illustrationPortability.js');
+    const saved = await store.saveGeneratedIllustrations('scene-gone', {
+        draft: baibaiDraft(), seed: 1, createdAt: Date.now(), images: [{ blob: png, width: 1, height: 1 }],
+    });
+    // 卸载柏宝绘之后：记录照读、采用照常、备份照出 —— 探测只在**出图**时发生。
+    delete h.window.STBaiBaiImage;
+    const record = await store.readSceneIllustrations('scene-gone');
+    assert.equal(record.images[0].id, saved.images[0].id);
+    assert.equal(store.selectedIllustration(record).id, saved.images[0].id);
+    const bundle = await portability.exportIllustrationBackup([]);
+    assert.equal(Object.keys(bundle.assets).length, 1);
+});
+
+/* ---------- 顶栏问号：静态说明收在一处 ---------- */
+
+test('the panel keeps its static explanations behind one help button, not scattered in the body', async t => {
+    const h = harness(); t.after(h.close);
+    const data = await h.load('src/core/illustrationData.js');
+    const panel = await h.load('src/ui/illustrationWindow.js');
+    panel.openIllustrationWindow(data.createIllustrationTarget({ content: story, generationId: 'g-help' }));
+    await waitFor(() => !h.document.querySelector('[data-action="prepare"]').disabled);
+
+    const help = h.document.querySelector('.t-help');
+    const button = help.querySelector('button');
+    const popover = help.querySelector('.t-help-popover');
+    const body = () => h.document.querySelector('.t-illustration-body');
+    assert.equal(popover.hidden, true);
+    assert.equal(button.getAttribute('aria-expanded'), 'false');
+
+    button.click();
+    assert.equal(popover.hidden, false);
+    assert.equal(button.getAttribute('aria-expanded'), 'true');
+    // 说明确实收进来了。
+    assert.match(popover.textContent, /LoRA 触发词/);
+    // 面板正文里不再散落着那条静态解释（气泡在顶栏，不属于正文）。
+    assert.equal(/LoRA 触发词/.test(body().textContent), false, '静态说明不应还留在正文里');
+
+    // 点别处收起：不占着界面。
+    body().click();
+    assert.equal(popover.hidden, true);
+    // Esc 也收得掉。
+    button.click();
+    assert.equal(popover.hidden, false);
+    h.document.dispatchEvent(new h.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(popover.hidden, true);
+    h.document.querySelector('[data-action="close"]').click();
+});
+
+test('the settings and profile windows carry the same help affordance', async t => {
+    const h = harness(); t.after(h.close);
+    const settings = await h.load('src/ui/illustrationSettingsWindow.js');
+    settings.openIllustrationSettingsWindow();
+    const popover = h.document.querySelector('.t-illustration-settings-window .t-help-popover');
+    assert.ok(popover, '设置窗顶栏应有问号');
+    // 占位符与后端说明都由各自的清单驱动生成，加一个就自动出现在这里。
+    assert.match(popover.textContent, /\{\{theater_text\}\}/);
+    assert.match(popover.textContent, /柏宝绘/);
+    // 而它是**关着**的：说明不该一进来就占着界面。
+    assert.equal(popover.hidden, true);
+    // 条件性的就绪状态仍然留在原位，没有被一起收走。
+    assert.ok(h.document.querySelector('[data-role="backend-validation"]'));
+    h.document.querySelector('.t-illustration-settings-window [data-action="close"]').click();
+
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    profiles.openCharacterProfileWindow();
+    assert.ok(h.document.querySelector('.t-profile-window .t-help-popover'), '档案窗顶栏应有问号');
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
 });

@@ -5,6 +5,11 @@
 // 中间那段时间它会读到旧值。这里一律即时落盘。
 
 import { getExtData, saveExtData } from "../utils/storage.js";
+import { detectIllustrationBackend } from "../core/cosmosVisionBridge.js";
+import {
+    ILLUSTRATION_BACKEND_KEY, ensureIllustrationBackend,
+    listIllustrationBackends, resolveActiveBackendId,
+} from "../core/illustrationBackends/registry.js";
 import {
     ILLUSTRATION_PRESETS_KEY, PLACEHOLDER_NAMES,
     createPresetEntry, createUserPreset, ensureIllustrationPresets, isChatCompletionPreset, isManagedEntry,
@@ -12,6 +17,7 @@ import {
     serializeIllustrationPreset, validatePresetForSelection,
 } from "../core/illustrationPresets.js";
 import { claimFloatingWindow, isFloatingWindowDisplaced, releaseFloatingWindow } from "./shared/floatingWindow.js";
+import { createHelpTip } from "./shared/helpPopover.js";
 
 /**
  * 四个素材占位符各自装什么。
@@ -26,15 +32,49 @@ const PLACEHOLDER_HELP = {
     previous_scenes: "点过「换个画面」时，此前已经选过的画面。",
 };
 
-/** 渲染成「占位符 — 说明」的若干行。展开时值为空的占位符，整行会连标题一起消失。 */
-function placeholderHelpLines() {
-    return PLACEHOLDER_NAMES
-        .map(name => {
-            const help = PLACEHOLDER_HELP[name];
-            return `<br><code>{{${name}}}</code>${help ? ` — ${help}` : ""}`;
-        })
-        .join("");
+/**
+ * 顶栏问号里的**静态**说明。
+ *
+ * 条件性的东西留在原位 —— 后端的就绪状态（`data-role="backend-validation"`）与预设的
+ * 校验结果（`data-role="validation"`）只在该出现的那一刻出现，收进这里等于用户最需要时看不到。
+ *
+ * 占位符与后端两类都由各自的清单驱动生成，所以以后加一个占位符、加一个后端，
+ * 说明里漏不掉（只会少一句描述，不会整条不显示）。
+ */
+function helpSections() {
+    return [
+        {
+            heading: "生图后端",
+            lines: [
+                "图片由装了的外部插件来画。这里选的是全局默认，场景配图面板按它决定这次交给谁。",
+                "草稿落盘时会记下当时用的后端，所以换后端重画不用重新选景；后端卸载后旧记录照样能看、能导出。",
+            ],
+            terms: listIllustrationBackends().map(backend => ({ term: backend.label, text: BACKEND_HELP[backend.id] || "" })),
+        },
+        {
+            heading: "素材占位符",
+            lines: ["素材靠占位符进入消息，只有这四个："],
+            terms: PLACEHOLDER_NAMES.map(name => ({ term: `{{${name}}}`, text: PLACEHOLDER_HELP[name] || "" })),
+        },
+        {
+            heading: "选景预设",
+            lines: [
+                "没有内置预设，一律靠「导入」或「新建」。导入认两种文件：酒馆的 Chat Completion 预设，以及本插件导出的选景预设。",
+                "导入时会丢弃上下文注入类条目（chatHistory、worldInfoBefore 这类）—— 选景这条链路不能把当前聊天塞进来。",
+                "条目按顺序拼成消息，可拖动排序。末尾那几条带 ↺ 的是小剧场自己的：可改写、可停用、可排序，但不能删。",
+            ],
+        },
+    ];
 }
+
+/**
+ * 每个生图后端的特点。键与注册表一致，由 listIllustrationBackends() 驱动渲染 ——
+ * 差异点写明，用户才知道该选哪个。
+ */
+const BACKEND_HELP = {
+    cosmos: "支持一次出多张，人物位置可用。画幅、画风与质量词在它那边配置。",
+    baibai: "一次出一张，人物位置固定在画面中心；NovelAI 下不使用这里填的负向提示词。",
+};
 
 /**
  * 打开场景配图设置窗口。
@@ -50,13 +90,17 @@ export function openIllustrationSettingsWindow(options = {}) {
         <section class="t-profile-panel" role="dialog" aria-labelledby="t-illustration-settings-title">
             <div class="t-panel-header">
                 <strong id="t-illustration-settings-title">场景配图设置</strong>
-                <button type="button" class="t-btn" data-action="close" title="关闭设置" aria-label="关闭设置"><i class="fa-solid fa-xmark"></i></button>
+                <div class="t-panel-header-actions" data-role="header-actions">
+                    <button type="button" class="t-btn" data-action="close" title="关闭设置" aria-label="关闭设置"><i class="fa-solid fa-xmark"></i></button>
+                </div>
             </div>
             <div class="t-profile-body">
-                <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:8px;">选景预设</div>
-                <p class="t-illustration-hint">
-                    素材靠占位符进入消息，只有这四个：${placeholderHelpLines()}
-                </p>
+                <div style="font-weight:bold; color:var(--t-color-accent); margin-bottom:8px;">生图后端</div>
+                <div class="t-profile-actions">
+                    <select class="t-input" data-role="backend-select" style="width:auto; min-width:180px;"></select>
+                </div>
+                <p class="t-illustration-hint" data-role="backend-validation"></p>
+                <div style="font-weight:bold; color:var(--t-color-accent); margin:14px 0 8px;">选景预设</div>
                 <div class="t-profile-actions">
                     <select class="t-input" data-role="preset-select" style="width:auto; min-width:180px;"></select>
                     <button type="button" class="t-btn primary" data-action="new-preset" title="新建预设（自动带上小剧场的选景条目）" aria-label="新建预设"><i class="fa-solid fa-plus"></i></button>
@@ -75,6 +119,9 @@ export function openIllustrationSettingsWindow(options = {}) {
 
     const role = name => root.querySelector(`[data-role="${name}"]`);
     const action = name => root.querySelector(`[data-action="${name}"]`);
+    // 静态说明统一收进顶栏的问号，界面本身只留操作。
+    const help = createHelpTip({ title: "场景配图设置", sections: helpSections() });
+    role("header-actions").insertBefore(help.root, action("close"));
     let disposed = false;
     let draggedId = "";
     // 条目默认折叠：一次能看到全部条目，要改哪条再点开。只活在本次开窗期间，不持久化。
@@ -151,6 +198,33 @@ export function openIllustrationSettingsWindow(options = {}) {
     }
 
     // --- 渲染 ---
+
+    /**
+     * 生图后端选择。全局默认，配图面板只读它。
+     * 状态行显示**当前选中那个后端**的就绪情况 —— 用户切过去立刻知道能不能用，
+     * 而不是等回到面板才发现它没装。
+     */
+    function renderBackend() {
+        // 读取端防御性自调一次，理由同 state()：测试夹具会整块替换 storage。
+        const data = getExtData();
+        ensureIllustrationBackend(data);
+        const active = resolveActiveBackendId(data);
+
+        const select = role("backend-select");
+        select.replaceChildren();
+        for (const backend of listIllustrationBackends()) {
+            const option = document.createElement("option");
+            option.value = backend.id;
+            option.textContent = backend.label;
+            select.append(option);
+        }
+        select.value = active;
+
+        const state = detectIllustrationBackend(active);
+        const node = role("backend-validation");
+        node.textContent = state.reason;
+        node.style.color = state.ready ? "" : "var(--t-color-danger, #e06c75)";
+    }
 
     function renderToolbar() {
         const presets = listPresets(getExtData());
@@ -397,6 +471,7 @@ export function openIllustrationSettingsWindow(options = {}) {
 
     function render() {
         if (disposed) return;
+        renderBackend();
         renderToolbar();
         renderValidation();
         // 没有生效的预设就一律走引导；有预设但 active 悬空的情况 ensure 已经回落过了。
@@ -414,6 +489,14 @@ export function openIllustrationSettingsWindow(options = {}) {
         for (const entry of preset.entries) expandedIds.add(entry.id);
         commit();
     }
+
+    // 切换后端即时落盘：配图面板是另一个界面，等「保存所有配置」的话中间会读到旧值。
+    role("backend-select").addEventListener("change", event => {
+        const data = getExtData();
+        ensureIllustrationBackend(data);
+        data[ILLUSTRATION_BACKEND_KEY].active_id = event.target.value;
+        commit();
+    });
 
     role("preset-select").addEventListener("change", event => {
         state().active_preset_id = event.target.value;
@@ -500,6 +583,8 @@ export function openIllustrationSettingsWindow(options = {}) {
         // 被别的窗口顶掉时不要回面板，否则会「顶掉 → 回面板 → 面板又顶掉」来回打乒乓。
         const displaced = isFloatingWindowDisplaced();
         releaseFloatingWindow(close);
+        // 说明气泡打开时在 document 上挂了关闭监听，随窗口一起收掉。
+        help.close();
         root.remove();
         if (!displaced) onClose?.();
     }

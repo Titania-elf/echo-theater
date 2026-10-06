@@ -29,6 +29,14 @@
     flex-shrink: 0;
 }
 
+/* 顶栏右侧那一簇按钮。放在这里而不是各窗口内联，是因为三个配图窗口的顶栏都要用，
+   而且问号气泡要靠它做定位参照（.t-help 是 position: relative）。 */
+.t-panel-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .t-panel-footer {
     padding: 12px 15px;
     background: var(--t-color-surface);

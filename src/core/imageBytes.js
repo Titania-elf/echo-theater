@@ -129,6 +129,41 @@ export function readImageSize(bytes) {
     return null;
 }
 
+/** data URL 的形状：只认我们自己支持的三种图片类型，其余一律当脏数据。 */
+const DATA_URL_PATTERN = /^data:(image\/(?:png|jpeg|webp));base64,([\s\S]*)$/;
+
+/**
+ * 把 data URL 解码成 Blob。
+ *
+ * 为什么带 maxBytes：有的供应方（柏宝绘）回的是 data URL 字符串，字节数在解码前就能从
+ * base64 长度算出来。先算再 atob，就能在那块可能几百 MB 的缓冲区分配出来**之前**拒掉，
+ * 而不是先解码再发现超限。这里只是便宜的预检；权威校验仍在 validateIllustrationBlob
+ * （那里还管 MIME 类型与魔数是否自洽），两道都在。
+ *
+ * @param {string} dataUrl 形如 data:image/png;base64,…
+ * @param {{maxBytes?:number}} [options] 解码后字节数上限，缺省不限
+ * @returns {Blob} 带正确 type 的图片 Blob
+ */
+export function dataUrlToBlob(dataUrl, { maxBytes = Infinity } = {}) {
+    const match = typeof dataUrl === "string" ? DATA_URL_PATTERN.exec(dataUrl.trim()) : null;
+    if (!match) throw new Error("返回的不是可识别的图片 data URL。");
+    const [, mimeType, base64] = match;
+    // base64 每 4 个字符对应 3 字节，末尾的 = 是补位，不算字节。
+    const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+    const byteLength = Math.floor((base64.length * 3) / 4) - padding;
+    if (byteLength <= 0) throw new Error("返回的图片数据是空的。");
+    if (byteLength > maxBytes) throw new Error(`图片超过 ${Math.round(maxBytes / (1024 * 1024))} MB，无法保存。`);
+    let binary;
+    try {
+        binary = atob(base64);
+    } catch {
+        throw new Error("返回的图片数据不是合法的 base64。");
+    }
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+    return new Blob([bytes], { type: mimeType });
+}
+
 /**
  * 嗅探 Blob 的真实类型与尺寸，并补上缺失的类型标记。
  * 返回 null 表示「不是可识别的图片」，由调用方决定报错文案。

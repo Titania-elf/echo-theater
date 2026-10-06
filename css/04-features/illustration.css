@@ -186,6 +186,80 @@
 .t-profile-order { color: var(--t-color-text-muted); font-size: 0.8em; }
 .t-profile-card-header .t-btn { margin-left: auto; }
 
+/* ── 顶栏问号：静态说明收在一处（三个配图窗口共用） ───────────────────
+   气泡挂在按钮容器上做绝对定位，所以容器必须有 position: relative。
+   头部本身没有 overflow: hidden，气泡不会被裁掉；z-index 要高过窗口内容。 */
+
+.t-help {
+    position: relative;
+    display: inline-flex;
+}
+
+.t-help-popover {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 20;
+    /* 说明是成段的，给宽一点但别把窗口撑破；窄屏靠 vw 兜底。 */
+    width: min(430px, 76vw);
+    max-height: min(60vh, 460px);
+    overflow-y: auto;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    text-align: left;
+    background: var(--t-color-surface-elevated);
+    border: 1px solid var(--t-color-border-strong);
+    border-radius: var(--t-radius-panel);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    color: var(--t-color-text-secondary);
+    font-size: 0.85em;
+    line-height: 1.6;
+    font-weight: normal;
+}
+
+.t-help-title {
+    color: var(--t-color-accent);
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.t-help-section + .t-help-section { margin-top: 10px; }
+
+.t-help-heading {
+    color: var(--t-color-text-label);
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.t-help-lines,
+.t-help-terms {
+    margin: 0;
+    padding-left: 1.2em;
+}
+
+.t-help-terms {
+    padding-left: 0;
+}
+
+.t-help-lines > li + li,
+.t-help-terms > dd + dt { margin-top: 4px; }
+
+.t-help-terms > dt {
+    font-weight: normal;
+    margin-top: 6px;
+}
+
+.t-help-terms > dd {
+    margin: 0 0 0 1.2em;
+}
+
+.t-help code {
+    padding: 1px 4px;
+    border-radius: var(--t-radius-inline);
+    background: var(--t-color-surface-code);
+    color: var(--t-color-text);
+}
+
 @media (max-width: 600px) {
     .t-root.t-illustration-window {
         padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
