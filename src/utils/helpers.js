@@ -564,6 +564,54 @@ export const getSnippet = (html) => {
     return text.length > 60 ? text.substring(0, 60) + "..." : text;
 };
 
+/** 小剧场正文的外壳标签名。输出规范要求模型把全部内容包在它里面。 */
+const THEATER_TAG = "小剧场";
+const THEATER_TAG_OPEN = /<小剧场\s*>/;
+const THEATER_TAG_ANY = /<\/?\s*小剧场\s*\/?>/g;
+/** 写到一半的外壳标签：`<`、`</`、`<小剧` 之类。 */
+const THEATER_TAG_PARTIAL = /^\/?\s*小?剧?场?\s*$/;
+
+/**
+ * 去掉外壳标签本身，内容原样留下。开、闭、自闭合都算。
+ * 流式阶段就要用它 —— 标签虽不会被渲染成文字，但会多套一层元素，
+ * 模型自写的 CSS 若依赖「根元素是内容的直接子节点」就会错位。
+ */
+function stripTheaterTags(text) {
+    return String(text || '').replace(THEATER_TAG_ANY, '');
+}
+
+/**
+ * 流式阶段补一刀：末尾可能是一个还没写完的外壳标签（`<小剧`），挡掉免得闪一下。
+ * 只处理**最后一个 `<` 之后没有 `>`** 的那种尾巴，且必须长得像外壳标签的前缀，
+ * 否则不动（正文里本来就可能出现 `<`）。
+ */
+function dropPartialTheaterTag(text) {
+    const value = String(text || '');
+    const at = value.lastIndexOf('<');
+    if (at === -1) return value;
+    const tail = value.slice(at + 1);
+    if (tail.includes('>')) return value;
+    return THEATER_TAG_PARTIAL.test(tail) ? value.slice(0, at) : value;
+}
+
+/**
+ * 取 `<小剧场>…</小剧场>` 的内侧。
+ *
+ * 只有开标签时（流式被截断、或模型忘了闭合）就取开标签之后的全部 ——
+ * 宁可多留也不要丢正文。找不到开标签返回 null，由调用方回退到启发式清洗。
+ *
+ * @param {string} content
+ * @returns {string|null}
+ */
+function takeTheaterWrapper(content) {
+    const match = THEATER_TAG_OPEN.exec(String(content || ''));
+    if (!match) return null;
+    const bodyStart = match.index + match[0].length;
+    const close = String(content).indexOf(`</${THEATER_TAG}`, bodyStart);
+    const body = close === -1 ? String(content).slice(bodyStart) : String(content).slice(bodyStart, close);
+    return body.trim();
+}
+
 /**
  * 轻量清洗 AI 输出内容（流式阶段用）
  * 仅移除明显噪声，避免每个 chunk 执行重度正则清洗
@@ -583,7 +631,9 @@ export function sanitizeAIOutputLite(rawContent) {
     content = content.replace(/<thinking[^>]*>[\s\S]*?<\/thinking>/gi, '');
     content = content.replace(/<think[^>]*>[\s\S]*?<\/think>/gi, '');
 
-    return content.trim();
+    // 外壳标签在流式阶段就得挡掉：它是未定义标签，不会显示成文字，但会多套一层
+    // 元素，模型自写的 CSS 若依赖「根元素是直接子节点」就会错位。
+    return dropPartialTheaterTag(stripTheaterTags(content)).trim();
 }
 
 /**
@@ -619,9 +669,67 @@ export function sanitizeAIOutput(rawContent) {
     content = content.replace(/```html\s*/gi, '');
     content = content.replace(/```\s*/g, '');
 
-    // === 第三阶段：激进清洗 - 提取纯 HTML 部分 ===
-    // 策略：找到第一个有效的 HTML 开始标签，删除之前的所有内容
-    //       找到最后一个有效的 HTML 闭合标签，删除之后的所有内容
+    // === 第三阶段：取正文 ===
+    // 有 <小剧场> 外壳时，边界是模型明确给出的，直接用内侧 —— 不用猜，也就不会把
+    // 「HTML 之前那句恰好含 <div> 字样的说明」当成正文起点留下、或把结尾的补充切掉。
+    // 没有外壳才回退到启发式：老的托管条目不会自动更新（只在新建/重新导入预设时写入），
+    // 用户也可能手动改掉那条约束，所以两种形状都得长期认。
+    const wrapped = takeTheaterWrapper(content);
+    if (wrapped !== null) {
+        content = wrapped;
+    } else {
+        content = extractHtmlByHeuristic(content);
+    }
+
+    // === 第四阶段：清理 Markdown 残留（针对可能残留在 HTML 中的） ===
+    // 只处理明显在文本节点中的 Markdown，避免破坏 HTML 结构
+
+    // 移除 Markdown 粗体（**text** 或 __text__）
+    // 仅在非 HTML 标签属性中替换
+    content = content.replace(/(\s|>)\*\*([^*<>]+)\*\*(\s|<)/g, '$1$2$3');
+    content = content.replace(/(\s|>)__([^_<>]+)__(\s|<)/g, '$1$2$3');
+
+    // 移除 Markdown 斜体（*text* 或 _text_）- 更保守的匹配
+    content = content.replace(/(\s|>)\*([^*<>\n]+)\*(\s|<)/g, '$1$2$3');
+
+    // 移除 Markdown 标题标记（# ## ### 等，仅在行首）
+    content = content.replace(/^\s*#{1,6}\s+/gm, '');
+
+    // 移除 Markdown 无序列表标记（- 或 * 在行首）
+    content = content.replace(/^\s*[-*+]\s+(?=[^\s<])/gm, '');
+
+    // 移除 Markdown 有序列表标记（1. 2. 等在行首）
+    content = content.replace(/^\s*\d+\.\s+(?=[^\s<])/gm, '');
+
+    // === 第五阶段：清理多余空白 ===
+    content = content.replace(/\n{3,}/g, '\n\n');  // 多个连续换行压缩为两个
+    content = content.trim();
+
+    // === 安全回退 ===
+    // 如果清洗后内容为空或过短，回退到原始内容
+    if (!content || content.length < 10) {
+        console.warn('Titania: 清洗后内容为空，回退到原始内容');
+        // 对原始内容只做最基础的清理（移除代码块标记）
+        return originalContent.replace(/```html\s*/gi, '').replace(/```\s*/g, '').trim();
+    }
+
+    return content;
+}
+
+/**
+ * 启发式地从一段文本里抠出 HTML 部分：找第一个「像 HTML 开始」的位置切掉前面的，
+ * 再找最后一个闭合标签切掉后面的。
+ *
+ * 这是**没有 `<小剧场>` 外壳时的回退**（老预设不会自动更新、用户也可能改掉那条约束）。
+ * 它是猜的，所以有已知的钝处：HTML 之前那句恰好含 `<div>`/`<p>` 字样的说明会被当成
+ * 正文起点留下；结尾依赖「末尾必须是闭合标签」，模型加一句补充就可能切不掉。
+ * 有外壳时走 takeTheaterWrapper，不经过这里。
+ *
+ * @param {string} input
+ * @returns {string}
+ */
+function extractHtmlByHeuristic(input) {
+    let content = String(input || '');
 
     // 常见的 HTML 开始标记（按优先级排序）
     const htmlStartPatterns = [
@@ -697,41 +805,8 @@ export function sanitizeAIOutput(rawContent) {
         content = content.substring(0, lastHtmlEndIndex);
     }
 
-    // === 第四阶段：清理 Markdown 残留（针对可能残留在 HTML 中的） ===
-    // 只处理明显在文本节点中的 Markdown，避免破坏 HTML 结构
-
-    // 移除 Markdown 粗体（**text** 或 __text__）
-    // 仅在非 HTML 标签属性中替换
-    content = content.replace(/(\s|>)\*\*([^*<>]+)\*\*(\s|<)/g, '$1$2$3');
-    content = content.replace(/(\s|>)__([^_<>]+)__(\s|<)/g, '$1$2$3');
-
-    // 移除 Markdown 斜体（*text* 或 _text_）- 更保守的匹配
-    content = content.replace(/(\s|>)\*([^*<>\n]+)\*(\s|<)/g, '$1$2$3');
-
-    // 移除 Markdown 标题标记（# ## ### 等，仅在行首）
-    content = content.replace(/^\s*#{1,6}\s+/gm, '');
-
-    // 移除 Markdown 无序列表标记（- 或 * 在行首）
-    content = content.replace(/^\s*[-*+]\s+(?=[^\s<])/gm, '');
-
-    // 移除 Markdown 有序列表标记（1. 2. 等在行首）
-    content = content.replace(/^\s*\d+\.\s+(?=[^\s<])/gm, '');
-
-    // === 第五阶段：清理多余空白 ===
-    content = content.replace(/\n{3,}/g, '\n\n');  // 多个连续换行压缩为两个
-    content = content.trim();
-
-    // === 安全回退 ===
-    // 如果清洗后内容为空或过短，回退到原始内容
-    if (!content || content.length < 10) {
-        console.warn('Titania: 清洗后内容为空，回退到原始内容');
-        // 对原始内容只做最基础的清理（移除代码块标记）
-        return originalContent.replace(/```html\s*/gi, '').replace(/```\s*/g, '').trim();
-    }
-
     return content;
 }
-
 /**
  * CSS 作用域净化与注入 (Safeguard B)
  * @param {string} rawHtml - AI 返回的原始 HTML (可能包含 style 标签)

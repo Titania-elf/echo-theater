@@ -1739,6 +1739,25 @@ function getChatHistory(limit, whitelist = [], blacklist = void 0, aiOnly = fals
     return `${name}: ${cleanContent}`;
   }).join("\n");
 }
+function stripTheaterTags(text) {
+  return String(text || "").replace(THEATER_TAG_ANY, "");
+}
+function dropPartialTheaterTag(text) {
+  const value = String(text || "");
+  const at = value.lastIndexOf("<");
+  if (at === -1) return value;
+  const tail = value.slice(at + 1);
+  if (tail.includes(">")) return value;
+  return THEATER_TAG_PARTIAL.test(tail) ? value.slice(0, at) : value;
+}
+function takeTheaterWrapper(content) {
+  const match = THEATER_TAG_OPEN.exec(String(content || ""));
+  if (!match) return null;
+  const bodyStart = match.index + match[0].length;
+  const close = String(content).indexOf(`</${THEATER_TAG}`, bodyStart);
+  const body = close === -1 ? String(content).slice(bodyStart) : String(content).slice(bodyStart, close);
+  return body.trim();
+}
 function sanitizeAIOutputLite(rawContent) {
   if (!rawContent || typeof rawContent !== "string") return "";
   let content = rawContent;
@@ -1746,7 +1765,7 @@ function sanitizeAIOutputLite(rawContent) {
   content = content.replace(/```\s*/g, "");
   content = content.replace(/<thinking[^>]*>[\s\S]*?<\/thinking>/gi, "");
   content = content.replace(/<think[^>]*>[\s\S]*?<\/think>/gi, "");
-  return content.trim();
+  return dropPartialTheaterTag(stripTheaterTags(content)).trim();
 }
 function sanitizeAIOutput(rawContent) {
   if (!rawContent || typeof rawContent !== "string") return "";
@@ -1782,6 +1801,28 @@ function sanitizeAIOutput(rawContent) {
   });
   content = content.replace(/```html\s*/gi, "");
   content = content.replace(/```\s*/g, "");
+  const wrapped = takeTheaterWrapper(content);
+  if (wrapped !== null) {
+    content = wrapped;
+  } else {
+    content = extractHtmlByHeuristic(content);
+  }
+  content = content.replace(/(\s|>)\*\*([^*<>]+)\*\*(\s|<)/g, "$1$2$3");
+  content = content.replace(/(\s|>)__([^_<>]+)__(\s|<)/g, "$1$2$3");
+  content = content.replace(/(\s|>)\*([^*<>\n]+)\*(\s|<)/g, "$1$2$3");
+  content = content.replace(/^\s*#{1,6}\s+/gm, "");
+  content = content.replace(/^\s*[-*+]\s+(?=[^\s<])/gm, "");
+  content = content.replace(/^\s*\d+\.\s+(?=[^\s<])/gm, "");
+  content = content.replace(/\n{3,}/g, "\n\n");
+  content = content.trim();
+  if (!content || content.length < 10) {
+    console.warn("Titania: \u6E05\u6D17\u540E\u5185\u5BB9\u4E3A\u7A7A\uFF0C\u56DE\u9000\u5230\u539F\u59CB\u5185\u5BB9");
+    return originalContent.replace(/```html\s*/gi, "").replace(/```\s*/g, "").trim();
+  }
+  return content;
+}
+function extractHtmlByHeuristic(input) {
+  let content = String(input || "");
   const htmlStartPatterns = [
     /<!DOCTYPE\s+html/i,
     // DOCTYPE 声明
@@ -1852,18 +1893,6 @@ function sanitizeAIOutput(rawContent) {
   }
   if (lastHtmlEndIndex > 0 && lastHtmlEndIndex < content.length) {
     content = content.substring(0, lastHtmlEndIndex);
-  }
-  content = content.replace(/(\s|>)\*\*([^*<>]+)\*\*(\s|<)/g, "$1$2$3");
-  content = content.replace(/(\s|>)__([^_<>]+)__(\s|<)/g, "$1$2$3");
-  content = content.replace(/(\s|>)\*([^*<>\n]+)\*(\s|<)/g, "$1$2$3");
-  content = content.replace(/^\s*#{1,6}\s+/gm, "");
-  content = content.replace(/^\s*[-*+]\s+(?=[^\s<])/gm, "");
-  content = content.replace(/^\s*\d+\.\s+(?=[^\s<])/gm, "");
-  content = content.replace(/\n{3,}/g, "\n\n");
-  content = content.trim();
-  if (!content || content.length < 10) {
-    console.warn("Titania: \u6E05\u6D17\u540E\u5185\u5BB9\u4E3A\u7A7A\uFF0C\u56DE\u9000\u5230\u539F\u59CB\u5185\u5BB9");
-    return originalContent.replace(/```html\s*/gi, "").replace(/```\s*/g, "").trim();
   }
   return content;
 }
@@ -2239,7 +2268,7 @@ ${mergedBody}`;
   }
   return mergedBody;
 }
-var fileToBase64, parseMeta, getSnippet;
+var fileToBase64, parseMeta, getSnippet, THEATER_TAG, THEATER_TAG_OPEN, THEATER_TAG_ANY, THEATER_TAG_PARTIAL;
 var init_helpers = __esm({
   "src/utils/helpers.js"() {
     init_storage();
@@ -2267,6 +2296,10 @@ var init_helpers = __esm({
       text = text.replace(/\s+/g, " ").trim();
       return text.length > 60 ? text.substring(0, 60) + "..." : text;
     };
+    THEATER_TAG = "\u5C0F\u5267\u573A";
+    THEATER_TAG_OPEN = /<小剧场\s*>/;
+    THEATER_TAG_ANY = /<\/?\s*小剧场\s*\/?>/g;
+    THEATER_TAG_PARTIAL = /^\/?\s*小?剧?场?\s*$/;
   }
 });
 
@@ -2816,14 +2849,15 @@ var init_promptManager = __esm({
     TITANIA_OUTPUT_CONTRACT = `\u4F60\u6B63\u5728\u751F\u6210\u53EF\u76F4\u63A5\u6E32\u67D3\u7684\u5C0F\u5267\u573A\u5185\u5BB9\u3002
 
 [\u8F93\u51FA\u8981\u6C42]
-1. \u6839\u636E\u968F\u540E\u63D0\u4F9B\u7684\u201C\u5C0F\u5267\u573A\u6307\u4EE4\u201D\u5B8C\u6210\u521B\u4F5C\uFF0C\u4E0D\u8981\u590D\u8FF0\u6216\u89E3\u91CA\u6307\u4EE4\u3002
-2. \u8F93\u51FA\u5FC5\u987B\u662F\u5B8C\u6574\u3001\u6709\u6548\u4E14\u53EF\u76F4\u63A5\u5D4C\u5165\u9875\u9762\u7684 HTML \u7247\u6BB5\u3002
-3. \u4F7F\u7528 HTML \u7ED3\u6784\u4E0E CSS \u5BF9\u5185\u5BB9\u8FDB\u884C\u89C6\u89C9\u7F16\u6392\uFF0C\u4F7F\u6837\u5F0F\u670D\u52A1\u4E8E\u573A\u666F\u6C1B\u56F4\u3001\u53D9\u4E8B\u5C42\u6B21\u548C\u9605\u8BFB\u4F53\u9A8C\u3002
-4. \u53EF\u4EE5\u4F7F\u7528\u5185\u8054\u6837\u5F0F\u6216\u7247\u6BB5\u5185\u7684 <style>\uFF0C\u4F46\u4E0D\u8981\u8F93\u51FA <html>\u3001<head>\u3001<body> \u7B49\u5B8C\u6574\u6587\u6863\u5916\u58F3\u3002
-5. \u4E0D\u8981\u8F93\u51FA Markdown \u4EE3\u7801\u5757\u3001\u5B9E\u73B0\u8BF4\u660E\u3001\u524D\u8A00\u3001\u603B\u7ED3\u6216 HTML \u4E4B\u5916\u7684\u6587\u672C\u3002
-6. \u4FDD\u8BC1\u7ED3\u6784\u95ED\u5408\uFF0C\u4E0D\u8981\u4F9D\u8D56\u5916\u90E8\u811A\u672C\u3001\u5916\u90E8\u6837\u5F0F\u8868\u6216\u7F51\u7EDC\u8D44\u6E90\u3002
-7. \u9ED8\u8BA4\u4F7F\u7528\u4E2D\u6587\uFF0C\u9664\u975E\u5C0F\u5267\u573A\u6307\u4EE4\u53E6\u6709\u8981\u6C42\u3002
-8. \u5185\u5BB9\u8868\u8FBE\u4F18\u5148\u4E8E\u88C5\u9970\u3002\u4FDD\u6301\u6B63\u6587\u6E05\u6670\u3001\u5C42\u6B21\u660E\u786E\uFF1B\u89C6\u89C9\u6548\u679C\u5E94\u589E\u5F3A\u5185\u5BB9\uFF0C\u4E0D\u5F97\u906E\u6321\u3001\u538B\u7F29\u6216\u5E72\u6270\u9605\u8BFB\u3002`;
+1. \u628A\u5168\u90E8\u5185\u5BB9\u5305\u5728\u4E00\u5BF9 <\u5C0F\u5267\u573A> \u6807\u7B7E\u4E4B\u95F4\uFF1A\u5F00\u5934\u5199 <\u5C0F\u5267\u573A>\uFF0C\u7ED3\u5C3E\u5199 </\u5C0F\u5267\u573A>\u3002\u8FD9\u4E24\u4E2A\u6807\u7B7E\u4E4B\u5916\u4E0D\u8981\u6709\u4EFB\u4F55\u5B57\u7B26\u2014\u2014\u4E0D\u8981\u95EE\u5019\u3001\u4E0D\u8981\u8BF4\u660E\u3001\u4E0D\u8981\u603B\u7ED3\u3001\u4E0D\u8981\u4EE3\u7801\u56F4\u680F\u3002
+2. \u6807\u7B7E\u4E4B\u5185\u662F\u5B8C\u6574\u3001\u6709\u6548\u4E14\u53EF\u76F4\u63A5\u5D4C\u5165\u9875\u9762\u7684 HTML \u7247\u6BB5\u3002
+3. \u6839\u636E\u968F\u540E\u63D0\u4F9B\u7684\u201C\u5C0F\u5267\u573A\u6307\u4EE4\u201D\u5B8C\u6210\u521B\u4F5C\uFF0C\u4E0D\u8981\u590D\u8FF0\u6216\u89E3\u91CA\u6307\u4EE4\u3002
+4. \u4F7F\u7528 HTML \u7ED3\u6784\u4E0E CSS \u5BF9\u5185\u5BB9\u8FDB\u884C\u89C6\u89C9\u7F16\u6392\uFF0C\u4F7F\u6837\u5F0F\u670D\u52A1\u4E8E\u573A\u666F\u6C1B\u56F4\u3001\u53D9\u4E8B\u5C42\u6B21\u548C\u9605\u8BFB\u4F53\u9A8C\u3002
+5. \u53EF\u4EE5\u4F7F\u7528\u5185\u8054\u6837\u5F0F\u6216\u7247\u6BB5\u5185\u7684 <style>\uFF0C\u4F46\u4E0D\u8981\u8F93\u51FA <html>\u3001<head>\u3001<body> \u7B49\u5B8C\u6574\u6587\u6863\u5916\u58F3\u3002
+6. \u4E0D\u8981\u8F93\u51FA Markdown \u4EE3\u7801\u5757\u3001\u5B9E\u73B0\u8BF4\u660E\u3001\u524D\u8A00\u6216\u603B\u7ED3\u3002
+7. \u4FDD\u8BC1\u7ED3\u6784\u95ED\u5408\uFF0C\u4E0D\u8981\u4F9D\u8D56\u5916\u90E8\u811A\u672C\u3001\u5916\u90E8\u6837\u5F0F\u8868\u6216\u7F51\u7EDC\u8D44\u6E90\u3002
+8. \u9ED8\u8BA4\u4F7F\u7528\u4E2D\u6587\uFF0C\u9664\u975E\u5C0F\u5267\u573A\u6307\u4EE4\u53E6\u6709\u8981\u6C42\u3002
+9. \u5185\u5BB9\u8868\u8FBE\u4F18\u5148\u4E8E\u88C5\u9970\u3002\u4FDD\u6301\u6B63\u6587\u6E05\u6670\u3001\u5C42\u6B21\u660E\u786E\uFF1B\u89C6\u89C9\u6548\u679C\u5E94\u589E\u5F3A\u5185\u5BB9\uFF0C\u4E0D\u5F97\u906E\u6321\u3001\u538B\u7F29\u6216\u5E72\u6270\u9605\u8BFB\u3002`;
     BUILTIN_MODES = ["narrative", "visual"];
     EDITOR_VIEWS = [...BUILTIN_MODES, "preset"];
     MESSAGE_ROLES = ["system", "user", "assistant"];
