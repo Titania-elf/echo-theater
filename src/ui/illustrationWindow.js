@@ -38,6 +38,7 @@ const PANEL_HELP = [
         lines: [
             "选一轮剧场内容 → 「分析画面」挑出适合落笔的瞬间 → 可以改提示词 → 「生成图片」。",
             "「换个画面」会重新选景，并把此前选过的画面作为排除参考。",
+            "排除只是要求，不是保证：正文里若只有一个可落笔的瞬间，模型可以复用同一幅 —— 真复用了面板会明说。想指定画面就写进「本次额外要求」，它优先于选景要求。",
             "切换正文不改变任务归属：正在跑的那次仍属于发起时的那一轮内容。",
         ],
     },
@@ -98,6 +99,23 @@ function notifyView(sceneId) {
 /** 任务类型 → 进行态阶段。选景与生图在主界面按钮上是两种说法。 */
 function activityPhaseFor(kind) {
     return kind === "prepare" ? "selecting" : "generating";
+}
+
+/**
+ * 两次选景是不是同一幅画面。取值优先级与 illustrationPresets 的 formatPreviousScenes 一致
+ * （摘要 → 摘录 → 提示词），否则刚推进排除表的那一条与下次比对的键对不上。
+ */
+function sceneIdentity(entry) {
+    return String(entry?.summary || entry?.sourceExcerpt || entry?.positivePrompt || "").trim();
+}
+
+/**
+ * 模型有没有听「换一个」。选景要求说的是「选**唯一一个最适合**的瞬间」，正文不变时它
+ * 完全可能给出同一个答案；不说一声的话，用户看到的就是一模一样的摘要，只会以为功能坏了。
+ */
+function repeatsPreviousScene(previousScenes, picked) {
+    const key = sceneIdentity(picked);
+    return Boolean(key) && previousScenes.some(item => sceneIdentity(item) === key);
 }
 
 function jobProgress(job) {
@@ -590,6 +608,11 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
             }
             session.record = record;
             session.draft ||= selectedIllustration(record)?.draft || null;
+            // 「换个画面」靠内存里的历史排除已选过的画面，刷新页面就没了。用记录里当前采用的那一幅
+            // 补种，否则重开页面后点「换个画面」不带任何排除信息，模型会把同一幅原样再选一次。
+            if (!session.previousScenes.length && session.draft?.scene) {
+                session.previousScenes.push({ ...session.draft.scene, positivePrompt: session.draft.prompts?.positivePrompt || "" });
+            }
             renderDraft();
             renderGallery();
         } catch (error) {
@@ -728,12 +751,18 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                 current.draft = draft;
                 // 连同正面提示词一起存：用户自写的预设可能不返回摘要，formatPreviousScenes
                 // 要回落到它才能拼出「已经选过的画面」。draft.scene 本身不含这个字段。
-                current.previousScenes.push({ ...draft.scene, positivePrompt: draft.prompts.positivePrompt });
+                const picked = { ...draft.scene, positivePrompt: draft.prompts.positivePrompt };
+                const repeated = alternate && repeatsPreviousScene(current.previousScenes, picked);
+                current.previousScenes.push(picked);
                 // 摘录被丢弃时说一句：面板上没有摘录行，既可能是模型没给，也可能是它编的
                 // 那段对不上正文，不区分的话用户只会以为这个功能坏了。
-                current.notice = draft.excerptDropped
-                    ? "画面已选好，但模型给的原文摘录与正文对不上，已丢弃。可以展开修改提示词，再生成图片。"
-                    : "画面已选好。可以展开修改提示词，再生成图片。";
+                current.notice = repeated
+                    // 「本次额外要求」是唯一能压过选景要求的入口（选景要求里写着它优先），
+                    // 所以重复时给的是这条出路，而不是让用户反复点同一个按钮。
+                    ? "模型又选了同一幅画面，多半是正文里只有一个可落笔的瞬间。想指定别的画面，写进「本次额外要求」。"
+                    : draft.excerptDropped
+                        ? "画面已选好，但模型给的原文摘录与正文对不上，已丢弃。可以展开修改提示词，再生成图片。"
+                        : "画面已选好。可以展开修改提示词，再生成图片。";
             });
             return;
         }

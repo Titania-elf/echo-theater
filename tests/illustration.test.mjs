@@ -488,6 +488,71 @@ test('panel previews selection, edits character prompts, generates, persists and
     action('close').click();
 });
 
+test('re-running selection carries the scenes already picked into the next request', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const target = data.createIllustrationTarget({ content: `<p>${story}</p>`, generationId: 'g-alternate' });
+    ui.openIllustrationWindow(target);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    await waitFor(() => !action('prepare').disabled, 'API ready');
+
+    action('prepare').click();
+    await waitFor(() => !action('generate').disabled, 'first draft ready');
+    const first = h.state.llmCalls[0].messages.find(m => m.role === 'user').content;
+    assert.equal(/已经选过/.test(first), false, '第一次选景不该有排除段');
+    // 「必须换一幅」得写在定义任务的 system 条目里。只把它当素材块的标题时，
+    // 模型会当上下文读，而 system 那句「选唯一一个最适合的瞬间」压过它 —— 就会原样再选一次。
+    const rules = h.state.llmCalls[0].messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
+    assert.match(rules, /已经选过的画面/, '排除要求必须进选景要求，不能只当素材块的标题');
+
+    action('alternate').click();
+    await waitFor(() => h.state.llmCalls.length > 1, 'second selection sent');
+    const second = h.state.llmCalls[1].messages.find(m => m.role === 'user').content;
+    assert.ok(second.includes('深夜门口的重逢。'), '第二次选景要带上第一次选过的画面摘要');
+    action('close').click();
+});
+
+test('a reopened panel still excludes the scene the saved record already holds', async t => {
+    const h = harness(); t.after(h.close);
+    const store = await h.load('src/core/illustrationStore.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const target = data.createIllustrationTarget({ content: `<p>${story}</p>`, generationId: 'g-reload' });
+    // 上一轮已经选过并保存了画面。刷新页面后会话状态没了，只有记录还在。
+    await store.saveGeneratedIllustration(target.sceneId, { draft: draft(), image: { blob: png, width: 1, height: 1 } });
+
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    ui.openIllustrationWindow(target);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    await waitFor(() => !action('prepare').disabled, 'API ready');
+    action('alternate').click();
+    await waitFor(() => h.state.llmCalls.length > 0, 'selection sent');
+    const sent = h.state.llmCalls[0].messages.find(m => m.role === 'user').content;
+    assert.ok(sent.includes('深夜门口的重逢。'), '记录里已有的画面也必须进排除表，否则「换个画面」会原样再选一次');
+    action('close').click();
+});
+
+test('the panel says so when the model picks the same scene again', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    const target = data.createIllustrationTarget({ content: `<p>${story}</p>`, generationId: 'g-repeat' });
+    ui.openIllustrationWindow(target);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    const notice = () => h.document.querySelector('[data-role="status"]').textContent;
+    await waitFor(() => !action('prepare').disabled, 'API ready');
+
+    action('prepare').click();
+    await waitFor(() => !action('generate').disabled, 'first draft ready');
+    assert.equal(/又选了同一幅/.test(notice()), false, '第一次选景不该说重复');
+
+    // 选景桩每次都回同一个 summary —— 模型无视排除表正是要如实说出来，而不是静默重复。
+    action('alternate').click();
+    await waitFor(() => /又选了同一幅/.test(notice()), 'repeat notice');
+    assert.match(notice(), /本次额外要求/, '要给一条出路，而不是让用户反复点同一个按钮');
+    action('close').click();
+});
+
 test('panel can retry saving without paying for another image; new displayed scene never receives old result', async t => {
     const h = harness(); t.after(h.close);
     const ui = await h.load('src/ui/illustrationWindow.js');
