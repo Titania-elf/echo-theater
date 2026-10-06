@@ -2307,3 +2307,53 @@ test('the manage controls are disabled while a job is running', async t => {
     assert.equal(h.document.querySelector('[data-action="delete-image"]').disabled, true, '单张删除同样要禁用');
     h.document.querySelector('[data-action="close"]').click();
 });
+
+test('a new profile fills its trigger words from the name, until the user edits them', async t => {
+    const h = harness(); t.after(h.close);
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    profiles.openCharacterProfileWindow();
+    const root = h.document.querySelector('.t-profile-window');
+    const entries = () => h.state.settings.character_profiles.entries;
+    // 跨 realm 的数组原型不同，deepEqual 会判不等，所以读出来先转成本 realm 的。
+    const keywords = () => Array.from(entries()[0].keywords);
+    // labeled() 把标签文字作为文本节点放在控件之前，据此定位这两个输入框。
+    const fieldInput = text => [...root.querySelectorAll('label.t-illustration-field')]
+        .find(el => el.textContent.startsWith(text))?.querySelector('input');
+    const type = (input, value) => {
+        input.value = value;
+        input.dispatchEvent(new h.window.Event('input', { bubbles: true }));
+    };
+
+    root.querySelector('[data-action="add"]').click();
+    assert.equal(entries().length, 1);
+    // 新建出来叫「新档案」但触发词是空的 —— 那是个占位名，不该顺手塞成触发词。
+    assert.deepEqual(keywords(), []);
+
+    // 填名字 → 触发词自动跟上，而且输入框里**看得见**（不重画列表，只同步这一格的值）。
+    type(fieldInput('档案名称'), '阿离');
+    assert.deepEqual(keywords(), ['阿离']);
+    assert.equal(fieldInput('触发词').value, '阿离');
+
+    // 改名 → 触发词跟着改。
+    type(fieldInput('档案名称'), '阿狸');
+    assert.deepEqual(keywords(), ['阿狸']);
+
+    // 用户自己写过触发词之后，改名不再覆盖它 —— 与「手打的永不被覆盖」同一原则。
+    type(fieldInput('触发词'), '阿狸，小狸');
+    type(fieldInput('档案名称'), '阿狸大人');
+    assert.deepEqual(keywords(), ['阿狸', '小狸']);
+    assert.equal(entries()[0].name, '阿狸大人');
+
+    // 名字短于下限时给空数组，而不是填一个等着被规范化裁掉的值。
+    type(fieldInput('触发词'), '');
+    type(fieldInput('档案名称'), '狸');
+    assert.deepEqual(keywords(), []);
+
+    // 只留一条与名字相同的触发词时，改名让它跟着走（判定是无状态的，不靠「碰过没有」的标记）。
+    type(fieldInput('档案名称'), '阿狸');
+    assert.deepEqual(keywords(), ['阿狸']);
+    type(fieldInput('档案名称'), '阿狸大人');
+    assert.deepEqual(keywords(), ['阿狸大人']);
+
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
+});

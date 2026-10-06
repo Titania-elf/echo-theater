@@ -2915,6 +2915,15 @@ function normalizeKeyword(value) {
   const text = String(value ?? "").trim();
   return text.length >= MIN_KEYWORD_LENGTH ? text : "";
 }
+function isAutoKeywords(entry) {
+  const keywords = Array.isArray(entry?.keywords) ? entry.keywords : [];
+  if (!keywords.length) return true;
+  return keywords.length === 1 && keywords[0] === String(entry?.name || "").trim();
+}
+function keywordsFromName(name) {
+  const text = String(name || "").trim();
+  return text.length >= MIN_KEYWORD_LENGTH ? [text] : [];
+}
 function normalizeEntries(value) {
   const list = Array.isArray(value) ? value : [];
   const seen = /* @__PURE__ */ new Set();
@@ -24492,17 +24501,22 @@ function openCharacterProfileWindow(options = {}) {
     });
     header.append(grip, toggle, del);
     card.append(header);
-    card.append(labeled("\u6863\u6848\u540D\u79F0", textInput(entry.name, "\u4F8B\u5982\uFF1A\u963F\u79BB", (value) => {
-      writeEntries(withEntry(entry.id, (target) => {
-        target.name = value;
-      }));
-    })));
-    card.append(labeled("\u89E6\u53D1\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF09", textInput(entry.keywords.join("\uFF0C"), "\u4F8B\u5982\uFF1A\u963F\u79BB\uFF0C\u5C0F\u79BB\uFF0C\u79BB\u59D1\u5A18", (value) => {
+    const keywordsInput = textInput(entry.keywords.join("\uFF0C"), "\u4F8B\u5982\uFF1A\u963F\u79BB\uFF0C\u5C0F\u79BB\uFF0C\u79BB\u59D1\u5A18", (value) => {
       const keywords = value.split(/[,，、]/).map((text) => text.trim()).filter(Boolean);
       writeEntries(withEntry(entry.id, (target) => {
         target.keywords = keywords;
       }));
+    });
+    card.append(labeled("\u6863\u6848\u540D\u79F0", textInput(entry.name, "\u4F8B\u5982\uFF1A\u963F\u79BB", (value) => {
+      writeEntries(withEntry(entry.id, (target) => {
+        const follow = isAutoKeywords(target);
+        target.name = value;
+        if (!follow) return;
+        target.keywords = keywordsFromName(value);
+        keywordsInput.value = target.keywords.join("\uFF0C");
+      }));
     })));
+    card.append(labeled("\u89E6\u53D1\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF09", keywordsInput));
     card.append(labeled("\u7ED1\u5B9A\u89D2\u8272\u5361", cardSelect(entry)));
     const content = document.createElement("textarea");
     content.className = "t-input";
@@ -24644,6 +24658,7 @@ var init_characterProfileWindow = __esm({
         lines: [
           "\u7ED1\u5B9A\u4E86\u89D2\u8272\u5361\u7684\uFF1A\u8FDB\u8FD9\u4E2A\u89D2\u8272\u7684\u4EFB\u4F55\u804A\u5929\u90FD\u5FC5\u4E2D\uFF0C\u7ED1\u5B9A\u7528\u7684\u662F\u89D2\u8272\u5361\u8EAB\u4EFD\uFF08\u57FA\u4E8E\u5934\u50CF\u6587\u4EF6\u540D\uFF09\u3002",
           "\u6CA1\u7ED1\u5B9A\u7684\u3001\u6216\u7ED1\u5B9A\u6CA1\u547D\u4E2D\u7684\uFF1A\u6309\u89E6\u53D1\u8BCD\u5728\u672C\u8F6E\u6B63\u6587\u91CC\u5339\u914D\uFF0C\u89E6\u53D1\u8BCD\u81F3\u5C11\u4E24\u4E2A\u5B57\u7B26\u3002",
+          "\u89E6\u53D1\u8BCD\u9ED8\u8BA4\u8DDF\u7740\u6863\u6848\u540D\u8D70\uFF1A\u586B\u4E2A\u540D\u5B57\u5B83\u5C31\u81EA\u52A8\u586B\u597D\uFF1B\u4F60\u81EA\u5DF1\u5199\u8FC7\u4E4B\u540E\u5B83\u5C31\u5F52\u4F60\uFF0C\u6539\u540D\u4E0D\u518D\u8986\u76D6\u3002",
           "\u5355\u6B21\u6700\u591A\u81EA\u52A8\u5E26\u5165 4 \u6761\u3002\u547D\u4E2D\u7684\u4F1A\u586B\u8FDB\u914D\u56FE\u9762\u677F\u7684\u300C\u4EBA\u7269\u8D44\u6599\u300D\u5E76\u9884\u52FE\u9009\uFF0C\u4F60\u624B\u6253\u7684\u5185\u5BB9\u6C38\u8FDC\u4E0D\u4F1A\u88AB\u8986\u76D6\u3002"
         ]
       },

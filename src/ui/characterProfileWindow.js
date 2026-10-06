@@ -6,7 +6,7 @@
 import { getExtData, saveExtData } from "../utils/storage.js";
 import {
     CHARACTER_PROFILES_KEY, CARD_KEY_PREFIX, CHARACTER_PROFILES_VERSION, MAX_PROFILE_BLOCK_CHARS,
-    MIN_KEYWORD_LENGTH, createCharacterProfile, readCharacterProfiles,
+    MIN_KEYWORD_LENGTH, createCharacterProfile, isAutoKeywords, keywordsFromName, readCharacterProfiles,
 } from "../core/characterProfiles.js";
 import { getCharacterCardKey, getCurrentCharacterDescription, getCurrentUserPersona, listCharacterCards } from "../core/context.js";
 import { claimFloatingWindow, isFloatingWindowDisplaced, releaseFloatingWindow } from "./shared/floatingWindow.js";
@@ -29,6 +29,7 @@ const PROFILE_HELP = [
         lines: [
             "绑定了角色卡的：进这个角色的任何聊天都必中，绑定用的是角色卡身份（基于头像文件名）。",
             "没绑定的、或绑定没命中的：按触发词在本轮正文里匹配，触发词至少两个字符。",
+            "触发词默认跟着档案名走：填个名字它就自动填好；你自己写过之后它就归你，改名不再覆盖。",
             "单次最多自动带入 4 条。命中的会填进配图面板的「人物资料」并预勾选，你手打的内容永远不会被覆盖。",
         ],
     },
@@ -208,15 +209,27 @@ export function openCharacterProfileWindow(options = {}) {
         header.append(grip, toggle, del);
         card.append(header);
 
-        card.append(labeled("档案名称", textInput(entry.name, "例如：阿离", value => {
-            writeEntries(withEntry(entry.id, target => { target.name = value; }));
-        })));
-
-        card.append(labeled("触发词（逗号分隔）", textInput(entry.keywords.join("，"), "例如：阿离，小离，离姑娘", value => {
+        // 触发词默认跟着档案名走：新建档案时只要填个名字，触发词就自动有了，不必再手打一遍。
+        // 一旦用户自己改过，就不再动它 —— 与「人物资料」那条「手打的永不被覆盖」同一原则。
+        const keywordsInput = textInput(entry.keywords.join("，"), "例如：阿离，小离，离姑娘", value => {
             // 中英文逗号与顿号都收；长度下限由 characterProfiles 规范化时统一裁掉。
             const keywords = value.split(/[,，、]/).map(text => text.trim()).filter(Boolean);
             writeEntries(withEntry(entry.id, target => { target.keywords = keywords; }));
+        });
+
+        card.append(labeled("档案名称", textInput(entry.name, "例如：阿离", value => {
+            writeEntries(withEntry(entry.id, target => {
+                // 判定要在改名字**之前**做：这条规则比较的正是「触发词是否仍等于当前名字」。
+                const follow = isAutoKeywords(target);
+                target.name = value;
+                if (!follow) return;
+                target.keywords = keywordsFromName(value);
+                // 不重画列表（那会把输入焦点和光标位置一起弄丢），只同步这一格的值。
+                keywordsInput.value = target.keywords.join("，");
+            }));
         })));
+
+        card.append(labeled("触发词（逗号分隔）", keywordsInput));
 
         card.append(labeled("绑定角色卡", cardSelect(entry)));
 

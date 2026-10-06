@@ -50,6 +50,28 @@ function normalizeKeyword(value) {
     return text.length >= MIN_KEYWORD_LENGTH ? text : "";
 }
 
+/**
+ * 触发词是否还停在「跟着档案名走」的状态。
+ *
+ * 判定刻意是**无状态**的 —— 空，或恰好只有名字这一条。这样不必另外记「用户碰过没有」
+ * （那种标记关窗就丢，重开后又会对已经改过的档案动手）。用户一旦写成别的组合就不满足
+ * 条件，从此不再被覆盖；而只留一条与名字相同的触发词时，改名让它跟着走通常正是想要的。
+ */
+export function isAutoKeywords(entry) {
+    const keywords = Array.isArray(entry?.keywords) ? entry.keywords : [];
+    if (!keywords.length) return true;
+    return keywords.length === 1 && keywords[0] === String(entry?.name || "").trim();
+}
+
+/**
+ * 由档案名推出触发词。短于下限的给空数组，与 normalizeKeyword 的口径一致 ——
+ * 界面据此把「名字太短写不成触发词」如实说出来，而不是填一个会被裁掉的值。
+ */
+export function keywordsFromName(name) {
+    const text = String(name || "").trim();
+    return text.length >= MIN_KEYWORD_LENGTH ? [text] : [];
+}
+
 /** 逐条白名单化：未知字段丢弃，非法值回退。 */
 function normalizeEntries(value) {
     const list = Array.isArray(value) ? value : [];
