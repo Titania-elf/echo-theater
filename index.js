@@ -70,7 +70,8 @@ var init_defaults = __esm({
       // 这里只声明存在，免得全新安装少一个键。注意与下面的 appearance 区分：
       // 那是悬浮球的 UI 皮肤，与角色外观无关。
       character_profiles: {
-        version: 1,
+        // 与 characterProfiles.js 的 CHARACTER_PROFILES_VERSION 同步（有测试盯着两份一致）。
+        version: 2,
         entries: []
       },
       history_extraction: {
@@ -2897,13 +2898,19 @@ var init_promptManager = __esm({
 });
 
 // src/core/characterProfiles.js
-function createCharacterProfile(name = "\u65B0\u6863\u6848") {
+function profileKind(entry) {
+  return entry?.kind === PROFILE_KIND_USER ? PROFILE_KIND_USER : PROFILE_KIND_CHARACTER;
+}
+function createCharacterProfile(name = "\u65B0\u6863\u6848", kind = PROFILE_KIND_CHARACTER) {
+  const resolved = profileKind({ kind });
   return {
     id: newIllustrationId(),
     name: String(name).trim(),
     keywords: [],
     content: "",
+    // 用户档案恒定不绑卡：绑上去会在别的角色的聊天里也被强行带入。
     cardKey: "",
+    kind: resolved,
     enabled: true
   };
 }
@@ -2934,12 +2941,16 @@ function normalizeEntries(value) {
     if (seen.has(id3)) continue;
     seen.add(id3);
     const keywords = (Array.isArray(raw.keywords) ? raw.keywords : []).map(normalizeKeyword).filter(Boolean);
+    const kind = profileKind(raw);
     entries.push({
       id: id3,
       name: String(raw.name ?? "").trim(),
       keywords: [...new Set(keywords)],
       content: typeof raw.content === "string" ? raw.content : "",
-      cardKey: normalizeCardKey(raw.cardKey),
+      // 「用户本人」与「绑了卡」是互斥状态：绑卡的用户档案在下拉框里既表达不出来、
+      // 也退不回去，所以在模型层直接掐掉，手改设置文件也造不出来。
+      cardKey: kind === PROFILE_KIND_USER ? "" : normalizeCardKey(raw.cardKey),
+      kind,
       enabled: raw.enabled !== false
     });
   }
@@ -2976,21 +2987,20 @@ function composeProfileBlock(entry) {
   const content = String(entry?.content ?? "").trim();
   if (!content) return "";
   const name = String(entry?.name ?? "").trim() || "\u672A\u547D\u540D\u89D2\u8272";
-  const block = `\u3010${name}\u3011
+  return `\u3010${name}\u3011
 ${content}`;
-  return block.length > MAX_PROFILE_BLOCK_CHARS ? block.slice(0, MAX_PROFILE_BLOCK_CHARS) + TRUNCATED_SUFFIX : block;
 }
-var CHARACTER_PROFILES_KEY, CHARACTER_PROFILES_VERSION, CARD_KEY_PREFIX, MIN_KEYWORD_LENGTH, MAX_MATCHED_PROFILES, MAX_PROFILE_BLOCK_CHARS, TRUNCATED_SUFFIX;
+var CHARACTER_PROFILES_KEY, CHARACTER_PROFILES_VERSION, CARD_KEY_PREFIX, PROFILE_KIND_CHARACTER, PROFILE_KIND_USER, MIN_KEYWORD_LENGTH, MAX_MATCHED_PROFILES;
 var init_characterProfiles = __esm({
   "src/core/characterProfiles.js"() {
     init_illustrationData();
     CHARACTER_PROFILES_KEY = "character_profiles";
-    CHARACTER_PROFILES_VERSION = 1;
+    CHARACTER_PROFILES_VERSION = 2;
     CARD_KEY_PREFIX = "card:";
+    PROFILE_KIND_CHARACTER = "character";
+    PROFILE_KIND_USER = "user";
     MIN_KEYWORD_LENGTH = 2;
     MAX_MATCHED_PROFILES = 4;
-    MAX_PROFILE_BLOCK_CHARS = 2e3;
-    TRUNCATED_SUFFIX = "\n\u2026\uFF08\u6863\u6848\u5185\u5BB9\u8FC7\u957F\u5DF2\u622A\u65AD\uFF09";
   }
 });
 
@@ -3290,6 +3300,7 @@ var init_illustrationPresets = __esm({
 
 ## \u9009\u666F\u8981\u6C42
 - \u9009\u4EBA\u7269\u5173\u7CFB\u9C9C\u660E\u3001\u52A8\u4F5C\u6216\u8868\u60C5\u660E\u786E\u3001\u73AF\u5883\u53EF\u4EE5\u753B\u51FA\u6765\u3001\u80FD\u4F53\u73B0\u6545\u4E8B\u6838\u5FC3\u60C5\u7EEA\u7684\u90A3\u4E2A\u77AC\u95F4\u3002
+- **\u7528\u6237\u5217\u51FA\u4E86\u300C\u5DF2\u7ECF\u9009\u8FC7\u7684\u753B\u9762\u300D\u65F6\uFF0C\u5FC5\u987B\u6362\u4E00\u4E2A\u4E0D\u540C\u7684\u77AC\u95F4** \u2014\u2014 \u53E6\u4E00\u4E2A\u540C\u6837\u6709\u539F\u6587\u4F9D\u636E\u3001\u540C\u6837\u53EF\u4EE5\u843D\u7B14\u7684\u753B\u9762\uFF0C\u4E0D\u8981\u91CD\u590D\u5176\u4E2D\u4EFB\u4F55\u4E00\u4E2A\u3002\u53EA\u6709\u6B63\u6587\u91CC\u786E\u5B9E\u4E0D\u5B58\u5728\u7B2C\u4E8C\u4E2A\u53EF\u4EE5\u843D\u7B14\u7684\u77AC\u95F4\uFF0C\u624D\u5141\u8BB8\u590D\u7528\u540C\u4E00\u5E45\u3002
 - \u753B\u9762\u5FC5\u987B\u5C5E\u4E8E\u540C\u4E00\u65F6\u95F4\u3001\u540C\u4E00\u5730\u70B9\u3002\u4E0D\u8981\u62FC\u63A5\u4E0D\u540C\u4E8B\u4EF6\uFF0C\u4E0D\u8981\u6DF7\u5408\u4E0D\u540C\u65F6\u95F4\u7684\u670D\u88C5\u72B6\u6001\uFF0C\u4E0D\u8981\u8BA9\u5168\u6587\u6240\u6709\u4EBA\u7269\u4E00\u8D77\u51FA\u573A\u3002
 - \u89D2\u8272\u5916\u89C2\u4EE5\u300C\u4EBA\u7269\u8D44\u6599\u300D\u4E3A\u4F9D\u636E\uFF0C\u52A8\u6001\u72B6\u6001\u4EE5\u9009\u5B9A\u7684\u539F\u6587\u4E3A\u4F9D\u636E\u3002
 - \u4EE5\u5185\u5FC3\u72EC\u767D\u6216\u5BF9\u8BDD\u4E3A\u4E3B\u7684\u4F5C\u54C1\uFF0C\u4F18\u5148\u5BFB\u627E\u627F\u8F7D\u60C5\u7EEA\u7684\u795E\u6001\u3001\u52A8\u4F5C\u6216\u73AF\u5883\u7EC6\u8282\uFF0C\u4E0D\u8981\u865A\u6784\u91CD\u5927\u60C5\u8282\u3002
@@ -13940,6 +13951,61 @@ textarea.t-input {
 .t-profile-order { color: var(--t-color-text-muted); font-size: 0.8em; }
 .t-profile-card-header .t-btn { margin-left: auto; }
 
+/* \u2500\u2500 \u4EBA\u7269\u5916\u89C2\u6863\u6848\u7BA1\u7406\u7A97\uFF1A\u9876\u4E0A\u4E00\u5206\u4E3A\u4E8C\u7684\u9875\u7B7E\uFF0C\u4E0B\u9762\u662F\u5F53\u524D\u7EC4\u7684\u7D27\u51D1\u5C0F\u5361\u7F51\u683C \u2500\u2500\u2500\u2500\u2500
+   \u26A0 \u4E0A\u9762\u90A3\u6279 .t-profile-window / -panel / -body / -list / -card / -card-header /
+     -grip / -toggle \u4E0E\u573A\u666F\u914D\u56FE\u8BBE\u7F6E\u7A97\uFF08\u9009\u666F\u9884\u8BBE\u7F16\u8F91\u5668\uFF09**\u5171\u7528**\uFF0C\u89C4\u5219\u4E00\u4E2A\u5B57\u90FD\u4E0D\u80FD\u6539 \u2014\u2014
+     \u52A8\u5B83\u4EEC\u4F1A\u628A\u90A3\u4E2A\u7A97\u53E3\u4E00\u8D77\u6539\u6389\u3002\u672C\u7A97\u53E3\u81EA\u5DF1\u7684\u5E03\u5C40\u4E00\u5F8B\u7528\u4E0B\u9762\u8FD9\u4E9B\u65B0\u540D\u5B57\uFF0C
+     \u5171\u7528\u7C7B\u53EA\u6309\u539F\u6837\u590D\u7528\u3001\u4E0D\u5728\u8FD9\u91CC\u91CD\u5B9A\u4E49\u3002
+     \uFF08.t-profile-expand \u662F\u9884\u8BBE\u7F16\u8F91\u5668\u72EC\u5360\u7684\uFF0C\u53EF\u4EE5\u653E\u5FC3\u590D\u7528\u3002\uFF09 */
+
+.t-profile-tabs { display: flex; border-bottom: 1px solid var(--t-color-border); margin-bottom: 12px; }
+/* \u4E24\u4E2A\u9875\u7B7E\u7B49\u5BBD\uFF0C\u6A2A\u680F\u4E00\u5206\u4E3A\u4E8C\uFF1Bflex:1 1 0 \u800C\u4E0D\u662F 1 1 auto\uFF0C\u5BBD\u5EA6\u624D\u4E0D\u53D7\u6587\u5B57\u957F\u77ED\u5F71\u54CD\u3002 */
+.t-profile-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 10px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--t-color-text-muted);
+    font: inherit;
+    cursor: pointer;
+}
+.t-profile-tab:hover { color: var(--t-color-text); }
+.t-profile-tab.is-active { color: var(--t-color-brand); border-bottom-color: var(--t-color-brand); }
+.t-profile-tab-count { color: var(--t-color-text-faint); font-size: 0.85em; }
+
+.t-profile-groups { display: flex; flex-direction: column; gap: 18px; }
+.t-profile-group { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+.t-profile-grid {
+    display: grid;
+    /* \u5185\u5BB9\u5BBD\u7EA6 648px\uFF08\u9762\u677F min(680px, 100%) \u51CF\u53BB\u4E24\u4FA7 16px \u5185\u8FB9\u8DDD\uFF09\uFF1A200px \u4E00\u884C\u4E09\u5F20\uFF0C
+       \u6458\u8981\u884C\u300C\u4E0D\u7ED1\u5B9A\u89D2\u8272\u5361 \xB7 42 \u5B57\u7B26\u300D\u8FD8\u8BFB\u5F97\u5168\u3002 */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    align-content: start;
+}
+
+.t-profile-tile {
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--t-color-border);
+    border-radius: 10px;
+    cursor: pointer;
+}
+/* \u5C55\u5F00\u7684\u90A3\u5F20\u5360\u6EE1\u6574\u884C\uFF0C\u7F16\u8F91\u533A\u624D\u591F\u5BBD\uFF1B\u5176\u4F59\u5361\u7247\u7559\u5728\u7F51\u683C\u91CC\u4E0D\u52A8\u3002 */
+.t-profile-tile.is-expanded { grid-column: 1 / -1; cursor: default; }
+.t-profile-tile.is-dragging { opacity: 0.5; }
+/* \u843D\u70B9\u63D0\u793A\u7528 inset \u9634\u5F71\u800C\u4E0D\u662F border\uFF1Aborder \u4F1A\u6539\u53D8\u5C3A\u5BF8\uFF0C\u628A\u7F51\u683C\u6324\u5F97\u6296\u4E00\u4E0B\uFF0C
+   dragover \u671F\u95F4\u53CD\u590D\u6296\u52A8\u4F1A\u8BA9\u6307\u793A\u7EBF\u95EA\u3002 */
+.t-profile-tile.is-drop-before { box-shadow: inset 3px 0 0 0 var(--t-color-brand); }
+.t-profile-tile.is-drop-after { box-shadow: inset -3px 0 0 0 var(--t-color-brand); }
+.t-profile-tile-meta { margin: 4px 0 0; color: var(--t-color-text-muted); font-size: 0.85em; }
+.t-profile-tile-body { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.t-profile-tile-foot { display: flex; justify-content: flex-end; }
+.t-profile-tile-empty { grid-column: 1 / -1; }
+
 /* \u2500\u2500 \u9876\u680F\u95EE\u53F7\uFF1A\u9759\u6001\u8BF4\u660E\u6536\u5728\u4E00\u5904\uFF08\u4E09\u4E2A\u914D\u56FE\u7A97\u53E3\u5171\u7528\uFF09 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
    \u6C14\u6CE1\u6302\u5728\u6309\u94AE\u5BB9\u5668\u4E0A\u505A\u7EDD\u5BF9\u5B9A\u4F4D\uFF0C\u6240\u4EE5\u5BB9\u5668\u5FC5\u987B\u6709 position: relative\u3002
    \u5934\u90E8\u672C\u8EAB\u6CA1\u6709 overflow: hidden\uFF0C\u6C14\u6CE1\u4E0D\u4F1A\u88AB\u88C1\u6389\uFF1Bz-index \u8981\u9AD8\u8FC7\u7A97\u53E3\u5185\u5BB9\u3002 */
@@ -14151,6 +14217,8 @@ textarea.t-input {
     }
     .t-profile-panel { max-height: 100%; }
     .t-profile-body { padding: 12px; }
+    /* \u7A84\u5C4F\u585E\u4E0D\u4E0B\u4E09\u5217\uFF0C\u4E24\u5217\u662F\u6458\u8981\u884C\u8FD8\u8BFB\u5F97\u5168\u7684\u4E0B\u9650\u3002 */
+    .t-profile-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }
 
 
@@ -23896,7 +23964,8 @@ function helpSections() {
       lines: [
         "\u6CA1\u6709\u5185\u7F6E\u9884\u8BBE\uFF0C\u4E00\u5F8B\u9760\u300C\u5BFC\u5165\u300D\u6216\u300C\u65B0\u5EFA\u300D\u3002\u5BFC\u5165\u8BA4\u4E24\u79CD\u6587\u4EF6\uFF1A\u9152\u9986\u7684 Chat Completion \u9884\u8BBE\uFF0C\u4EE5\u53CA\u672C\u63D2\u4EF6\u5BFC\u51FA\u7684\u9009\u666F\u9884\u8BBE\u3002",
         "\u5BFC\u5165\u65F6\u4F1A\u4E22\u5F03\u4E0A\u4E0B\u6587\u6CE8\u5165\u7C7B\u6761\u76EE\uFF08chatHistory\u3001worldInfoBefore \u8FD9\u7C7B\uFF09\u2014\u2014 \u9009\u666F\u8FD9\u6761\u94FE\u8DEF\u4E0D\u80FD\u628A\u5F53\u524D\u804A\u5929\u585E\u8FDB\u6765\u3002",
-        "\u6761\u76EE\u6309\u987A\u5E8F\u62FC\u6210\u6D88\u606F\uFF0C\u53EF\u62D6\u52A8\u6392\u5E8F\u3002\u672B\u5C3E\u90A3\u51E0\u6761\u5E26 \u21BA \u7684\u662F\u5C0F\u5267\u573A\u81EA\u5DF1\u7684\uFF1A\u53EF\u6539\u5199\u3001\u53EF\u505C\u7528\u3001\u53EF\u6392\u5E8F\uFF0C\u4F46\u4E0D\u80FD\u5220\u3002"
+        "\u6761\u76EE\u6309\u987A\u5E8F\u62FC\u6210\u6D88\u606F\uFF0C\u53EF\u62D6\u52A8\u6392\u5E8F\u3002\u672B\u5C3E\u90A3\u51E0\u6761\u5E26 \u21BA \u7684\u662F\u5C0F\u5267\u573A\u81EA\u5DF1\u7684\uFF1A\u53EF\u6539\u5199\u3001\u53EF\u505C\u7528\u3001\u53EF\u6392\u5E8F\uFF0C\u4F46\u4E0D\u80FD\u5220\u3002",
+        "\u63D2\u4EF6\u5347\u7EA7**\u4E0D\u4F1A**\u81EA\u52A8\u5237\u65B0\u8FD9\u51E0\u6761\u7684\u5185\u5BB9 \u2014\u2014 \u9884\u8BBE\u91CC\u5B58\u7684\u662F\u4F60\u90A3\u4EFD\u526F\u672C\u3002\u6240\u4EE5\u5C0F\u5267\u573A\u6539\u4E86\u9ED8\u8BA4\u6587\u6848\uFF08\u6BD4\u5982\u300C\u9009\u666F\u8981\u6C42\u300D\u65B0\u589E\u4E86\u4E00\u6761\u7EA6\u675F\uFF09\u65F6\u8981\u81EA\u5DF1\u70B9 \u21BA \u8FD8\u539F\u624D\u4F1A\u751F\u6548\u3002\u8FD9\u662F\u523B\u610F\u7684\uFF1A\u5206\u4E0D\u6E05\u300C\u6CA1\u6539\u8FC7\u300D\u548C\u300C\u6539\u6210\u4E86\u522B\u7684\u6837\u5B50\u300D\uFF0C\u81EA\u52A8\u8986\u76D6\u4F1A\u6BC1\u6389\u4F60\u5199\u7684\u7248\u672C\u3002"
       ]
     }
   ];
@@ -24375,8 +24444,12 @@ function notifyProfilesChanged() {
 function stripHtml(value) {
   return String(value ?? "").replace(/<[^>]*>/g, "").replace(/\n{3,}/g, "\n\n").trim();
 }
-function bindingLabel(cardKey) {
-  return cardKey ? cardKey.slice(CARD_KEY_PREFIX.length) : "\u4E0D\u7ED1\u5B9A\u89D2\u8272\u5361";
+function ownerLabel(entry) {
+  if (profileKind(entry) === PROFILE_KIND_USER) return "\u7528\u6237\u672C\u4EBA";
+  return entry.cardKey ? entry.cardKey.slice(CARD_KEY_PREFIX.length) : "\u4E0D\u7ED1\u5B9A\u89D2\u8272\u5361";
+}
+function tileMeta(entry) {
+  return `${ownerLabel(entry)} \xB7 ${String(entry.content ?? "").length} \u5B57\u7B26`;
 }
 function openCharacterProfileWindow(options = {}) {
   const { onClose } = options;
@@ -24397,7 +24470,8 @@ function openCharacterProfileWindow(options = {}) {
                     <button type="button" class="t-btn" data-action="import-persona" title="\u4ECE\u5F53\u524D\u7528\u6237\u8BBE\u5B9A\uFF08Persona\uFF09\u5BFC\u5165\u63CF\u8FF0" aria-label="\u4ECE\u5F53\u524D\u7528\u6237\u8BBE\u5B9A\u5BFC\u5165"><i class="fa-solid fa-user"></i></button>
                     <span class="t-illustration-hint" data-role="status"></span>
                 </div>
-                <div class="t-profile-list" data-role="list"></div>
+                <div class="t-profile-tabs" data-role="tabs" role="tablist"></div>
+                <div class="t-profile-groups" data-role="list"></div>
             </div>
         </section>`;
   document.body.append(root);
@@ -24406,7 +24480,10 @@ function openCharacterProfileWindow(options = {}) {
   const help = createHelpTip({ title: "\u4EBA\u7269\u5916\u89C2\u6863\u6848", sections: PROFILE_HELP });
   role("header-actions").insertBefore(help.root, action("close"));
   let disposed = false;
+  const expandedIds = /* @__PURE__ */ new Set();
+  let activeKind = GROUPS[0].kind;
   let draggedId = "";
+  let draggedKind = "";
   function writeEntries(mutate, rerender = false) {
     const data = getExtData();
     const current = data[CHARACTER_PROFILES_KEY];
@@ -24416,13 +24493,18 @@ function openCharacterProfileWindow(options = {}) {
     mutate(data[CHARACTER_PROFILES_KEY].entries);
     saveExtData();
     notifyProfilesChanged();
-    if (rerender && !disposed) renderList();
+    if (rerender && !disposed) renderGroups();
   }
   function withEntry(id3, apply) {
     return (list) => {
       const found = list.find((item) => item.id === id3);
       if (found) apply(found);
     };
+  }
+  function currentEntries() {
+    const data = getExtData();
+    ensureCharacterProfiles(data);
+    return readCharacterProfiles(data);
   }
   function labeled(labelText, control) {
     const wrap = document.createElement("label");
@@ -24439,13 +24521,17 @@ function openCharacterProfileWindow(options = {}) {
     input.addEventListener("input", () => onInput(input.value));
     return input;
   }
-  function cardSelect(entry) {
+  function bindingSelect(entry) {
     const select = document.createElement("select");
     select.className = "t-input";
     const none = document.createElement("option");
     none.value = "";
     none.textContent = "\u4E0D\u7ED1\u5B9A\u89D2\u8272\u5361";
     select.append(none);
+    const self = document.createElement("option");
+    self.value = USER_BINDING_VALUE;
+    self.textContent = "\u7528\u6237\u672C\u4EBA\uFF08{{user}}\uFF09";
+    select.append(self);
     const cards = listCharacterCards();
     for (const card of cards) {
       const option = document.createElement("option");
@@ -24456,37 +24542,70 @@ function openCharacterProfileWindow(options = {}) {
     if (entry.cardKey && !cards.some((card) => card.cardKey === entry.cardKey)) {
       const stale = document.createElement("option");
       stale.value = entry.cardKey;
-      stale.textContent = `${bindingLabel(entry.cardKey)}\uFF08\u672C\u5730\u5DF2\u627E\u4E0D\u5230\uFF09`;
+      stale.textContent = `${entry.cardKey.slice(CARD_KEY_PREFIX.length)}\uFF08\u672C\u5730\u5DF2\u627E\u4E0D\u5230\uFF09`;
       select.append(stale);
     }
-    select.value = entry.cardKey;
-    select.addEventListener("change", () => writeEntries(withEntry(entry.id, (target) => {
-      target.cardKey = select.value;
-    })));
+    select.value = profileKind(entry) === PROFILE_KIND_USER ? USER_BINDING_VALUE : entry.cardKey;
+    select.addEventListener("change", () => {
+      const wasUser = profileKind(entry) === PROFILE_KIND_USER;
+      writeEntries(withEntry(entry.id, (target) => {
+        if (select.value === USER_BINDING_VALUE) {
+          target.kind = PROFILE_KIND_USER;
+          target.cardKey = "";
+        } else {
+          target.kind = PROFILE_KIND_CHARACTER;
+          target.cardKey = select.value;
+        }
+      }), true);
+      if (wasUser !== (select.value === USER_BINDING_VALUE)) {
+        role("status").textContent = select.value === USER_BINDING_VALUE ? `\u300C${entry.name || "\u672A\u547D\u540D\u89D2\u8272"}\u300D\u5DF2\u79FB\u5230\u7528\u6237\u6863\u6848\u3002` : `\u300C${entry.name || "\u672A\u547D\u540D\u89D2\u8272"}\u300D\u5DF2\u79FB\u5230\u89D2\u8272\u6863\u6848\u3002`;
+      }
+    });
     return select;
   }
-  function buildCard(entry) {
-    const card = document.createElement("article");
-    card.className = "t-profile-card";
-    card.dataset.profileId = entry.id;
-    card.draggable = true;
-    const header = document.createElement("div");
-    header.className = "t-profile-card-header";
-    const grip = document.createElement("span");
-    grip.className = "t-profile-grip";
-    grip.title = "\u62D6\u52A8\u6392\u5E8F";
-    grip.textContent = "\u283F";
-    const toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = `t-profile-toggle${entry.enabled ? " is-on" : ""}`;
-    toggle.textContent = entry.enabled ? "\u542F\u7528" : "\u505C\u7528";
-    toggle.title = entry.enabled ? "\u70B9\u51FB\u505C\u7528\uFF1A\u505C\u7528\u540E\u4E0D\u53C2\u4E0E\u5339\u914D" : "\u70B9\u51FB\u542F\u7528";
-    toggle.addEventListener("click", () => writeEntries(withEntry(entry.id, (target) => {
-      target.enabled = !target.enabled;
-    }), true));
+  function buildTileBody(entry, syncSummary) {
+    const body = document.createElement("div");
+    body.className = "t-profile-tile-body";
+    const keywordsInput = textInput(entry.keywords.join("\uFF0C"), "\u4F8B\u5982\uFF1A\u963F\u79BB\uFF0C\u5C0F\u79BB\uFF0C\u79BB\u59D1\u5A18", (value) => {
+      const keywords = value.split(/[,，、]/).map((text) => text.trim()).filter(Boolean);
+      writeEntries(withEntry(entry.id, (target) => {
+        target.keywords = keywords;
+      }));
+    });
+    body.append(labeled("\u6863\u6848\u540D\u79F0", textInput(entry.name, "\u4F8B\u5982\uFF1A\u963F\u79BB", (value) => {
+      writeEntries(withEntry(entry.id, (target) => {
+        const follow = isAutoKeywords(target);
+        target.name = value;
+        if (!follow) return;
+        target.keywords = keywordsFromName(value);
+        keywordsInput.value = target.keywords.join("\uFF0C");
+      }));
+      syncSummary();
+    })));
+    body.append(labeled("\u89E6\u53D1\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF09", keywordsInput));
+    body.append(labeled("\u5F52\u5C5E\u4E0E\u7ED1\u5B9A", bindingSelect(entry)));
+    const content = document.createElement("textarea");
+    content.className = "t-input";
+    content.rows = 5;
+    content.value = entry.content;
+    content.placeholder = "\u4F8B\u5982\uFF1A\u94F6\u767D\u957F\u53D1\uFF0C\u7EA2\u77B3\uFF0C\u5E38\u7A7F\u6DF1\u8272\u957F\u5916\u5957\uFF0C\u5DE6\u8033\u6709\u4E00\u679A\u94F6\u8272\u8033\u73AF\u3002";
+    const counter = document.createElement("p");
+    counter.className = "t-illustration-hint";
+    const refreshCounter = () => {
+      counter.textContent = `\u5F53\u524D ${content.value.length} \u5B57\u7B26 \xB7 ${ownerLabel(entry)}`;
+    };
+    content.addEventListener("input", () => {
+      writeEntries(withEntry(entry.id, (target) => {
+        target.content = content.value;
+      }));
+      refreshCounter();
+      syncSummary();
+    });
+    refreshCounter();
+    body.append(labeled("\u5916\u89C2\u63CF\u5199", content), counter);
     const del = document.createElement("button");
     del.type = "button";
-    del.className = "t-btn";
+    del.className = "t-btn t-btn-danger";
     del.title = "\u5220\u9664\u8FD9\u6761\u6863\u6848";
     del.setAttribute("aria-label", "\u5220\u9664\u8FD9\u6761\u6863\u6848");
     const trash = document.createElement("i");
@@ -24497,86 +24616,206 @@ function openCharacterProfileWindow(options = {}) {
       writeEntries((list) => {
         const index = list.findIndex((item) => item.id === entry.id);
         if (index >= 0) list.splice(index, 1);
-      }, true);
+      });
+      expandedIds.delete(entry.id);
+      renderGroups();
     });
-    header.append(grip, toggle, del);
+    const foot = document.createElement("div");
+    foot.className = "t-profile-tile-foot";
+    foot.append(del);
+    body.append(foot);
+    return body;
+  }
+  function buildTile(entry) {
+    const open = expandedIds.has(entry.id);
+    const card = document.createElement("article");
+    card.className = `t-profile-tile${open ? " is-expanded" : ""}`;
+    card.dataset.profileId = entry.id;
+    card.dataset.kind = profileKind(entry);
+    card.draggable = true;
+    const header = document.createElement("div");
+    header.className = "t-profile-card-header";
+    const grip = document.createElement("span");
+    grip.className = "t-profile-grip";
+    grip.title = "\u62D6\u52A8\u6392\u5E8F\uFF08\u53EA\u80FD\u5728\u540C\u7EC4\u5185\u62D6\u52A8\uFF09";
+    grip.textContent = "\u283F";
+    const expand = document.createElement("button");
+    expand.type = "button";
+    expand.className = "t-profile-expand";
+    expand.setAttribute("aria-expanded", String(open));
+    expand.title = open ? "\u6536\u8D77" : "\u5C55\u5F00\u7F16\u8F91";
+    expand.textContent = `${open ? "\u25BE" : "\u25B8"} ${entry.name || "\u672A\u547D\u540D\u89D2\u8272"}`;
+    expand.addEventListener("click", () => toggleExpanded(entry.id));
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = `t-profile-toggle${entry.enabled ? " is-on" : ""}`;
+    toggle.textContent = entry.enabled ? "\u542F\u7528" : "\u505C\u7528";
+    toggle.title = entry.enabled ? "\u70B9\u51FB\u505C\u7528\uFF1A\u505C\u7528\u540E\u4E0D\u53C2\u4E0E\u5339\u914D" : "\u70B9\u51FB\u542F\u7528";
+    toggle.addEventListener("click", () => writeEntries(withEntry(entry.id, (target) => {
+      target.enabled = !target.enabled;
+    }), true));
+    header.append(grip, expand, toggle);
     card.append(header);
-    const keywordsInput = textInput(entry.keywords.join("\uFF0C"), "\u4F8B\u5982\uFF1A\u963F\u79BB\uFF0C\u5C0F\u79BB\uFF0C\u79BB\u59D1\u5A18", (value) => {
-      const keywords = value.split(/[,，、]/).map((text) => text.trim()).filter(Boolean);
-      writeEntries(withEntry(entry.id, (target) => {
-        target.keywords = keywords;
-      }));
-    });
-    card.append(labeled("\u6863\u6848\u540D\u79F0", textInput(entry.name, "\u4F8B\u5982\uFF1A\u963F\u79BB", (value) => {
-      writeEntries(withEntry(entry.id, (target) => {
-        const follow = isAutoKeywords(target);
-        target.name = value;
-        if (!follow) return;
-        target.keywords = keywordsFromName(value);
-        keywordsInput.value = target.keywords.join("\uFF0C");
-      }));
-    })));
-    card.append(labeled("\u89E6\u53D1\u8BCD\uFF08\u9017\u53F7\u5206\u9694\uFF09", keywordsInput));
-    card.append(labeled("\u7ED1\u5B9A\u89D2\u8272\u5361", cardSelect(entry)));
-    const content = document.createElement("textarea");
-    content.className = "t-input";
-    content.rows = 5;
-    content.value = entry.content;
-    content.placeholder = "\u4F8B\u5982\uFF1A\u94F6\u767D\u957F\u53D1\uFF0C\u7EA2\u77B3\uFF0C\u5E38\u7A7F\u6DF1\u8272\u957F\u5916\u5957\uFF0C\u5DE6\u8033\u6709\u4E00\u679A\u94F6\u8272\u8033\u73AF\u3002";
-    const counter = document.createElement("p");
-    counter.className = "t-illustration-hint";
-    const refreshCounter = () => {
-      counter.textContent = `\u5F53\u524D ${content.value.length} \u5B57\u7B26 \xB7 ${bindingLabel(entry.cardKey)}`;
+    const meta = document.createElement("p");
+    meta.className = "t-profile-tile-meta";
+    meta.textContent = tileMeta(entry);
+    card.append(meta);
+    const syncSummary = () => {
+      meta.textContent = tileMeta(entry);
+      expand.textContent = `${expandedIds.has(entry.id) ? "\u25BE" : "\u25B8"} ${entry.name || "\u672A\u547D\u540D\u89D2\u8272"}`;
     };
-    content.addEventListener("input", () => {
-      writeEntries(withEntry(entry.id, (target) => {
-        target.content = content.value;
-      }));
-      refreshCounter();
+    if (open) card.append(buildTileBody(entry, syncSummary));
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("button, input, textarea, select, label, .t-profile-grip")) return;
+      toggleExpanded(entry.id);
     });
-    refreshCounter();
-    card.append(labeled(`\u5916\u89C2\u63CF\u5199\uFF08\u6700\u591A ${MAX_PROFILE_BLOCK_CHARS} \u5B57\u7B26\uFF09`, content), counter);
-    card.addEventListener("dragstart", (event) => {
-      draggedId = entry.id;
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("text/plain", entry.id);
-      card.classList.add("is-dragging");
-    });
-    card.addEventListener("dragend", () => card.classList.remove("is-dragging"));
-    card.addEventListener("dragover", (event) => event.preventDefault());
-    card.addEventListener("drop", (event) => {
-      event.preventDefault();
-      const sourceId = draggedId || event.dataTransfer.getData("text/plain");
-      if (!sourceId || sourceId === entry.id) return;
-      const rect = card.getBoundingClientRect();
-      const insertBefore = event.clientY < rect.top + rect.height / 2;
-      writeEntries((list) => {
-        const from = list.findIndex((item) => item.id === sourceId);
-        if (from < 0) return;
-        const [moved] = list.splice(from, 1);
-        const base = list.findIndex((item) => item.id === entry.id);
-        if (base < 0) {
-          list.push(moved);
-          return;
-        }
-        list.splice(insertBefore ? base : base + 1, 0, moved);
-      }, true);
-      draggedId = "";
-    });
+    bindDrag(card, entry);
     return card;
   }
-  function renderList() {
-    const list = role("list");
-    list.replaceChildren();
-    const items = readCharacterProfiles(getExtData());
-    if (!items.length) {
-      const empty = document.createElement("p");
-      empty.className = "t-illustration-hint";
-      empty.textContent = "\u8FD8\u6CA1\u6709\u6863\u6848\u3002\u70B9\u300C\u65B0\u5EFA\u6863\u6848\u300D\uFF0C\u6216\u7528\u4E0A\u9762\u4E24\u4E2A\u5BFC\u5165\u6309\u94AE\u628A\u5F53\u524D\u89D2\u8272\u5361 / \u7528\u6237\u8BBE\u5B9A\u7684\u63CF\u8FF0\u62C9\u8FDB\u6765\u5F53\u8349\u7A3F\u3002";
-      list.append(empty);
-      return;
+  function clearDropMarks(scope) {
+    for (const tile of (scope || root).querySelectorAll(".t-profile-tile")) {
+      tile.classList.remove("is-drop-before", "is-drop-after");
     }
-    for (const entry of items) list.append(buildCard(entry));
+  }
+  function markDropTarget(card, after) {
+    for (const tile of root.querySelectorAll(".t-profile-tile")) {
+      tile.classList.toggle("is-drop-before", tile === card && !after);
+      tile.classList.toggle("is-drop-after", tile === card && after);
+    }
+  }
+  function dropAfter(event, card) {
+    const rect = card.getBoundingClientRect();
+    const nextRect = card.nextElementSibling?.getBoundingClientRect?.();
+    const sameRow = Boolean(nextRect) && Math.abs(nextRect.top - rect.top) < rect.height / 2;
+    return sameRow ? event.clientX >= rect.left + rect.width / 2 : event.clientY >= rect.top + rect.height / 2;
+  }
+  function reorderedIds(kind, sourceId, targetId, after) {
+    const ids = currentEntries().filter((entry) => profileKind(entry) === kind).map((entry) => entry.id);
+    const from = ids.indexOf(sourceId);
+    if (from < 0 || !ids.includes(targetId)) return null;
+    ids.splice(from, 1);
+    const landing = ids.indexOf(targetId);
+    if (landing < 0) return null;
+    ids.splice(after ? landing + 1 : landing, 0, sourceId);
+    return ids;
+  }
+  function reorderWithinKind(kind, ids) {
+    if (!ids) return;
+    writeEntries((list) => {
+      const byId = new Map(list.map((item) => [item.id, item]));
+      const slots = [];
+      list.forEach((item, index) => {
+        if (profileKind(item) === kind) slots.push(index);
+      });
+      slots.forEach((index, i) => {
+        const moved = byId.get(ids[i]);
+        if (moved) list[index] = moved;
+      });
+    }, true);
+  }
+  function bindDrag(card, entry) {
+    card.addEventListener("dragstart", (event) => {
+      if (event.target.closest?.("input, textarea, select, button, a")) {
+        event.preventDefault();
+        return;
+      }
+      draggedId = entry.id;
+      draggedKind = profileKind(entry);
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", entry.id);
+      }
+      card.classList.add("is-dragging");
+    });
+    card.addEventListener("dragend", () => {
+      card.classList.remove("is-dragging");
+      draggedId = "";
+      draggedKind = "";
+      clearDropMarks();
+    });
+    card.addEventListener("dragover", (event) => {
+      if (!draggedId || draggedKind !== profileKind(entry)) return;
+      event.preventDefault();
+      markDropTarget(card, dropAfter(event, card));
+    });
+    card.addEventListener("dragleave", (event) => {
+      if (event.target === card) clearDropMarks(card);
+    });
+    card.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const sourceId = draggedId || event.dataTransfer?.getData("text/plain") || "";
+      const after = dropAfter(event, card);
+      const kind = profileKind(entry);
+      clearDropMarks();
+      draggedId = "";
+      draggedKind = "";
+      const source = currentEntries().find((item) => item.id === sourceId);
+      if (!source || source.id === entry.id || profileKind(source) !== kind) return;
+      reorderWithinKind(kind, reorderedIds(kind, source.id, entry.id, after));
+    });
+  }
+  function toggleExpanded(id3) {
+    if (expandedIds.has(id3)) expandedIds.delete(id3);
+    else expandedIds.add(id3);
+    renderGroups();
+  }
+  function renderTabs(counts) {
+    const host = role("tabs");
+    host.replaceChildren();
+    for (const group of GROUPS) {
+      const active = group.kind === activeKind;
+      const tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = `t-profile-tab${active ? " is-active" : ""}`;
+      tab.dataset.action = "switch-tab";
+      tab.dataset.tab = group.kind;
+      tab.setAttribute("role", "tab");
+      tab.setAttribute("aria-selected", String(active));
+      tab.append(document.createTextNode(`${group.title} `));
+      const count = document.createElement("span");
+      count.className = "t-profile-tab-count";
+      count.dataset.role = `count-${group.kind}`;
+      count.textContent = String(counts.get(group.kind) || 0);
+      tab.append(count);
+      host.append(tab);
+    }
+  }
+  function buildGroup(group, entries) {
+    const section = document.createElement("section");
+    section.className = "t-profile-group";
+    section.dataset.kind = group.kind;
+    const grid = document.createElement("div");
+    grid.className = "t-profile-grid";
+    grid.dataset.role = `grid-${group.kind}`;
+    if (!entries.length) {
+      const empty = document.createElement("p");
+      empty.className = "t-profile-tile-empty t-illustration-hint";
+      empty.textContent = group.empty;
+      grid.append(empty);
+    }
+    for (const entry of entries) grid.append(buildTile(entry));
+    section.append(grid);
+    return section;
+  }
+  function renderGroups() {
+    const items = currentEntries();
+    const present = new Set(items.map((item) => item.id));
+    for (const id3 of [...expandedIds]) if (!present.has(id3)) expandedIds.delete(id3);
+    const counts = new Map(GROUPS.map((group2) => [
+      group2.kind,
+      items.filter((entry) => profileKind(entry) === group2.kind).length
+    ]));
+    renderTabs(counts);
+    const host = role("list");
+    host.replaceChildren();
+    const group = GROUPS.find((item) => item.kind === activeKind) || GROUPS[0];
+    host.append(buildGroup(group, items.filter((entry) => profileKind(entry) === group.kind)));
+  }
+  function revealEntry(id3, kind) {
+    activeKind = kind;
+    expandedIds.add(id3);
+    renderGroups();
+    root.querySelector(`[data-profile-id="${id3}"]`)?.scrollIntoView?.({ block: "nearest" });
   }
   function importFromCard() {
     const description = stripHtml(getCurrentCharacterDescription());
@@ -24587,7 +24826,8 @@ function openCharacterProfileWindow(options = {}) {
     const cardKey = getCharacterCardKey();
     const name = listCharacterCards().find((card) => card.cardKey === cardKey)?.name || "\u5BFC\u5165\u7684\u89D2\u8272";
     const created = { ...createCharacterProfile(name), content: description, cardKey };
-    writeEntries((list) => list.push(created), true);
+    writeEntries((list) => list.push(created));
+    revealEntry(created.id, PROFILE_KIND_CHARACTER);
     role("status").textContent = cardKey.startsWith(CARD_KEY_PREFIX) ? `\u5DF2\u5BFC\u5165\u300C${name}\u300D\u7684\u89D2\u8272\u5361\u63CF\u8FF0\uFF0C\u53EF\u5728\u4E0B\u9762\u7EE7\u7EED\u7CBE\u7B80\u3002` : "\u5DF2\u5BFC\u5165\u63CF\u8FF0\uFF0C\u4F46\u5F53\u524D\u662F\u7FA4\u804A\uFF0C\u65E0\u6CD5\u7ED1\u5B9A\u89D2\u8272\u5361\u3002";
   }
   function importFromPersona() {
@@ -24598,8 +24838,9 @@ function openCharacterProfileWindow(options = {}) {
       return;
     }
     const label = name || "\u6211";
-    const created = { ...createCharacterProfile(label), content, keywords: name ? [name] : [] };
-    writeEntries((list) => list.push(created), true);
+    const created = { ...createCharacterProfile(label, PROFILE_KIND_USER), content, keywords: name ? [name] : [] };
+    writeEntries((list) => list.push(created));
+    revealEntry(created.id, PROFILE_KIND_USER);
     role("status").textContent = name.length < MIN_KEYWORD_LENGTH ? `\u5DF2\u5BFC\u5165\u300C${label}\u300D\u7684\u7528\u6237\u8BBE\u5B9A\uFF0C\u4F46\u540D\u5B57\u77ED\u4E8E ${MIN_KEYWORD_LENGTH} \u5B57\uFF0C\u6CA1\u80FD\u5199\u6210\u89E6\u53D1\u8BCD\uFF0C\u8BF7\u624B\u52A8\u8865\u4E00\u4E2A\u3002` : `\u5DF2\u5BFC\u5165\u300C${label}\u300D\u7684\u7528\u6237\u8BBE\u5B9A\uFF0C\u89E6\u53D1\u8BCD\u5DF2\u586B\u597D\uFF0C\u53EF\u5728\u4E0B\u9762\u7EE7\u7EED\u7CBE\u7B80\u3002`;
   }
   root.addEventListener("click", (event) => {
@@ -24610,8 +24851,18 @@ function openCharacterProfileWindow(options = {}) {
       close();
       return;
     }
+    if (operation === "switch-tab") {
+      const next = GROUPS.find((group) => group.kind === button.dataset.tab);
+      if (next && next.kind !== activeKind) {
+        activeKind = next.kind;
+        renderGroups();
+      }
+      return;
+    }
     if (operation === "add") {
-      writeEntries((list) => list.push(createCharacterProfile("\u65B0\u6863\u6848")), true);
+      const created = createCharacterProfile("\u65B0\u6863\u6848");
+      writeEntries((list) => list.push(created));
+      revealEntry(created.id, PROFILE_KIND_CHARACTER);
       return;
     }
     if (operation === "import") {
@@ -24633,11 +24884,11 @@ function openCharacterProfileWindow(options = {}) {
     if (!displaced) onClose?.();
   }
   claimFloatingWindow(close);
-  renderList();
+  renderGroups();
   action("close").focus();
   return close;
 }
-var PROFILE_HELP;
+var PROFILE_HELP, GROUPS, USER_BINDING_VALUE;
 var init_characterProfileWindow = __esm({
   "src/ui/characterProfileWindow.js"() {
     init_storage();
@@ -24654,19 +24905,28 @@ var init_characterProfileWindow = __esm({
         ]
       },
       {
+        heading: "\u4E24\u7EC4\u6863\u6848",
+        lines: [
+          "**\u89D2\u8272\u6863\u6848**\uFF1A\u7ED9\u67D0\u4E2A\u89D2\u8272\u5199\u7684\u3002\u7ED1\u5B9A\u4E86\u89D2\u8272\u5361\u7684\uFF0C\u8FDB\u8FD9\u4E2A\u89D2\u8272\u7684\u4EFB\u4F55\u804A\u5929\u90FD\u5FC5\u4E2D\u3002",
+          "**\u7528\u6237\u6863\u6848**\uFF1A\u7ED9\u4F60\u81EA\u5DF1\uFF08{{user}} / Persona\uFF09\u5199\u7684\uFF0C\u6052\u5B9A\u4E0D\u7ED1\u5361\uFF0C\u53EA\u6309\u89E6\u53D1\u8BCD\u5339\u914D\u3002",
+          "\u5F52\u5C5E\u8BB0\u5728\u6863\u6848\u91CC\uFF0C\u4E0D\u662F\u9760\u7ED1\u6CA1\u7ED1\u5361\u63A8\u51FA\u6765\u7684 \u2014\u2014 \u6CA1\u7ED1\u5361\u7684\u89D2\u8272\u6863\u6848\u4ECD\u7136\u5C5E\u4E8E\u89D2\u8272\u6863\u6848\u3002",
+          "\u5206\u7EC4\u53EA\u662F\u65B9\u4FBF\u627E\u3002\u62D6\u52A8\u6392\u5E8F\u53EA\u80FD\u5728\u540C\u7EC4\u5185\u8FDB\u884C\uFF1B\u8981\u6362\u7EC4\uFF0C\u7528\u7F16\u8F91\u533A\u91CC\u7684\u300C\u5F52\u5C5E\u4E0E\u7ED1\u5B9A\u300D\u4E0B\u62C9\u3002"
+        ]
+      },
+      {
         heading: "\u4EC0\u4E48\u65F6\u5019\u4F1A\u88AB\u7528\u4E0A",
         lines: [
           "\u7ED1\u5B9A\u4E86\u89D2\u8272\u5361\u7684\uFF1A\u8FDB\u8FD9\u4E2A\u89D2\u8272\u7684\u4EFB\u4F55\u804A\u5929\u90FD\u5FC5\u4E2D\uFF0C\u7ED1\u5B9A\u7528\u7684\u662F\u89D2\u8272\u5361\u8EAB\u4EFD\uFF08\u57FA\u4E8E\u5934\u50CF\u6587\u4EF6\u540D\uFF09\u3002",
           "\u6CA1\u7ED1\u5B9A\u7684\u3001\u6216\u7ED1\u5B9A\u6CA1\u547D\u4E2D\u7684\uFF1A\u6309\u89E6\u53D1\u8BCD\u5728\u672C\u8F6E\u6B63\u6587\u91CC\u5339\u914D\uFF0C\u89E6\u53D1\u8BCD\u81F3\u5C11\u4E24\u4E2A\u5B57\u7B26\u3002",
           "\u89E6\u53D1\u8BCD\u9ED8\u8BA4\u8DDF\u7740\u6863\u6848\u540D\u8D70\uFF1A\u586B\u4E2A\u540D\u5B57\u5B83\u5C31\u81EA\u52A8\u586B\u597D\uFF1B\u4F60\u81EA\u5DF1\u5199\u8FC7\u4E4B\u540E\u5B83\u5C31\u5F52\u4F60\uFF0C\u6539\u540D\u4E0D\u518D\u8986\u76D6\u3002",
-          "\u5355\u6B21\u6700\u591A\u81EA\u52A8\u5E26\u5165 4 \u6761\u3002\u547D\u4E2D\u7684\u4F1A\u586B\u8FDB\u914D\u56FE\u9762\u677F\u7684\u300C\u4EBA\u7269\u8D44\u6599\u300D\u5E76\u9884\u52FE\u9009\uFF0C\u4F60\u624B\u6253\u7684\u5185\u5BB9\u6C38\u8FDC\u4E0D\u4F1A\u88AB\u8986\u76D6\u3002"
+          "\u5355\u6B21\u6700\u591A\u81EA\u52A8\u5E26\u5165 4 \u6761\uFF0C\u6309\u5217\u8868\u987A\u5E8F\u53D6\u3002\u547D\u4E2D\u7684\u4F1A\u586B\u8FDB\u914D\u56FE\u9762\u677F\u7684\u300C\u4EBA\u7269\u8D44\u6599\u300D\u5E76\u9884\u52FE\u9009\uFF0C\u4F60\u624B\u6253\u7684\u5185\u5BB9\u6C38\u8FDC\u4E0D\u4F1A\u88AB\u8986\u76D6\u3002"
         ]
       },
       {
-        heading: "\u4F60\u81EA\u5DF1\uFF08\u7528\u6237\u8BBE\u5B9A\uFF09",
+        heading: "\u4ECE\u54EA\u513F\u5BFC\u5165",
         lines: [
-          "\u7528\u300C\u4ECE\u5F53\u524D\u7528\u6237\u8BBE\u5B9A\u5BFC\u5165\u300D\u4E5F\u80FD\u8FD9\u4E48\u8BB0\u4E00\u4EFD\uFF1A\u5BFC\u5165\u540E\u4E0D\u7ED1\u5361\uFF0C\u9760\u540D\u5B57\u5728\u6B63\u6587\u91CC\u5339\u914D\u3002",
-          "\u60F3\u8BA9\u5B83\u5728\u67D0\u4E2A\u89D2\u8272\u90A3\u513F\u5FC5\u4E2D\uFF0C\u5BFC\u5165\u540E\u81EA\u5DF1\u5728\u4E0B\u62C9\u91CC\u9009\u4E00\u5F20\u5361\u5373\u53EF\u3002"
+          "\u300C\u4ECE\u5F53\u524D\u89D2\u8272\u5361\u5BFC\u5165\u300D\u8BFB\u5F53\u524D\u6253\u5F00\u90A3\u5F20\u5361\u7684\u63CF\u8FF0\u539F\u6587\uFF0C\u5BFC\u5165\u540E\u5F52\u5165\u89D2\u8272\u6863\u6848\u5E76\u81EA\u52A8\u7ED1\u5B9A\u8BE5\u5361\u3002",
+          "\u300C\u4ECE\u5F53\u524D\u7528\u6237\u8BBE\u5B9A\u5BFC\u5165\u300D\u8BFB\u5F53\u524D\u751F\u6548\u7684 Persona \u6B63\u6587\uFF0C\u5F52\u5165\u7528\u6237\u6863\u6848\u3001\u4E0D\u7ED1\u5361 \u2014\u2014 \u7528\u6237\u8BBE\u5B9A\u4E0D\u5C5E\u4E8E\u4EFB\u4F55\u4E00\u5F20\u5361\uFF0C\u7ED1\u4E0A\u53BB\u4F1A\u5728\u522B\u7684\u89D2\u8272\u7684\u804A\u5929\u91CC\u4E5F\u88AB\u5F3A\u884C\u5E26\u5165\u3002"
         ]
       },
       {
@@ -24677,6 +24937,19 @@ var init_characterProfileWindow = __esm({
         ]
       }
     ];
+    GROUPS = [
+      {
+        kind: PROFILE_KIND_CHARACTER,
+        title: "\u89D2\u8272\u6863\u6848",
+        empty: "\u8FD8\u6CA1\u6709\u89D2\u8272\u6863\u6848\u3002\u70B9\u300C\u65B0\u5EFA\u6863\u6848\u300D\uFF0C\u6216\u7528\u300C\u4ECE\u5F53\u524D\u89D2\u8272\u5361\u5BFC\u5165\u300D\u628A\u5F53\u524D\u89D2\u8272\u5361\u7684\u63CF\u8FF0\u62C9\u8FDB\u6765\u5F53\u8349\u7A3F\u3002"
+      },
+      {
+        kind: PROFILE_KIND_USER,
+        title: "\u7528\u6237\u6863\u6848",
+        empty: "\u8FD8\u6CA1\u6709\u7528\u6237\u6863\u6848\u3002\u7528\u300C\u4ECE\u5F53\u524D\u7528\u6237\u8BBE\u5B9A\u5BFC\u5165\u300D\u628A\u4F60\u7684 Persona \u8BB0\u4E00\u4EFD\u5728\u8FD9\u91CC\u3002"
+      }
+    ];
+    USER_BINDING_VALUE = "__user__";
   }
 });
 
@@ -24981,6 +25254,13 @@ function notifyView(sceneId) {
 }
 function activityPhaseFor(kind) {
   return kind === "prepare" ? "selecting" : "generating";
+}
+function sceneIdentity(entry) {
+  return String(entry?.summary || entry?.sourceExcerpt || entry?.positivePrompt || "").trim();
+}
+function repeatsPreviousScene(previousScenes, picked) {
+  const key = sceneIdentity(picked);
+  return Boolean(key) && previousScenes.some((item) => sceneIdentity(item) === key);
 }
 function jobProgress(job) {
   return (event) => {
@@ -25372,6 +25652,9 @@ ${block}` : block;
       }
       session.record = record;
       session.draft || (session.draft = selectedIllustration(record)?.draft || null);
+      if (!session.previousScenes.length && session.draft?.scene) {
+        session.previousScenes.push({ ...session.draft.scene, positivePrompt: session.draft.prompts?.positivePrompt || "" });
+      }
       renderDraft();
       renderGallery();
     } catch (error) {
@@ -25526,8 +25809,10 @@ ${block}` : block;
         notifyView(job.sceneId);
         const draft = await selectIllustrationScene(request, { signal: job.controller.signal });
         current.draft = draft;
-        current.previousScenes.push({ ...draft.scene, positivePrompt: draft.prompts.positivePrompt });
-        current.notice = draft.excerptDropped ? "\u753B\u9762\u5DF2\u9009\u597D\uFF0C\u4F46\u6A21\u578B\u7ED9\u7684\u539F\u6587\u6458\u5F55\u4E0E\u6B63\u6587\u5BF9\u4E0D\u4E0A\uFF0C\u5DF2\u4E22\u5F03\u3002\u53EF\u4EE5\u5C55\u5F00\u4FEE\u6539\u63D0\u793A\u8BCD\uFF0C\u518D\u751F\u6210\u56FE\u7247\u3002" : "\u753B\u9762\u5DF2\u9009\u597D\u3002\u53EF\u4EE5\u5C55\u5F00\u4FEE\u6539\u63D0\u793A\u8BCD\uFF0C\u518D\u751F\u6210\u56FE\u7247\u3002";
+        const picked = { ...draft.scene, positivePrompt: draft.prompts.positivePrompt };
+        const repeated = alternate && repeatsPreviousScene(current.previousScenes, picked);
+        current.previousScenes.push(picked);
+        current.notice = repeated ? "\u6A21\u578B\u53C8\u9009\u4E86\u540C\u4E00\u5E45\u753B\u9762\uFF0C\u591A\u534A\u662F\u6B63\u6587\u91CC\u53EA\u6709\u4E00\u4E2A\u53EF\u843D\u7B14\u7684\u77AC\u95F4\u3002\u60F3\u6307\u5B9A\u522B\u7684\u753B\u9762\uFF0C\u5199\u8FDB\u300C\u672C\u6B21\u989D\u5916\u8981\u6C42\u300D\u3002" : draft.excerptDropped ? "\u753B\u9762\u5DF2\u9009\u597D\uFF0C\u4F46\u6A21\u578B\u7ED9\u7684\u539F\u6587\u6458\u5F55\u4E0E\u6B63\u6587\u5BF9\u4E0D\u4E0A\uFF0C\u5DF2\u4E22\u5F03\u3002\u53EF\u4EE5\u5C55\u5F00\u4FEE\u6539\u63D0\u793A\u8BCD\uFF0C\u518D\u751F\u6210\u56FE\u7247\u3002" : "\u753B\u9762\u5DF2\u9009\u597D\u3002\u53EF\u4EE5\u5C55\u5F00\u4FEE\u6539\u63D0\u793A\u8BCD\uFF0C\u518D\u751F\u6210\u56FE\u7247\u3002";
       });
       return;
     }
@@ -25740,6 +26025,7 @@ var init_illustrationWindow = __esm({
         lines: [
           "\u9009\u4E00\u8F6E\u5267\u573A\u5185\u5BB9 \u2192 \u300C\u5206\u6790\u753B\u9762\u300D\u6311\u51FA\u9002\u5408\u843D\u7B14\u7684\u77AC\u95F4 \u2192 \u53EF\u4EE5\u6539\u63D0\u793A\u8BCD \u2192 \u300C\u751F\u6210\u56FE\u7247\u300D\u3002",
           "\u300C\u6362\u4E2A\u753B\u9762\u300D\u4F1A\u91CD\u65B0\u9009\u666F\uFF0C\u5E76\u628A\u6B64\u524D\u9009\u8FC7\u7684\u753B\u9762\u4F5C\u4E3A\u6392\u9664\u53C2\u8003\u3002",
+          "\u6392\u9664\u53EA\u662F\u8981\u6C42\uFF0C\u4E0D\u662F\u4FDD\u8BC1\uFF1A\u6B63\u6587\u91CC\u82E5\u53EA\u6709\u4E00\u4E2A\u53EF\u843D\u7B14\u7684\u77AC\u95F4\uFF0C\u6A21\u578B\u53EF\u4EE5\u590D\u7528\u540C\u4E00\u5E45 \u2014\u2014 \u771F\u590D\u7528\u4E86\u9762\u677F\u4F1A\u660E\u8BF4\u3002\u60F3\u6307\u5B9A\u753B\u9762\u5C31\u5199\u8FDB\u300C\u672C\u6B21\u989D\u5916\u8981\u6C42\u300D\uFF0C\u5B83\u4F18\u5148\u4E8E\u9009\u666F\u8981\u6C42\u3002",
           "\u5207\u6362\u6B63\u6587\u4E0D\u6539\u53D8\u4EFB\u52A1\u5F52\u5C5E\uFF1A\u6B63\u5728\u8DD1\u7684\u90A3\u6B21\u4ECD\u5C5E\u4E8E\u53D1\u8D77\u65F6\u7684\u90A3\u4E00\u8F6E\u5185\u5BB9\u3002"
         ]
       },

@@ -83,7 +83,8 @@ export const defaultSettings = {
     // 这里只声明存在，免得全新安装少一个键。注意与下面的 appearance 区分：
     // 那是悬浮球的 UI 皮肤，与角色外观无关。
     character_profiles: {
-        version: 1,
+        // 与 characterProfiles.js 的 CHARACTER_PROFILES_VERSION 同步（有测试盯着两份一致）。
+        version: 2,
         entries: []
     },
     history_extraction: {

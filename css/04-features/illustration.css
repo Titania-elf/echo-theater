@@ -192,6 +192,61 @@
 .t-profile-order { color: var(--t-color-text-muted); font-size: 0.8em; }
 .t-profile-card-header .t-btn { margin-left: auto; }
 
+/* ── 人物外观档案管理窗：顶上一分为二的页签，下面是当前组的紧凑小卡网格 ─────
+   ⚠ 上面那批 .t-profile-window / -panel / -body / -list / -card / -card-header /
+     -grip / -toggle 与场景配图设置窗（选景预设编辑器）**共用**，规则一个字都不能改 ——
+     动它们会把那个窗口一起改掉。本窗口自己的布局一律用下面这些新名字，
+     共用类只按原样复用、不在这里重定义。
+     （.t-profile-expand 是预设编辑器独占的，可以放心复用。） */
+
+.t-profile-tabs { display: flex; border-bottom: 1px solid var(--t-color-border); margin-bottom: 12px; }
+/* 两个页签等宽，横栏一分为二；flex:1 1 0 而不是 1 1 auto，宽度才不受文字长短影响。 */
+.t-profile-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 10px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--t-color-text-muted);
+    font: inherit;
+    cursor: pointer;
+}
+.t-profile-tab:hover { color: var(--t-color-text); }
+.t-profile-tab.is-active { color: var(--t-color-brand); border-bottom-color: var(--t-color-brand); }
+.t-profile-tab-count { color: var(--t-color-text-faint); font-size: 0.85em; }
+
+.t-profile-groups { display: flex; flex-direction: column; gap: 18px; }
+.t-profile-group { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+.t-profile-grid {
+    display: grid;
+    /* 内容宽约 648px（面板 min(680px, 100%) 减去两侧 16px 内边距）：200px 一行三张，
+       摘要行「不绑定角色卡 · 42 字符」还读得全。 */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    align-content: start;
+}
+
+.t-profile-tile {
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--t-color-border);
+    border-radius: 10px;
+    cursor: pointer;
+}
+/* 展开的那张占满整行，编辑区才够宽；其余卡片留在网格里不动。 */
+.t-profile-tile.is-expanded { grid-column: 1 / -1; cursor: default; }
+.t-profile-tile.is-dragging { opacity: 0.5; }
+/* 落点提示用 inset 阴影而不是 border：border 会改变尺寸，把网格挤得抖一下，
+   dragover 期间反复抖动会让指示线闪。 */
+.t-profile-tile.is-drop-before { box-shadow: inset 3px 0 0 0 var(--t-color-brand); }
+.t-profile-tile.is-drop-after { box-shadow: inset -3px 0 0 0 var(--t-color-brand); }
+.t-profile-tile-meta { margin: 4px 0 0; color: var(--t-color-text-muted); font-size: 0.85em; }
+.t-profile-tile-body { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.t-profile-tile-foot { display: flex; justify-content: flex-end; }
+.t-profile-tile-empty { grid-column: 1 / -1; }
+
 /* ── 顶栏问号：静态说明收在一处（三个配图窗口共用） ───────────────────
    气泡挂在按钮容器上做绝对定位，所以容器必须有 position: relative。
    头部本身没有 overflow: hidden，气泡不会被裁掉；z-index 要高过窗口内容。 */
@@ -403,4 +458,6 @@
     }
     .t-profile-panel { max-height: 100%; }
     .t-profile-body { padding: 12px; }
+    /* 窄屏塞不下三列，两列是摘要行还读得全的下限。 */
+    .t-profile-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }

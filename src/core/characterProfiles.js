@@ -7,30 +7,48 @@
 //
 // 本模块**不 import 任何宿主模块**（只借用 illustrationData 的 id 生成器，那也是个纯模块）。
 // 测试夹具会把 utils/storage.js 整个替换掉，保持无宿主依赖才能被直接加载与单测。
+//
+// ⚠ kind（角色 / 用户）**只用于分组展示**，不参与 profileMatches / matchCharacterProfiles。
+// 将来若有人想让用户档案「总是带上」或「总是排除」，那是匹配规则的决定，得显式改那两处 ——
+// 别顺手写进 profileKind，那会让匹配行为无声改变。
 
 import { newIllustrationId } from "./illustrationData.js";
 
 export const CHARACTER_PROFILES_KEY = "character_profiles";
-export const CHARACTER_PROFILES_VERSION = 1;
+/** 2：新增 kind 归属字段（1 → 2 时老记录一律落成「角色」，见 normalizeEntries）。 */
+export const CHARACTER_PROFILES_VERSION = 2;
 /** 角色卡绑定的键前缀；只有这个前缀才被认作有效绑定。 */
 export const CARD_KEY_PREFIX = "card:";
+/** 归属：给某个角色写的档案。 */
+export const PROFILE_KIND_CHARACTER = "character";
+/** 归属：给用户自己（{{user}} / Persona）写的档案。恒定不绑卡。 */
+export const PROFILE_KIND_USER = "user";
 /** 关键词长度下限：单字关键词几乎会命中任何一段正文。 */
 export const MIN_KEYWORD_LENGTH = 2;
 /** 单次配图最多自动带入的档案数，避免把【人物资料】撑爆。 */
 export const MAX_MATCHED_PROFILES = 4;
-/** 单条档案插入正文的最大字符数。 */
-export const MAX_PROFILE_BLOCK_CHARS = 2000;
 
-const TRUNCATED_SUFFIX = "\n…（档案内容过长已截断）";
+/**
+ * 归属的**单一读取口径**：只认 "user"，其余（缺失、垃圾值、v1 老记录）一律角色。
+ *
+ * 界面与分组都走这里，不直接读 entry.kind —— 测试夹具的 getExtData 是裸桩、
+ * 不跑规范化，视图必须能自己兜住未规范化的数据。
+ */
+export function profileKind(entry) {
+    return entry?.kind === PROFILE_KIND_USER ? PROFILE_KIND_USER : PROFILE_KIND_CHARACTER;
+}
 
 /** 新建一条空白档案，供界面使用。 */
-export function createCharacterProfile(name = "新档案") {
+export function createCharacterProfile(name = "新档案", kind = PROFILE_KIND_CHARACTER) {
+    const resolved = profileKind({ kind });
     return {
         id: newIllustrationId(),
         name: String(name).trim(),
         keywords: [],
         content: "",
+        // 用户档案恒定不绑卡：绑上去会在别的角色的聊天里也被强行带入。
         cardKey: "",
+        kind: resolved,
         enabled: true,
     };
 }
@@ -83,12 +101,20 @@ function normalizeEntries(value) {
         if (seen.has(id)) continue;
         seen.add(id);
         const keywords = (Array.isArray(raw.keywords) ? raw.keywords : []).map(normalizeKeyword).filter(Boolean);
+        // v1 的记录没有 kind，一律落成角色：老数据里没有可靠信号能区分「用户设定导入的」
+        // 与「手写的、没绑卡的」（群聊里从角色卡导入同样不绑卡，触发词恰等于档案名也是
+        // 任何新档案填完名字的状态），猜就会误判。kind 不参与匹配，判错只是分组位置不对，
+        // 用户可以自己用归属下拉改。
+        const kind = profileKind(raw);
         entries.push({
             id,
             name: String(raw.name ?? "").trim(),
             keywords: [...new Set(keywords)],
             content: typeof raw.content === "string" ? raw.content : "",
-            cardKey: normalizeCardKey(raw.cardKey),
+            // 「用户本人」与「绑了卡」是互斥状态：绑卡的用户档案在下拉框里既表达不出来、
+            // 也退不回去，所以在模型层直接掐掉，手改设置文件也造不出来。
+            cardKey: kind === PROFILE_KIND_USER ? "" : normalizeCardKey(raw.cardKey),
+            kind,
             enabled: raw.enabled !== false,
         });
     }
@@ -98,6 +124,11 @@ function normalizeEntries(value) {
 /**
  * 规范化并迁移档案库。幂等：形状已经正确时返回 false，不触发落盘。
  * 由 utils/storage.js 的 getExtData() 调用，沿用 ensurePromptManager 的范式。
+ *
+ * 下面这个判据是**全量逐字比对**（版本号 + 规范化结果的序列化），所以白名单里新增字段
+ * 自动被覆盖：升级后第一次调用写一次并返回 true，之后重新规范化得到完全相同的字节、
+ * 返回 false。成立的前提是 normalizeEntries 保持确定性、且不动既有条目的 id ——
+ * 一旦它给已有 id 的条目重新生成 id，这里会每次 getExtData() 都返回 true、变成每次访问都落盘。
  * @param {object} data 扩展设置对象
  * @returns {boolean} 是否发生了改动
  */
@@ -148,11 +179,17 @@ export function matchCharacterProfiles(entries, options = {}) {
     return list.filter(entry => profileMatches(entry, options)).slice(0, MAX_MATCHED_PROFILES);
 }
 
-/** 档案插入「人物资料」文本框时的那段文本。空内容返回空串，不插入。 */
+/**
+ * 档案插入「人物资料」文本框时的那段文本。空内容返回空串，不插入。
+ *
+ * **不截断**：这是用户自己写的外观描写，写多长就带多长。截断在这里格外有害 ——
+ * 被砍掉的往往是末尾那些更具体的特征（耳饰、纹样），而用户看到的文本框里是完整的，
+ * 界面又不显示「已截断」，于是画错了也无从察觉。送不下是模型上下文的事，
+ * 那由用户在预设置里自己权衡，不由这条自动带入的路径替他决定。
+ */
 export function composeProfileBlock(entry) {
     const content = String(entry?.content ?? "").trim();
     if (!content) return "";
     const name = String(entry?.name ?? "").trim() || "未命名角色";
-    const block = `【${name}】\n${content}`;
-    return block.length > MAX_PROFILE_BLOCK_CHARS ? block.slice(0, MAX_PROFILE_BLOCK_CHARS) + TRUNCATED_SUFFIX : block;
+    return `【${name}】\n${content}`;
 }

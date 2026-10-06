@@ -57,6 +57,26 @@ async function waitFor(check, label = 'condition') {
     assert.fail(`Timed out: ${label}`);
 }
 
+/**
+ * jsdom 既没有布局（getBoundingClientRect 全返回 0），也没有可靠的 DragEvent / DataTransfer，
+ * 两个都手搓。凡几何相关的用例必须先给目标卡片桩 rect —— 网格落点算得准不准，
+ * 自动化测不了，只能真机看（见 docs 的验证一节）。
+ */
+function stubRect(element, { top, left, width = 100, height = 40 }) {
+    element.getBoundingClientRect = () => ({
+        top, left, width, height, right: left + width, bottom: top + height, x: left, y: top,
+    });
+}
+
+function fireDrag(window, element, type, { x = 0, y = 0, id = '' } = {}) {
+    const event = new window.Event(type, { bubbles: true, cancelable: true });
+    event.clientX = x;
+    event.clientY = y;
+    event.dataTransfer = { effectAllowed: '', dropEffect: '', setData() {}, getData: () => id };
+    element.dispatchEvent(event);
+    return event;
+}
+
 function harness() {
     // 结构与真实主界面一致：#t-overlay > #t-main-view > .t-content-wrapper > #t-output-content。
     // 配图按钮挂在 .t-content-wrapper（定位祖先），灯箱挂在 #t-overlay，
@@ -1479,7 +1499,60 @@ test('appearance profiles match by card binding or keyword and normalize idempot
     assert.equal(cleaned.length, 1, '垃圾条目应被丢弃');
     assert.equal(cleaned[0].keywords.length, 0, '单字关键词应被剔除');
     assert.equal(cleaned[0].cardKey, '', 'name: 键应被清空');
+    assert.equal(cleaned[0].kind, 'character', 'v1 老记录没有 kind，一律落成角色');
     assert.equal(profiles.ensureCharacterProfiles(data), false);
+});
+
+test('profiles upgrade to v2 with a default kind, and only write once', async t => {
+    const h = harness(); t.after(h.close);
+    const profiles = await h.load('src/core/characterProfiles.js');
+    // 升级前落盘的形状：version 1，条目里没有 kind。
+    const data = {
+        character_profiles: {
+            version: 1,
+            entries: [
+                { id: 'a', name: '阿离', keywords: ['阿离'], content: '银发', cardKey: 'card:ali', enabled: true },
+                { id: 'b', name: '我', keywords: ['我'], content: '短发', cardKey: '', enabled: true },
+                { id: 'c', name: '坏的', keywords: [], content: '', cardKey: '', enabled: true, kind: '垃圾值' },
+            ],
+        },
+    };
+    assert.equal(profiles.ensureCharacterProfiles(data), true, 'v1 数据第一次读要写一次');
+    assert.equal(data.character_profiles.version, 2);
+    assert.deepEqual(
+        Array.from(data.character_profiles.entries, entry => entry.kind),
+        ['character', 'character', 'character'],
+        '老记录一律落成角色 —— 旧数据里没有可靠信号能区分用户档案与没绑卡的角色档案，猜就会误判',
+    );
+    assert.equal(profiles.ensureCharacterProfiles(data), false,
+        '再读一次必须是固定点；否则每次 getExtData() 都会返回 true，变成每次访问都落盘');
+});
+
+test('a user profile never keeps a card binding', async t => {
+    const h = harness(); t.after(h.close);
+    const profiles = await h.load('src/core/characterProfiles.js');
+    const data = {
+        character_profiles: {
+            version: 2,
+            entries: [
+                { id: 'u', name: '我', keywords: ['我'], content: '短发', cardKey: 'card:ali', kind: 'user', enabled: true },
+                { id: 'k', name: '阿离', keywords: ['阿离'], content: '银发', cardKey: 'card:ali', kind: 'character', enabled: true },
+            ],
+        },
+    };
+    profiles.ensureCharacterProfiles(data);
+    const [user, character] = data.character_profiles.entries;
+    assert.equal(user.kind, 'user', '用户档案的归属要保留');
+    assert.equal(user.cardKey, '', '用户档案绑了卡会被清掉 —— 那个状态在下拉里表达不出来，也退不回去');
+    assert.equal(character.cardKey, 'card:ali', '角色档案的绑定不受影响');
+});
+
+test('the shipped defaults agree with the profile store version', async t => {
+    const h = harness(); t.after(h.close);
+    const defaults = await h.load('src/config/defaults.js');
+    const profiles = await h.load('src/core/characterProfiles.js');
+    assert.equal(defaults.defaultSettings.character_profiles.version, profiles.CHARACTER_PROFILES_VERSION,
+        '全新安装写下的版本号必须与 store 当前版本一致，否则第一次读就白写一次');
 });
 
 test('targets carry the character key without letting it into the scene hash', async t => {
@@ -1587,6 +1660,7 @@ test('appearance profiles import the user persona as an unbound, name-keyed entr
     assert.equal(entries()[0].content, '黑长直，左眼下有颗小痣。');
     assert.equal(entries()[0].keywords.join(','), '林晚', '名字要写成触发词，否则这条档案永远不会自己命中');
     assert.equal(entries()[0].cardKey, '', '用户设定不属于任何一张角色卡，不能绑卡');
+    assert.equal(entries()[0].kind, 'user', '用户设定导入的档案归入用户档案组');
     assert.match(status(), /林晚/);
 
     // 没有启用的人设：只给一句说明，不要建出一份空档案。
@@ -1603,6 +1677,244 @@ test('appearance profiles import the user persona as an unbound, name-keyed entr
     assert.match(status(), /触发词/);
     core.ensureCharacterProfiles(h.state.settings);
     assert.equal(entries()[1].keywords.length, 0, '单字触发词确实会被规范化剔除，所以那句提示是必要的');
+});
+
+// 档案窗的页签 / 网格 / 拖动。共用一个夹具：种子、开窗、以及按 id 取卡片。
+// 两组**不同时渲染**（页签的意义就在这里），所以取卡片前要先切到它所在的那一页。
+function profileWindowHarness(h, entries) {
+    h.state.settings.character_profiles = { version: 2, entries };
+    const root = () => h.document.querySelector('.t-profile-window');
+    const kindOf = id => (h.state.settings.character_profiles.entries.find(entry => entry.id === id)?.kind === 'user' ? 'user' : 'character');
+    const showTab = kind => {
+        const tab = root().querySelector(`[data-action="switch-tab"][data-tab="${kind}"]`);
+        if (!tab.classList.contains('is-active')) tab.click();
+    };
+    return {
+        root,
+        showTab,
+        ids: () => Array.from(h.state.settings.character_profiles.entries, entry => entry.id),
+        kinds: () => Array.from(h.state.settings.character_profiles.entries, entry => entry.kind),
+        tile: id => {
+            showTab(kindOf(id));
+            return root().querySelector(`.t-profile-tile[data-profile-id="${id}"]`);
+        },
+        activeTab: () => root().querySelector('.t-profile-tab.is-active')?.dataset.tab,
+        idsIn: kind => {
+            showTab(kind);
+            return [...root().querySelectorAll('.t-profile-group .t-profile-tile')].map(tile => tile.dataset.profileId);
+        },
+        // labeled() 把标签文字作为前置文本节点，取 firstChild 才不会把 select 里的选项文字也读进来。
+        fieldInput: (scope, text) => [...scope.querySelectorAll('label.t-illustration-field')]
+            .find(label => label.firstChild.textContent.startsWith(text))?.querySelector('input'),
+    };
+}
+
+const charProfile = (id, name, overrides = {}) => ({
+    id, name, keywords: [name], content: '银白长发', cardKey: '', kind: 'character', enabled: true, ...overrides,
+});
+const userProfile = (id, name, overrides = {}) => ({
+    id, name, keywords: [name], content: '黑长直', cardKey: '', kind: 'user', enabled: true, ...overrides,
+});
+
+test('the window opens on 角色档案 and the tab bar switches between the two', async t => {
+    const h = harness(); t.after(h.close);
+    const w = profileWindowHarness(h, [charProfile('c1', '阿离'), userProfile('u1', '我')]);
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    profiles.openCharacterProfileWindow();
+
+    // 进窗默认停在角色档案，且用户档案那一组根本不在 DOM 里 —— 这正是「不再挤在一起」的含义。
+    assert.equal(w.activeTab(), 'character');
+    assert.equal(w.root().querySelector('.t-profile-tile[data-profile-id="u1"]'), null);
+    assert.deepEqual([...w.root().querySelectorAll('.t-profile-tile')].map(tile => tile.dataset.profileId), ['c1']);
+
+    w.showTab('user');
+    assert.equal(w.activeTab(), 'user');
+    assert.deepEqual([...w.root().querySelectorAll('.t-profile-tile')].map(tile => tile.dataset.profileId), ['u1']);
+
+    // 条数挂在页签上，另一组有没有东西不点进去也看得到。
+    assert.equal(w.root().querySelector('[data-role="count-character"]').textContent, '1');
+    assert.equal(w.root().querySelector('[data-role="count-user"]').textContent, '1');
+    assert.equal(w.root().querySelectorAll('.t-profile-tab').length, 2);
+    assert.equal(w.root().querySelector('[data-tab="user"]').getAttribute('aria-selected'), 'true');
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
+});
+
+test('profiles are grouped by their own kind, and v1 records land under 角色档案', async t => {
+    const h = harness(); t.after(h.close);
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+
+    // 空库：两个页签都在，当前这页给一句怎么开始的话，而不是整片空白。
+    const closeEmpty = profiles.openCharacterProfileWindow();
+    assert.equal(h.document.querySelectorAll('.t-profile-window .t-profile-tab').length, 2);
+    assert.equal(h.document.querySelectorAll('.t-profile-window .t-profile-tile-empty').length, 1);
+    closeEmpty();
+
+    // 升级前的真实形状：version 1，条目里没有 kind。没绑卡的那条也必须是角色档案 ——
+    // 归属不靠「绑没绑卡」推，旧数据里没有可靠信号能区分用户档案与没绑卡的角色档案。
+    const w = profileWindowHarness(h, [
+        { id: 'c1', name: '阿离', keywords: ['阿离'], content: '银发', cardKey: 'card:ali', enabled: true },
+        { id: 'c2', name: '店主', keywords: ['店主'], content: '络腮胡', cardKey: '', enabled: true },
+        userProfile('u1', '我'),
+    ]);
+    h.state.settings.character_profiles.version = 1;
+    profiles.openCharacterProfileWindow();
+
+    assert.deepEqual(w.idsIn('character'), ['c1', 'c2'], '没写 kind 的老记录归角色档案，包括没绑卡的那条');
+    assert.deepEqual(w.idsIn('user'), ['u1']);
+    assert.equal(w.root().querySelector('[data-role="count-character"]').textContent, '2');
+    assert.equal(w.root().querySelector('[data-role="count-user"]').textContent, '1');
+    assert.equal(h.state.settings.character_profiles.version, 2, '开窗读一次就该把老数据升上来');
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
+});
+
+test('a tile expands in place into the full editor, and new profiles arrive expanded', async t => {
+    const h = harness(); t.after(h.close);
+    const w = profileWindowHarness(h, [charProfile('a', '阿离')]);
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    profiles.openCharacterProfileWindow();
+
+    // 打开时全折叠 —— 一屏能塞下十几条，这正是这次改版要的。
+    assert.equal(w.tile('a').querySelector('.t-profile-tile-body'), null);
+    assert.equal(w.root().querySelectorAll('.t-profile-tile.is-expanded').length, 0);
+
+    w.tile('a').querySelector('.t-profile-expand').click();
+    assert.ok(w.tile('a').classList.contains('is-expanded'));
+    assert.equal(w.tile('a').querySelector('.t-profile-expand').getAttribute('aria-expanded'), 'true');
+    assert.deepEqual(
+        [...w.tile('a').querySelectorAll('label.t-illustration-field')].map(label => label.firstChild.textContent),
+        ['档案名称', '触发词（逗号分隔）', '归属与绑定', '外观描写'],
+    );
+
+    w.tile('a').querySelector('.t-profile-expand').click();
+    assert.equal(w.tile('a').querySelector('.t-profile-tile-body'), null, '再点收起');
+
+    // 新建的那条自动展开：刚加完还要自己找一遍、再点一次，是多余的。
+    w.root().querySelector('[data-action="add"]').click();
+    const created = h.state.settings.character_profiles.entries[1];
+    assert.ok(w.tile(created.id).classList.contains('is-expanded'));
+    assert.equal(created.kind, 'character', '新建的默认是角色档案');
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
+});
+
+test('typing updates the collapsed summary without rebuilding the editor', async t => {
+    const h = harness(); t.after(h.close);
+    const w = profileWindowHarness(h, [charProfile('a', '阿离')]);
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    profiles.openCharacterProfileWindow();
+    w.tile('a').querySelector('.t-profile-expand').click();
+
+    const type = (input, value) => {
+        input.value = value;
+        input.dispatchEvent(new h.window.Event('input', { bubbles: true }));
+    };
+
+    const nameInput = w.fieldInput(w.tile('a'), '档案名称');
+    nameInput.focus();
+    assert.equal(h.document.activeElement, nameInput);
+    type(nameInput, '阿狸');
+    assert.equal(h.document.activeElement, nameInput, '打字时重画列表会让每敲一个字就丢焦点');
+    assert.equal(w.fieldInput(w.tile('a'), '触发词').value, '阿狸', '触发词仍跟着名字走');
+    // 卡片头在折叠时是唯一看得见的东西，必须同步。
+    assert.match(w.tile('a').querySelector('.t-profile-expand').textContent, /阿狸/);
+    assert.match(w.tile('a').querySelector('.t-profile-tile-meta').textContent, /银白长发|字符/);
+
+    const content = w.tile('a').querySelector('textarea');
+    content.focus();
+    type(content, '银白长发红瞳');
+    assert.equal(h.document.activeElement, content, '外观描写也不能重画');
+    assert.match(w.tile('a').querySelector('.t-illustration-hint').textContent, /6 字符/);
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
+});
+
+test('the binding select moves a profile between the two groups', async t => {
+    const h = harness(); t.after(h.close);
+    h.state.cards = [{ cardKey: 'card:ali', name: '阿离卡' }];
+    const w = profileWindowHarness(h, [charProfile('a', '阿离')]);
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    profiles.openCharacterProfileWindow();
+
+    const changeTo = value => {
+        // 展开状态跨重画保留（按 id 记），所以只有第一次需要点开。
+        if (!w.tile('a').classList.contains('is-expanded')) w.tile('a').querySelector('.t-profile-expand').click();
+        const select = w.tile('a').querySelector('select');
+        select.value = value;
+        select.dispatchEvent(new h.window.Event('change', { bubbles: true }));
+    };
+
+    changeTo('__user__');
+    assert.equal(h.state.settings.character_profiles.entries[0].kind, 'user');
+    assert.equal(h.state.settings.character_profiles.entries[0].cardKey, '', '换成用户本人必须解绑');
+    assert.deepEqual(w.idsIn('user'), ['a'], '卡片要挪到用户档案组');
+    assert.deepEqual(w.idsIn('character'), []);
+    // 换组等于从当前页签里消失。不说一句的话，看着就像这条档案被删了。
+    assert.match(w.root().querySelector('[data-role="status"]').textContent, /移到用户档案/);
+
+    changeTo('card:ali');
+    assert.equal(h.state.settings.character_profiles.entries[0].kind, 'character', '选一张卡就回到角色档案');
+    assert.equal(h.state.settings.character_profiles.entries[0].cardKey, 'card:ali');
+    assert.deepEqual(w.idsIn('character'), ['a']);
+
+    changeTo('');
+    assert.equal(h.state.settings.character_profiles.entries[0].kind, 'character');
+    assert.equal(h.state.settings.character_profiles.entries[0].cardKey, '', '不绑定仍是角色档案，不是用户档案');
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
+});
+
+test('reordering inside a group leaves the other group exactly where it was', async t => {
+    const h = harness(); t.after(h.close);
+    // 交错排列：角色与用户在数组里各占 0/2 与 1/3 位。
+    const w = profileWindowHarness(h, [
+        charProfile('a', '甲'), userProfile('b', '乙'), charProfile('c', '丙'), userProfile('d', '丁'),
+    ]);
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    profiles.openCharacterProfileWindow();
+
+    const drag = (fromId, toId, x) => {
+        // 每次重排都会重画，rect 得重新桩；甲丙在同一行，所以由 X 定前后。
+        stubRect(w.tile('a'), { top: 0, left: 0 });
+        stubRect(w.tile('c'), { top: 0, left: 110 });
+        fireDrag(h.window, w.tile(fromId), 'dragstart');
+        fireDrag(h.window, w.tile(toId), 'drop', { x, y: 20 });
+    };
+
+    drag('c', 'a', 10);   // 落在甲的左半 → 插到甲之前
+    assert.deepEqual(w.ids(), ['c', 'b', 'a', 'd'], '只有角色档案换了位置，用户档案的绝对下标一个都不能动');
+
+    drag('c', 'a', 90);   // 落在甲的右半 → 插回甲之后
+    assert.deepEqual(w.ids(), ['a', 'b', 'c', 'd'], '往回拖一次应当复原');
+    assert.deepEqual(w.kinds(), ['character', 'user', 'character', 'user'], '拖动不改变归属');
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
+});
+
+test('the other group is never on screen, so nothing can be dragged across it', async t => {
+    const h = harness(); t.after(h.close);
+    const w = profileWindowHarness(h, [charProfile('a', '甲'), userProfile('b', '乙')]);
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    profiles.openCharacterProfileWindow();
+
+    // 页签把两组隔开了：停在角色档案时，用户档案那张卡压根不在 DOM 里，想拖都没有落点。
+    // 这比在事件里拒绝更彻底 —— 拒绝是兜底，这里是结构上就做不到。
+    assert.equal(w.root().querySelector('.t-profile-tile[data-profile-id="b"]'), null);
+    w.showTab('user');
+    assert.equal(w.root().querySelector('.t-profile-tile[data-profile-id="a"]'), null);
+    assert.deepEqual(w.ids(), ['a', 'b'], '切页签只改视图，不动数据与顺序');
+    assert.deepEqual(w.kinds(), ['character', 'user']);
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
+});
+
+test('a drag never starts from inside the editor', async t => {
+    const h = harness(); t.after(h.close);
+    const w = profileWindowHarness(h, [charProfile('a', '甲')]);
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    profiles.openCharacterProfileWindow();
+    w.tile('a').querySelector('.t-profile-expand').click();
+
+    // 展开的编辑区在可拖动的卡片内部：没有守卫的话，在文本框里选词会把整张卡拖走。
+    fireDrag(h.window, w.tile('a').querySelector('textarea'), 'dragstart');
+    assert.equal(w.tile('a').className.includes('is-dragging'), false);
+    fireDrag(h.window, w.fieldInput(w.tile('a'), '档案名称'), 'dragstart');
+    assert.equal(w.tile('a').className.includes('is-dragging'), false);
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
 });
 
 test('every returned image becomes a candidate, with the first adopted', async t => {
