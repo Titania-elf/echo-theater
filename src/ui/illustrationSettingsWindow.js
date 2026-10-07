@@ -87,6 +87,7 @@ function helpSections() {
 const BACKEND_HELP = {
     cosmos: "支持一次出多张，人物位置可用。画幅、画风与质量词在它那边配置。",
     baibai: "一次出一张，人物位置固定在画面中心；NovelAI 下不使用这里填的负向提示词。",
+    chatu8: "一次出一张，不支持分人物提示词与人物位置；用哪个渠道（SD / NovelAI / ComfyUI / Banana / RunningHub）由它自己的「主要设置」决定，替换词与质量词也在它那边配。它没有取消接口，取消只是这边不再等。",
 };
 
 /**

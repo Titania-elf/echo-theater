@@ -119,6 +119,29 @@ function harness() {
     const { window } = dom;
     window.URL.createObjectURL = URL.createObjectURL;
     window.URL.revokeObjectURL = URL.revokeObjectURL;
+    /**
+     * 假的事件总线，形状与 ST 的 eventSource 一致（on / removeListener / emit / listenerCount）。
+     * 智绘姬适配器靠它下单，用例可以在这里**扮 chatu8**：接单，然后回一条响应。
+     */
+    const busListeners = new Map();
+    const bus = {
+        on(name, handler) {
+            if (!busListeners.has(name)) busListeners.set(name, []);
+            busListeners.get(name).push(handler);
+        },
+        removeListener(name, handler) {
+            const list = busListeners.get(name);
+            if (!list) return;
+            const index = list.indexOf(handler);
+            if (index !== -1) list.splice(index, 1);
+        },
+        emit(name, payload) {
+            for (const handler of [...(busListeners.get(name) || [])]) handler(payload);
+        },
+        listenerCount(name) { return (busListeners.get(name) || []).length; },
+        /** 摘掉某一类事件的**所有**接单者：用来模拟「它没在听」（它在未启用/渠道没选时不注册监听）。 */
+        clear(name) { busListeners.delete(name); },
+    };
     class TestFileReader {
         readAsDataURL(blob) {
             blob.arrayBuffer().then(bytes => {
@@ -205,7 +228,14 @@ function harness() {
         FileReader: TestFileReader, __environment: environment,
         // 变量沙箱经 SillyTavern.getContext() 拿 chat_metadata / extension_settings。
         // 缺了它沙箱会退化成空操作，用例就测不出「构建后还原」。
-        SillyTavern: { getContext: () => ({ chatMetadata: state.chatMetadata, extensionSettings: state.extensionSettings }) },
+        // eventSource 也在同一个上下文里：智绘姬适配器靠它下单（与 chatu8 听的是同一个对象）。
+        SillyTavern: {
+            getContext: () => ({
+                chatMetadata: state.chatMetadata,
+                extensionSettings: state.extensionSettings,
+                eventSource: bus,
+            }),
+        },
         // 界面里的 confirm / prompt 要走 vm 全局，缺失时点击处理器会抛 ReferenceError。
         confirm: () => state.confirmResult !== false,
         prompt: () => state.promptResult,        fetch: async (url, options) => {
@@ -289,7 +319,7 @@ function harness() {
     window.STBaiBaiImage = baibai();
     // 用例删掉全局对象模拟「没装」之后，靠这个把桩装回去。
     const installBaibai = () => { window.STBaiBaiImage = baibai(); return window.STBaiBaiImage; };
-    return { ...state, state, load, window, document: window.document, installBaibai, close: () => window.close() };
+    return { ...state, state, load, window, document: window.document, installBaibai, bus, close: () => window.close() };
 }
 
 test('stable scene identity survives a reload; regenerated or edited text gets a separate attachment', async t => {
@@ -2178,6 +2208,21 @@ test('the panel hides what the active backend cannot honor, and restores it afte
     await waitFor(() => h.document.querySelector('.t-illustration-coordinates').hidden === false, 'positions restored');
     assert.equal(node('negative-hint').hidden, true);
     assert.equal(node('characters-hint').hidden, true);
+
+    // 智绘姬：位置、分人物、画幅三样都收起来（它的请求里只有一个 prompt 字段）。
+    h.state.extensionSettings['st-chatu8'] = chatu8Settings({ mode: 'sd' });
+    h.state.settings.illustration_backend = { version: 1, active_id: 'chatu8' };
+    action('detect').click();
+    await waitFor(() => node('size-field').hidden === true, 'chatu8 capabilities applied');
+    assert.equal(h.document.querySelector('.t-illustration-coordinates').hidden, true);
+    assert.equal(node('characters').hidden, true);
+    assert.equal(node('negative-hint').hidden, true, 'sd 渠道收这个字段');
+
+    // 换成 banana：它那条处理器不读 negative_prompt，提示要出现（且不能点名别的后端）。
+    h.state.extensionSettings['st-chatu8'] = chatu8Settings({ mode: 'banana' });
+    action('detect').click();
+    await waitFor(() => node('negative-hint').hidden === false, 'banana drops the negative prompt');
+    assert.match(node('negative-hint').textContent, /不使用这里填写的负向提示词/);
     action('close').click();
 });
 
@@ -2208,7 +2253,7 @@ test('the settings window switches the active backend and persists it immediatel
     const ui = await h.load('src/ui/illustrationSettingsWindow.js');
     ui.openIllustrationSettingsWindow();
     const select = h.document.querySelector('[data-role="backend-select"]');
-    assert.deepEqual([...select.options].map(option => option.value), ['cosmos', 'baibai']);
+    assert.deepEqual([...select.options].map(option => option.value), ['cosmos', 'baibai', 'chatu8']);
     assert.equal(select.value, 'cosmos', '没设过时默认选 cosmos');
 
     select.value = 'baibai';
@@ -2523,6 +2568,141 @@ test('the panel still opens when this round has nothing to illustrate yet', asyn
     assert.equal(action('settings').disabled, false, '顶栏入口不受影响');
     assert.equal(action('profiles').disabled, false);
     action('close').click();
+});
+
+/* ---------- 智绘姬（st-chatu8）：借酒馆的事件总线出图 ---------- */
+
+/** 它的状态全在 extension_settings["st-chatu8"] 里。用例在这里扮「已装好」的它。 */
+const chatu8Settings = (overrides = {}) => ({ scriptEnabled: "true", mode: "sd", ...overrides });
+
+/**
+ * 扮 chatu8 那一侧：接到 generate-image-request 就回一条响应。
+ * 返回收到的请求数组，方便断言我们发出去的是什么。
+ */
+function fakeChatu8(h, respond) {
+    const seen = [];
+    h.bus.on('generate-image-request', request => {
+        seen.push(request);
+        respond(request, h.bus);
+    });
+    return seen;
+}
+
+test('the chatu8 backend reads its state from the tavern settings, and reports honest capabilities', async t => {
+    const h = harness(); t.after(h.close);
+    const { chatu8Backend } = await h.load('src/core/illustrationBackends/chatu8.js');
+
+    // 没装：只有一条能照着做的提示。
+    assert.equal(chatu8Backend.probe().status, 'missing');
+    assert.match(chatu8Backend.probe().reason, /未检测到智绘姬/);
+
+    // 装了但没启用 —— 与「没装」分开报，用户知道去开哪个开关。
+    h.state.extensionSettings['st-chatu8'] = chatu8Settings({ scriptEnabled: 'false' });
+    assert.equal(chatu8Backend.probe().status, 'not_configured');
+    assert.match(chatu8Backend.probe().reason, /没有启用/);
+
+    // 启用了但渠道不能出图：这是它那边最常见的漏配，所以要说清去哪儿改。
+    h.state.extensionSettings['st-chatu8'] = chatu8Settings({ mode: '' });
+    assert.match(chatu8Backend.probe().reason, /还没有选渠道/);
+    h.state.extensionSettings['st-chatu8'] = chatu8Settings({ mode: 'none' });
+    assert.match(chatu8Backend.probe().reason, /「none」不能用来出图/);
+    assert.equal(chatu8Backend.probe().status, 'not_configured');
+
+    // 就绪：能力如实上报 —— 一次一张、没有分人物与位置、画幅由它自己决定。
+    h.state.extensionSettings['st-chatu8'] = chatu8Settings({ mode: 'sd' });
+    const ready = chatu8Backend.probe();
+    assert.equal(ready.ready, true);
+    assert.match(ready.reason, /Stable Diffusion/);
+    // ⚠ 逐字段断言而不是 deepEqual：夹具跑在 vm 里，跨 realm 的对象原型不同，
+    //   node:assert/strict 的 deepEqual 会判「结构相同但不是同一个引用」。
+    const capabilities = chatu8Backend.probe().capabilities;
+    assert.equal(capabilities.characterPrompts, false);
+    assert.equal(capabilities.characterPositions, false);
+    assert.equal(capabilities.characterNegative, false);
+    assert.equal(capabilities.negativePrompt, true);
+    assert.equal(capabilities.size, false, '画幅由它自己渠道里配的宽高决定，不从这里指定');
+    assert.equal(capabilities.batch, false, '一个响应一张图');
+    assert.equal(capabilities.streamPreview, false);
+    // banana 那条处理器不读 negative_prompt，所以那里要把负向框收起来。
+    h.state.extensionSettings['st-chatu8'] = chatu8Settings({ mode: 'banana' });
+    assert.equal(chatu8Backend.probe().capabilities.negativePrompt, false);
+});
+
+test('a chatu8 request goes out on the tavern event bus and comes back as a saved picture', async t => {
+    const h = harness(); t.after(h.close);
+    const bridge = await h.load('src/core/cosmosVisionBridge.js');
+    h.state.extensionSettings['st-chatu8'] = chatu8Settings({ mode: 'sd' });
+    const seen = fakeChatu8(h, (request, bus) => {
+        // 它就是这样回的：同一根总线、同一个 id、dataURL。
+        bus.emit('generate-image-response', { id: request.id, success: true, imageData: pngDataUrl, prompt: request.prompt });
+    });
+
+    const result = await bridge.generateTheaterIllustration({ ...draft(), backend: 'chatu8' });
+    assert.equal(seen.length, 1, '应当正好发出一条请求');
+    assert.equal(seen[0].prompt, draft().prompts.positivePrompt);
+    // 文档给的形状就是 null = 用它自己渠道里配的尺寸。
+    assert.deepEqual([seen[0].width, seen[0].height], [null, null]);
+    assert.ok(seen[0].id, 'id 必须带（响应靠它认领）');
+    // 回的是 dataURL，解码后照样走同一条嗅探 + 校验路径。
+    assert.equal(result.images.length, 1);
+    assert.equal(result.images[0].blob.type, 'image/png');
+    assert.deepEqual([result.images[0].width, result.images[0].height], [1, 1]);
+    assert.equal(h.bus.listenerCount('generate-image-response'), 0, '拿到结果后要退订');
+});
+
+test('a chatu8 response for somebody else is ignored, and aborting stops waiting', async t => {
+    const h = harness(); t.after(h.close);
+    const bridge = await h.load('src/core/cosmosVisionBridge.js');
+    h.state.extensionSettings['st-chatu8'] = chatu8Settings();
+
+    // 先发一条别人的响应（前端卡、它的自动点击都可能同时在等），必须被忽略。
+    // 刻意让它是一条**失败**：不按 id 过滤的实现会当场被它带崩，这样断言才咬得住。
+    h.bus.on('generate-image-request', request => {
+        h.bus.emit('generate-image-response', { id: 'someone-else', success: false, error: '别人的失败' });
+        h.bus.emit('generate-image-response', { id: request.id, success: true, imageData: pngDataUrl, prompt: request.prompt });
+    });
+    const result = await bridge.generateTheaterIllustration({ ...draft(), backend: 'chatu8' });
+    assert.equal(result.images.length, 1, '别人的那条不该认领，自己那条照样收得到');
+
+    // 取消：它没有取消接口，所以只要求「本地不再等」，并把监听退掉。
+    // 先让它别回话（模拟它那边还在算），否则这里根本等不到「挂着监听」的时刻。
+    h.bus.clear('generate-image-request');
+    const controller = new AbortController();
+    const pending = bridge.generateTheaterIllustration({ ...draft(), backend: 'chatu8' }, { signal: controller.signal });
+    await waitFor(() => h.bus.listenerCount('generate-image-response') === 1, 'listener attached while waiting');
+    controller.abort();
+    await assert.rejects(pending, error => error?.name === 'AbortError' || error?.code === 'ABORTED');
+    assert.equal(h.bus.listenerCount('generate-image-response'), 0, '取消后必须退订');
+
+    // 发出去没人接：不能无限等下去，要给一句能照着查的错。
+    const { chatu8Backend } = await h.load('src/core/illustrationBackends/chatu8.js');
+    await assert.rejects(
+        chatu8Backend.generate(draft(), { timeoutMs: 20 }),
+        error => error?.code === 'NOT_READY' && /没有回应/.test(error.message),
+    );
+    assert.equal(h.bus.listenerCount('generate-image-response'), 0, '超时也要退订');
+});
+
+test('chatu8 failures and stray video come back as plugin errors, never as a broken picture', async t => {
+    const h = harness(); t.after(h.close);
+    const bridge = await h.load('src/core/cosmosVisionBridge.js');
+    h.state.extensionSettings['st-chatu8'] = chatu8Settings();
+
+    // 它自己报的失败：把它的原话带上，别吞掉。
+    const seen = fakeChatu8(h, (request, bus) => bus.emit('generate-image-response', {
+        id: request.id, success: false, error: '额度不足', prompt: request.prompt,
+    }));
+    await assert.rejects(bridge.generateTheaterIllustration({ ...draft(), backend: 'chatu8' }),
+        error => error?.code === 'GENERATION_FAILED' && /额度不足/.test(error.message));
+    assert.equal(seen.length, 1);
+
+    // 返回视频（我们从不发 {视频}，出现即说明它那边配置串了）：如实报错，别当图片存下去。
+    h.bus.clear('generate-image-request');
+    fakeChatu8(h, (request, bus) => bus.emit('generate-image-response', {
+        id: request.id, success: true, imageData: pngDataUrl, isVideo: true, prompt: request.prompt,
+    }));
+    await assert.rejects(bridge.generateTheaterIllustration({ ...draft(), backend: 'chatu8' }),
+        error => error?.code === 'GENERATION_FAILED' && /视频/.test(error.message));
 });
 
 /* ---------- 内容区不再有任何配图元素 ---------- */

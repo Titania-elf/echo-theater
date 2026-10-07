@@ -13,7 +13,7 @@ export const ILLUSTRATION_DRAFT_VERSION = 2;
  *
  * 必须与 illustrationBackends/registry.js 的注册表一致，有测试盯着这一条。
  */
-export const ILLUSTRATION_BACKEND_IDS = ["cosmos", "baibai"];
+export const ILLUSTRATION_BACKEND_IDS = ["cosmos", "baibai", "chatu8"];
 const BACKENDS = new Set(ILLUSTRATION_BACKEND_IDS);
 const MIME_EXTENSIONS = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 

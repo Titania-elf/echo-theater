@@ -8,6 +8,7 @@
 // 这样测试夹具能直接加载它。
 
 import { baibaiBackend } from "./baibai.js";
+import { chatu8Backend } from "./chatu8.js";
 import { cosmosBackend } from "./cosmos.js";
 
 /** 一个后端都探测不到时的能力集：界面据此把对不上的控件收起来。 */
@@ -34,7 +35,7 @@ export function statusToErrorCode(status) {
 
 // ⚠ 这里的 id 必须与 illustrationData.js 的 ILLUSTRATION_BACKEND_IDS 完全一致（有测试盯着）：
 //   那边是读路径的校验白名单，漏了一个就会出现「选得出、存得下、读不回」的草稿。
-const ADAPTERS = new Map([cosmosBackend, baibaiBackend].map(adapter => [adapter.id, adapter]));
+const ADAPTERS = new Map([cosmosBackend, baibaiBackend, chatu8Backend].map(adapter => [adapter.id, adapter]));
 
 export function listIllustrationBackends() { return [...ADAPTERS.values()]; }
 export function listIllustrationBackendIds() { return [...ADAPTERS.keys()]; }

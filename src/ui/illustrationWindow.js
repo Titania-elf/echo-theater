@@ -545,9 +545,12 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         role("characters-hint").hidden = !characterHint;
         role("characters-hint").textContent = characterHint;
 
+        // 措辞不能点名后端：柏宝绘的 NAI 与智绘姬的 banana 都会走到这里，
+        // 一个是「用渠道自己的负向词」，另一个是「那条处理器压根不收这个字段」。
+        // 两者的共同事实只有一句：这里填的不会生效。细节在设置窗的问号里按后端分列。
         const negativeHint = caps.negativePrompt
             ? ""
-            : "当前生图后端在 NovelAI 下使用你渠道配置的负向词，这里填写的不会生效。";
+            : "当前生图后端不使用这里填写的负向提示词，它用自己那边配置的。";
         role("negative-hint").hidden = !negativeHint;
         role("negative-hint").textContent = negativeHint;
     }
