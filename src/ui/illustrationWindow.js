@@ -7,8 +7,12 @@ import { getExtData } from "../utils/storage.js";
 import { openIllustrationSettingsWindow } from "./illustrationSettingsWindow.js";
 import { openCharacterProfileWindow } from "./characterProfileWindow.js";
 import { deleteSceneIllustrations, readSceneIllustrations, saveGeneratedIllustrations, selectSceneIllustration, selectedIllustration } from "../core/illustrationStore.js";
+import { getAutoIllustrationJob } from "../core/illustrationAuto.js";
 import { findReferencedIllustrationPaths } from "../core/illustrationReferences.js";
-import { escapeIllustrationHtml as escape, illustrationFigure, normalizeIllustrationDraft, normalizeSavedIllustration } from "../core/illustrationData.js";
+import {
+    escapeIllustrationHtml as escape, formatIllustrationError, illustrationFigure,
+    normalizeIllustrationDraft, normalizeSavedIllustration,
+} from "../core/illustrationData.js";
 import { exportAsHtmlFile } from "../utils/helpers.js";
 import { claimFloatingWindow, releaseFloatingWindow } from "./shared/floatingWindow.js";
 import { createHelpTip } from "./shared/helpPopover.js";
@@ -64,12 +68,6 @@ const PANEL_HELP = [
 // 会话与任务都放在模块级：面板关掉后选景与生图继续跑，重新打开同一场景能接着看进度和结果。
 const sessions = new Map();
 let activeView = null;
-
-function showError(error) {
-    return error?.name === "AbortError" || error?.code === "ABORTED"
-        ? "已取消等待。后端可能仍在计算；需要时可重新发起。"
-        : String(error?.message || "配图操作失败，请重试。");
-}
 
 function sessionFor(sceneId, initialText) {
     if (!sessions.has(sceneId)) {
@@ -127,7 +125,7 @@ function startJob(current, currentTarget, kind, operation) {
         .then(() => operation(job))
         .catch(error => {
             job.error = error;
-            current.notice = showError(error);
+            current.notice = formatIllustrationError(error);
         })
         .finally(() => {
             if (current.job === job) current.job = null;
@@ -142,7 +140,7 @@ function startJob(current, currentTarget, kind, operation) {
 function notifyBackgroundResult(job) {
     if (!window.toastr) return;
     const titles = { prepare: "场景配图：画面已选好，重新打开配图面板即可继续。", generate: "场景配图：图片已生成并保存。" };
-    if (job.error) window.toastr.warning(showError(job.error), "Titania Echo");
+    if (job.error) window.toastr.warning(formatIllustrationError(job.error), "Titania Echo");
     else if (titles[job.kind]) window.toastr.info(titles[job.kind], "Titania Echo");
 }
 
@@ -247,7 +245,10 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         const busy = isBusy();
         const job = session?.job;
         root.querySelectorAll("input, textarea, select").forEach(el => { el.disabled = busy; });
-        for (const name of ["prepare", "alternate", "generate"]) action(name).disabled = busy || !ready || !session?.record || (name !== "prepare" && !session?.draft);
+        // 顶栏那一簇与「分析画面」在没正文时一律不可用：选了也没用，主入口不该给一个
+        // 点下去必然报错的按钮（占位目标的 content 为空，见 createPendingIllustrationTarget）。
+        const hasContent = Boolean(String(target?.content || "").trim());
+        for (const name of ["prepare", "alternate", "generate"]) action(name).disabled = busy || !ready || !session?.record || !hasContent || (name !== "prepare" && !session?.draft);
         action("detect").disabled = busy;
         // 关闭面板不再中断任务，取消只对正在跑的后台任务有意义。
         action("cancel").hidden = !job || job.phase === "saving";
@@ -568,6 +569,86 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         updateControls();
     }
 
+    /**
+     * 把刚读到的记录写进会话并重画（草稿区 + 图库）。
+     * 读失败与「读取期间换了轮次」都由调用方处理，这里只负责应用与渲染。
+     */
+    function applyRecord(current, record) {
+        // 收藏持有自己的采用图快照；浏览收藏不会被同源场景的后续换图改变。
+        if (Object.hasOwn(current, "illustration")) {
+            const adopted = session.adopted === undefined ? current.illustration : session.adopted;
+            const saved = adopted ? normalizeSavedIllustration(adopted) : null;
+            if (saved && !record.images.some(image => image.id === saved.id)) record.images.push(saved);
+            record.selectedId = saved?.id || null;
+        }
+        session.record = record;
+        session.draft ||= selectedIllustration(record)?.draft || null;
+        // 「换个画面」靠内存里的历史排除已选过的画面，刷新页面就没了。用记录里当前采用的那一幅
+        // 补种，否则重开页面后点「换个画面」不带任何排除信息，模型会把同一幅原样再选一次。
+        if (!session.previousScenes.length && session.draft?.scene) {
+            session.previousScenes.push({ ...session.draft.scene, positivePrompt: session.draft.prompts?.positivePrompt || "" });
+        }
+        renderDraft();
+        renderGallery();
+    }
+
+    /**
+     * 重读当前这一轮的配图记录并应用它。
+     *
+     * 只有**接管中的自动任务跑完之后**会走这里：那是自动配好的图能出现在图库里的唯一途径
+     * —— 自动任务不走面板的 startJob，不会主动通知界面。
+     *
+     * ⚠ 切换轮次那条路径刻意不走它（见 loadTarget），而是在原处直接 `await
+     *   readSceneIllustrations`：多包一层 async 就多一个微任务边界，面板「忙碌中但已经
+     *   画好界面」的那一瞬间会被拉长，够外面的人点到一个还没解禁的按钮。
+     */
+    async function reloadRecord() {
+        const current = target;
+        const sequence = selectionSequence;
+        let record = null, failure = null;
+        try {
+            record = await readSceneIllustrations(current.sceneId);
+        } catch (error) {
+            failure = error;
+        }
+        // 读取期间用户可能已经切到别的轮次，那时 session 已经是别人了，这次结果必须作废。
+        if (disposed || !session || sequence !== selectionSequence) return;
+        if (failure) {
+            session.notice = formatIllustrationError(failure);
+            session.record = null;
+            return;
+        }
+        applyRecord(current, record);
+    }
+
+    /**
+     * 这一轮正在自动配图？把它**镜像**成面板自己的任务。
+     *
+     * 为什么必须镜像：自动配图要跑十几秒到一分钟，这段时间图库是空的、按钮是亮的、
+     * 界面上没有任何指示 —— 用户点「分析画面」就是同一轮付两次钱。镜像之后 `isBusy()`
+     * 为真，输入与按钮全禁用、「取消等待」可用（点它 abort 的就是自动任务那个 controller），
+     * 状态行显示它的进度。
+     *
+     * 为什么这样就够：面板的 target 是开窗时的快照，而自动任务只可能属于「刚生成的
+     * 那一轮」—— 那一轮要么就在快照里（于是这里接得上），要么面板根本不显示它。
+     * 所以不需要更复杂的机制。
+     *
+     * ⚠ 结束时不走 notifyBackgroundResult：那会给自动任务多发一条 toastr，而它自己
+     *   已经有且只有一条了。这里只把新图读出来。
+     */
+    function adoptAutoJob(sceneId) {
+        const autoJob = getAutoIllustrationJob(sceneId);
+        if (!autoJob || session?.job === autoJob) return;
+        session.job = autoJob;
+        void autoJob.promise.finally(() => {
+            // ⚠ 只有镜像还在时才能清：这期间用户可能已经自己发起了面板任务，
+            //   那时 session.job 是**别人的** job，清掉会让新任务丢掉「忙」的状态。
+            if (disposed || !session || session.job !== autoJob) return;
+            session.job = null;
+            void reloadRecord().then(() => { if (!disposed) refreshFromState(); });
+        }).catch(() => { });
+    }
+
     async function loadTarget(index) {
         target = targets[index];
         const sequence = ++selectionSequence;
@@ -584,6 +665,9 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         ready = false;
         // 首次进入这个场景时把命中的外观档案填进「人物资料」，之后交给勾选条。
         applyAutoProfiles(session);
+        // 占位目标（这一轮还在生成 / 失败 / 还没有内容）：把原因写进状态行。
+        // 面板照常打开，只是没有素材可用 —— 见 illustrationData.js 的 createPendingIllustrationTarget。
+        if (current.unavailable) session.notice = current.unavailable;
         field("text").value = session.text;
         field("request").value = session.request;
         field("participants").value = session.participants;
@@ -594,29 +678,17 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         try {
             const record = await readSceneIllustrations(current.sceneId);
             if (disposed || sequence !== selectionSequence) return;
-            // 收藏持有自己的采用图快照；浏览收藏不会被同源场景的后续换图改变。
-            if (Object.hasOwn(current, "illustration")) {
-                const adopted = session.adopted === undefined ? current.illustration : session.adopted;
-                const saved = adopted ? normalizeSavedIllustration(adopted) : null;
-                if (saved && !record.images.some(image => image.id === saved.id)) record.images.push(saved);
-                record.selectedId = saved?.id || null;
-            }
-            session.record = record;
-            session.draft ||= selectedIllustration(record)?.draft || null;
-            // 「换个画面」靠内存里的历史排除已选过的画面，刷新页面就没了。用记录里当前采用的那一幅
-            // 补种，否则重开页面后点「换个画面」不带任何排除信息，模型会把同一幅原样再选一次。
-            if (!session.previousScenes.length && session.draft?.scene) {
-                session.previousScenes.push({ ...session.draft.scene, positivePrompt: session.draft.prompts?.positivePrompt || "" });
-            }
-            renderDraft();
-            renderGallery();
+            applyRecord(current, record);
         } catch (error) {
-            session.notice = showError(error);
+            session.notice = formatIllustrationError(error);
             session.record = null;
         } finally {
             if (!disposed && sequence === selectionSequence) {
                 localBusy = false;
                 view.sceneId = current.sceneId;
+                // 先接管（若有）再重画：接管之后这一次渲染才会带上任务的状态行、
+                // 按钮禁用态与「取消等待」。
+                adoptAutoJob(current.sceneId);
                 refreshFromState();
                 void detect();
             }
@@ -628,7 +700,7 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         localBusy = true;
         updateControls();
         try { await operation(); }
-        catch (error) { session.notice = showError(error); }
+        catch (error) { session.notice = formatIllustrationError(error); }
         finally {
             localBusy = false;
             refreshFromState();
@@ -767,7 +839,7 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
                 return;
             }
             let draft;
-            try { draft = readDraft(); } catch (error) { role("status").textContent = showError(error); return; }
+            try { draft = readDraft(); } catch (error) { role("status").textContent = formatIllustrationError(error); return; }
             // 分派依据是草稿自己记的 backend。用户换了后端设置就重新盖章 ——
             // 提示词是后端无关的（只有内容、没有风格），所以换后端重画不必重新选景。
             if (draft.backend !== activeBackendId) draft = normalizeIllustrationDraft({ ...draft, backend: activeBackendId });

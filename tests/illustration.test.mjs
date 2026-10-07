@@ -97,6 +97,9 @@ function harness() {
     const state = {
         settings: seededPresets(), files: new Map(), uploads: 0, saveFails: false,
         generateCalls: [], llmCalls: [],
+        // toastr 桩：记录 [kind, message, title]。插件里所有调用点都写了 `if (window.toastr)`，
+        // 所以以前没有它也能跑；自动配图的「每条 toastr 说明」是它的产品行为，必须能断言。
+        toasts: [],
         // 选景 LLM 的默认实现；单个用例可替换成挂起、报错或返回坏格式。
         llmHandler: () => sceneReply(),
         // 角色身份桩：默认没有角色卡（等同群聊/无卡），用例按需覆盖。
@@ -246,6 +249,14 @@ function harness() {
         if (module.status === 'linked') await module.evaluate();
         return module.namespace;
     }
+    // toastr 桩。插件里所有调用点都写了 `if (window.toastr)`，补上它只是让那些分支真的执行，
+    // 自动配图的「每条 toastr 说明原因」才有东西可断言。
+    window.toastr = {
+        info: (message, title) => state.toasts.push(['info', message, title]),
+        success: (message, title) => state.toasts.push(['success', message, title]),
+        warning: (message, title) => state.toasts.push(['warning', message, title]),
+        error: (message, title) => state.toasts.push(['error', message, title]),
+    };
     // Cosmos dev 分支交付的薄接口：只有 version 与 generateImage，没有能力协商。
     // 返回的是裸 Blob（无类型、无尺寸），由适配层嗅探补齐。
     window.CosmosVision = {
@@ -2314,6 +2325,204 @@ test('all three illustration headers use borderless icon buttons', async t => {
     assert.deepEqual(headerButtons('.t-profile-window').map(button => button.className),
         ['t-icon-btn', 't-icon-btn'], '档案窗顶栏：问号 → 关闭');
     h.document.querySelector('.t-profile-window [data-action="close"]').click();
+});
+
+/* ---------- 自动配图（单次演绎后） ---------- */
+
+/** 自动配图的一次调用的标准入参。用例按需覆盖。 */
+const autoArgs = (overrides = {}) => ({
+    source: 'manual', generationId: 'g-auto', scriptId: 's-auto', scriptName: '自动配图剧本',
+    content: story, ...overrides,
+});
+/** 与 illustrationAuto.js 用同一套输入算出的 sceneId（两边必须对得上，否则图存了但面板看不到）。 */
+const autoSceneId = (data, overrides = {}) => data.createIllustrationTarget(autoArgs(overrides)).sceneId;
+
+test('the auto-illustration gate rejects everything but a fresh manual round', async t => {
+    const h = harness(); t.after(h.close);
+    const auto = await h.load('src/core/illustrationAuto.js');
+    const base = { enabled: true, content: story, hasImages: false, busy: false };
+
+    assert.equal(auto.shouldAutoIllustrate({ ...base, source: 'manual' }).ok, true);
+    // 开关是总闸：默认关，关着时连理由都不给（绝大多数用户走这条路径）。
+    // ⚠ 逐字段断言而不是 deepEqual：夹具跑在 vm 里，跨 realm 的对象原型不同，
+    //   node:assert/strict 的 deepEqual 会判「结构相同但不是同一个引用」。
+    const off = auto.shouldAutoIllustrate({ ...base, enabled: false, source: 'manual' });
+    assert.equal(off.ok, false);
+    assert.equal(off.silent, true);
+    // 续写 / 队列 / 自动演绎（同为 queue）/ 预览都不是「新一轮」。
+    for (const source of ['user_continuation', 'queue', 'preview', '']) {
+        assert.equal(auto.shouldAutoIllustrate({ ...base, source }).ok, false, `${source} 不该自动配图`);
+    }
+    // 正文空、这一轮已经有图 —— 静默跳过，不必打扰。
+    for (const patch of [{ content: '  ' }, { hasImages: true }]) {
+        const skipped = auto.shouldAutoIllustrate({ ...base, source: 'manual', ...patch });
+        assert.equal(skipped.ok, false);
+        assert.equal(skipped.silent, true);
+    }
+    // 上一张还在跑：跳过，但要说一声（否则用户会以为功能坏了）。
+    const busy = auto.shouldAutoIllustrate({ ...base, source: 'manual', busy: true });
+    assert.equal(busy.ok, false);
+    assert.match(busy.reason, /还在生成/);
+
+    // 默认关闭，且刻意没有 ensure：老用户缺这个键时读端一律按未勾处理。
+    const defaults = await h.load('src/config/defaults.js');
+    assert.equal(defaults.defaultSettings.illustration_auto.enabled, false);
+});
+
+test('auto-illustration refuses to spend a cent when the backend or the preset is unusable', async t => {
+    const h = harness(); t.after(h.close);
+    const auto = await h.load('src/core/illustrationAuto.js');
+    h.state.settings.illustration_auto = { enabled: true };
+
+    // 生图后端没装：连选景的 LLM 都不该发出去。
+    delete h.window.CosmosVision;
+    auto.maybeAutoIllustrate(autoArgs());
+    await waitFor(() => h.state.toasts.length > 0, 'backend warning');
+    assert.match(h.state.toasts[0][1], /未检测到 Cosmos Vision/);
+    assert.equal(h.state.llmCalls.length, 0, '后端没就绪时不该发起选景调用');
+
+    // 后端恢复了，但没有选景预设：同样零调用，并说清去处。
+    h.state.toasts.length = 0;
+    h.window.CosmosVision = {
+        version: '1.3.0',
+        generateImage: async options => ({ requestId: options.requestId, imageBlobs: [png], prompts: options.prompts }),
+    };
+    h.state.settings = { illustration_auto: { enabled: true } };
+    auto.maybeAutoIllustrate(autoArgs());
+    await waitFor(() => h.state.toasts.length > 0, 'preset warning');
+    assert.match(h.state.toasts[0][1], /还没有选景预设/);
+    assert.equal(h.state.llmCalls.length, 0, '没有预设时不该发起选景调用');
+});
+
+test('an enabled manual round selects, generates and saves on its own, then says so once', async t => {
+    const h = harness(); t.after(h.close);
+    const auto = await h.load('src/core/illustrationAuto.js');
+    const data = await h.load('src/core/illustrationData.js');
+    h.state.settings.illustration_auto = { enabled: true };
+
+    auto.maybeAutoIllustrate(autoArgs());
+    const sceneId = autoSceneId(data);
+    await waitFor(() => h.state.settings.illustration_index?.[sceneId], 'saved without the panel');
+    assert.equal(h.state.generateCalls.length, 1);
+    assert.equal(h.state.uploads, 1, '图片应已上传到用户文件');
+    // 只有一条提示，且是完成那条 —— 自动配图不弹灯箱、不加回内容区元素。
+    assert.equal(h.state.toasts.length, 1);
+    assert.equal(h.state.toasts[0][0], 'info');
+    assert.match(h.state.toasts[0][1], /自动配图完成/);
+    assert.equal(h.document.querySelector('.t-illustration-lightbox'), null);
+    assert.equal(h.document.querySelector('.t-illustration-badge'), null);
+
+    // 同一轮再触发一次：已经有图，静默跳过，不再花钱。
+    auto.maybeAutoIllustrate(autoArgs());
+    await new Promise(resolve => setTimeout(resolve, 30));
+    assert.equal(h.state.generateCalls.length, 1, '同一轮不该配两次');
+    assert.equal(h.state.toasts.length, 1, '跳过不该有提示');
+});
+
+test('a hanging auto job blocks the next one instead of paying twice', async t => {
+    const h = harness(); t.after(h.close);
+    const auto = await h.load('src/core/illustrationAuto.js');
+    h.state.settings.illustration_auto = { enabled: true };
+    // 第一次选景挂住不返回，模拟「还在通读正文」。
+    h.state.llmHandler = () => new Promise(() => { });
+
+    auto.maybeAutoIllustrate(autoArgs({ generationId: 'g-auto-1' }));
+    await waitFor(() => h.state.llmCalls.length === 1, 'first job started');
+    // 第二个是不同的 sceneId（连点两次单次演绎），按场景去重拦不住它 —— 只有单槽位能拦。
+    auto.maybeAutoIllustrate(autoArgs({ generationId: 'g-auto-2' }));
+    await waitFor(() => h.state.toasts.length > 0, 'skip notice');
+    assert.match(h.state.toasts[0][1], /还在生成/);
+    assert.equal(h.state.llmCalls.length, 1, '第二个任务不该再发一次选景调用');
+});
+
+test('auto-illustration carries the matched appearance profile, like the manual path does', async t => {
+    const h = harness(); t.after(h.close);
+    const auto = await h.load('src/core/illustrationAuto.js');
+    h.state.settings.illustration_auto = { enabled: true };
+    h.state.settings.character_profiles = {
+        version: 2,
+        entries: [{ id: 'p1', name: '阿离', kind: 'character', keywords: ['阿离'], content: '银发红瞳', cardKey: 'card:ali', enabled: true }],
+    };
+    h.state.cardKey = 'card:ali';
+
+    auto.maybeAutoIllustrate(autoArgs({ generationId: 'g-auto-profile' }));
+    await waitFor(() => h.state.llmCalls.length > 0, 'selection sent');
+    const userContent = h.state.llmCalls[0].messages.find(message => message.role === 'user').content;
+    assert.match(userContent, /【阿离】/, '命中的外观档案应自动带进人物资料');
+    assert.match(userContent, /银发红瞳/);
+});
+
+test('a running auto job is mirrored into the panel, and can be cancelled there', async t => {
+    const h = harness(); t.after(h.close);
+    const auto = await h.load('src/core/illustrationAuto.js');
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+    h.state.settings.illustration_auto = { enabled: true };
+    h.state.llmHandler = () => new Promise(() => { });   // 挂在选景上
+
+    auto.maybeAutoIllustrate(autoArgs({ generationId: 'g-auto-panel' }));
+    await waitFor(() => h.state.llmCalls.length === 1, 'auto job started');
+
+    // 面板打开的是同一轮 —— 它必须接管这个任务，否则用户看着空图库点「分析画面」就是付两次钱。
+    const target = data.createIllustrationTarget(autoArgs({ generationId: 'g-auto-panel' }));
+    ui.openIllustrationWindow(target);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    await waitFor(() => !action('cancel').hidden, 'auto job mirrored in');
+    assert.match(h.document.querySelector('[data-role="status"]').textContent, /自动配图/);
+    assert.equal(action('generate').disabled, true, '自动任务跑着时不该还能手动发起');
+    assert.equal(action('prepare').disabled, true);
+
+    action('cancel').click();
+    await waitFor(() => action('cancel').hidden, 'cancelled');
+    assert.equal(h.state.toasts.some(([kind, message]) => kind === 'info' && /自动配图已取消/.test(message)), true);
+    // 取消后面板回到空闲：能重新点「分析画面」、输入框解禁。
+    //（「生成图片」这会儿仍然禁用是对的 —— 这一轮还没有草稿。）
+    assert.equal(action('prepare').disabled, false, '取消后应当能手动发起');
+    assert.equal(h.document.querySelector('[data-field="text"]').disabled, false);
+    action('close').click();
+});
+
+test('the auto-illustration hook sits on the success path of a real generation', async () => {
+    // 夹具不加载 api.js（它拽着整条生成链路），所以这里用源码断言钉住接入点：
+    // 必须在 pushSceneToHistory 成功之后，才能保证只认「成功的新一轮」。
+    const api = stripped('src/core/api.js');
+    const hook = api.indexOf('maybeAutoIllustrate(');
+    assert.ok(hook > 0, 'api.js 的成功路径必须调用自动配图');
+    assert.ok(hook > api.indexOf('pushSceneToHistory(finalOutput'), '接入点应在 pushSceneToHistory 之后');
+    assert.ok(api.includes('import { maybeAutoIllustrate }'), '缺少 import');
+});
+
+test('the panel still opens when this round has nothing to illustrate yet', async t => {
+    const h = harness(); t.after(h.close);
+    const ui = await h.load('src/ui/illustrationWindow.js');
+    const data = await h.load('src/core/illustrationData.js');
+
+    // 占位目标：稳定、与真实轮次不同 id、带着「为什么没得配」。
+    const pending = data.createPendingIllustrationTarget({ scriptId: 's1', scriptName: '雨夜', reason: '这一轮还在生成中。' });
+    const again = data.createPendingIllustrationTarget({ scriptId: 's1', scriptName: '雨夜', reason: '这一轮还在生成中。' });
+    assert.equal(pending.sceneId, again.sceneId, '同一个剧本的占位目标应当稳定');
+    assert.equal(pending.content, '');
+    assert.equal(pending.unavailable, '这一轮还在生成中。');
+    // 与真实轮次绝不会撞：真实轮次的散列输入里正文一定非空。
+    assert.notEqual(pending.sceneId, data.createIllustrationTarget({ content: story, generationId: 'g-x', scriptId: 's1' }).sceneId);
+    // 主界面取目标时必须走这条兜底（mainWindow.js 不在夹具里，只能源码断言）。
+    const mainWindow = stripped('src/ui/mainWindow.js');
+    assert.ok(/createPendingIllustrationTarget/.test(mainWindow), '取不到可用正文时要给占位目标，而不是抛错');
+
+    // 面板照开：状态行说明原因，三个主操作都不可用，顶栏按钮照常。
+    ui.openIllustrationWindow(pending);
+    const action = name => h.document.querySelector(`[data-action="${name}"]`);
+    const status = () => h.document.querySelector('[data-role="status"]').textContent;
+    await waitFor(() => h.document.querySelector('.t-illustration-window'), 'panel opened');
+    assert.equal(h.document.querySelector('[data-field="text"]').value, '', '没有正文可带');
+    assert.match(status(), /这一轮还在生成中/);
+    for (const name of ['prepare', 'alternate', 'generate']) {
+        assert.equal(action(name).disabled, true, `${name} 在没正文时不该可点`);
+    }
+    assert.equal(h.document.querySelector('.t-illustration-candidate'), null, '图库应当是空的');
+    assert.equal(action('settings').disabled, false, '顶栏入口不受影响');
+    assert.equal(action('profiles').disabled, false);
+    action('close').click();
 });
 
 /* ---------- 内容区不再有任何配图元素 ---------- */

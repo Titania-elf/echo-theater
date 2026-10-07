@@ -87,6 +87,12 @@ export const defaultSettings = {
         version: 2,
         entries: []
     },
+    // 自动配图（场景配图）：开启后每次「单次演绎 / 重演」成功会自动跑一次选景 + 生图。
+    // ⚠ 刻意**不**写 ensure：默认关的布尔值不需要迁移，读端一律 `?.enabled === true`，
+    //   老用户没有这个键时勾选框自然是未勾。给一个布尔值加版本化迁移是过度设计。
+    illustration_auto: {
+        enabled: false
+    },
     history_extraction: {
         whitelist: "",
         blacklist: "",

@@ -16,6 +16,7 @@ import {
     listPresets, managedEntryDefault, readChatCompletionPreset, resolveActivePreset,
     serializeIllustrationPreset, validatePresetForSelection,
 } from "../core/illustrationPresets.js";
+import { ILLUSTRATION_AUTO_KEY } from "../core/illustrationAuto.js";
 import { claimFloatingWindow, isFloatingWindowDisplaced, releaseFloatingWindow } from "./shared/floatingWindow.js";
 import { createHelpTip } from "./shared/helpPopover.js";
 
@@ -55,6 +56,17 @@ function helpSections() {
             heading: "素材占位符",
             lines: ["素材靠占位符进入消息，只有这四个："],
             terms: PLACEHOLDER_NAMES.map(name => ({ term: `{{${name}}}`, text: PLACEHOLDER_HELP[name] || "" })),
+        },
+        {
+            heading: "自动配图",
+            lines: [
+                "默认关闭。打开后，每次「单次演绎」或「重演」完成会自动跑一次选景 + 生图并存下来。",
+                "续写、队列生成、ST 事件触发的自动演绎都不触发 —— 那几种是无人看着的连续生成，跟着配图会一口气烧掉多张图的额度。",
+                "成本：每一轮自动配图都是一次真实的选景调用 + 一次真实的生图（选景失败重试时最多两次），与手动点「分析画面」「生成图片」完全一样。",
+                "跑完只发一条提示，不弹灯箱、不打断阅读；图片在配图面板的图库里。",
+                "自动任务跑着的时候打开配图面板，会看到它的进度，也能在那里取消等待。",
+                "上一张还在配的时候不会开始下一张：那一轮会跳过并提示一句。",
+            ],
         },
         {
             heading: "选景预设",
@@ -101,6 +113,9 @@ export function openIllustrationSettingsWindow(options = {}) {
                     <select class="t-input" data-role="backend-select" style="width:auto; min-width:180px;"></select>
                 </div>
                 <p class="t-illustration-hint" data-role="backend-validation"></p>
+                <div style="font-weight:bold; color:var(--t-color-accent); margin:14px 0 8px;">自动配图</div>
+                <label class="t-illustration-field"><input type="checkbox" data-role="auto-enabled"> 单次演绎完成后自动配图（默认关闭）</label>
+                <p class="t-illustration-hint" data-role="auto-hint"></p>
                 <div style="font-weight:bold; color:var(--t-color-accent); margin:14px 0 8px;">选景预设</div>
                 <div class="t-profile-actions">
                     <select class="t-input" data-role="preset-select" style="width:auto; min-width:180px;"></select>
@@ -470,9 +485,38 @@ export function openIllustrationSettingsWindow(options = {}) {
         actions.append(note, button("新增条目", "fa-solid fa-plus", "在当前预设末尾新增一条条目", () => insertEntry(preset.entries.length)));
     }
 
+    /**
+     * 自动配图那一行。
+     *
+     * 勾选框回填走 `=== true`：老用户没有这个键时就是未勾，与默认值一致，
+     * 所以不需要迁移（见 src/config/defaults.js 的 illustration_auto）。
+     *
+     * 提示只在该出现的时候出现：开关开着却配不了，说清是后端还是预设的问题 ——
+     * 否则用户只会看到「演绎完了但什么都没发生」。
+     */
+    function renderAuto() {
+        const data = getExtData();
+        const enabled = data?.[ILLUSTRATION_AUTO_KEY]?.enabled === true;
+        role("auto-enabled").checked = enabled;
+
+        const node = role("auto-hint");
+        if (!enabled) { node.textContent = ""; node.style.color = ""; return; }
+        // 与自动配图实际的前置条件同一套判断（illustrationAuto.js 也是先查后端再查预设）。
+        const backendId = resolveActiveBackendId(data);
+        const backend = detectIllustrationBackend(backendId);
+        const preset = activePreset();
+        const check = preset ? validatePresetForSelection(preset) : { ok: false, reason: "还没有选景预设。" };
+        const blocked = !backend.ready ? backend.reason : (!check.ok ? check.reason : "");
+        node.textContent = blocked
+            ? `现在打开也不会配：${blocked}`
+            : "已开启：每次「单次演绎」或「重演」完成后会自动选景并出一张图，续写与队列生成不触发。每轮都会真实调用一次选景与生图。";
+        node.style.color = blocked ? "var(--t-color-danger, #e06c75)" : "";
+    }
+
     function render() {
         if (disposed) return;
         renderBackend();
+        renderAuto();
         renderToolbar();
         renderValidation();
         // 没有生效的预设就一律走引导；有预设但 active 悬空的情况 ensure 已经回落过了。
@@ -496,6 +540,14 @@ export function openIllustrationSettingsWindow(options = {}) {
         const data = getExtData();
         ensureIllustrationBackend(data);
         data[ILLUSTRATION_BACKEND_KEY].active_id = event.target.value;
+        commit();
+    });
+
+    // 自动配图开关：同样即时落盘（它决定下一轮演绎跑不跑，不该等到别处去读）。
+    role("auto-enabled").addEventListener("change", event => {
+        const data = getExtData();
+        data[ILLUSTRATION_AUTO_KEY] ||= {};
+        data[ILLUSTRATION_AUTO_KEY].enabled = event.target.checked === true;
         commit();
     });
 

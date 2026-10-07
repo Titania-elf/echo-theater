@@ -61,6 +61,8 @@ import { sendChatCompletion } from "./relayClient.js";
 import { recordScriptGenerated } from "./scriptData.js";
 import { getPromptScheme, buildPromptMessageDetails, DEFAULT_CONTENT_PROMPT, DEFAULT_VISUAL_PROMPT } from "./promptManager.js";
 import { scheduleContinuationPersistence } from "./continuationStore.js";
+// 自动配图（可选，默认关）：只在「单次演绎 / 重演」成功之后触发，见 illustrationAuto.js。
+import { maybeAutoIllustrate } from "./illustrationAuto.js";
 
 // 导入 ST 的 ChatCompletionService 和配置（仅用于特殊场景）
 import { ChatCompletionService } from "../../../custom-request.js";
@@ -2319,6 +2321,24 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
                 generationId
             });
         }
+
+        // 自动配图（开关在场景配图设置里，默认关）：这一轮已经记好了，问一句要不要配图。
+        // ⚠ 三个承重细节，挪动这一行之前先读 illustrationAuto.js 的文件头：
+        //   1) 必须留在这条成功路径上 —— 中止/部分（catch 里 status:"aborted"|"partial"）
+        //      与完全失败都在别处，天然不会触发；
+        //   2) content 必须是 finalOutput 原文。sceneId = hash([generationId, scriptId, content])，
+        //      而配图面板读的是 pushSceneToHistory 存下的同一份；传别的形状会让两边算出的
+        //      sceneId 对不上，表现为「图存下来了但面板里看不到」；
+        //   3) 不能挪进下面的渲染分支 —— 用户在翻历史时生成的也必须配图，
+        //      那条路径根本不走 renderGeneratedContent。
+        maybeAutoIllustrate({
+            source: generationSource,
+            generationId,
+            scriptId: script.id,
+            scriptName: script.name,
+            content: finalOutput,
+        });
+
         recordScriptGenerated(script.id, {
             isQueue: silent === true && GlobalState.queueState.isRunning,
             mode: GlobalState.generationMode,

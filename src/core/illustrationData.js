@@ -21,6 +21,51 @@ export function illustrationError(message, code = "INVALID_RESPONSE") {
     return Object.assign(new Error(message), { code });
 }
 
+/**
+ * 把配图链路的异常转成可以给用户看的一句话。
+ *
+ * 取消不是失败：后端可能还在算，所以措辞如实说明「已取消等待」而不是「失败」。
+ * 面板的状态行与自动配图的 toastr 共用这一份，两处说法必须一致 ——
+ * 用户看到的同一件事，不该因为从哪条路径触发而换个说法。
+ */
+export function formatIllustrationError(error) {
+    return error?.name === "AbortError" || error?.code === "ABORTED" || error?.code === "aborted"
+        ? "已取消等待。后端可能仍在计算；需要时可重新发起。"
+        : String(error?.message || "配图操作失败，请重试。");
+}
+
+/**
+ * 「暂时没得配」时的占位目标：正文还没生成完 / 生成失败 / 全新还没演绎过。
+ *
+ * 为什么需要它：配图入口是**随时可点**的（内容区那个按钮删掉之后，工具栏图标是唯一入口），
+ * 点它却因为「这一轮还不能配图」而弹一条警告、什么都不打开，是最难理解的一种拒绝 ——
+ * 用户看着界面上明明有内容（正在流式输出的正文），却被告知「请先选择一段已完成的内容」。
+ * 现在改成：面板照常打开，只是没有任何素材可用，并说明为什么。
+ *
+ * ⚠ 它的 sceneId 与任何真实轮次都不会撞：真实轮次的散列输入里 content 一定非空，
+ *   而这里的 content 恒为空。所以它读到的记录必然是空的 —— 这正是想要的。
+ *   也**不要**把它当成「可以稍后补上内容」的骨架：正文一变 sceneId 就变，
+ *   那一轮要用 createIllustrationTarget 重新造一个目标。
+ *
+ * @param {object} options
+ * @param {string} [options.scriptId] 用于让同一个剧本的占位目标稳定（重复开窗不会换 id）
+ * @param {string} [options.scriptName] 面板顶部的「配图内容」下拉会显示它
+ * @param {string} [options.reason] 为什么现在没得配，面板会原样显示在状态行上
+ */
+export function createPendingIllustrationTarget({ scriptId = "", scriptName = "场景", reason = "" } = {}) {
+    const id = String(scriptId || "");
+    return Object.freeze({
+        sceneId: `scene-pending-${illustrationHash(JSON.stringify([id]))}`,
+        content: "",
+        scriptId: id,
+        scriptName: String(scriptName || "场景"),
+        generationId: "",
+        cardKey: "",
+        // 面板据此说明原因并收起「分析画面」这些按钮（见 illustrationWindow.js）。
+        unavailable: String(reason || "这一轮还没有可配图的正文。"),
+    });
+}
+
 export function newIllustrationId() {
     return globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }

@@ -63,17 +63,43 @@ import {
     HISTORY_AI_ONLY_HINT
 } from "./mainWindow/topBar.js";
 import { toggleUITheme } from "./theme.js";
-import { createIllustrationTarget } from "../core/illustrationData.js";
+import { createIllustrationTarget, createPendingIllustrationTarget } from "../core/illustrationData.js";
 import { openIllustrationWindow } from "./illustrationWindow.js";
 
+/**
+ * 没得配时说清楚是哪一种没得配，不要一律「请先选择一段已完成的内容」。
+ *
+ * 只列真的会走到这儿的三种（也就是 createIllustrationTarget 会拒绝的那三种）：
+ * 生成中、生成失败、还没有正文。**中断与部分完成不在其中** —— 它们带着非空正文
+ * 与 generationId，本来就能配图（那是「看得见内容就该能配」的一半意义）。
+ */
+function describeUnavailableResult(result) {
+    if (result?.status === "running") return "这一轮还在生成中。等它写完之后再点一次配图。";
+    if (result?.status === "failed") return "这一轮生成失败了，没有可配图的正文。";
+    return "还没有可以配图的正文。先演绎一次，再来配图。";
+}
+
+/**
+ * 配图入口的目标。**刻意永不抛** —— 工具栏那个图标是随时可点的，
+ * 点下去必须打开面板（哪怕是空态），见 illustrationData.js 的 createPendingIllustrationTarget。
+ */
 function getMainIllustrationTarget() {
     const result = getCurrentGenerationResult();
     const view = continuationHistoryView;
     const fallback = view
         ? `${view.chatId}:${view.scriptId}:${view.branchKey}:${view.roundKey}`
         : `legacy:${getCurrentContinuationSource().chatId}:${result?.scriptId || ""}`;
-    // 这里是当前聊天，取当前角色卡身份是正确的；配图面板读 target.cardKey，不自己现读。
-    return createIllustrationTarget({ ...result, cardKey: getCharacterCardKey() }, fallback);
+    try {
+        // 这里是当前聊天，取当前角色卡身份是正确的；配图面板读 target.cardKey，不自己现读。
+        return createIllustrationTarget({ ...result, cardKey: getCharacterCardKey() }, fallback);
+    } catch {
+        // 生成中 / 失败 / 还没有任何内容：给一个占位目标，让面板照常打开并说明原因。
+        return createPendingIllustrationTarget({
+            scriptId: result?.scriptId || "",
+            scriptName: result?.scriptName || "场景",
+            reason: describeUnavailableResult(result),
+        });
+    }
 }
 
 const SORT_MODE_LABELS = {
