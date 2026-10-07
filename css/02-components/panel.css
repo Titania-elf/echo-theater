@@ -34,7 +34,17 @@
 .t-panel-header-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    /* 按钮组内的间距（6px）。比通用列表间距紧一档：这里是一排无边框图标，
+       没有边框帮忙分隔，间距大了会散。 */
+    gap: var(--t-gap-inline);
+}
+
+/* 这一簇一律是无边框图标钮（档案 / 设置 / 问号 / 关闭）。
+   ⚠ 字形大小跟着上下文走，与换组件之前一致 —— 组件默认的 1.2em 会把这几个图标
+     放大一档，而那不在本次改动范围内。icon-button.css 明确把 font-size 留给
+     消费方决定，要调只改这一个变量。 */
+.t-panel-header-actions .t-icon-btn {
+    --t-icon-btn-font-size: var(--t-text-body);
 }
 
 .t-panel-footer {

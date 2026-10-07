@@ -57,6 +57,13 @@ async function waitFor(check, label = 'condition') {
     assert.fail(`Timed out: ${label}`);
 }
 
+/** 去掉注释的源码。断言「某个东西不再被引用」时必须用它 —— 注释里提一嘴不算引用。 */
+function stripped(file) {
+    return readFileSync(path.join(project, file), 'utf8')
+        .replace(/\/\/[^\n]*/g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
 /**
  * jsdom 既没有布局（getBoundingClientRect 全返回 0），也没有可靠的 DragEvent / DataTransfer，
  * 两个都手搓。凡几何相关的用例必须先给目标卡片桩 rect —— 网格落点算得准不准，
@@ -79,8 +86,8 @@ function fireDrag(window, element, type, { x = 0, y = 0, id = '' } = {}) {
 
 function harness() {
     // 结构与真实主界面一致：#t-overlay > #t-main-view > .t-content-wrapper > #t-output-content。
-    // 配图按钮挂在 .t-content-wrapper（定位祖先），灯箱挂在 #t-overlay，
-    // 所以这两层都得在，否则测不到真实路径。
+    // 配图面板开在 body 上、灯箱开在面板自己的 root 里，所以正文那几层仍要照着搭，
+    // 才能断言「正文里不出现任何配图元素」。
     const dom = new JSDOM(
         '<!doctype html><body><div id="t-overlay"><div id="t-main-view">'
         + '<div class="t-content-wrapper"><div id="t-output-content"></div></div>'
@@ -573,15 +580,12 @@ test('the panel says so when the model picks the same scene again', async t => {
     action('close').click();
 });
 
-test('panel can retry saving without paying for another image; new displayed scene never receives old result', async t => {
+test('panel can retry saving without paying for another image', async t => {
     const h = harness(); t.after(h.close);
     const ui = await h.load('src/ui/illustrationWindow.js');
     const data = await h.load('src/core/illustrationData.js');
     const first = data.createIllustrationTarget({ content: story, generationId: 'first' });
     const second = data.createIllustrationTarget({ content: '另一幕', generationId: 'second' });
-    let displayed = first;
-    const unbind = ui.bindMainIllustrations(() => displayed);
-    t.after(unbind);
     ui.openIllustrationWindow(first);
     const action = name => h.document.querySelector(`[data-action="${name}"]`);
     await waitFor(() => !action('prepare').disabled);
@@ -590,14 +594,12 @@ test('panel can retry saving without paying for another image; new displayed sce
     h.state.saveFails = true;
     action('generate').click();
     await waitFor(() => !action('save').hidden && !action('save').disabled);
-    displayed = second;
-    h.window.dispatchEvent(new h.window.CustomEvent('titania:scene-rendered'));
-    await new Promise(resolve => setTimeout(resolve, 100));
     h.state.saveFails = false;
     action('save').click();
     await waitFor(() => action('save').hidden);
     assert.equal(h.state.generateCalls.length, 1);
     assert.ok(h.state.settings.illustration_index[first.sceneId]);
+    // 任务从发起那一刻就绑死在第一轮上，别的轮次不会捡到这次结果。
     assert.equal(h.state.settings.illustration_index[second.sceneId], undefined);
     assert.equal(h.document.querySelector('#t-output-content [data-titania-illustration]'), null);
     action('close').click();
@@ -662,62 +664,68 @@ test('reopening the panel reattaches to the running task and can still cancel it
     action('close').click();
 });
 
-test('the adopted image lives in a badge and a lightbox, never in the prose', async t => {
+test('gallery thumbnails open the lightbox inside the panel, and the prose stays clean', async t => {
     const h = harness(); t.after(h.close);
     const ui = await h.load('src/ui/illustrationWindow.js');
     const data = await h.load('src/core/illustrationData.js');
     const store = await h.load('src/core/illustrationStore.js');
     const content = `<p>清晨，雨还没停。</p><p>${story}</p><p>她合上门。</p>`;
-    const target = data.createIllustrationTarget({ content, generationId: 'g-badge', scriptId: 'script-badge' });
+    const target = data.createIllustrationTarget({ content, generationId: 'g-lightbox', scriptId: 'script-lightbox' });
     const record = await store.saveGeneratedIllustration(target.sceneId, { draft: draft(), image: { blob: png, width: 1, height: 1 } });
     const picture = store.selectedIllustration(record);
+    // 正文照旧渲染进 shadow DOM —— 配图元素一个都不该出现在里面。
     const container = h.document.getElementById('t-output-content');
     const host = h.document.createElement('div');
     host.className = 't-shadow-host';
     host.attachShadow({ mode: 'open' }).innerHTML = `<div class="t-shadow-content">${content}</div>`;
     container.append(host);
 
-    const unbind = ui.bindMainIllustrations(() => target);
-    t.after(unbind);
-    const badge = () => h.document.querySelector('.t-illustration-badge');
+    ui.openIllustrationWindow(target);
+    const thumb = () => h.document.querySelector('.t-illustration-candidate-open');
     const lightbox = () => h.document.querySelector('.t-illustration-lightbox');
+    await waitFor(() => thumb(), 'gallery rendered');
 
-    await waitFor(() => badge() && !badge().hidden, 'badge shown');
-    assert.equal(badge().dataset.state, 'image');
-    // 按钮必须挂在定位祖先里，否则 absolute 定位会跑到别处。
-    assert.equal(badge().parentElement.classList.contains('t-content-wrapper'), true);
-
-    // 本次改动的全部意义：正文里不再有任何配图元素。
     assert.equal(host.shadowRoot.querySelector('.t-shadow-content [data-titania-illustration]'), null);
     assert.equal(container.querySelector('[data-titania-illustration]'), null);
+    // 缩略图不再是开新标签页的链接：点它开的是灯箱。
+    assert.equal(thumb().tagName, 'BUTTON');
+    assert.equal(h.document.querySelector('.t-illustration-candidate a[target="_blank"]'), null);
 
-    badge().click();
+    thumb().click();
     await waitFor(() => lightbox(), 'lightbox opened');
     assert.equal(lightbox().querySelector('.t-illustration-lightbox-image').getAttribute('src'), picture.filePath);
     assert.equal(lightbox().querySelector('.t-illustration-lightbox-caption').textContent, draft().scene.summary);
+    // 灯箱必须长在面板自己的 root 里：挂到外面（#t-overlay 有 isolation）会藏在面板后面。
+    assert.equal(lightbox().parentElement.classList.contains('t-illustration-window'), true);
 
-    // 三路关闭各走一遍。
+    // 三路关闭各走一遍。灯箱不碰图库，缩略图节点每次都还在。
     h.document.dispatchEvent(new h.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     assert.equal(lightbox(), null, 'Esc 应关掉灯箱');
-    badge().click();
+    thumb().click();
     await waitFor(() => lightbox(), 'lightbox reopened');
     lightbox().querySelector('.t-illustration-lightbox-backdrop').click();
     assert.equal(lightbox(), null, '点遮罩应关掉灯箱');
-    badge().click();
+    thumb().click();
     await waitFor(() => lightbox(), 'lightbox reopened again');
     lightbox().querySelector('.t-illustration-lightbox-close').click();
     assert.equal(lightbox(), null, '关闭按钮应关掉灯箱');
 
-    // 流式重绘重建整块正文后：正文里仍然没有图，按钮还在且不重复。
-    container.innerHTML = '';
-    const nextHost = h.document.createElement('div');
-    nextHost.className = 't-shadow-host';
-    nextHost.attachShadow({ mode: 'open' }).innerHTML = `<div class="t-shadow-content">${content}</div>`;
-    container.append(nextHost);
-    h.window.dispatchEvent(new h.window.CustomEvent('titania:scene-rendered'));
-    await new Promise(resolve => setTimeout(resolve, 150));   // 越过 80ms 防抖
-    assert.equal(h.document.querySelectorAll('.t-illustration-badge').length, 1, '重绘后按钮不能重复');
-    assert.equal(nextHost.shadowRoot.querySelector('.t-shadow-content [data-titania-illustration]'), null);
+    // 灯箱的 Esc 监听挂在 document 上，不随面板 root 一起消失 ——
+    // 面板关闭必须显式收掉它，否则它会替别人吞掉 Esc（禅模式就是这么丢的）。
+    const seen = [];
+    h.document.addEventListener('keydown', () => seen.push('escape'));
+    const fireEscape = () => h.document.body.dispatchEvent(new h.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    thumb().click();
+    await waitFor(() => lightbox(), 'lightbox opened before closing the panel');
+    fireEscape();
+    assert.deepEqual(seen, [], '灯箱开着时 Esc 应被它拦下');
+    thumb().click();
+    await waitFor(() => lightbox(), 'lightbox reopened to outlive the panel');
+    h.document.querySelector('.t-illustration-window [data-action="close"]').click();
+    assert.equal(h.document.querySelector('.t-illustration-window'), null, '面板已关');
+    assert.equal(lightbox(), null, '面板关闭要连带关掉灯箱');
+    fireEscape();
+    assert.deepEqual(seen, ['escape'], '面板关掉后 Esc 不该再被吞');
 });
 
 test('HTML exports embed image bytes and reject missing files instead of silently breaking images', async t => {
@@ -956,9 +964,6 @@ test('scene selection sees only caller-supplied material, never the current chat
 test('illustration modules never reach into global generation state or the live chat', async () => {
     // 配图任务用自己的 AbortController：碰 GlobalState 或 cancelGeneration 会让
     // 取消配图误伤正在跑的主聊天生成，反之亦然。
-    const stripped = file => readFileSync(path.join(project, file), 'utf8')
-        .replace(/\/\/[^\n]*/g, '')
-        .replace(/\/\*[\s\S]*?\*\//g, '');
     for (const file of [
         'src/core/illustrationScene.js', 'src/core/cosmosVisionBridge.js', 'src/ui/illustrationWindow.js',
         'src/core/illustrationBackends/registry.js', 'src/core/illustrationBackends/cosmos.js',
@@ -2280,157 +2285,52 @@ test('the settings and profile windows carry the same help affordance', async t 
     h.document.querySelector('.t-profile-window [data-action="close"]').click();
 });
 
-/* ---------- 主界面配图按钮与灯箱 ---------- */
+/* ---------- 顶栏按钮的样式归属 ---------- */
 
-test('badge mode derivation prefers the image over a stale job error', async t => {
+test('all three illustration headers use borderless icon buttons', async t => {
+    // 顶栏那一簇（档案 / 设置 / 问号 / 关闭）一律 .t-icon-btn：无边框方形热区，
+    // 间距由父级 gap 负责。谁要是在顶栏里写回 .t-btn，会立刻多出四个带框方块 ——
+    // jsdom 看不见样式，只能这样钉住类名。
     const h = harness(); t.after(h.close);
-    const badge = await h.load('src/ui/illustrationBadge.js');
-    assert.equal(badge.deriveBadgeMode({}), 'hidden');
-    assert.equal(badge.deriveBadgeMode({ activity: { phase: 'generating' } }), 'busy');
-    assert.equal(badge.deriveBadgeMode({ activity: { phase: 'selecting' } }), 'busy');
-    assert.equal(badge.deriveBadgeMode({ activity: { phase: 'saving' } }), 'busy');
-    assert.equal(badge.deriveBadgeMode({ image: { id: 'a' } }), 'image');
-    assert.equal(badge.deriveBadgeMode({ error: '读不出来了' }), 'error');
-    assert.equal(badge.deriveBadgeMode({ activity: { phase: 'error', message: '炸了' } }), 'error');
-    // 有图时让图胜出：否则一次后台任务失败会让「看图」这个入口永久消失。
-    assert.equal(
-        badge.deriveBadgeMode({ image: { id: 'a' }, activity: { phase: 'error' }, error: '炸了' }),
-        'image',
-    );
-    // 任务在跑时图先让位，转圈比看图重要。
-    assert.equal(badge.deriveBadgeMode({ image: { id: 'a' }, activity: { phase: 'generating' } }), 'busy');
-});
-
-test('the badge stays hidden with nothing to show, and follows background job progress', async t => {
-    const h = harness(); t.after(h.close);
-    const ui = await h.load('src/ui/illustrationWindow.js');
     const data = await h.load('src/core/illustrationData.js');
-    const activity = await h.load('src/core/illustrationActivity.js');
-    const target = data.createIllustrationTarget({ content: story, generationId: 'g-badge-state' });
-    const unbind = ui.bindMainIllustrations(() => target);
-    t.after(unbind);
-    const el = () => h.document.querySelector('.t-illustration-badge');
-    await waitFor(() => el(), 'badge created');
+    const panel = await h.load('src/ui/illustrationWindow.js');
+    const settings = await h.load('src/ui/illustrationSettingsWindow.js');
+    const profiles = await h.load('src/ui/characterProfileWindow.js');
+    // 问号在 .t-help 里包了一层，仍是这一簇的按钮，按文档顺序一起数进来。
+    const headerButtons = selector => [...h.document.querySelectorAll(`${selector} .t-panel-header-actions button`)];
 
-    // 没图、没任务、没错误 —— 什么都不显示，不占界面。
-    assert.equal(el().hidden, true);
-    assert.equal(el().dataset.state, 'hidden');
-
-    // 关窗后台跑任务时，按钮是用户唯一能看到进度的地方。
-    activity.setIllustrationActivity(target.sceneId, 'generating', '正在生成图片… 42%');
-    await waitFor(() => !el().hidden && el().dataset.state === 'busy', 'busy state');
-    assert.match(el().getAttribute('aria-label'), /正在生成图片… 42%/);
-    assert.match(el().querySelector('i').className, /fa-spinner/);
-
-    activity.clearIllustrationActivity(target.sceneId);
-    await waitFor(() => el().hidden, 'hidden again');
-
-    // 进行态是**纯图标钮**：文案只走 title / aria-label，没有可见文字节点。
-    assert.equal(el().textContent.trim(), '');
-});
-
-test('badge click opens the panel while busy, and the lightbox when there is an image', async t => {
-    const h = harness(); t.after(h.close);
-    const ui = await h.load('src/ui/illustrationWindow.js');
-    const data = await h.load('src/core/illustrationData.js');
-    const store = await h.load('src/core/illustrationStore.js');
-    const activity = await h.load('src/core/illustrationActivity.js');
-    const target = data.createIllustrationTarget({ content: story, generationId: 'g-badge-click' });
-    const unbind = ui.bindMainIllustrations(() => target);
-    t.after(unbind);
-    const el = () => h.document.querySelector('.t-illustration-badge');
-    await waitFor(() => el(), 'badge created');
-
-    // 忙时点它去面板：那里能看进度、能取消。
-    activity.setIllustrationActivity(target.sceneId, 'selecting', '正在通读正文、选择画面…');
-    await waitFor(() => el().dataset.state === 'busy', 'busy');
-    el().click();
-    await waitFor(() => h.document.querySelector('.t-illustration-window'), 'panel opened');
+    panel.openIllustrationWindow(data.createIllustrationTarget({ content: story, generationId: 'g-header' }));
+    assert.deepEqual(headerButtons('.t-illustration-window').map(button => button.className),
+        ['t-icon-btn', 't-icon-btn', 't-icon-btn', 't-icon-btn'],
+        '配图面板顶栏：档案 → 设置 → 问号 → 关闭');
     h.document.querySelector('.t-illustration-window [data-action="close"]').click();
-    activity.clearIllustrationActivity(target.sceneId);
 
-    // 有图时点它开灯箱。
-    await store.saveGeneratedIllustration(target.sceneId, { draft: draft(), image: { blob: png, width: 1, height: 1 } });
-    await waitFor(() => el().dataset.state === 'image', 'image state');
-    el().click();
-    await waitFor(() => h.document.querySelector('.t-illustration-lightbox'), 'lightbox opened');
+    settings.openIllustrationSettingsWindow();
+    assert.deepEqual(headerButtons('.t-illustration-settings-window').map(button => button.className),
+        ['t-icon-btn', 't-icon-btn'], '设置窗顶栏：问号 → 关闭');
+    h.document.querySelector('.t-illustration-settings-window [data-action="close"]').click();
+
+    profiles.openCharacterProfileWindow();
+    assert.deepEqual(headerButtons('.t-profile-window').map(button => button.className),
+        ['t-icon-btn', 't-icon-btn'], '档案窗顶栏：问号 → 关闭');
+    h.document.querySelector('.t-profile-window [data-action="close"]').click();
 });
 
-test('a failed record read turns the badge into an error that opens the panel', async t => {
-    const h = harness(); t.after(h.close);
-    const ui = await h.load('src/ui/illustrationWindow.js');
-    const data = await h.load('src/core/illustrationData.js');
-    const target = data.createIllustrationTarget({ content: story, generationId: 'g-badge-error' });
-    // 索引指向一个不存在的记录文件 —— 读取会抛，落到错误态。
-    h.state.settings.illustration_index = { [target.sceneId]: { file: '/user/files/titania-scene-missing.json', rev: 1 } };
-    const unbind = ui.bindMainIllustrations(() => target);
-    t.after(unbind);
-    const el = () => h.document.querySelector('.t-illustration-badge');
-    await waitFor(() => el() && el().dataset.state === 'error', 'error state');
-    assert.match(el().getAttribute('title'), /配图读取失败/);
-    assert.match(el().querySelector('i').className, /fa-triangle-exclamation/);
-
-    // 错误文案本身就写着「可打开场景配图面板重试」，点它就照做。
-    el().click();
-    await waitFor(() => h.document.querySelector('.t-illustration-window'), 'panel opened');
-});
-
-test('panel jobs publish their phase to the badge channel and clear it when done', async t => {
-    const h = harness(); t.after(h.close);
-    const ui = await h.load('src/ui/illustrationWindow.js');
-    const data = await h.load('src/core/illustrationData.js');
-    const activity = await h.load('src/core/illustrationActivity.js');
-    const target = data.createIllustrationTarget({ content: story, generationId: 'g-badge-wire' });
-
-    const phases = [];
-    t.after(activity.subscribeIllustrationActivity(event => phases.push(event.detail.phase)));
-
-    ui.openIllustrationWindow(target);
-    const action = name => h.document.querySelector(`[data-action="${name}"]`);
-    await waitFor(() => !action('prepare').disabled);
-    action('prepare').click();
-    await waitFor(() => activity.getIllustrationActivity(target.sceneId)?.phase === 'selecting', 'selecting published');
-    await waitFor(() => !action('generate').disabled);
-    action('generate').click();
-    await waitFor(() => h.state.settings.illustration_index?.[target.sceneId], 'saved');
-    // 存完必须清掉，否则按钮会一直转。
-    await waitFor(() => activity.getIllustrationActivity(target.sceneId) === null, 'cleared');
-    assert.deepEqual(phases.filter(p => p !== 'idle'), ['selecting', 'generating', 'saving']);
-    action('close').click();
-});
-
-test('the entrance animation plays once per image, not on every update', async t => {
-    const h = harness(); t.after(h.close);
-    const badgeModule = await h.load('src/ui/illustrationBadge.js');
-    const badge = badgeModule.createIllustrationBadge({ container: h.document.querySelector('.t-content-wrapper') });
-    t.after(() => badge.destroy());
-    const image = { id: 'img-1', filePath: '/user/files/titania-illustration-a.png', width: 1, height: 1, draft: draft() };
-
-    badge.update({ image });
-    assert.equal(badge.element.classList.contains('is-entering'), true, '第一次出现应播入场');
-    // jsdom 不触发 animationend，靠 400ms 兜底摘类。
-    await new Promise(resolve => setTimeout(resolve, 450));
-    assert.equal(badge.element.classList.contains('is-entering'), false);
-
-    // 同一张图再更新不该重播 —— 流式期间按钮会藏了又现。
-    badge.update({ image });
-    assert.equal(badge.element.classList.contains('is-entering'), false, '同一张图不该重播');
-    badge.update({ image: null, activity: { phase: 'generating' } });
-    badge.update({ image });
-    assert.equal(badge.element.classList.contains('is-entering'), false, '藏了再现也不该重播');
-
-    // 换成另一张才重播。
-    badge.update({ image: { ...image, id: 'img-2' } });
-    assert.equal(badge.element.classList.contains('is-entering'), true, '换图应重播');
-
-    // 进行态与错误态从不播动画。
-    badge.destroy();
-    const other = badgeModule.createIllustrationBadge({ container: h.document.querySelector('.t-content-wrapper') });
-    t.after(() => other.destroy());
-    other.update({ activity: { phase: 'generating', message: '正在生成图片…' } });
-    assert.equal(other.element.classList.contains('is-entering'), false);
-    other.update({ error: '读不出来了' });
-    assert.equal(other.element.classList.contains('is-entering'), false);
+/* ---------- 内容区不再有任何配图元素 ---------- */
+test('the content area is never handed an illustration element to begin with', async () => {
+    // 内容区那个按钮连同它的进行态通道一起删了：面板关着时后台任务只剩
+    // 完成/失败那一条 toastr（见 illustrationWindow.js 的 notifyBackgroundResult）。
+    // 这条测试防止有人「顺手」把按钮加回来。
+    const windowSource = stripped('src/ui/illustrationWindow.js');
+    assert.equal(/illustrationBadge|createIllustrationBadge/.test(windowSource), false,
+        'illustrationWindow.js 不应再引用配图按钮');
+    assert.equal(/bindMainIllustrations/.test(windowSource), false,
+        '主界面那套绑定已删除，别留下一个没导出的死函数');
+    assert.equal(/t-illustration-badge/.test(readFileSync(path.join(project, 'css/04-features/illustration.css'), 'utf8')), false,
+        'CSS 里不该还留着配图按钮的样式');
+    // 正文里唯一还产出配图标记的地方是 illustrationFigure（收藏阅读页与导出 HTML）。
+    const data = stripped('src/core/illustrationData.js');
+    assert.ok(/export function illustrationFigure/.test(data), 'illustrationFigure 是收藏与导出的唯一产出点，不能删');
 });
 
 test('favorites and HTML export still render the figure into the prose', async t => {

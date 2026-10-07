@@ -65,7 +65,10 @@ export function createHelpTip({ label = "使用说明", title = "使用说明", 
 
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "t-btn";
+    // 无边框图标钮：问号与它旁边的档案 / 设置 / 关闭是一个家族（见 panel.css
+    // 的 .t-panel-header-actions）。注意它同时是气泡的定位参照 —— .t-help 是
+    // position: relative 的，换类不影响这一点。
+    button.className = "t-icon-btn";
     button.title = label;
     button.setAttribute("aria-label", label);
     button.setAttribute("aria-expanded", "false");

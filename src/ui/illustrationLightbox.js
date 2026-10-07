@@ -1,12 +1,20 @@
-// 配图灯箱：把当前采用图放大看，正文完全不参与。
+// 配图灯箱：把一张配图放大看，正文与面板都不参与。
 //
-// ⚠ 它**不占浮层名额**（不走 floatingWindow.js 的 claim）—— 所以配图面板开着时也能
-//   看大图，而不是把面板顶掉。灯箱与面板是可以并存的：点「换一张」开面板，
-//   采用别的图之后灯箱会跟着更新。
+// 唯一的入口是**配图面板图库里的那张缩略图**（以前它是个 target="_blank" 的链接，
+// 点开是浏览器的新标签页）。正文里从来没有配图元素，收藏阅读页与导出的 HTML
+// 仍然是正文内嵌图（见 illustrationData.js 的 illustrationFigure）。
 //
-// ⚠ 挂载点由调用方给，必须是不被 `.t-content-wrapper` 裁剪的容器（用 #t-overlay）。
-//   那个 wrapper 带 transform: translateZ(0) + overflow: hidden，既是 position:fixed
-//   后代的包含块、又会把它裁掉 —— 灯箱挂进去会整个看不见。
+// ⚠ 挂载点是**配图面板自己的 root**（.t-root.t-illustration-window），不是 #t-overlay：
+//   面板 root 带 z-index: 20060，是一个自成一层的作用域；#t-overlay 带
+//   isolation: isolate + z-index: 20000，挂进去的灯箱会被关在 20000 那一层，
+//   而面板在 20060 —— 灯箱会整块藏在面板后面。
+//   挂在面板 root 里则是同一层叠上下文的后代，必然盖在面板内容之上，
+//   而且随面板一起从 DOM 上消失。
+//
+// ⚠ 它**不占浮层名额**（不走 floatingWindow.js 的 claim）：灯箱不是窗口，
+//   它只是在面板里铺满一层。代价是面板关闭时不会连带关掉它 ——
+//   面板必须在自己的 close() 里显式调它的 close()，否则挂在 document 上的
+//   Esc 监听会留下来，变成一个关不掉的幽灵（面板 root 已经从 DOM 上摘走了）。
 
 const CLOSE_ICON = "fa-solid fa-xmark";
 
@@ -14,18 +22,19 @@ const CLOSE_ICON = "fa-solid fa-xmark";
  * 打开灯箱。
  *
  * @param {object} options
- * @param {object|null} [options.image] 已保存的配图记录（normalizeSavedIllustration 的形状）
+ * @param {object} options.image 要看的配图（已保存记录，normalizeSavedIllustration 的形状）。
+ *   **必填**：调用方先在图库里找到那一张再开灯箱，找不到就别开 —— 一个没有图的大黑幕
+ *   比什么都不做更让人困惑。
  * @param {HTMLElement} [options.container] 挂载点，缺省 document.body
- * @param {() => void} [options.onSwap] 点「换一张」时回调（调用方去开配图面板）
  * @param {() => void} [options.onClose] 关闭后回调
- * @returns {{element:HTMLElement, update:Function, close:Function}}
+ * @returns {{element:HTMLElement, close:Function}}
  */
-export function openIllustrationLightbox({ image = null, container = null, onSwap = null, onClose = null } = {}) {
+export function openIllustrationLightbox({ image, container = null, onClose = null } = {}) {
     const root = document.createElement("div");
     root.className = "t-root t-illustration-lightbox";
     root.setAttribute("role", "dialog");
     root.setAttribute("aria-modal", "true");
-    root.setAttribute("aria-label", "场景配图");
+    root.setAttribute("aria-label", "配图大图");
     root.tabIndex = -1;
 
     const backdrop = document.createElement("div");
@@ -43,14 +52,6 @@ export function openIllustrationLightbox({ image = null, container = null, onSwa
     caption.className = "t-illustration-lightbox-caption";
     caption.hidden = true;
 
-    const actions = document.createElement("div");
-    actions.className = "t-illustration-lightbox-actions";
-    const swap = document.createElement("button");
-    swap.type = "button";
-    swap.className = "t-btn";
-    swap.textContent = "换一张";
-    actions.append(swap);
-
     const closeButton = document.createElement("button");
     closeButton.type = "button";
     closeButton.className = "t-illustration-lightbox-close";
@@ -60,11 +61,10 @@ export function openIllustrationLightbox({ image = null, container = null, onSwa
     closeIcon.className = CLOSE_ICON;
     closeButton.append(closeIcon);
 
-    root.append(backdrop, stage, caption, actions, closeButton);
+    root.append(backdrop, stage, caption, closeButton);
     (container || document.body).append(root);
 
     let disposed = false;
-    let renderedId = "";
     // 先记下焦点，再把自己的关闭按钮聚焦 —— 顺序反了就还原不回去。
     const restoreFocus = document.activeElement;
 
@@ -87,29 +87,19 @@ export function openIllustrationLightbox({ image = null, container = null, onSwa
         onClose?.();
     }
 
-    /** 换图时原地更新；传 null 等价于关闭。同一张图重复调用直接跳过。 */
-    function update(next) {
-        if (disposed) return;
-        if (!next) { close(); return; }
-        if (next.id && next.id === renderedId) return;
-        renderedId = next.id || "";
-        img.src = next.filePath || "";
-        // 给了原始尺寸就带上，让浏览器在图片加载前就能算好布局、不跳动。
-        if (next.width) img.width = next.width;
-        if (next.height) img.height = next.height;
-        const summary = next.draft?.scene?.summary || "";
-        img.alt = summary || "配图";
-        caption.textContent = summary;
-        caption.hidden = !summary;
-    }
+    img.src = image.filePath || "";
+    // 给了原始尺寸就带上，让浏览器在图片加载前就能算好布局、不跳动。
+    if (image.width) img.width = image.width;
+    if (image.height) img.height = image.height;
+    const summary = image.draft?.scene?.summary || "";
+    img.alt = summary || "配图";
+    caption.textContent = summary;
+    caption.hidden = !summary;
 
     backdrop.addEventListener("click", close);
     closeButton.addEventListener("click", close);
-    swap.addEventListener("click", () => onSwap?.());
     document.addEventListener("keydown", onKeydown, true);
-
-    update(image);
     closeButton.focus?.();
 
-    return { element: root, update, close };
+    return { element: root, close };
 }

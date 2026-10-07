@@ -131,7 +131,7 @@ export function openCharacterProfileWindow(options = {}) {
             <div class="t-panel-header">
                 <strong id="t-profile-title">人物外观档案</strong>
                 <div class="t-panel-header-actions" data-role="header-actions">
-                    <button type="button" class="t-btn" data-action="close" title="关闭档案管理" aria-label="关闭档案管理"><i class="fa-solid fa-xmark"></i></button>
+                    <button type="button" class="t-icon-btn" data-action="close" title="关闭档案管理" aria-label="关闭档案管理"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             </div>
             <div class="t-profile-body">

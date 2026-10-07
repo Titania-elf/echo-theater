@@ -92,7 +92,7 @@ export function openIllustrationSettingsWindow(options = {}) {
             <div class="t-panel-header">
                 <strong id="t-illustration-settings-title">场景配图设置</strong>
                 <div class="t-panel-header-actions" data-role="header-actions">
-                    <button type="button" class="t-btn" data-action="close" title="关闭设置" aria-label="关闭设置"><i class="fa-solid fa-xmark"></i></button>
+                    <button type="button" class="t-icon-btn" data-action="close" title="关闭设置" aria-label="关闭设置"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             </div>
             <div class="t-profile-body">

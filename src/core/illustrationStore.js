@@ -57,7 +57,6 @@ function mutateScene(sceneId, mutate) {
         if (oldPointer?.file && oldPointer.file !== file) {
             try { await deleteUserFile(oldPointer.file, { label: "场景记录" }); } catch { /* 见上 */ }
         }
-        window.dispatchEvent(new CustomEvent("titania:illustrations-changed", { detail: { sceneId } }));
         return record;
     });
     writes.set(sceneId, operation);

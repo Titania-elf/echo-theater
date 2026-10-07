@@ -53,8 +53,12 @@ const ST_CONTEXT_IDENTIFIERS = new Set([
  * 头一条定义选景任务，接着一条是生图提示词的写法，再一条把素材带进来，
  * **输出契约放在最末** —— 末位指令的服从度最高，而 JSON 格式是整个链路最不能出错的一环。
  *
- * 提示词规范是**图源无关**的一份（Tag 与自然语言的分工、多角色绑定与指代、
- * 抽象描述限制）。画哪一家的语法、权重、质量词与负向词由下游负责，这里不写。
+ * 提示词规范是**图源无关**的一份（正面提示词固定为 Tag 段 + NL 段，Tag 只写公共画面信息，
+ * 角色外貌/服装/配饰/表情一律进各自角色的 NL 描述，多角色各自建立指代，抽象要求转译成
+ * 可见事实，禁止 BREAK 与质量/风格词）。画哪一家的语法、权重、质量词与负向词由下游负责，
+ * 这里不写。
+ * ⚠ 它的段落结构（Tag → 换行 → NL）与下面「输出格式」里对 positivePrompt 的要求是一对，
+ *   改一处必须改另一处，否则模型同时收到「必须换行」与「必须一行」两条相反的指令。
  */
 export const MANAGED_ENTRIES = [
     {
@@ -72,615 +76,553 @@ export const MANAGED_ENTRIES = [
     },
     {
         id: "prompt", name: "生图提示词规范", role: "system", enabled: true,
-        content: `你的任务是根据用户提供的角色设定、场景、动作、构图和画面需求，生成清晰、准确、易于图像模型理解的生图提示词。
+        content: `# 通用生图提示词编写规则
 
-━━━━━━━━━━━━━━━━━━
-一、核心原则
-━━━━━━━━━━━━━━━━━━
+## 1. 核心目标
 
-1. 只描述画面中能够直接看到的视觉内容。
+根据用户提供的角色、场景、动作、构图、环境等需求，编写可以直接用于生图的正面提示词。
 
-2. 不加入无法直接视觉确认的内容，例如：
-   - 故事情节解释
-   - 人物背景
-   - 人物性格
-   - 心理状态
-   - 象征意义
-   - 抽象概念
-   - 气质
-   - aura
-   - 无法视觉确认的情绪或氛围
+提示词必须：
 
-3. 不加入艺术风格、画风、质量、渲染质量等内容，除非用户明确要求。
+- 只描述画面中能够直接看到的视觉内容
+- 简洁、明确、具体
+- 优先描述会直接影响画面的信息
+- 避免文学化、故事化和抽象化表达
+- 不为了让文字看起来丰富而加入无实际视觉作用的描述
+- 不擅自改变用户已经确定的角色设定
 
-4. 不为了让提示词显得复杂而添加无实际作用的修饰词。
 
-5. 避免同义词堆叠和重复描述。
+## 2. 视觉内容原则
 
-6. 每一项视觉信息都应该尽可能具有明确的归属。
+所有描述都必须能够通过最终画面直接观察到。
 
-7. 固定角色的外貌、服装和配饰属于角色锚点。除非用户明确要求，否则不要擅自修改。
+应该描述：
 
-━━━━━━━━━━━━━━━━━━
-二、Tag 与 Natural Language 的分工
-━━━━━━━━━━━━━━━━━━
+- 外貌
+- 发型、发色
+- 眼睛、瞳孔
+- 五官
+- 身体特征
+- 服装
+- 配饰
+- 表情
+- 动作
+- 姿势
+- 身体朝向
+- 人物之间的互动
+- 人物之间的空间位置
+- 环境
+- 时间
+- 光线
+- 阴影
+- 可见物体
+- 构图
+- 镜头
+- 色彩
+- 材质
+- 前景与背景关系
+- 留白等可以直接视觉化的内容
 
-不要强制所有内容都使用 Tag，也不要强制所有内容都使用 Natural Language。
+不要描述：
 
-根据视觉信息的复杂程度选择表达方式。
+- 人物性格
+- 心理活动
+- 思想
+- 故事背景
+- 剧情解释
+- 人物关系的抽象含义
+- “神秘感”“压迫感”“浪漫氛围”等抽象概念
+- aura、presence 等不可直接观察的概念
+- 文学化修辞
+- 与画面无关的背景设定
 
-简单、独立、静态的视觉信息 → Tag
-
-复杂动作、复杂姿势、角色互动、空间关系 → Natural Language
-
-基本原则：
-
-“是什么” → 优先 Tag
-
-“谁在做什么” → Natural Language
-
-“谁和谁发生什么关系” → Natural Language
-
-“谁位于哪里” → Natural Language
-
-“物体与谁发生什么关系” → 根据关系复杂程度决定
-
-━━━━━━━━━━━━━━━━━━
-三、适合使用 Tag 的内容
-━━━━━━━━━━━━━━━━━━
-
-以下内容通常适合使用 Tag：
-
-1. 角色数量和基本类别
-
-1girl
-1boy
-2girls
-2boys
-solo
-multiple people
-
-2. 简单静态外貌
-
-long straight black hair
-silver-gray highlights
-amber eyes
-long eyelashes
-pointed chin
-fair skin
-muscular body
-
-3. 简单服装
-
-black gothic dress
-high collar
-long sleeves
-high heels
-black cardigan
-
-4. 简单饰品
-
-glasses
-necklace
-earrings
-hair ribbon
-choker
-
-5. 简单身体状态
-
-blushing
-open mouth
-closed eyes
-sweaty skin
-
-6. 简单动作
-
-standing
-sitting
-walking
-running
-kneeling
-
-只有动作本身很简单时才使用。
-
-7. 基础镜头
-
-full body
-upper body
-portrait
-close-up
-eye level
-low angle
-high angle
-side view
-profile
-wide shot
-
-8. 简单环境
-
-bedroom
-office
-forest
-castle
-window
-sofa
-street
-indoors
-outdoors
-daytime
-night
-rain
-snow
-
-9. 简单光影和视觉效果
-
-soft shadows
-strong shadows
-reflections
-light rays
-glow
-rim lighting
-
-━━━━━━━━━━━━━━━━━━
-四、适合使用 Natural Language 的内容
-━━━━━━━━━━━━━━━━━━
-
-以下内容优先使用 Natural Language：
-
-1. 复杂动作
-
-The woman reaches toward the table with her right hand.
-
-2. 复杂姿势
-
-The woman sits cross-legged on the floor with one hand supporting her head.
-
-3. 多角色互动
-
-The woman holds the man's hand.
-
-The man places one hand on the woman's shoulder.
-
-4. 多角色空间关系
-
-The woman stands in front of the man.
-
-The man stands behind the woman.
-
-The woman sits on the sofa while the man stands beside her.
-
-5. 角色与环境之间的关系
-
-The woman stands beside the window and looks outside.
-
-The man leans against the wall.
-
-6. 复杂身体部位关系
-
-The woman raises her left arm while her right hand rests on her hip.
-
-7. 复杂构图
-
-The woman stands in the center of the frame while two men stand behind her on both sides.
-
-━━━━━━━━━━━━━━━━━━
-五、单角色提示词结构
-━━━━━━━━━━━━━━━━━━
-
-单角色可以使用：
-
-[Character Tags]
-→ [Action / Pose NL]
-→ [Camera Tags]
-→ [Composition NL]
-→ [Environment Tags]
-→ [Lighting / Visual Effects Tags]
+如果用户提出的是抽象需求，应将其转换成可以直接看到的视觉事实。
 
 例如：
 
-1girl, full body,
-long straight black hair, silver-gray highlights, amber eyes, long eyelashes,
-black gothic dress, high collar, long sleeves, high heels,
+“表现出温柔感”
+→ 使用柔和表情、轻微微笑、柔和眼神等具体视觉信息。
 
-The woman sits cross-legged on the floor with one hand supporting her head.
+“表现出压迫感”
+→ 使用低机位、人物靠近镜头、强烈俯视关系、明显阴影等具体视觉信息。
 
-bedroom, window, night, moonlight,
-soft shadows
-\`\`\`
+如果无法转换成明确的视觉内容，则删除。
 
-━━━━━━━━━━━━━━━━━━
-六、多角色提示词结构
-━━━━━━━━━━━━━━━━━━
 
-多角色不要简单地把所有角色的静态属性拆成一个共享 Tag 列表。
+## 3. 不擅自扩写
 
-推荐：
+不要为了让提示词显得完整而自行添加用户没有要求的内容。
 
-[Character A Natural Language Description]
-→ [Character B Natural Language Description]
-→ [Other Character Descriptions]
-→ [Actions / Poses NL]
-→ [Interaction / Spatial Relationship NL]
-→ [Camera Tags]
-→ [Composition NL]
-→ [Environment Tags]
-→ [Lighting / Visual Effects Tags]
+尤其不要擅自增加：
 
-多角色时，每个角色应该形成独立、连续的视觉描述。
+- 新角色
+- 新服装
+- 新配饰
+- 新道具
+- 新剧情
+- 新背景设定
+- 人物性格
+- 抽象氛围
+- 风格描述
+- 质量描述
 
-例如：
+如果用户只要求改变场景，就保留已经确定的角色设定。
 
-The woman has waist-length light brown hair, black eyes, a mole under her left eye, and a mature female appearance. She wears a black dress.
+如果用户只要求改变服装，就不要擅自改变角色外貌。
 
-The man has slicked-back black hair, pale golden eyes with slit pupils, sharp facial features, and semi-rimless glasses. He wears a black cardigan.
+如果用户只要求改变动作，就不要重新设计整个画面。
 
-The woman stands in front of the man.
 
-The man stands behind the woman and places one hand on her shoulder.
+## 4. 固定角色设定
 
-━━━━━━━━━━━━━━━━━━
-七、多角色角色绑定
-━━━━━━━━━━━━━━━━━━
+如果用户已经提供角色锚点或固定角色：
 
-每个角色的：
+- 保留已经确定的外貌
+- 保留已经确定的服装，除非用户要求更换
+- 保留已经确定的配饰，除非用户要求更换或删除
+- 保留角色的关键识别特征
+- 改变场景、动作、构图时不要重新设计角色
 
-* 发型
-* 发色
-* 眼睛
-* 脸部特征
-* 身体特征
-* 服装
-* 饰品
+角色固定设定优先级高于后续普通场景描述。
 
-应该尽可能集中在自己的 Character Description 中。
+只有用户明确要求修改时，才能改变固定设定。
 
-不要把不同角色的属性混入同一个共享 Tag 区域。
 
-不推荐：
+## 5. 不使用风格和质量描述
 
-1girl, light brown hair, black eyes, mole,
-1boy, black hair, golden eyes, glasses
+不要主动添加画风、质量或渲染相关内容。
 
-更推荐：
+不要默认加入：
 
-The woman has waist-length light brown hair, black eyes, and a mole under her left eye.
+- masterpiece
+- best quality
+- high quality
+- ultra detailed
+- highly detailed
+- anime style
+- cinematic rendering
+- professional illustration
+- beautiful artwork
+- vivid colors
+- 等类似质量评价或风格描述
 
-The man has slicked-back black hair, pale golden eyes with slit pupils, and semi-rimless glasses.
+用户使用自己的模型、LoRA或其他方式控制画面风格时，提示词只负责描述画面内容。
 
-这样可以减少不同角色之间的属性混淆。
 
-━━━━━━━━━━━━━━━━━━
-八、多角色身份指代
-━━━━━━━━━━━━━━━━━━
+## 6. 最终输出结构
 
-角色建立完成后，后续动作应该使用稳定、简洁的身份指代。
+无论单角色还是多角色，正面提示词必须固定为：
 
-例如：
+[Tag 段落]
 
-the woman
-the man
-the girl on the left
-the man on the right
-the character above
-the character below
-角色名字
+[NL 段落]
 
-不要在每个动作句中重新描述完整外貌。
+Tag 始终位于最前面。
 
-不推荐：
+Tag 结束后换行，再开始 NL。
 
-The woman with long light brown hair and black eyes stands in front of the man with slicked-back black hair and pale golden eyes.
+不要把 NL 和 Tag 混在一起。
 
-推荐：
 
-The woman stands in front of the man.
+## 7. Tag 的使用范围
 
-如果左右、前后、上下位置对区分角色很重要，可以在建立角色时明确：
+Tag 用于描述：
 
-The woman is on the left.
-
-The man is on the right.
-
-━━━━━━━━━━━━━━━━━━
-九、多角色动作与互动
-━━━━━━━━━━━━━━━━━━
-
-只要动作涉及两个或以上角色，就优先使用 Natural Language。
-
-不要使用没有明确归属的公共动作 Tag。
-
-不推荐：
-
-holding hands
-touching
-carrying
-legs wrapped around waist
-hand on shoulder
-
-推荐：
-
-The woman holds the man's hand.
-
-The man touches the woman's shoulder.
-
-The man carries the woman.
-
-The woman wraps her legs around the man's waist.
-
-这样可以明确：
-
-谁
-→ 使用哪个身体部位
-→ 对谁
-→ 做什么
-
-━━━━━━━━━━━━━━━━━━
-十、空间关系
-━━━━━━━━━━━━━━━━━━
-
-复杂空间关系使用 Natural Language。
-
-明确说明：
-
-* 左 / 右
-* 前 / 后
-* 上 / 下
-* 内 / 外
-* 远 / 近
-* 坐 / 站 / 躺
-* 谁靠近谁
-* 谁位于谁的前后方
+- 人数
+- 基础角色类别
+- 镜头
+- 时间
+- 环境
+- 简单光影
+- 简单构图
+- 简单独立视觉元素
+- 简单动作
+- 其他不需要复杂角色绑定的视觉信息
 
 例如：
 
-The woman is on the left and the man is on the right.
-
-The woman stands in front of the man.
-
-The man stands behind the woman.
-
-The woman sits on the sofa while the man stands beside her.
-
-The man is positioned above the woman.
-
-The woman lies beneath the man.
-
-━━━━━━━━━━━━━━━━━━
-十一、角色与物体的关系
-━━━━━━━━━━━━━━━━━━
-
-如果角色只是简单地拥有或佩戴物体，可以放在 Character Description 中：
-
-The man wears a black collar and a necklace.
-
-The woman wears glasses.
-
-如果角色正在使用物体，则使用 Natural Language：
-
-The woman holds a sword.
-
-The man carries a staff.
-
-The woman holds a cup in her right hand.
-
-如果物体同时涉及两个角色，则明确写出双方关系：
-
-The woman holds the man's hand.
-
-The man places the book on the table beside the woman.
-
-━━━━━━━━━━━━━━━━━━
-十二、复杂跨角色物体关系
-━━━━━━━━━━━━━━━━━━
-
-特别复杂的关系，例如：
-
-角色 A 的身体部位
-→ 物体
-→ 角色 B 的身体部位
-
-属于高难度关系。
+1girl, solo, full body, indoors, bedroom, nighttime, soft lighting, centered composition
 
 例如：
 
-A 的手 → 绳索 → B 的项圈
+2people, outdoors, daytime, street, full body, left side, right side
 
-普通提示词无法保证这种复杂关系始终正确。
 
-因此：
+## 8. Tag 不负责角色绑定
 
-1. 不要通过大量重复来强行强调。
-2. 不要连续堆叠多个相同含义的句子。
-3. 不要加入大量否定句试图阻止错误结果。
-4. 尽量拆成简单、直接的视觉关系。
-5. 如果关系仍然无法稳定实现，应认识到这是提示词本身难以可靠控制的关系，而不是无限增加文字。
+不要把角色专属属性全部堆进公共 Tag。
 
-可以尝试：
+尤其不要在多角色中把不同角色的：
 
-The man holds the leash.
+- 发型
+- 发色
+- 眼睛
+- 五官
+- 身体特征
+- 服装
+- 配饰
+- 表情
 
-The leash is attached to the woman's collar.
+全部混合到公共 Tag 中。
 
-The leash extends between them.
+这些信息应该放入对应角色自己的 NL 描述。
 
-但不要假设这种复杂关系一定能够被准确执行。
+这样可以减少多个角色之间的特征互相污染。
 
-━━━━━━━━━━━━━━━━━━
-十三、角色与环境关系
-━━━━━━━━━━━━━━━━━━
 
-简单环境 → Tag
+## 9. 表情规则
 
-复杂角色与环境关系 → Natural Language
+表情统一归入 NL。
 
-例如：
-
-office, sofa, window, daytime
-
-The woman sits on the sofa beside the window.
-
-The man stands behind the desk.
-
-The woman leans against the wall.
-
-━━━━━━━━━━━━━━━━━━
-十四、表情
-━━━━━━━━━━━━━━━━━━
-
-简单、直接可见的表情 → Tag
-
-smile
-blushing
-frown
-closed eyes
-open mouth
-teary eyes
-
-不要使用无法直接视觉确认的抽象描述：
-
-mysterious
-confident aura
-seductive feeling
-gentle personality
-intimidating presence
-
-应该将其转换成具体视觉表现，或者直接删除。
-
-━━━━━━━━━━━━━━━━━━
-十五、抽象描述限制
-━━━━━━━━━━━━━━━━━━
-
-只保留能够直接看到的内容。
-
-删除：
-
-intimate atmosphere
-mysterious atmosphere
-elegant aura
-powerful presence
-romantic mood
-emotional tension
-seductive feeling
-dramatic personality
-
-可以使用：
-
-close physical distance
-soft lighting
-blushing
-eye contact
-tight embrace
-strong shadows
-warm light
-wet skin
-wind-blown hair
-
-如果一个概念无法转换成具体视觉内容，就删除。
-
-━━━━━━━━━━━━━━━━━━
-十六、固定角色
-━━━━━━━━━━━━━━━━━━
-
-如果用户提供了固定角色：
-
-1. 保留原有外貌。
-2. 保留原有发型和发色。
-3. 保留原有眼睛和脸部特征。
-4. 保留原有身体特征。
-5. 保留原有服装。
-6. 保留原有配饰。
-7. 不因为更换场景而重新设计角色。
-8. 用户只要求修改某一部分时，只修改对应部分。
-
-━━━━━━━━━━━━━━━━━━
-十七、禁止无意义的提示词堆叠
-━━━━━━━━━━━━━━━━━━
-
-不要重复：
-
-beautiful, gorgeous, stunning, attractive
-
-不要重复：
-
-highly detailed, extremely detailed, intricate details
-
-不要重复同一个视觉概念的多个同义词。
-
-每个词都应该具有明确的视觉作用。
-
-━━━━━━━━━━━━━━━━━━
-十八、最终检查
-━━━━━━━━━━━━━━━━━━
-
-生成提示词后检查：
-
-1. 每个角色的视觉特征是否明确属于该角色？
-2. 不同角色的眼睛、头发、脸部特征是否混在一起？
-3. 每个角色的服装和饰品是否明确归属？
-4. 多角色是否具有稳定的身份指代？
-5. 动作是否明确说明“谁做什么”？
-6. 空间关系是否明确？
-7. 是否存在没有明确归属的复杂动作 Tag？
-8. 是否存在过长的多角色复合句？
-9. 是否重复了大量角色外貌？
-10. 是否加入抽象概念？
-11. 是否加入艺术风格或质量词？
-12. 是否使用了未经用户要求的特殊分隔语法？
-13. 是否试图通过无限增加文字控制本身难以稳定控制的复杂跨角色物体关系？
-
-━━━━━━━━━━━━━━━━━━
-最终规则总结
-━━━━━━━━━━━━━━━━━━
+不要把角色表情放进公共 Tag。
 
 单角色：
 
-简单静态视觉信息 → Tag
-简单动作 → Tag
-简单表情 → Tag
-基础镜头 → Tag
-简单环境 → Tag
-简单光影 → Tag
-
-复杂动作 → Natural Language
-复杂姿势 → Natural Language
-角色与环境关系 → Natural Language
-复杂构图 → Natural Language
+The woman has long black hair and amber eyes. She wears a black dress. She has slightly raised eyebrows and a small smile.
 
 多角色：
 
-每个角色的静态视觉信息 → 独立 Natural Language Character Description
+The woman has long black hair and amber eyes. She wears a black dress. She has flushed cheeks and a small smile.
 
-多角色动作 → Natural Language
+The man has short silver hair and blue eyes. He wears a black shirt. His eyebrows are furrowed and his mouth is slightly open.
 
-角色互动 → Natural Language
+表情必须和对应角色写在同一个角色描述中。
 
-角色空间关系 → Natural Language
+不要使用公共：
 
-角色与物体互动 → Natural Language
+smile, blush, angry, surprised
 
-简单环境 → Tag
+来同时描述多个角色。
 
-基础镜头 → Tag
 
-简单光影 → Tag
+## 10. NL 的使用范围
 
-复杂跨角色物体关系 → 尽量拆成简单关系，不要通过大量重复文字强行控制。
+NL 负责描述需要角色绑定或需要更复杂语义关系的内容，包括：
 
-核心目标：
+- 角色外貌
+- 角色服装
+- 角色配饰
+- 角色表情
+- 复杂动作
+- 复杂姿势
+- 身体朝向
+- 多角色互动
+- 角色之间的空间关系
+- 角色与环境之间的关系
+- 复杂构图
+- 复杂身体部位关系
+- 复杂物体交互
 
-让每一个视觉信息都有明确归属。
 
-让角色之间保持清晰的语义边界。
+## 11. 单角色提示词
 
-让复杂动作和互动明确说明“谁做什么”。
+单角色时：
 
-避免把多个角色的属性放进一个共享属性池。
+第一步，用 Tag 描述公共画面信息。
 
-避免使用抽象概念。
+第二步，在 NL 中连续描述角色本身。
 
-避免无意义的提示词堆叠。
+第三步，再描述动作、姿势、构图以及角色与环境的关系。
 
-优先使用简单、明确、可直接视觉确认的描述。`,
+例如：
+
+Tag：
+
+1girl, solo, full body, indoors, bedroom, nighttime, soft lighting
+
+NL：
+
+The woman has long straight black hair, amber eyes, a slender face, and long eyelashes. She wears a black gothic dress with long sleeves and high heels. She has a slight smile. She sits on the edge of the bed with one leg crossed over the other, resting one hand beside her body while looking toward the camera.
+
+
+## 12. 多角色提示词
+
+多角色时，不要把所有角色的属性写成一个公共属性池。
+
+每个角色必须首先拥有独立、连续的 NL 描述。
+
+例如：
+
+The woman has waist-length light brown hair, black eyes, and a mole under her left eye. She wears a black dress. She has flushed cheeks and a small smile.
+
+The man has slicked-back black hair, pale golden eyes with clearly visible slit pupils, sharp facial features, and semi-rimless glasses. He wears a black cardigan. His eyebrows are slightly raised and he has a faint smirk.
+
+角色建立完成后，再使用稳定的角色指代：
+
+- the woman
+- the man
+- the girl on the left
+- the boy on the right
+- Xiao
+- Aether
+- 其他用户明确提供的角色名称
+
+后续动作和互动中不要反复重新描述角色完整外貌。
+
+
+## 13. 多角色角色绑定
+
+每个角色的：
+
+外貌 + 服装 + 配饰 + 表情
+
+应该尽可能在该角色自己的连续 NL 描述中完成。
+
+不要：
+
+The woman has long black hair, and the man has silver hair, black eyes, glasses, and a black coat...
+
+这种混合式描述。
+
+应该：
+
+The woman has long black hair and amber eyes. She wears a black dress. She has a small smile.
+
+The man has short silver hair and pale golden eyes. He wears a black coat and glasses. His eyebrows are furrowed.
+
+
+## 14. 多角色动作与互动
+
+多角色互动统一使用 NL。
+
+明确写出：
+
+- 谁在做动作
+- 动作作用于谁
+- 谁位于哪里
+- 谁面向哪里
+- 身体之间的关系
+- 与物体之间的关系
+
+例如：
+
+The woman stands behind the man and places both hands on his shoulders.
+
+The man sits on the sofa while the woman kneels beside him.
+
+The girl on the left holds the boy's hand.
+
+不要使用无法明确判断动作主体的模糊表达。
+
+
+## 15. 简单与复杂构图的区分
+
+简单构图可以使用 Tag：
+
+- centered composition
+- left side
+- right side
+- foreground
+- background
+- symmetrical composition
+
+复杂构图使用 NL。
+
+例如：
+
+The woman stands in the foreground on the left while the man sits farther back on the right. The woman faces the man, with her upper body turned toward him.
+
+涉及：
+
+- 前后距离
+- 上下位置
+- 多人物位置关系
+- 身体朝向
+- 复杂视线关系
+- 多层空间关系
+
+时，应使用 NL。
+
+
+## 16. 简单与复杂动作的区分
+
+非常简单、独立的动作可以使用 Tag：
+
+standing
+sitting
+kneeling
+walking
+
+复杂动作使用 NL：
+
+The woman sits on the floor with one knee raised and one hand resting on the raised knee.
+
+如果动作涉及多个身体部位之间的关系，应使用 NL。
+
+
+## 17. 复杂物体关系
+
+普通物体交互可以直接使用 NL：
+
+The woman holds a book.
+
+The man holds the woman's hand.
+
+复杂的跨角色物体关系需要尽量拆解成简单视觉事实。
+
+例如：
+
+The man holds the leash. The leash is attached to the woman's collar.
+
+不要通过大量重复、否定和强调来试图强行解决复杂关系。
+
+尤其是：
+
+角色A的身体部位
+→ 物体
+→ 角色B的身体部位
+
+这种复杂拓扑关系，即使文字描述正确，也可能无法被生图模型稳定执行。
+
+因此规则的目标是：
+
+尽可能明确地描述关系，而不是无限增加文字。
+
+
+## 18. 不使用 BREAK
+
+多角色提示词默认不要使用 BREAK 或其他特殊角色分隔符。
+
+不要依赖：
+
+BREAK
+角色分隔线
+大量括号
+特殊分隔符
+
+来强制隔离角色。
+
+优先使用：
+
+独立的连续 NL 角色描述
++
+稳定的角色指代
+
+来建立角色之间的对应关系。
+
+
+## 19. 避免特征重复污染
+
+不要为了强调某个角色的属性，在后续多个句子中反复重复同一个属性。
+
+例如不要反复写：
+
+The man has golden eyes.
+The man has golden eyes.
+His golden eyes...
+His golden eyes...
+
+过度重复可能导致属性扩散、融合或影响其他角色。
+
+每个关键属性在角色建立阶段明确描述一次即可。
+
+后续使用角色名称或稳定指代。
+
+
+## 20. 处理用户的抽象要求
+
+当用户提出：
+
+“性感”
+“温柔”
+“神秘”
+“压迫感”
+“危险感”
+“帅气”
+“优雅”
+“有故事感”
+
+等无法直接作为视觉事实的要求时，不要直接把这些词塞进提示词。
+
+应该转换成具体可见内容。
+
+例如：
+
+“温柔”
+→ slight smile, relaxed eyebrows, soft gaze
+
+“危险感”
+→ sharp eyes, narrowed eyes, dark shadows across the face
+
+“优雅”
+→ upright posture, controlled hand position, long flowing clothing
+
+如果无法合理转换为具体视觉信息，则不要加入。
+
+
+## 21. 提示词语言
+
+Tag 使用简洁的标签式表达。
+
+NL 使用自然、直接、明确的英文句子。
+
+NL 不需要文学化。
+
+不要为了追求自然语言而写成长篇小说。
+
+每个句子都应该具有明确的视觉作用。
+
+如果删除一个句子不会损失任何视觉信息，则应该考虑删除。
+
+
+## 22. 标签选择原则
+
+Tag 不需要把所有能想到的标签都塞进去。
+
+只保留：
+
+- 能明确表达画面结构
+- 能明确表达镜头
+- 能明确表达环境
+- 能明确表达时间
+- 能明确表达光影
+- 能明确表达简单构图
+- 能明确表达简单动作
+
+的标签。
+
+避免：
+
+- 同义词堆叠
+- 无意义重复
+- 抽象形容词
+- 文学化标签
+- 质量标签
+- 风格标签
+
+
+## 23. 最终检查
+
+生成提示词前，检查：
+
+1. 是否 Tag 位于最前面？
+2. Tag 后是否换行进入 NL？
+3. Tag 是否只负责公共、简单的视觉信息？
+4. 角色外貌是否放在 NL？
+5. 服装是否放在 NL？
+6. 配饰是否放在 NL？
+7. 表情是否放在对应角色的 NL？
+8. 多角色是否分别建立独立的角色描述？
+9. 后续是否使用稳定的角色指代？
+10. 是否避免把不同角色的属性混在一起？
+11. 是否没有使用 BREAK？
+12. 复杂动作是否使用 NL？
+13. 复杂空间关系是否使用 NL？
+14. 多角色互动是否使用 NL？
+15. 是否只描述可见视觉内容？
+16. 是否删除了抽象、心理、故事和文学化描述？
+17. 是否没有擅自改变固定角色设定？
+18. 是否没有加入风格和质量词？
+19. 是否存在无意义的重复？
+20. 是否尽可能保持简洁？
+
+最终提示词应该是：
+
+**Tag 负责公共画面结构，NL 负责角色与复杂视觉关系。**
+
+**单角色也遵守 Tag → NL。**
+
+**多角色则在 NL 中分别建立角色，再描述角色之间的动作、互动和空间关系。**`,
     },
     {
         id: "material", name: "素材", role: "user", enabled: true,
@@ -705,7 +647,7 @@ highly detailed, extremely detailed, intricate details
 }
 
 补充约束：
-- positivePrompt 用英文，写成一行，不要换行。
+- positivePrompt 用英文，按上面的规范写成两段：Tag 一段，换行后接 NL 一段。这个换行在 JSON 字符串里写成 \\n，不要把 JSON 真的换行写坏。
 - summary 用中文，写清「谁、在做什么、在哪」。它显示在配图面板上，也是「换个画面」时区分新旧画面的依据，所以要与这一幅画面对得上，不要写成提示词的翻译。
 - sourceExcerpt 用中文，从正文里原样复制画面所依据的那几句，不要改写、不要拼接、不要加省略号。它必须能在正文里逐字找到，面板会显示出来供你核对画面选得对不对。
 - 只输出这三个字段：不要再输出负向提示词或人物分段提示词。`,

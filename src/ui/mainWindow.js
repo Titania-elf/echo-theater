@@ -64,7 +64,7 @@ import {
 } from "./mainWindow/topBar.js";
 import { toggleUITheme } from "./theme.js";
 import { createIllustrationTarget } from "../core/illustrationData.js";
-import { bindMainIllustrations, openIllustrationWindow } from "./illustrationWindow.js";
+import { openIllustrationWindow } from "./illustrationWindow.js";
 
 function getMainIllustrationTarget() {
     const result = getCurrentGenerationResult();
@@ -1055,7 +1055,8 @@ export async function openMainWindow() {
     }
 
     // --- 事件监听绑定 ---
-    registerTeardown(bindMainIllustrations(getMainIllustrationTarget));
+    // 配图只有一个入口：工具栏那个按钮开面板，看图在面板图库里点缩略图开灯箱。
+    // 内容区不再有任何常驻的配图元素（曾有一个按钮兼任进度提示与看图，已删）。
     $("#t-tool-illustrate").on("click", () => {
         try { openIllustrationWindow(getMainIllustrationTarget()); }
         catch (error) { if (window.toastr) toastr.warning(error.message); }

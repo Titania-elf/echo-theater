@@ -12,12 +12,7 @@ import { escapeIllustrationHtml as escape, illustrationFigure, normalizeIllustra
 import { exportAsHtmlFile } from "../utils/helpers.js";
 import { claimFloatingWindow, releaseFloatingWindow } from "./shared/floatingWindow.js";
 import { createHelpTip } from "./shared/helpPopover.js";
-import { createIllustrationBadge } from "./illustrationBadge.js";
 import { openIllustrationLightbox } from "./illustrationLightbox.js";
-import {
-    clearIllustrationActivity, getIllustrationActivity,
-    setIllustrationActivity, subscribeIllustrationActivity,
-} from "../core/illustrationActivity.js";
 
 // 选景跑在本插件自己的 LLM 上，生图才交给 Cosmos，所以只有这两个阶段；
 // 生图的百分比来自 ComfyUI 的步数回调，NovelAI 非流式则没有进度。
@@ -96,11 +91,6 @@ function notifyView(sceneId) {
     if (activeView?.sceneId === sceneId) activeView.sync();
 }
 
-/** 任务类型 → 进行态阶段。选景与生图在主界面按钮上是两种说法。 */
-function activityPhaseFor(kind) {
-    return kind === "prepare" ? "selecting" : "generating";
-}
-
 /**
  * 两次选景是不是同一幅画面。取值优先级与 illustrationPresets 的 formatPreviousScenes 一致
  * （摘要 → 摘录 → 提示词），否则刚推进排除表的那一条与下次比对的键对不上。
@@ -123,8 +113,6 @@ function jobProgress(job) {
         const label = PROGRESS_LABELS[event.stage] || "正在处理…";
         const percent = Number.isFinite(event.fraction) ? ` ${Math.round(event.fraction * 100)}%` : "";
         job.status = `${label}${percent}`;
-        // 关窗后台跑时，主界面那个按钮是用户唯一能看到进度的地方。
-        setIllustrationActivity(job.sceneId, activityPhaseFor(job.kind), job.status);
         notifyView(job.sceneId);
     };
 }
@@ -135,20 +123,14 @@ function startJob(current, currentTarget, kind, operation) {
     const job = { sceneId: currentTarget.sceneId, kind, status: "", phase: "running", controller: new AbortController(), error: null };
     current.job = job;
     current.notice = "";
-    const phase = activityPhaseFor(kind);
-    setIllustrationActivity(job.sceneId, phase, PROGRESS_LABELS[phase] || "");
     job.promise = Promise.resolve()
         .then(() => operation(job))
         .catch(error => {
             job.error = error;
             current.notice = showError(error);
-            // 取消不是失败：把按钮收回静止，别让它一直转着。
-            if (error?.name === "AbortError" || error?.code === "ABORTED") clearIllustrationActivity(job.sceneId);
-            else setIllustrationActivity(job.sceneId, "error", current.notice);
         })
         .finally(() => {
             if (current.job === job) current.job = null;
-            if (!job.error) clearIllustrationActivity(job.sceneId);
             if (activeView?.sceneId === job.sceneId) activeView.sync();
             else notifyBackgroundResult(job);
         });
@@ -166,22 +148,13 @@ function notifyBackgroundResult(job) {
 
 /** 生成成功后立即保存；面板关掉也继续，保存失败时图片留在会话里等「重试保存」。 */
 async function persistPending(current, currentTarget) {
-    // 这里自报进行态，因为它也能从「重试保存」那条独立路径进来（不经过 startJob）。
-    setIllustrationActivity(currentTarget.sceneId, "saving", "正在保存配图…");
-    try {
-        current.record = await saveGeneratedIllustrations(currentTarget.sceneId, current.pending);
-    } catch (error) {
-        setIllustrationActivity(currentTarget.sceneId, "error", showError(error));
-        throw error;
-    }
+    // 保存失败时直接抛出：图片留在 session.pending 里，「重试保存」仍然可用。
+    current.record = await saveGeneratedIllustrations(currentTarget.sceneId, current.pending);
     const image = selectedIllustration(current.record);
     await currentTarget.onSelected?.(image);
     current.adopted = image;
     current.pending = null;
     current.notice = "配图已保存。可在下方挑选图片，或沿用提示词重新生成。";
-    // 清掉进行态：保存成功后 mutateScene 会派发 titania:illustrations-changed，
-    // 按钮随之换成「有图」的样子。
-    clearIllustrationActivity(currentTarget.sceneId);
     return current.record;
 }
 
@@ -202,9 +175,9 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
             <div class="t-panel-header">
                 <strong id="t-illustration-title">场景配图</strong>
                 <div class="t-panel-header-actions" data-role="header-actions">
-                    <button type="button" class="t-btn" data-action="profiles" title="人物外观档案" aria-label="人物外观档案"><i class="fa-solid fa-address-book"></i></button>
-                    <button type="button" class="t-btn" data-action="settings" title="场景配图设置：选景预设" aria-label="场景配图设置"><i class="fa-solid fa-gear"></i></button>
-                    <button type="button" class="t-btn" data-action="close" title="关闭配图面板" aria-label="关闭配图面板"><i class="fa-solid fa-xmark"></i></button>
+                    <button type="button" class="t-icon-btn" data-action="profiles" title="人物外观档案" aria-label="人物外观档案"><i class="fa-solid fa-address-book"></i></button>
+                    <button type="button" class="t-icon-btn" data-action="settings" title="场景配图设置：选景预设" aria-label="场景配图设置"><i class="fa-solid fa-gear"></i></button>
+                    <button type="button" class="t-icon-btn" data-action="close" title="关闭配图面板" aria-label="关闭配图面板"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             </div>
             <div class="t-illustration-body">
@@ -263,6 +236,8 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
     const selectedImageIds = new Set();
     // 过程图与「已生成待保存」是两种状态：前者只预览，后者才启用「重试保存」。
     let previewUrl = null, renderedPreviewBlob = null, previewUpdatedAt = 0;
+    // 灯箱：同一时刻至多一个，且**活在面板里**（挂载点就是 root，见 openLightbox）。
+    let lightbox = null;
     const isBusy = () => localBusy || Boolean(session?.job);
     // 后台任务通过 activeView 找到当前面板；面板不在时任务照常写会话。
     const view = { sceneId: "", sync: () => refreshFromState() };
@@ -424,6 +399,26 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         for (const entry of matched) insertProfileBlock(current, entry);
     }
 
+    /**
+     * 点图库里的缩略图 → 开灯箱看大图。这是**全插件唯一看大图的入口**：
+     * 正文里从不插配图（正文往往是自带底色的卡片，插图在开头只会把它顶出屏幕），
+     * 所以采用的那张只在图库里以缩略图存在，想看细节就得点开。
+     *
+     * 挂载点是 root：面板本身就是 z-index 20060 的层叠上下文，灯箱作为它的后代
+     * 必然盖在面板内容之上，也随面板一起消失。挂到外面反而更麻烦 ——
+     * #t-overlay 带 isolation: isolate，会把灯箱困在它那一层（20000）里，
+     * 于是整块藏在面板后面。代价只剩一条：root 是 pointer-events: none，
+     * 灯箱要在 CSS 里自己把它收回来。
+     */
+    function openLightbox(image) {
+        lightbox?.close();
+        lightbox = openIllustrationLightbox({
+            image,
+            container: root,
+            onClose: () => { lightbox = null; },
+        });
+    }
+
     function renderGallery() {
         const images = session?.record?.images || [];
         // 后台任务可能同时增删图片，把已经不在的勾选剔掉，免得计数虚高、删除时报"找不到"。
@@ -446,7 +441,7 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
             return `
             <article class="t-illustration-candidate${picked ? " is-selected" : ""}">
                 ${managing ? `<label class="t-illustration-select"><input type="checkbox" data-select-image-id="${escape(image.id)}" ${picked ? "checked" : ""}> 选择</label>` : ""}
-                <a href="${image.filePath}" target="_blank" rel="noopener"><img src="${image.filePath}" loading="lazy" alt="${escape(summary || "配图")}"></a>
+                <button class="t-illustration-candidate-open" type="button" data-preview-image-id="${escape(image.id)}" title="放大查看" aria-label="放大查看这张配图"><img src="${image.filePath}" loading="lazy" alt="${escape(summary || "配图")}"></button>
                 ${summary ? `<p>${escape(summary)}</p>` : ""}
                 <div class="t-illustration-actions"><button class="t-btn" type="button" data-image-id="${escape(image.id)}">${session.record.selectedId === image.id ? "当前配图" : "采用这张"}</button><a class="t-btn" href="${image.filePath}" download>下载</a>${managing ? "" : `<button class="t-btn t-btn-danger" type="button" data-action="delete-image" data-image-id="${escape(image.id)}" title="删除这张配图" aria-label="删除这张配图"><i class="fa-solid fa-trash"></i></button>`}</div>
             </article>`;
@@ -816,6 +811,14 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
             });
             return;
         }
+        // ⚠ 必须排在下面那个按属性存在性派发的 `data-image-id` 处理器之前 ——
+        //   理由同下面那条注释：一个按钮上同时挂着别的 data-* 就会被它抢走。
+        const previewId = button.dataset.previewImageId;
+        if (previewId) {
+            const image = current.record?.images.find(item => String(item.id) === String(previewId));
+            if (image) openLightbox(image);
+            return;
+        }
         if (button.hasAttribute("data-image-id")) {
             void run(async () => {
                 const id = button.dataset.imageId || null;
@@ -836,6 +839,9 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
         }
         disposed = true;
         if (activeView === view) activeView = null;
+        // 灯箱挂在 document 上的 Esc 监听不会随 root 一起消失，必须显式关掉。
+        lightbox?.close();
+        lightbox = null;
         if (pendingUrl) URL.revokeObjectURL(pendingUrl);
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         root.remove();
@@ -861,110 +867,4 @@ export function openIllustrationWindow(targetOrTargets, initialIndex = 0) {
     window.addEventListener("titania:character-profiles-changed", profilesChanged);
     void loadTarget(Math.min(Math.max(0, Number(initialIndex) || 0), targets.length - 1));
     action("close").focus();
-}
-
-/**
- * 主界面的配图入口：内容区底部中间那个按钮 + 灯箱。
- *
- * 图片**不再插进正文**。正文往往是自带底色的卡片（内置预设就要求模型输出
- * 「羊皮纸纹理背景」这类 CSS），插在开头只会把正文顶出屏幕。采用图改为只在按钮里
- * 体现，点开灯箱看大图。
- *
- * 收藏页与导出 HTML **仍然是图文一体** —— 它们直接用 illustrationFigure
- * （见 illustrationData.js 上那条「不可删」的注释）。
- *
- * ⚠ 灯箱要挂 #t-overlay，不能挂 .t-content-wrapper：后者带 transform: translateZ(0)
- *   与 overflow: hidden，会把 position:fixed 的后代整个裁掉。
- *   按钮正相反，必须挂进 .t-content-wrapper —— 它是定位祖先且不滚动。
- */
-export function bindMainIllustrations(getTarget) {
-    const content = document.getElementById("t-output-content");
-    if (!content) return () => { };
-    // 定位祖先。夹具里可能没有 .t-content-wrapper，所以留一条回落。
-    const container = content.closest(".t-content-wrapper") || content.parentElement || document.body;
-    const overlay = document.getElementById("t-overlay");
-    let disposed = false, sequence = 0, timer, lightbox = null;
-    let currentKey = "", currentImage = null, currentError = "";
-
-    const badge = createIllustrationBadge({ container, onActivate: activate });
-
-    function openPanel() {
-        try { openIllustrationWindow(getTarget()); }
-        catch (error) { if (window.toastr) window.toastr.warning(showError(error), "Titania Echo"); }
-    }
-
-    function openLightbox() {
-        lightbox = openIllustrationLightbox({
-            image: currentImage,
-            container: overlay || document.body,
-            onSwap: openPanel,
-            onClose: () => { lightbox = null; },
-        });
-    }
-
-    /** busy 与 error 都去面板：那里能看进度、能取消、能重试保存。 */
-    function activate(state) {
-        if (state.mode === "image") openLightbox();
-        else openPanel();
-    }
-
-    function draw() {
-        if (disposed) return;
-        badge.update({
-            image: currentImage,
-            error: currentError,
-            activity: currentKey ? getIllustrationActivity(currentKey) : null,
-        });
-        // 灯箱开着时跟着换图；图没了就关掉，别留一张已不属于这一轮的图。
-        if (lightbox) {
-            if (currentImage) lightbox.update(currentImage);
-            else lightbox.close();
-        }
-    }
-
-    const refresh = async (force = false) => {
-        let target;
-        try { target = getTarget(); } catch { target = null; }
-        const key = target?.sceneId || "";
-        // 同一轮次算过一次就不再重算 —— 流式期间这个函数会被高频触发而配图并没变。
-        // 记录变化（采用 / 隐藏 / 重新生成）走 titania:illustrations-changed（force）进来。
-        if (!force && key === currentKey) return;
-        currentKey = key;
-        currentImage = null;
-        currentError = "";
-        const request = ++sequence;
-        if (key) {
-            try {
-                const record = await readSceneIllustrations(key);
-                if (disposed || request !== sequence) return;
-                currentImage = selectedIllustration(record);
-            } catch {
-                if (disposed || request !== sequence) return;
-                currentError = "配图读取失败，可打开场景配图面板重试。";
-            }
-        } else if (disposed || request !== sequence) return;
-        draw();
-    };
-
-    // ⚠ 这 80ms 防抖是承重的，别删：翻页时内容先渲染并派发 titania:scene-rendered，
-    //   generation result 之后才更新，同步刷新会读到上一轮的 target。
-    const schedule = () => { clearTimeout(timer); timer = setTimeout(() => void refresh(), 80); };
-    // 换轮次一律经过 renderGeneratedContent，它必然派发这个事件 —— 所以它是场景切换
-    // 的可靠信号，原先那个 MutationObserver 的独有价值（Shadow DOM 内部变化）正是它覆盖的。
-    window.addEventListener("titania:scene-rendered", schedule);
-    const changed = () => void refresh(true);
-    window.addEventListener("titania:illustrations-changed", changed);
-    const unsubscribeActivity = subscribeIllustrationActivity(() => draw());
-    void refresh(true);
-
-    return () => {
-        disposed = true;
-        clearTimeout(timer);
-        window.removeEventListener("titania:scene-rendered", schedule);
-        window.removeEventListener("titania:illustrations-changed", changed);
-        unsubscribeActivity();
-        lightbox?.close();
-        lightbox = null;
-        badge.destroy();
-    };
 }

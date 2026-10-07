@@ -202,8 +202,8 @@ export function escapeIllustrationHtml(value) {
  * 配图标记的唯一产出点：`<figure data-titania-illustration>` + `<img>` + 可选图题。
  * 内联布局，使收藏阅读页、独立导出的 HTML 与正文渲染共用同一份标记。
  *
- * ⚠ **不要删这个函数。** 主界面从 5.4 起不再把图插进正文（改为底部按钮 + 灯箱，
- * 见 illustrationWindow.js 的 bindMainIllustrations），但它仍有两个消费者：
+ * ⚠ **不要删这个函数。** 主界面从 5.4 起不再把图插进正文（配图面板图库里点缩略图
+ * 开灯箱看大图），但它仍有两个消费者：
  *   - `illustrationWindow.js` 的「导出图文 HTML」
  *   - `favsWindow.js` 的收藏链式分段与收藏阅读页
  * 删掉会让收藏页和导出一起坏，而且测试未必拦得住。新增消费者时记得也考虑导出侧。
