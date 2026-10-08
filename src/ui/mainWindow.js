@@ -321,6 +321,7 @@ export function closeWindow() {
     $("#t-overlay").remove();
     $(document).off("keydown.zenmode");
     $(document).off("click.tinlinebranch");
+    $(window).off("resize.ttempinput");
 }
 
 function escapeHtmlText(str) {
@@ -997,6 +998,48 @@ function updateDesc() {
 }
 
 /**
+ * 「本次补充」输入框最多长到几行，再长就在框内滚。
+ * 与 main-window.css 里 `.t-temp-input` 的注释成对 —— 那边不再写死 max-height，
+ * 免得一处改行数另一处跟不上（CSS 只负责外观，尺寸全由下面这个函数算）。
+ */
+const TEMP_INSTRUCTION_INPUT_MAX_ROWS = 3;
+
+/**
+ * 把「本次补充」输入框的高度贴到内容高度（单行起步，最多 N 行，超出内部滚动）。
+ *
+ * 为什么在 JS 里算而不是 CSS：`field-sizing: content` 内核支持面还不够，
+ * 而 textarea 的 auto-grow 本来就得先量后设。封顶值也不能写在 CSS 里 ——
+ * 那要用 em 拼 padding/border，而 padding 到底是谁赢（`.t-input` 那条是 0,3,0）
+ * 说不准，算式一错就是"框比内容矮"。这里全用实测值，不猜。
+ *
+ * ⚠ 先归零再量：直接读 scrollHeight 会读到上一次设进去的高度，删字之后框缩不回去。
+ * ⚠ .t-input 是 border-box，scrollHeight 不含上下边框 —— 不补回来每次量都差那 2px，
+ *   长文本会永远少一行、早早冒出滚动条。
+ * ⚠ 元素 hidden（display:none）时量到的是 0，只在编辑态可见时才是有效调用。
+ */
+function syncTempInstructionInputHeight() {
+    const el = document.getElementById("t-temp-input");
+    if (!el) return; // 主窗口没开
+
+    el.style.height = "auto";
+
+    const cs = getComputedStyle(el);
+    const lineHeight = parseFloat(cs.lineHeight);
+    const borders = el.offsetHeight - el.clientHeight;
+    const verticalSpace = borders
+        + (parseFloat(cs.paddingTop) || 0)
+        + (parseFloat(cs.paddingBottom) || 0);
+
+    // 行高得是个像样的 px 数：`normal` 解析成 NaN，而无单位值（line-height: 1.5 若被
+    // 原样吐回来）会算出比一行还矮的封顶。两种情况都不封顶 —— 宁可框长高，也不能裁内容。
+    const capped = Number.isFinite(lineHeight) && lineHeight >= 8;
+
+    const contentHeight = el.scrollHeight + borders;
+    const maxHeight = lineHeight * TEMP_INSTRUCTION_INPUT_MAX_ROWS + verticalSpace;
+    el.style.height = `${capped ? Math.min(contentHeight, maxHeight) : contentHeight}px`;
+}
+
+/**
  * 刷新「本次补充」条（顶栏剧本卡下方那条）。
  *
  * 两种模式互斥：
@@ -1030,7 +1073,13 @@ function updateTempInstructionUI() {
 
     if (editMode) {
         const $input = $("#t-temp-input");
-        if ($input.val() !== draft) $input.val(draft);
+        // ⚠ 比的是 trim 过的值，不是原始值：draft 在 setTempInstructionDraft 里收尾，
+        //   而输入框是多行框，用户刚敲下的换行还没进 draft。比原始值会把那个换行当场抹掉 ——
+        //   表现是「行尾按 Enter 像是没反应，接着打的字又并回上一行」。
+        if ($input.val().trim() !== draft) $input.val(draft);
+        // 必须在 $bar 解除 hidden 之后：display:none 时量出来的高度是 0。
+        // 撤销（会把长文塞回输入框）与开窗恢复草稿都走这条路，所以放这儿而不是只在 input 事件里。
+        syncTempInstructionInputHeight();
     }
 }
 
@@ -1218,7 +1267,14 @@ export async function openMainWindow() {
     // （见其文件头的分工说明）。也放这里而不是各 layout 内，两套布局自动共享。
     $("#t-temp-input").on("input", function () {
         setTempInstructionDraft($(this).val());
-        updateTempInstructionUI();
+        updateTempInstructionUI(); // 里面会按新内容重算输入框高度（换行就得长高）
+    });
+
+    // 窗口宽了窄了（手机转屏、桌面拖截面）都会改变换行点，行数得跟着重算，
+    // 否则加高过的框会停在旧行数上不动。命名空间与 closeWindow 的 off 对应。
+    $(window).on("resize.ttempinput", () => {
+        if ($("#t-temp-edit").prop("hidden")) return; // 不可见时量出来是 0
+        syncTempInstructionInputHeight();
     });
 
     $("#t-temp-clear").on("click", () => {
@@ -1245,6 +1301,7 @@ export async function openMainWindow() {
 
     // 自由输入，Enter 不做提交：紧邻剧本卡，误触 Ctrl+Enter 会直接关窗跑一次演绎。
     // 生成仍由底部发送键（modern）/ 单次演绎（legacy）触发。
+    // （输入框是 textarea，所以 Enter 就是换行 —— 草稿允许分行，正是它该有的行为。）
 
     $("#t-btn-filter").on("click", function (e) {
         renderFilterMenu(GlobalState.currentCategoryFilter, $(this), (newCat) => {

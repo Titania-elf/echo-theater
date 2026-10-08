@@ -4,6 +4,9 @@
     width: 950px;
     max-width: 95vw;
     height: 85vh;
+    /* 移动端地址栏/工具栏收放时 100vh 大于真实可视高度，窗口下半截会被推出屏幕。
+       dvh 跟随实际视口，双写一遍做旧内核回退（同 settings-drawer.css / illustration.css）。 */
+    height: 85dvh;
     display: flex;
     flex-direction: column;
     background: var(--t-color-bg);
@@ -202,8 +205,28 @@
     font-size: 0.85em;
 }
 
+/* 输入框是单行起步的 <textarea> 而不是 <input>：补充写长了得能换行看全，
+   input 只会横向滚，后半截永远看不见。高度由 JS 按内容撑（见 mainWindow.js
+   的 syncTempInstructionInputHeight），封顶 3 行后内部滚动 —— 不封顶的话
+   这条会把内容区一路挤上去。
+
+   ⚠ 选择器必须带 .t-temp-bar 前缀：field.css 的 `textarea.t-input` 给所有
+   多行框上了 resize:vertical 与等宽字体，单类 .t-temp-input（0,1,0）盖不住它。 */
+.t-temp-bar .t-temp-input {
+    resize: none;
+    font-family: inherit;
+    line-height: 1.5;
+    overflow-y: auto;
+    white-space: pre-wrap; /* 显式写死：换行是本条的立身之本，不能被主题层的 textarea 规则改掉 */
+    /* 长串（URL、没有空格的长句）也强制断行，否则换行规则救不了它 */
+    overflow-wrap: anywhere;
+}
+
+/* 占位文案是按一行写的。框窄到它换行时，第二行会被只有一行的盒高裁掉半截，
+   看着像坏了 —— 干脆照 <input> 时代的老规矩：不换行，放不下就在右边截断。 */
 .t-temp-input::placeholder {
     color: var(--t-color-text-dim);
+    white-space: nowrap;
 }
 
 /* 清空 / 撤销都是小号控件，间距交给父级 gap（B13 的核心约定） */
@@ -957,6 +980,7 @@
     #t-main-view {
         width: 100%;
         height: 95vh;
+        height: 95dvh; /* 窄屏几乎铺满，dvh 与 vh 的差值在这里最要命（见顶部注释） */
         max-width: 100vw;
         border-radius: 10px 10px 0 0;
     }

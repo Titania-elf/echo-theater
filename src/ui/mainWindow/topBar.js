@@ -91,6 +91,10 @@ export function renderTopBarHtml(variant = "modern") {
  * 刻意不在这里算初始显隐：本模块只产出 HTML（见文件头分工），
  * 而显隐依赖 tempInstruction 的运行时状态，由主窗口统一刷新。
  *
+ * ⚠ 那个输入框是 rows=1 的 <textarea> 而非 <input>：补充写长了要换行看全，
+ *   input 只会横向滚。它随内容长高、到 3 行封顶后内部滚动，高度由 mainWindow.js 的
+ *   syncTempInstructionInputHeight 算（行数上限也在那边，改这里就要一起改）。
+ *
  * ⚠ 那条状态带 `hidden` 属性，而 CSS 里它是 display:flex —— 必须靠
  *   `.t-temp-bar[hidden]{display:none}` 兜住，否则 hidden 会被 flex 覆盖掉。
  */
@@ -99,8 +103,8 @@ export function renderTempInstructionHtml() {
             <div class="t-temp-bar" id="t-temp-bar" hidden>
                 <div class="t-temp-edit" id="t-temp-edit" hidden>
                     <span class="t-temp-label"><i class="fa-solid fa-pen"></i> 本次补充</span>
-                    <input type="text" class="t-input t-temp-input" id="t-temp-input" autocomplete="off"
-                        placeholder="只对这次生成生效，例如：写得轻松一点，加一段日常对话">
+                    <textarea class="t-input t-temp-input" id="t-temp-input" rows="1" autocomplete="off"
+                        placeholder="只对这次生成生效，例如：写得轻松一点，加一段日常对话"></textarea>
                     <button type="button" class="t-icon-btn t-temp-clear" id="t-temp-clear" title="清除本次补充" aria-label="清除本次补充"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="t-temp-active" id="t-temp-active" hidden>
