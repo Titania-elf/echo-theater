@@ -14,6 +14,10 @@
     left: 0;
     width: 100vw;
     height: 100vh;
+    /* 移动端地址栏/工具栏收放时 100vh 大于真实可视高度：遮罩比屏幕还高，被它居中的窗口
+       下半截就被推出屏幕。dvh 跟随实际视口，双写一遍做旧内核回退
+       （同 settings-drawer.css / illustration.css）。 */
+    height: 100dvh;
     background: var(--t-color-scrim);
     z-index: 20000;
     backdrop-filter: blur(2px);

@@ -18,6 +18,9 @@
     flex-direction: column;
     width: 100vw;
     height: 100vh;
+    /* 全屏阅读画布也要贴合真实视口：沿用 vh 的话，手机上末几行落在地址栏底下，
+       而这页恰恰是拿来通读的。与 .t-overlay 双写 dvh（旧内核回退到上面那行）。 */
+    height: 100dvh;
 }
 
 /* —— 顶栏（沉浸模式下滑出视口）—— */
