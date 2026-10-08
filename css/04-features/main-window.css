@@ -35,6 +35,7 @@
 /* Zen Mode (沉浸模式) */
 #t-main-view.t-zen-mode .t-header,
 #t-main-view.t-zen-mode .t-top-bar,
+#t-main-view.t-zen-mode .t-temp-bar,
 #t-main-view.t-zen-mode .t-bottom-bar,
 #t-main-view.t-zen-mode .t-toolbox-panel,
 #t-main-view.t-zen-mode .t-toolbox-backdrop {
@@ -135,6 +136,121 @@
     box-sizing: border-box;
     flex-shrink: 0;
     z-index: 20;
+}
+
+/* ── 「本次补充」条（临时指令）──
+
+   位置：.t-top-bar 的**兄弟**，不是它的一行。
+   为什么不做成栏内第二行：.t-top-bar 是写死 height:52px 的单行胶囊条，上方注释
+   已说明这一栏的空间预算是按 950px 窗口实测调过的，且 modern/legacy 两变体刻意
+   分叉 —— 塞第二行要么顶破固定高度、要么得把整栏改成 column 重新配平。
+
+   做成兄弟后靠两点伪装成「顶栏长出的第二行」：
+     1. 同款背景与左右内边距；
+     2. 它可见时由 JS 给 .t-top-bar 挂 .has-temp-bar，把那道 border-bottom 关掉。
+        （不用 :has()，那对旧内核不可靠。）
+   于是两行之间没有分隔线，下面那条 border-bottom 才是与内容区的分界。
+
+   只在「待演绎」与「补充已生效」两个瞬态出现，其余时候整条 hidden。 */
+.t-temp-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 20px;
+    background: var(--t-color-surface);
+    border-bottom: 1px solid var(--t-color-border);
+    flex-shrink: 0;
+}
+
+/* display:flex 会盖掉 hidden 属性的 display:none，必须显式补回来 */
+.t-temp-bar[hidden] {
+    display: none;
+}
+
+/* 它可见时，上面那一栏的分隔线让位，两行读成一整块 */
+.t-top-bar.has-temp-bar {
+    border-bottom-color: transparent;
+}
+
+.t-temp-edit,
+.t-temp-active {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+}
+
+.t-temp-edit[hidden],
+.t-temp-active[hidden] {
+    display: none;
+}
+
+.t-temp-label {
+    flex: 0 0 auto;
+    font-size: 0.85em;
+    color: var(--t-color-text-muted);
+    white-space: nowrap;
+}
+
+/* 复用 .t-input 组件（它自带背景/边框/圆角/焦点态），这里只补本条的布局。
+   覆盖尺寸类自定义属性不算重定义组件视觉（见 icon-button.css 头部同款理由）。 */
+.t-temp-bar .t-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 4px 8px;
+    font-size: 0.85em;
+}
+
+.t-temp-input::placeholder {
+    color: var(--t-color-text-dim);
+}
+
+/* 清空 / 撤销都是小号控件，间距交给父级 gap（B13 的核心约定） */
+.t-temp-bar .t-icon-btn {
+    --t-icon-btn-size: 26px;
+    --t-icon-btn-font-size: 0.95em;
+}
+
+.t-temp-active-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.85em;
+    color: var(--t-color-text-faint);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.t-temp-active-text .fa-check {
+    color: var(--t-color-accent);
+}
+
+.t-temp-undo {
+    flex: 0 0 auto;
+    padding: 3px 10px;
+    font-size: 0.85em;
+    color: var(--t-color-text-muted);
+    background: transparent;
+    border: 1px solid var(--t-color-border);
+    border-radius: var(--t-radius-inline);
+    cursor: pointer;
+    transition: var(--t-transition-hover);
+}
+
+.t-temp-undo:hover {
+    color: var(--t-color-text);
+    border-color: var(--t-color-border-strong);
+}
+
+@media screen and (max-width: 600px) {
+    .t-temp-bar {
+        padding: 5px 12px;
+    }
+
+    .t-temp-label {
+        display: none; /* 窄屏优先把宽度留给输入框，铅笔图标已足够示意 */
+    }
 }
 
 /* 历史开关组 */

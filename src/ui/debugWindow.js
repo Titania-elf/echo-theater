@@ -55,7 +55,11 @@ function expandBuiltinContextDetails(details, trace, meta) {
         ["scriptInstruction", "剧本指令"],
         ["continuationPreamble", "续写模式说明"],
         ["continuationContext", "续写会话上下文"],
-        ["continuationInstruction", "本轮续写指令"]
+        ["continuationInstruction", "本轮续写指令"],
+        // 「本次补充」是 api.js 拼在 [剧本指令] 块**之后**的独立一段，故排在最后。
+        // ⚠ 这个顺序就是 user 串的拼接顺序，切片靠它连续累加；api.js 那两处组装点
+        //   若把它挪到别处，这里必须同步挪，否则后面的分段会全部错位。
+        ["tempInstruction", "本次补充要求"]
     ];
 
     return details.flatMap(detail => {

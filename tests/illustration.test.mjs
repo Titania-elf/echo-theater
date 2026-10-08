@@ -3023,3 +3023,62 @@ test('a new profile fills its trigger words from the name, until the user edits 
 
     h.document.querySelector('.t-profile-window [data-action="close"]').click();
 });
+
+/* ------------------------------------------------------------------ *
+ * 「本次补充」（临时指令）—— 两条只能靠源码文本守住的契约
+ *
+ * 夹具刻意不加载 api.js（它拽着整条生成链路），所以这里只能做源码断言。
+ * 之所以值得单列，是因为这两条坏起来都是**静默**的：不报错、不崩溃，
+ * 只是提示词里少一段、或查看器里分段错位。
+ * ------------------------------------------------------------------ */
+
+test('临时指令独立成段，不得混进 [剧本指令] 的正文', () => {
+    const api = stripped('src/core/api.js');
+
+    // 两个组装点各登记一次分段长度（真实生成 + 预览）
+    assert.equal((api.match(/sectionLengths\.tempInstruction/g) || []).length, 2,
+        'sectionLengths.tempInstruction 应在 handleGenerate 与 buildPromptCompositionPreview 各出现一次');
+
+    // 续写的三段长度求和必须恰好等于 promptBody.length 才拆段（applyScriptInstructionSectionLengths）。
+    // 把补充段并进 processedPrompt 会让这个和立刻对不上，续写的三段拆分静默退化成一整块。
+    const scriptBlockLines = api.split('\n').filter(line => line.includes('[剧本指令]'));
+    assert.ok(scriptBlockLines.length > 0, '应能找到 [剧本指令] 块的构造处');
+    for (const line of scriptBlockLines) {
+        assert.equal(/本次补充/.test(line), false,
+            '[剧本指令] 块里不得包含本次补充 —— 它必须独立成段拼在后面');
+    }
+});
+
+test('提示词查看器的分段顺序与 user 串拼接顺序一致', () => {
+    const debug = stripped('src/ui/debugWindow.js');
+    const continuationIdx = debug.indexOf('["continuationInstruction"');
+    const tempIdx = debug.indexOf('["tempInstruction"');
+
+    assert.ok(continuationIdx >= 0, 'definitions 里应有 continuationInstruction');
+    assert.ok(tempIdx >= 0, 'definitions 里应有 tempInstruction');
+    // definitions 是"键 + 标签"的顺序表，查看器按累计长度连续切片。
+    // 补充段拼在 [剧本指令] 块之后，所以它必须排在续写三段之后。
+    assert.ok(tempIdx > continuationIdx,
+        'tempInstruction 必须排在 continuationInstruction 之后，否则后面的分段会整体错位');
+
+    const api = stripped('src/core/api.js');
+    assert.ok(api.indexOf('user += tempInstructionBlock') > api.indexOf('user += scriptBlock'),
+        '补充段必须在 scriptBlock 之后追加');
+});
+
+test('选用预设模式下补充段也要能进提示词', () => {
+    const api = stripped('src/core/api.js');
+    // 预设模式下整条 user 串不会被注入（预设条目 id 永远不等于 preset_user），
+    // {{titaniaScript}} 是剧本正文的唯一通道 —— 漏了这行，预设模式用户就看不到补充。
+    assert.equal((api.match(/titaniaScript: processedPrompt \+ tempInstructionBlock/g) || []).length, 2,
+        '两个组装点的 titaniaScript 都应并上补充段');
+});
+
+test('tempInstruction.js 保持零依赖', () => {
+    // 它被 core（api.js）与 ui（mainWindow/topBar）两侧同时引用：一旦引入 import，
+    // 就会牵出 core↔ui 的依赖方向问题 —— 那正是它独立成模块要躲开的东西。
+    // 真正的行为验证在 tests/tempInstruction.test.mjs：那边的 vm 夹具**不挂任何桩**，
+    // 只要它多一条 import，加载就当场失败。这里是同一件事的快速失败版。
+    assert.equal(/^\s*import\s/m.test(stripped('src/core/tempInstruction.js')), false,
+        'tempInstruction.js 不得 import 任何模块');
+});

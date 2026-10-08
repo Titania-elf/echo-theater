@@ -60,6 +60,15 @@ import {
 import { sendChatCompletion } from "./relayClient.js";
 import { recordScriptGenerated } from "./scriptData.js";
 import { getPromptScheme, buildPromptMessageDetails, DEFAULT_CONTENT_PROMPT, DEFAULT_VISUAL_PROMPT } from "./promptManager.js";
+// 「临时指令」（本次补充）：叠在剧本之上、只对本次生成生效。块必须独立成段拼在
+// [剧本指令] 之后，**不能**并进 processedPrompt —— 理由见该文件头部的约束 1。
+import {
+    buildTempInstructionBlock,
+    getActiveTempInstruction,
+    getTempInstructionDraft,
+    consumeTempInstruction,
+    isTempInstructionGenerationSource
+} from "./tempInstruction.js";
 import { scheduleContinuationPersistence } from "./continuationStore.js";
 // 自动配图（可选，默认关）：只在「单次演绎 / 重演」成功之后触发，见 illustrationAuto.js。
 import { maybeAutoIllustrate } from "./illustrationAuto.js";
@@ -1490,7 +1499,10 @@ export async function buildPromptCompositionPreview(options = {}) {
             // 仅续写口径下非零：把 [剧本指令] 块再拆三段（顺序即查看器的切片顺序）
             continuationPreamble: 0,
             continuationContext: 0,
-            continuationInstruction: 0
+            continuationInstruction: 0,
+            // 「本次补充」：独立成段拼在 [剧本指令] 之后，故记在最后。
+            // ⚠ 顺序必须与 user 串的拼接顺序一致，也要与 debugWindow.js 的 definitions 对齐。
+            tempInstruction: 0
         };
 
         // 构建导演指令区块
@@ -1563,6 +1575,20 @@ export async function buildPromptCompositionPreview(options = {}) {
         applyScriptInstructionSectionLengths(sectionLengths, scriptBlock, processedPrompt, continuationPlan?.override.lengths || null);
         user += scriptBlock;
 
+        // 「本次补充」：独立成段拼在 [剧本指令] 之后，绝不并进 processedPrompt ——
+        // 并进去会让续写的三段求和校验对不上（见 tempInstruction.js 头部约束 1）。
+        // 预览**只读不消费**：绝不能把用户正在打的草稿清掉。
+        // 口径跟着「下一步动作」走：续写形状的预览取已生效快照，首轮取输入框草稿 ——
+        // 与 resolveContinuationPreviewPlan 同源，才能兑现「预览 = 下一次真正发出去的提示词」。
+        const tempInstructionBlock = buildTempInstructionBlock(
+            continuationPlan ? getActiveTempInstruction(script.id) : getTempInstructionDraft(),
+            { continuation: Boolean(continuationPlan) }
+        );
+        if (tempInstructionBlock) {
+            sectionLengths.tempInstruction = tempInstructionBlock.length;
+            user += tempInstructionBlock;
+        }
+
         const meta = {
             source: generationSource,
             hasPromptOverride: hasExplicitOverride,
@@ -1589,7 +1615,10 @@ export async function buildPromptCompositionPreview(options = {}) {
             worldInfoBefore: ctx.worldInfo,
             worldInfoAfter: "",
             chatHistory: runtimeChatHistory,
-            titaniaScript: processedPrompt
+            // 选用预设模式下整条 user 串**不会被注入**（预设条目 id 永远不等于 preset_user），
+            // {{titaniaScript}} 才是剧本正文进提示词的唯一通道 —— 补充段必须一并带上，
+            // 否则预设模式用户静默看不到它。builtin 模式下没有条目消费这个键，并入是惰性的。
+            titaniaScript: processedPrompt + tempInstructionBlock
         };
 
         const messageDetails = buildPromptMessageDetails(promptScheme, {
@@ -1796,6 +1825,22 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
     const keepOverlayOpen = generationOverrides?.keepOverlayOpen === true;
     if (!silent && !keepOverlayOpen) $("#t-overlay").remove();
 
+    // 「本次补充」在这里才解析与消费 —— 必须晚于上面所有提前返回（尤其是世界书为空的
+    // 取消分支）。放在 generationSource 那会儿消费的话，用户在弹窗上点了取消，
+    // 输入框已被清空、"已生效"提示条还会宣称续写沿用，可这一轮压根没生成 —— 是句假话。
+    //
+    // 口径：只有手动演绎/重演与主动续写带得上，队列批量与 ST 事件自动演绎不带
+    // （两者都传 silent=true → source 为 "queue"）。
+    // 手动口径在这一刻把草稿消费掉（快照 + 清空输入框），即「用完自动清空」；
+    // 生成即便随后失败也不会丢文本 —— 快照还在，"已生效"提示条上的撤销能放回输入框。
+    // 主动续写是只读：取已生效的快照，它记着属于哪个剧本，换了剧本自动取不到。
+    const tempInstructionText = generationSource === "manual"
+        ? consumeTempInstruction(script.id)
+        : (isTempInstructionGenerationSource(generationSource) ? getActiveTempInstruction(script.id) : "");
+    const tempInstructionBlock = buildTempInstructionBlock(tempInstructionText, {
+        continuation: generationSource === "user_continuation"
+    });
+
     // 创建新的中断控制器
     GlobalState.abortController = new AbortController();
     const signal = GlobalState.abortController.signal;
@@ -1871,7 +1916,10 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
             // 仅续写口径下非零：把 [剧本指令] 块再拆三段（顺序即查看器的切片顺序）
             continuationPreamble: 0,
             continuationContext: 0,
-            continuationInstruction: 0
+            continuationInstruction: 0,
+            // 「本次补充」：独立成段拼在 [剧本指令] 之后，故记在最后。
+            // ⚠ 顺序必须与 user 串的拼接顺序一致，也要与 debugWindow.js 的 definitions 对齐。
+            tempInstruction: 0
         };
 
         // 构建导演指令部分
@@ -1984,6 +2032,14 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
         );
         user += scriptBlock;
 
+        // 「本次补充」独立成段拼在最后，**不能**并进 processedPrompt：
+        // 并进去会让上面那次三段求和校验立刻对不上，续写的三段拆分在提示词查看器里
+        // 静默退化成一整块（不报错，最难查）。所以 sectionLengths 里它单独计数。
+        if (tempInstructionBlock) {
+            sectionLengths.tempInstruction = tempInstructionBlock.length;
+            user += tempInstructionBlock;
+        }
+
         diagnostics.input_stats.sys_len = sys.length;
         diagnostics.input_stats.user_len = user.length;
 
@@ -1993,6 +2049,13 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
             promptOverrideLength: promptOverride ? String(promptOverride).length : 0,
             skipMacroEvaluation,
             sectionLengths,
+            // 「本次补充」只记是否生效与长度：全文本来就随 user 串进了 messageDetails，
+            // 再抄一份没有意义。查看器靠 sectionLengths 把它切成独立一段。
+            tempInstruction: {
+                applied: Boolean(tempInstructionBlock),
+                mode: generationSource === "user_continuation" ? "continuation" : "create",
+                length: tempInstructionBlock.length
+            },
             estimatedTokens: {
                 system: estimateTokens(sys),
                 user: estimateTokens(user)
@@ -2014,7 +2077,10 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
             worldInfoBefore: ctx.worldInfo,
             worldInfoAfter: "",
             chatHistory: runtimeChatHistory,
-            titaniaScript: processedPrompt
+            // 选用预设模式下整条 user 串**不会被注入**（预设条目 id 永远不等于 preset_user），
+            // {{titaniaScript}} 才是剧本正文进提示词的唯一通道 —— 补充段必须一并带上，
+            // 否则预设模式用户静默看不到它。builtin 模式下没有条目消费这个键，并入是惰性的。
+            titaniaScript: processedPrompt + tempInstructionBlock
         };
         const messageDetails = buildPromptMessageDetails(promptScheme, {
             [`${GlobalState.generationMode}_system`]: sys,

@@ -48,6 +48,15 @@ import {
     getContinuationQuickDraft,
     setContinuationQuickDraft
 } from "./mainWindow/viewState.js";
+// 「本次补充」（临时指令）：顶栏剧本卡下方那条。状态与文案都在 core/tempInstruction.js，
+// 这里只负责显隐与三个交互。
+import {
+    getTempInstructionDraft,
+    setTempInstructionDraft,
+    hasActiveTempInstruction,
+    takeActiveTempInstruction,
+    clearTempInstruction
+} from "../core/tempInstruction.js";
 import * as modernLayout from "./mainWindow/layouts/modern.js";
 import * as legacyLayout from "./mainWindow/layouts/legacy.js";
 import {
@@ -988,6 +997,44 @@ function updateDesc() {
 }
 
 /**
+ * 刷新「本次补充」条（顶栏剧本卡下方那条）。
+ *
+ * 两种模式互斥：
+ *   编辑态 —— 有待演绎剧本，或输入框里已有草稿。输入框是这件事的主入口，
+ *             有剧本可选就一直显示（空着也显示），它同时也是唯一的发现渠道。
+ *   已生效态 —— 草稿已清空、快照仍在生效（演绎完重开窗口就是这一幕）。给撤销。
+ *   都不成立 —— 整条隐藏。
+ *
+ * 草稿存在模块状态里、不只在 DOM：提示词预览（buildPromptCompositionPreview）
+ * 要读它，而预览不该去戳 DOM。input 事件负责把 DOM 的值同步回模块。
+ *
+ * ⚠ 快照是认剧本的（tempInstruction.js 的 scriptId 比对）。这里也一样 ——
+ *   翻到别的剧本的稿子上时，这条"已生效"提示不该跟过去。
+ */
+function updateTempInstructionUI() {
+    const $bar = $("#t-temp-bar");
+    if (!$bar.length) return; // 主窗口没开，静默返回
+
+    const pendingScriptId = getPendingGenerationScriptId();
+    const draft = getTempInstructionDraft();
+    // 与顶栏剧本卡的身份口径保持一致：待演绎优先，否则是最近用过的那个
+    const currentScriptId = pendingScriptId || GlobalState.lastUsedScriptId || "";
+    const editMode = Boolean(pendingScriptId || draft);
+    const visible = editMode || hasActiveTempInstruction(currentScriptId);
+
+    $bar.prop("hidden", !visible);
+    $("#t-temp-edit").prop("hidden", !editMode);
+    $("#t-temp-active").prop("hidden", editMode);
+    // 它可见时关掉上面那一栏的分隔线，两行才读成"顶栏长出的第二行"
+    $(".t-top-bar").toggleClass("has-temp-bar", visible);
+
+    if (editMode) {
+        const $input = $("#t-temp-input");
+        if ($input.val() !== draft) $input.val(draft);
+    }
+}
+
+/**
  * 应用选中的剧本到触发器卡片 (供 api.js 和 内部 调用)
  * @param {string} id - 剧本ID
  */
@@ -1006,6 +1053,10 @@ export function applyScriptSelection(id, options = {}) {
         setPendingGenerationScriptId(s.id);
         setContinuationQuickDraft("");
         $("#t-continuation-quick-input").val("");
+        // 换剧本 = 丢弃「本次补充」：草稿与已生效快照一起清。这是本功能唯一
+        // 需要主动清快照的地方（历史导航与开窗清 pending 都不能清，理由见
+        // tempInstruction.js 与 updateTempInstructionUI 的注释）。
+        clearTempInstruction();
         if (typeof window.updateRunButtonsState === "function") window.updateRunButtonsState();
     }
 
@@ -1022,6 +1073,10 @@ export function applyScriptSelection(id, options = {}) {
 
     // 兼容性：更新隐藏的文本框
     $("#t-txt-desc").val(s.desc);
+
+    // 顶栏文案是逐元素改的，不走重渲染，所以这一条也得自己刷新。
+    // 放在函数末尾无条件调：覆盖生成成功后那条无 pending 的 applyScriptSelection。
+    updateTempInstructionUI();
 }
 
 /**
@@ -1157,6 +1212,39 @@ export async function openMainWindow() {
     }
 
     $("#t-trigger-btn").on("click", () => showScriptSelector(GlobalState.currentCategoryFilter));
+
+    // --- 「本次补充」（临时指令）---
+    // 绑定放在这里而不是 topBar.js：那个文件只产出 HTML，动作实现一律留在本文件
+    // （见其文件头的分工说明）。也放这里而不是各 layout 内，两套布局自动共享。
+    $("#t-temp-input").on("input", function () {
+        setTempInstructionDraft($(this).val());
+        updateTempInstructionUI();
+    });
+
+    $("#t-temp-clear").on("click", () => {
+        // 只清草稿，不动快照 —— 编辑态下快照本来就该是空的（演绎才产生），
+        // 而"已生效"那条走的是撤销，不该被这个 ✕ 顺手抹掉。
+        setTempInstructionDraft("");
+        updateTempInstructionUI();
+    });
+
+    $("#t-temp-undo").on("click", () => {
+        const taken = takeActiveTempInstruction();
+        if (!taken) {
+            updateTempInstructionUI();
+            return;
+        }
+        setTempInstructionDraft(taken.text);
+        // 关键：把"待演绎"重新架回去。否则草稿虽回到输入框，底部主按钮仍是"续写"，
+        // 而重新点剧本卡会走 applyScriptSelection 的换剧本分支把草稿清掉 ——
+        // 撤销就成了死路，文本再也送不出去。
+        if (taken.scriptId) setPendingGenerationScriptId(taken.scriptId);
+        updateTempInstructionUI();
+        updateRunButtonsState();
+    });
+
+    // 自由输入，Enter 不做提交：紧邻剧本卡，误触 Ctrl+Enter 会直接关窗跑一次演绎。
+    // 生成仍由底部发送键（modern）/ 单次演绎（legacy）触发。
 
     $("#t-btn-filter").on("click", function (e) {
         renderFilterMenu(GlobalState.currentCategoryFilter, $(this), (newCat) => {
@@ -1563,6 +1651,8 @@ export async function openMainWindow() {
     window.updateRunButtonsState = updateRunButtonsState;
     window.updateFavButtonUI = updateFavButtonUI;
     window.updateScriptTitleDisplay = updateScriptTitleDisplay;
+    // 「本次补充」条的刷新（主窗口没开时静默返回，调用方无需守卫）
+    window.updateTempInstructionUI = updateTempInstructionUI;
     // 供设置窗口在改动顶栏图标后即时重绘（主窗口没开时函数不存在，调用方需守卫）
     window.refreshHeaderActions = refreshHeaderActions;
 
@@ -1618,6 +1708,9 @@ export async function openMainWindow() {
  * 根据生成状态禁用另一个按钮
  */
 export function updateRunButtonsState() {
+    // 「本次补充」条的显隐由「待演绎剧本 + 生成中」共同决定，跟着这里一起刷新最省事：
+    // 演绎发起前/结束后更新按钮状态时，这一条会自洽地切到"已生效"或隐藏。
+    updateTempInstructionUI();
     if (!activeLayout) return;
     activeLayout.syncRunButtons({
         isGenerating: GlobalState.isGenerating,

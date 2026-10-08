@@ -74,7 +74,40 @@ export const HISTORY_AI_ONLY_HINT =
  * @returns {string}
  */
 export function renderTopBarHtml(variant = "modern") {
-    return variant === "legacy" ? renderLegacyTopBar() : renderModernTopBar();
+    const bar = variant === "legacy" ? renderLegacyTopBar() : renderModernTopBar();
+    // 「本次补充」条挂在 .t-top-bar **之后**，是它的兄弟而非它的一行 ——
+    // .t-top-bar 是写死 height:52px 的单行胶囊条（理由见 css 里 .t-temp-bar 的注释）。
+    // 两套布局共用这一份，故直接拼在分派处，两个变体自动都有。
+    return bar + renderTempInstructionHtml();
+}
+
+/**
+ * 「本次补充」（临时指令）条的 DOM。
+ *
+ * 两个状态互斥，显隐由 mainWindow.js 的 updateTempInstructionUI() 按状态模块重算：
+ *   编辑态 —— 待演绎（或有草稿）时显示输入框
+ *   已生效态 —— 演绎后草稿已清空、快照还在生效时显示提示与撤销
+ *
+ * 刻意不在这里算初始显隐：本模块只产出 HTML（见文件头分工），
+ * 而显隐依赖 tempInstruction 的运行时状态，由主窗口统一刷新。
+ *
+ * ⚠ 那条状态带 `hidden` 属性，而 CSS 里它是 display:flex —— 必须靠
+ *   `.t-temp-bar[hidden]{display:none}` 兜住，否则 hidden 会被 flex 覆盖掉。
+ */
+export function renderTempInstructionHtml() {
+    return `
+            <div class="t-temp-bar" id="t-temp-bar" hidden>
+                <div class="t-temp-edit" id="t-temp-edit" hidden>
+                    <span class="t-temp-label"><i class="fa-solid fa-pen"></i> 本次补充</span>
+                    <input type="text" class="t-input t-temp-input" id="t-temp-input" autocomplete="off"
+                        placeholder="只对这次生成生效，例如：写得轻松一点，加一段日常对话">
+                    <button type="button" class="t-icon-btn t-temp-clear" id="t-temp-clear" title="清除本次补充" aria-label="清除本次补充"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="t-temp-active" id="t-temp-active" hidden>
+                    <span class="t-temp-active-text"><i class="fa-solid fa-check"></i> 本次补充已生效，续写沿用</span>
+                    <button type="button" class="t-temp-undo" id="t-temp-undo">撤销</button>
+                </div>
+            </div>`;
 }
 
 /** 新版：单行胶囊条 */
