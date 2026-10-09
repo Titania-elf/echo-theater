@@ -17,13 +17,28 @@
 //   代价：每次改 scale 都必须重新钳制。可见区边长 srcSize = 框宽/k 随放大而变小，
 //   钳制上限 (W - srcSize)/2 随之变大；放大顶到边界后再缩小，若不重新钳制会让
 //   srcX 变负 —— drawImage 会把越界的源矩形裁掉一部分再映射到目标区一角，
-//   画出一条透明带。render() 里统一做这件事。
+//   画出一条**偏心**的透明带。render() 里统一做这件事。
+//   缩到「整图进圆」那一段，limit 归 0、图片自动居中，源矩形越界是**有意的**，
+//   见下一节。
+//
+// ── 缩放范围：cover(1×) ~ 整图落进取景圆 ───────────────────────────
+// scale 的基准是 cover —— 1 表示图片刚好铺满取景框（measure() 里的 baseScale），
+// 打开时就是 1，预览仍然是一颗满的球。
+//   下限却**不是** 1：宽高比非 1:1 的图，缩到 1 就再也缩不动了 —— cover 已经把
+//   长边撑满、短边裁掉，滑块左端成了死区，用户拿到的只有「放大」。所以下限按图算：
+//   整张图的对角线缩到等于取景框边长，即 min(宽,高)/对角线。
+//   取景框是正方形里挖出的内切圆，只有缩到这一步，整张图才真的完整落进圆内 ——
+//   而圆形悬浮球里能显示的全部正是这个圆（球是 border-radius: 50%，
+//   输出又是正方的，取景圆 ≡ 球面）。再往下缩只会让图更小，到此为止。
+//   缩出来那圈留白（图小于框的范围）导出后是透明的，球里透出的是球自己的背景色。
 
 import { ensureOverlay } from "../utils/dom.js";
 
 const OUTPUT_SIZE_DEFAULT = 512;
 const OUTPUT_QUALITY_DEFAULT = 0.92;
-const SCALE_MIN = 1;
+// 缩放的基准是 cover，1 = 铺满取景框，也就是打开时的状态。
+// 下限随每张图的宽高比变化，见 createSession 里的 scaleMin。
+const SCALE_DEFAULT = 1;
 const SCALE_MAX = 4;
 // 滚轮缩放灵敏度：deltaY 经指数映射后乘到 scale 上
 const WHEEL_ZOOM_RATE = 0.0015;
@@ -124,9 +139,9 @@ function createSession({ image, outputSize, quality, resolve }) {
                 <div class="t-crop-stage" id="t-crop-stage">
                     <div class="t-crop-frame"></div>
                 </div>
-                <p class="t-crop-hint">拖动图片调整位置，滚轮或双指缩放</p>
+                <p class="t-crop-hint">拖动图片调整位置，滚轮、双指或下方滑杆缩放（向左缩到底可看全整张图）</p>
                 <div class="t-crop-zoom-row">
-                    <i class="fa-solid fa-image" aria-hidden="true"></i>
+                    <i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i>
                     <input type="range" class="t-crop-zoom" id="t-crop-zoom" min="100" max="400" step="1" value="100" aria-label="缩放">
                     <i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i>
                 </div>
@@ -160,9 +175,13 @@ function createSession({ image, outputSize, quality, resolve }) {
 
     const naturalW = image.naturalWidth;
     const naturalH = image.naturalHeight;
+    // 缩小下限：整张图完整落进取景圆，即对角线 = 取景框边长。
+    // 与 cover 基准的比值 = min(宽,高)/对角线，只由宽高比决定、与框的大小无关，
+    // 所以只算这一次（measure() 里重算的那部分才是随窗口变的）。
+    const scaleMin = Math.min(naturalW, naturalH) / Math.hypot(naturalW, naturalH);
     let stageSize = 0;
     let baseScale = 1;
-    const state = { scale: SCALE_MIN, panNatX: 0, panNatY: 0 };
+    const state = { scale: SCALE_DEFAULT, panNatX: 0, panNatY: 0 };
 
     let drag = null;
     let pinch = null;
@@ -200,13 +219,13 @@ function createSession({ image, outputSize, quality, resolve }) {
     }
 
     function setScale(next) {
-        state.scale = Math.min(SCALE_MAX, Math.max(SCALE_MIN, next));
+        state.scale = Math.min(SCALE_MAX, Math.max(scaleMin, next));
         render();
         syncZoom();
     }
 
     function reset() {
-        state.scale = SCALE_MIN;
+        state.scale = SCALE_DEFAULT;
         state.panNatX = 0;
         state.panNatY = 0;
         render();
@@ -265,7 +284,7 @@ function createSession({ image, outputSize, quality, resolve }) {
             const dist = touchDistance(touches[0], touches[1]);
             const mid = touchMid(touches[0], touches[1]);
             const ratio = pinch.dist > 0 ? dist / pinch.dist : 1;
-            state.scale = Math.min(SCALE_MAX, Math.max(SCALE_MIN, pinch.scale * ratio));
+            state.scale = Math.min(SCALE_MAX, Math.max(scaleMin, pinch.scale * ratio));
             const { k } = metrics();
             // 捏合的同时按两指中点位移平移
             state.panNatX = pinch.panX + (mid.x - pinch.mid.x) / k;
@@ -446,6 +465,9 @@ function createSession({ image, outputSize, quality, resolve }) {
     }
 
     measure();
+    // 滑块左端 = 缩到整图进圆的那一格。向下取整：四舍五入到 71 会让最左一格
+    // 停在 scaleMin 之上，用户把滑杆推到底也差一口气看不到整张图。
+    $zoom.attr("min", String(Math.floor(scaleMin * 100)));
     reset();
     $confirm[0].focus();
 
