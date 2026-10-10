@@ -249,25 +249,36 @@ export const defaultSettings = {
         // 不写进用户的聊天存档。开启后写入照常落盘（少数依赖变量跨次留存的预设才需要）。
         persist_variables: false
     },
-    // 文本改写入口（显示在故事大纲菜单中）
+    // 文本改写入口（显示在故事大纲菜单中）：改写 / 删除两套独立子系统
     rewrite_entry: {
         enabled: false,
+        // —— 共享：模型连接与切分 ——
         profile_mode: "custom",
         profile_id: "",
         api_url: "",
         api_key: "",
         model: "",
         split_mode: "sentence",
-        stream_live: true,
-        auto_trigger: false,
-        selected_sentence_enabled: true,
         tag_whitelist: "",
-        active_scheme_id: "",
-        schemes: [],
-        prompt_system: "你是专业中文文本改写助手。仅根据输入 targets 对命中片段改写，不新增未命中信息。保持语义一致、语气自然、连贯，并与原上下文风格一致。",
-        prompt_user: "返回 JSON schema：\n{{schema}}\n唯一合法示例：\n{\"task_id\":\"rewrite_x\",\"results\":[{\"segment_id\":\"s_1\",\"rewritten_text\":\"示例文本\"}]}\n硬约束：\n1) results 条目数必须等于 targets 条目数\n2) segment_id 必须来自 targets 且不重复\n3) rewritten_text 不能为空；若无需改写则原样返回\n4) 不得输出任何 JSON 之外的内容\n\n输入数据：\n{{payload}}",
-        selected_prompt_system: "你是专业中文文本改写助手的手动选句模式，专门将句子改写为白描风格。白描核心准则：用具体动作、物象、细节说话，不直述角色内心感受；克制形容词副词，以名词和动词支撑句子；删除心理概括句，转为外部可观察的行为或环境映衬；句式简洁硬朗，不虚饰不煽情。用户已选定需要改写的句子；只对输入 targets 逐条改写，不新增未选内容。改后能自然替换回原位置。",
-        selected_prompt_user: "返回 JSON schema：\n{{schema}}\n唯一合法示例：\n{\"task_id\":\"rewrite_selected_x\",\"results\":[{\"segment_id\":\"s_1\",\"rewritten_text\":\"示例文本\"}]}\n硬约束：\n1) targets 是用户手动选中的句子，只改写这些句子\n2) results 条目数必须等于 targets 条目数\n3) segment_id 必须来自 targets 且不重复\n4) rewritten_text 不能为空，且应能原位替换回上下文\n5) 不得输出任何 JSON 之外的内容\n\n输入数据：\n{{payload}}",
-        prompt_json_rule: "JSON格式指令（谨慎修改）：\n- 只输出 JSON，不输出解释或 markdown\n- 顶层必须包含 task_id 和 results\n- results 每项必须包含 segment_id 和 rewritten_text\n- rewritten_text 中不能出现目标命中词（anchor / matched_extra）"
+        stream_live: true,
+        // —— 改写子系统（LLM）——
+        rewrite: {
+            enabled: false,
+            auto_trigger: false,
+            active_scheme_id: "",
+            schemes: [],
+            selected_sentence_enabled: true,
+            prompt_system: "你是专业中文文本改写助手。仅根据输入 targets 对命中片段改写，不新增未命中信息。保持语义一致、语气自然、连贯，并与原上下文风格一致。若 target 带有 category（分类）信息，请严格按该分类的 guidance（改写指导）调整方向，并参考 bad_example（差句示例）与 good_example（优秀示例）：把差句那样的写法改成优秀示例那样的写法。",
+            prompt_user: "返回 JSON schema：\n{{schema}}\n唯一合法示例：\n{\"task_id\":\"rewrite_x\",\"results\":[{\"segment_id\":\"s_1\",\"rewritten_text\":\"示例文本\"}]}\n硬约束：\n1) results 条目数必须等于 targets 条目数\n2) segment_id 必须来自 targets 且不重复\n3) rewritten_text 不能为空；若无需改写则原样返回\n4) 每个 target 若含 category，必须遵循其 guidance 并向 good_example 风格靠拢，远离 bad_example 风格\n5) 不得输出任何 JSON 之外的内容\n\n输入数据：\n{{payload}}",
+            selected_prompt_system: "你是专业中文文本改写助手的手动选句模式，专门将句子改写为白描风格。白描核心准则：用具体动作、物象、细节说话，不直述角色内心感受；克制形容词副词，以名词和动词支撑句子；删除心理概括句，转为外部可观察的行为或环境映衬；句式简洁硬朗，不虚饰不煽情。用户已选定需要改写的句子；只对输入 targets 逐条改写，不新增未选内容。改后能自然替换回原位置。",
+            selected_prompt_user: "返回 JSON schema：\n{{schema}}\n唯一合法示例：\n{\"task_id\":\"rewrite_selected_x\",\"results\":[{\"segment_id\":\"s_1\",\"rewritten_text\":\"示例文本\"}]}\n硬约束：\n1) targets 是用户手动选中的句子，只改写这些句子\n2) results 条目数必须等于 targets 条目数\n3) segment_id 必须来自 targets 且不重复\n4) rewritten_text 不能为空，且应能原位替换回上下文\n5) 不得输出任何 JSON 之外的内容\n\n输入数据：\n{{payload}}",
+            prompt_json_rule: "JSON格式指令（谨慎修改）：\n- 只输出 JSON，不输出解释或 markdown\n- 顶层必须包含 task_id 和 results\n- results 每项必须包含 segment_id 和 rewritten_text\n- rewritten_text 中不能出现目标命中词（anchor / matched_extra）"
+        },
+        // —— 删除子系统（本地确定性，无 LLM，命中即删）——
+        deletion: {
+            enabled: false,
+            auto_trigger: true,
+            rules: []
+        }
     },
 };

@@ -42,6 +42,11 @@
 
 #chat .mes .t-rewrite-select-sentence.selected { background: var(--t-color-success-soft); box-shadow: inset 0 0 0 1px var(--t-color-success-border); }
 
+/* 无感删除：命中句原地删除后，被重渲染的那一楼正文做一次很短的淡入，
+   读起来像消息自然落定，而非 reloadCurrentChat 的整屏闪烁。复用 t-fade-in（R6）。 */
+#chat .mes .mes_text.t-delete-settle { animation: t-fade-in 0.28s ease; }
+
+
 #chat .mes .t-rewrite-mark {
     position: relative;
     display: inline;

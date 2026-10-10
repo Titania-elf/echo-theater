@@ -4,7 +4,7 @@
     "description": "沉浸式角色内心独白与平行世界演绎插件",
     "type": "module",
     "scripts": {
-        "test": "node --experimental-vm-modules --test --test-isolation=none tests/illustration.test.mjs tests/cleaning.test.mjs tests/tempInstruction.test.mjs tests/pacing.test.mjs",
+        "test": "node --experimental-vm-modules --test --test-isolation=none tests/illustration.test.mjs tests/cleaning.test.mjs tests/tempInstruction.test.mjs tests/pacing.test.mjs tests/textRewrite.test.mjs",
         "test:illustration": "node --experimental-vm-modules --test --test-isolation=none tests/illustration.test.mjs",
         "test:cleaning": "node --experimental-vm-modules --test --test-isolation=none tests/cleaning.test.mjs",
         "test:temp": "node --experimental-vm-modules --test --test-isolation=none tests/tempInstruction.test.mjs",

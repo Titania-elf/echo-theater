@@ -1,10 +1,25 @@
 // src/ui/rewriteEntryButton.js
 
 import { getExtData, saveExtData } from "../utils/storage.js";
-import { saveChatConditional, reloadCurrentChat, eventSource, event_types } from "../../../../script.js";
+import { saveChatConditional, reloadCurrentChat, updateMessageBlock, eventSource, event_types } from "../../../../script.js";
 import { parseTagWhitelistInput, extractTextByWhitelist } from "../utils/chatTagWhitelist.js";
 import { normalizeRewriteCustomProfiles } from "../core/apiProfileRegistry.js";
 import { sendChatCompletion } from "../core/relayClient.js";
+import {
+    normalizeToken,
+    parseCommaList,
+    uniq,
+    splitBySentence,
+    splitByParagraph,
+    splitText,
+    normalizeDeleteMode,
+    applyDeletesToUnit,
+    applyReplacements,
+    buildDeleteReplacements,
+    evaluateDeleteRules,
+    evaluateRewriteRules,
+    splitLegacyRules,
+} from "../core/textRewriteCore.js";
 import {
     createApiConnectionEditor,
     mapConnectionProfilesToCustomProfiles,
@@ -24,8 +39,11 @@ let autoTriggerBound = false;
 let rewriteDecorBound = false;
 let rewriteDecorTimer = null;
 let autoRewriteTimer = null;
+let autoDeleteTimer = null;
 let activeRewriteAbortController = null;
 let isAutoRewriting = false;
+let isAutoDeleting = false;
+let activePanelTab = "rewrite"; // 主面板当前分区：rewrite | delete
 let runtimeCollapsed = false;
 let lastRawResponseText = "";
 let lastRawMetaText = "等待请求";
@@ -34,6 +52,8 @@ let liveResponseHistorySeq = 0;
 let lastMatchResult = null;
 let lastMatchSourceText = "";
 let lastDiffRows = [];
+let lastDeleteResult = null;
+let lastDeleteSourceText = "";
 let latestSentenceUnits = [];
 let selectedSentenceIds = new Set();
 let inlineSelectionMessageIndex = null;
@@ -109,59 +129,20 @@ function escapeHtml(text) {
         .replace(/'/g, "&#39;");
 }
 
-function normalizeToken(s) {
-    return String(s || "").replace(/\s+/g, " ").trim().toLowerCase();
+function getRewriteState() {
+    return ensureRewriteDataShape().rewrite;
 }
 
-function normalizePunctuation(s) {
-    return String(s || "")
-        .replace(/，/g, ",")
-        .replace(/；/g, ";")
-        .replace(/：/g, ":")
-        .replace(/[\t\f\v]+/g, " ");
+function getDeletionState() {
+    return ensureRewriteDataShape().deletion;
 }
 
-function parseCommaList(input) {
-    return normalizePunctuation(input)
-        .split(",")
-        .map(x => normalizeToken(x))
-        .filter(Boolean);
+function isRewriteEnabled() {
+    return getRewriteState().enabled === true;
 }
 
-function uniq(arr) {
-    return [...new Set(arr)];
-}
-
-function normalizeRuleAction(action) {
-    const value = String(action || "").trim().toLowerCase();
-    if (value === "delete") return "delete";
-    if (value === "delete_range") return "delete_range";
-    return "rewrite";
-}
-
-function actionLabel(action) {
-    const normalized = normalizeRuleAction(action);
-    if (normalized === "delete") return "删除";
-    if (normalized === "delete_range") return "删片段";
-    return "改写";
-}
-
-/* 命中归并：同一单元命中多条规则时取最强动作——整句删除 > 片段删除 > 改写。
-   返回 { deleteAction: "delete"|"delete_range"|null, deleteFragment }。 */
-function mergeUnitDeleteAction(matchedRules) {
-    let deleteAction = null;
-    let deleteFragment = "";
-    (Array.isArray(matchedRules) ? matchedRules : []).forEach((rule) => {
-        const action = normalizeRuleAction(rule?.action);
-        if (action === "delete") {
-            deleteAction = "delete";
-            deleteFragment = "";
-        } else if (action === "delete_range" && deleteAction !== "delete") {
-            deleteAction = "delete_range";
-            deleteFragment = String(rule?.fragment || "").trim();
-        }
-    });
-    return { deleteAction, deleteFragment };
+function isDeleteEnabled() {
+    return getDeletionState().enabled === true;
 }
 
 function generateId(prefix) {
@@ -171,9 +152,9 @@ function generateId(prefix) {
 }
 
 function getActiveScheme() {
-    const data = ensureRewriteDataShape();
-    const schemes = Array.isArray(data.schemes) ? data.schemes : [];
-    const activeId = String(data.active_scheme_id || "").trim();
+    const rw = getRewriteState();
+    const schemes = Array.isArray(rw.schemes) ? rw.schemes : [];
+    const activeId = String(rw.active_scheme_id || "").trim();
     if (!activeId) return null;
     return schemes.find(s => s.id === activeId) || null;
 }
@@ -191,16 +172,10 @@ function normalizeCategory(cat) {
         bad_example: String(cat?.bad_example || "").trim(),
         good_example: String(cat?.good_example || "").trim(),
         guidance: String(cat?.guidance || "").trim(),
-        rules: (Array.isArray(cat?.rules) ? cat.rules : []).map(r => {
-            const action = normalizeRuleAction(r?.action);
-            return {
-                anchor: uniq(parseCommaList(r?.anchor || "").filter(Boolean)).join(", "),
-                extras: uniq(parseCommaList(r?.extras || "").filter(Boolean)).join(", "),
-                action,
-                // 仅片段删除需要删除起点；其他动作不存，避免无谓字段
-                fragment: action === "delete_range" ? String(r?.fragment || "").trim() : ""
-            };
-        }).filter(r => r.anchor && r.extras)
+        rules: (Array.isArray(cat?.rules) ? cat.rules : []).map(r => ({
+            anchor: uniq(parseCommaList(r?.anchor || "")).join(", "),
+            extras: uniq(parseCommaList(r?.extras || "")).join(", "),
+        })).filter(r => r.anchor && r.extras)
     };
 }
 
@@ -212,59 +187,97 @@ function normalizeScheme(scheme) {
     };
 }
 
+function normalizeDeleteRule(rule) {
+    const mode = normalizeDeleteMode(rule?.mode);
+    return {
+        anchor: uniq(parseCommaList(rule?.anchor || "")).join(", "),
+        extras: uniq(parseCommaList(rule?.extras || "")).join(", "),
+        mode,
+        fragment: mode === "fragment" ? String(rule?.fragment || "").trim() : "",
+        enabled: rule?.enabled !== false,
+    };
+}
+
 function ensureRewriteDataShape() {
     const data = getExtData();
     if (!data.rewrite_entry || typeof data.rewrite_entry !== "object") {
-        data.rewrite_entry = {
-            enabled: false,
-            api_url: "",
-            api_key: "",
-            model: "",
-            split_mode: "sentence",
-            active_scheme_id: "",
-            schemes: []
+        data.rewrite_entry = { enabled: false };
+    }
+    const item = data.rewrite_entry;
+
+    // —— 旧结构迁移（幂等：item.rewrite 一旦存在就不再迁移）——
+    if (!item.rewrite || typeof item.rewrite !== "object") {
+        const legacy = { schemes: Array.isArray(item.schemes) ? item.schemes : [] };
+        const { rewriteSchemes, deletionRules } = splitLegacyRules(legacy);
+        const hasRewriteRules = rewriteSchemes.some(s => (s.categories || []).some(c => (c.rules || []).length > 0));
+        const wasOn = item.enabled === true;
+        item.rewrite = {
+            enabled: wasOn && hasRewriteRules,
+            auto_trigger: item.auto_trigger === true,
+            active_scheme_id: typeof item.active_scheme_id === "string" ? item.active_scheme_id : "",
+            schemes: rewriteSchemes,
+            selected_sentence_enabled: item.selected_sentence_enabled !== false,
+            prompt_system: typeof item.prompt_system === "string" ? item.prompt_system : REWRITE_DEFAULT_PROMPT_SYSTEM,
+            prompt_user: typeof item.prompt_user === "string" ? item.prompt_user : REWRITE_DEFAULT_PROMPT_USER,
+            selected_prompt_system: typeof item.selected_prompt_system === "string" ? item.selected_prompt_system : REWRITE_DEFAULT_SELECTED_PROMPT_SYSTEM,
+            selected_prompt_user: typeof item.selected_prompt_user === "string" ? item.selected_prompt_user : REWRITE_DEFAULT_SELECTED_PROMPT_USER,
+            prompt_json_rule: typeof item.prompt_json_rule === "string" ? item.prompt_json_rule : REWRITE_DEFAULT_PROMPT_JSON_RULE,
         };
+        item.deletion = { enabled: wasOn && deletionRules.length > 0, auto_trigger: item.auto_trigger === true, rules: deletionRules };
+        ["schemes", "active_scheme_id", "auto_trigger", "selected_sentence_enabled",
+         "prompt_system", "prompt_user", "selected_prompt_system", "selected_prompt_user", "prompt_json_rule"]
+            .forEach(k => { delete item[k]; });
     }
 
-    const item = data.rewrite_entry;
+    // —— 共享字段 ——
+    if (typeof item.enabled !== "boolean") item.enabled = false;
     item.profile_mode = "custom";
     if (typeof item.profile_id !== "string") item.profile_id = "";
     item.custom_profiles = normalizeRewriteCustomProfiles(item.custom_profiles, item);
-    if (!item.profile_id) {
-        item.profile_id = item.custom_profiles[0]?.id || "";
-    }
+    if (!item.profile_id) item.profile_id = item.custom_profiles[0]?.id || "";
     if (!item.split_mode || !["sentence", "paragraph"].includes(item.split_mode)) item.split_mode = "sentence";
     if (typeof item.stream_live !== "boolean") item.stream_live = true;
-    if (typeof item.auto_trigger !== "boolean") item.auto_trigger = false;
-    if (typeof item.selected_sentence_enabled !== "boolean") item.selected_sentence_enabled = true;
     if (typeof item.tag_whitelist !== "string") item.tag_whitelist = "";
-    if (typeof item.active_scheme_id !== "string") item.active_scheme_id = "";
-    if (!Array.isArray(item.schemes)) item.schemes = [];
-    if (typeof item.prompt_system !== "string") item.prompt_system = REWRITE_DEFAULT_PROMPT_SYSTEM;
-    if (typeof item.prompt_user !== "string") item.prompt_user = REWRITE_DEFAULT_PROMPT_USER;
-    if (typeof item.selected_prompt_system !== "string") item.selected_prompt_system = REWRITE_DEFAULT_SELECTED_PROMPT_SYSTEM;
-    if (typeof item.selected_prompt_user !== "string") item.selected_prompt_user = REWRITE_DEFAULT_SELECTED_PROMPT_USER;
-    if (typeof item.prompt_json_rule !== "string") item.prompt_json_rule = REWRITE_DEFAULT_PROMPT_JSON_RULE;
 
-    item.schemes = item.schemes.map(normalizeScheme).filter(s => s.name);
+    // —— 改写子系统 ——
+    const rw = (item.rewrite && typeof item.rewrite === "object") ? item.rewrite : (item.rewrite = {});
+    if (typeof rw.enabled !== "boolean") rw.enabled = false;
+    if (typeof rw.auto_trigger !== "boolean") rw.auto_trigger = false;
+    if (typeof rw.active_scheme_id !== "string") rw.active_scheme_id = "";
+    if (!Array.isArray(rw.schemes)) rw.schemes = [];
+    if (typeof rw.selected_sentence_enabled !== "boolean") rw.selected_sentence_enabled = true;
+    if (typeof rw.prompt_system !== "string") rw.prompt_system = REWRITE_DEFAULT_PROMPT_SYSTEM;
+    if (typeof rw.prompt_user !== "string") rw.prompt_user = REWRITE_DEFAULT_PROMPT_USER;
+    if (typeof rw.selected_prompt_system !== "string") rw.selected_prompt_system = REWRITE_DEFAULT_SELECTED_PROMPT_SYSTEM;
+    if (typeof rw.selected_prompt_user !== "string") rw.selected_prompt_user = REWRITE_DEFAULT_SELECTED_PROMPT_USER;
+    if (typeof rw.prompt_json_rule !== "string") rw.prompt_json_rule = REWRITE_DEFAULT_PROMPT_JSON_RULE;
+    rw.schemes = rw.schemes.map(normalizeScheme).filter(s => s.name);
+
+    // —— 删除子系统 ——
+    const del = (item.deletion && typeof item.deletion === "object") ? item.deletion : (item.deletion = {});
+    if (typeof del.enabled !== "boolean") del.enabled = false;
+    if (typeof del.auto_trigger !== "boolean") del.auto_trigger = true;
+    if (!Array.isArray(del.rules)) del.rules = [];
+    del.rules = del.rules.map(normalizeDeleteRule).filter(r => r.anchor && r.extras);
+
     return item;
 }
 
 function getRewritePromptState() {
-    const item = ensureRewriteDataShape();
+    const rw = getRewriteState();
     return {
-        prompt_system: String(item.prompt_system || REWRITE_DEFAULT_PROMPT_SYSTEM),
-        prompt_user: String(item.prompt_user || REWRITE_DEFAULT_PROMPT_USER),
-        prompt_json_rule: String(item.prompt_json_rule || REWRITE_DEFAULT_PROMPT_JSON_RULE)
+        prompt_system: String(rw.prompt_system || REWRITE_DEFAULT_PROMPT_SYSTEM),
+        prompt_user: String(rw.prompt_user || REWRITE_DEFAULT_PROMPT_USER),
+        prompt_json_rule: String(rw.prompt_json_rule || REWRITE_DEFAULT_PROMPT_JSON_RULE)
     };
 }
 
 function getSelectedRewritePromptState() {
-    const item = ensureRewriteDataShape();
+    const rw = getRewriteState();
     return {
-        prompt_system: String(item.selected_prompt_system || REWRITE_DEFAULT_SELECTED_PROMPT_SYSTEM),
-        prompt_user: String(item.selected_prompt_user || REWRITE_DEFAULT_SELECTED_PROMPT_USER),
-        prompt_json_rule: String(item.prompt_json_rule || REWRITE_DEFAULT_PROMPT_JSON_RULE)
+        prompt_system: String(rw.selected_prompt_system || REWRITE_DEFAULT_SELECTED_PROMPT_SYSTEM),
+        prompt_user: String(rw.selected_prompt_user || REWRITE_DEFAULT_SELECTED_PROMPT_USER),
+        prompt_json_rule: String(rw.prompt_json_rule || REWRITE_DEFAULT_PROMPT_JSON_RULE)
     };
 }
 
@@ -330,13 +343,13 @@ function persistPromptStateFromSettings() {
     const parsed = parseCombinedPromptText(combinedText, getRewritePromptState());
     const selectedCombinedText = String($overlay.find("#t-rewrite-settings-selected-prompt-combined").val() || "");
     const selectedParsed = parseCombinedPromptText(selectedCombinedText, getSelectedRewritePromptState());
-    data.rewrite_entry = {
-        ...prev,
+    prev.rewrite = {
+        ...prev.rewrite,
         prompt_system: parsed.prompt_system,
         prompt_user: parsed.prompt_user,
         selected_prompt_system: selectedParsed.prompt_system,
         selected_prompt_user: selectedParsed.prompt_user,
-        prompt_json_rule: String(prev.prompt_json_rule || REWRITE_DEFAULT_PROMPT_JSON_RULE)
+        prompt_json_rule: String(prev.rewrite.prompt_json_rule || REWRITE_DEFAULT_PROMPT_JSON_RULE)
     };
     saveExtData();
 }
@@ -389,26 +402,6 @@ function setStatus(text, tone = "muted") {
     $targets.each((_, el) => {
         $(el).removeClass("ok warn err muted").addClass(tone).text(text || "");
     });
-}
-
-function splitBySentence(text) {
-    const src = String(text || "");
-    if (!src.trim()) return [];
-
-    const lines = src.split(/\r?\n/);
-    const chunks = [];
-
-    lines.forEach((line) => {
-        if (!line.trim()) return;
-        const arr = line.split(/(?<=[。！？!?])/u).filter(s => s.trim());
-        if (arr.length === 0) {
-            chunks.push(line);
-        } else {
-            chunks.push(...arr);
-        }
-    });
-
-    return chunks;
 }
 
 function getSelectedSentenceIdSet() {
@@ -585,8 +578,8 @@ function ensureInlineRewriteToolbar(latest) {
 }
 
 function refreshInlineRewriteEntry() {
-    const data = ensureRewriteDataShape();
-    if (!isEnabled() || data.selected_sentence_enabled === false) {
+    const rw = getRewriteState();
+    if (!isEnabled() || !isRewriteEnabled() || rw.selected_sentence_enabled === false) {
         clearInlineSentenceSelection();
         return;
     }
@@ -628,95 +621,13 @@ function enterInlineSentenceSelection() {
     updateInlineRewriteCount();
 }
 
-function splitByParagraph(text) {
-    return String(text || "")
-        .split(/\r?\n\s*\r?\n+/)
-        .map(s => s.trim())
-        .filter(Boolean);
-}
-
-function splitText(text, splitMode) {
-    return splitMode === "paragraph" ? splitByParagraph(text) : splitBySentence(text);
-}
-
-function evaluateUnitAgainstRule(unitText, rule) {
-    const anchorList = parseCommaList(String(rule?.anchor || ""));
-    const extrasList = parseCommaList(String(rule?.extras || ""));
-    if (anchorList.length === 0 || extrasList.length === 0) return false;
-    const source = normalizeToken(unitText);
-    const anchorHit = anchorList.some(kw => source.includes(kw));
-    if (!anchorHit) return false;
-    const extrasHit = extrasList.some(kw => source.includes(kw));
-    return extrasHit;
-}
-
-function evaluateUnitAgainstCategory(unitText, category) {
-    const rules = Array.isArray(category.rules) ? category.rules : [];
-    const matchedRules = [];
-    rules.forEach((rule) => {
-        if (evaluateUnitAgainstRule(unitText, rule)) {
-            matchedRules.push({
-                anchor: String(rule.anchor || ""),
-                extras: String(rule.extras || ""),
-                action: normalizeRuleAction(rule?.action),
-                fragment: String(rule?.fragment || "")
-            });
-        }
-    });
-    return matchedRules;
-}
-
-function evaluateRules(payload, sourceText = null) {
-    const splitMode = payload?.split_mode === "paragraph" ? "paragraph" : "sentence";
-    const categories = Array.isArray(payload?.categories) ? payload.categories : [];
-    const testText = String(sourceText || "");
-    const units = splitText(testText, splitMode);
-
-    const unitResults = units.map((unit, idx) => {
-        const matchedCategories = [];
-        categories.forEach((cat) => {
-            const matchedRules = evaluateUnitAgainstCategory(unit, cat);
-            if (matchedRules.length > 0) {
-                matchedCategories.push({
-                    categoryId: String(cat.id || ""),
-                    categoryName: String(cat.name || ""),
-                    matchedRules
-                });
-            }
-        });
-        // 删除动作按全部命中规则归并（整句删除 > 片段删除 > 改写）
-        const allMatchedRules = matchedCategories.flatMap(c => c.matchedRules);
-        const { deleteAction, deleteFragment } = mergeUnitDeleteAction(allMatchedRules);
-        return {
-            unitIndex: idx + 1,
-            text: unit,
-            hit: matchedCategories.length > 0,
-            matchedCategories,
-            deleteAction,
-            deleteFragment
-        };
-    });
-
-    const hitUnits = unitResults.filter(item => item.hit);
-    const hitCategoryIds = new Set();
-    hitUnits.forEach(u => u.matchedCategories.forEach(c => hitCategoryIds.add(c.categoryId)));
-
-    return {
-        splitMode,
-        unitCount: unitResults.length,
-        hitCount: hitUnits.length,
-        categoryCount: hitCategoryIds.size,
-        unitResults
-    };
-}
-
 function renderDiffRows(rows = []) {
     if (Array.isArray(rows)) {
         lastDiffRows = rows.map((item) => ({
             before: String(item?.before || ""),
             after: String(item?.after || ""),
             ruleHint: String(item?.ruleHint || ""),
-            action: normalizeRuleAction(item?.action)
+            action: item?.action === "delete" ? "delete" : "rewrite"
         }));
     } else {
         lastDiffRows = [];
@@ -734,9 +645,9 @@ function renderDiffRows(rows = []) {
         const before = escapeHtml(item.before || "");
         const after = escapeHtml(item.after || "");
         const ruleHint = escapeHtml(item.ruleHint || "");
-        const action = normalizeRuleAction(item.action);
-        const afterLabel = action === "delete" ? "删除" : "改写";
-        const afterText = action === "delete" ? "（已删除）" : after;
+        const isDelete = item.action === "delete";
+        const afterLabel = isDelete ? "删除" : "改写";
+        const afterText = isDelete && !item.after ? "（已删除）" : after;
         return `
             <div class="t-rewrite-diff-row">
                 <div class="t-rewrite-diff-cell t-rewrite-diff-before">
@@ -968,38 +879,35 @@ function parseRewriteJson(raw) {
 
 function buildRewritePayload(data, sourceText) {
     const categories = getActiveSchemeCategories();
-    const payload = {
-        split_mode: data.split_mode || "sentence",
-        categories
-    };
-    const evaluated = evaluateRules(payload, sourceText || "");
+    const evaluated = evaluateRewriteRules(sourceText || "", data.split_mode || "sentence", categories);
 
     const targets = [];
     const catNames = new Set();
-    const deleteUnits = [];
+    // 一个命中单元 = 一个 target（segment_id 唯一）；合并其命中的所有分类关键词与指导
     evaluated.unitResults.forEach((unit) => {
         if (!unit.hit) return;
-        // 删除规则命中的单元离线处理，不发给模型
-        if (unit.deleteAction) {
-            deleteUnits.push({
-                unitIndex: unit.unitIndex,
-                text: unit.text,
-                deleteAction: unit.deleteAction,
-                deleteFragment: unit.deleteFragment || "",
-                ruleHint: unit.matchedCategories.map(c => c.categoryName).join(" | ")
-            });
-            unit.matchedCategories.forEach((mc) => catNames.add(mc.categoryName));
-            return;
-        }
+        const allKeywords = [];
+        const unitCats = [];
         unit.matchedCategories.forEach((mc) => {
             catNames.add(mc.categoryName);
-            const allKeywords = mc.matchedRules.map(r => [...parseCommaList(r.anchor), ...parseCommaList(r.extras)]).flat();
-            targets.push({
-                segment_id: `s_${unit.unitIndex}`,
-                original_text: unit.text,
-                matched_keywords: uniq(allKeywords)
+            mc.matchedRules.forEach(r => {
+                allKeywords.push(...parseCommaList(r.anchor), ...parseCommaList(r.extras));
             });
+            const cat = { name: mc.categoryName };
+            if (mc.guidance) cat.guidance = mc.guidance;
+            if (mc.bad_example) cat.bad_example = mc.bad_example;
+            if (mc.good_example) cat.good_example = mc.good_example;
+            unitCats.push(cat);
         });
+        const target = {
+            segment_id: `s_${unit.unitIndex}`,
+            original_text: unit.text,
+            matched_keywords: uniq(allKeywords),
+        };
+        // 把分类的改写指导/示例真正带给模型（旧实现收集了却从未发送）
+        if (unitCats.length === 1) target.category = unitCats[0];
+        else if (unitCats.length > 1) target.categories = unitCats;
+        targets.push(target);
     });
 
     return {
@@ -1009,7 +917,6 @@ function buildRewritePayload(data, sourceText) {
             targets
         },
         hitCategoryCount: catNames.size,
-        deleteUnits
     };
 }
 
@@ -1195,86 +1102,19 @@ function bindRewriteDecorationEvents() {
     });
 }
 
-/* 片段删除：从命中的字面片段删到单元末尾，保留句末标点，清理悬挂连接符。
-   例：「他笑了，那笑声像碎玻璃一样脆。」+ fragment「那笑声像」→「他笑了。」
-   片段不在单元内 → 原文不动（规则失配不误删）。 */
-function applyDeletesToUnit(unitText, deleteAction, fragment) {
-    const text = String(unitText || "");
-    if (deleteAction === "delete") return "";
-    if (deleteAction !== "delete_range") return text;
-    const frag = String(fragment || "").trim();
-    if (!frag) return text;
-    const idx = text.indexOf(frag);
-    if (idx < 0) return text;
-    const tail = text.slice(idx + frag.length);
-    const punct = /[。！？!?…]\s*$/.exec(tail);
-    const rawHead = text.slice(0, idx);
-    // head 末尾的悬挂连接符清理：直连的「，、；」裁掉
-    let cleanedHead = rawHead.replace(/[，、；,;]\s*$/, "");
-    // head 已以闭引号/闭括号收尾（“走吧。”那笑声像铃。）时不再拼句末标点，
-    // 避免产生「”。」这样的重复终止符
-    const closedByQuote = /[”」』）)]\s*$/.test(cleanedHead);
-    let keptTail = punct && !closedByQuote ? punct[0] : "";
-    // head 末尾是开括号（删除段带走了闭括号）时补回，保持配对
-    const openMatch = /[（(]\s*$/.exec(cleanedHead);
-    if (openMatch) {
-        const closeChar = cleanedHead.endsWith("（") ? "）" : ")";
-        cleanedHead = cleanedHead.replace(/[（(]\s*$/, closeChar);
-        keptTail = "";
-    }
-    return cleanedHead + keptTail;
+/* 删除回写：命中单元 → 顺序替换（整句 after=""）。 */
+function applyDeleteToFullText(sourceText, deleteUnits) {
+    return applyReplacements(sourceText, buildDeleteReplacements(deleteUnits));
 }
 
-/* 删除单元 → diff 行。片段删除展示删后结果，整句删除展示（已删除）。 */
-function buildDeleteDiffRows(deleteUnits = []) {
-    return (Array.isArray(deleteUnits) ? deleteUnits : []).map((unit) => ({
-        before: unit.text,
-        after: applyDeletesToUnit(unit.text, unit.deleteAction, unit.deleteFragment),
-        ruleHint: unit.ruleHint || "",
-        action: "delete"
-    }));
-}
-
-function applyRewriteToFullText(sourceText, evaluated, parsed, request = null, deleteUnits = []) {
-    // 删除单元先行：unit.text → 删除结果（整句为 ""）。与改写一样用 indexOf+cursor
-    // 逐个推进，同一句文本只消费一次。
-    const deletes = (Array.isArray(deleteUnits) ? deleteUnits : [])
-        .map((unit) => ({
-            before: String(unit?.text || ""),
-            after: applyDeletesToUnit(unit?.text, unit?.deleteAction, unit?.deleteFragment)
-        }))
-        .filter((item) => item.before && item.after !== item.before);
-
+/* 改写回写：按模型返回的 rewritten_text 替换命中单元（纯改写，删除走独立链路）。 */
+function applyRewriteToFullText(sourceText, evaluated, parsed) {
     const map = new Map((parsed?.results || []).map(r => [String(r.segment_id), String(r.rewritten_text || "")]));
-    let rewritten = String(sourceText || "");
-    let cursor = 0;
-    let replaced = 0;
-
-    // 合并两个来源后按原文出现顺序统一替换
-    const rewriteEntries = evaluated.unitResults
-        .filter(u => u.hit && !u.deleteAction)
-        .map((unit) => {
-            const segmentId = `s_${unit.unitIndex}`;
-            return { before: String(unit.text || ""), after: map.get(segmentId) };
-        })
-        .filter((item) => item.before && typeof item.after === "string" && item.after !== item.before);
-
-    const entries = [...deletes, ...rewriteEntries]
-        .map((item) => {
-            const idx = rewritten.indexOf(item.before, cursor);
-            return { ...item, idx };
-        })
-        .filter((item) => item.idx >= 0)
-        .sort((a, b) => a.idx - b.idx);
-
-    entries.forEach((item) => {
-        if (item.idx < cursor) return; // 同位置重叠（同句既删又改的兜底，理论不发生：分流已互斥）
-        rewritten = `${rewritten.slice(0, item.idx)}${item.after}${rewritten.slice(item.idx + item.before.length)}`;
-        cursor = item.idx + item.after.length;
-        replaced += 1;
-    });
-
-    return { text: rewritten, replaced };
+    const entries = (evaluated?.unitResults || [])
+        .filter(u => u.hit)
+        .map((unit) => ({ before: String(unit.text || ""), after: map.get(`s_${unit.unitIndex}`) }))
+        .filter((item) => item.before && typeof item.after === "string");
+    return applyReplacements(sourceText, entries);
 }
 
 function writeBackMessageContent(targetMsg, rewrittenText) {
@@ -1289,6 +1129,26 @@ function writeBackMessageContent(targetMsg, rewrittenText) {
             : (targetMsg.swipes.length - 1);
         targetMsg.swipes[idx] = text;
     }
+}
+
+/* 无感删除回写：只重渲染被删那一楼（updateMessageBlock），不走 reloadCurrentChat 的全量重载，
+   避免整屏闪烁与滚动跳动。配一个很短的淡出，让「命中句原地消失」读起来像消息自然落定。 */
+function rerenderMessageInPlace(index, msg) {
+    try {
+        updateMessageBlock(index, msg);
+    } catch (e) {
+        return false;
+    }
+    const el = getChatMessageElementByIndex(index).get(0);
+    const textEl = el ? el.querySelector(".mes_text") : null;
+    if (textEl) {
+        textEl.classList.remove("t-delete-settle");
+        // 触发重排后再加类，保证动画每次都播放
+        void textEl.offsetWidth;
+        textEl.classList.add("t-delete-settle");
+        setTimeout(() => textEl.classList.remove("t-delete-settle"), 400);
+    }
+    return true;
 }
 
 function buildRewriteMessages(payload, promptState = null) {
@@ -1476,24 +1336,14 @@ function normalizeRewriteResponseShape(parsed, payload) {
     };
 }
 
-function buildDiffRowsFromResults(evaluated, payload, parsed, deleteUnits = []) {
-    const rewrittenMap = new Map(parsed.results.map(r => [String(r.segment_id), String(r.rewritten_text || "")]));
-
-    // 行序 = unitResults 顺序：改写行与删除行同源遍历，天然对齐
+function buildDiffRowsFromResults(evaluated, payload, parsed) {
+    const rewrittenMap = new Map((parsed?.results || []).map(r => [String(r.segment_id), String(r.rewritten_text || "")]));
     return evaluated.unitResults
         .filter(u => u.hit)
         .map((u) => {
             const categoryNames = Array.isArray(u.matchedCategories)
                 ? u.matchedCategories.map(c => c.categoryName).join(" | ")
                 : "";
-            if (u.deleteAction) {
-                return {
-                    before: u.text,
-                    after: applyDeletesToUnit(u.text, u.deleteAction, u.deleteFragment),
-                    ruleHint: categoryNames,
-                    action: "delete"
-                };
-            }
             const segmentId = `s_${u.unitIndex}`;
             const after = rewrittenMap.get(segmentId) || u.text;
             return {
@@ -1505,7 +1355,7 @@ function buildDiffRowsFromResults(evaluated, payload, parsed, deleteUnits = []) 
         });
 }
 
-async function executeRewriteRequest({ data, latest, evaluated, request, rewriteCount, hitCategoryCount = 0, source = "manual", buttonSelector = "#t-rewrite-trigger", promptState = null, deleteUnits = [] }) {
+async function executeRewriteRequest({ data, latest, evaluated, request, rewriteCount, hitCategoryCount = 0, source = "manual", buttonSelector = "#t-rewrite-trigger", promptState = null }) {
     const apiUrl = String(data.api_url || "").trim();
     const apiKey = String(data.api_key || "").trim();
     const model = String(data.model || "").trim();
@@ -1573,11 +1423,11 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
             if (!valid.ok) throw new Error(`返回校验失败: ${valid.reason}`);
         }
 
-        const rows = buildDiffRowsFromResults(evaluated, request, parsed, deleteUnits);
+        const rows = buildDiffRowsFromResults(evaluated, request, parsed);
         renderDiffRows(rows);
         const rewriteMarks = buildRewriteMarksFromRows(rows);
 
-        const applied = applyRewriteToFullText(latest.content, evaluated, parsed, request, deleteUnits);
+        const applied = applyRewriteToFullText(latest.content, evaluated, parsed);
         writeBackMessageContent(latest.msg, applied.text);
         if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
         latest.msg.extra.titania_rewrite_done = true;
@@ -1586,8 +1436,7 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
         await reloadCurrentChat();
         scheduleApplyAllRewriteMarks(180);
 
-        const deleteCount = Array.isArray(deleteUnits) ? deleteUnits.length : 0;
-        setStatus(`执行完成：改写 ${rewriteCount} 条${deleteCount > 0 ? `，删除 ${deleteCount} 条` : ""}，已回写第 ${latest.index + 1} 楼`, "ok");
+        setStatus(`执行完成：改写 ${rewriteCount} 条，已回写第 ${latest.index + 1} 楼`, "ok");
         success = true;
     } catch (e) {
         renderDiffRows([]);
@@ -1610,10 +1459,16 @@ async function runRewrite(options = {}) {
     persistPanelState();
     const data = ensureRewriteDataShape();
 
+    if (!isRewriteEnabled()) {
+        setStatus("改写功能未启用，请先在设置中开启", "warn");
+        if (options.source !== "auto" && window.toastr) toastr.warning("改写功能未启用", "文本改写");
+        return;
+    }
+
     const scheme = getActiveScheme();
     if (!scheme) {
         setStatus("请先在设置中创建并保存改写方案", "warn");
-        if (window.toastr) toastr.warning("请先在设置中创建并保存改写方案", "Titania 改写");
+        if (options.source !== "auto" && window.toastr) toastr.warning("请先在设置中创建并保存改写方案", "Titania 改写");
         return;
     }
 
@@ -1623,39 +1478,19 @@ async function runRewrite(options = {}) {
         return;
     }
 
-    const { evaluated, request, hitCategoryCount, deleteUnits } = buildRewritePayload(data, latest.content);
+    const { evaluated, request, hitCategoryCount } = buildRewritePayload(data, latest.content);
     renderMatchResult(evaluated, latest.content);
 
     if (!String(latest.content || "").trim()) {
         setStatus("最新楼层内容为空，无法改写", "warn");
         return;
     }
-    const rewriteTargets = Array.isArray(request.targets) ? request.targets : [];
-    const rewriteCount = rewriteTargets.length;
-    const deleteCount = Array.isArray(deleteUnits) ? deleteUnits.length : 0;
+    const rewriteCount = Array.isArray(request.targets) ? request.targets.length : 0;
 
-    if (rewriteCount === 0 && deleteCount === 0) {
+    if (rewriteCount === 0) {
         setStatus("没有命中任何分类规则的文本单元，未执行改写", "warn");
         renderDiffRows([]);
         return;
-    }
-
-    // 纯删除：不发给模型，离线直接应用（删除规则是字面匹配，确定性操作）
-    if (rewriteCount === 0) {
-        const rows = buildDiffRowsFromResults(evaluated, request, { results: [] }, deleteUnits);
-        renderDiffRows(rows);
-        const rewriteMarks = buildRewriteMarksFromRows(rows);
-        const applied = applyRewriteToFullText(latest.content, evaluated, { results: [] }, null, deleteUnits);
-        writeBackMessageContent(latest.msg, applied.text);
-        if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
-        latest.msg.extra.titania_rewrite_done = true;
-        latest.msg.extra.titania_rewrite_marks = rewriteMarks;
-        await saveChatConditional();
-        await reloadCurrentChat();
-        scheduleApplyAllRewriteMarks(180);
-        setStatus(`执行完成：删除 ${deleteCount} 条（离线处理，未请求模型），已回写第 ${latest.index + 1} 楼`, "ok");
-        if (window.toastr) toastr.success(`已按删除规则处理 ${deleteCount} 条`, "文本改写");
-        return true;
     }
 
     return executeRewriteRequest({
@@ -1667,8 +1502,61 @@ async function runRewrite(options = {}) {
         hitCategoryCount,
         source: options.source || "manual",
         buttonSelector: "#t-rewrite-trigger",
-        deleteUnits
     });
+}
+
+/* 删除执行（本地确定性，无 LLM）：命中删除规则的单元按模式删除后回写最新楼层。 */
+async function runDelete(options = {}) {
+    const data = ensureRewriteDataShape();
+    const del = data.deletion;
+
+    if (!isDeleteEnabled()) {
+        setStatus("删除功能未启用，请先在设置中开启", "warn");
+        if (options.source !== "auto" && window.toastr) toastr.warning("删除功能未启用", "文本删除");
+        return false;
+    }
+    if (!Array.isArray(del.rules) || del.rules.length === 0) {
+        setStatus("尚未配置删除规则", "warn");
+        if (options.source !== "auto" && window.toastr) toastr.warning("尚未配置删除规则", "文本删除");
+        return false;
+    }
+
+    const latest = getLatestAssistantMessageFromChat();
+    if (!latest) {
+        setStatus("未找到可处理的最新回复楼层", "warn");
+        return false;
+    }
+    if (!String(latest.content || "").trim()) {
+        setStatus("最新楼层内容为空，无法删除", "warn");
+        return false;
+    }
+
+    const result = evaluateDeleteRules(latest.content, data.split_mode, del.rules);
+    renderDeleteResult(result, latest.content);
+
+    if (result.hitCount === 0) {
+        setStatus("没有命中任何删除规则的文本单元，未执行删除", "warn");
+        return false;
+    }
+
+    const applied = applyDeleteToFullText(latest.content, result.deleteUnits);
+    writeBackMessageContent(latest.msg, applied.text);
+    if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
+    latest.msg.extra.titania_delete_done = true;
+    await saveChatConditional();
+    // 无感：只原地重渲染这一楼，不整屏重载
+    const rerendered = rerenderMessageInPlace(latest.index, latest.msg);
+    if (!rerendered) await reloadCurrentChat(); // 兜底：拿不到 DOM 时退回重载
+    scheduleApplyAllRewriteMarks(180);
+    refreshInlineRewriteEntry();
+
+    setStatus(`执行完成：删除 ${result.hitCount} 处，已回写第 ${latest.index + 1} 楼`, "ok");
+    if (options.source !== "auto" && window.toastr) toastr.success(`已按删除规则处理 ${result.hitCount} 处`, "文本删除");
+    return true;
+}
+
+async function runManualDelete() {
+    return runDelete({ source: "manual" });
 }
 
 async function runSelectedSentenceRewrite() {
@@ -1727,10 +1615,43 @@ async function runManualRewrite() {
     return runRewrite({ source: "manual" });
 }
 
-async function onAutoTriggerRewrite() {
-    const data = ensureRewriteDataShape();
-    if (!data.auto_trigger) return;
+/* 生成结束后的自动编排：先跑删除（本地确定性、立即），再在删后文本上调度改写。
+   两条链路各自独立的开关、per-message 守卫（titania_delete_done / titania_rewrite_done）
+   与 in-flight 锁（isAutoDeleting / isAutoRewriting），互不阻塞。 */
+async function onGenerationEndedAuto() {
     if (!isEnabled()) return;
+    try {
+        await maybeAutoDelete();
+    } catch (e) { /* 删除失败不应阻断改写调度 */ }
+    maybeScheduleAutoRewrite();
+}
+
+async function maybeAutoDelete() {
+    const data = ensureRewriteDataShape();
+    if (!data.deletion.enabled || !data.deletion.auto_trigger) return;
+    if (isAutoDeleting) return;
+    if (!Array.isArray(data.deletion.rules) || data.deletion.rules.length === 0) return;
+
+    const latest = getLatestAssistantMessageFromChat();
+    if (!latest || !latest.msg) return;
+    if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
+    if (latest.msg.extra.titania_delete_done === true) return;
+
+    const result = evaluateDeleteRules(latest.content, data.split_mode, data.deletion.rules);
+    if (result.hitCount <= 0) return;
+
+    try {
+        isAutoDeleting = true;
+        const ok = await runDelete({ source: "auto" });
+        if (ok && window.toastr) toastr.success(`已按删除规则处理 ${result.hitCount} 处`, "文本删除");
+    } finally {
+        isAutoDeleting = false;
+    }
+}
+
+function maybeScheduleAutoRewrite() {
+    const data = ensureRewriteDataShape();
+    if (!data.rewrite.enabled || !data.rewrite.auto_trigger) return;
     if (isAutoRewriting) return;
     if (activeRewriteAbortController) return;
     if (!getActiveScheme()) return;
@@ -1753,7 +1674,7 @@ async function onAutoTriggerRewrite() {
         autoRewriteTimer = null;
 
         const freshData = ensureRewriteDataShape();
-        if (!freshData.auto_trigger) return;
+        if (!freshData.rewrite.enabled || !freshData.rewrite.auto_trigger) return;
         if (!isEnabled()) return;
         if (isAutoRewriting) return;
         if (activeRewriteAbortController) return;
@@ -1788,27 +1709,18 @@ function bindAutoTriggerEvents() {
     if (autoTriggerBound) return;
     autoTriggerBound = true;
 
-    // 自动改写只在生成结束后触发，避免流式生成尚未完成时读取到半截内容
-    eventSource.on(event_types.GENERATION_ENDED, onAutoTriggerRewrite);
+    // 删除/改写都只在生成结束后触发，避免流式生成尚未完成时读取到半截内容
+    eventSource.on(event_types.GENERATION_ENDED, onGenerationEndedAuto);
 }
 
-/* 关键词规则行 markup：主词 与 附加词 + 动作下拉 + 片段输入（仅"删除片段"显示）。
+/* 改写关键词规则行 markup：主词 与 附加词（命中即交给模型改写，无动作选择）。
    三处复用（已保存规则渲染 / 空模板 / 添加按钮），保证控件集一致。 */
 function buildKwRowHtml(rule = {}) {
-    const action = normalizeRuleAction(rule?.action);
-    const fragment = String(rule?.fragment || "");
-    const isRange = action === "delete_range";
     return `
-                <div class="t-rewrite-kw-row${isRange ? " t-rewrite-kw-row--range" : ""}">
+                <div class="t-rewrite-kw-row">
                     <input class="text_pole t-rewrite-kw-anchor" type="text" value="${escapeHtml(rule?.anchor || "")}" placeholder="主词（逗号分隔，任一命中）">
                     <span class="t-rewrite-kw-and">与</span>
                     <input class="text_pole t-rewrite-kw-extras" type="text" value="${escapeHtml(rule?.extras || "")}" placeholder="附加词（逗号分隔，任一命中）">
-                    <select class="text_pole t-rewrite-kw-action" title="命中后的动作">
-                        <option value="rewrite" ${!isRange && action !== "delete" ? "selected" : ""}>改写</option>
-                        <option value="delete" ${action === "delete" ? "selected" : ""}>删除整句</option>
-                        <option value="delete_range" ${isRange ? "selected" : ""}>删除片段</option>
-                    </select>
-                    <input class="text_pole t-rewrite-kw-fragment" type="text" value="${escapeHtml(fragment)}" placeholder="删除起点片段，删到句尾（如：那笑声像）" style="${isRange ? "" : "display:none;"}">
                     <button class="t-btn t-btn--glass t-rewrite-kw-del" type="button" title="删除此关键词规则"><i class="fa-solid fa-xmark"></i></button>
                 </div>`;
 }
@@ -1826,11 +1738,7 @@ function readCategoriesFromDom() {
         $card.find(".t-rewrite-kw-row").each((_, kwEl) => {
             const anchor = String($(kwEl).find(".t-rewrite-kw-anchor").val() || "").trim();
             const extras = String($(kwEl).find(".t-rewrite-kw-extras").val() || "").trim();
-            const action = normalizeRuleAction($(kwEl).find(".t-rewrite-kw-action").val() || "rewrite");
-            const fragment = action === "delete_range"
-                ? String($(kwEl).find(".t-rewrite-kw-fragment").val() || "").trim()
-                : "";
-            if (anchor && extras) rules.push({ anchor, extras, action, fragment });
+            if (anchor && extras) rules.push({ anchor, extras });
         });
         categories.push({ id: id || generateId("cat"), name, bad_example, good_example, guidance, rules });
     });
@@ -1890,7 +1798,7 @@ function renderSchemeCategoriesList(scheme) {
                         <textarea class="text_pole t-rewrite-cat-guidance" rows="2" placeholder="告诉模型具体怎么改">${escapeHtml(cat.guidance || "")}</textarea>
                     </div>
                     <div class="t-rewrite-cat-field">
-                        <label>关键词规则<span class="t-rewrite-cat-field-hint">（主词 AND 附加词同时命中才生效；动作可选改写/删除整句/删除片段，同时命中时删除优先）</span></label>
+                        <label>关键词规则<span class="t-rewrite-cat-field-hint">（主词 AND 附加词同时命中才触发改写；命中句将连同本分类的示例/指导一起交给模型）</span></label>
                         <div class="t-rewrite-cat-kw-list">${kwRows}</div>
                         <button class="t-btn t-btn--glass t-rewrite-cat-add-kw" type="button"><i class="fa-solid fa-plus"></i> 添加关键词</button>
                     </div>
@@ -1919,51 +1827,41 @@ function persistPanelState() {
     const $overlay = getOverlay();
     if (!$overlay.length) return;
 
-    const data = getExtData();
     const prev = ensureRewriteDataShape();
-
-    const readValue = (selector, fallback = "") => {
-        const $el = $overlay.find(selector);
-        return $el.length > 0 ? String($el.val() || "").trim() : fallback;
-    };
-
     const readChecked = (selector, fallback = false) => {
         const $el = $overlay.find(selector);
         return $el.length > 0 ? ($el.prop("checked") === true) : fallback;
     };
 
-    data.rewrite_entry = {
-        enabled: prev.enabled === true,
-        profile_mode: prev.profile_mode || "custom",
-        profile_id: prev.profile_id || "",
-        custom_profiles: normalizeRewriteCustomProfiles(prev.custom_profiles, prev),
-        api_url: readValue("#t-rewrite-api-url", prev.api_url || ""),
-        api_key: readValue("#t-rewrite-api-key", prev.api_key || ""),
-        model: readValue("#t-rewrite-model", prev.model || ""),
-        split_mode: readValue("input[name='t-rewrite-split-mode']:checked", prev.split_mode || "sentence"),
-        active_scheme_id: prev.active_scheme_id || "",
-        schemes: prev.schemes || [],
-        stream_live: readChecked("#t-rewrite-stream-live", prev.stream_live === true),
-        auto_trigger: prev.auto_trigger === true,
-        selected_sentence_enabled: prev.selected_sentence_enabled !== false,
-        tag_whitelist: prev.tag_whitelist || "",
-        prompt_system: prev.prompt_system || REWRITE_DEFAULT_PROMPT_SYSTEM,
-        prompt_user: prev.prompt_user || REWRITE_DEFAULT_PROMPT_USER,
-        selected_prompt_system: prev.selected_prompt_system || REWRITE_DEFAULT_SELECTED_PROMPT_SYSTEM,
-        selected_prompt_user: prev.selected_prompt_user || REWRITE_DEFAULT_SELECTED_PROMPT_USER,
-        prompt_json_rule: prev.prompt_json_rule || REWRITE_DEFAULT_PROMPT_JSON_RULE
-    };
+    prev.rewrite.enabled = readChecked("#t-rewrite-enable", prev.rewrite.enabled);
+    prev.rewrite.auto_trigger = readChecked("#t-rewrite-auto", prev.rewrite.auto_trigger);
+    prev.deletion.enabled = readChecked("#t-delete-enable", prev.deletion.enabled);
+    prev.deletion.auto_trigger = readChecked("#t-delete-auto", prev.deletion.auto_trigger);
 
     saveExtData();
     const categories = getActiveSchemeCategories();
     $("#t-rewrite-rule-count").text(String(categories.length));
 }
 
+function readDeleteRulesFromDom($scope) {
+    const rules = [];
+    const $root = $scope && $scope.length ? $scope : getSettingsOverlay();
+    $root.find("#t-delete-rules-list .t-delete-rule-row").each((_, el) => {
+        const $row = $(el);
+        const anchor = String($row.find(".t-delete-rule-anchor").val() || "").trim();
+        const extras = String($row.find(".t-delete-rule-extras").val() || "").trim();
+        const mode = normalizeDeleteMode($row.find(".t-delete-rule-mode").val() || "sentence");
+        const fragment = mode === "fragment" ? String($row.find(".t-delete-rule-fragment").val() || "").trim() : "";
+        const enabled = $row.find(".t-delete-rule-enabled").prop("checked") !== false;
+        if (anchor && extras) rules.push({ anchor, extras, mode, fragment, enabled });
+    });
+    return rules;
+}
+
 function persistSettingsPanelState() {
     const $overlay = getSettingsOverlay();
     if (!$overlay.length) return;
 
-    const data = getExtData();
     const prev = ensureRewriteDataShape();
     const rawProfileId = String($overlay.find("#t-rewrite-settings-profile-select").val() || prev.profile_id || "").trim();
     const customProfilesRaw = $overlay.data("rewriteCustomProfiles");
@@ -1978,7 +1876,7 @@ function persistSettingsPanelState() {
         profileId = current.id;
     }
 
-    const activeSchemeId = String($overlay.find("#t-rewrite-scheme-select").val() || prev.active_scheme_id || "").trim();
+    const activeSchemeId = String($overlay.find("#t-rewrite-scheme-select").val() || prev.rewrite.active_scheme_id || "").trim();
     const rulePromptParsed = parseCombinedPromptText(
         String($overlay.find("#t-rewrite-settings-prompt-combined").val() || ""),
         getRewritePromptState()
@@ -1988,27 +1886,27 @@ function persistSettingsPanelState() {
         getSelectedRewritePromptState()
     );
 
-    data.rewrite_entry = {
-        enabled: prev.enabled === true,
-        profile_mode: "custom",
-        profile_id: profileId,
-        custom_profiles: customProfiles,
-        api_url: String($overlay.find("#t-rewrite-settings-api-url").val() || "").trim(),
-        api_key: String($overlay.find("#t-rewrite-settings-api-key").val() || "").trim(),
-        model: String($overlay.find("#t-rewrite-settings-model").val() || "").trim(),
-        split_mode: String($overlay.find("input[name='t-rewrite-settings-split-mode']:checked").val() || "sentence"),
-        active_scheme_id: activeSchemeId,
-        schemes: prev.schemes || [],
-        stream_live: $overlay.find("#t-rewrite-settings-stream-live").prop("checked") === true,
-        auto_trigger: $overlay.find("#t-rewrite-settings-auto-trigger").prop("checked") === true,
-        selected_sentence_enabled: $overlay.find("#t-rewrite-settings-selected-sentence-enabled").prop("checked") === true,
-        tag_whitelist: String($overlay.find("#t-rewrite-settings-tag-whitelist").val() || "").trim(),
-        prompt_system: rulePromptParsed.prompt_system,
-        prompt_user: rulePromptParsed.prompt_user,
-        selected_prompt_system: selectedPromptParsed.prompt_system,
-        selected_prompt_user: selectedPromptParsed.prompt_user,
-        prompt_json_rule: String(prev.prompt_json_rule || REWRITE_DEFAULT_PROMPT_JSON_RULE)
-    };
+    // 共享字段
+    prev.profile_mode = "custom";
+    prev.profile_id = profileId;
+    prev.custom_profiles = customProfiles;
+    prev.api_url = String($overlay.find("#t-rewrite-settings-api-url").val() || "").trim();
+    prev.api_key = String($overlay.find("#t-rewrite-settings-api-key").val() || "").trim();
+    prev.model = String($overlay.find("#t-rewrite-settings-model").val() || "").trim();
+    prev.split_mode = String($overlay.find("input[name='t-rewrite-settings-split-mode']:checked").val() || "sentence");
+    prev.stream_live = $overlay.find("#t-rewrite-settings-stream-live").prop("checked") === true;
+    prev.tag_whitelist = String($overlay.find("#t-rewrite-settings-tag-whitelist").val() || "").trim();
+
+    // 改写子系统（保留 enabled/auto_trigger，由主面板管理）
+    prev.rewrite.active_scheme_id = activeSchemeId;
+    prev.rewrite.selected_sentence_enabled = $overlay.find("#t-rewrite-settings-selected-sentence-enabled").prop("checked") === true;
+    prev.rewrite.prompt_system = rulePromptParsed.prompt_system;
+    prev.rewrite.prompt_user = rulePromptParsed.prompt_user;
+    prev.rewrite.selected_prompt_system = selectedPromptParsed.prompt_system;
+    prev.rewrite.selected_prompt_user = selectedPromptParsed.prompt_user;
+
+    // 删除子系统（保留 enabled/auto_trigger，由主面板管理）
+    prev.deletion.rules = readDeleteRulesFromDom($overlay).map(normalizeDeleteRule).filter(r => r.anchor && r.extras);
 
     saveExtData();
     refreshRuntimeStateView();
@@ -2027,7 +1925,7 @@ function refreshRuntimeStateView() {
     $overlay.find("#t-rewrite-runtime-scheme").text(scheme ? scheme.name : "无方案");
     $overlay.find("#t-rewrite-rule-count").text(String(categories.length));
     $overlay.find("#t-rewrite-runtime-stream").text(data.stream_live === false ? "关闭" : "开启");
-    $overlay.find("#t-rewrite-runtime-auto").text(data.auto_trigger ? "开启" : "关闭");
+    $overlay.find("#t-rewrite-runtime-delete-count").text(String((data.deletion.rules || []).length));
     $overlay.find("#t-rewrite-runtime-whitelist").text(data.tag_whitelist || "未设置（全文）");
 }
 
@@ -2055,7 +1953,6 @@ function renderMatchResult(result, sourceText = "") {
                     return `<span class="t-rewrite-hit-tag">【${escapeHtml(c.categoryName)}】${escapeHtml(keywords)}</span>`;
                 }).join("")
                 : "<span class=\"t-rewrite-hit-tag\">用户选中</span>")
-                + (item.deleteAction ? `<span class="t-rewrite-hit-tag t-rewrite-hit-tag--delete">${escapeHtml(actionLabel(item.deleteAction))}</span>` : "")
             : (lastMatchResult.sourceMode === "selected"
                 ? "<span class=\"t-rewrite-hit-tag miss\">未选中</span>"
                 : "<span class=\"t-rewrite-hit-tag miss\">未命中</span>");
@@ -2076,9 +1973,55 @@ function renderMatchResult(result, sourceText = "") {
     $body.html(`${header}${src}${html}`);
 }
 
+/* 删除命中预览：命中单元标出删后结果（整句显示「将删除」，片段显示删后文本）。 */
+function renderDeleteResult(result, sourceText = "") {
+    const hasUnits = !!(result && Array.isArray(result.unitResults) && result.unitResults.length > 0);
+    lastDeleteResult = hasUnits ? result : null;
+    lastDeleteSourceText = hasUnits ? String(sourceText || "") : "";
+
+    const $body = $("#t-delete-match-body");
+    if (!$body.length) return;
+
+    if (!lastDeleteResult) {
+        $body.html('<div class="t-rewrite-diff-empty">等待执行删除后展示命中结果</div>');
+        return;
+    }
+
+    const tag = lastDeleteResult.splitMode === "paragraph" ? "段" : "句";
+    const html = lastDeleteResult.unitResults.map((item) => {
+        const cls = item.hit ? "hit" : "miss";
+        if (!item.hit) {
+            return `
+            <div class="t-rewrite-match-row ${cls}">
+                <div class="t-rewrite-match-head"><div>${tag} #${item.unitIndex}</div><div class="t-rewrite-match-tags"><span class="t-rewrite-hit-tag miss">未命中</span></div></div>
+                <div class="t-rewrite-match-text">${escapeHtml(item.text)}</div>
+            </div>`;
+        }
+        const modeLabel = item.deleteMode === "fragment" ? "删除片段" : "删除整句";
+        const kw = item.matchedRule ? `${item.matchedRule.anchor} + ${item.matchedRule.extras}` : "";
+        const afterHtml = item.deleteMode === "fragment"
+            ? `<div class="t-rewrite-match-text t-delete-after">删后：${escapeHtml(item.after || "")}</div>`
+            : "";
+        return `
+            <div class="t-rewrite-match-row ${cls} t-delete-hit">
+                <div class="t-rewrite-match-head">
+                    <div>${tag} #${item.unitIndex}</div>
+                    <div class="t-rewrite-match-tags"><span class="t-rewrite-hit-tag t-rewrite-hit-tag--delete">${modeLabel}</span><span class="t-rewrite-hit-tag">${escapeHtml(kw)}</span></div>
+                </div>
+                <div class="t-rewrite-match-text t-delete-before">${escapeHtml(item.text)}</div>
+                ${afterHtml}
+            </div>`;
+    }).join("");
+
+    const header = `<div class="t-rewrite-hit-summary">切分 ${lastDeleteResult.unitCount} 个单元，命中 ${lastDeleteResult.hitCount} 个</div>`;
+    const src = lastDeleteSourceText ? `<div class="t-rewrite-hit-source">来源：最新回复楼层（长度 ${lastDeleteSourceText.length}）</div>` : "";
+    $body.html(`${header}${src}${html}`);
+}
+
 function renderPersistedRewriteViews() {
     renderMatchResult(lastMatchResult, lastMatchSourceText);
     renderDiffRows(lastDiffRows);
+    renderDeleteResult(lastDeleteResult, lastDeleteSourceText);
 }
 
 function bindPanelEvents() {
@@ -2090,8 +2033,27 @@ function bindPanelEvents() {
         closePanel();
     });
 
+    // 主面板分区切换
+    $overlay.on("click", ".t-rewrite-tab-btn", function (e) {
+        e.preventDefault();
+        const tab = String($(this).attr("data-tab") || "rewrite");
+        activePanelTab = tab === "delete" ? "delete" : "rewrite";
+        syncPanelTabUi();
+    });
+
+    // 功能开关
+    $overlay.on("change", "#t-rewrite-enable, #t-rewrite-auto, #t-delete-enable, #t-delete-auto", () => {
+        persistPanelState();
+        refreshInlineRewriteEntry();
+        syncPanelTabUi();
+    });
+
     $overlay.on("click", "#t-rewrite-trigger", () => {
         runManualRewrite();
+    });
+
+    $overlay.on("click", "#t-delete-trigger", () => {
+        runManualDelete();
     });
 
     $overlay.on("click", "#t-rewrite-open-settings", (e) => {
@@ -2108,6 +2070,17 @@ function bindPanelEvents() {
         e.preventDefault();
         runtimeCollapsed = !runtimeCollapsed;
         syncRuntimeCollapseUi();
+    });
+}
+
+function syncPanelTabUi() {
+    const $overlay = getOverlay();
+    if (!$overlay.length) return;
+    $overlay.find(".t-rewrite-tab-btn").each((_, el) => {
+        $(el).toggleClass("active", String($(el).attr("data-tab")) === activePanelTab);
+    });
+    $overlay.find(".t-rewrite-tab-page").each((_, el) => {
+        $(el).toggleClass("active", String($(el).attr("data-tab")) === activePanelTab);
     });
 }
 
@@ -2212,14 +2185,10 @@ function bindSettingsPanelEvents(connectionEditor = null) {
         $overlay.find("#t-rewrite-settings-prompt-combined").val(
             buildCombinedPromptText(REWRITE_DEFAULT_PROMPT_SYSTEM, REWRITE_DEFAULT_PROMPT_USER)
         );
-        const data = getExtData();
         const prev = ensureRewriteDataShape();
-        data.rewrite_entry = {
-            ...prev,
-            prompt_system: REWRITE_DEFAULT_PROMPT_SYSTEM,
-            prompt_user: REWRITE_DEFAULT_PROMPT_USER,
-            prompt_json_rule: REWRITE_DEFAULT_PROMPT_JSON_RULE
-        };
+        prev.rewrite.prompt_system = REWRITE_DEFAULT_PROMPT_SYSTEM;
+        prev.rewrite.prompt_user = REWRITE_DEFAULT_PROMPT_USER;
+        prev.rewrite.prompt_json_rule = REWRITE_DEFAULT_PROMPT_JSON_RULE;
         saveExtData();
         persistPromptStateFromSettings();
         if (window.toastr) toastr.success("规则提示词已恢复默认", "文本改写");
@@ -2230,14 +2199,10 @@ function bindSettingsPanelEvents(connectionEditor = null) {
         $overlay.find("#t-rewrite-settings-selected-prompt-combined").val(
             buildCombinedPromptText(REWRITE_DEFAULT_SELECTED_PROMPT_SYSTEM, REWRITE_DEFAULT_SELECTED_PROMPT_USER)
         );
-        const data = getExtData();
         const prev = ensureRewriteDataShape();
-        data.rewrite_entry = {
-            ...prev,
-            selected_prompt_system: REWRITE_DEFAULT_SELECTED_PROMPT_SYSTEM,
-            selected_prompt_user: REWRITE_DEFAULT_SELECTED_PROMPT_USER,
-            prompt_json_rule: REWRITE_DEFAULT_PROMPT_JSON_RULE
-        };
+        prev.rewrite.selected_prompt_system = REWRITE_DEFAULT_SELECTED_PROMPT_SYSTEM;
+        prev.rewrite.selected_prompt_user = REWRITE_DEFAULT_SELECTED_PROMPT_USER;
+        prev.rewrite.prompt_json_rule = REWRITE_DEFAULT_PROMPT_JSON_RULE;
         saveExtData();
         persistPromptStateFromSettings();
         if (window.toastr) toastr.success("选句提示词已恢复默认", "文本改写");
@@ -2247,16 +2212,16 @@ function bindSettingsPanelEvents(connectionEditor = null) {
         e.preventDefault();
         const name = (window.prompt && window.prompt("请输入新方案名称：", "")) || "";
         if (!name.trim()) return;
-        const data = getExtData();
         const prev = ensureRewriteDataShape();
-        const schemes = [...(prev.schemes || [])];
+        const schemes = [...(prev.rewrite.schemes || [])];
         if (schemes.some(s => s.name === name.trim())) {
             if (window.toastr) toastr.warning("方案名称已存在", "文本改写");
             return;
         }
         const newScheme = { id: generateId("scheme"), name: name.trim(), categories: [] };
         schemes.push(newScheme);
-        data.rewrite_entry = { ...prev, schemes, active_scheme_id: newScheme.id };
+        prev.rewrite.schemes = schemes;
+        prev.rewrite.active_scheme_id = newScheme.id;
         saveExtData();
         refreshSettingsSchemeUI();
         if (window.toastr) toastr.success(`已创建方案「${name}」`, "文本改写");
@@ -2268,10 +2233,8 @@ function bindSettingsPanelEvents(connectionEditor = null) {
         if (!scheme) { if (window.toastr) toastr.warning("请先选择方案", "文本改写"); return; }
         const name = (window.prompt && window.prompt("请输入新名称：", scheme.name)) || "";
         if (!name.trim()) return;
-        const data = getExtData();
         const prev = ensureRewriteDataShape();
-        const schemes = (prev.schemes || []).map(s => s.id === scheme.id ? { ...s, name: name.trim() } : s);
-        data.rewrite_entry = { ...prev, schemes };
+        prev.rewrite.schemes = (prev.rewrite.schemes || []).map(s => s.id === scheme.id ? { ...s, name: name.trim() } : s);
         saveExtData();
         refreshSettingsSchemeUI();
         if (window.toastr) toastr.success("方案已重命名", "文本改写");
@@ -2282,24 +2245,21 @@ function bindSettingsPanelEvents(connectionEditor = null) {
         const scheme = getActiveSchemeFromSettings();
         if (!scheme) { if (window.toastr) toastr.warning("请先选择方案", "文本改写"); return; }
         if (!window.confirm(`确定删除方案「${scheme.name}」吗？此操作不可撤销。`)) return;
-        const data = getExtData();
         const prev = ensureRewriteDataShape();
-        const schemes = (prev.schemes || []).filter(s => s.id !== scheme.id);
-        const newActiveId = schemes.length > 0 ? schemes[0].id : "";
-        data.rewrite_entry = { ...prev, schemes, active_scheme_id: newActiveId };
+        const schemes = (prev.rewrite.schemes || []).filter(s => s.id !== scheme.id);
+        prev.rewrite.schemes = schemes;
+        prev.rewrite.active_scheme_id = schemes.length > 0 ? schemes[0].id : "";
         saveExtData();
         refreshSettingsSchemeUI();
         if (window.toastr) toastr.success("方案已删除", "文本改写");
     });
 
     $overlay.on("change", "#t-rewrite-scheme-select", () => {
-        const data = getExtData();
         const prev = ensureRewriteDataShape();
         const newId = String($overlay.find("#t-rewrite-scheme-select").val() || "").trim();
-        data.rewrite_entry = { ...prev, active_scheme_id: newId };
+        prev.rewrite.active_scheme_id = newId;
         saveExtData();
-        const schemes = prev.schemes || [];
-        const scheme = schemes.find(s => s.id === newId) || null;
+        const scheme = (prev.rewrite.schemes || []).find(s => s.id === newId) || null;
         renderSchemeCategoriesList(scheme);
         const $status = $overlay.find("#t-rewrite-scheme-status");
         if ($status.length) $status.text(scheme ? `激活方案「${escapeHtml(scheme.name)}」` : '无方案，请新建或选择已有方案');
@@ -2309,7 +2269,7 @@ function bindSettingsPanelEvents(connectionEditor = null) {
         e.preventDefault();
         const scheme = getActiveSchemeFromSettings();
         if (!scheme) { if (window.toastr) toastr.warning("请先创建方案", "文本改写"); return; }
-        const newCat = { id: generateId("cat"), name: "", bad_example: "", good_example: "", guidance: "", rules: [{ keywords: "" }] };
+        const newCat = { id: generateId("cat"), name: "", bad_example: "", good_example: "", guidance: "", rules: [{ anchor: "", extras: "" }] };
         const categories = [...(Array.isArray(scheme.categories) ? scheme.categories : []), newCat];
         renderSchemeCategoriesList({ ...scheme, categories });
     });
@@ -2336,14 +2296,6 @@ function bindSettingsPanelEvents(connectionEditor = null) {
         $card.find(".t-rewrite-cat-kw-list").append(buildKwRowHtml());
     });
 
-    // 动作下拉切换：仅"删除片段"显示片段输入
-    $overlay.on("change", ".t-rewrite-kw-action", function () {
-        const $row = $(this).closest(".t-rewrite-kw-row");
-        const isRange = normalizeRuleAction($(this).val()) === "delete_range";
-        $row.toggleClass("t-rewrite-kw-row--range", isRange);
-        $row.find(".t-rewrite-kw-fragment").toggle(isRange);
-    });
-
     $overlay.on("click", ".t-rewrite-kw-del", (e) => {
         e.preventDefault();
         const $row = $(e.currentTarget).closest(".t-rewrite-kw-row");
@@ -2351,19 +2303,38 @@ function bindSettingsPanelEvents(connectionEditor = null) {
         if ($list.find(".t-rewrite-kw-row").length <= 1) {
             $row.find(".t-rewrite-kw-anchor").val("");
             $row.find(".t-rewrite-kw-extras").val("");
-            $row.find(".t-rewrite-kw-fragment").val("");
-            $row.find(".t-rewrite-kw-action").val("rewrite").trigger("change");
             return;
         }
         $row.remove();
     });
+
+    // —— 删除规则编辑器 ——
+    $overlay.on("click", "#t-delete-rule-add", (e) => {
+        e.preventDefault();
+        $overlay.find("#t-delete-rules-list .t-delete-rules-empty").remove();
+        $overlay.find("#t-delete-rules-list").append(buildDeleteRuleRowHtml());
+    });
+
+    $overlay.on("change", ".t-delete-rule-mode", function () {
+        const $row = $(this).closest(".t-delete-rule-row");
+        const isFragment = normalizeDeleteMode($(this).val()) === "fragment";
+        $row.toggleClass("t-delete-rule-row--fragment", isFragment);
+        $row.find(".t-delete-rule-fragment").toggle(isFragment);
+    });
+
+    $overlay.on("click", ".t-delete-rule-del", (e) => {
+        e.preventDefault();
+        $(e.currentTarget).closest(".t-delete-rule-row").remove();
+        if ($overlay.find("#t-delete-rules-list .t-delete-rule-row").length === 0) {
+            $overlay.find("#t-delete-rules-list").html('<div class="t-rewrite-empty-rule t-delete-rules-empty">暂无删除规则，点击“添加删除规则”开始</div>');
+        }
+    });
 }
 
 function getActiveSchemeFromSettings() {
-    const data = getExtData();
-    ensureRewriteDataShape();
-    const schemes = Array.isArray(data.rewrite_entry?.schemes) ? data.rewrite_entry.schemes : [];
-    const activeId = String($("#t-rewrite-scheme-select").val() || data.rewrite_entry?.active_scheme_id || "").trim();
+    const rw = getRewriteState();
+    const schemes = Array.isArray(rw.schemes) ? rw.schemes : [];
+    const activeId = String($("#t-rewrite-scheme-select").val() || rw.active_scheme_id || "").trim();
     return schemes.find(s => s.id === activeId) || null;
 }
 
@@ -2371,20 +2342,17 @@ function saveCurrentSchemeFromDom() {
     const scheme = getActiveSchemeFromSettings();
     if (!scheme) { if (window.toastr) toastr.warning("请先创建方案", "文本改写"); return; }
     const categories = readCategoriesFromDom();
-    const data = getExtData();
     const prev = ensureRewriteDataShape();
-    const schemes = (prev.schemes || []).map(s =>
+    prev.rewrite.schemes = (prev.rewrite.schemes || []).map(s =>
         s.id === scheme.id ? { ...s, categories } : s
     );
-    data.rewrite_entry = { ...prev, schemes };
     saveExtData();
 }
 
 function refreshSettingsSchemeUI() {
-    const data = getExtData();
-    ensureRewriteDataShape();
-    const schemes = Array.isArray(data.rewrite_entry?.schemes) ? data.rewrite_entry.schemes : [];
-    const activeId = data.rewrite_entry?.active_scheme_id || "";
+    const rw = getRewriteState();
+    const schemes = Array.isArray(rw.schemes) ? rw.schemes : [];
+    const activeId = rw.active_scheme_id || "";
     const scheme = schemes.find(s => s.id === activeId) || null;
 
     const $select = $("#t-rewrite-scheme-select");
@@ -2394,6 +2362,37 @@ function refreshSettingsSchemeUI() {
     const $status = $("#t-rewrite-scheme-status");
     if ($status.length) $status.text(scheme ? `激活方案「${escapeHtml(scheme.name)}」` : '无方案，请新建或选择已有方案');
     renderSchemeCategoriesList(scheme);
+}
+
+/* 删除规则行 markup：主词 与 附加词 + 模式（整句|片段）+ 片段输入（仅片段显示）+ 启用。 */
+function buildDeleteRuleRowHtml(rule = {}) {
+    const mode = normalizeDeleteMode(rule?.mode);
+    const isFragment = mode === "fragment";
+    const enabled = rule?.enabled !== false;
+    return `
+                <div class="t-delete-rule-row${isFragment ? " t-delete-rule-row--fragment" : ""}">
+                    <input class="text_pole t-delete-rule-anchor" type="text" value="${escapeHtml(rule?.anchor || "")}" placeholder="主词（逗号分隔，任一命中）">
+                    <span class="t-rewrite-kw-and">与</span>
+                    <input class="text_pole t-delete-rule-extras" type="text" value="${escapeHtml(rule?.extras || "")}" placeholder="附加词（逗号分隔，任一命中）">
+                    <select class="text_pole t-delete-rule-mode" title="删除粒度">
+                        <option value="sentence" ${!isFragment ? "selected" : ""}>删除整句</option>
+                        <option value="fragment" ${isFragment ? "selected" : ""}>删除片段</option>
+                    </select>
+                    <input class="text_pole t-delete-rule-fragment" type="text" value="${escapeHtml(rule?.fragment || "")}" placeholder="删除起点片段，删到句尾（如：那笑声像）" style="${isFragment ? "" : "display:none;"}">
+                    <label class="t-delete-rule-enabled-wrap" title="启用此规则"><input class="t-delete-rule-enabled" type="checkbox" ${enabled ? "checked" : ""}> 启用</label>
+                    <button class="t-btn t-btn--glass t-delete-rule-del" type="button" title="删除此规则"><i class="fa-solid fa-xmark"></i></button>
+                </div>`;
+}
+
+function renderDeleteRulesList(rules) {
+    const $box = $("#t-delete-rules-list");
+    if (!$box.length) return;
+    const list = Array.isArray(rules) ? rules : [];
+    if (list.length === 0) {
+        $box.html('<div class="t-rewrite-empty-rule t-delete-rules-empty">暂无删除规则，点击“添加删除规则”开始</div>');
+        return;
+    }
+    $box.html(list.map(r => buildDeleteRuleRowHtml(r)).join(""));
 }
 
 function openSettingsPanel() {
@@ -2412,8 +2411,8 @@ function openSettingsPanel() {
     const initApiUrl = String(initProfile?.api_url || rewriteData.api_url || "");
     const promptState = getRewritePromptState();
     const selectedPromptState = getSelectedRewritePromptState();
-    const schemes = Array.isArray(rewriteData.schemes) ? rewriteData.schemes : [];
-    const activeScheme = schemes.find(s => s.id === rewriteData.active_scheme_id) || null;
+    const schemes = Array.isArray(rewriteData.rewrite.schemes) ? rewriteData.rewrite.schemes : [];
+    const activeScheme = schemes.find(s => s.id === rewriteData.rewrite.active_scheme_id) || null;
     const schemeOptions = schemes.map(s => `<option value="${escapeHtml(s.id)}" ${s.id === (activeScheme?.id || "") ? "selected" : ""}>${escapeHtml(s.name)}</option>`).join("");
 
     const html = `
@@ -2429,9 +2428,10 @@ function openSettingsPanel() {
             <div class="t-set-shell-body t-set-glass-body t-set-body">
                 <div class="t-set-shell-nav t-set-glass-nav t-set-nav">
                     <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn active" data-tab="api"><i class="fa-solid fa-plug"></i> API 连接</div>
-                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="runtime"><i class="fa-solid fa-sliders"></i> 运行设置</div>
-                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="prompt"><i class="fa-solid fa-file-lines"></i> 提示词管理</div>
-                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="scheme"><i class="fa-solid fa-list-check"></i> 规则方案</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="runtime"><i class="fa-solid fa-sliders"></i> 通用</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="prompt"><i class="fa-solid fa-file-lines"></i> 提示词</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="scheme"><i class="fa-solid fa-highlighter"></i> 改写规则</div>
+                    <div class="t-set-shell-tab t-set-glass-tab t-set-tab-btn" data-tab="delete"><i class="fa-solid fa-eraser"></i> 删除规则</div>
                 </div>
 
                 <div class="t-set-shell-content t-set-glass-content t-set-content">
@@ -2489,15 +2489,12 @@ function openSettingsPanel() {
                         <div class="t-form-group">
                             <label class="t-form-label">请求行为</label>
                             <div class="t-rewrite-debug-row t-rewrite-debug-row-block">
-                                <label><input id="t-rewrite-settings-stream-live" type="checkbox" ${rewriteData.stream_live === false ? "" : "checked"}> 启用流式并显示实时响应</label>
+                                <label><input id="t-rewrite-settings-stream-live" type="checkbox" ${rewriteData.stream_live === false ? "" : "checked"}> 启用流式并显示实时响应（仅改写）</label>
                             </div>
                             <div class="t-rewrite-debug-row t-rewrite-debug-row-block">
-                                <label><input id="t-rewrite-settings-auto-trigger" type="checkbox" ${rewriteData.auto_trigger ? "checked" : ""}> 自动触发改写（新回复生成后）</label>
+                                <label><input id="t-rewrite-settings-selected-sentence-enabled" type="checkbox" ${rewriteData.rewrite.selected_sentence_enabled === false ? "" : "checked"}> 启用楼层内选句改写</label>
                             </div>
-                            <div class="t-rewrite-debug-row t-rewrite-debug-row-block">
-                                <label><input id="t-rewrite-settings-selected-sentence-enabled" type="checkbox" ${rewriteData.selected_sentence_enabled === false ? "" : "checked"}> 启用楼层内选句改写</label>
-                            </div>
-                            <div class="t-rewrite-rule-guide">关闭后仅隐藏最新楼层内的“选句改写”入口，不影响按规则改写。</div>
+                            <div class="t-rewrite-rule-guide">改写/删除的启用与自动触发开关在主面板顶部；这里只管共享项。</div>
                         </div>
 
                         <div class="t-form-group">
@@ -2544,8 +2541,16 @@ function openSettingsPanel() {
                         </div>
                         <div class="t-form-group">
                             <button id="t-rewrite-scheme-add-category" class="t-btn t-btn--glass" type="button"><i class="fa-solid fa-plus"></i> 添加分类</button>
-                            <div class="t-rewrite-rule-guide" style="margin: 6px 0 4px;">每个分类包含示例和改写指导，命中句将按分类注入提示词。</div>
+                            <div class="t-rewrite-rule-guide" style="margin: 6px 0 4px;">每个分类包含示例和改写指导，命中句将连同本分类的示例/指导一起注入模型。</div>
                             <div id="t-rewrite-scheme-categories-list"></div>
+                        </div>
+                    </div>
+
+                    <div id="t-rewrite-page-delete" class="t-set-page">
+                        <div class="t-form-group">
+                            <button id="t-delete-rule-add" class="t-btn t-btn--glass" type="button"><i class="fa-solid fa-plus"></i> 添加删除规则</button>
+                            <div class="t-rewrite-rule-guide" style="margin: 6px 0 4px;">命中规则（主词 AND 附加词）即删除：整句删除移除该句，片段删除从片段删到句尾。删除是本地确定性操作，不请求模型。</div>
+                            <div id="t-delete-rules-list"></div>
                         </div>
                     </div>
                 </div>
@@ -2560,6 +2565,7 @@ function openSettingsPanel() {
     $("body").append(html);
     const $overlay = getSettingsOverlay();
     renderSchemeCategoriesList(activeScheme);
+    renderDeleteRulesList(rewriteData.deletion.rules);
     const rewriteSettingsConnectionEditor = createApiConnectionEditor({
         root: $overlay,
         ids: {
@@ -2611,12 +2617,23 @@ function openPanel() {
                 </div>
             </div>
 
-            <div class="t-window-body t-rewrite-body">
-                <div class="t-rewrite-left">
+            <div class="t-window-body t-rewrite-body t-rewrite-body-tabbed">
+                <div class="t-rewrite-toolbar">
+                    <div class="t-rewrite-switches">
+                        <label class="t-rewrite-switch"><input type="checkbox" id="t-rewrite-enable" ${rewriteData.rewrite.enabled ? "checked" : ""}> <span>启用改写</span></label>
+                        <label class="t-rewrite-switch"><input type="checkbox" id="t-delete-enable" ${rewriteData.deletion.enabled ? "checked" : ""}> <span>启用删除</span></label>
+                    </div>
+                    <div class="t-rewrite-tabs">
+                        <button class="t-rewrite-tab-btn" data-tab="rewrite" type="button"><i class="fa-solid fa-wand-magic-sparkles"></i> 改写</button>
+                        <button class="t-rewrite-tab-btn" data-tab="delete" type="button"><i class="fa-solid fa-eraser"></i> 删除</button>
+                    </div>
+                </div>
+
+                <div class="t-rewrite-tab-page" data-tab="rewrite">
                     <div class="t-rewrite-section">
                         <div class="t-rewrite-runtime-head">
                             <div class="t-rewrite-section-title">运行状态</div>
-                            <button id="t-rewrite-runtime-toggle" class="t-btn" type="button">折叠</button>
+                            <label class="t-rewrite-inline-switch"><input type="checkbox" id="t-rewrite-auto" ${rewriteData.rewrite.auto_trigger ? "checked" : ""}> 自动改写</label>
                         </div>
                         <div id="t-rewrite-runtime-body" class="t-rewrite-runtime-meta">
                             <div>当前模型：<b id="t-rewrite-runtime-model">${escapeHtml(rewriteData.model || "未设置")}</b></div>
@@ -2624,45 +2641,46 @@ function openPanel() {
                             <div>当前方案：<b id="t-rewrite-runtime-scheme">${scheme ? escapeHtml(scheme.name) : "无方案"}</b></div>
                             <div>分类数量：<b id="t-rewrite-rule-count">${categories.length}</b></div>
                             <div>流式显示：<b id="t-rewrite-runtime-stream">${rewriteData.stream_live === false ? "关闭" : "开启"}</b></div>
-                            <div>自动触发：<b id="t-rewrite-runtime-auto">${rewriteData.auto_trigger ? "开启" : "关闭"}</b></div>
+                            <div>删除规则：<b id="t-rewrite-runtime-delete-count">${(rewriteData.deletion.rules || []).length}</b></div>
                             <div>提取白名单：<b id="t-rewrite-runtime-whitelist">${rewriteData.tag_whitelist ? escapeHtml(rewriteData.tag_whitelist) : "未设置（全文）"}</b></div>
                         </div>
-                        <div id="t-rewrite-status" class="t-rewrite-status muted">改写会自动读取最新回复楼层，并回写原消息</div>
                     </div>
-
-                </div>
-
-                <div class="t-rewrite-right">
                     <div class="t-rewrite-section t-rewrite-test-section">
-                        <div class="t-rewrite-diff-head">
-                            <div class="t-rewrite-section-title">命中结果预览</div>
-                        </div>
+                        <div class="t-rewrite-diff-head"><div class="t-rewrite-section-title">命中结果预览</div></div>
                         <div id="t-rewrite-match-body" class="t-rewrite-diff-body"></div>
                     </div>
-
                     <div class="t-rewrite-section">
-                        <div class="t-rewrite-diff-head">
-                            <div class="t-rewrite-section-title">改写结果 Diff</div>
-                        </div>
+                        <div class="t-rewrite-diff-head"><div class="t-rewrite-section-title">改写结果 Diff</div></div>
                         <div id="t-rewrite-diff-body" class="t-rewrite-diff-body"></div>
                     </div>
+                    <div class="t-rewrite-actions">
+                        <button id="t-rewrite-trigger" class="t-btn" type="button"><i class="fa-solid fa-wand-magic-sparkles"></i> 执行改写</button>
+                        <span class="t-rewrite-action-hint">选句改写入口会显示在最新回复楼层内</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="t-rewrite-footer-actions">
-                <div class="t-rewrite-actions">
-                    <button id="t-rewrite-trigger" class="t-btn" type="button">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> 按规则改写
-                    </button>
-                    <span class="t-rewrite-action-hint">选句改写入口会显示在最新回复楼层内</span>
+                <div class="t-rewrite-tab-page" data-tab="delete">
+                    <div class="t-rewrite-section">
+                        <div class="t-rewrite-runtime-head">
+                            <div class="t-rewrite-section-title">删除命中预览</div>
+                            <label class="t-rewrite-inline-switch"><input type="checkbox" id="t-delete-auto" ${rewriteData.deletion.auto_trigger ? "checked" : ""}> 自动删除（命中即删）</label>
+                        </div>
+                        <div id="t-delete-match-body" class="t-rewrite-diff-body"></div>
+                    </div>
+                    <div class="t-rewrite-actions">
+                        <button id="t-delete-trigger" class="t-btn" type="button"><i class="fa-solid fa-eraser"></i> 执行删除</button>
+                        <span class="t-rewrite-action-hint">删除为本地确定性操作，不请求模型</span>
+                    </div>
                 </div>
+
+                <div id="t-rewrite-status" class="t-rewrite-status muted">改写/删除会读取最新回复楼层并回写原消息</div>
             </div>
         </div>
     </div>`;
 
     $("body").append(html);
     bindPanelEvents();
-    syncRuntimeCollapseUi();
+    syncPanelTabUi();
     renderPersistedRewriteViews();
     refreshInlineRewriteEntry();
     setRawResponse("");

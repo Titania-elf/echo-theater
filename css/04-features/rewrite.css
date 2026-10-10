@@ -438,3 +438,35 @@
     border-color: var(--t-color-accent-border-hover);
     background: linear-gradient(145deg, var(--t-color-accent-soft-strong), var(--t-color-surface-hover));
 }
+
+/* ===== 改写/删除拆分：主面板 Tab 与删除规则编辑器 ===== */
+
+/* 分区化主面板：覆盖原两栏网格，改为单列可滚动 */
+#t-rewrite-overlay .t-rewrite-body-tabbed { display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+
+#t-rewrite-overlay .t-rewrite-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+#t-rewrite-overlay .t-rewrite-switches { display: flex; gap: 12px; flex-wrap: wrap; }
+#t-rewrite-overlay .t-rewrite-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 0.86em; font-weight: 700; color: rgb(var(--t-sky-text-1-rgb)); cursor: pointer; padding: 5px 12px; border: 1px solid var(--t-color-border-subtle); border-radius: 999px; background: var(--t-glass-panel); }
+#t-rewrite-overlay .t-rewrite-switch input { margin: 0; }
+
+#t-rewrite-overlay .t-rewrite-tabs { display: flex; gap: 6px; }
+#t-rewrite-overlay .t-rewrite-tab-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--t-color-border-subtle); background: var(--t-glass-panel); color: var(--t-glass-text-secondary); font-size: 0.84em; cursor: pointer; }
+#t-rewrite-overlay .t-rewrite-tab-btn.active { border-color: var(--t-color-accent-border-strong); background: linear-gradient(135deg, var(--t-color-accent-soft-strong) 0%, var(--t-color-surface-veil) 100%); color: rgb(var(--t-sky-text-0-rgb)); font-weight: 700; }
+
+#t-rewrite-overlay .t-rewrite-tab-page { display: none; flex-direction: column; gap: 12px; }
+#t-rewrite-overlay .t-rewrite-tab-page.active { display: flex; }
+#t-rewrite-overlay .t-rewrite-tab-page .t-rewrite-section:nth-last-child(2) { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+#t-rewrite-overlay .t-rewrite-inline-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8em; color: var(--t-glass-text-secondary); cursor: pointer; }
+#t-rewrite-overlay .t-rewrite-inline-switch input { margin: 0; }
+
+/* 删除命中预览：原句划删、片段显示删后文本 */
+#t-rewrite-overlay .t-rewrite-match-row.t-delete-hit .t-delete-before { text-decoration: line-through; opacity: 0.72; }
+#t-rewrite-overlay .t-delete-after { color: rgb(var(--t-accent-diff-after-text-rgb)); margin-top: 4px; }
+
+/* 删除规则编辑器行 */
+#t-rewrite-settings-overlay .t-delete-rule-row { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+#t-rewrite-settings-overlay .t-delete-rule-row input[type="text"] { flex: 1; font-size: 0.82em; min-width: 80px; }
+#t-rewrite-settings-overlay .t-delete-rule-row input.t-delete-rule-fragment { flex: 2 1 160px; }
+#t-rewrite-settings-overlay .t-delete-rule-enabled-wrap { display: inline-flex; align-items: center; gap: 4px; font-size: 0.76em; color: var(--t-glass-text-tertiary); white-space: nowrap; }
