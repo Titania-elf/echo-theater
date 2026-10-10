@@ -326,6 +326,14 @@ export function openSettingsWindow() {
                     </div>
 
                     <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
+                        <label style="cursor:pointer; display:flex; align-items:center;">
+                            <input type="checkbox" id="cfg-temp-instruction" ${data.temp_instruction?.enabled !== false ? 'checked' : ''} style="margin-right:10px;">
+                            <span style="color:var(--t-color-text-label);">✏️ 本次补充（临时指令）</span>
+                        </label>
+                        <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:5px; margin-left:22px;">开启后，小剧场顶栏剧本卡下方会出现「本次补充」输入框，可对单次生成追加一句临时要求（用完自动清空）。关闭则隐藏该入口，提示词里不再带补充段。</p>
+                    </div>
+
+                    <div class="t-form-group" style="margin-top:15px; padding-top:15px; border-top:1px solid var(--t-color-border);">
                         <label style="color:var(--t-color-text-label); display:block; margin-bottom:8px;">🎨 标题栏图标 <span id="p-header-actions-count" class="t-header-action-count"></span></label>
                         <div id="p-header-actions" class="t-header-action-list"></div>
                         <p style="font-size:0.75em; color:var(--t-color-text-faint); margin-top:6px;">勾选要常驻标题栏的功能（最多 ${HEADER_ACTION_MAX} 个），拖动可调整顺序。没选中的会收进标题栏的「更多」菜单。改动立即生效。</p>
@@ -2337,6 +2345,11 @@ export function openSettingsWindow() {
         }
         d.director = { instruction: $("#set-dir-instruction").val().trim() };
 
+        // 「本次补充」功能总开关（外观页）。独立成键，默认开启，读端用 `?.enabled !== false`。
+        d.temp_instruction = {
+            enabled: $("#cfg-temp-instruction").is(":checked")
+        };
+
         const clampInt = (value, min, max, fallback) => {
             const n = parseInt(value, 10);
             if (!Number.isFinite(n)) return fallback;
@@ -2444,6 +2457,8 @@ export function openSettingsWindow() {
         applyFontSettings(d.font_settings); // 应用字体设置
         applyUIFontScale(d.appearance?.ui_font_scale); // 应用 UI 字体大小
         applyUITheme(d.appearance?.ui_theme); // 应用界面主题
+        // 「本次补充」开关可能刚被切换：主窗口若开着，立刻重算那条的显隐
+        if (typeof window.updateTempInstructionUI === "function") window.updateTempInstructionUI();
         if (window.toastr) toastr.success("设置已保存");
     });
 

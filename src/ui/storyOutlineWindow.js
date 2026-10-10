@@ -42,7 +42,9 @@ function getGenParamDefaults() {
     return {
         outline: { temperature: 0.4, maxTokens: 20000, timeoutSec: 0 },
         // scenes 存储键沿用旧名（细纲时代遗留），现服务剧情推进推荐；2~3 条候选用不到 60k。
-        scenes: { temperature: 0.8, maxTokens: 8000, timeoutSec: 0 }
+        scenes: { temperature: 0.8, maxTokens: 8000, timeoutSec: 0 },
+        // pacing：节奏判断只回一小段 JSON，低温要稳、上限给小。
+        pacing: { temperature: 0.3, maxTokens: 1024, timeoutSec: 0 }
     };
 }
 
@@ -65,7 +67,8 @@ function getOutlineGenParams() {
     const raw = data?.[GEN_PARAMS_KEY] && typeof data[GEN_PARAMS_KEY] === "object" ? data[GEN_PARAMS_KEY] : {};
     return {
         outline: normalizeGenParamGroup(raw.outline, defaults.outline),
-        scenes: normalizeGenParamGroup(raw.scenes, defaults.scenes)
+        scenes: normalizeGenParamGroup(raw.scenes, defaults.scenes),
+        pacing: normalizeGenParamGroup(raw.pacing, defaults.pacing)
     };
 }
 
@@ -74,7 +77,8 @@ function saveOutlineGenParams(params) {
     const defaults = getGenParamDefaults();
     data[GEN_PARAMS_KEY] = {
         outline: normalizeGenParamGroup(params?.outline, defaults.outline),
-        scenes: normalizeGenParamGroup(params?.scenes, defaults.scenes)
+        scenes: normalizeGenParamGroup(params?.scenes, defaults.scenes),
+        pacing: normalizeGenParamGroup(params?.pacing, defaults.pacing)
     };
     saveExtData();
 }
@@ -976,6 +980,67 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 1) 先判断故事目前推进到了大纲的哪一条，填进 current_item_index（确实无法判断填 null）。
 2) 再给出 2~3 个候选剧情走向：都从该位置出发，承接已经发生的剧情，彼此方向不同，朝结局稳步推进但不要跳到结局。每个候选的 item_index 填它推进到的那一条（通常彼此相同或相邻）。
 严格按 version 1.6 结构返回。只返回 JSON。`
+        },
+        pacing: {
+            system: `你是叙事节奏分析师，在写作模型动笔前为「本次这一条回复」把控节奏。
+你不执笔——不写正文、不写对白、不替角色行动，只做两件事：判断当前叙事节奏，给出一句针对下一条回复的节奏指令。
+
+[判断锚点]
+1) 读「最近正文」把握当前这几拍在做什么：是在推进事件，还是在原地打转/反复铺垫。
+2) 对照「故事大纲」与「当前进度」判断该快还是该慢：
+   - 拖沓：正文在当前这拍反复停留、大纲却迟迟没往前 → 该推进。
+   - 仓促：跳得太快、情绪或信息没铺够就硬推 → 该放慢补铺垫。
+   - 紧凑/平稳：节奏本就合适 → 维持，别为改而改。
+3) 没有大纲或进度不明时，仅凭正文的张弛判断，宁可判得保守。
+
+[directive 怎么写]
+1) 是给写作模型的祈使句，只约束「本次这一条回复」，不是对整段故事的规划。
+2) 具体可执行：说清这次该放慢还是加快、笔墨该落在哪一拍（某段情绪/某个冲突/某次转场/某条伏笔），该引入什么或先按下什么。
+3) 禁止空泛（不要只说"写得更好/更精彩"），禁止直接代写正文或对白，禁止改变角色设定与既定事实。
+4) 节奏本就合适时，directive 可以是「保持当前节奏，继续把当前这拍写完整」，并把 intensity 调低。
+
+[硬性要求]
+1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
+2) 返回格式必须是：
+{
+  "version": "1.0",
+  "pacing_state": "拖沓|平稳|紧凑|仓促 四选一",
+  "assessment": "一两句诊断",
+  "directive": "一句针对本次回复的节奏指令",
+  "focus": "推进场景|深化情绪|引入冲突|收束悬念|留白停顿 之一，可留空字符串",
+  "intensity": 3
+}
+3) pacing_state 必须是四个值之一。
+4) intensity 是 1-5 的整数：1=轻微微调，5=强烈纠偏。
+5) directive 不超过 80 字，祈使句，中文。
+6) 所有字段必须存在，focus 可为空字符串。
+7) 输出语言使用中文。`,
+            user: `[角色设定]
+{{persona}}
+
+[用户设定]
+{{userDesc}}
+
+[世界书/设定]
+{{worldInfo}}
+
+[剧情设定]
+{{scenario}}
+
+[故事大纲（路标，最后一条=结局）]
+{{outlineItemsJson}}
+
+[当前进度]
+{{outlineProgress}}
+
+[最近正文（越靠后越新，仅为最近片段，不代表故事开头）]
+{{recentChat}}
+
+[本卡的故事需求]
+{{storyInput}}
+
+[任务]
+判断「最近正文」此刻的叙事节奏，对照大纲与当前进度，给出一句只约束本次这一条回复的节奏指令。严格按 version 1.0 结构返回，只返回 JSON。`
         }
     };
 }
@@ -1009,7 +1074,11 @@ function getPromptTemplates() {
                 return JSON.parse(JSON.stringify(defaults.rolling));
             }
             return { system: sys, user: usr };
-        })()
+        })(),
+        pacing: {
+            system: String(raw?.pacing?.system || defaults.pacing.system),
+            user: String(raw?.pacing?.user || defaults.pacing.user)
+        }
     };
 }
 
@@ -1026,6 +1095,7 @@ function renderPromptTemplate(template, vars) {
 
 function getPromptTemplateSection(templates, type) {
     if (type === "rolling") return templates.rolling;
+    if (type === "pacing") return templates.pacing;
     return templates.outline;
 }
 
@@ -1034,7 +1104,9 @@ function getUnknownPromptVars(text) {
         "persona", "userDesc", "openingText", "storyInput", "outlineItemsJson",
         "worldInfo", "scenario", "dialogueExamples",
         // 剧情推进专用变量
-        "recentChat"
+        "recentChat",
+        // 节奏把控专用变量
+        "outlineProgress"
     ]);
     const unknown = new Set();
     String(text || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
@@ -1057,7 +1129,9 @@ function buildPromptTemplateVars(ctx, userStoryInput, openingText, outlinePayloa
         scenario: String(ctx?.scenario || "").trim() || "(无)",
         dialogueExamples: String(ctx?.dialogueExamples || "").trim() || "(无)",
         // 剧情推进专用；非推荐场景为 "(无)"，模板里没引用就不影响。
-        recentChat: String(extras?.recentChat || "").trim() || "(无)"
+        recentChat: String(extras?.recentChat || "").trim() || "(无)",
+        // 节奏把控专用：当前大纲进度，无方案时为 "(无大纲)"。
+        outlineProgress: String(extras?.outlineProgress || "").trim() || "(无)"
     };
 }
 
@@ -1178,6 +1252,7 @@ export async function openPromptTemplateManager() {
                             <div class="t-outline-genparam-hint">分别控制大纲/剧情推荐的采样与上限。推荐结果被中途掐断时多为网关超时，建议调低 max_tokens。超时为客户端安全上限（0=不限制）。</div>
                             ${renderGenParamRow("outline", "大纲", settingsDraft.genParams.outline)}
                             ${renderGenParamRow("scenes", "剧情推荐", settingsDraft.genParams.scenes)}
+                            ${renderGenParamRow("pacing", "节奏判断", settingsDraft.genParams.pacing)}
                         </div>
 
                         <div class="t-form-group">
@@ -1207,10 +1282,11 @@ export async function openPromptTemplateManager() {
                                 <select id="t-prompt-target" class="t-outline-select">
                                     <option value="outline">故事大纲</option>
                                     <option value="rolling">剧情推进</option>
+                                    <option value="pacing">叙事节奏</option>
                                 </select>
                                 <button id="t-prompt-reset-current" class="t-btn t-btn-xs"><i class="fa-solid fa-rotate-left"></i> 恢复当前默认</button>
                             </div>
-                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}}</div>
+                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}}<br>叙事节奏额外变量：{{recentChat}} {{outlineProgress}}</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1315,7 +1391,10 @@ export async function openPromptTemplateManager() {
         const openingMode = getOpeningSourceMode();
         const openingSourceRef = getOpeningSourceRef();
         const opening = getOpeningTextForPreview(openingMode, openingSourceRef);
-        const varsLocal = buildPromptTemplateVars(ctx, currentStoryInput, opening, outlinePayload);
+        const varsLocal = buildPromptTemplateVars(ctx, currentStoryInput, opening, outlinePayload, {
+            recentChat: collectRecentChatText(getRollingChatFloors()),
+            outlineProgress: buildOutlineProgressText()
+        });
         const renderedSys = renderPromptTemplate(section.system, varsLocal);
         const renderedUser = renderPromptTemplate(section.user, varsLocal);
         $("#t-prompt-preview-system").text(renderedSys);
@@ -2518,6 +2597,81 @@ function collectRecentChatText(floors) {
 // 组装剧情推荐 prompt：完整大纲 + 最近正文。
 // 刻意**不**下发「当前进度」——进度改由模型读正文自行判断（见默认模板的「进度由你判断」）。
 // 大纲一直是全量下发的（buildOutlinePayloadForPrompt 不截断），模型才有足够路标做判断。
+/** 当前大纲进度的一行描述，供节奏判断参考；无方案时为 "(无大纲)"。 */
+function buildOutlineProgressText() {
+    const plan = getRollingPlan();
+    const total = Array.isArray(plan?.items) ? plan.items.length : 0;
+    if (!plan || total <= 0) return "(无大纲)";
+    const { itemIndex } = getPlanProgress(plan);
+    const item = normalizeItems(plan.items)[itemIndex];
+    const title = String(item?.title || "").trim() || "未命名";
+    return `当前约在第 ${itemIndex + 1} / ${total} 条：${title}`;
+}
+
+/**
+ * 组装节奏判断提示词。
+ * ⚠ 刻意不碰 ensureOpeningTextForGeneration —— 节奏判断只读正文/大纲/进度，
+ *   不需要开场白，更不该因此弹出「选择参考开场白」对话框。openingText 传空即可。
+ */
+function buildPacingPrompt(ctx) {
+    const outlinePayload = buildOutlinePayloadForPrompt();
+    const templates = getPromptTemplates();
+    const vars = buildPromptTemplateVars(ctx, "(空)", "", outlinePayload, {
+        recentChat: collectRecentChatText(getRollingChatFloors()),
+        outlineProgress: buildOutlineProgressText()
+    });
+    return [
+        { role: "system", content: renderPromptTemplate(templates.pacing.system, vars) },
+        { role: "user", content: renderPromptTemplate(templates.pacing.user, vars) }
+    ];
+}
+
+/** 节奏判断的合法状态值。模型给了别的词就当"平稳"（展示用，不进注入）。 */
+const PACING_STATES = ["拖沓", "平稳", "紧凑", "仓促"];
+
+/**
+ * 解析节奏判断返回（version 1.0）。directive 为空直接抛错——没有可注入内容。
+ * pacing_state 非四值归"平稳"，intensity 夹到 1-5，focus/assessment 容缺。
+ * 导出供单测直接验证（它是本功能里唯一值得独立测的纯逻辑）。
+ */
+export function parsePacingResponse(raw) {
+    if (!raw || typeof raw !== "string") throw new Error("模型返回为空");
+    const data = tryParseLooseJsonObject(raw);
+    const directive = String(data?.directive || "").trim();
+    if (!directive) throw new Error("节奏判断返回缺少有效 directive");
+    const pacingState = PACING_STATES.includes(data?.pacing_state) ? data.pacing_state : "平稳";
+    let intensity = Number(data?.intensity);
+    if (!Number.isFinite(intensity)) intensity = 3;
+    intensity = Math.min(5, Math.max(1, Math.round(intensity)));
+    return {
+        pacingState,
+        assessment: String(data?.assessment || "").trim(),
+        directive,
+        focus: String(data?.focus || "").trim(),
+        intensity
+    };
+}
+
+/**
+ * 调外部模型做一次节奏判断，返回诊断对象；失败时报错并返回 null（调用方据此复位 UI）。
+ * 复用大纲的 API 方案与 pacing 采样参数，走非流式（结果短、不牵动流式 raw 对话框）。
+ */
+export async function generatePacingAssessment() {
+    try {
+        const ctx = await getContextData();
+        const params = getOutlineGenParams().pacing;
+        const raw = await sendOutlineRequest(buildPacingPrompt(ctx), {
+            temperature: params.temperature,
+            maxTokens: params.maxTokens,
+            stream: false
+        });
+        return parsePacingResponse(raw);
+    } catch (e) {
+        reportGenerationError(e, "叙事节奏", "节奏分析失败");
+        return null;
+    }
+}
+
 function buildRecommendationPrompt(ctx, userStoryInput, openingText) {
     const outlinePayload = buildOutlinePayloadForPrompt();
     const templates = getPromptTemplates();

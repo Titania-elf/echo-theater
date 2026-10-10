@@ -67,7 +67,8 @@ import {
     getActiveTempInstruction,
     getTempInstructionDraft,
     consumeTempInstruction,
-    isTempInstructionGenerationSource
+    isTempInstructionGenerationSource,
+    isTempInstructionFeatureEnabled
 } from "./tempInstruction.js";
 import { scheduleContinuationPersistence } from "./continuationStore.js";
 // 自动配图（可选，默认关）：只在「单次演绎 / 重演」成功之后触发，见 illustrationAuto.js。
@@ -1580,8 +1581,11 @@ export async function buildPromptCompositionPreview(options = {}) {
         // 预览**只读不消费**：绝不能把用户正在打的草稿清掉。
         // 口径跟着「下一步动作」走：续写形状的预览取已生效快照，首轮取输入框草稿 ——
         // 与 resolveContinuationPreviewPlan 同源，才能兑现「预览 = 下一次真正发出去的提示词」。
+        // 功能被设置页关掉时源文本取空串：下游全不变，block 为空、各处自然成 no-op。
         const tempInstructionBlock = buildTempInstructionBlock(
-            continuationPlan ? getActiveTempInstruction(script.id) : getTempInstructionDraft(),
+            isTempInstructionFeatureEnabled(data)
+                ? (continuationPlan ? getActiveTempInstruction(script.id) : getTempInstructionDraft())
+                : "",
             { continuation: Boolean(continuationPlan) }
         );
         if (tempInstructionBlock) {
@@ -1834,9 +1838,12 @@ export async function handleGenerate(forceScriptId = null, silent = false, gener
     // 手动口径在这一刻把草稿消费掉（快照 + 清空输入框），即「用完自动清空」；
     // 生成即便随后失败也不会丢文本 —— 快照还在，"已生效"提示条上的撤销能放回输入框。
     // 主动续写是只读：取已生效的快照，它记着属于哪个剧本，换了剧本自动取不到。
-    const tempInstructionText = generationSource === "manual"
-        ? consumeTempInstruction(script.id)
-        : (isTempInstructionGenerationSource(generationSource) ? getActiveTempInstruction(script.id) : "");
+    // 功能被设置页关掉时直接取空串，连 manual 的 consume 都不走 —— 不碰草稿、不建快照。
+    const tempInstructionText = !isTempInstructionFeatureEnabled(data)
+        ? ""
+        : (generationSource === "manual"
+            ? consumeTempInstruction(script.id)
+            : (isTempInstructionGenerationSource(generationSource) ? getActiveTempInstruction(script.id) : ""));
     const tempInstructionBlock = buildTempInstructionBlock(tempInstructionText, {
         continuation: generationSource === "user_continuation"
     });

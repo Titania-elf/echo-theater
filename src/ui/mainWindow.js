@@ -55,7 +55,8 @@ import {
     setTempInstructionDraft,
     hasActiveTempInstruction,
     takeActiveTempInstruction,
-    clearTempInstruction
+    clearTempInstruction,
+    isTempInstructionFeatureEnabled
 } from "../core/tempInstruction.js";
 import * as modernLayout from "./mainWindow/layouts/modern.js";
 import * as legacyLayout from "./mainWindow/layouts/legacy.js";
@@ -1057,6 +1058,14 @@ function syncTempInstructionInputHeight() {
 function updateTempInstructionUI() {
     const $bar = $("#t-temp-bar");
     if (!$bar.length) return; // 主窗口没开，静默返回
+
+    // 功能被设置页关掉：整条隐藏，不渲染任何入口（草稿/快照即便残留也进不了提示词，
+    // 已在 api.js 两个组装点一并闸掉）。关掉上一栏的分隔线复位，别留下第二行的痕迹。
+    if (!isTempInstructionFeatureEnabled(getExtData())) {
+        $bar.prop("hidden", true);
+        $(".t-top-bar").removeClass("has-temp-bar");
+        return;
+    }
 
     const pendingScriptId = getPendingGenerationScriptId();
     const draft = getTempInstructionDraft();

@@ -32,6 +32,7 @@ const {
     TEMP_INSTRUCTION_HEADER,
     buildTempInstructionBlock,
     isTempInstructionGenerationSource,
+    isTempInstructionFeatureEnabled,
     getTempInstructionDraft,
     setTempInstructionDraft,
     getActiveTempInstruction,
@@ -97,6 +98,20 @@ test('只有手动演绎与主动续写允许携带', () => {
     assert.equal(isTempInstructionGenerationSource('preview'), false);
     assert.equal(isTempInstructionGenerationSource(''), false);
     assert.equal(isTempInstructionGenerationSource(undefined), false);
+});
+
+/* ------------------------------------------------------------------ *
+ * 功能总开关
+ * ------------------------------------------------------------------ */
+
+test('功能开关默认开启，只有显式 false 才算关', () => {
+    // 默认开启的既有功能：老用户设置里没有这个键，getExtData 不深合并 → undefined，
+    // 必须仍判成开启，否则他们一直在用的输入框会被静默抹掉
+    assert.equal(isTempInstructionFeatureEnabled(undefined), true, '整个 data 缺失 → 开启');
+    assert.equal(isTempInstructionFeatureEnabled({}), true, '没有 temp_instruction 键 → 开启');
+    assert.equal(isTempInstructionFeatureEnabled({ temp_instruction: {} }), true, '有键无 enabled → 开启');
+    assert.equal(isTempInstructionFeatureEnabled({ temp_instruction: { enabled: true } }), true);
+    assert.equal(isTempInstructionFeatureEnabled({ temp_instruction: { enabled: false } }), false, '显式 false 才关');
 });
 
 /* ------------------------------------------------------------------ *

@@ -3082,3 +3082,15 @@ test('tempInstruction.js 保持零依赖', () => {
     assert.equal(/^\s*import\s/m.test(stripped('src/core/tempInstruction.js')), false,
         'tempInstruction.js 不得 import 任何模块');
 });
+
+test('功能总开关在 core 两个组装点与 ui 显隐处都加了闸', () => {
+    // 设置页关掉「本次补充」后，三处必须都看不到它：api.js 的真实生成与预览两个组装点，
+    // 以及 mainWindow 顶栏那条的显隐。少一处就会出现「关了还在用 / 关了还显示」的割裂。
+    const api = stripped('src/core/api.js');
+    assert.equal((api.match(/isTempInstructionFeatureEnabled\(/g) || []).length, 2,
+        'api.js 应在 handleGenerate 与 buildPromptCompositionPreview 各闸一次');
+
+    const main = stripped('src/ui/mainWindow.js');
+    assert.ok(/isTempInstructionFeatureEnabled\(/.test(main),
+        'mainWindow.js 的 updateTempInstructionUI 必须按开关决定那条的显隐');
+});

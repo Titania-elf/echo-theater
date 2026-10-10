@@ -241,3 +241,48 @@
 .tsa-panel .tsa-preview-item.current .tsa-preview-marker { color: var(--t-color-accent); }
 
 .tsa-panel .tsa-preview-item.todo .tsa-preview-marker { color: var(--t-glass-text-secondary); }
+
+/* ── 节奏把控（剧情推进面板的第二模式）────────────────────────────── */
+.tsa-panel .tsa-mode-tabs { display: flex; gap: 6px; padding: 8px 10px 0; }
+
+.tsa-panel .tsa-mode-tab { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 8px; border: 1px solid var(--t-color-accent-border); border-radius: 999px; background: transparent; color: var(--t-glass-text-secondary); cursor: pointer; font-size: 12px; transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease; }
+
+.tsa-panel .tsa-mode-tab:hover { border-color: var(--t-color-accent-border-hover); background: var(--t-glass-row-hover); }
+
+.tsa-panel .tsa-mode-tab.is-active { color: var(--t-glass-text); background: var(--t-color-accent-soft); border-color: var(--t-color-accent-border-hover); }
+
+.tsa-panel .tsa-mode-tab i { color: var(--t-color-accent); }
+
+.tsa-panel .tsa-pacing-diag { margin-bottom: 8px; padding: 8px; border: 1px solid var(--t-color-accent-border); border-radius: var(--t-radius-sm); background: var(--t-glass-window); }
+
+.tsa-panel .tsa-pacing-state { display: inline-block; padding: 1px 8px; margin-right: 6px; border-radius: 999px; border: 1px solid var(--t-color-accent-border-hover); background: var(--t-color-accent-soft); color: var(--t-glass-text); font-weight: 700; }
+
+.tsa-panel .tsa-pacing-focus { display: inline-block; padding: 1px 7px; margin-right: 6px; border-radius: 999px; border: 1px solid var(--t-color-accent-border); font-size: 11px; color: var(--t-glass-text-secondary); }
+
+.tsa-panel .tsa-pacing-intensity { font-size: 11px; color: var(--t-glass-text-secondary); }
+
+.tsa-panel .tsa-pacing-assessment { margin-top: 6px; white-space: pre-wrap; word-break: break-word; }
+
+.tsa-panel .tsa-pacing-input { width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 6px 8px; border: 1px solid var(--t-color-accent-border); border-radius: var(--t-radius-sm); background: var(--t-glass-window); color: var(--t-glass-text); font: inherit; resize: vertical; }
+
+.tsa-panel .tsa-pacing-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+
+.tsa-panel .tsa-pacing-preset { padding: 3px 10px; border: 1px solid var(--t-color-accent-border); border-radius: 999px; background: transparent; color: var(--t-glass-text); cursor: pointer; font-size: 12px; }
+
+.tsa-panel .tsa-pacing-preset:hover { border-color: var(--t-color-accent-border-hover); background: var(--t-glass-row-hover); }
+
+.tsa-panel .tsa-pacing-adv { margin-bottom: 8px; font-size: 12px; color: var(--t-glass-text-secondary); }
+
+.tsa-panel .tsa-pacing-adv summary { cursor: pointer; user-select: none; }
+
+.tsa-panel .tsa-pacing-adv-fields { display: flex; gap: 12px; margin-top: 6px; flex-wrap: wrap; }
+
+.tsa-panel .tsa-pacing-adv-fields label { display: inline-flex; align-items: center; gap: 5px; }
+
+.tsa-panel .tsa-pacing-adv-fields input, .tsa-panel .tsa-pacing-adv-fields select { width: 92px; padding: 2px 6px; border: 1px solid var(--t-color-accent-border); border-radius: var(--t-radius-sm); background: var(--t-glass-window); color: var(--t-glass-text); }
+
+.tsa-panel .tsa-pacing-armed { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--t-color-success-border); border-radius: var(--t-radius-sm); background: var(--t-color-success-soft); font-size: 12px; }
+
+.tsa-panel .tsa-pacing-armed i { color: var(--t-color-success-border); }
+
+.tsa-panel .tsa-pacing-apply { background: var(--t-color-success-soft); border-color: var(--t-color-success-border); }

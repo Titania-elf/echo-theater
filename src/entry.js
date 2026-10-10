@@ -55,6 +55,7 @@ import { initOutlineEntryButton } from "./ui/outlineEntryButton.js";
 import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteEntryButton.js";
 import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
 import { initSceneAdvanceBubble, refreshSceneAdvanceBubble } from "./ui/sceneAdvanceBubble.js";
+import { initPacingInjection } from "./core/pacingInjection.js";
 import { initFloorNav, refreshFloorNavButton } from "./ui/floorNav.js";
 import { isInjectedTheaterMessage } from "./core/chatInjector.js";
 import { exportIllustrationBackup, restoreIllustrationBackup } from "./core/illustrationPortability.js";
@@ -213,6 +214,9 @@ function initCoreFeatures() {
 
     // 初始化消息气泡上的剧情推进入口（与发送键菜单入口共用 show_outline_actions 开关）
     initSceneAdvanceBubble();
+
+    // 初始化叙事节奏把控的一次性注入生命周期（arm/clear + GENERATION_ENDED 清除）
+    initPacingInjection();
 
     // 初始化楼层快捷操作（跳转 + 批量隐藏旧楼）
     initFloorNav();

@@ -172,6 +172,21 @@ export const defaultSettings = {
         recent_instructions: [],
         inject_rounds_count: 3
     },
+    // 「本次补充」（临时指令）功能总开关。
+    // ⚠ 这是**默认开启**的既有功能，读端一律 `?.enabled !== false`（见 tempInstruction.js
+    //   的 isTempInstructionFeatureEnabled）——getExtData 不做深合并，老用户没有这个键，
+    //   用 `=== true` 判会把他们正用着的功能静默关掉。这里写 true 只服务全新安装。
+    temp_instruction: {
+        enabled: true
+    },
+    // 「叙事节奏把控」（剧情推进面板的第二能力）的注入参数。
+    // ⚠ 只放注入侧参数：判断用的提示词模板走 story_outline_prompt_templates.pacing、
+    //   采样参数走 story_outline_gen_params.pacing、API 方案复用大纲——都不在这里。
+    //   读端一律 `?? 默认`（老用户没这个键时 depth=0 / role=system）。
+    pacing: {
+        inject_depth: 0,       // setExtensionPrompt 的 IN_CHAT 深度，0 = 紧贴最新消息
+        inject_role: "system"  // system | user | assistant
+    },
 
     // 自定义系统提示词配置
     custom_prompts: {

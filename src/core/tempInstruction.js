@@ -59,6 +59,25 @@ export function isTempInstructionGenerationSource(source) {
 }
 
 /**
+ * 「本次补充」功能的设置总开关。
+ *
+ * 单一事实来源：ui（主窗口顶栏那条的显隐）与 core（api.js 两个组装点）都读它，
+ * 一处判法改了两处同步。放在本模块是因为它是本功能的一部分，而本模块零 import ——
+ * 把设置对象当**参数**传进来，而不是自己去 import getExtData，这条零依赖才守得住
+ * （test 'tempInstruction.js 保持零依赖' 盯着）。
+ *
+ * ⚠ 判法是 `!== false` 而非 `=== true`：这是默认开启的既有功能，getExtData 不做
+ *   深合并，老用户的设置里根本没有 temp_instruction 这个键（undefined）——
+ *   用 `=== true` 会把他们一直在用的输入框静默抹掉。只有用户显式存了 false 才算关。
+ *
+ * @param {{ temp_instruction?: { enabled?: boolean } }} [data] getExtData() 的返回值
+ * @returns {boolean}
+ */
+export function isTempInstructionFeatureEnabled(data) {
+    return data?.temp_instruction?.enabled !== false;
+}
+
+/**
  * 组装临时指令块。
  *
  * 返回串的尾部**没有**多余空白，使 `block.length` 与它在 user 串末尾实际占用的长度

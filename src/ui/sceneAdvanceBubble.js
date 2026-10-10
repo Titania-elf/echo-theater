@@ -26,8 +26,9 @@
 // 属「注入 ST DOM」一类（依 ADR-02），样式集中在 css/04-features/st-embedded.css。
 
 import { eventSource, event_types } from "../../../../script.js";
-import { getExtData } from "../utils/storage.js";
+import { getExtData, saveExtData } from "../utils/storage.js";
 import { TitaniaLogger } from "../core/logger.js";
+import * as pacingInjection from "../core/pacingInjection.js";
 
 const STRIP_CLASS = "titania-scene-advance-strip";
 const PANEL_ID = "t-scene-advance-panel";
@@ -53,6 +54,40 @@ let restoring = false;
 let previewItemIdx = -1;
 /** 大纲情节预览整块是否展开。默认折叠 —— 面板收起时会重置，每次打开都从折叠态开始。 */
 let previewOpen = false;
+/** 面板当前模式：recommend（推荐剧情）| pacing（节奏把控）。收起时重置回 recommend。 */
+let panelMode = "recommend";
+/** 最近一次节奏诊断（{pacingState, assessment, directive, focus, intensity}），重绘不丢。 */
+let pacingResult = null;
+/** 节奏指令编辑草稿：和输入框同步，避免重绘丢失用户正在打的字（同 tempInstruction 的做法）。 */
+let pacingDraft = "";
+/** 节奏分析进行中：防连点，也让重绘保留 loading 态。 */
+let pacingAnalyzing = false;
+
+/** 手动节奏预设：一键把现成 directive 填进编辑框，不调 API。措辞与 judge 产出同格式。 */
+const PACING_PRESETS = [
+    { label: "放慢", text: "本次回复放慢节奏，停留在当前场景，深化人物情绪与感官细节，不要推进到新事件。" },
+    { label: "加快", text: "本次回复加快节奏，略去过场与寒暄，直接推进到下一个关键事件或场景。" },
+    { label: "起张力", text: "本次回复提升张力，制造冲突或悬念让局势升级，避免平淡交代。" },
+    { label: "收束", text: "本次回复收束当前这条线索，给已有伏笔或冲突一个阶段性结果，不要再抛新线。" },
+    { label: "留白", text: "本次回复克制笔墨，以未尽之语和留白收尾，给回味空间。" },
+    { label: "转场", text: "本次回复完成一次场景或时间转换，自然过渡到下一个场景。" },
+];
+
+/** 读注入参数（depth/role），缺省 depth=0 / role=system（老用户没这个键也不报错）。 */
+function getPacingConfig() {
+    const p = getExtData()?.pacing || {};
+    const role = ["system", "user", "assistant"].includes(p.inject_role) ? p.inject_role : "system";
+    const depthRaw = Number(p.inject_depth);
+    const depth = Number.isFinite(depthRaw) && depthRaw >= 0 ? Math.floor(depthRaw) : 0;
+    return { depth, role };
+}
+
+function savePacingConfig(patch) {
+    const data = getExtData();
+    const prev = data.pacing && typeof data.pacing === "object" ? data.pacing : {};
+    data.pacing = { ...prev, ...patch };
+    saveExtData();
+}
 
 function loadApi() {
     if (!apiPromise) apiPromise = import("./storyOutlineWindow.js");
@@ -352,23 +387,28 @@ function buildCandidatesHtml(state) {
 }
 
 /**
- * 面板 HTML：预览在最上，其次是方案/进度/候选（整块可滚动），底部操作条常驻。
- * 顺序照搬原「剧情推进」窗口的排布，只是换成内联形态。
+ * 面板 HTML：顶部模式切换（推荐剧情 / 节奏把控），下面按模式分叉。
+ * 推荐剧情沿用原排布；节奏把控是本次新增、与前者机制不同（见 pacingInjection.js）。
  */
 function buildPanelHtml(state) {
-    const planOptions = state.plans.length
-        ? state.plans.map(p => `<option value="${escapeHtmlText(p.id)}" ${p.id === state.planId ? "selected" : ""}>${escapeHtmlText(p.name)}</option>`).join("")
-        : `<option value="">（暂无方案）</option>`;
+    const tabs = `
+        <div class="tsa-mode-tabs">
+            <button type="button" class="tsa-mode-tab ${panelMode === "recommend" ? "is-active" : ""}" data-mode="recommend"><i class="fa-solid fa-forward-step"></i> 推荐剧情</button>
+            <button type="button" class="tsa-mode-tab ${panelMode === "pacing" ? "is-active" : ""}" data-mode="pacing"><i class="fa-solid fa-gauge-high"></i> 节奏把控</button>
+        </div>`;
+    const body = panelMode === "pacing" ? buildPacingBody() : buildRecommendBody(state);
+    return `<div id="${PANEL_ID}" class="tsa-panel">${tabs}${body}</div>`;
+}
 
+/** 推荐剧情体：预览 / 方案 / 进度 / 候选（可滚动）+ 底部操作条。原「剧情推进」排布。 */
+function buildRecommendBody(state) {
     const generateLabel = state.candidates.length > 0 ? "换一批" : "推荐剧情";
-
     return `
-    <div id="${PANEL_ID}" class="tsa-panel">
         <div class="tsa-scroll">
             ${buildPreviewHtml(state)}
             <div class="tsa-plan-row">
                 <label class="tsa-plan-label">方案
-                    <select class="tsa-plan-select" id="tsa-plan-select">${planOptions}</select>
+                    <select class="tsa-plan-select" id="tsa-plan-select">${buildPlanOptions(state)}</select>
                 </label>
             </div>
             ${buildProgressHtml(state)}
@@ -382,8 +422,67 @@ function buildPanelHtml(state) {
             <button type="button" class="tsa-generate" id="tsa-generate" ${generating || !state.hasPlan ? "disabled" : ""}>
                 <i class="fa-solid ${generating ? "fa-spinner fa-spin" : "fa-forward-step"}"></i> ${generating ? "推荐中..." : generateLabel}
             </button>
+        </div>`;
+}
+
+function buildPlanOptions(state) {
+    return state.plans.length
+        ? state.plans.map(p => `<option value="${escapeHtmlText(p.id)}" ${p.id === state.planId ? "selected" : ""}>${escapeHtmlText(p.name)}</option>`).join("")
+        : `<option value="">（暂无方案）</option>`;
+}
+
+/**
+ * 节奏把控体：诊断区 / 可编辑指令 / 预设按钮 / 注入高级设置 / 武装条 + 底部操作条。
+ * ⚠ 不被 hasPlan 拦——没有大纲也能凭正文判断，大纲只作可选上下文。
+ */
+function buildPacingBody() {
+    const cfg = getPacingConfig();
+    const r = pacingResult;
+    const diag = r
+        ? `<div class="tsa-pacing-diag">
+                <span class="tsa-pacing-state">${escapeHtmlText(r.pacingState)}</span>
+                ${r.focus ? `<span class="tsa-pacing-focus">${escapeHtmlText(r.focus)}</span>` : ""}
+                <span class="tsa-pacing-intensity">强度 ${r.intensity}/5</span>
+                ${r.assessment ? `<div class="tsa-pacing-assessment">${escapeHtmlText(r.assessment)}</div>` : ""}
+            </div>`
+        : `<div class="tsa-empty">点下方「分析节奏」，让外部模型读最近正文与大纲进度，给一条只影响下一条回复的节奏指令。无大纲也能用。</div>`;
+
+    const presets = PACING_PRESETS.map(p =>
+        `<button type="button" class="tsa-pacing-preset" data-preset="${escapeHtmlText(p.text)}">${escapeHtmlText(p.label)}</button>`
+    ).join("");
+
+    const armed = pacingInjection.getArmedPacing();
+    const armedHtml = armed.armed
+        ? `<div class="tsa-pacing-armed"><i class="fa-solid fa-circle-check"></i> 已武装：${escapeHtmlText(armed.summary)} · 下条回复生效</div>`
+        : "";
+
+    return `
+        <div class="tsa-scroll">
+            ${diag}
+            <textarea class="tsa-pacing-input" id="tsa-pacing-directive" rows="3" placeholder="本次回复的节奏指令，可直接编辑，或点下方预设填入">${escapeHtmlText(pacingDraft)}</textarea>
+            <div class="tsa-pacing-presets">${presets}</div>
+            <details class="tsa-pacing-adv">
+                <summary>注入高级设置</summary>
+                <div class="tsa-pacing-adv-fields">
+                    <label>深度<input type="number" id="tsa-pacing-depth" min="0" max="10000" step="1" value="${cfg.depth}"></label>
+                    <label>角色
+                        <select id="tsa-pacing-role">
+                            <option value="system" ${cfg.role === "system" ? "selected" : ""}>system</option>
+                            <option value="user" ${cfg.role === "user" ? "selected" : ""}>user</option>
+                            <option value="assistant" ${cfg.role === "assistant" ? "selected" : ""}>assistant</option>
+                        </select>
+                    </label>
+                </div>
+            </details>
+            ${armedHtml}
         </div>
-    </div>`;
+        <div class="tsa-footer">
+            <button type="button" class="tsa-chip" id="tsa-pacing-clear" title="清除已武装的节奏指令"><i class="fa-solid fa-eraser"></i> 清除</button>
+            <button type="button" class="tsa-generate" id="tsa-pacing-analyze" ${pacingAnalyzing ? "disabled" : ""}>
+                <i class="fa-solid ${pacingAnalyzing ? "fa-spinner fa-spin" : "fa-gauge-high"}"></i> ${pacingAnalyzing ? "分析中..." : "分析节奏"}
+            </button>
+            <button type="button" class="tsa-generate tsa-pacing-apply" id="tsa-pacing-apply"><i class="fa-solid fa-syringe"></i> 应用到下次回复</button>
+        </div>`;
 }
 
 /** 重新拉取状态并整体重绘面板内容。 */
@@ -414,6 +513,7 @@ function destroyPanel() {
     expandedForMesid = null;
     previewItemIdx = -1;
     previewOpen = false;   // 下次打开回到折叠态
+    panelMode = "recommend";   // 下次打开回到推荐剧情页（节奏诊断缓存保留，重开仍可见）
     const strip = getStrip();
     if (strip) updateStrip(strip, { expanded: false });
 }
@@ -506,6 +606,39 @@ async function onGenerate() {
     }
 }
 
+/** 调外部模型分析节奏，把诊断与建议指令填进面板。 */
+async function onAnalyzePacing() {
+    if (pacingAnalyzing) return;
+    pacingAnalyzing = true;
+    await refreshPanel();
+    try {
+        const api = await loadApi();
+        const result = await api.generatePacingAssessment();   // 失败时返回 null（内部已 toast）
+        if (result) {
+            pacingResult = result;
+            pacingDraft = result.directive;
+        }
+    } catch (e) {
+        TitaniaLogger.warn("节奏分析失败", e?.message || String(e));
+    } finally {
+        pacingAnalyzing = false;
+        await refreshPanel();
+    }
+}
+
+/** 把编辑框里的指令武装成一次性注入（影响下一条 ST 原生回复）。 */
+function onApplyPacing() {
+    const text = String($("#tsa-pacing-directive").val() || "").trim();
+    if (!text) {
+        if (window.toastr) toastr.warning("请先填写或分析出一条节奏指令", "叙事节奏");
+        return;
+    }
+    pacingDraft = text;
+    const ok = pacingInjection.armPacingDirective(text, getPacingConfig());
+    if (ok && window.toastr) toastr.success("已应用，将影响下一条回复", "叙事节奏");
+    void refreshPanel();   // 刷新武装条
+}
+
 async function togglePanel(strip, mesid) {
     if (document.getElementById(PANEL_ID)) {
         destroyPanel();
@@ -563,6 +696,40 @@ function bindPanelNode(panel) {
 
     $panel.on("click", ".tsa-item", function () {
         onPickCandidate(Number($(this).data("candidate-index")));
+    });
+
+    // ── 节奏把控 ──
+    $panel.on("click", ".tsa-mode-tab", async function () {
+        const next = String($(this).data("mode") || "recommend") === "pacing" ? "pacing" : "recommend";
+        if (next === panelMode) return;
+        panelMode = next;
+        await refreshPanel();
+    });
+
+    // 直接改 DOM 不重绘：重绘会丢掉输入框焦点与光标
+    $panel.on("input", "#tsa-pacing-directive", function () {
+        pacingDraft = String($(this).val() || "");
+    });
+
+    $panel.on("click", ".tsa-pacing-preset", function () {
+        pacingDraft = String($(this).data("preset") || "");
+        $panel.find("#tsa-pacing-directive").val(pacingDraft);
+    });
+
+    $panel.on("change", "#tsa-pacing-depth", function () {
+        const n = Math.max(0, Math.floor(Number($(this).val()) || 0));
+        savePacingConfig({ inject_depth: n });
+    });
+    $panel.on("change", "#tsa-pacing-role", function () {
+        const role = String($(this).val() || "system");
+        savePacingConfig({ inject_role: ["system", "user", "assistant"].includes(role) ? role : "system" });
+    });
+
+    $panel.on("click", "#tsa-pacing-analyze", () => onAnalyzePacing());
+    $panel.on("click", "#tsa-pacing-apply", () => onApplyPacing());
+    $panel.on("click", "#tsa-pacing-clear", async () => {
+        pacingInjection.clearPacingDirective();
+        await refreshPanel();
     });
 
     // ⚠ 必须最后注册：同一元素上的处理器按注册顺序执行，先让上面那些跑完，

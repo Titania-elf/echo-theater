@@ -4,10 +4,11 @@
     "description": "沉浸式角色内心独白与平行世界演绎插件",
     "type": "module",
     "scripts": {
-        "test": "node --experimental-vm-modules --test --test-isolation=none tests/illustration.test.mjs tests/cleaning.test.mjs tests/tempInstruction.test.mjs",
+        "test": "node --experimental-vm-modules --test --test-isolation=none tests/illustration.test.mjs tests/cleaning.test.mjs tests/tempInstruction.test.mjs tests/pacing.test.mjs",
         "test:illustration": "node --experimental-vm-modules --test --test-isolation=none tests/illustration.test.mjs",
         "test:cleaning": "node --experimental-vm-modules --test --test-isolation=none tests/cleaning.test.mjs",
         "test:temp": "node --experimental-vm-modules --test --test-isolation=none tests/tempInstruction.test.mjs",
+        "test:pacing": "node --experimental-vm-modules --test --test-isolation=none tests/pacing.test.mjs",
         "build": "node build.js",
         "build:watch": "node build.js --watch",
         "prebuild": "node scripts/css-audit.js",
