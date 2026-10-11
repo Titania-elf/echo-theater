@@ -29,6 +29,7 @@ import { eventSource, event_types } from "../../../../script.js";
 import { getExtData, saveExtData } from "../utils/storage.js";
 import { TitaniaLogger } from "../core/logger.js";
 import * as pacingInjection from "../core/pacingInjection.js";
+import { isBlindboxPlan, normalizeBlindbox, getProgressStats } from "../core/blindboxPlan.js";
 
 const STRIP_CLASS = "titania-scene-advance-strip";
 const PANEL_ID = "t-scene-advance-panel";
@@ -145,6 +146,39 @@ function formatProgressLabel(progress) {
     return `第 ${progress.index + 1} / ${progress.total} 条`;
 }
 
+/* ------------------------------------------------------------------ *
+ * 盲盒导演：激活方案是已封印盲盒时，横条退化成"引导中"状态灯，面板不给剧透
+ * ------------------------------------------------------------------ */
+
+/** 当前激活方案若是「已封印、未解封」的盲盒，返回其进度信息；否则 null。只读 extData，不加载大模块。 */
+function getActiveBlindboxInfo() {
+    try {
+        const data = getExtData();
+        const plans = Array.isArray(data?.[PLANS_KEY]) ? data[PLANS_KEY] : [];
+        if (plans.length === 0) return null;
+        const activeId = String(data?.[ACTIVE_PLAN_KEY] || "");
+        const plan = plans.find(p => p?.id === activeId) || plans[0];
+        if (!plan || !isBlindboxPlan(plan)) return null;
+        const bb = plan.blindbox;
+        if (!bb || bb.sealed !== true || bb.unsealed === true) return null;
+        const nbb = normalizeBlindbox(bb);
+        return { planId: plan.id, stats: getProgressStats(nbb), paused: bb.directorPaused === true };
+    } catch {
+        return null;
+    }
+}
+
+/** 翻转激活盲盒的导演暂停标记，落盘。 */
+function toggleBlindboxDirectorPaused(planId) {
+    const data = getExtData();
+    const plans = Array.isArray(data?.[PLANS_KEY]) ? data[PLANS_KEY] : [];
+    const plan = plans.find(p => p?.id === planId);
+    if (!plan || !plan.blindbox) return;
+    plan.blindbox.directorPaused = plan.blindbox.directorPaused !== true;
+    plan.updatedAt = Date.now();
+    saveExtData();
+}
+
 /**
  * 把无头 API 的状态快照转成横条要的进度，没有方案/方案为空时返回 null。
  * total 为 0 时必须回 null：否则会渲染出「第 1 / 0 条」。
@@ -215,10 +249,18 @@ function buildStrip() {
 /** 就地更新某条横条上的进度文字与展开态外观。 */
 function updateStrip(strip, { progress, expanded } = {}) {
     if (!strip) return;
-    const target = progress === undefined ? readProgressFromSettings() : progress;
-    const label = formatProgressLabel(target);
-    // 用 text() 而非 html()：进度文案没有富文本需求，也免得把外部数据当 HTML 解析
-    $(strip).find(".tsa-strip-progress").text(label ? `· ${label}` : "");
+    const bbInfo = getActiveBlindboxInfo();
+    if (bbInfo) {
+        // 盲盒激活：横条退化成"引导中"状态灯，不显示任何剧透文字。
+        $(strip).find(".tsa-strip-title").text(bbInfo.paused ? "盲盒导演 · 已暂停" : "盲盒导演");
+        $(strip).find(".tsa-strip-progress").text(`· 已达成 ${bbInfo.stats.passed}/${bbInfo.stats.total}`);
+    } else {
+        $(strip).find(".tsa-strip-title").text("剧情推进");
+        const target = progress === undefined ? readProgressFromSettings() : progress;
+        const label = formatProgressLabel(target);
+        // 用 text() 而非 html()：进度文案没有富文本需求，也免得把外部数据当 HTML 解析
+        $(strip).find(".tsa-strip-progress").text(label ? `· ${label}` : "");
+    }
     if (expanded !== undefined) {
         $(strip).attr("aria-expanded", String(expanded)).toggleClass("is-open", expanded);
     }
@@ -391,6 +433,11 @@ function buildCandidatesHtml(state) {
  * 推荐剧情沿用原排布；节奏把控是本次新增、与前者机制不同（见 pacingInjection.js）。
  */
 function buildPanelHtml(state) {
+    const bbInfo = getActiveBlindboxInfo();
+    if (bbInfo) {
+        // 盲盒激活：面板只给"引导中"状态 + 暂停开关，推荐剧情（会剧透）与节奏把控（已被导演覆盖）都隐身。
+        return `<div id="${PANEL_ID}" class="tsa-panel">${buildBlindboxBody(bbInfo)}</div>`;
+    }
     const tabs = `
         <div class="tsa-mode-tabs">
             <button type="button" class="tsa-mode-tab ${panelMode === "recommend" ? "is-active" : ""}" data-mode="recommend"><i class="fa-solid fa-forward-step"></i> 推荐剧情</button>
@@ -398,6 +445,24 @@ function buildPanelHtml(state) {
         </div>`;
     const body = panelMode === "pacing" ? buildPacingBody() : buildRecommendBody(state);
     return `<div id="${PANEL_ID}" class="tsa-panel">${tabs}${body}</div>`;
+}
+
+/** 盲盒导演面板体：只报状态，不剧透；带一个暂停/恢复开关。进度骨架与剧透逃生在大纲窗。 */
+function buildBlindboxBody(info) {
+    const s = info.stats;
+    return `
+        <div class="tsa-scroll">
+            <div class="tsa-empty" style="line-height:1.6;">
+                <div style="font-weight:600;"><i class="fa-solid fa-clapperboard"></i> 盲盒导演${info.paused ? " · 已暂停" : "引导中"}</div>
+                <div style="margin-top:6px;">内容已封印，由导演在幕后把每回合悄悄引导向主线。已达成 ${s.passed}/${s.total} 个关键事件 · 共 ${s.nodeCount} 个节点。</div>
+                <div style="margin-top:6px;opacity:.7;">想看进度骨架 / 回顾墙，或剧透逃生，请到「大纲生成」窗口打开这本方案。</div>
+            </div>
+        </div>
+        <div class="tsa-footer">
+            <button type="button" class="tsa-generate" id="tsa-bb-pause">
+                <i class="fa-solid ${info.paused ? "fa-play" : "fa-pause"}"></i> ${info.paused ? "恢复导演" : "暂停导演"}
+            </button>
+        </div>`;
 }
 
 /** 推荐剧情体：预览 / 方案 / 进度 / 候选（可滚动）+ 底部操作条。原「剧情推进」排布。 */
@@ -693,6 +758,16 @@ function bindPanelNode(panel) {
     });
 
     $panel.on("click", "#tsa-generate", () => onGenerate());
+
+    // 盲盒导演：暂停 / 恢复
+    $panel.on("click", "#tsa-bb-pause", async function () {
+        const info = getActiveBlindboxInfo();
+        if (!info) return;
+        toggleBlindboxDirectorPaused(info.planId);
+        const strip = getStrip();
+        if (strip) updateStrip(strip);
+        await refreshPanel();
+    });
 
     $panel.on("click", ".tsa-item", function () {
         onPickCandidate(Number($(this).data("candidate-index")));

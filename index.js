@@ -1539,9 +1539,9 @@ ${bodyContent}
 </body>
 </html>`;
 }
-function escapeHtml(str) {
-  if (str === null || str === void 0 || str === "") return "";
-  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+function escapeHtml(str2) {
+  if (str2 === null || str2 === void 0 || str2 === "") return "";
+  return String(str2).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 function openInNewWindow(html, scriptName = "\u4E92\u52A8\u573A\u666F") {
   console.log("[Titania] openInNewWindow \u88AB\u8C03\u7528\uFF0C\u539F\u59CBHTML\u957F\u5EA6:", html?.length || 0);
@@ -1991,16 +1991,16 @@ function extractFromShadowDOM(container) {
   return container.innerHTML;
 }
 async function countTokens(text) {
-  const str = String(text || "");
-  if (!str) return { count: 0, exact: true };
+  const str2 = String(text || "");
+  if (!str2) return { count: 0, exact: true };
   try {
     const { getTokenCountAsync } = await import("../../../tokenizers.js");
-    const count = await getTokenCountAsync(str);
+    const count = await getTokenCountAsync(str2);
     if (Number.isFinite(count)) return { count, exact: true };
   } catch (error) {
     console.warn("Titania: ST \u5206\u8BCD\u5668\u4E0D\u53EF\u7528\uFF0C\u56DE\u9000\u5230\u4F30\u7B97", error);
   }
-  return { count: estimateTokens(str), exact: false };
+  return { count: estimateTokens(str2), exact: false };
 }
 async function countTokensBatch(texts) {
   const list = Array.isArray(texts) ? texts : [];
@@ -26514,8 +26514,8 @@ function getCurrentAvatarSrc() {
   console.log("Titania: Captured Avatar Path ->", avatarSrc);
   return avatarSrc;
 }
-function escapeHtmlText(str) {
-  return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
+function escapeHtmlText(str2) {
+  return String(str2 || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
 }
 function buildChainSegmentsHtml(chainItems) {
   const items = Array.isArray(chainItems) ? chainItems : [];
@@ -26568,9 +26568,9 @@ function buildChainSignature(scriptId, rounds) {
   }
   return `chain:${scriptId || "none"}:${Math.abs(hash)}`;
 }
-function replaceAllLiteral(str, search, replacement) {
-  if (!str || !search) return str;
-  return str.split(search).join(replacement);
+function replaceAllLiteral(str2, search, replacement) {
+  if (!str2 || !search) return str2;
+  return str2.split(search).join(replacement);
 }
 function maskStringSameLength(value, maskChar = "\u2588") {
   if (!value) return value;
@@ -28445,9 +28445,9 @@ var init_favsWindow = __esm({
 
 // src/ui/shared/logView.js
 function clip(text) {
-  const str = String(text ?? "");
-  if (str.length <= MAX_DETAIL_CHARS) return str;
-  return `${str.slice(0, MAX_DETAIL_CHARS)}\u2026\uFF08\u5DF2\u622A\u65AD\uFF0C\u5B8C\u6574\u5185\u5BB9\u89C1\u300C\u5BFC\u51FA\u65E5\u5FD7\u300D\uFF09`;
+  const str2 = String(text ?? "");
+  if (str2.length <= MAX_DETAIL_CHARS) return str2;
+  return `${str2.slice(0, MAX_DETAIL_CHARS)}\u2026\uFF08\u5DF2\u622A\u65AD\uFF0C\u5B8C\u6574\u5185\u5BB9\u89C1\u300C\u5BFC\u51FA\u65E5\u5FD7\u300D\uFF09`;
 }
 function safeStringify(value) {
   try {
@@ -28517,8 +28517,8 @@ __export(debugWindow_exports, {
   showDebugInfo: () => showDebugInfo,
   showDiagnosticsWindow: () => showDiagnosticsWindow
 });
-function escapeHtml2(str) {
-  return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
+function escapeHtml2(str2) {
+  return String(str2 || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
 }
 function makePreview(text, maxLen = 260) {
   const normalized = String(text || "").replace(/\s+/g, " ").trim();
@@ -28976,18 +28976,18 @@ function openImageCropper(options = {}) {
   const outputSize = Math.round(clampNumber(options.outputSize, 64, 2048, OUTPUT_SIZE_DEFAULT));
   const quality = clampNumber(options.quality, 0.1, 1, OUTPUT_QUALITY_DEFAULT);
   shutdown(null);
-  const seq = sessionSeq;
+  const seq2 = sessionSeq;
   if (!src) return Promise.reject(new Error("\u6CA1\u6709\u53EF\u88C1\u526A\u7684\u56FE\u7247"));
   return loadImage(src).then(
     (image) => new Promise((resolve) => {
-      if (seq !== sessionSeq) {
+      if (seq2 !== sessionSeq) {
         resolve(null);
         return;
       }
       activeSession = createSession({ image, outputSize, quality, resolve });
     }),
     (error) => {
-      if (seq !== sessionSeq) return null;
+      if (seq2 !== sessionSeq) return null;
       throw error;
     }
   );
@@ -29768,6 +29768,304 @@ var init_apiConnectionEditor = __esm({
   }
 });
 
+// src/core/blindboxPlan.js
+function getPlanKind(plan) {
+  return plan && plan.kind === BLINDBOX_KIND ? BLINDBOX_KIND : "normal";
+}
+function isBlindboxPlan(plan) {
+  return getPlanKind(plan) === BLINDBOX_KIND;
+}
+function clampNodeCount(v) {
+  return clampInt(v, NODE_COUNT_MIN, NODE_COUNT_MAX, NODE_COUNT_DEFAULT);
+}
+function clampEventsPerGap(v) {
+  return clampInt(v, EVENTS_PER_GAP_MIN, EVENTS_PER_GAP_MAX, EVENTS_PER_GAP_MIN);
+}
+function normalizeEvent(raw) {
+  const status = VALID_STATUS.has(raw?.status) ? raw.status : EVENT_STATUS.PENDING;
+  return {
+    id: str(raw?.id) || genId("ev"),
+    content: str(raw?.content),
+    status,
+    // 导演把事件判成 done/skipped 时留下的一句「实际怎么发生的」回顾。
+    // 这是导演私有的 durable 记忆：不随聊天楼层被总结/隐藏而消失，判定时随骨架一起回灌，
+    // 让导演即便读不到最近正文也知道这拍已经翻过去了（见方案第 5 节 A+B）。
+    recap: str(raw?.recap)
+  };
+}
+function normalizeNode(raw) {
+  const events = Array.isArray(raw?.events) ? raw.events.map(normalizeEvent) : [];
+  return {
+    id: str(raw?.id) || genId("nd"),
+    title: str(raw?.title),
+    anchor: str(raw?.anchor),
+    events
+  };
+}
+function normalizeProgress(raw, nodes) {
+  const nodeCount = nodes.length;
+  let nodeIndex = clampInt(raw?.nodeIndex, 0, Math.max(0, nodeCount - 1), 0);
+  const evCount = nodes[nodeIndex] ? nodes[nodeIndex].events.length : 0;
+  let eventIndex = clampInt(raw?.eventIndex, 0, Math.max(0, evCount - 1), 0);
+  const revealed = Array.isArray(raw?.revealed) ? raw.revealed.map((r) => ({ nodeIndex: Math.floor(Number(r?.nodeIndex)), eventIndex: Math.floor(Number(r?.eventIndex)) })).filter((r) => Number.isFinite(r.nodeIndex) && Number.isFinite(r.eventIndex)) : [];
+  return { nodeIndex, eventIndex, revealed };
+}
+function normalizeBlindbox(raw) {
+  const bb = raw && typeof raw === "object" ? raw : {};
+  const nodes = Array.isArray(bb.nodes) ? bb.nodes.map(normalizeNode) : [];
+  return {
+    tone: str(bb.tone),
+    redlines: str(bb.redlines),
+    nodeCount: clampNodeCount(bb.nodeCount),
+    eventsPerGap: clampEventsPerGap(bb.eventsPerGap),
+    sealed: bb.sealed === true,
+    unsealed: bb.unsealed === true,
+    generatedAt: Number(bb.generatedAt) || 0,
+    nodes,
+    progress: normalizeProgress(bb.progress, nodes)
+  };
+}
+function createBlindboxDraft({ tone, redlines, nodeCount, eventsPerGap } = {}) {
+  return normalizeBlindbox({
+    tone,
+    redlines,
+    nodeCount,
+    eventsPerGap,
+    sealed: false,
+    unsealed: false,
+    nodes: []
+  });
+}
+function sealWithNodes(blindbox, nodes) {
+  const bb = normalizeBlindbox(blindbox);
+  bb.nodes = Array.isArray(nodes) ? nodes.map(normalizeNode) : [];
+  bb.sealed = true;
+  bb.unsealed = false;
+  bb.generatedAt = Date.now();
+  bb.progress = normalizeProgress({ nodeIndex: 0, eventIndex: 0, revealed: [] }, bb.nodes);
+  const first = bb.nodes[0]?.events?.[0];
+  if (first && first.status === EVENT_STATUS.PENDING) first.status = EVENT_STATUS.ACTIVE;
+  return bb;
+}
+function unseal(blindbox) {
+  const bb = normalizeBlindbox(blindbox);
+  bb.unsealed = true;
+  return bb;
+}
+function flattenEvents(blindbox) {
+  const bb = normalizeBlindbox(blindbox);
+  const out = [];
+  bb.nodes.forEach((node, nodeIndex) => {
+    node.events.forEach((event, eventIndex) => {
+      out.push({ nodeIndex, eventIndex, node, event });
+    });
+  });
+  return out;
+}
+function getProgressStats(blindbox) {
+  const flat = flattenEvents(blindbox);
+  const total = flat.length;
+  let done = 0;
+  let skipped = 0;
+  flat.forEach(({ event }) => {
+    if (event.status === EVENT_STATUS.DONE) done += 1;
+    else if (event.status === EVENT_STATUS.SKIPPED) skipped += 1;
+  });
+  const bb = normalizeBlindbox(blindbox);
+  return { total, done, skipped, passed: done + skipped, nodeCount: bb.nodes.length };
+}
+function toVisibleItems(blindbox) {
+  const bb = normalizeBlindbox(blindbox);
+  const items = [];
+  bb.nodes.forEach((node, i) => {
+    items.push({ time: `\u8282\u70B9 ${i + 1}`, title: node.title, plot: node.anchor, foreshadowing: "" });
+    node.events.forEach((ev, j) => {
+      items.push({ time: `${i + 1}.${j + 1}`, title: "", plot: ev.content, foreshadowing: "" });
+    });
+  });
+  return items;
+}
+function extractBlindboxNodes(data) {
+  if (!data || !Array.isArray(data.nodes)) throw new Error("\u8FD4\u56DE\u683C\u5F0F\u7F3A\u5C11 nodes \u6570\u7EC4");
+  const nodes = data.nodes.map(normalizeNode).filter((n) => n.events.length > 0 || n.title || n.anchor);
+  if (nodes.length === 0) throw new Error("\u8FD4\u56DE\u7684 nodes \u4E3A\u7A7A");
+  return nodes;
+}
+function parseDirectorDecision(data) {
+  const obj = data && typeof data === "object" ? data : {};
+  const updates = (Array.isArray(obj.updates) ? obj.updates : []).map((u) => ({
+    node: Math.floor(Number(u?.node)),
+    event: Math.floor(Number(u?.event)),
+    status: u?.status === EVENT_STATUS.DONE || u?.status === EVENT_STATUS.SKIPPED ? u.status : null,
+    // 一句话回顾，达成/跳过时写进事件；缺省空串，由 applyDirectorDecision 决定是否覆盖。
+    recap: typeof u?.recap === "string" ? u.recap.trim() : ""
+  })).filter((u) => Number.isFinite(u.node) && Number.isFinite(u.event) && u.status);
+  const t = obj.target && typeof obj.target === "object" ? obj.target : {};
+  const targetNode = Number.isFinite(Math.floor(Number(t.node))) ? Math.max(0, Math.floor(Number(t.node))) : 0;
+  const targetEvent = Number.isFinite(Math.floor(Number(t.event))) ? Math.max(0, Math.floor(Number(t.event))) : 0;
+  return {
+    updates,
+    target: { node: targetNode, event: targetEvent },
+    directive: typeof obj.directive === "string" ? obj.directive.trim() : "",
+    intensity: VALID_INTENSITY.has(obj.intensity) ? obj.intensity : DIRECTOR_INTENSITY.GENTLE
+  };
+}
+function applyDirectorDecision(blindbox, decision) {
+  const bb = normalizeBlindbox(blindbox);
+  const dec = decision || {};
+  (dec.updates || []).forEach((u) => {
+    const ev = bb.nodes[u?.node]?.events?.[u?.event];
+    if (ev && (u.status === EVENT_STATUS.DONE || u.status === EVENT_STATUS.SKIPPED)) {
+      ev.status = u.status;
+      if (u.recap) ev.recap = u.recap;
+    }
+  });
+  const nodeIdx = Math.min(Math.max(Math.floor(Number(dec.target?.node)) || 0, 0), Math.max(0, bb.nodes.length - 1));
+  const evCount = bb.nodes[nodeIdx] ? bb.nodes[nodeIdx].events.length : 0;
+  const evIdx = Math.min(Math.max(Math.floor(Number(dec.target?.event)) || 0, 0), Math.max(0, evCount - 1));
+  bb.progress.nodeIndex = nodeIdx;
+  bb.progress.eventIndex = evIdx;
+  const targetEv = bb.nodes[nodeIdx]?.events?.[evIdx];
+  if (targetEv && targetEv.status === EVENT_STATUS.PENDING) targetEv.status = EVENT_STATUS.ACTIVE;
+  return bb;
+}
+var BLINDBOX_KIND, EVENTS_PER_GAP_MIN, EVENTS_PER_GAP_MAX, NODE_COUNT_MIN, NODE_COUNT_MAX, NODE_COUNT_DEFAULT, EVENT_STATUS, VALID_STATUS, clampInt, str, seq, genId, DIRECTOR_INTENSITY, VALID_INTENSITY;
+var init_blindboxPlan = __esm({
+  "src/core/blindboxPlan.js"() {
+    BLINDBOX_KIND = "blindbox";
+    EVENTS_PER_GAP_MIN = 3;
+    EVENTS_PER_GAP_MAX = 10;
+    NODE_COUNT_MIN = 2;
+    NODE_COUNT_MAX = 20;
+    NODE_COUNT_DEFAULT = 4;
+    EVENT_STATUS = Object.freeze({
+      PENDING: "pending",
+      ACTIVE: "active",
+      DONE: "done",
+      SKIPPED: "skipped"
+    });
+    VALID_STATUS = new Set(Object.values(EVENT_STATUS));
+    clampInt = (v, lo, hi, dflt) => {
+      const n = Math.floor(Number(v));
+      if (!Number.isFinite(n)) return dflt;
+      return Math.min(hi, Math.max(lo, n));
+    };
+    str = (v) => typeof v === "string" ? v : "";
+    seq = 0;
+    genId = (prefix) => `${prefix}_${Date.now().toString(36)}_${(seq++).toString(36)}`;
+    DIRECTOR_INTENSITY = Object.freeze({ NONE: "none", GENTLE: "gentle", FIRM: "firm" });
+    VALID_INTENSITY = new Set(Object.values(DIRECTOR_INTENSITY));
+  }
+});
+
+// src/core/directorInjection.js
+import {
+  setExtensionPrompt,
+  extension_prompt_types,
+  extension_prompt_roles,
+  eventSource as eventSource2,
+  event_types as event_types2
+} from "../../../../script.js";
+function normalizeRole2(role) {
+  const name = String(role || "system").toLowerCase();
+  return name in ROLE_NAME_TO_ENUM ? name : "system";
+}
+function normalizeDepth(depth) {
+  const n = Number(depth);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(1e4, Math.floor(n));
+}
+function getDirectorInjectConfig() {
+  const d = getExtData()?.director || {};
+  const role = ["system", "user", "assistant"].includes(d.inject_role) ? d.inject_role : "system";
+  const depthRaw = Number(d.inject_depth);
+  const depth = Number.isFinite(depthRaw) && depthRaw >= 0 ? Math.floor(depthRaw) : 0;
+  return { depth, role };
+}
+function armDirectorDirective(text, options = {}) {
+  const body = String(text || "").trim();
+  if (!body) {
+    clearDirectorDirective();
+    return false;
+  }
+  const roleName = normalizeRole2(options.role);
+  setExtensionPrompt(
+    DIRECTOR_PROMPT_KEY,
+    body,
+    extension_prompt_types.IN_CHAT,
+    normalizeDepth(options.depth),
+    false,
+    ROLE_NAME_TO_ENUM[roleName]
+  );
+  armed = true;
+  return true;
+}
+function clearDirectorDirective() {
+  setExtensionPrompt(DIRECTOR_PROMPT_KEY, "", extension_prompt_types.IN_CHAT, 0);
+  armed = false;
+}
+function isDirectorActive() {
+  try {
+    const data = getExtData();
+    const plans = Array.isArray(data?.[PLANS_KEY]) ? data[PLANS_KEY] : [];
+    if (plans.length === 0) return false;
+    const activeId = typeof data?.[ACTIVE_PLAN_KEY] === "string" ? data[ACTIVE_PLAN_KEY] : "";
+    const plan = plans.find((p) => p?.id === activeId) || plans[0];
+    if (!plan || plan.kind !== BLINDBOX_KIND2) return false;
+    const bb = plan.blindbox;
+    return !!bb && bb.sealed === true && bb.unsealed !== true && bb.directorPaused !== true;
+  } catch {
+    return false;
+  }
+}
+async function onGenerationEnded() {
+  if (running) return;
+  if (!isDirectorActive()) {
+    if (armed) clearDirectorDirective();
+    return;
+  }
+  running = true;
+  try {
+    const mod = await Promise.resolve().then(() => (init_storyOutlineWindow(), storyOutlineWindow_exports));
+    if (typeof mod.runDirectorTurn === "function") await mod.runDirectorTurn();
+  } catch (e) {
+    TitaniaLogger.warn("\u76F2\u76D2\u5BFC\u6F14\u5224\u5B9A\u5931\u8D25\uFF08\u5DF2\u5FFD\u7565\uFF0C\u4E0D\u6253\u65AD\u5BF9\u8BDD\uFF09", e);
+  } finally {
+    running = false;
+  }
+}
+function initDirectorInjection() {
+  if (listenersBound) return;
+  listenersBound = true;
+  clearDirectorDirective();
+  eventSource2.on(event_types2.GENERATION_ENDED, onGenerationEnded);
+  if (event_types2.CHAT_CHANGED) {
+    eventSource2.on(event_types2.CHAT_CHANGED, () => {
+      if (armed) clearDirectorDirective();
+    });
+  }
+  TitaniaLogger.info("\u76F2\u76D2\u5BFC\u6F14\u6CE8\u5165\u5DF2\u521D\u59CB\u5316");
+}
+var DIRECTOR_PROMPT_KEY, ROLE_NAME_TO_ENUM, PLANS_KEY, ACTIVE_PLAN_KEY, BLINDBOX_KIND2, listenersBound, armed, running;
+var init_directorInjection = __esm({
+  "src/core/directorInjection.js"() {
+    init_storage();
+    init_logger();
+    DIRECTOR_PROMPT_KEY = "TITANIA_DIRECTOR";
+    ROLE_NAME_TO_ENUM = {
+      system: extension_prompt_roles.SYSTEM,
+      user: extension_prompt_roles.USER,
+      assistant: extension_prompt_roles.ASSISTANT
+    };
+    PLANS_KEY = "story_outline_plans";
+    ACTIVE_PLAN_KEY = "story_outline_active_plan_id";
+    BLINDBOX_KIND2 = "blindbox";
+    listenersBound = false;
+    armed = false;
+    running = false;
+  }
+});
+
 // src/ui/storyOutlineWindow.js
 var storyOutlineWindow_exports = {};
 __export(storyOutlineWindow_exports, {
@@ -29781,6 +30079,7 @@ __export(storyOutlineWindow_exports, {
   openPromptTemplateManager: () => openPromptTemplateManager,
   openStoryOutlineWindow: () => openStoryOutlineWindow,
   parsePacingResponse: () => parsePacingResponse,
+  runDirectorTurn: () => runDirectorTurn,
   switchSceneSourcePlan: () => switchSceneSourcePlan,
   toggleSceneInsertMode: () => toggleSceneInsertMode,
   writeSceneToInput: () => writePlotToInput
@@ -30259,7 +30558,8 @@ function getCardOpeningEntries() {
     return [];
   }
 }
-function getChatHistoryEntries() {
+function getChatHistoryEntries(opts = {}) {
+  const includeHidden = opts.includeHidden === true;
   try {
     if (typeof SillyTavern === "undefined" || !SillyTavern.getContext) return [];
     const stCtx = SillyTavern.getContext();
@@ -30267,12 +30567,14 @@ function getChatHistoryEntries() {
     const whitelist = parseTagWhitelistInput(getOutlineChatTagWhitelistRaw());
     return chat2.map((msg, idx) => {
       const raw = typeof msg?.mes === "string" ? msg.mes : "";
-      const text = extractTextByWhitelist(raw, whitelist);
+      const hidden = !!(msg?.is_system || msg?.is_hidden);
+      let text = extractTextByWhitelist(raw, whitelist);
+      if (!text && includeHidden && hidden) text = raw.trim();
       if (!text) return null;
-      if (msg?.is_system || msg?.is_hidden) return null;
+      if (hidden && !includeHidden) return null;
       return {
         chatIndex: idx,
-        role: msg?.is_user ? "\u7528\u6237" : "\u89D2\u8272",
+        role: hidden ? "\u80CC\u666F" : msg?.is_user ? "\u7528\u6237" : "\u89D2\u8272",
         text
       };
     }).filter(Boolean);
@@ -30553,6 +30855,61 @@ plot \u7684\u6587\u4F53\u662F\u300C\u5206\u96C6\u6897\u6982\u300D\uFF1A\u5199\u7
 [\u4EFB\u52A1]
 \u8BF7\u8BBE\u8BA1\u6545\u4E8B\u5927\u7EB2\uFF08plot \u7528\u5BA2\u89C2\u6897\u6982\u4F53\u6982\u8FF0\uFF0C\u4E0D\u5199\u5BF9\u767D\u4E0E\u8868\u6F14\u6027\u7EC6\u8282\uFF09\uFF0C\u5E76\u4E25\u683C\u6309\u7EA6\u5B9A JSON \u8FD4\u56DE\u3002`
     },
+    blindbox: {
+      system: `\u4F60\u662F\u6545\u4E8B\u7ED3\u6784\u8BBE\u8BA1\u5E08\uFF08\u5267\u96C6 showrunner\uFF09\uFF0C\u4E3A\u4E00\u90E8"\u76F2\u76D2\u5267\u672C"\u89C4\u5212\u5206\u5C42\u9AA8\u67B6\u2014\u2014\u4F5C\u8005\u672C\u4EBA\u4E0D\u4F1A\u770B\u5230\u4F60\u5199\u7684\u5185\u5BB9\uFF0C\u5168\u51ED\u5B83\u5728\u540E\u7EED\u6E38\u73A9\u4E2D\u88AB\u6084\u6084\u5F15\u5BFC\u7740\u6D6E\u73B0\uFF0C\u6240\u4EE5\u7ED3\u6784\u8981\u7A33\u3001\u56E0\u679C\u8981\u786C\u3002
+\u4F60\u4EE5"\u4E8B\u4EF6\u4E0E\u540E\u679C"\u4E3A\u601D\u8003\u5355\u4F4D\uFF0C\u4EA7\u51FA\u4E24\u5C42\u7ED3\u6784\uFF1A
+- \u8282\u70B9\uFF08node\uFF09\uFF1D\u4E3B\u7EBF\u4E0A\u7684\u5FC5\u8FBE\u91CC\u7A0B\u7891\uFF08\u786C\u951A\uFF09\u3002\u5B83\u662F\u6545\u4E8B\u5FC5\u987B\u62B5\u8FBE\u7684\u72B6\u6001\uFF0C\u4E0D\u53EF\u7ED5\u8FC7\u3002anchor \u5B57\u6BB5\u5BA2\u89C2\u6982\u8FF0"\u8FD9\u4E2A\u8282\u70B9\u8FBE\u6210\u65F6\uFF0C\u4E16\u754C/\u4EBA\u7269\u5904\u4E8E\u4EC0\u4E48\u72B6\u6001"\u3002
+- \u5173\u952E\u4E8B\u4EF6\uFF08event\uFF09\uFF1D\u901A\u5F80\u8BE5\u8282\u70B9\u7684\u57AB\u811A\u77F3\uFF08\u8F6F\uFF09\u3002\u6BCF\u4E2A\u8282\u70B9\u4E0B\u6302\u82E5\u5E72\u5173\u952E\u4E8B\u4EF6\uFF0C\u6309\u5148\u540E\u987A\u5E8F\u628A\u5267\u60C5\u4ECE\u4E0A\u4E00\u4E2A\u8282\u70B9\u81EA\u7136\u63A8\u5230\u8FD9\u4E2A\u8282\u70B9\uFF1B\u5B83\u4EEC\u5141\u8BB8\u5728\u6E38\u73A9\u4E2D\u88AB\u652F\u7EBF\u987A\u5E26\u5B8C\u6210\u3001\u6216\u5728\u5931\u53BB\u610F\u4E49\u65F6\u8DF3\u8FC7\u3002
+
+[\u786C\u6027\u8981\u6C42]
+1) \u53EA\u80FD\u8FD4\u56DE JSON\uFF0C\u4E0D\u8981 markdown\uFF0C\u4E0D\u8981\u89E3\u91CA\uFF0C\u4E0D\u8981\u591A\u4F59\u6587\u672C\u3002
+2) \u8FD4\u56DE\u683C\u5F0F\u5FC5\u987B\u662F\uFF1A
+{
+  "version": "1.0",
+  "story_summary": "\u4E00\u53E5\u8BDD\u6982\u62EC\uFF08\u4EC5\u4F9B\u5185\u90E8\uFF0C\u7528\u6237\u4E0D\u4F1A\u770B\u5230\uFF09",
+  "nodes": [
+    {
+      "title": "\u8282\u70B9\u6807\u9898",
+      "anchor": "\u8BE5\u8282\u70B9\u8FBE\u6210\u65F6\u7684\u5BA2\u89C2\u72B6\u6001\uFF08\u6897\u6982\u4F53\uFF09",
+      "events": [
+        { "content": "\u5173\u952E\u4E8B\u4EF6\uFF08\u6897\u6982\u4F53\uFF0C\u5BA2\u89C2\u6982\u8FF0\u53D1\u751F\u4E86\u4EC0\u4E48\u3001\u5BFC\u81F4\u4E86\u4EC0\u4E48\uFF09" }
+      ]
+    }
+  ]
+}
+3) \u5FC5\u987B\u751F\u6210**\u6070\u597D {{nodeCount}} \u4E2A\u8282\u70B9**\uFF1B\u6BCF\u4E2A\u8282\u70B9\u4E0B\u7684 events **\u6570\u91CF\u5C3D\u91CF\u8D34\u8FD1 {{eventsPerGap}} \u4E2A**\uFF08\u53EF\u56E0\u5267\u60C5\u5206\u91CF\u4E0A\u4E0B\u6D6E\u52A8\u4E00\u4E24\u4E2A\uFF0C\u4F46\u4E0D\u8981\u60AC\u6B8A\uFF09\u3002
+4) \u8282\u70B9\u4E4B\u95F4\u3001\u4EE5\u53CA\u540C\u4E00\u8282\u70B9\u5185\u7684\u4E8B\u4EF6\u4E4B\u95F4\uFF0C\u5FC5\u987B\u56E0\u679C\u8854\u63A5\uFF08\u4E0A\u4E00\u6B65\u7684\u540E\u679C\u9A71\u52A8\u4E0B\u4E00\u6B65\uFF09\uFF0C\u7528"\u56E0\u6B64/\u4F46\u662F"\u800C\u975E"\u7136\u540E"\u3002\u6700\u540E\u4E00\u4E2A\u8282\u70B9\u5373\u7ED3\u5C40\u3002
+5) anchor \u4E0E content \u4E00\u5F8B\u7528\u6897\u6982\u4F53\uFF08\u5BA2\u89C2\u6982\u8FF0\uFF09\u4E66\u5199\uFF0C\u8FD9\u662F\u6587\u98CE\u786C\u7EA6\u675F\uFF1A
+   - \u53EA\u5199"\u53D1\u751F\u4E86\u4EC0\u4E48\u4E8B\u4EF6\u3001\u4EA7\u751F\u4EC0\u4E48\u540E\u679C\u3001\u4EBA\u7269\u5904\u5883\u6216\u5173\u7CFB\u53D1\u751F\u4EC0\u4E48\u53D8\u5316"\uFF0C\u7528\u9648\u8FF0\u53E5\uFF1B
+   - \u7981\u6B62\u5BF9\u767D\u4E0E\u53F0\u8BCD\u3001\u7981\u6B62\u795E\u6001/\u52A8\u4F5C/\u8BED\u6C14\u7B49\u8868\u6F14\u6027\u63CF\u5199\u4E0E\u5FC3\u7406\u6D3B\u52A8\u6E32\u67D3\uFF1B
+   - \u6B63\u4F8B\uFF1A\u6797\u7136\u6574\u7406\u9057\u7269\u65F6\u53D1\u73B0\u4E00\u5F20\u964C\u751F\u5408\u5F71\uFF0C\u8FFD\u95EE\u4E0B\u6BCD\u4EB2\u627F\u8BA4\u4ED6\u6709\u4E00\u4E2A\u4ECE\u672A\u8C0B\u9762\u7684\u59D0\u59D0\u3002
+   - \u53CD\u4F8B\uFF1A\u6797\u7136\u98A4\u6296\u7740\u62FF\u8D77\u7167\u7247\uFF0C\u6BCD\u4EB2\u82E6\u7B11\u7740\u522B\u8FC7\u8138\u53BB\u3002
+6) \u4E25\u683C\u9075\u5B88\u4E0B\u65B9[\u7EA2\u7EBF/\u7981\u5FCC]\u2014\u2014\u5176\u4E2D\u5217\u51FA\u7684\u5185\u5BB9\u4E00\u5F8B\u4E0D\u5F97\u51FA\u73B0\u5728\u4EFB\u4F55\u8282\u70B9\u6216\u4E8B\u4EF6\u91CC\u3002
+7) \u8F93\u51FA\u8BED\u8A00\u4F7F\u7528\u4E2D\u6587\u3002`,
+      user: `[\u89D2\u8272\u8BBE\u5B9A]
+{{persona}}
+
+[\u7528\u6237\u8BBE\u5B9A]
+{{userDesc}}
+
+[\u4E16\u754C\u4E66/\u8BBE\u5B9A]
+{{worldInfo}}
+
+[\u5267\u60C5\u8BBE\u5B9A]
+{{scenario}}
+
+[\u5F00\u573A\u767D]
+{{openingText}}
+
+[\u6545\u4E8B\u57FA\u8C03\u4E0E\u8D70\u5411]
+{{storyInput}}
+
+[\u7EA2\u7EBF/\u7981\u5FCC]
+{{redlines}}
+
+[\u4EFB\u52A1]
+\u8BF7\u4E3A\u8FD9\u90E8\u76F2\u76D2\u5267\u672C\u8BBE\u8BA1\u5206\u5C42\u9AA8\u67B6\uFF1A\u6070\u597D {{nodeCount}} \u4E2A\u8282\u70B9\u3001\u6BCF\u8282\u70B9\u7EA6 {{eventsPerGap}} \u4E2A\u5173\u952E\u4E8B\u4EF6\uFF0Canchor \u4E0E content \u7528\u5BA2\u89C2\u6897\u6982\u4F53\uFF0C\u4E25\u683C\u6309\u7EA6\u5B9A JSON \u8FD4\u56DE\u3002`
+    },
     rolling: {
       system: `\u4F60\u662F\u5267\u60C5\u63A8\u8FDB\u7B56\u5212\u3002\u5B8C\u6574\u6545\u4E8B\u5927\u7EB2\u5DF2\u7ED9\u5B9A\uFF08\u6700\u540E\u4E00\u6761\u5373\u7ED3\u5C40\uFF09\u3002\u4F60\u7684\u804C\u8D23\u662F\uFF1A\u81EA\u884C\u5224\u65AD\u6545\u4E8B\u76EE\u524D\u63A8\u8FDB\u5230\u4E86\u5927\u7EB2\u7684\u54EA\u4E00\u6761\uFF0C\u5E76\u7ED9\u51FA 2~3 \u4E2A\u5019\u9009\u5267\u60C5\u8D70\u5411\uFF0C\u4F9B\u73A9\u5BB6\u6311\u9009\u540E\u4F5C\u4E3A\u4E0B\u4E00\u56DE\u5408\u7684\u73A9\u5BB6\u8F93\u5165\u6765\u63A8\u8FDB\u6545\u4E8B\u3002
 
@@ -30601,7 +30958,7 @@ plot \u7684\u6587\u4F53\u662F\u300C\u5206\u96C6\u6897\u6982\u300D\uFF1A\u5199\u7
 [\u5B8C\u6574\u6545\u4E8B\u5927\u7EB2\uFF08\u8DEF\u6807\uFF0C\u6700\u540E\u4E00\u6761=\u7ED3\u5C40\uFF09]
 {{outlineItemsJson}}
 
-[\u5DF2\u7ECF\u53D1\u751F\u7684\u5267\u60C5\uFF08\u4EC5\u4E3A\u6700\u8FD1\u6B63\u6587\u7247\u6BB5\uFF0C\u8D8A\u9760\u540E\u8D8A\u65B0\uFF0C\u4E0D\u4EE3\u8868\u6545\u4E8B\u5F00\u5934\uFF09]
+[\u5DF2\u7ECF\u53D1\u751F\u7684\u5267\u60C5\uFF08\u4EC5\u4E3A\u6700\u8FD1\u6B63\u6587\u7247\u6BB5\uFF0C\u8D8A\u9760\u540E\u8D8A\u65B0\uFF0C\u4E0D\u4EE3\u8868\u6545\u4E8B\u5F00\u5934\uFF1B\u5E26\u3010\u80CC\u666F\u3011\u524D\u7F00\u7684\u662F\u88AB\u603B\u7ED3/\u9690\u85CF\u7684\u697C\u5C42\u6216\u6458\u8981\uFF09]
 {{recentChat}}
 
 [\u4EFB\u52A1]
@@ -30661,7 +31018,7 @@ plot \u7684\u6587\u4F53\u662F\u300C\u5206\u96C6\u6897\u6982\u300D\uFF1A\u5199\u7
 [\u5F53\u524D\u8FDB\u5EA6]
 {{outlineProgress}}
 
-[\u6700\u8FD1\u6B63\u6587\uFF08\u8D8A\u9760\u540E\u8D8A\u65B0\uFF0C\u4EC5\u4E3A\u6700\u8FD1\u7247\u6BB5\uFF0C\u4E0D\u4EE3\u8868\u6545\u4E8B\u5F00\u5934\uFF09]
+[\u6700\u8FD1\u6B63\u6587\uFF08\u8D8A\u9760\u540E\u8D8A\u65B0\uFF0C\u4EC5\u4E3A\u6700\u8FD1\u7247\u6BB5\uFF0C\u4E0D\u4EE3\u8868\u6545\u4E8B\u5F00\u5934\uFF1B\u5E26\u3010\u80CC\u666F\u3011\u524D\u7F00\u7684\u662F\u88AB\u603B\u7ED3/\u9690\u85CF\u7684\u697C\u5C42\u6216\u6458\u8981\uFF0C\u53EF\u5F53\u80CC\u666F\u53C2\u8003\uFF0C\u522B\u5355\u51ED\u5B83\u5224\u8282\u594F\u5FEB\u6162\uFF09]
 {{recentChat}}
 
 [\u672C\u5361\u7684\u6545\u4E8B\u9700\u6C42]
@@ -30669,6 +31026,41 @@ plot \u7684\u6587\u4F53\u662F\u300C\u5206\u96C6\u6897\u6982\u300D\uFF1A\u5199\u7
 
 [\u4EFB\u52A1]
 \u5224\u65AD\u300C\u6700\u8FD1\u6B63\u6587\u300D\u6B64\u523B\u7684\u53D9\u4E8B\u8282\u594F\uFF0C\u5BF9\u7167\u5927\u7EB2\u4E0E\u5F53\u524D\u8FDB\u5EA6\uFF0C\u7ED9\u51FA\u4E00\u53E5\u53EA\u7EA6\u675F\u672C\u6B21\u8FD9\u4E00\u6761\u56DE\u590D\u7684\u8282\u594F\u6307\u4EE4\u3002\u4E25\u683C\u6309 version 1.0 \u7ED3\u6784\u8FD4\u56DE\uFF0C\u53EA\u8FD4\u56DE JSON\u3002`
+    },
+    director: {
+      system: `\u4F60\u662F\u4E00\u90E8"\u76F2\u76D2\u5267\u672C"\u7684\u9690\u5F62\u5BFC\u6F14\u3002\u5B8C\u6574\u5206\u5C42\u9AA8\u67B6\uFF08\u8282\u70B9=\u5FC5\u8FBE\u786C\u951A\u3001\u5173\u952E\u4E8B\u4EF6=\u901A\u5F80\u8282\u70B9\u7684\u57AB\u811A\u77F3\uFF09\u4E0E\u5F53\u524D\u8FDB\u5EA6\u5DF2\u7ED9\u5B9A\u3002\u8BFB[\u6700\u8FD1\u6B63\u6587]\uFF0C\u53EA\u505A\u5224\u5B9A\u3001\u4E0D\u5199\u6B63\u6587\uFF1A
+1) \u54EA\u4E9B\u5173\u952E\u4E8B\u4EF6\u5728\u6700\u8FD1\u6B63\u6587\u91CC\u5DF2\u7ECF\u8FBE\u6210\uFF08done\uFF09\uFF0C\u6216\u88AB\u73A9\u5BB6\u7684\u652F\u7EBF\u5E26\u8FC7/\u5DF2\u5931\u53BB\u610F\u4E49\uFF08skipped\uFF09\uFF1B
+2) \u4E0B\u4E00\u6B65\u8BE5\u628A\u6545\u4E8B\u5F80\u54EA\u4E2A\u5173\u952E\u4E8B\u4EF6\u63A8\uFF08target\uFF09\uFF1B
+3) \u7ED9\u4E00\u53E5\u53EA\u7EA6\u675F"\u4E0B\u4E00\u6761\u56DE\u590D"\u7684\u5F15\u5BFC\uFF08directive\uFF09\u4E0E\u529B\u5EA6\uFF08intensity\uFF09\u3002
+
+[\u4E24\u7EA7\u5F3A\u5EA6\u2014\u2014\u8FD9\u662F\u5173\u952E]
+- \u5173\u952E\u4E8B\u4EF6\u662F\u8F6F\u57AB\u811A\u77F3\uFF1A\u5F53\u6B63\u6587\u81EA\u5DF1\u6B63\u671D target \u81EA\u7136\u63A8\u8FDB\u65F6\uFF0Cdirective \u7559\u7A7A\u3001intensity \u586B "none"\uFF08\u5728\u7EBF\u4E0A\u5C31\u95ED\u5634\uFF0C\u7EDD\u4E0D\u751F\u786C railroad\uFF09\uFF1B\u53EA\u5728\u8F7B\u5FAE\u8DD1\u504F\u65F6\u7528 "gentle" \u8F7B\u63A8\u3002
+- \u8282\u70B9\u662F\u786C\u951A\uFF1A\u5F53\u6B63\u6587\u5DF2\u63A5\u8FD1\u5F53\u524D\u8282\u70B9\u7684\u6700\u540E\u4E00\u4E2A\u4E8B\u4EF6\u3001\u6216\u660E\u663E\u8981\u8D8A\u8FC7\u672C\u8282\u70B9\u5F80\u540E\u8DD1\u504F\uFF0C\u7528 "firm" \u628A\u4E3B\u7EBF\u6536\u56DE\u6765\u3002
+- \u652F\u7EBF\u81EA\u7531\uFF1A\u73A9\u5BB6\u6545\u610F\u8DD1\u652F\u7EBF\u662F\u4E50\u8DA3\uFF0C\u5BB9\u5FCD\u51E0\u62CD\u522B\u6025\u7740\u62FD\uFF1B\u53EA\u6709\u8FDF\u8FDF\u56DE\u4E0D\u6765\u624D\u5347\u7EA7\u529B\u5EA6\u3002\u786E\u5B9E\u5DF2 moot \u7684\u4E8B\u4EF6\u6807 skipped\uFF0C\u5E76\u628A target \u987A\u52BF\u632A\u5230\u66F4\u5408\u9002\u7684\u4F4D\u7F6E\uFF0C\u800C\u4E0D\u662F\u786C\u903C\u56DE\u53BB\u3002
+
+[\u5DF2\u8FBE\u6210\u7684\u8BB0\u5FC6\u2014\u2014\u52A1\u5FC5\u9075\u5B88]
+- [\u76F2\u76D2\u9AA8\u67B6]\u91CC status \u5DF2\u662F done/skipped \u7684\u4E8B\u4EF6\u5C31\u662F"\u5DF2\u7ECF\u7FFB\u8FC7\u53BB\u7684\u7BC7\u7AE0"\uFF0C\u5176 recap \u5B57\u6BB5\u662F\u4E0A\u51E0\u56DE\u5408\u8BB0\u4E0B\u7684\u5B9E\u9645\u7ECF\u8FC7\u3002
+- [\u6700\u8FD1\u6B63\u6587]\u53EF\u80FD\u88AB\u603B\u7ED3\u63D2\u4EF6\u6298\u53E0\u6216\u9690\u85CF\uFF0C\u53EA\u5269\u5F88\u77ED\u4E00\u622A\u751A\u81F3\u7A7A\u767D\u3002\u6240\u4EE5\uFF1A\u51E1\u9AA8\u67B6\u91CC\u5DF2 done/skipped \u7684\u4E8B\u4EF6\uFF0C\u4E00\u5F8B\u5F53\u4F5C\u65E2\u6210\u4E8B\u5B9E\uFF0C**\u7EDD\u4E0D**\u56E0\u4E3A\u6700\u8FD1\u6B63\u6587\u91CC\u770B\u4E0D\u5230\u5C31\u628A\u5B83\u91CD\u65B0\u6807\u56DE\u672A\u8FBE\u6210\u3001\u4E5F\u4E0D\u8981\u518D\u628A target \u5F80\u56DE\u62E8\u5230\u5B83\u8EAB\u4E0A\u3002\u53EA\u5224\u65AD"\u8FD8\u6CA1\u7FFB\u8FC7\u53BB"\u7684\u4E8B\u4EF6\u6709\u6CA1\u6709\u5728\u8FD9\u6700\u65B0\u4E00\u62CD\u91CC\u63A8\u8FDB\u3002
+- \u6BCF\u6807\u4E00\u4E2A\u4E8B\u4EF6 done/skipped\uFF0C\u90FD\u8981\u5728\u8BE5\u6761 update \u91CC\u5199\u4E00\u53E5 recap\uFF1A\u5BA2\u89C2\u8BB0\u4E0B\u5B83\u5728\u73A9\u5BB6\u7684\u6545\u4E8B\u91CC\u5B9E\u9645\u662F\u600E\u4E48\u53D1\u751F/\u600E\u4E48\u88AB\u5E26\u8FC7\u7684\uFF08\u4E00\u53E5\u8BDD\uFF0C\u4E2D\u6587\uFF09\uFF0C\u4F9B\u4EE5\u540E\u56DE\u987E\u2014\u2014\u8FD9\u53E5\u8BDD\u4F1A\u88AB\u6C38\u4E45\u4FDD\u5B58\uFF0C\u4E0D\u968F\u697C\u5C42\u9690\u85CF\u4E22\u5931\u3002
+
+[directive \u5199\u6CD5] \u5B83\u662F\u7ED9\u5199\u4F5C\u6A21\u578B\u7684\u5E55\u540E\u65C1\u767D\u63D0\u793A\uFF08\u73A9\u5BB6\u770B\u4E0D\u5230\uFF09\uFF0C\u7528\u5BA2\u89C2\u7948\u4F7F\u53E5\u70B9\u4E00\u4E2A\u65B9\u5411\u5373\u53EF\uFF0C\u4E0D\u66FF\u89D2\u8272\u5199\u5BF9\u767D\u3001\u4E0D\u66FF\u89D2\u8272\u884C\u52A8\uFF1B\u53EF\u4EE5\u5177\u4F53\u6307\u5411 target \u4E8B\u4EF6\u8BE5\u5982\u4F55\u81EA\u7136\u6D6E\u73B0\u3002
+
+[\u786C\u6027\u8981\u6C42] \u53EA\u8FD4\u56DE JSON\uFF0C\u4E0D\u8981\u89E3\u91CA\uFF1A
+{
+  "updates": [ { "node": 0, "event": 1, "status": "done", "recap": "\u4E00\u53E5\u8BDD\uFF1A\u8FD9\u4E2A\u4E8B\u4EF6\u5728\u73A9\u5BB6\u7684\u6545\u4E8B\u91CC\u5B9E\u9645\u600E\u4E48\u53D1\u751F\u7684" } ],
+  "target": { "node": 1, "event": 0 },
+  "directive": "\u4E00\u53E5\u5F15\u5BFC\uFF0C\u6216\u7A7A\u5B57\u7B26\u4E32",
+  "intensity": "none" | "gentle" | "firm"
+}`,
+      user: `[\u6700\u8FD1\u6B63\u6587\uFF08\u53EF\u80FD\u5DF2\u88AB\u603B\u7ED3\u63D2\u4EF6\u6298\u53E0/\u9690\u85CF\uFF0C\u53EA\u5269\u5F88\u77ED\u4E00\u622A\u751A\u81F3\u7A7A\u767D\uFF1B\u5E26\u3010\u80CC\u666F\u3011\u524D\u7F00\u7684\u662F\u6458\u8981\u6216\u5DF2\u9690\u85CF\u697C\u5C42\uFF09]
+{{recentChat}}
+
+[\u76F2\u76D2\u9AA8\u67B6] \u8282\u70B9=\u786C\u951A\uFF0C\u4E8B\u4EF6=\u57AB\u811A\u77F3\uFF1Bstatus\uFF1Apending\u672A\u5230 / active\u8FDB\u884C\u4E2D / done\u5DF2\u8FBE\u6210 / skipped\u5DF2\u8DF3\u8FC7\uFF1Bdone/skipped \u7684 recap \u662F\u4EE5\u5F80\u56DE\u5408\u8BB0\u4E0B\u7684\u5B9E\u9645\u7ECF\u8FC7
+{{blindboxOutline}}
+
+[\u5F53\u524D\u76EE\u6807\u6307\u9488] {{blindboxProgress}}
+
+[\u4EFB\u52A1] \u8BFB\u6700\u8FD1\u6B63\u6587\uFF0C\u66F4\u65B0\u8FD9\u4E00\u62CD\u91CC\u65B0\u8FBE\u6210/\u8DF3\u8FC7\u7684\u4E8B\u4EF6\uFF08\u5E76\u4E3A\u6BCF\u6761\u5199\u4E00\u53E5 recap\uFF09\u3001\u7ED9\u51FA\u4E0B\u4E00\u6B65 target \u4E0E\u4E00\u53E5\u5F15\u5BFC directive\uFF08\u53CA intensity\uFF09\u3002\u9AA8\u67B6\u91CC\u5DF2 done/skipped \u7684\u4E8B\u4EF6\u89C6\u4E3A\u65E2\u6210\u4E8B\u5B9E\uFF0C\u4E0D\u5F97\u7FFB\u56DE\u3002\u4E25\u683C\u6309\u7EA6\u5B9A JSON \u8FD4\u56DE\u3002`
     }
   };
 }
@@ -30702,6 +31094,14 @@ function getPromptTemplates() {
     pacing: {
       system: String(raw?.pacing?.system || defaults.pacing.system),
       user: String(raw?.pacing?.user || defaults.pacing.user)
+    },
+    blindbox: {
+      system: String(raw?.blindbox?.system || defaults.blindbox.system),
+      user: String(raw?.blindbox?.user || defaults.blindbox.user)
+    },
+    director: {
+      system: String(raw?.director?.system || defaults.director.system),
+      user: String(raw?.director?.user || defaults.director.user)
     }
   };
 }
@@ -30717,6 +31117,8 @@ function renderPromptTemplate(template, vars) {
 function getPromptTemplateSection(templates, type) {
   if (type === "rolling") return templates.rolling;
   if (type === "pacing") return templates.pacing;
+  if (type === "blindbox") return templates.blindbox;
+  if (type === "director") return templates.director;
   return templates.outline;
 }
 function getUnknownPromptVars(text) {
@@ -30732,7 +31134,14 @@ function getUnknownPromptVars(text) {
     // 剧情推进专用变量
     "recentChat",
     // 节奏把控专用变量
-    "outlineProgress"
+    "outlineProgress",
+    // 盲盒生成专用变量
+    "nodeCount",
+    "eventsPerGap",
+    "redlines",
+    // 盲盒导演判定专用变量
+    "blindboxOutline",
+    "blindboxProgress"
   ]);
   const unknown = /* @__PURE__ */ new Set();
   String(text || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
@@ -30755,7 +31164,14 @@ function buildPromptTemplateVars(ctx, userStoryInput, openingText, outlinePayloa
     // 剧情推进专用；非推荐场景为 "(无)"，模板里没引用就不影响。
     recentChat: String(extras?.recentChat || "").trim() || "(\u65E0)",
     // 节奏把控专用：当前大纲进度，无方案时为 "(无大纲)"。
-    outlineProgress: String(extras?.outlineProgress || "").trim() || "(\u65E0)"
+    outlineProgress: String(extras?.outlineProgress || "").trim() || "(\u65E0)",
+    // 盲盒生成专用：下单参数。缺省给占位串，预览时不至于渲染成空。
+    nodeCount: String(extras?.nodeCount ?? "") || "(\u8282\u70B9\u6570)",
+    eventsPerGap: String(extras?.eventsPerGap ?? "") || "(\u6BCF\u6BB5\u5173\u952E\u4E8B\u4EF6\u6570)",
+    redlines: String(extras?.redlines || "").trim() || "\uFF08\u65E0\u7279\u522B\u7981\u5FCC\uFF09",
+    // 盲盒导演判定专用：封印骨架 JSON 与当前目标指针（实际判定时注入，预览只给占位）。
+    blindboxOutline: String(extras?.blindboxOutline || "").trim() || "\uFF08\u5C01\u5370\u9AA8\u67B6\uFF0C\u5224\u5B9A\u65F6\u6CE8\u5165\uFF09",
+    blindboxProgress: String(extras?.blindboxProgress || "").trim() || "\uFF08\u5F53\u524D\u76EE\u6807\u6307\u9488\uFF0C\u5224\u5B9A\u65F6\u6CE8\u5165\uFF09"
   };
 }
 function renderGenParamRow(moduleKey, moduleLabel, group) {
@@ -30901,10 +31317,12 @@ async function openPromptTemplateManager() {
                                     <option value="outline">\u6545\u4E8B\u5927\u7EB2</option>
                                     <option value="rolling">\u5267\u60C5\u63A8\u8FDB</option>
                                     <option value="pacing">\u53D9\u4E8B\u8282\u594F</option>
+                                    <option value="blindbox">\u76F2\u76D2\u5267\u672C\u751F\u6210</option>
+                                    <option value="director">\u76F2\u76D2\u5BFC\u6F14\u5224\u5B9A</option>
                                 </select>
                                 <button id="t-prompt-reset-current" class="t-btn t-btn-xs"><i class="fa-solid fa-rotate-left"></i> \u6062\u590D\u5F53\u524D\u9ED8\u8BA4</button>
                             </div>
-                            <div class="t-plan-tip" style="margin-top:8px;">\u901A\u7528\u53D8\u91CF\uFF1A{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>\u5267\u60C5\u63A8\u8FDB\u989D\u5916\u53D8\u91CF\uFF1A{{recentChat}}<br>\u53D9\u4E8B\u8282\u594F\u989D\u5916\u53D8\u91CF\uFF1A{{recentChat}} {{outlineProgress}}</div>
+                            <div class="t-plan-tip" style="margin-top:8px;">\u901A\u7528\u53D8\u91CF\uFF1A{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>\u5267\u60C5\u63A8\u8FDB\u989D\u5916\u53D8\u91CF\uFF1A{{recentChat}}<br>\u53D9\u4E8B\u8282\u594F\u989D\u5916\u53D8\u91CF\uFF1A{{recentChat}} {{outlineProgress}}<br>\u76F2\u76D2\u5267\u672C\u751F\u6210\u989D\u5916\u53D8\u91CF\uFF1A{{nodeCount}} {{eventsPerGap}} {{redlines}}<br>\u76F2\u76D2\u5BFC\u6F14\u5224\u5B9A\u989D\u5916\u53D8\u91CF\uFF1A{{recentChat}} {{blindboxOutline}} {{blindboxProgress}}</div>
                         </div>
 
                         <div class="t-form-group">
@@ -31191,12 +31609,12 @@ function isStreamingEnabled() {
 }
 function getPlans() {
   const data = getExtData();
-  if (!Array.isArray(data[PLANS_KEY])) data[PLANS_KEY] = [];
-  return data[PLANS_KEY];
+  if (!Array.isArray(data[PLANS_KEY2])) data[PLANS_KEY2] = [];
+  return data[PLANS_KEY2];
 }
 function getActivePlanId() {
   const data = getExtData();
-  return typeof data[ACTIVE_PLAN_KEY] === "string" ? data[ACTIVE_PLAN_KEY] : "";
+  return typeof data[ACTIVE_PLAN_KEY2] === "string" ? data[ACTIVE_PLAN_KEY2] : "";
 }
 function getSceneSourcePlanId() {
   const data = getExtData();
@@ -31209,7 +31627,7 @@ function setSceneSourcePlanId(planId) {
 }
 function setActivePlanId(planId) {
   const data = getExtData();
-  data[ACTIVE_PLAN_KEY] = planId || "";
+  data[ACTIVE_PLAN_KEY2] = planId || "";
   saveExtData();
 }
 function getCurrentCharCardName() {
@@ -31284,7 +31702,7 @@ function createDistinctPlanName(baseName = "") {
   }
   return candidate;
 }
-function insertPlan({ name, storyInput, instruction, items }) {
+function insertPlan({ name, storyInput, instruction, items, kind, blindbox }) {
   const plans = getPlans();
   const now = Date.now();
   const plan = {
@@ -31296,6 +31714,10 @@ function insertPlan({ name, storyInput, instruction, items }) {
     createdAt: now,
     updatedAt: now
   };
+  if (kind === BLINDBOX_KIND) {
+    plan.kind = BLINDBOX_KIND;
+    plan.blindbox = blindbox || createBlindboxDraft({});
+  }
   plans.unshift(plan);
   activePlanId = plan.id;
   setActivePlanId(plan.id);
@@ -31322,6 +31744,17 @@ function createEmptyPlan(nameInput = "", defaultName = "") {
     storyInput: instruction,
     instruction,
     items: []
+  });
+}
+function createBlindboxPlan({ name, tone, redlines, nodeCount, eventsPerGap }) {
+  const draft2 = createBlindboxDraft({ tone, redlines, nodeCount, eventsPerGap });
+  return insertPlan({
+    name,
+    storyInput: tone || "",
+    instruction: tone || "",
+    items: [],
+    kind: BLINDBOX_KIND,
+    blindbox: draft2
   });
 }
 function createBranchPlanFromSource(sourcePlan) {
@@ -31383,10 +31816,21 @@ function ensureEditingPlanContext() {
 function updatePlanWorkflowUI() {
   const hasPlans = getPlans().length > 0;
   const inEditor = currentView === "editor";
+  const bb = inEditor && isBlindboxPlan(getCurrentPlanForEditor());
   $("#t-outline-plan-name-wrap").toggle(hasPlans && inEditor);
-  $("#t-outline-save-plan").toggle(hasPlans && inEditor);
-  $("#t-outline-top").toggle(inEditor);
+  $("#t-outline-save-plan").toggle(hasPlans && inEditor && !bb);
+  $("#t-outline-top").toggle(inEditor && !bb);
   $("#t-outline-hub-view").toggle(currentView === "hub");
+  $("#t-outline-subview-blindbox").toggle(bb);
+  if (bb) {
+    $("#t-outline-subview-outline").hide();
+    $("#t-outline-mobile-list").hide();
+  } else {
+    $("#t-outline-subview-outline").css("display", "");
+    $("#t-outline-mobile-list").css("display", "");
+  }
+  $("#t-editor-tab-outline").toggle(inEditor && !bb);
+  $("#t-outline-add-item").toggle(inEditor && !bb);
   refreshPlanNameDisplay();
 }
 function updatePlanHubActionState() {
@@ -31411,9 +31855,27 @@ function openPlanCreationDialog() {
                 <div class="t-plan-tip" style="font-size:13px; margin-bottom:10px;">\u521B\u5EFA\u540E\u4F1A\u76F4\u63A5\u8FDB\u5165\u300C\u5927\u7EB2\u751F\u6210\u300D\u7F16\u8F91\u9875\u3002</div>
                 <label class="t-outline-label">\u65B9\u6848\u540D\u79F0</label>
                 <input id="t-create-plan-name" class="t-outline-input" value="${escapeHtml4(defaultPlanName)}" />
-                <label class="t-outline-label" style="margin-top:10px;">\u521D\u59CB\u6545\u4E8B\u6307\u4EE4\uFF08\u53EF\u9009\uFF09</label>
+                <label class="t-outline-label" style="margin-top:10px;">\u65B9\u6848\u7C7B\u578B</label>
+                <div class="t-bb-kind-toggle" style="display:flex; gap:8px; margin-top:4px;">
+                    <button type="button" class="t-btn t-btn-xs t-btn-primary t-bb-kind-btn is-active" data-kind="normal"><i class="fa-solid fa-table-list"></i> \u666E\u901A\u5927\u7EB2</button>
+                    <button type="button" class="t-btn t-btn-xs t-bb-kind-btn" data-kind="blindbox"><i class="fa-solid fa-gift"></i> \u76F2\u76D2\u5267\u672C</button>
+                </div>
+                <label class="t-outline-label" id="t-create-plan-story-label" style="margin-top:10px;">\u521D\u59CB\u6545\u4E8B\u6307\u4EE4\uFF08\u53EF\u9009\uFF09</label>
                 <textarea id="t-create-plan-story" class="t-outline-story-input" rows="4" placeholder="\u53EF\u5148\u5199\u4E00\u4E2A\u65B9\u5411\uFF0C\u540E\u7EED\u4ECD\u53EF\u968F\u65F6\u4FEE\u6539">${escapeHtml4(draftStoryInput)}</textarea>
-                <div class="t-plan-tip" style="margin-top:8px;">\u63D0\u793A\uFF1A\u5982\u679C\u7559\u7A7A\uFF0C\u4F1A\u521B\u5EFA\u4E00\u4E2A\u7A7A\u767D\u65B9\u6848\u3002</div>
+                <div class="t-plan-tip" id="t-create-plan-normal-tip" style="margin-top:8px;">\u63D0\u793A\uFF1A\u5982\u679C\u7559\u7A7A\uFF0C\u4F1A\u521B\u5EFA\u4E00\u4E2A\u7A7A\u767D\u65B9\u6848\u3002</div>
+                <div id="t-create-plan-bb-fields" style="display:none; margin-top:10px;">
+                    <div style="display:flex; gap:12px;">
+                        <label class="t-outline-label" style="flex:1;">\u8282\u70B9\u6570\uFF08\u4E3B\u7EBF\u91CC\u7A0B\u7891\uFF09
+                            <input id="t-create-plan-bb-nodes" type="number" class="t-outline-input" value="4" min="2" max="20" step="1" />
+                        </label>
+                        <label class="t-outline-label" style="flex:1;">\u6BCF\u6BB5\u5173\u952E\u4E8B\u4EF6\uFF083\u201310\uFF09
+                            <input id="t-create-plan-bb-events" type="number" class="t-outline-input" value="3" min="3" max="10" step="1" />
+                        </label>
+                    </div>
+                    <label class="t-outline-label" style="margin-top:10px;">\u7EA2\u7EBF / \u7981\u5FCC\uFF08\u53EF\u9009\uFF09</label>
+                    <textarea id="t-create-plan-bb-redlines" class="t-outline-story-input" rows="2" placeholder="\u4E0D\u60F3\u51FA\u73B0\u7684\u5185\u5BB9\uFF0C\u4F8B\u5982\uFF1A\u4E0D\u8981\u89D2\u8272\u6B7B\u4EA1\u3001\u4E0D\u8981\u8840\u8165\u63CF\u5199"></textarea>
+                    <div class="t-plan-tip" style="margin-top:8px;">\u76F2\u76D2\u5267\u672C\u751F\u6210\u540E\u4F1A\u7ACB\u5373\u5C01\u5370\u2014\u2014\u4F60\u672C\u4EBA\u4E5F\u770B\u4E0D\u5230\u5185\u5BB9\uFF0C\u9760\u6E38\u73A9\u65F6\u88AB\u6084\u6084\u5F15\u5BFC\u7740\u6D6E\u73B0\u3002</div>
+                </div>
                 <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
                     <button id="t-create-plan-cancel" class="t-btn">\u53D6\u6D88</button>
                     <button id="t-create-plan-confirm" class="t-btn t-btn-primary"><i class="fa-solid fa-check"></i> \u521B\u5EFA\u5E76\u8FDB\u5165\u7F16\u8F91</button>
@@ -31424,17 +31886,53 @@ function openPlanCreationDialog() {
   $("body").append(html);
   const close = () => $("#t-outline-create-plan-dialog").remove();
   $("#t-create-plan-close, #t-create-plan-cancel").on("click", close);
-  $("#t-create-plan-confirm").on("click", () => {
+  const selectedKind = () => $("#t-outline-create-plan-dialog .t-bb-kind-btn.is-active").data("kind") || "normal";
+  $("#t-outline-create-plan-dialog").on("click", ".t-bb-kind-btn", function() {
+    $("#t-outline-create-plan-dialog .t-bb-kind-btn").removeClass("is-active t-btn-primary");
+    $(this).addClass("is-active t-btn-primary");
+    const isBB = selectedKind() === "blindbox";
+    $("#t-create-plan-bb-fields").toggle(isBB);
+    $("#t-create-plan-normal-tip").toggle(!isBB);
+    $("#t-create-plan-story-label").text(isBB ? "\u6545\u4E8B\u57FA\u8C03\u4E0E\u8D70\u5411" : "\u521D\u59CB\u6545\u4E8B\u6307\u4EE4\uFF08\u53EF\u9009\uFF09");
+    $("#t-create-plan-confirm").html(isBB ? '<i class="fa-solid fa-gift"></i> \u521B\u5EFA\u5E76\u5C01\u5370\u751F\u6210' : '<i class="fa-solid fa-check"></i> \u521B\u5EFA\u5E76\u8FDB\u5165\u7F16\u8F91');
+  });
+  $("#t-create-plan-confirm").on("click", async () => {
     const planName = String($("#t-create-plan-name").val() || "").trim();
     const planStory = String($("#t-create-plan-story").val() || "").trim();
-    $("#t-outline-story-input").val(planStory);
-    const created = createEmptyPlan(planName);
+    if (selectedKind() !== "blindbox") {
+      $("#t-outline-story-input").val(planStory);
+      const created2 = createEmptyPlan(planName);
+      close();
+      if (window.toastr) toastr.success(`\u5DF2\u65B0\u5EFA\u65B9\u6848\uFF1A${created2.name}`, "\u6545\u4E8B\u5927\u7EB2");
+      loadPlanToEditor(created2);
+      renderPlanHub();
+      showOutlineView("editor");
+      updatePlanWorkflowUI();
+      return;
+    }
+    if (!planStory) {
+      if (window.toastr) toastr.warning("\u8BF7\u5148\u586B\u5199\u6545\u4E8B\u57FA\u8C03\u4E0E\u8D70\u5411", "\u76F2\u76D2\u5267\u672C");
+      return;
+    }
+    const created = createBlindboxPlan({
+      name: planName,
+      tone: planStory,
+      redlines: String($("#t-create-plan-bb-redlines").val() || "").trim(),
+      nodeCount: Number($("#t-create-plan-bb-nodes").val()),
+      eventsPerGap: Number($("#t-create-plan-bb-events").val())
+    });
     close();
-    if (window.toastr) toastr.success(`\u5DF2\u65B0\u5EFA\u65B9\u6848\uFF1A${created.name}`, "\u6545\u4E8B\u5927\u7EB2");
-    loadPlanToEditor(created);
     renderPlanHub();
-    showOutlineView("editor");
+    showOutlineView("hub");
     updatePlanWorkflowUI();
+    if (window.toastr) toastr.info("\u6B63\u5728\u751F\u6210\u76F2\u76D2\u5267\u672C\uFF0C\u8BF7\u7A0D\u5019\u2026\uFF08\u5185\u5BB9\u5C06\u76F4\u63A5\u5C01\u5370\uFF09", "\u76F2\u76D2\u5267\u672C");
+    try {
+      await runBlindboxGeneration(created);
+      if (window.toastr) toastr.success(`\u76F2\u76D2\u5267\u672C\u5DF2\u751F\u6210\u5E76\u5C01\u5370\uFF1A${created.name}`, "\u76F2\u76D2\u5267\u672C");
+    } catch (e) {
+      reportGenerationError(e, "\u76F2\u76D2\u5267\u672C", "\u76F2\u76D2\u5267\u672C\u751F\u6210\u5931\u8D25");
+    }
+    renderPlanHub();
   });
 }
 function overwritePlan(planId, nameInput = "") {
@@ -31621,16 +32119,163 @@ function showOutlineView(view) {
 }
 function loadPlanToEditor(plan) {
   if (!plan) return false;
+  setEditingPlan(plan);
+  planRenameMode = false;
+  if (isBlindboxPlan(plan)) {
+    renderBlindboxSubview(plan);
+    refreshPlanNameDisplay();
+    return true;
+  }
   outlineItems = normalizeItems(plan.items || []);
   selectedRowIndex = -1;
   const planInstruction = getPlanInstruction(plan);
   $("#t-outline-story-input").val(planInstruction);
-  setEditingPlan(plan);
-  planRenameMode = false;
   saveDraft(planInstruction, $("#t-outline-insert-mode").val() || "overwrite");
   renderRows();
   refreshPlanNameDisplay();
   return true;
+}
+function bbConfigLine(bb) {
+  const tone = String(bb?.tone || "").trim();
+  const toneBrief = tone ? escapeHtml4(getBriefText(tone, 60)) : "\uFF08\u672A\u586B\uFF09";
+  return `\u57FA\u8C03\uFF1A${toneBrief} \xB7 \u8282\u70B9 ${bb?.nodeCount ?? "?"} \xB7 \u6BCF\u6BB5\u7EA6 ${bb?.eventsPerGap ?? "?"} \u4EF6`;
+}
+function bbEventDot(status, isTarget) {
+  const base = "display:inline-block;width:14px;text-align:center;";
+  if (status === EVENT_STATUS.DONE) return `<span style="${base}color:#49c17a">\u25CF</span>`;
+  if (status === EVENT_STATUS.SKIPPED) return `<span style="${base}color:#8a8f98" title="\u5DF2\u8DF3\u8FC7">\u25CF</span>`;
+  if (isTarget || status === EVENT_STATUS.ACTIVE) return `<span style="${base}color:#e0a63a">\u25C9</span>`;
+  return `<span style="${base}color:#555b66">\u25CB</span>`;
+}
+function bbNodeDots(node, nodeIndex, bb) {
+  const curNode = bb.progress?.nodeIndex;
+  const curEv = bb.progress?.eventIndex;
+  const dots = node.events.map((ev, j) => bbEventDot(ev.status, nodeIndex === curNode && j === curEv)).join("");
+  const passed = node.events.length > 0 && node.events.every((ev) => ev.status === EVENT_STATUS.DONE || ev.status === EVENT_STATUS.SKIPPED);
+  return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+        <span style="color:${passed ? "#49c17a" : "#777"};width:18px;">${passed ? "\u25C6" : "\u25C7"}</span>
+        <span style="opacity:.75;min-width:52px;">\u8282\u70B9 ${nodeIndex + 1}</span>
+        <span>${dots}</span>
+    </div>`;
+}
+function bbRevealWall(bb) {
+  const revealed = flattenEvents(bb).filter(
+    ({ event }) => event.status === EVENT_STATUS.DONE || event.status === EVENT_STATUS.SKIPPED
+  );
+  if (revealed.length === 0) {
+    return `<div class="t-plan-tip">\u8FD8\u6CA1\u6709\u5DF2\u63ED\u6653\u7684\u4E8B\u4EF6\u2014\u2014\u5F00\u59CB\u6E38\u73A9\u540E\uFF0C\u8E29\u4E2D\u7684\u5173\u952E\u8282\u70B9\u4F1A\u663E\u793A\u5728\u8FD9\u91CC\u3002</div>`;
+  }
+  return revealed.map(({ nodeIndex, eventIndex, event }) => {
+    const tag = event.status === EVENT_STATUS.SKIPPED ? `<span style="color:#8a8f98">\uFF08\u8DF3\u8FC7\uFF09</span>` : "";
+    const recap = String(event.recap || "").trim();
+    const recapLine = recap ? `<div style="opacity:.55;font-size:12px;padding:2px 0 0 18px;">\u21B3 ${escapeHtml4(recap)}</div>` : "";
+    return `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+            <span style="opacity:.6;">${nodeIndex + 1}.${eventIndex + 1}</span>
+            ${escapeHtml4(event.content)} ${tag}
+            ${recapLine}
+        </div>`;
+  }).join("");
+}
+function bbNodeFull(node, nodeIndex) {
+  const statusLabel = {
+    [EVENT_STATUS.DONE]: "\u5DF2\u8FBE\u6210",
+    [EVENT_STATUS.SKIPPED]: "\u5DF2\u8DF3\u8FC7",
+    [EVENT_STATUS.ACTIVE]: "\u8FDB\u884C\u4E2D",
+    [EVENT_STATUS.PENDING]: "\u672A\u5230"
+  };
+  const events = node.events.map((ev, j) => `<div style="padding:3px 0 3px 16px;">
+        <span style="opacity:.55;">${nodeIndex + 1}.${j + 1}</span>
+        <span style="opacity:.6;font-size:11px;">[${statusLabel[ev.status] || ""}]</span>
+        ${escapeHtml4(ev.content)}
+    </div>`).join("");
+  return `<div style="margin-bottom:10px;">
+        <div style="font-weight:600;">\u25C6 \u8282\u70B9 ${nodeIndex + 1}\uFF1A${escapeHtml4(node.title || "")}</div>
+        <div style="opacity:.8;padding:2px 0 2px 16px;">${escapeHtml4(node.anchor || "")}</div>
+        ${events}
+    </div>`;
+}
+function renderBlindboxSubview(plan) {
+  const $root = $("#t-outline-subview-blindbox");
+  if ($root.length === 0) return;
+  const bb = plan?.blindbox ? normalizeBlindbox(plan.blindbox) : null;
+  const sealed = !!bb && bb.sealed === true;
+  const unsealed = !!bb && bb.unsealed === true;
+  if (!sealed) {
+    $root.html(`<div class="t-bb-view">
+            <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-gift"></i> \u76F2\u76D2\u5267\u672C \xB7 \u5F85\u751F\u6210</div>
+            <div class="t-plan-tip" style="margin-bottom:6px;">${bbConfigLine(bb)}</div>
+            <div class="t-plan-tip">\u8FD9\u672C\u8FD8\u6CA1\u6709\u751F\u6210\uFF08\u6216\u4E0A\u6B21\u751F\u6210\u5931\u8D25\uFF09\u3002\u70B9\u4E0B\u9762\u6309\u94AE\u7528\u4E0A\u8FF0\u8BBE\u5B9A\u76F2\u63B7\u4E00\u672C\u2014\u2014\u5185\u5BB9\u4F1A\u76F4\u63A5\u5C01\u5370\u3002</div>
+            <div style="margin-top:12px;"><button class="t-btn t-btn-primary" data-action="bb-generate"><i class="fa-solid fa-wand-magic-sparkles"></i> \u751F\u6210\u76F2\u76D2\u5267\u672C</button></div>
+        </div>`);
+    return;
+  }
+  const stats = getProgressStats(bb);
+  if (!unsealed) {
+    const skeleton = bb.nodes.map((n, i) => bbNodeDots(n, i, bb)).join("");
+    $root.html(`<div class="t-bb-view">
+            <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-lock"></i> \u76F2\u76D2\u5267\u672C \xB7 \u5DF2\u5C01\u5370</div>
+            <div class="t-plan-tip">\u5DF2\u63A8\u8FDB ${stats.passed} / ${stats.total} \u4E2A\u5173\u952E\u4E8B\u4EF6 \xB7 \u5171 ${stats.nodeCount} \u4E2A\u8282\u70B9</div>
+            <div style="margin:10px 0;">${skeleton}</div>
+            <div style="font-weight:600;margin:12px 0 4px;">\u56DE\u987E\u5899</div>
+            ${bbRevealWall(bb)}
+            <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="t-btn" data-action="bb-reroll"><i class="fa-solid fa-dice"></i> \u91CD\u65B0\u751F\u6210\uFF08\u76F2\u63B7\uFF09</button>
+                <button class="t-btn t-btn-danger" data-action="bb-unseal"><i class="fa-solid fa-unlock"></i> \u5267\u900F\u9003\u751F\uFF08\u89E3\u5C01\u67E5\u770B\uFF09</button>
+            </div>
+        </div>`);
+    return;
+  }
+  const full = bb.nodes.map((n, i) => bbNodeFull(n, i)).join("");
+  $root.html(`<div class="t-bb-view">
+        <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-unlock"></i> \u76F2\u76D2\u5267\u672C \xB7 \u5DF2\u89E3\u5C01</div>
+        <div class="t-plan-tip">\u5DF2\u7ECF\u770B\u8FC7\u4E86\uFF0C\u60CA\u559C\u4E0D\u590D\u2014\u2014\u8FD9\u5C31\u662F\u5355\u5411\u95E8\u7684\u4EE3\u4EF7\u3002\u60F3\u4FEE\u6539\u5185\u5BB9\u53EF\u8F6C\u6210\u666E\u901A\u5927\u7EB2\u3002</div>
+        <div style="margin:10px 0;">${full}</div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="t-btn" data-action="bb-reroll"><i class="fa-solid fa-dice"></i> \u91CD\u65B0\u751F\u6210\uFF08\u76F2\u63B7\uFF09</button>
+            <button class="t-btn t-btn-primary" data-action="bb-to-normal"><i class="fa-solid fa-table-list"></i> \u8F6C\u4E3A\u666E\u901A\u5927\u7EB2\uFF08\u53EF\u7F16\u8F91\uFF09</button>
+        </div>
+    </div>`);
+}
+async function blindboxGenerateFromView(reroll) {
+  const plan = getPlans().find((p) => p.id === editingPlanId);
+  if (!plan || !isBlindboxPlan(plan)) return;
+  if (reroll && !window.confirm("\u91CD\u65B0\u751F\u6210\u4F1A\u4E22\u5F03\u5F53\u524D\u8FD9\u672C\uFF08\u4F60\u672C\u5C31\u6CA1\u770B\u8FC7\uFF09\uFF0C\u7528\u76F8\u540C\u8BBE\u5B9A\u91CD\u63B7\u4E00\u672C\u3002\u786E\u5B9A\uFF1F")) return;
+  if (window.toastr) toastr.info("\u6B63\u5728\u751F\u6210\u76F2\u76D2\u5267\u672C\u2026\uFF08\u5185\u5BB9\u5C06\u76F4\u63A5\u5C01\u5370\uFF09", "\u76F2\u76D2\u5267\u672C");
+  try {
+    await runBlindboxGeneration(plan);
+    if (window.toastr) toastr.success("\u76F2\u76D2\u5267\u672C\u5DF2\u751F\u6210\u5E76\u5C01\u5370", "\u76F2\u76D2\u5267\u672C");
+  } catch (e) {
+    reportGenerationError(e, "\u76F2\u76D2\u5267\u672C", "\u76F2\u76D2\u5267\u672C\u751F\u6210\u5931\u8D25");
+  }
+  renderBlindboxSubview(getPlans().find((p) => p.id === editingPlanId));
+  renderPlanHub();
+}
+function blindboxUnsealFromView() {
+  const plan = getPlans().find((p) => p.id === editingPlanId);
+  if (!plan || !isBlindboxPlan(plan) || !plan.blindbox?.sealed) return;
+  if (!window.confirm("\u5267\u900F\u9003\u751F\u662F\u5355\u5411\u95E8\uFF1A\u770B\u8FC7\u5C31\u56DE\u4E0D\u53BB\u4E86\uFF0C\u76F2\u73A9\u7684\u60CA\u559C\u5C06\u4E0D\u590D\u5B58\u5728\u3002\u786E\u5B9A\u89E3\u5C01\u67E5\u770B\uFF1F")) return;
+  plan.blindbox = unseal(plan.blindbox);
+  plan.updatedAt = Date.now();
+  saveExtData();
+  renderBlindboxSubview(plan);
+  renderPlanHub();
+  if (window.toastr) toastr.success("\u5DF2\u89E3\u5C01\uFF0C\u5185\u5BB9\u73B0\u5728\u5BF9\u4F60\u53EF\u89C1", "\u76F2\u76D2\u5267\u672C");
+}
+function blindboxConvertToNormal() {
+  const plan = getPlans().find((p) => p.id === editingPlanId);
+  if (!plan || !isBlindboxPlan(plan)) return;
+  if (!window.confirm("\u8F6C\u4E3A\u666E\u901A\u5927\u7EB2\u540E\uFF0C\u8FD9\u672C\u4F1A\u53D8\u6210\u53EF\u7F16\u8F91\u7684\u5E73\u94FA\u5927\u7EB2\u3001\u4E0D\u518D\u662F\u76F2\u76D2\uFF08\u4E0D\u53EF\u9006\uFF09\u3002\u786E\u5B9A\uFF1F")) return;
+  const items = toVisibleItems(plan.blindbox);
+  delete plan.kind;
+  delete plan.blindbox;
+  plan.items = normalizeItems(items);
+  plan.updatedAt = Date.now();
+  saveExtData();
+  setEditingPlan(plan);
+  loadPlanToEditor(plan);
+  renderPlanHub();
+  updatePlanWorkflowUI();
+  if (window.toastr) toastr.success("\u5DF2\u8F6C\u4E3A\u666E\u901A\u5927\u7EB2\uFF0C\u53EF\u76F4\u63A5\u7F16\u8F91", "\u76F2\u76D2\u5267\u672C");
 }
 function getPlanItemCursor(planId, totalItems) {
   const total = Number(totalItems) || 0;
@@ -31744,12 +32389,16 @@ function renderPlanHub() {
     const timeText = `${updated.getMonth() + 1}/${updated.getDate()} ${String(updated.getHours()).padStart(2, "0")}:${String(updated.getMinutes()).padStart(2, "0")}`;
     const items = normalizeItems(plan.items || []);
     const isSource = sceneSourcePlanId === plan.id;
+    const bb = isBlindboxPlan(plan);
+    const bbSealed = bb && plan.blindbox?.sealed === true;
+    const nameHtml = bb ? `<i class="fa-solid fa-gift" title="\u76F2\u76D2\u5267\u672C"></i> ${escapeHtml4(plan.name || "\u672A\u547D\u540D\u65B9\u6848")}` : escapeHtml4(plan.name || "\u672A\u547D\u540D\u65B9\u6848");
+    const metaHtml = bb ? `${timeText} \xB7 \u76F2\u76D2\u5267\u672C \xB7 ${bbSealed ? "\u{1F512} \u5DF2\u5C01\u5370" : "\u5F85\u751F\u6210"}` : `${timeText} \xB7 ${items.length} \u6761`;
     return `
             <div class="t-plan-accordion-item ${active2 ? "expanded" : ""}" data-plan-id="${plan.id}">
                 <div class="t-plan-accordion-head" data-action="select-plan" data-plan-id="${plan.id}">
                     <div class="t-plan-accordion-main">
-                        <div class="t-plan-name">${escapeHtml4(plan.name || "\u672A\u547D\u540D\u65B9\u6848")}</div>
-                        <div class="t-plan-meta">${timeText} \xB7 ${items.length} \u6761</div>
+                        <div class="t-plan-name">${nameHtml}</div>
+                        <div class="t-plan-meta">${metaHtml}</div>
                         <div class="t-plan-tip">${isSource ? "\u5F53\u524D\u5267\u60C5\u63A8\u8FDB\u6765\u6E90\u65B9\u6848" : "\u5355\u51FB\u9009\u4E2D\u65B9\u6848"}</div>
                     </div>
                 </div>
@@ -32021,10 +32670,10 @@ function buildOutlinePayloadForPrompt() {
     foreshadowing: item.foreshadowing || ""
   }));
 }
-function collectRecentChatText(floors) {
+function collectRecentChatText(floors, opts = {}) {
   const n = Number(floors) || 0;
   if (n <= 0) return "";
-  const entries = getChatHistoryEntries();
+  const entries = getChatHistoryEntries(opts);
   if (!entries.length) return "";
   return entries.slice(-n).map((e) => `\u3010${e.role}\u3011${e.text}`).join("\n\n");
 }
@@ -32041,7 +32690,9 @@ function buildPacingPrompt(ctx) {
   const outlinePayload = buildOutlinePayloadForPrompt();
   const templates = getPromptTemplates();
   const vars = buildPromptTemplateVars(ctx, "(\u7A7A)", "", outlinePayload, {
-    recentChat: collectRecentChatText(getRollingChatFloors()),
+    // 带上被总结/隐藏的楼层：聊天变长后玩家常把前文折叠隐藏，否则节奏判断读不到最近几拍的实际文字
+    // 就等于没了判断对象（进度指针另有持久来源 buildOutlineProgressText，不受影响）。
+    recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true }),
     outlineProgress: buildOutlineProgressText()
   });
   return [
@@ -32085,7 +32736,9 @@ function buildRecommendationPrompt(ctx, userStoryInput, openingText) {
   const outlinePayload = buildOutlinePayloadForPrompt();
   const templates = getPromptTemplates();
   const vars = buildPromptTemplateVars(ctx, userStoryInput || "(\u7A7A)", openingText, outlinePayload, {
-    recentChat: collectRecentChatText(getRollingChatFloors())
+    // 带上被总结/隐藏的楼层：否则前文一折叠，模型既判不出 current_item_index、也凑不出贴合剧情的候选。
+    // 判不出时解析器回退保留旧指针（见 parseRecommendationResponse 注释），不会把进度冲掉。
+    recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true })
   });
   const sys = renderPromptTemplate(templates.rolling.system, vars);
   const user = renderPromptTemplate(templates.rolling.user, vars);
@@ -32316,6 +32969,106 @@ async function runGenerationFlow(cfg) {
     if (window.toastr) toastr.success(cfg.successMessage(false), cfg.label);
   }, { timeoutSec: cfg.timeoutSec });
 }
+function buildBlindboxPrompt(ctx, openingText, blindbox) {
+  const templates = getPromptTemplates().blindbox;
+  const vars = buildPromptTemplateVars(ctx, blindbox.tone, openingText, [], {
+    nodeCount: blindbox.nodeCount,
+    eventsPerGap: blindbox.eventsPerGap,
+    redlines: blindbox.redlines
+  });
+  return [
+    { role: "system", content: renderPromptTemplate(templates.system, vars) },
+    { role: "user", content: renderPromptTemplate(templates.user, vars) }
+  ];
+}
+function parseBlindboxResponse(raw) {
+  return extractBlindboxNodes(tryParseLooseJsonObject(raw));
+}
+async function runBlindboxGeneration(plan) {
+  if (!plan || !isBlindboxPlan(plan)) throw new Error("\u8BE5\u65B9\u6848\u4E0D\u662F\u76F2\u76D2\u5267\u672C");
+  const bb = plan.blindbox || createBlindboxDraft({});
+  const params = getOutlineGenParams().outline;
+  return runOutlineGeneration(async (signal) => {
+    const ctx = await getContextData();
+    const opening2 = await ensureOpeningTextForGeneration();
+    const messages = buildBlindboxPrompt(ctx, opening2, bb);
+    const raw = await sendOutlineRequest(messages, {
+      stream: false,
+      temperature: params.temperature,
+      maxTokens: params.maxTokens,
+      signal
+    });
+    const nodes = parseBlindboxResponse(raw);
+    const sealed = sealWithNodes(bb, nodes);
+    const target = getPlans().find((p) => p.id === plan.id);
+    if (!target) throw new Error("\u65B9\u6848\u5DF2\u4E0D\u5B58\u5728");
+    target.blindbox = sealed;
+    target.updatedAt = Date.now();
+    saveExtData();
+    return true;
+  }, { timeoutSec: params.timeoutSec || 0 });
+}
+function buildDirectorOutlineJson(bb) {
+  return bb.nodes.map((node, i) => ({
+    node: i,
+    title: node.title,
+    anchor: node.anchor,
+    is_final: i === bb.nodes.length - 1,
+    events: node.events.map((ev, j) => {
+      const e = { event: j, content: ev.content, status: ev.status };
+      if ((ev.status === EVENT_STATUS.DONE || ev.status === EVENT_STATUS.SKIPPED) && ev.recap) e.recap = ev.recap;
+      return e;
+    })
+  }));
+}
+function buildDirectorMessages(ctx, bb) {
+  const templates = getPromptTemplates().director;
+  const cur = bb.progress || { nodeIndex: 0, eventIndex: 0 };
+  const vars = buildPromptTemplateVars(ctx, "(\u7A7A)", "", [], {
+    // 导演专用：带上被总结/隐藏的楼层（includeHidden），否则总结一跑导演就瞎了。
+    recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true }),
+    blindboxOutline: JSON.stringify(buildDirectorOutlineJson(bb), null, 2),
+    blindboxProgress: `\u8282\u70B9 ${cur.nodeIndex} \xB7 \u4E8B\u4EF6 ${cur.eventIndex}`
+  });
+  return [
+    { role: "system", content: renderPromptTemplate(templates.system, vars) },
+    { role: "user", content: renderPromptTemplate(templates.user, vars) }
+  ];
+}
+async function runDirectorTurn() {
+  const plan = getActivePlan();
+  if (!plan || !isBlindboxPlan(plan)) return;
+  const bb0 = plan.blindbox;
+  if (!bb0 || bb0.sealed !== true || bb0.unsealed === true || bb0.directorPaused === true) return;
+  const ctx = await getContextData();
+  const params = getOutlineGenParams().pacing;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6e4);
+  let raw = "";
+  try {
+    raw = await sendOutlineRequest(buildDirectorMessages(ctx, normalizeBlindbox(bb0)), {
+      temperature: params.temperature,
+      maxTokens: params.maxTokens,
+      stream: false,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+  const decision = parseDirectorDecision(tryParseLooseJsonObject(raw));
+  const target = getPlans().find((p) => p.id === plan.id);
+  if (!target || !isBlindboxPlan(target)) return;
+  target.blindbox = applyDirectorDecision(target.blindbox, decision);
+  target.updatedAt = Date.now();
+  saveExtData();
+  if (editingPlanId === target.id) renderBlindboxSubview(target);
+  if (decision.directive && decision.intensity !== DIRECTOR_INTENSITY.NONE) {
+    const header = decision.intensity === DIRECTOR_INTENSITY.FIRM ? "\u3010\u5267\u60C5\u5BFC\u6F14\xB7\u6536\u675F\u3011\n" : "\u3010\u5267\u60C5\u5BFC\u6F14\xB7\u8F7B\u63A8\u3011\n";
+    armDirectorDirective(header + decision.directive, getDirectorInjectConfig());
+  } else {
+    clearDirectorDirective();
+  }
+}
 async function generateRecommendations() {
   if (!ensureEditingPlanContext()) return;
   if (!Array.isArray(outlineItems) || outlineItems.length === 0) {
@@ -32468,6 +33221,10 @@ function bindEvents() {
   $overlay.on("click", "#t-hub-view-detail", function() {
     const plan = getPlans().find((p) => p.id === activePlanId) || null;
     if (!plan) return;
+    if (isBlindboxPlan(plan)) {
+      if (window.toastr) toastr.info("\u76F2\u76D2\u5267\u672C\u5DF2\u5C01\u5370\uFF0C\u65E0\u6CD5\u67E5\u770B\u60C5\u8282\u3002", "\u76F2\u76D2\u5267\u672C");
+      return;
+    }
     showPlanDetailDialog(plan.id);
   });
   $overlay.on("click", "#t-hub-view-instruction", function() {
@@ -32475,6 +33232,10 @@ function bindEvents() {
     if (!plan) return;
     showPlanInstructionDialog(plan);
   });
+  $overlay.on("click", "[data-action='bb-generate']", () => blindboxGenerateFromView(false));
+  $overlay.on("click", "[data-action='bb-reroll']", () => blindboxGenerateFromView(true));
+  $overlay.on("click", "[data-action='bb-unseal']", () => blindboxUnsealFromView());
+  $overlay.on("click", "[data-action='bb-to-normal']", () => blindboxConvertToNormal());
   $overlay.on("click", "[data-action='delete-plan']", function(e) {
     e.stopPropagation();
     const planId = String($(this).data("plan-id") || "").trim();
@@ -32727,6 +33488,8 @@ function openStoryOutlineWindow() {
                         </div>
                     </div>
 
+                    <div id="t-outline-subview-blindbox" class="t-outline-subview" style="display:none;"></div>
+
                     <div id="t-outline-mobile-list" class="t-outline-mobile-list"></div>
                 </div>
             </div>
@@ -32805,7 +33568,7 @@ function markSceneCandidateUsed(planId, index) {
   candidates[index] = { ...candidates[index], used: true };
   setPlanCandidates(id3, candidates, { keepTimestamp: true });
 }
-var outlineItems, lastRawResponse, rawResponseHistory, selectedRowIndex, isRawDialogOpen, responseTimerStartAt, responseElapsedMs, responseTimerId, responseTimerRunning, activeOutlineAbortController, DRAFT_KEY, PLANS_KEY, ACTIVE_PLAN_KEY, SCENE_SOURCE_PLAN_KEY, PROMPT_TEMPLATES_KEY, OPENING_SOURCE_MODE_KEY, OPENING_SOURCE_REF_KEY, OUTLINE_CHAT_TAG_WHITELIST_KEY, RAW_HISTORY_KEY, OUTLINE_SELECTED_PROFILE_KEY, OUTLINE_CUSTOM_PROFILES_KEY, GEN_PARAMS_KEY, ROLLING_CHAT_FLOORS_KEY, ROLLING_CHAT_FLOORS_DEFAULT, ROLLING_CHAT_FLOORS_MAX, currentView, activePlanId, editingPlanId, editingPlanBaseline, planItemCursorMap, autoSavePlanTimer, planRenameMode, planRenameSnapshot, MAX_RAW_HISTORY, OUTLINE_ST_FOLLOW_ID, PACING_STATES;
+var outlineItems, lastRawResponse, rawResponseHistory, selectedRowIndex, isRawDialogOpen, responseTimerStartAt, responseElapsedMs, responseTimerId, responseTimerRunning, activeOutlineAbortController, DRAFT_KEY, PLANS_KEY2, ACTIVE_PLAN_KEY2, SCENE_SOURCE_PLAN_KEY, PROMPT_TEMPLATES_KEY, OPENING_SOURCE_MODE_KEY, OPENING_SOURCE_REF_KEY, OUTLINE_CHAT_TAG_WHITELIST_KEY, RAW_HISTORY_KEY, OUTLINE_SELECTED_PROFILE_KEY, OUTLINE_CUSTOM_PROFILES_KEY, GEN_PARAMS_KEY, ROLLING_CHAT_FLOORS_KEY, ROLLING_CHAT_FLOORS_DEFAULT, ROLLING_CHAT_FLOORS_MAX, currentView, activePlanId, editingPlanId, editingPlanBaseline, planItemCursorMap, autoSavePlanTimer, planRenameMode, planRenameSnapshot, MAX_RAW_HISTORY, OUTLINE_ST_FOLLOW_ID, PACING_STATES;
 var init_storyOutlineWindow = __esm({
   "src/ui/storyOutlineWindow.js"() {
     init_context();
@@ -32815,6 +33578,8 @@ var init_storyOutlineWindow = __esm({
     init_storage();
     init_chatTagWhitelist();
     init_apiConnectionEditor();
+    init_blindboxPlan();
+    init_directorInjection();
     outlineItems = [];
     lastRawResponse = "";
     rawResponseHistory = [];
@@ -32826,8 +33591,8 @@ var init_storyOutlineWindow = __esm({
     responseTimerRunning = false;
     activeOutlineAbortController = null;
     DRAFT_KEY = "story_outline_draft";
-    PLANS_KEY = "story_outline_plans";
-    ACTIVE_PLAN_KEY = "story_outline_active_plan_id";
+    PLANS_KEY2 = "story_outline_plans";
+    ACTIVE_PLAN_KEY2 = "story_outline_active_plan_id";
     SCENE_SOURCE_PLAN_KEY = "story_outline_scene_source_plan_id";
     PROMPT_TEMPLATES_KEY = "story_outline_prompt_templates";
     OPENING_SOURCE_MODE_KEY = "story_outline_opening_source_mode";
@@ -33074,7 +33839,7 @@ __export(rewriteEntryButton_exports, {
   openRewritePanelFromMenu: () => openRewritePanelFromMenu,
   refreshRewriteEntryButton: () => refreshRewriteEntryButton
 });
-import { saveChatConditional as saveChatConditional2, reloadCurrentChat as reloadCurrentChat2, updateMessageBlock, eventSource as eventSource2, event_types as event_types2 } from "../../../../script.js";
+import { saveChatConditional as saveChatConditional2, reloadCurrentChat as reloadCurrentChat2, updateMessageBlock, eventSource as eventSource3, event_types as event_types3 } from "../../../../script.js";
 function isEnabled2() {
   const data = getExtData();
   return data?.rewrite_entry?.enabled === true;
@@ -33876,11 +34641,11 @@ function scheduleApplyAllRewriteMarks(delay = 80) {
 function bindRewriteDecorationEvents() {
   if (rewriteDecorBound) return;
   rewriteDecorBound = true;
-  eventSource2.on(event_types2.MESSAGE_RECEIVED, () => {
+  eventSource3.on(event_types3.MESSAGE_RECEIVED, () => {
     scheduleApplyAllRewriteMarks(120);
     setTimeout(refreshInlineRewriteEntry, 160);
   });
-  eventSource2.on(event_types2.GENERATION_ENDED, () => {
+  eventSource3.on(event_types3.GENERATION_ENDED, () => {
     scheduleApplyAllRewriteMarks(120);
     setTimeout(refreshInlineRewriteEntry, 160);
   });
@@ -34388,7 +35153,7 @@ function maybeScheduleAutoRewrite() {
 function bindAutoTriggerEvents() {
   if (autoTriggerBound) return;
   autoTriggerBound = true;
-  eventSource2.on(event_types2.GENERATION_ENDED, onGenerationEndedAuto);
+  eventSource3.on(event_types3.GENERATION_ENDED, onGenerationEndedAuto);
 }
 function buildKwRowHtml(rule = {}) {
   return `
@@ -35423,7 +36188,7 @@ __export(floorNav_exports, {
   jumpToTopFloor: () => jumpToTopFloor,
   refreshFloorNavButton: () => refreshFloorNavButton
 });
-import { eventSource as eventSource3, event_types as event_types3, showMoreMessages } from "../../../../script.js";
+import { eventSource as eventSource4, event_types as event_types4, showMoreMessages } from "../../../../script.js";
 import { hideChatMessageRange } from "../../../chats.js";
 function isEnabled3() {
   return getExtData()?.floor_nav?.enabled !== false;
@@ -35546,11 +36311,11 @@ async function onFloorHideClick(mesid) {
   }
 }
 function initFloorNav() {
-  if (listenersBound) {
+  if (listenersBound2) {
     scheduleRefreshButtons(0);
     return;
   }
-  listenersBound = true;
+  listenersBound2 = true;
   $(document).on("click", `.${BTN_CLASS}`, function(event) {
     event.stopPropagation();
     const mesid = Number($(this).closest(".mes").attr("mesid"));
@@ -35558,27 +36323,27 @@ function initFloorNav() {
     void onFloorHideClick(mesid);
   });
   const rerenderEvents = [
-    event_types3.CHAT_CHANGED,
-    event_types3.CHARACTER_MESSAGE_RENDERED,
-    event_types3.USER_MESSAGE_RENDERED,
-    event_types3.MESSAGE_SWIPED,
-    event_types3.MESSAGE_DELETED,
-    event_types3.MORE_MESSAGES_LOADED
+    event_types4.CHAT_CHANGED,
+    event_types4.CHARACTER_MESSAGE_RENDERED,
+    event_types4.USER_MESSAGE_RENDERED,
+    event_types4.MESSAGE_SWIPED,
+    event_types4.MESSAGE_DELETED,
+    event_types4.MORE_MESSAGES_LOADED
   ];
   for (const eventName of rerenderEvents) {
     if (!eventName) continue;
-    eventSource3.on(eventName, () => scheduleRefreshButtons(0));
+    eventSource4.on(eventName, () => scheduleRefreshButtons(0));
   }
   scheduleRefreshButtons(300);
   TitaniaLogger.info("\u697C\u5C42\u5FEB\u6377\u64CD\u4F5C\u5DF2\u521D\u59CB\u5316");
 }
-var BTN_CLASS, listenersBound, refreshQueued;
+var BTN_CLASS, listenersBound2, refreshQueued;
 var init_floorNav = __esm({
   "src/ui/floorNav.js"() {
     init_storage();
     init_logger();
     BTN_CLASS = "titania-floorhide-btn";
-    listenersBound = false;
+    listenersBound2 = false;
     refreshQueued = false;
   }
 });
@@ -36000,17 +36765,17 @@ var init_outlineEntryButton = __esm({
 
 // src/core/pacingInjection.js
 import {
-  setExtensionPrompt,
-  extension_prompt_types,
-  extension_prompt_roles,
-  eventSource as eventSource4,
-  event_types as event_types4
+  setExtensionPrompt as setExtensionPrompt2,
+  extension_prompt_types as extension_prompt_types2,
+  extension_prompt_roles as extension_prompt_roles2,
+  eventSource as eventSource5,
+  event_types as event_types5
 } from "../../../../script.js";
-function normalizeRole2(role) {
+function normalizeRole3(role) {
   const name = String(role || "system").toLowerCase();
-  return name in ROLE_NAME_TO_ENUM ? name : "system";
+  return name in ROLE_NAME_TO_ENUM2 ? name : "system";
 }
-function normalizeDepth(depth) {
+function normalizeDepth2(depth) {
   const n = Number(depth);
   if (!Number.isFinite(n) || n < 0) return 0;
   return Math.min(1e4, Math.floor(n));
@@ -36025,17 +36790,17 @@ function armPacingDirective(text, options = {}) {
     clearPacingDirective();
     return false;
   }
-  const roleName = normalizeRole2(options.role);
-  const depth = normalizeDepth(options.depth);
-  setExtensionPrompt(
+  const roleName = normalizeRole3(options.role);
+  const depth = normalizeDepth2(options.depth);
+  setExtensionPrompt2(
     PACING_PROMPT_KEY,
     DIRECTIVE_HEADER + body,
-    extension_prompt_types.IN_CHAT,
+    extension_prompt_types2.IN_CHAT,
     depth,
     false,
-    ROLE_NAME_TO_ENUM[roleName]
+    ROLE_NAME_TO_ENUM2[roleName]
   );
-  armed = true;
+  armed2 = true;
   armedSummary = briefSummary(body);
   armedDepth = depth;
   armedRole = roleName;
@@ -36043,40 +36808,40 @@ function armPacingDirective(text, options = {}) {
   return true;
 }
 function clearPacingDirective() {
-  setExtensionPrompt(PACING_PROMPT_KEY, "", extension_prompt_types.IN_CHAT, 0);
-  armed = false;
+  setExtensionPrompt2(PACING_PROMPT_KEY, "", extension_prompt_types2.IN_CHAT, 0);
+  armed2 = false;
   armedSummary = "";
 }
 function getArmedPacing() {
-  return { armed, summary: armedSummary, depth: armedDepth, role: armedRole };
+  return { armed: armed2, summary: armedSummary, depth: armedDepth, role: armedRole };
 }
 function initPacingInjection() {
-  if (listenersBound2) return;
-  listenersBound2 = true;
+  if (listenersBound3) return;
+  listenersBound3 = true;
   clearPacingDirective();
-  eventSource4.on(event_types4.GENERATION_ENDED, () => {
-    if (armed) clearPacingDirective();
+  eventSource5.on(event_types5.GENERATION_ENDED, () => {
+    if (armed2) clearPacingDirective();
   });
-  if (event_types4.CHAT_CHANGED) {
-    eventSource4.on(event_types4.CHAT_CHANGED, () => {
-      if (armed) clearPacingDirective();
+  if (event_types5.CHAT_CHANGED) {
+    eventSource5.on(event_types5.CHAT_CHANGED, () => {
+      if (armed2) clearPacingDirective();
     });
   }
   TitaniaLogger.info("\u53D9\u4E8B\u8282\u594F\u6CE8\u5165\u5DF2\u521D\u59CB\u5316");
 }
-var PACING_PROMPT_KEY, DIRECTIVE_HEADER, ROLE_NAME_TO_ENUM, listenersBound2, armed, armedSummary, armedDepth, armedRole;
+var PACING_PROMPT_KEY, DIRECTIVE_HEADER, ROLE_NAME_TO_ENUM2, listenersBound3, armed2, armedSummary, armedDepth, armedRole;
 var init_pacingInjection = __esm({
   "src/core/pacingInjection.js"() {
     init_logger();
     PACING_PROMPT_KEY = "TITANIA_PACING";
     DIRECTIVE_HEADER = "\u3010\u53D9\u4E8B\u8282\u594F\u63D0\u793A\u3011\n";
-    ROLE_NAME_TO_ENUM = {
-      system: extension_prompt_roles.SYSTEM,
-      user: extension_prompt_roles.USER,
-      assistant: extension_prompt_roles.ASSISTANT
+    ROLE_NAME_TO_ENUM2 = {
+      system: extension_prompt_roles2.SYSTEM,
+      user: extension_prompt_roles2.USER,
+      assistant: extension_prompt_roles2.ASSISTANT
     };
-    listenersBound2 = false;
-    armed = false;
+    listenersBound3 = false;
+    armed2 = false;
     armedSummary = "";
     armedDepth = 0;
     armedRole = "system";
@@ -36084,7 +36849,7 @@ var init_pacingInjection = __esm({
 });
 
 // src/ui/sceneAdvanceBubble.js
-import { eventSource as eventSource5, event_types as event_types5 } from "../../../../script.js";
+import { eventSource as eventSource6, event_types as event_types6 } from "../../../../script.js";
 function getPacingConfig() {
   const p = getExtData()?.pacing || {};
   const role = ["system", "user", "assistant"].includes(p.inject_role) ? p.inject_role : "system";
@@ -36105,8 +36870,8 @@ function loadApi() {
 function isEnabled5() {
   return getExtData()?.outline_entry?.show_outline_actions === true;
 }
-function escapeHtmlText2(str) {
-  return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+function escapeHtmlText2(str2) {
+  return String(str2 || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 function briefText(text, maxLen = 48) {
   const s = String(text || "").replace(/\s+/g, " ").trim();
@@ -36115,9 +36880,9 @@ function briefText(text, maxLen = 48) {
 }
 function readProgressFromSettings() {
   const data = getExtData();
-  const plans = Array.isArray(data?.[PLANS_KEY2]) ? data[PLANS_KEY2] : [];
+  const plans = Array.isArray(data?.[PLANS_KEY3]) ? data[PLANS_KEY3] : [];
   const sourceId = String(data?.[SCENE_SOURCE_PLAN_KEY2] || "");
-  const activeId = String(data?.[ACTIVE_PLAN_KEY2] || "");
+  const activeId = String(data?.[ACTIVE_PLAN_KEY3] || "");
   const plan = plans.find((p) => p.id === sourceId) || plans.find((p) => p.id === activeId) || null;
   if (!plan) return null;
   const total = Array.isArray(plan.items) ? plan.items.length : 0;
@@ -36129,6 +36894,31 @@ function readProgressFromSettings() {
 function formatProgressLabel(progress) {
   if (!progress) return "";
   return `\u7B2C ${progress.index + 1} / ${progress.total} \u6761`;
+}
+function getActiveBlindboxInfo() {
+  try {
+    const data = getExtData();
+    const plans = Array.isArray(data?.[PLANS_KEY3]) ? data[PLANS_KEY3] : [];
+    if (plans.length === 0) return null;
+    const activeId = String(data?.[ACTIVE_PLAN_KEY3] || "");
+    const plan = plans.find((p) => p?.id === activeId) || plans[0];
+    if (!plan || !isBlindboxPlan(plan)) return null;
+    const bb = plan.blindbox;
+    if (!bb || bb.sealed !== true || bb.unsealed === true) return null;
+    const nbb = normalizeBlindbox(bb);
+    return { planId: plan.id, stats: getProgressStats(nbb), paused: bb.directorPaused === true };
+  } catch {
+    return null;
+  }
+}
+function toggleBlindboxDirectorPaused(planId) {
+  const data = getExtData();
+  const plans = Array.isArray(data?.[PLANS_KEY3]) ? data[PLANS_KEY3] : [];
+  const plan = plans.find((p) => p?.id === planId);
+  if (!plan || !plan.blindbox) return;
+  plan.blindbox.directorPaused = plan.blindbox.directorPaused !== true;
+  plan.updatedAt = Date.now();
+  saveExtData();
 }
 function progressFromState(state) {
   const total = Number(state?.total) || 0;
@@ -36179,9 +36969,16 @@ function buildStrip() {
 }
 function updateStrip(strip, { progress, expanded } = {}) {
   if (!strip) return;
-  const target = progress === void 0 ? readProgressFromSettings() : progress;
-  const label = formatProgressLabel(target);
-  $(strip).find(".tsa-strip-progress").text(label ? `\xB7 ${label}` : "");
+  const bbInfo = getActiveBlindboxInfo();
+  if (bbInfo) {
+    $(strip).find(".tsa-strip-title").text(bbInfo.paused ? "\u76F2\u76D2\u5BFC\u6F14 \xB7 \u5DF2\u6682\u505C" : "\u76F2\u76D2\u5BFC\u6F14");
+    $(strip).find(".tsa-strip-progress").text(`\xB7 \u5DF2\u8FBE\u6210 ${bbInfo.stats.passed}/${bbInfo.stats.total}`);
+  } else {
+    $(strip).find(".tsa-strip-title").text("\u5267\u60C5\u63A8\u8FDB");
+    const target = progress === void 0 ? readProgressFromSettings() : progress;
+    const label = formatProgressLabel(target);
+    $(strip).find(".tsa-strip-progress").text(label ? `\xB7 ${label}` : "");
+  }
   if (expanded !== void 0) {
     $(strip).attr("aria-expanded", String(expanded)).toggleClass("is-open", expanded);
   }
@@ -36297,6 +37094,10 @@ function buildCandidatesHtml(state) {
     `).join("");
 }
 function buildPanelHtml(state) {
+  const bbInfo = getActiveBlindboxInfo();
+  if (bbInfo) {
+    return `<div id="${PANEL_ID}" class="tsa-panel">${buildBlindboxBody(bbInfo)}</div>`;
+  }
   const tabs = `
         <div class="tsa-mode-tabs">
             <button type="button" class="tsa-mode-tab ${panelMode === "recommend" ? "is-active" : ""}" data-mode="recommend"><i class="fa-solid fa-forward-step"></i> \u63A8\u8350\u5267\u60C5</button>
@@ -36304,6 +37105,22 @@ function buildPanelHtml(state) {
         </div>`;
   const body = panelMode === "pacing" ? buildPacingBody() : buildRecommendBody(state);
   return `<div id="${PANEL_ID}" class="tsa-panel">${tabs}${body}</div>`;
+}
+function buildBlindboxBody(info) {
+  const s = info.stats;
+  return `
+        <div class="tsa-scroll">
+            <div class="tsa-empty" style="line-height:1.6;">
+                <div style="font-weight:600;"><i class="fa-solid fa-clapperboard"></i> \u76F2\u76D2\u5BFC\u6F14${info.paused ? " \xB7 \u5DF2\u6682\u505C" : "\u5F15\u5BFC\u4E2D"}</div>
+                <div style="margin-top:6px;">\u5185\u5BB9\u5DF2\u5C01\u5370\uFF0C\u7531\u5BFC\u6F14\u5728\u5E55\u540E\u628A\u6BCF\u56DE\u5408\u6084\u6084\u5F15\u5BFC\u5411\u4E3B\u7EBF\u3002\u5DF2\u8FBE\u6210 ${s.passed}/${s.total} \u4E2A\u5173\u952E\u4E8B\u4EF6 \xB7 \u5171 ${s.nodeCount} \u4E2A\u8282\u70B9\u3002</div>
+                <div style="margin-top:6px;opacity:.7;">\u60F3\u770B\u8FDB\u5EA6\u9AA8\u67B6 / \u56DE\u987E\u5899\uFF0C\u6216\u5267\u900F\u9003\u751F\uFF0C\u8BF7\u5230\u300C\u5927\u7EB2\u751F\u6210\u300D\u7A97\u53E3\u6253\u5F00\u8FD9\u672C\u65B9\u6848\u3002</div>
+            </div>
+        </div>
+        <div class="tsa-footer">
+            <button type="button" class="tsa-generate" id="tsa-bb-pause">
+                <i class="fa-solid ${info.paused ? "fa-play" : "fa-pause"}"></i> ${info.paused ? "\u6062\u590D\u5BFC\u6F14" : "\u6682\u505C\u5BFC\u6F14"}
+            </button>
+        </div>`;
 }
 function buildRecommendBody(state) {
   const generateLabel = state.candidates.length > 0 ? "\u6362\u4E00\u6279" : "\u63A8\u8350\u5267\u60C5";
@@ -36343,8 +37160,8 @@ function buildPacingBody() {
   const presets = PACING_PRESETS.map(
     (p) => `<button type="button" class="tsa-pacing-preset" data-preset="${escapeHtmlText2(p.text)}">${escapeHtmlText2(p.label)}</button>`
   ).join("");
-  const armed2 = getArmedPacing();
-  const armedHtml = armed2.armed ? `<div class="tsa-pacing-armed"><i class="fa-solid fa-circle-check"></i> \u5DF2\u6B66\u88C5\uFF1A${escapeHtmlText2(armed2.summary)} \xB7 \u4E0B\u6761\u56DE\u590D\u751F\u6548</div>` : "";
+  const armed3 = getArmedPacing();
+  const armedHtml = armed3.armed ? `<div class="tsa-pacing-armed"><i class="fa-solid fa-circle-check"></i> \u5DF2\u6B66\u88C5\uFF1A${escapeHtmlText2(armed3.summary)} \xB7 \u4E0B\u6761\u56DE\u590D\u751F\u6548</div>` : "";
   return `
         <div class="tsa-scroll">
             ${diag}
@@ -36537,6 +37354,14 @@ function bindPanelNode(panel) {
     $(this).attr("data-mode", next).find(".tsa-chip-label").text(next === "append" ? "\u8FFD\u52A0" : "\u8986\u76D6");
   });
   $panel.on("click", "#tsa-generate", () => onGenerate());
+  $panel.on("click", "#tsa-bb-pause", async function() {
+    const info = getActiveBlindboxInfo();
+    if (!info) return;
+    toggleBlindboxDirectorPaused(info.planId);
+    const strip = getStrip();
+    if (strip) updateStrip(strip);
+    await refreshPanel();
+  });
   $panel.on("click", ".tsa-item", function() {
     onPickCandidate(Number($(this).data("candidate-index")));
   });
@@ -36570,28 +37395,28 @@ function bindPanelNode(panel) {
   $panel.on("click mousedown", (event) => event.stopPropagation());
 }
 function initSceneAdvanceBubble() {
-  if (listenersBound3) {
+  if (listenersBound4) {
     scheduleRefreshStrips(0);
     return;
   }
-  listenersBound3 = true;
+  listenersBound4 = true;
   $(document).on("keydown.tsceneadvance", (event) => {
     if (event.key === "Escape" && document.getElementById(PANEL_ID)) destroyPanel();
   });
   const rerenderEvents = [
-    event_types5.CHARACTER_MESSAGE_RENDERED,
-    event_types5.USER_MESSAGE_RENDERED,
-    event_types5.MESSAGE_SWIPED,
-    event_types5.MESSAGE_DELETED,
-    event_types5.MESSAGE_EDITED,
-    event_types5.MORE_MESSAGES_LOADED
+    event_types6.CHARACTER_MESSAGE_RENDERED,
+    event_types6.USER_MESSAGE_RENDERED,
+    event_types6.MESSAGE_SWIPED,
+    event_types6.MESSAGE_DELETED,
+    event_types6.MESSAGE_EDITED,
+    event_types6.MORE_MESSAGES_LOADED
   ];
   for (const eventName of rerenderEvents) {
     if (!eventName) continue;
-    eventSource5.on(eventName, () => scheduleRefreshStrips(0));
+    eventSource6.on(eventName, () => scheduleRefreshStrips(0));
   }
-  if (event_types5.CHAT_CHANGED) {
-    eventSource5.on(event_types5.CHAT_CHANGED, () => {
+  if (event_types6.CHAT_CHANGED) {
+    eventSource6.on(event_types6.CHAT_CHANGED, () => {
       destroyPanel();
       scheduleRefreshStrips(0);
     });
@@ -36599,18 +37424,19 @@ function initSceneAdvanceBubble() {
   scheduleRefreshStrips(300);
   TitaniaLogger.info("\u5267\u60C5\u63A8\u8FDB\u6A2A\u6761\u5DF2\u521D\u59CB\u5316");
 }
-var STRIP_CLASS, PANEL_ID, PLANS_KEY2, ACTIVE_PLAN_KEY2, SCENE_SOURCE_PLAN_KEY2, listenersBound3, refreshQueued2, apiPromise, expandedForMesid, generating, opening, restoring, previewItemIdx, previewOpen, panelMode, pacingResult, pacingDraft, pacingAnalyzing, PACING_PRESETS;
+var STRIP_CLASS, PANEL_ID, PLANS_KEY3, ACTIVE_PLAN_KEY3, SCENE_SOURCE_PLAN_KEY2, listenersBound4, refreshQueued2, apiPromise, expandedForMesid, generating, opening, restoring, previewItemIdx, previewOpen, panelMode, pacingResult, pacingDraft, pacingAnalyzing, PACING_PRESETS;
 var init_sceneAdvanceBubble = __esm({
   "src/ui/sceneAdvanceBubble.js"() {
     init_storage();
     init_logger();
     init_pacingInjection();
+    init_blindboxPlan();
     STRIP_CLASS = "titania-scene-advance-strip";
     PANEL_ID = "t-scene-advance-panel";
-    PLANS_KEY2 = "story_outline_plans";
-    ACTIVE_PLAN_KEY2 = "story_outline_active_plan_id";
+    PLANS_KEY3 = "story_outline_plans";
+    ACTIVE_PLAN_KEY3 = "story_outline_active_plan_id";
     SCENE_SOURCE_PLAN_KEY2 = "story_outline_scene_source_plan_id";
-    listenersBound3 = false;
+    listenersBound4 = false;
     refreshQueued2 = false;
     apiPromise = null;
     expandedForMesid = null;
@@ -38729,7 +39555,7 @@ function openSettingsWindow() {
     d.temp_instruction = {
       enabled: $("#cfg-temp-instruction").is(":checked")
     };
-    const clampInt = (value, min, max, fallback) => {
+    const clampInt2 = (value, min, max, fallback) => {
       const n = parseInt(value, 10);
       if (!Number.isFinite(n)) return fallback;
       return Math.max(min, Math.min(max, n));
@@ -41847,8 +42673,8 @@ function closeWindow() {
   $(document).off("click.tinlinebranch");
   $(window).off("resize.ttempinput");
 }
-function escapeHtmlText3(str) {
-  return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
+function escapeHtmlText3(str2) {
+  return String(str2 || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
 }
 function getContinuationRecentInstructions() {
   const data = getExtData();
@@ -47633,7 +48459,7 @@ init_continuationStore();
 init_favsStore();
 init_scriptStore();
 import { extension_settings as extension_settings2 } from "../../../extensions.js";
-import { saveSettingsDebounced as saveSettingsDebounced2, eventSource as eventSource7, event_types as event_types7 } from "../../../../script.js";
+import { saveSettingsDebounced as saveSettingsDebounced2, eventSource as eventSource8, event_types as event_types8 } from "../../../../script.js";
 
 // src/core/extensionUpdate.js
 init_defaults();
@@ -47862,14 +48688,14 @@ init_rewriteEntryButton();
 init_state();
 init_chatInjector();
 init_logger();
-import { eventSource as eventSource6, event_types as event_types6 } from "../../../../script.js";
+import { eventSource as eventSource7, event_types as event_types7 } from "../../../../script.js";
 var BTN_CLASS2 = "titania-inject-btn";
 var OVERLAY_ID3 = "t-chat-inject-overlay";
-var listenersBound4 = false;
+var listenersBound5 = false;
 var refreshQueued3 = false;
 var lastVisibleChoice = null;
-function escapeHtmlText4(str) {
-  return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+function escapeHtmlText4(str2) {
+  return String(str2 || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 function isEnabled6() {
   return getChatInjectConfig().enabled;
@@ -48035,11 +48861,11 @@ function openInjectPickerWindow(mesid) {
   });
 }
 function initChatInjectButton() {
-  if (listenersBound4) {
+  if (listenersBound5) {
     scheduleRefreshButtons2(0);
     return;
   }
-  listenersBound4 = true;
+  listenersBound5 = true;
   $(document).on("click", `.${BTN_CLASS2}`, function(event) {
     event.stopPropagation();
     const mesid = Number($(this).closest(".mes").attr("mesid"));
@@ -48050,16 +48876,16 @@ function initChatInjectButton() {
     openInjectPickerWindow(mesid);
   });
   const rerenderEvents = [
-    event_types6.CHAT_CHANGED,
-    event_types6.CHARACTER_MESSAGE_RENDERED,
-    event_types6.USER_MESSAGE_RENDERED,
-    event_types6.MESSAGE_SWIPED,
-    event_types6.MESSAGE_DELETED,
-    event_types6.MORE_MESSAGES_LOADED
+    event_types7.CHAT_CHANGED,
+    event_types7.CHARACTER_MESSAGE_RENDERED,
+    event_types7.USER_MESSAGE_RENDERED,
+    event_types7.MESSAGE_SWIPED,
+    event_types7.MESSAGE_DELETED,
+    event_types7.MORE_MESSAGES_LOADED
   ];
   for (const eventName of rerenderEvents) {
     if (!eventName) continue;
-    eventSource6.on(eventName, () => scheduleRefreshButtons2(0));
+    eventSource7.on(eventName, () => scheduleRefreshButtons2(0));
   }
   scheduleRefreshButtons2(300);
   TitaniaLogger.info("\u5C0F\u5267\u573A\u6CE8\u5165\u5165\u53E3\u5DF2\u521D\u59CB\u5316");
@@ -48068,13 +48894,14 @@ function initChatInjectButton() {
 // src/entry.js
 init_sceneAdvanceBubble();
 init_pacingInjection();
+init_directorInjection();
 init_floorNav();
 init_chatInjector();
 init_illustrationPortability();
 init_illustrationData();
 init_illustrationStore();
 init_outlineEntryButton();
-async function onGenerationEnded() {
+async function onGenerationEnded2() {
   const extData = getExtData();
   const cfg = extData.config || {};
   if (!cfg.auto_generate) return;
@@ -48150,8 +48977,8 @@ function initCoreFeatures() {
   }
   applyUIFontScale(extData.appearance?.ui_font_scale);
   applyUITheme(extData.appearance?.ui_theme);
-  eventSource7.on(event_types7.GENERATION_ENDED, onGenerationEnded);
-  eventSource7.on(event_types7.CHAT_CHANGED, () => {
+  eventSource8.on(event_types8.GENERATION_ENDED, onGenerationEnded2);
+  eventSource8.on(event_types8.CHAT_CHANGED, () => {
     void restoreContinuationForCurrentChat().catch((error) => console.error("Titania: \u7EED\u5199\u5386\u53F2\u6062\u590D\u5931\u8D25", error));
   });
   void restoreContinuationForCurrentChat().catch((error) => console.error("Titania: \u521D\u59CB\u7EED\u5199\u5386\u53F2\u6062\u590D\u5931\u8D25", error));
@@ -48160,6 +48987,7 @@ function initCoreFeatures() {
   initChatInjectButton();
   initSceneAdvanceBubble();
   initPacingInjection();
+  initDirectorInjection();
   initFloorNav();
 }
 function loadQueueConfig() {

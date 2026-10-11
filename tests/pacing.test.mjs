@@ -51,6 +51,7 @@ async function loadStoryOutline() {
         [path.join(project, 'src/utils/storage.js'), 'export const getExtData = () => ({}); export const saveExtData = () => {};'],
         [path.join(project, 'src/utils/chatTagWhitelist.js'), 'export const parseTagWhitelistInput = () => []; export const extractTextByWhitelist = t => t;'],
         [path.join(uiPath, 'shared/apiConnectionEditor.js'), 'export const createApiConnectionEditor = () => ({}); export const mapConnectionProfilesToCustomProfiles = p => p; export const mapCustomProfilesToConnectionProfiles = p => p; export const renderApiConnectionEditorHTML = () => "";'],
+        [path.join(project, 'src/core/directorInjection.js'), 'export const armDirectorDirective = () => {}; export const clearDirectorDirective = () => {}; export const getDirectorInjectConfig = () => ({ depth: 0, role: "system" });'],
     ]);
     const modules = new Map();
     const moduleFor = id => {

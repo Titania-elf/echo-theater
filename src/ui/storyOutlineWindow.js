@@ -12,6 +12,27 @@ import {
     mapCustomProfilesToConnectionProfiles,
     renderApiConnectionEditorHTML,
 } from "./shared/apiConnectionEditor.js";
+import {
+    BLINDBOX_KIND,
+    isBlindboxPlan,
+    createBlindboxDraft,
+    normalizeBlindbox,
+    sealWithNodes,
+    unseal,
+    extractBlindboxNodes,
+    getProgressStats,
+    flattenEvents,
+    toVisibleItems,
+    EVENT_STATUS,
+    DIRECTOR_INTENSITY,
+    parseDirectorDecision,
+    applyDirectorDecision,
+} from "../core/blindboxPlan.js";
+import {
+    armDirectorDirective,
+    clearDirectorDirective,
+    getDirectorInjectConfig,
+} from "../core/directorInjection.js";
 
 let outlineItems = [];
 let lastRawResponse = "";
@@ -607,7 +628,8 @@ function getCardOpeningEntries() {
     }
 }
 
-function getChatHistoryEntries() {
+function getChatHistoryEntries(opts = {}) {
+    const includeHidden = opts.includeHidden === true;
     try {
         if (typeof SillyTavern === "undefined" || !SillyTavern.getContext) return [];
         const stCtx = SillyTavern.getContext();
@@ -616,12 +638,18 @@ function getChatHistoryEntries() {
         return chat
             .map((msg, idx) => {
                 const raw = typeof msg?.mes === "string" ? msg.mes : "";
-                const text = extractTextByWhitelist(raw, whitelist);
+                const hidden = !!(msg?.is_system || msg?.is_hidden);
+                // 隐藏/系统楼层正是总结插件折叠正文、塞入摘要的产物。默认视图把它们滤掉（开场白选择、
+                // 剧情推荐等不该读隐藏内容）；唯独盲盒导演判定要带上它们（includeHidden），否则楼层一被
+                // 总结+隐藏，导演既看不到原始正文、也看不到替代它们的摘要——会对已触发的事件视而不见。
+                let text = extractTextByWhitelist(raw, whitelist);
+                // 摘要文本通常不带白名单标签，会被 extract 洗成空——隐藏楼层退回原文，别把摘要丢了。
+                if (!text && includeHidden && hidden) text = raw.trim();
                 if (!text) return null;
-                if (msg?.is_system || msg?.is_hidden) return null;
+                if (hidden && !includeHidden) return null;
                 return {
                     chatIndex: idx,
-                    role: msg?.is_user ? "用户" : "角色",
+                    role: hidden ? "背景" : (msg?.is_user ? "用户" : "角色"),
                     text
                 };
             })
@@ -925,6 +953,61 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 [任务]
 请设计故事大纲（plot 用客观梗概体概述，不写对白与表演性细节），并严格按约定 JSON 返回。`
         },
+        blindbox: {
+            system: `你是故事结构设计师（剧集 showrunner），为一部"盲盒剧本"规划分层骨架——作者本人不会看到你写的内容，全凭它在后续游玩中被悄悄引导着浮现，所以结构要稳、因果要硬。
+你以"事件与后果"为思考单位，产出两层结构：
+- 节点（node）＝主线上的必达里程碑（硬锚）。它是故事必须抵达的状态，不可绕过。anchor 字段客观概述"这个节点达成时，世界/人物处于什么状态"。
+- 关键事件（event）＝通往该节点的垫脚石（软）。每个节点下挂若干关键事件，按先后顺序把剧情从上一个节点自然推到这个节点；它们允许在游玩中被支线顺带完成、或在失去意义时跳过。
+
+[硬性要求]
+1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
+2) 返回格式必须是：
+{
+  "version": "1.0",
+  "story_summary": "一句话概括（仅供内部，用户不会看到）",
+  "nodes": [
+    {
+      "title": "节点标题",
+      "anchor": "该节点达成时的客观状态（梗概体）",
+      "events": [
+        { "content": "关键事件（梗概体，客观概述发生了什么、导致了什么）" }
+      ]
+    }
+  ]
+}
+3) 必须生成**恰好 {{nodeCount}} 个节点**；每个节点下的 events **数量尽量贴近 {{eventsPerGap}} 个**（可因剧情分量上下浮动一两个，但不要悬殊）。
+4) 节点之间、以及同一节点内的事件之间，必须因果衔接（上一步的后果驱动下一步），用"因此/但是"而非"然后"。最后一个节点即结局。
+5) anchor 与 content 一律用梗概体（客观概述）书写，这是文风硬约束：
+   - 只写"发生了什么事件、产生什么后果、人物处境或关系发生什么变化"，用陈述句；
+   - 禁止对白与台词、禁止神态/动作/语气等表演性描写与心理活动渲染；
+   - 正例：林然整理遗物时发现一张陌生合影，追问下母亲承认他有一个从未谋面的姐姐。
+   - 反例：林然颤抖着拿起照片，母亲苦笑着别过脸去。
+6) 严格遵守下方[红线/禁忌]——其中列出的内容一律不得出现在任何节点或事件里。
+7) 输出语言使用中文。`,
+            user: `[角色设定]
+{{persona}}
+
+[用户设定]
+{{userDesc}}
+
+[世界书/设定]
+{{worldInfo}}
+
+[剧情设定]
+{{scenario}}
+
+[开场白]
+{{openingText}}
+
+[故事基调与走向]
+{{storyInput}}
+
+[红线/禁忌]
+{{redlines}}
+
+[任务]
+请为这部盲盒剧本设计分层骨架：恰好 {{nodeCount}} 个节点、每节点约 {{eventsPerGap}} 个关键事件，anchor 与 content 用客观梗概体，严格按约定 JSON 返回。`
+        },
         rolling: {
             system: `你是剧情推进策划。完整故事大纲已给定（最后一条即结局）。你的职责是：自行判断故事目前推进到了大纲的哪一条，并给出 2~3 个候选剧情走向，供玩家挑选后作为下一回合的玩家输入来推进故事。
 
@@ -973,7 +1056,7 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 [完整故事大纲（路标，最后一条=结局）]
 {{outlineItemsJson}}
 
-[已经发生的剧情（仅为最近正文片段，越靠后越新，不代表故事开头）]
+[已经发生的剧情（仅为最近正文片段，越靠后越新，不代表故事开头；带【背景】前缀的是被总结/隐藏的楼层或摘要）]
 {{recentChat}}
 
 [任务]
@@ -1033,7 +1116,7 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 [当前进度]
 {{outlineProgress}}
 
-[最近正文（越靠后越新，仅为最近片段，不代表故事开头）]
+[最近正文（越靠后越新，仅为最近片段，不代表故事开头；带【背景】前缀的是被总结/隐藏的楼层或摘要，可当背景参考，别单凭它判节奏快慢）]
 {{recentChat}}
 
 [本卡的故事需求]
@@ -1041,6 +1124,41 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 
 [任务]
 判断「最近正文」此刻的叙事节奏，对照大纲与当前进度，给出一句只约束本次这一条回复的节奏指令。严格按 version 1.0 结构返回，只返回 JSON。`
+        },
+        director: {
+            system: `你是一部"盲盒剧本"的隐形导演。完整分层骨架（节点=必达硬锚、关键事件=通往节点的垫脚石）与当前进度已给定。读[最近正文]，只做判定、不写正文：
+1) 哪些关键事件在最近正文里已经达成（done），或被玩家的支线带过/已失去意义（skipped）；
+2) 下一步该把故事往哪个关键事件推（target）；
+3) 给一句只约束"下一条回复"的引导（directive）与力度（intensity）。
+
+[两级强度——这是关键]
+- 关键事件是软垫脚石：当正文自己正朝 target 自然推进时，directive 留空、intensity 填 "none"（在线上就闭嘴，绝不生硬 railroad）；只在轻微跑偏时用 "gentle" 轻推。
+- 节点是硬锚：当正文已接近当前节点的最后一个事件、或明显要越过本节点往后跑偏，用 "firm" 把主线收回来。
+- 支线自由：玩家故意跑支线是乐趣，容忍几拍别急着拽；只有迟迟回不来才升级力度。确实已 moot 的事件标 skipped，并把 target 顺势挪到更合适的位置，而不是硬逼回去。
+
+[已达成的记忆——务必遵守]
+- [盲盒骨架]里 status 已是 done/skipped 的事件就是"已经翻过去的篇章"，其 recap 字段是上几回合记下的实际经过。
+- [最近正文]可能被总结插件折叠或隐藏，只剩很短一截甚至空白。所以：凡骨架里已 done/skipped 的事件，一律当作既成事实，**绝不**因为最近正文里看不到就把它重新标回未达成、也不要再把 target 往回拨到它身上。只判断"还没翻过去"的事件有没有在这最新一拍里推进。
+- 每标一个事件 done/skipped，都要在该条 update 里写一句 recap：客观记下它在玩家的故事里实际是怎么发生/怎么被带过的（一句话，中文），供以后回顾——这句话会被永久保存，不随楼层隐藏丢失。
+
+[directive 写法] 它是给写作模型的幕后旁白提示（玩家看不到），用客观祈使句点一个方向即可，不替角色写对白、不替角色行动；可以具体指向 target 事件该如何自然浮现。
+
+[硬性要求] 只返回 JSON，不要解释：
+{
+  "updates": [ { "node": 0, "event": 1, "status": "done", "recap": "一句话：这个事件在玩家的故事里实际怎么发生的" } ],
+  "target": { "node": 1, "event": 0 },
+  "directive": "一句引导，或空字符串",
+  "intensity": "none" | "gentle" | "firm"
+}`,
+            user: `[最近正文（可能已被总结插件折叠/隐藏，只剩很短一截甚至空白；带【背景】前缀的是摘要或已隐藏楼层）]
+{{recentChat}}
+
+[盲盒骨架] 节点=硬锚，事件=垫脚石；status：pending未到 / active进行中 / done已达成 / skipped已跳过；done/skipped 的 recap 是以往回合记下的实际经过
+{{blindboxOutline}}
+
+[当前目标指针] {{blindboxProgress}}
+
+[任务] 读最近正文，更新这一拍里新达成/跳过的事件（并为每条写一句 recap）、给出下一步 target 与一句引导 directive（及 intensity）。骨架里已 done/skipped 的事件视为既成事实，不得翻回。严格按约定 JSON 返回。`
         }
     };
 }
@@ -1078,6 +1196,14 @@ function getPromptTemplates() {
         pacing: {
             system: String(raw?.pacing?.system || defaults.pacing.system),
             user: String(raw?.pacing?.user || defaults.pacing.user)
+        },
+        blindbox: {
+            system: String(raw?.blindbox?.system || defaults.blindbox.system),
+            user: String(raw?.blindbox?.user || defaults.blindbox.user)
+        },
+        director: {
+            system: String(raw?.director?.system || defaults.director.system),
+            user: String(raw?.director?.user || defaults.director.user)
         }
     };
 }
@@ -1096,6 +1222,8 @@ function renderPromptTemplate(template, vars) {
 function getPromptTemplateSection(templates, type) {
     if (type === "rolling") return templates.rolling;
     if (type === "pacing") return templates.pacing;
+    if (type === "blindbox") return templates.blindbox;
+    if (type === "director") return templates.director;
     return templates.outline;
 }
 
@@ -1106,7 +1234,11 @@ function getUnknownPromptVars(text) {
         // 剧情推进专用变量
         "recentChat",
         // 节奏把控专用变量
-        "outlineProgress"
+        "outlineProgress",
+        // 盲盒生成专用变量
+        "nodeCount", "eventsPerGap", "redlines",
+        // 盲盒导演判定专用变量
+        "blindboxOutline", "blindboxProgress"
     ]);
     const unknown = new Set();
     String(text || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
@@ -1131,7 +1263,14 @@ function buildPromptTemplateVars(ctx, userStoryInput, openingText, outlinePayloa
         // 剧情推进专用；非推荐场景为 "(无)"，模板里没引用就不影响。
         recentChat: String(extras?.recentChat || "").trim() || "(无)",
         // 节奏把控专用：当前大纲进度，无方案时为 "(无大纲)"。
-        outlineProgress: String(extras?.outlineProgress || "").trim() || "(无)"
+        outlineProgress: String(extras?.outlineProgress || "").trim() || "(无)",
+        // 盲盒生成专用：下单参数。缺省给占位串，预览时不至于渲染成空。
+        nodeCount: String(extras?.nodeCount ?? "") || "(节点数)",
+        eventsPerGap: String(extras?.eventsPerGap ?? "") || "(每段关键事件数)",
+        redlines: String(extras?.redlines || "").trim() || "（无特别禁忌）",
+        // 盲盒导演判定专用：封印骨架 JSON 与当前目标指针（实际判定时注入，预览只给占位）。
+        blindboxOutline: String(extras?.blindboxOutline || "").trim() || "（封印骨架，判定时注入）",
+        blindboxProgress: String(extras?.blindboxProgress || "").trim() || "（当前目标指针，判定时注入）"
     };
 }
 
@@ -1283,10 +1422,12 @@ export async function openPromptTemplateManager() {
                                     <option value="outline">故事大纲</option>
                                     <option value="rolling">剧情推进</option>
                                     <option value="pacing">叙事节奏</option>
+                                    <option value="blindbox">盲盒剧本生成</option>
+                                    <option value="director">盲盒导演判定</option>
                                 </select>
                                 <button id="t-prompt-reset-current" class="t-btn t-btn-xs"><i class="fa-solid fa-rotate-left"></i> 恢复当前默认</button>
                             </div>
-                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}}<br>叙事节奏额外变量：{{recentChat}} {{outlineProgress}}</div>
+                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}}<br>叙事节奏额外变量：{{recentChat}} {{outlineProgress}}<br>盲盒剧本生成额外变量：{{nodeCount}} {{eventsPerGap}} {{redlines}}<br>盲盒导演判定额外变量：{{recentChat}} {{blindboxOutline}} {{blindboxProgress}}</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1731,7 +1872,7 @@ function createDistinctPlanName(baseName = "") {
 
 // 三种"新建方案"（沿用编辑器内容 / 空白 / 从来源分支）共用的落盘骨架：
 // 构造 plan → unshift → 设为 active，首个方案兼作剧情推进来源 → 存 → 标记为编辑态。
-function insertPlan({ name, storyInput, instruction, items }) {
+function insertPlan({ name, storyInput, instruction, items, kind, blindbox }) {
     const plans = getPlans();
     const now = Date.now();
     const plan = {
@@ -1743,6 +1884,11 @@ function insertPlan({ name, storyInput, instruction, items }) {
         createdAt: now,
         updatedAt: now
     };
+    // 盲盒方案多带 kind + blindbox；普通方案不写这两个字段，形状与老方案一致（零迁移）。
+    if (kind === BLINDBOX_KIND) {
+        plan.kind = BLINDBOX_KIND;
+        plan.blindbox = blindbox || createBlindboxDraft({});
+    }
     plans.unshift(plan);
     activePlanId = plan.id;
     setActivePlanId(plan.id);
@@ -1773,6 +1919,20 @@ function createEmptyPlan(nameInput = "", defaultName = "") {
         storyInput: instruction,
         instruction,
         items: []
+    });
+}
+
+// 新建盲盒方案：故事基调即 storyInput/instruction（用户自己的输入，可见不算泄题），
+// 节点数/每段事件数/红线存进 plan.blindbox 草稿；此时还没节点、未封印，待生成。
+function createBlindboxPlan({ name, tone, redlines, nodeCount, eventsPerGap }) {
+    const draft = createBlindboxDraft({ tone, redlines, nodeCount, eventsPerGap });
+    return insertPlan({
+        name,
+        storyInput: tone || "",
+        instruction: tone || "",
+        items: [],
+        kind: BLINDBOX_KIND,
+        blindbox: draft,
     });
 }
 
@@ -1842,10 +2002,27 @@ function ensureEditingPlanContext() {
 function updatePlanWorkflowUI() {
     const hasPlans = getPlans().length > 0;
     const inEditor = currentView === "editor";
+    const bb = inEditor && isBlindboxPlan(getCurrentPlanForEditor());
     $("#t-outline-plan-name-wrap").toggle(hasPlans && inEditor);
-    $("#t-outline-save-plan").toggle(hasPlans && inEditor);
-    $("#t-outline-top").toggle(inEditor);
+    // 盲盒自动落盘、不手动编辑保存，也不用通用故事框+生成按钮。
+    $("#t-outline-save-plan").toggle(hasPlans && inEditor && !bb);
+    $("#t-outline-top").toggle(inEditor && !bb);
     $("#t-outline-hub-view").toggle(currentView === "hub");
+    // 编辑区子视图：盲盒走进度视图，普通走表格/移动卡片。
+    $("#t-outline-subview-blindbox").toggle(bb);
+    if (bb) {
+        // 盲盒：表格与移动卡片都藏起。
+        $("#t-outline-subview-outline").hide();
+        $("#t-outline-mobile-list").hide();
+    } else {
+        // 普通：把表格/移动卡片的显隐交回 CSS（含 max-width:768px 的响应式切换），
+        // 不能用 jQuery .toggle/.show 写内联 display——那会盖掉媒体查询，桌面端把移动
+        // 卡片和表格同时显示出来（左下角重复小字的根因）。清空内联 display 即可。
+        $("#t-outline-subview-outline").css("display", "");
+        $("#t-outline-mobile-list").css("display", "");
+    }
+    $("#t-editor-tab-outline").toggle(inEditor && !bb);
+    $("#t-outline-add-item").toggle(inEditor && !bb);
     refreshPlanNameDisplay();
 }
 
@@ -1873,9 +2050,27 @@ function openPlanCreationDialog() {
                 <div class="t-plan-tip" style="font-size:13px; margin-bottom:10px;">创建后会直接进入「大纲生成」编辑页。</div>
                 <label class="t-outline-label">方案名称</label>
                 <input id="t-create-plan-name" class="t-outline-input" value="${escapeHtml(defaultPlanName)}" />
-                <label class="t-outline-label" style="margin-top:10px;">初始故事指令（可选）</label>
+                <label class="t-outline-label" style="margin-top:10px;">方案类型</label>
+                <div class="t-bb-kind-toggle" style="display:flex; gap:8px; margin-top:4px;">
+                    <button type="button" class="t-btn t-btn-xs t-btn-primary t-bb-kind-btn is-active" data-kind="normal"><i class="fa-solid fa-table-list"></i> 普通大纲</button>
+                    <button type="button" class="t-btn t-btn-xs t-bb-kind-btn" data-kind="blindbox"><i class="fa-solid fa-gift"></i> 盲盒剧本</button>
+                </div>
+                <label class="t-outline-label" id="t-create-plan-story-label" style="margin-top:10px;">初始故事指令（可选）</label>
                 <textarea id="t-create-plan-story" class="t-outline-story-input" rows="4" placeholder="可先写一个方向，后续仍可随时修改">${escapeHtml(draftStoryInput)}</textarea>
-                <div class="t-plan-tip" style="margin-top:8px;">提示：如果留空，会创建一个空白方案。</div>
+                <div class="t-plan-tip" id="t-create-plan-normal-tip" style="margin-top:8px;">提示：如果留空，会创建一个空白方案。</div>
+                <div id="t-create-plan-bb-fields" style="display:none; margin-top:10px;">
+                    <div style="display:flex; gap:12px;">
+                        <label class="t-outline-label" style="flex:1;">节点数（主线里程碑）
+                            <input id="t-create-plan-bb-nodes" type="number" class="t-outline-input" value="4" min="2" max="20" step="1" />
+                        </label>
+                        <label class="t-outline-label" style="flex:1;">每段关键事件（3–10）
+                            <input id="t-create-plan-bb-events" type="number" class="t-outline-input" value="3" min="3" max="10" step="1" />
+                        </label>
+                    </div>
+                    <label class="t-outline-label" style="margin-top:10px;">红线 / 禁忌（可选）</label>
+                    <textarea id="t-create-plan-bb-redlines" class="t-outline-story-input" rows="2" placeholder="不想出现的内容，例如：不要角色死亡、不要血腥描写"></textarea>
+                    <div class="t-plan-tip" style="margin-top:8px;">盲盒剧本生成后会立即封印——你本人也看不到内容，靠游玩时被悄悄引导着浮现。</div>
+                </div>
                 <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
                     <button id="t-create-plan-cancel" class="t-btn">取消</button>
                     <button id="t-create-plan-confirm" class="t-btn t-btn-primary"><i class="fa-solid fa-check"></i> 创建并进入编辑</button>
@@ -1888,17 +2083,61 @@ function openPlanCreationDialog() {
 
     const close = () => $("#t-outline-create-plan-dialog").remove();
     $("#t-create-plan-close, #t-create-plan-cancel").on("click", close);
-    $("#t-create-plan-confirm").on("click", () => {
+
+    // 方案类型切换：盲盒模式亮出节点数/每段事件/红线，并把「故事指令」改称「故事基调与走向」。
+    const selectedKind = () => $("#t-outline-create-plan-dialog .t-bb-kind-btn.is-active").data("kind") || "normal";
+    $("#t-outline-create-plan-dialog").on("click", ".t-bb-kind-btn", function () {
+        $("#t-outline-create-plan-dialog .t-bb-kind-btn").removeClass("is-active t-btn-primary");
+        $(this).addClass("is-active t-btn-primary");
+        const isBB = selectedKind() === "blindbox";
+        $("#t-create-plan-bb-fields").toggle(isBB);
+        $("#t-create-plan-normal-tip").toggle(!isBB);
+        $("#t-create-plan-story-label").text(isBB ? "故事基调与走向" : "初始故事指令（可选）");
+        $("#t-create-plan-confirm").html(isBB
+            ? '<i class="fa-solid fa-gift"></i> 创建并封印生成'
+            : '<i class="fa-solid fa-check"></i> 创建并进入编辑');
+    });
+
+    $("#t-create-plan-confirm").on("click", async () => {
         const planName = String($("#t-create-plan-name").val() || "").trim();
         const planStory = String($("#t-create-plan-story").val() || "").trim();
-        $("#t-outline-story-input").val(planStory);
-        const created = createEmptyPlan(planName);
+
+        if (selectedKind() !== "blindbox") {
+            $("#t-outline-story-input").val(planStory);
+            const created = createEmptyPlan(planName);
+            close();
+            if (window.toastr) toastr.success(`已新建方案：${created.name}`, "故事大纲");
+            loadPlanToEditor(created);
+            renderPlanHub();
+            showOutlineView("editor");
+            updatePlanWorkflowUI();
+            return;
+        }
+
+        // 盲盒：基调必填（内容看不见，这是唯一的方向约束）。
+        if (!planStory) {
+            if (window.toastr) toastr.warning("请先填写故事基调与走向", "盲盒剧本");
+            return;
+        }
+        const created = createBlindboxPlan({
+            name: planName,
+            tone: planStory,
+            redlines: String($("#t-create-plan-bb-redlines").val() || "").trim(),
+            nodeCount: Number($("#t-create-plan-bb-nodes").val()),
+            eventsPerGap: Number($("#t-create-plan-bb-events").val()),
+        });
         close();
-        if (window.toastr) toastr.success(`已新建方案：${created.name}`, "故事大纲");
-        loadPlanToEditor(created);
         renderPlanHub();
-        showOutlineView("editor");
+        showOutlineView("hub");
         updatePlanWorkflowUI();
+        if (window.toastr) toastr.info("正在生成盲盒剧本，请稍候…（内容将直接封印）", "盲盒剧本");
+        try {
+            await runBlindboxGeneration(created);
+            if (window.toastr) toastr.success(`盲盒剧本已生成并封印：${created.name}`, "盲盒剧本");
+        } catch (e) {
+            reportGenerationError(e, "盲盒剧本", "盲盒剧本生成失败");
+        }
+        renderPlanHub();
     });
 }
 
@@ -2130,16 +2369,179 @@ function showOutlineView(view) {
 
 function loadPlanToEditor(plan) {
     if (!plan) return false;
+    setEditingPlan(plan);
+    planRenameMode = false;
+    if (isBlindboxPlan(plan)) {
+        // 盲盒方案不进可编辑表格——渲染进度视图（封印时只给骨架/进度点/回顾墙）。
+        renderBlindboxSubview(plan);
+        refreshPlanNameDisplay();
+        return true;
+    }
     outlineItems = normalizeItems(plan.items || []);
     selectedRowIndex = -1;
     const planInstruction = getPlanInstruction(plan);
     $("#t-outline-story-input").val(planInstruction);
-    setEditingPlan(plan);
-    planRenameMode = false;
     saveDraft(planInstruction, $("#t-outline-insert-mode").val() || "overwrite");
     renderRows();
     refreshPlanNameDisplay();
     return true;
+}
+
+/* ---- 盲盒进度视图（封印态只给骨架/进度点/回顾墙；解封后给全文；绝不展示未来文字） ---- */
+
+function bbConfigLine(bb) {
+    const tone = String(bb?.tone || "").trim();
+    const toneBrief = tone ? escapeHtml(getBriefText(tone, 60)) : "（未填）";
+    return `基调：${toneBrief} · 节点 ${bb?.nodeCount ?? "?"} · 每段约 ${bb?.eventsPerGap ?? "?"} 件`;
+}
+
+function bbEventDot(status, isTarget) {
+    const base = "display:inline-block;width:14px;text-align:center;";
+    if (status === EVENT_STATUS.DONE) return `<span style="${base}color:#49c17a">●</span>`;
+    if (status === EVENT_STATUS.SKIPPED) return `<span style="${base}color:#8a8f98" title="已跳过">●</span>`;
+    if (isTarget || status === EVENT_STATUS.ACTIVE) return `<span style="${base}color:#e0a63a">◉</span>`;
+    return `<span style="${base}color:#555b66">○</span>`;
+}
+
+function bbNodeDots(node, nodeIndex, bb) {
+    const curNode = bb.progress?.nodeIndex;
+    const curEv = bb.progress?.eventIndex;
+    const dots = node.events.map((ev, j) => bbEventDot(ev.status, nodeIndex === curNode && j === curEv)).join("");
+    const passed = node.events.length > 0 && node.events.every((ev) => ev.status === EVENT_STATUS.DONE || ev.status === EVENT_STATUS.SKIPPED);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+        <span style="color:${passed ? "#49c17a" : "#777"};width:18px;">${passed ? "◆" : "◇"}</span>
+        <span style="opacity:.75;min-width:52px;">节点 ${nodeIndex + 1}</span>
+        <span>${dots}</span>
+    </div>`;
+}
+
+function bbRevealWall(bb) {
+    const revealed = flattenEvents(bb).filter(
+        ({ event }) => event.status === EVENT_STATUS.DONE || event.status === EVENT_STATUS.SKIPPED
+    );
+    if (revealed.length === 0) {
+        return `<div class="t-plan-tip">还没有已揭晓的事件——开始游玩后，踩中的关键节点会显示在这里。</div>`;
+    }
+    return revealed.map(({ nodeIndex, eventIndex, event }) => {
+        const tag = event.status === EVENT_STATUS.SKIPPED ? `<span style="color:#8a8f98">（跳过）</span>` : "";
+        const recap = String(event.recap || "").trim();
+        // recap 是导演记下的「实际怎么发生的」，比封印时写死的计划内容更贴玩家的故事，有就补一行。
+        const recapLine = recap
+            ? `<div style="opacity:.55;font-size:12px;padding:2px 0 0 18px;">↳ ${escapeHtml(recap)}</div>`
+            : "";
+        return `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+            <span style="opacity:.6;">${nodeIndex + 1}.${eventIndex + 1}</span>
+            ${escapeHtml(event.content)} ${tag}
+            ${recapLine}
+        </div>`;
+    }).join("");
+}
+
+function bbNodeFull(node, nodeIndex) {
+    const statusLabel = {
+        [EVENT_STATUS.DONE]: "已达成", [EVENT_STATUS.SKIPPED]: "已跳过",
+        [EVENT_STATUS.ACTIVE]: "进行中", [EVENT_STATUS.PENDING]: "未到",
+    };
+    const events = node.events.map((ev, j) => `<div style="padding:3px 0 3px 16px;">
+        <span style="opacity:.55;">${nodeIndex + 1}.${j + 1}</span>
+        <span style="opacity:.6;font-size:11px;">[${statusLabel[ev.status] || ""}]</span>
+        ${escapeHtml(ev.content)}
+    </div>`).join("");
+    return `<div style="margin-bottom:10px;">
+        <div style="font-weight:600;">◆ 节点 ${nodeIndex + 1}：${escapeHtml(node.title || "")}</div>
+        <div style="opacity:.8;padding:2px 0 2px 16px;">${escapeHtml(node.anchor || "")}</div>
+        ${events}
+    </div>`;
+}
+
+function renderBlindboxSubview(plan) {
+    const $root = $("#t-outline-subview-blindbox");
+    if ($root.length === 0) return;
+    const bb = plan?.blindbox ? normalizeBlindbox(plan.blindbox) : null;
+    const sealed = !!bb && bb.sealed === true;
+    const unsealed = !!bb && bb.unsealed === true;
+
+    if (!sealed) {
+        $root.html(`<div class="t-bb-view">
+            <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-gift"></i> 盲盒剧本 · 待生成</div>
+            <div class="t-plan-tip" style="margin-bottom:6px;">${bbConfigLine(bb)}</div>
+            <div class="t-plan-tip">这本还没有生成（或上次生成失败）。点下面按钮用上述设定盲掷一本——内容会直接封印。</div>
+            <div style="margin-top:12px;"><button class="t-btn t-btn-primary" data-action="bb-generate"><i class="fa-solid fa-wand-magic-sparkles"></i> 生成盲盒剧本</button></div>
+        </div>`);
+        return;
+    }
+
+    const stats = getProgressStats(bb);
+    if (!unsealed) {
+        const skeleton = bb.nodes.map((n, i) => bbNodeDots(n, i, bb)).join("");
+        $root.html(`<div class="t-bb-view">
+            <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-lock"></i> 盲盒剧本 · 已封印</div>
+            <div class="t-plan-tip">已推进 ${stats.passed} / ${stats.total} 个关键事件 · 共 ${stats.nodeCount} 个节点</div>
+            <div style="margin:10px 0;">${skeleton}</div>
+            <div style="font-weight:600;margin:12px 0 4px;">回顾墙</div>
+            ${bbRevealWall(bb)}
+            <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="t-btn" data-action="bb-reroll"><i class="fa-solid fa-dice"></i> 重新生成（盲掷）</button>
+                <button class="t-btn t-btn-danger" data-action="bb-unseal"><i class="fa-solid fa-unlock"></i> 剧透逃生（解封查看）</button>
+            </div>
+        </div>`);
+        return;
+    }
+
+    const full = bb.nodes.map((n, i) => bbNodeFull(n, i)).join("");
+    $root.html(`<div class="t-bb-view">
+        <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-unlock"></i> 盲盒剧本 · 已解封</div>
+        <div class="t-plan-tip">已经看过了，惊喜不复——这就是单向门的代价。想修改内容可转成普通大纲。</div>
+        <div style="margin:10px 0;">${full}</div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="t-btn" data-action="bb-reroll"><i class="fa-solid fa-dice"></i> 重新生成（盲掷）</button>
+            <button class="t-btn t-btn-primary" data-action="bb-to-normal"><i class="fa-solid fa-table-list"></i> 转为普通大纲（可编辑）</button>
+        </div>
+    </div>`);
+}
+
+async function blindboxGenerateFromView(reroll) {
+    const plan = getPlans().find((p) => p.id === editingPlanId);
+    if (!plan || !isBlindboxPlan(plan)) return;
+    if (reroll && !window.confirm("重新生成会丢弃当前这本（你本就没看过），用相同设定重掷一本。确定？")) return;
+    if (window.toastr) toastr.info("正在生成盲盒剧本…（内容将直接封印）", "盲盒剧本");
+    try {
+        await runBlindboxGeneration(plan);
+        if (window.toastr) toastr.success("盲盒剧本已生成并封印", "盲盒剧本");
+    } catch (e) {
+        reportGenerationError(e, "盲盒剧本", "盲盒剧本生成失败");
+    }
+    renderBlindboxSubview(getPlans().find((p) => p.id === editingPlanId));
+    renderPlanHub();
+}
+
+function blindboxUnsealFromView() {
+    const plan = getPlans().find((p) => p.id === editingPlanId);
+    if (!plan || !isBlindboxPlan(plan) || !plan.blindbox?.sealed) return;
+    if (!window.confirm("剧透逃生是单向门：看过就回不去了，盲玩的惊喜将不复存在。确定解封查看？")) return;
+    plan.blindbox = unseal(plan.blindbox);
+    plan.updatedAt = Date.now();
+    saveExtData();
+    renderBlindboxSubview(plan);
+    renderPlanHub();
+    if (window.toastr) toastr.success("已解封，内容现在对你可见", "盲盒剧本");
+}
+
+function blindboxConvertToNormal() {
+    const plan = getPlans().find((p) => p.id === editingPlanId);
+    if (!plan || !isBlindboxPlan(plan)) return;
+    if (!window.confirm("转为普通大纲后，这本会变成可编辑的平铺大纲、不再是盲盒（不可逆）。确定？")) return;
+    const items = toVisibleItems(plan.blindbox);
+    delete plan.kind;
+    delete plan.blindbox;
+    plan.items = normalizeItems(items);
+    plan.updatedAt = Date.now();
+    saveExtData();
+    setEditingPlan(plan);
+    loadPlanToEditor(plan);
+    renderPlanHub();
+    updatePlanWorkflowUI();
+    if (window.toastr) toastr.success("已转为普通大纲，可直接编辑", "盲盒剧本");
 }
 
 function getPlanItemCursor(planId, totalItems) {
@@ -2267,13 +2669,21 @@ function renderPlanHub() {
         const timeText = `${updated.getMonth() + 1}/${updated.getDate()} ${String(updated.getHours()).padStart(2, "0")}:${String(updated.getMinutes()).padStart(2, "0")}`;
         const items = normalizeItems(plan.items || []);
         const isSource = sceneSourcePlanId === plan.id;
+        const bb = isBlindboxPlan(plan);
+        const bbSealed = bb && plan.blindbox?.sealed === true;
+        const nameHtml = bb
+            ? `<i class="fa-solid fa-gift" title="盲盒剧本"></i> ${escapeHtml(plan.name || "未命名方案")}`
+            : escapeHtml(plan.name || "未命名方案");
+        const metaHtml = bb
+            ? `${timeText} · 盲盒剧本 · ${bbSealed ? "🔒 已封印" : "待生成"}`
+            : `${timeText} · ${items.length} 条`;
 
         return `
             <div class="t-plan-accordion-item ${active ? "expanded" : ""}" data-plan-id="${plan.id}">
                 <div class="t-plan-accordion-head" data-action="select-plan" data-plan-id="${plan.id}">
                     <div class="t-plan-accordion-main">
-                        <div class="t-plan-name">${escapeHtml(plan.name || "未命名方案")}</div>
-                        <div class="t-plan-meta">${timeText} · ${items.length} 条</div>
+                        <div class="t-plan-name">${nameHtml}</div>
+                        <div class="t-plan-meta">${metaHtml}</div>
                         <div class="t-plan-tip">${isSource ? "当前剧情推进来源方案" : "单击选中方案"}</div>
                     </div>
                 </div>
@@ -2583,10 +2993,10 @@ function buildOutlinePayloadForPrompt() {
 }
 
 // 取最近 N 楼酒馆正文（走标签白名单过滤），越靠后越新，拼成给模型的"已发生的剧情"。
-function collectRecentChatText(floors) {
+function collectRecentChatText(floors, opts = {}) {
     const n = Number(floors) || 0;
     if (n <= 0) return "";
-    const entries = getChatHistoryEntries();
+    const entries = getChatHistoryEntries(opts);
     if (!entries.length) return "";
     return entries
         .slice(-n)
@@ -2617,7 +3027,9 @@ function buildPacingPrompt(ctx) {
     const outlinePayload = buildOutlinePayloadForPrompt();
     const templates = getPromptTemplates();
     const vars = buildPromptTemplateVars(ctx, "(空)", "", outlinePayload, {
-        recentChat: collectRecentChatText(getRollingChatFloors()),
+        // 带上被总结/隐藏的楼层：聊天变长后玩家常把前文折叠隐藏，否则节奏判断读不到最近几拍的实际文字
+        // 就等于没了判断对象（进度指针另有持久来源 buildOutlineProgressText，不受影响）。
+        recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true }),
         outlineProgress: buildOutlineProgressText()
     });
     return [
@@ -2676,7 +3088,9 @@ function buildRecommendationPrompt(ctx, userStoryInput, openingText) {
     const outlinePayload = buildOutlinePayloadForPrompt();
     const templates = getPromptTemplates();
     const vars = buildPromptTemplateVars(ctx, userStoryInput || "(空)", openingText, outlinePayload, {
-        recentChat: collectRecentChatText(getRollingChatFloors())
+        // 带上被总结/隐藏的楼层：否则前文一折叠，模型既判不出 current_item_index、也凑不出贴合剧情的候选。
+        // 判不出时解析器回退保留旧指针（见 parseRecommendationResponse 注释），不会把进度冲掉。
+        recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true })
     });
     const sys = renderPromptTemplate(templates.rolling.system, vars);
     const user = renderPromptTemplate(templates.rolling.user, vars);
@@ -2965,6 +3379,138 @@ async function runGenerationFlow(cfg) {
     }, { timeoutSec: cfg.timeoutSec });
 }
 
+/* ================================================================== *
+ * 盲盒剧本：分层骨架的生成与封印（见 docs/盲盒剧本-导演模式-方案.md）
+ * ================================================================== */
+
+function buildBlindboxPrompt(ctx, openingText, blindbox) {
+    const templates = getPromptTemplates().blindbox;
+    const vars = buildPromptTemplateVars(ctx, blindbox.tone, openingText, [], {
+        nodeCount: blindbox.nodeCount,
+        eventsPerGap: blindbox.eventsPerGap,
+        redlines: blindbox.redlines,
+    });
+    return [
+        { role: "system", content: renderPromptTemplate(templates.system, vars) },
+        { role: "user", content: renderPromptTemplate(templates.user, vars) },
+    ];
+}
+
+function parseBlindboxResponse(raw) {
+    return extractBlindboxNodes(tryParseLooseJsonObject(raw));
+}
+
+// 盲盒剧本生成：刻意**不**走 runGenerationFlow —— 那条链路会把原始响应推进 raw
+// 历史、流式预览、失败时还弹出可编辑的原文对话框，全是泄题口。这里自建一条封闭
+// 链路：非流式、不碰 lastRawResponse / raw 历史 / 预览，解析成节点后立即封印落盘。
+// 失败只抛错给上层弹一句提示，绝不把模型原文暴露给用户。
+async function runBlindboxGeneration(plan) {
+    if (!plan || !isBlindboxPlan(plan)) throw new Error("该方案不是盲盒剧本");
+    const bb = plan.blindbox || createBlindboxDraft({});
+    const params = getOutlineGenParams().outline;
+    return runOutlineGeneration(async (signal) => {
+        const ctx = await getContextData();
+        const opening = await ensureOpeningTextForGeneration();
+        const messages = buildBlindboxPrompt(ctx, opening, bb);
+        const raw = await sendOutlineRequest(messages, {
+            stream: false,
+            temperature: params.temperature,
+            maxTokens: params.maxTokens,
+            signal,
+        });
+        const nodes = parseBlindboxResponse(raw); // 失败即抛，原文不外泄
+        const sealed = sealWithNodes(bb, nodes);
+        const target = getPlans().find((p) => p.id === plan.id);
+        if (!target) throw new Error("方案已不存在");
+        target.blindbox = sealed;
+        target.updatedAt = Date.now();
+        saveExtData();
+        return true;
+    }, { timeoutSec: params.timeoutSec || 0 });
+}
+
+/* ---- 盲盒导演：每条原生回复后的后台判定（见方案第 5 节；注入在 directorInjection.js） ---- */
+
+// 给判定模型看的完整骨架（带下标与状态）。这是封印内容——只进后台提示词，绝不回灌任何用户可见视图。
+// done/skipped 的事件带上导演上回合留的 recap：这是不随楼层隐藏消失的 durable 记忆，
+// 让导演即便读不到最近正文也知道这拍已经发生过，别再往回推（见方案第 5 节 B）。
+function buildDirectorOutlineJson(bb) {
+    return bb.nodes.map((node, i) => ({
+        node: i,
+        title: node.title,
+        anchor: node.anchor,
+        is_final: i === bb.nodes.length - 1,
+        events: node.events.map((ev, j) => {
+            const e = { event: j, content: ev.content, status: ev.status };
+            if ((ev.status === EVENT_STATUS.DONE || ev.status === EVENT_STATUS.SKIPPED) && ev.recap) e.recap = ev.recap;
+            return e;
+        }),
+    }));
+}
+
+// 导演判定提示词已改为可在「设置→提示词模板」里编辑（defaults.director），这里只负责装配变量。
+function buildDirectorMessages(ctx, bb) {
+    const templates = getPromptTemplates().director;
+    const cur = bb.progress || { nodeIndex: 0, eventIndex: 0 };
+    const vars = buildPromptTemplateVars(ctx, "(空)", "", [], {
+        // 导演专用：带上被总结/隐藏的楼层（includeHidden），否则总结一跑导演就瞎了。
+        recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true }),
+        blindboxOutline: JSON.stringify(buildDirectorOutlineJson(bb), null, 2),
+        blindboxProgress: `节点 ${cur.nodeIndex} · 事件 ${cur.eventIndex}`,
+    });
+    return [
+        { role: "system", content: renderPromptTemplate(templates.system, vars) },
+        { role: "user", content: renderPromptTemplate(templates.user, vars) },
+    ];
+}
+
+/**
+ * 一个导演回合：读激活盲盒方案 + 最近正文 → 判定 → 落盘状态机 → 刷新注入。
+ * 由 directorInjection 在 GENERATION_ENDED 后台调用。**刻意不走 runOutlineGeneration**
+ * （那会动大纲窗的中断按钮 UI）、也不碰 raw 历史/流式预览——判定在幕后无声进行。
+ * 任何异常都吞掉：判定失败不该打断玩家的 RP（调用方也兜了一层）。
+ */
+export async function runDirectorTurn() {
+    const plan = getActivePlan();
+    if (!plan || !isBlindboxPlan(plan)) return;
+    const bb0 = plan.blindbox;
+    if (!bb0 || bb0.sealed !== true || bb0.unsealed === true || bb0.directorPaused === true) return;
+
+    const ctx = await getContextData();
+    const params = getOutlineGenParams().pacing; // 复用节奏采样：短、非流式
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+    let raw = "";
+    try {
+        raw = await sendOutlineRequest(buildDirectorMessages(ctx, normalizeBlindbox(bb0)), {
+            temperature: params.temperature,
+            maxTokens: params.maxTokens,
+            stream: false,
+            signal: controller.signal,
+        });
+    } finally {
+        clearTimeout(timer);
+    }
+
+    const decision = parseDirectorDecision(tryParseLooseJsonObject(raw));
+    const target = getPlans().find((p) => p.id === plan.id);
+    if (!target || !isBlindboxPlan(target)) return;
+    target.blindbox = applyDirectorDecision(target.blindbox, decision);
+    target.updatedAt = Date.now();
+    saveExtData();
+
+    // 进度视图若正开着这本，就地刷新（同模块，安全）。横条由 ST 下次渲染时自行追上。
+    if (editingPlanId === target.id) renderBlindboxSubview(target);
+
+    // 刷新/清除注入：在线上（none 或空 directive）就闭嘴，清掉上一拍的引导。
+    if (decision.directive && decision.intensity !== DIRECTOR_INTENSITY.NONE) {
+        const header = decision.intensity === DIRECTOR_INTENSITY.FIRM ? "【剧情导演·收束】\n" : "【剧情导演·轻推】\n";
+        armDirectorDirective(header + decision.directive, getDirectorInjectConfig());
+    } else {
+        clearDirectorDirective();
+    }
+}
+
 // 剧情推荐：结合大纲(终点)+最近正文，生成 2~3 个候选剧情走向供玩家挑选。
 // 进度指针不在此推进——用户点击候选卡片写入输入框时才推进。
 async function generateRecommendations() {
@@ -3147,6 +3693,10 @@ function bindEvents() {
     $overlay.on("click", "#t-hub-view-detail", function () {
         const plan = getPlans().find(p => p.id === activePlanId) || null;
         if (!plan) return;
+        if (isBlindboxPlan(plan)) {
+            if (window.toastr) toastr.info("盲盒剧本已封印，无法查看情节。", "盲盒剧本");
+            return;
+        }
         showPlanDetailDialog(plan.id);
     });
 
@@ -3155,6 +3705,12 @@ function bindEvents() {
         if (!plan) return;
         showPlanInstructionDialog(plan);
     });
+
+    // 盲盒进度视图里的操作
+    $overlay.on("click", "[data-action='bb-generate']", () => blindboxGenerateFromView(false));
+    $overlay.on("click", "[data-action='bb-reroll']", () => blindboxGenerateFromView(true));
+    $overlay.on("click", "[data-action='bb-unseal']", () => blindboxUnsealFromView());
+    $overlay.on("click", "[data-action='bb-to-normal']", () => blindboxConvertToNormal());
 
     $overlay.on("click", "[data-action='delete-plan']", function (e) {
         e.stopPropagation();
@@ -3435,6 +3991,8 @@ export function openStoryOutlineWindow() {
                             </table>
                         </div>
                     </div>
+
+                    <div id="t-outline-subview-blindbox" class="t-outline-subview" style="display:none;"></div>
 
                     <div id="t-outline-mobile-list" class="t-outline-mobile-list"></div>
                 </div>
