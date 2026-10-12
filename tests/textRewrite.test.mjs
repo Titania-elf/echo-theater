@@ -11,6 +11,7 @@ const {
     splitBySentence, splitByParagraph, splitText,
     matchKeywordRule, normalizeDeleteMode,
     applyDeletesToUnit, applyReplacements,
+    splitIntoClauses, applyClauseDeleteToUnit,
     evaluateDeleteRules, buildDeleteReplacements, evaluateRewriteRules,
     splitLegacyRules,
 } = core;
@@ -53,7 +54,42 @@ test('applyDeletesToUnit 闭引号收尾时不重复终止符', () => {
 test('normalizeDeleteMode 兼容旧 action 名', () => {
     assert.equal(normalizeDeleteMode('delete_range'), 'fragment');
     assert.equal(normalizeDeleteMode('delete'), 'sentence');
+    assert.equal(normalizeDeleteMode('clause'), 'clause');
     assert.equal(normalizeDeleteMode(''), 'sentence');
+});
+
+test('splitIntoClauses 按小句分隔符切分并保留分隔符', () => {
+    assert.deepEqual(
+        splitIntoClauses('他闻到血腥味，猛地后退，那味道扑面而来。'),
+        ['他闻到血腥味，', '猛地后退，', '那味道扑面而来。']
+    );
+    assert.deepEqual(splitIntoClauses('单句无逗号。'), ['单句无逗号。']);
+});
+
+test('applyClauseDeleteToUnit 只删含主词的小句（附加词不参与定位）', () => {
+    // 主词在首句：删掉首句，其余保留
+    assert.equal(
+        applyClauseDeleteToUnit('他闻到血腥味，猛地后退，那味道扑面而来。', '血腥味'),
+        '猛地后退，那味道扑面而来。'
+    );
+    // 主词在末句：删末句后把悬挂逗号接成句末标点
+    assert.equal(
+        applyClauseDeleteToUnit('他皱眉，血腥味扑面而来。', '血腥味'),
+        '他皱眉。'
+    );
+    // 每个小句都含主词 → 整句删空
+    assert.equal(applyClauseDeleteToUnit('他笑了，他哭了。', '他'), '');
+    // 没有小句命中主词 → 原文不动
+    assert.equal(applyClauseDeleteToUnit('风很大。', '血腥味'), '风很大。');
+});
+
+test('evaluateDeleteRules 小句模式：命中整句但只删主词小句', () => {
+    const src = '他闻到血腥味，猛地后退，那味道扑面而来。无关句。';
+    const rules = [{ anchor: '血腥味', extras: '扑面', mode: 'clause', enabled: true }];
+    const result = evaluateDeleteRules(src, 'sentence', rules);
+    assert.equal(result.hitCount, 1);
+    const applied = applyReplacements(src, buildDeleteReplacements(result.deleteUnits));
+    assert.equal(applied.text, '猛地后退，那味道扑面而来。无关句。');
 });
 
 test('applyReplacements 按出现顺序游标推进，不重复消费', () => {

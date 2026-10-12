@@ -1102,6 +1102,140 @@ function bindRewriteDecorationEvents() {
     });
 }
 
+/* ===== 原地分段替换（不重渲染整层楼）=====
+   目标：改哪句就只动哪句的文本节点，其余 DOM（其他插件注入的前端美化、酒馆显示正则产出的
+   结构、代码块等）一个都不碰。这样不依赖「猜其他插件监听了哪个事件」，天然不打断它们。 */
+
+const T_INLINE_WRAP_TAGS = new Set(["Q", "EM", "STRONG", "I", "B", "DEL", "MARK", "SPAN", "CODE", "U", "SMALL", "SUB", "SUP"]);
+
+function collectVisibleTextNodes(containerEl) {
+    const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+            const parent = node.parentElement;
+            if (!parent) return NodeFilter.FILTER_REJECT;
+            if (parent.closest("script, style, pre, code")) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+        }
+    });
+    const nodes = [];
+    let n = walker.nextNode();
+    while (n) { nodes.push(n); n = walker.nextNode(); }
+    return nodes;
+}
+
+/* 清理被我们掏空的内联包裹元素（如清空后残留的空 <q></q>），只上溯处理传入的元素，绝不全局扫描。 */
+function cleanupEmptiedWrappers(elements) {
+    (elements || []).forEach((start) => {
+        let cur = start;
+        while (cur && cur.nodeType === 1 && T_INLINE_WRAP_TAGS.has(cur.tagName)
+            && !cur.textContent.trim() && cur.children.length === 0) {
+            const parent = cur.parentNode;
+            if (!parent) break;
+            parent.removeChild(cur);
+            cur = (parent.nodeType === 1) ? parent : null;
+        }
+    });
+}
+
+/* 在容器所有可见文本里找 before（可跨多个文本节点，因为 markdown/正则会把一句话拆进
+   <q>/<em> 等内联标签），命中后把这一段换成 after（after="" 即删除）。只改命中跨到的节点，
+   其余结构原样保留。mark=true 时把 after 包进 .t-rewrite-mark。返回是否命中。 */
+function replaceAcrossTextNodes(containerEl, before, after, { mark = false, title = "" } = {}) {
+    const needle = String(before || "");
+    if (!containerEl || !needle) return false;
+
+    const nodes = collectVisibleTextNodes(containerEl);
+    let full = "";
+    const spans = [];
+    for (const node of nodes) {
+        const val = node.nodeValue || "";
+        spans.push({ node, start: full.length, end: full.length + val.length });
+        full += val;
+    }
+
+    const idx = full.indexOf(needle);
+    if (idx < 0) return false;
+    const matchStart = idx;
+    const matchEnd = idx + needle.length;
+    const covered = spans.filter(s => s.end > matchStart && s.start < matchEnd);
+    if (covered.length === 0) return false;
+
+    const first = covered[0];
+    const last = covered[covered.length - 1];
+    const prefix = (first.node.nodeValue || "").slice(0, matchStart - first.start);
+    const suffix = (last.node.nodeValue || "").slice(matchEnd - last.start);
+
+    let afterNode = null;
+    if (String(after || "") !== "") {
+        if (mark) {
+            const span = document.createElement("span");
+            span.className = "t-rewrite-mark";
+            if (title) span.title = title;
+            span.textContent = String(after);
+            afterNode = span;
+        } else {
+            afterNode = document.createTextNode(String(after));
+        }
+    }
+
+    const touchedParents = covered.map(s => s.node.parentElement).filter(Boolean);
+    const firstParent = first.node.parentNode;
+    if (!firstParent) return false;
+
+    const frag = document.createDocumentFragment();
+    if (prefix) frag.appendChild(document.createTextNode(prefix));
+    if (afterNode) frag.appendChild(afterNode);
+    if (covered.length === 1 && suffix) frag.appendChild(document.createTextNode(suffix));
+    if (!frag.childNodes.length) frag.appendChild(document.createTextNode(""));
+    firstParent.replaceChild(frag, first.node);
+
+    if (covered.length > 1) {
+        for (let i = 1; i < covered.length; i += 1) {
+            covered[i].node.nodeValue = (covered[i] === last) ? suffix : "";
+        }
+    }
+
+    cleanupEmptiedWrappers(touchedParents);
+    if (firstParent.normalize) firstParent.normalize();
+    return true;
+}
+
+/* 把一批 {before, after, mark} 原地应用到某楼的 .mes_text。先把手动选句高亮和旧改写标记还原成
+   纯文本（避免干扰定位、避免 after 被插进包裹里），再逐条替换。返回 {containerFound, applied, total}。 */
+function applyInPlaceEdits(index, edits) {
+    const list = Array.isArray(edits) ? edits : [];
+    const $message = getChatMessageElementByIndex(index);
+    const containerEl = getMessageRenderContainer($message);
+    if (!containerEl) return { containerFound: false, applied: 0, total: list.length };
+
+    containerEl.querySelectorAll(".t-rewrite-select-sentence, .t-rewrite-mark").forEach((el) => {
+        el.replaceWith(document.createTextNode(el.textContent || ""));
+    });
+    if (containerEl.normalize) containerEl.normalize();
+
+    let applied = 0;
+    list.forEach((edit) => {
+        const before = String(edit?.before || "");
+        const after = String(edit?.after || "");
+        if (!before || after === before) return;
+        const ok = replaceAcrossTextNodes(containerEl, before, after, {
+            mark: edit?.mark === true,
+            title: edit?.mark === true ? `原句：${before}` : "",
+        });
+        if (ok) applied += 1;
+    });
+    return { containerFound: true, applied, total: list.length };
+}
+
+/* 改写命中单元 → 原地替换条目（before=原句，after=模型改写，带标记）。与 applyRewriteToFullText 同源。 */
+function buildInPlaceRewriteEdits(evaluated, parsed) {
+    const map = new Map((parsed?.results || []).map(r => [String(r.segment_id), String(r.rewritten_text || "")]));
+    return (evaluated?.unitResults || [])
+        .filter(u => u.hit)
+        .map((unit) => ({ before: String(unit.text || ""), after: map.get(`s_${unit.unitIndex}`), mark: true }))
+        .filter((e) => e.before && typeof e.after === "string" && e.after && e.after !== e.before);
+}
+
 /* 删除回写：命中单元 → 顺序替换（整句 after=""）。 */
 function applyDeleteToFullText(sourceText, deleteUnits) {
     return applyReplacements(sourceText, buildDeleteReplacements(deleteUnits));
@@ -1131,11 +1265,19 @@ function writeBackMessageContent(targetMsg, rewrittenText) {
     }
 }
 
-/* 无感删除回写：只重渲染被删那一楼（updateMessageBlock），不走 reloadCurrentChat 的全量重载，
-   避免整屏闪烁与滚动跳动。配一个很短的淡出，让「命中句原地消失」读起来像消息自然落定。 */
-function rerenderMessageInPlace(index, msg) {
+/* 原地回写一楼：对齐 ST 自身的编辑落定流程（script.js 的 messageEditDone）。
+   关键不在「只渲染一楼 vs 整屏重载」，而在**有没有发编辑事件**：
+   ST 编辑消息时会先 emit MESSAGE_EDITED、重渲染 .mes_text、再 emit MESSAGE_UPDATED。其他插件的前端
+   美化、以及「随编辑运行」(runOnEdit) 的酒馆正则，全都挂在这两个事件上。改写/删除是对楼层内容的
+   程序化编辑，只调 updateMessageBlock 而不发事件，就会：重渲染把那一楼的三方美化 DOM 冲掉，却又不给
+   三方插件重新挂载的机会 —— 这正是「破坏前端美化、让正则失效」的根因，整屏重载只是把范围放大到全部楼层。
+   所以这里补发标准编辑事件，让生态把这一楼当成一次正常编辑重新处理。改写与删除两条链路共用。
+   配一个很短的淡出，让「命中句原地变化」读起来像消息自然落定。 */
+async function rerenderMessageInPlace(index, msg) {
     try {
+        await eventSource.emit(event_types.MESSAGE_EDITED, index);
         updateMessageBlock(index, msg);
+        await eventSource.emit(event_types.MESSAGE_UPDATED, index);
     } catch (e) {
         return false;
     }
@@ -1433,10 +1575,18 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
         latest.msg.extra.titania_rewrite_done = true;
         latest.msg.extra.titania_rewrite_marks = rewriteMarks;
         await saveChatConditional();
-        await reloadCurrentChat();
-        scheduleApplyAllRewriteMarks(180);
+        // 只改命中那几句的 DOM 文本节点，不重渲染整层楼——其余结构（其他插件的前端美化、酒馆
+        // 显示正则产出的 HTML）全部原样保留。只有拿不到楼层 DOM 时才退回按编辑流程重渲染这一楼。
+        const editRes = applyInPlaceEdits(latest.index, buildInPlaceRewriteEdits(evaluated, parsed));
+        if (!editRes.containerFound) {
+            const rerendered = await rerenderMessageInPlace(latest.index, latest.msg);
+            if (!rerendered) await reloadCurrentChat();
+            scheduleApplyAllRewriteMarks(180);
+        }
 
-        setStatus(`执行完成：改写 ${rewriteCount} 条，已回写第 ${latest.index + 1} 楼`, "ok");
+        const appliedNote = editRes.containerFound && editRes.applied < editRes.total
+            ? `（原地回写 ${editRes.applied}/${editRes.total} 句，其余已存入楼层，重载后生效）` : "";
+        setStatus(`执行完成：改写 ${rewriteCount} 条，已回写第 ${latest.index + 1} 楼${appliedNote}`, "ok");
         success = true;
     } catch (e) {
         renderDiffRows([]);
@@ -1544,13 +1694,18 @@ async function runDelete(options = {}) {
     if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
     latest.msg.extra.titania_delete_done = true;
     await saveChatConditional();
-    // 无感：只原地重渲染这一楼，不整屏重载
-    const rerendered = rerenderMessageInPlace(latest.index, latest.msg);
-    if (!rerendered) await reloadCurrentChat(); // 兜底：拿不到 DOM 时退回重载
-    scheduleApplyAllRewriteMarks(180);
+    // 只删命中那几句的 DOM 文本节点，不重渲染整层楼；拿不到楼层 DOM 时才退回按编辑流程重渲染。
+    const deleteEdits = buildDeleteReplacements(result.deleteUnits).map(e => ({ before: e.before, after: e.after, mark: false }));
+    const editRes = applyInPlaceEdits(latest.index, deleteEdits);
+    if (!editRes.containerFound) {
+        const rerendered = await rerenderMessageInPlace(latest.index, latest.msg);
+        if (!rerendered) await reloadCurrentChat(); // 兜底：拿不到 DOM 时退回重载
+    }
     refreshInlineRewriteEntry();
 
-    setStatus(`执行完成：删除 ${result.hitCount} 处，已回写第 ${latest.index + 1} 楼`, "ok");
+    const delNote = editRes.containerFound && editRes.applied < editRes.total
+        ? `（原地删除 ${editRes.applied}/${editRes.total} 处，其余已存入楼层，重载后生效）` : "";
+    setStatus(`执行完成：删除 ${result.hitCount} 处，已回写第 ${latest.index + 1} 楼${delNote}`, "ok");
     if (options.source !== "auto" && window.toastr) toastr.success(`已按删除规则处理 ${result.hitCount} 处`, "文本删除");
     return true;
 }
@@ -1997,10 +2152,11 @@ function renderDeleteResult(result, sourceText = "") {
                 <div class="t-rewrite-match-text">${escapeHtml(item.text)}</div>
             </div>`;
         }
-        const modeLabel = item.deleteMode === "fragment" ? "删除片段" : "删除整句";
+        const modeLabel = item.deleteMode === "fragment" ? "删除片段"
+            : item.deleteMode === "clause" ? "删除小句" : "删除整句";
         const kw = item.matchedRule ? `${item.matchedRule.anchor} + ${item.matchedRule.extras}` : "";
-        const afterHtml = item.deleteMode === "fragment"
-            ? `<div class="t-rewrite-match-text t-delete-after">删后：${escapeHtml(item.after || "")}</div>`
+        const afterHtml = (item.deleteMode === "fragment" || item.deleteMode === "clause")
+            ? `<div class="t-rewrite-match-text t-delete-after">删后：${escapeHtml(item.after || "（已删空）")}</div>`
             : "";
         return `
             <div class="t-rewrite-match-row ${cls} t-delete-hit">
@@ -2375,7 +2531,8 @@ function buildDeleteRuleRowHtml(rule = {}) {
                     <span class="t-rewrite-kw-and">与</span>
                     <input class="text_pole t-delete-rule-extras" type="text" value="${escapeHtml(rule?.extras || "")}" placeholder="附加词（逗号分隔，任一命中）">
                     <select class="text_pole t-delete-rule-mode" title="删除粒度">
-                        <option value="sentence" ${!isFragment ? "selected" : ""}>删除整句</option>
+                        <option value="sentence" ${mode === "sentence" ? "selected" : ""}>删除整句</option>
+                        <option value="clause" ${mode === "clause" ? "selected" : ""}>删除小句</option>
                         <option value="fragment" ${isFragment ? "selected" : ""}>删除片段</option>
                     </select>
                     <input class="text_pole t-delete-rule-fragment" type="text" value="${escapeHtml(rule?.fragment || "")}" placeholder="删除起点片段，删到句尾（如：那笑声像）" style="${isFragment ? "" : "display:none;"}">

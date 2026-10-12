@@ -80,16 +80,64 @@ export function normalizeDeleteMode(mode) {
     const value = String(mode || "").trim().toLowerCase();
     // 兼容旧 action 名：delete→sentence，delete_range→fragment
     if (value === "fragment" || value === "delete_range") return "fragment";
+    if (value === "clause") return "clause";
     return "sentence";
+}
+
+/* 把一个句子按小句分隔符（，、；,;）切成小句，每个小句**保留它结尾的那个分隔符**，
+   句末标点（。！？…）留在最后一个小句里。逐字符遍历，天然安全处理中英文。 */
+export function splitIntoClauses(sentence) {
+    const s = String(sentence || "");
+    const parts = [];
+    let buf = "";
+    for (const ch of s) {
+        buf += ch;
+        if (/[，、；,;]/.test(ch)) {
+            parts.push(buf);
+            buf = "";
+        }
+    }
+    if (buf) parts.push(buf);
+    return parts;
+}
+
+/* 小句删除：只删掉**含主词（anchor）的那些小句**，保留同句其余小句，再把标点接干净。
+   附加词只负责「要不要触发」，不参与删除定位（见讨论结论）。
+   例：「他闻到血腥味，猛地后退，那味道扑面而来。」+ anchor「血腥味」
+       →「猛地后退，那味道扑面而来。」
+   若每个小句都含主词 → 返回空串（等价整句删除）。 */
+export function applyClauseDeleteToUnit(unitText, anchor) {
+    const text = String(unitText || "");
+    const anchorList = parseCommaList(String(anchor || ""));
+    if (anchorList.length === 0) return text; // 没有主词无从定位，原文不动
+
+    const clauses = splitIntoClauses(text);
+    const kept = clauses.filter((clause) => {
+        const norm = normalizeToken(clause);
+        return !anchorList.some(kw => norm.includes(kw));
+    });
+    if (kept.length === clauses.length) return text; // 没有任何小句命中主词，原文不动
+    let out = kept.join("");
+    if (!out.trim()) return "";
+
+    // 清尾：去掉结尾悬挂的小句分隔符；若原句有句末标点而现在收尾不是句末标点/闭合符，补回去
+    out = out.replace(/[，、；,;]\s*$/, "");
+    const endMatch = /[。！？!?…]+\s*$/.exec(text);
+    const endPunct = endMatch ? endMatch[0].trim() : "";
+    if (endPunct && !/[。！？!?…”」』）)]\s*$/.test(out)) {
+        out += endPunct;
+    }
+    return out;
 }
 
 /* 片段删除：从命中的字面片段删到单元末尾，保留句末标点，清理悬挂连接符。
    例：「他笑了，那笑声像碎玻璃一样脆。」+ fragment「那笑声像」→「他笑了。」
    片段不在单元内 → 原文不动（规则失配不误删）。 */
-export function applyDeletesToUnit(unitText, mode, fragment) {
+export function applyDeletesToUnit(unitText, mode, fragment, anchor) {
     const text = String(unitText || "");
     const normMode = normalizeDeleteMode(mode);
     if (normMode === "sentence") return "";
+    if (normMode === "clause") return applyClauseDeleteToUnit(text, anchor);
     const frag = String(fragment || "").trim();
     if (!frag) return text;
     const idx = text.indexOf(frag);
@@ -146,26 +194,28 @@ export function evaluateDeleteRules(text, splitMode, rules) {
 
     const unitResults = units.map((unit, idx) => {
         let matchedRule = null;
+        let bestRank = 0;
+        // 多条规则命中同一单元时的优先级：整句(3) > 小句(2) > 片段(1)，删得越彻底越优先
+        const rankOf = (m) => ({ sentence: 3, clause: 2, fragment: 1 }[normalizeDeleteMode(m)] || 1);
         for (const rule of activeRules) {
             if (matchKeywordRule(unit, rule)) {
-                const rMode = normalizeDeleteMode(rule.mode);
-                // 整句删除优先于片段删除（删得更彻底）
-                if (!matchedRule || (rMode === "sentence" && normalizeDeleteMode(matchedRule.mode) === "fragment")) {
-                    matchedRule = rule;
-                }
-                if (rMode === "sentence") break;
+                const r = rankOf(rule.mode);
+                if (r > bestRank) { matchedRule = rule; bestRank = r; }
+                if (bestRank === 3) break;
             }
         }
         const hit = !!matchedRule;
         const deleteMode = hit ? normalizeDeleteMode(matchedRule.mode) : null;
         const fragment = hit && deleteMode === "fragment" ? String(matchedRule.fragment || "") : "";
+        const anchor = hit && deleteMode === "clause" ? String(matchedRule.anchor || "") : "";
         return {
             unitIndex: idx + 1,
             text: unit,
             hit,
             deleteMode,
             fragment,
-            after: hit ? applyDeletesToUnit(unit, deleteMode, fragment) : unit,
+            anchor,
+            after: hit ? applyDeletesToUnit(unit, deleteMode, fragment, anchor) : unit,
             matchedRule: hit ? { anchor: matchedRule.anchor, extras: matchedRule.extras } : null,
         };
     });
@@ -184,7 +234,7 @@ export function evaluateDeleteRules(text, splitMode, rules) {
 export function buildDeleteReplacements(deleteUnits = []) {
     return (Array.isArray(deleteUnits) ? deleteUnits : []).map(u => ({
         before: String(u?.text || ""),
-        after: applyDeletesToUnit(u?.text, u?.deleteMode, u?.fragment),
+        after: applyDeletesToUnit(u?.text, u?.deleteMode, u?.fragment, u?.anchor),
     }));
 }
 
