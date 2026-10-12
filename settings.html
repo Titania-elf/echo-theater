@@ -82,6 +82,30 @@
                 </label>
 
                 <label class="checkbox_label titania-switch-row">
+                    <input id="cfg-blindbox-sound-enabled" type="checkbox" />
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">盲盒解锁提示音</span>
+                        <small>盲盒剧本解开一个关键事件时响一声轻音，通关一个阶段时响一段更长的琶音。音量可在「剧情推进」面板底部就地循环调整。</small>
+                    </span>
+                </label>
+
+                <div class="checkbox_label titania-switch-row titania-blindbox-sound-extra" id="titania-blindbox-sound-extra">
+                    <span class="titania-switch-text">
+                        <span class="titania-switch-main">音量与试听</span>
+                        <small>事件解锁的提示音可单独关掉，只保留阶段通关那一声。</small>
+                        <div class="titania-sound-controls">
+                            <input id="cfg-blindbox-sound-volume" type="range" min="0" max="100" step="5" />
+                            <span id="cfg-blindbox-sound-volume-label" class="titania-sound-volume">30</span>
+                            <button id="cfg-blindbox-sound-preview" class="titania-mini-btn" type="button"><i class="fa-solid fa-volume-high"></i> 试听</button>
+                        </div>
+                        <label class="titania-sound-event-toggle">
+                            <input id="cfg-blindbox-sound-event" type="checkbox" />
+                            <span>事件解锁也响</span>
+                        </label>
+                    </span>
+                </div>
+
+                <label class="checkbox_label titania-switch-row">
                     <input id="cfg-rewrite-entry-enabled" type="checkbox" />
                     <span class="titania-switch-text">
                         <span class="titania-switch-main">启用文本改写入口</span>

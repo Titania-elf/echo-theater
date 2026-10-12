@@ -411,3 +411,47 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* ---- 盲盒解锁提示音：音量 + 试听 + 事件档开关（settings.html 的那一行） ---- */
+.titania-blindbox-sound-extra {
+    /* 与上面的开关行同构，但内容是一组控件，所以对齐方式不同 */
+    align-items: center;
+    margin-top: -2px;
+    margin-bottom: 12px;
+}
+
+/* 主开关关掉时整块淡出但保留占位，避免开关行在抽屉里跳动 */
+.titania-blindbox-sound-extra.is-muted {
+    opacity: 0.55;
+}
+
+.titania-sound-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.titania-sound-controls input[type="range"] {
+    flex: 1;
+    min-width: 80px;
+    accent-color: var(--t-color-accent);
+}
+
+.titania-sound-volume {
+    min-width: 26px;
+    text-align: right;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--t-glass-text-faint);
+}
+
+.titania-sound-event-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--t-glass-text-faint);
+}

@@ -21,17 +21,23 @@ import {
     unseal,
     extractBlindboxNodes,
     getProgressStats,
-    flattenEvents,
     toVisibleItems,
     EVENT_STATUS,
     DIRECTOR_INTENSITY,
+    STRICTNESS,
+    normalizeStrictness,
     parseDirectorDecision,
     applyDirectorDecision,
+    rollbackJournalFrom,
+    buildDirectorSkeleton,
+    describeDirectorProgress,
+    describeStrictness,
 } from "../core/blindboxPlan.js";
 import {
     armDirectorDirective,
     clearDirectorDirective,
     getDirectorInjectConfig,
+    getDirectorTrigger,
 } from "../core/directorInjection.js";
 
 let outlineItems = [];
@@ -65,7 +71,10 @@ function getGenParamDefaults() {
         // scenes 存储键沿用旧名（细纲时代遗留），现服务剧情推进推荐；2~3 条候选用不到 60k。
         scenes: { temperature: 0.8, maxTokens: 8000, timeoutSec: 0 },
         // pacing：节奏判断只回一小段 JSON，低温要稳、上限给小。
-        pacing: { temperature: 0.3, maxTokens: 1024, timeoutSec: 0 }
+        pacing: { temperature: 0.3, maxTokens: 1024, timeoutSec: 0 },
+        // director：盲盒判定要的是「稳」不是「活」——温度压到底。v2 的回报带 evidence/criteria，
+        // 比 v1 长不少，上限给够：截断 → JSON 解析失败 → 这一拍白判。
+        director: { temperature: 0.15, maxTokens: 2048, timeoutSec: 0 }
     };
 }
 
@@ -89,7 +98,8 @@ function getOutlineGenParams() {
     return {
         outline: normalizeGenParamGroup(raw.outline, defaults.outline),
         scenes: normalizeGenParamGroup(raw.scenes, defaults.scenes),
-        pacing: normalizeGenParamGroup(raw.pacing, defaults.pacing)
+        pacing: normalizeGenParamGroup(raw.pacing, defaults.pacing),
+        director: normalizeGenParamGroup(raw.director, defaults.director)
     };
 }
 
@@ -99,7 +109,8 @@ function saveOutlineGenParams(params) {
     data[GEN_PARAMS_KEY] = {
         outline: normalizeGenParamGroup(params?.outline, defaults.outline),
         scenes: normalizeGenParamGroup(params?.scenes, defaults.scenes),
-        pacing: normalizeGenParamGroup(params?.pacing, defaults.pacing)
+        pacing: normalizeGenParamGroup(params?.pacing, defaults.pacing),
+        director: normalizeGenParamGroup(params?.director, defaults.director)
     };
     saveExtData();
 }
@@ -120,6 +131,35 @@ function saveRollingChatFloors(n) {
     const data = getExtData();
     const raw = Number(n);
     data[ROLLING_CHAT_FLOORS_KEY] = Number.isFinite(raw) && raw >= 0 ? Math.min(ROLLING_CHAT_FLOORS_MAX, Math.floor(raw)) : ROLLING_CHAT_FLOORS_DEFAULT;
+    saveExtData();
+}
+
+// 盲盒导演判定独立的读取层数。和剧情推进共用 3 层太薄：导演要判的是「这个事件兑现完了没有」，
+// 看不到前几拍的铺垫就只能凭最后一句话下结论——判定松的来源之一。0=跟随剧情推进的设置。
+const DIRECTOR_CHAT_FLOORS_KEY = "story_outline_director_chat_floors";
+const DIRECTOR_CHAT_FLOORS_DEFAULT = 6;
+
+function getDirectorChatFloors() {
+    const data = getExtData();
+    const raw = Number(data?.[DIRECTOR_CHAT_FLOORS_KEY]);
+    if (!Number.isFinite(raw) || raw < 0) return DIRECTOR_CHAT_FLOORS_DEFAULT;
+    const n = Math.min(ROLLING_CHAT_FLOORS_MAX, Math.floor(raw));
+    return n === 0 ? getRollingChatFloors() : n;
+}
+
+/** 设置面板要显示的原始值（0 要如实显示成 0＝跟随剧情推进，别被上面的回退改写）。 */
+function getDirectorChatFloorsRaw() {
+    const raw = Number(getExtData()?.[DIRECTOR_CHAT_FLOORS_KEY]);
+    if (!Number.isFinite(raw) || raw < 0) return DIRECTOR_CHAT_FLOORS_DEFAULT;
+    return Math.min(ROLLING_CHAT_FLOORS_MAX, Math.floor(raw));
+}
+
+function saveDirectorChatFloors(n) {
+    const data = getExtData();
+    const raw = Number(n);
+    data[DIRECTOR_CHAT_FLOORS_KEY] = Number.isFinite(raw) && raw >= 0
+        ? Math.min(ROLLING_CHAT_FLOORS_MAX, Math.floor(raw))
+        : DIRECTOR_CHAT_FLOORS_DEFAULT;
     saveExtData();
 }
 
@@ -954,7 +994,7 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 请设计故事大纲（plot 用客观梗概体概述，不写对白与表演性细节），并严格按约定 JSON 返回。`
         },
         blindbox: {
-            system: `你是故事结构设计师（剧集 showrunner），为一部"盲盒剧本"规划分层骨架——作者本人不会看到你写的内容，全凭它在后续游玩中被悄悄引导着浮现，所以结构要稳、因果要硬。
+            system: `你是故事结构设计师（剧集 showrunner），为一部"盲盒剧本"规划分层骨架——作者本人不会看到你写的内容，全凭它在后续游玩中被悄悄引导着浮现，所以结构要稳、因果要硬、时间要拉得开。
 你以"事件与后果"为思考单位，产出两层结构：
 - 节点（node）＝主线上的必达里程碑（硬锚）。它是故事必须抵达的状态，不可绕过。anchor 字段客观概述"这个节点达成时，世界/人物处于什么状态"。
 - 关键事件（event）＝通往该节点的垫脚石（软）。每个节点下挂若干关键事件，按先后顺序把剧情从上一个节点自然推到这个节点；它们允许在游玩中被支线顺带完成、或在失去意义时跳过。
@@ -963,27 +1003,49 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
 2) 返回格式必须是：
 {
-  "version": "1.0",
+  "version": "2.0",
   "story_summary": "一句话概括（仅供内部，用户不会看到）",
+  "total_span": "整个故事横跨的总时长（与[故事总时长]一致）",
   "nodes": [
     {
       "title": "节点标题",
+      "span": "本节点覆盖的时间（如：约两周 / 约三个月 / 次年春天起的半年）",
       "anchor": "该节点达成时的客观状态（梗概体）",
+      "anchor_when": ["硬锚的成立条件（可观测、可指认）"],
       "events": [
-        { "content": "关键事件（梗概体，客观概述发生了什么、导致了什么）" }
+        {
+          "content": "关键事件（梗概体，客观概述发生了什么、导致了什么）",
+          "span": "本事件距上一拍的时间跨度（如：开场当晚 / 三天后 / 两周后）",
+          "done_when": ["成立条件1（可观测）", "成立条件2"],
+          "beats": 3
+        }
       ]
     }
   ]
 }
-3) 必须生成**恰好 {{nodeCount}} 个节点**；每个节点下的 events **数量尽量贴近 {{eventsPerGap}} 个**（可因剧情分量上下浮动一两个，但不要悬殊）。
-4) 节点之间、以及同一节点内的事件之间，必须因果衔接（上一步的后果驱动下一步），用"因此/但是"而非"然后"。最后一个节点即结局。
-5) anchor 与 content 一律用梗概体（客观概述）书写，这是文风硬约束：
+3) 必须生成**恰好 {{nodeCount}} 个节点**；每个节点下的 events **数量尽量贴近 {{eventsPerGap}} 个**（可因剧情分量上下浮动一两个，但不要悬殊）。最后一个节点即结局。
+4) 因果衔接：节点之间、以及同一节点内的事件之间，上一步的后果要驱动下一步，用"因此/但是"而非"然后"。
+   ⚠ 因果连得紧**不等于**时间挨得近：后果可以在数日、数周、数月之后才显形。不要为了因果紧凑把整条线压在连续几天里。
+5) 时间跨度（与第 4 条同等重要，违反即算不合格）：
+   - 先认下[故事总时长]，再把这段总时长分配给各节点与各事件，分别填进 node.span 与 event.span；
+   - span 写成时间跨度标记而非瞬时时刻，格式参考：开场当晚 / 三天后 / 一周后 / 半年后 / 次年春天 / 三年后；
+   - 禁止默认逐日推进，禁止把整个故事压缩在连续数日之内（除非[故事总时长]明确就是短时间线，如单日密室）；
+   - 同一节点内的相邻事件之间也要有可感知的间隔，不要连成"当晚→次日→第三天"的连续场景串；
+   - **「本节点最后一个事件 → 下一个节点」是全段最大的一跳**：跨节点必须发生明显的时间推移；
+   - 跳过的那段时间里发生的关键变化，直接写进 content / anchor，不要留空白。
+6) done_when 是这个事件"算不算已经发生"的判定标准——后台导演会拿它对着正文逐条核对，所以：
+   - 每条都必须可观测、可指认：谁知道了什么 / 谁与谁达成什么 / 某物到了谁手上 / 某关系或处境发生什么不可逆变化 / 某事实被公开；
+   - 禁止不可验证的心理与程度描述（"关系更亲密了""气氛变紧张"都不算条件）；
+   - 每个事件 1~3 条，宁少勿滥；条条独立，别把同一件事拆成两条。
+7) beats 是这个事件至少应当占据的"回复拍数"（整数 1~8）：时间跨度大、信息量大、情绪转折重的给 3~5，过场性质的给 1~2。它决定导演多久之后才允许把这个事件判为已达成。
+8) anchor 与 content 一律用梗概体（客观概述）书写，这是文风硬约束：
    - 只写"发生了什么事件、产生什么后果、人物处境或关系发生什么变化"，用陈述句；
    - 禁止对白与台词、禁止神态/动作/语气等表演性描写与心理活动渲染；
    - 正例：林然整理遗物时发现一张陌生合影，追问下母亲承认他有一个从未谋面的姐姐。
    - 反例：林然颤抖着拿起照片，母亲苦笑着别过脸去。
-6) 严格遵守下方[红线/禁忌]——其中列出的内容一律不得出现在任何节点或事件里。
-7) 输出语言使用中文。`,
+9) 严格遵守下方[红线/禁忌]——其中列出的内容一律不得出现在任何节点或事件里。
+10) 返回前自检：节点数是否恰好 {{nodeCount}}；所有 span 是否沿时间轴单调前进、累加是否≈[故事总时长]；是否出现"整本挤在几天内"；每个事件是否都有 done_when 与 beats。不满足就重排后再返回。
+11) 输出语言使用中文。`,
             user: `[角色设定]
 {{persona}}
 
@@ -1002,11 +1064,14 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 [故事基调与走向]
 {{storyInput}}
 
+[故事总时长]
+{{timescale}}
+
 [红线/禁忌]
 {{redlines}}
 
 [任务]
-请为这部盲盒剧本设计分层骨架：恰好 {{nodeCount}} 个节点、每节点约 {{eventsPerGap}} 个关键事件，anchor 与 content 用客观梗概体，严格按约定 JSON 返回。`
+请为这部盲盒剧本设计分层骨架：恰好 {{nodeCount}} 个节点、每节点约 {{eventsPerGap}} 个关键事件；把[故事总时长]分配进各级 span（跨节点要有明显时间推移），每个事件都要给 done_when 与 beats，anchor 与 content 用客观梗概体。严格按约定 JSON 返回。`
         },
         rolling: {
             system: `你是剧情推进策划。完整故事大纲已给定（最后一条即结局）。你的职责是：自行判断故事目前推进到了大纲的哪一条，并给出 2~3 个候选剧情走向，供玩家挑选后作为下一回合的玩家输入来推进故事。
@@ -1127,38 +1192,66 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
         },
         director: {
             system: `你是一部"盲盒剧本"的隐形导演。完整分层骨架（节点=必达硬锚、关键事件=通往节点的垫脚石）与当前进度已给定。读[最近正文]，只做判定、不写正文：
-1) 哪些关键事件在最近正文里已经达成（done），或被玩家的支线带过/已失去意义（skipped）；
-2) 下一步该把故事往哪个关键事件推（target）；
-3) 给一句只约束"下一条回复"的引导（directive）与力度（intensity）。
+1) 「还没翻过去」的关键事件在这一拍里的进展（done / skipped / progress 三档，见下）；
+2) 一句只约束"下一条回复"的引导（directive）与力度（intensity）；
+3) 若本节点的关键事件都已翻过，确认硬锚是否真的兑现（anchor_met）。
 
-[两级强度——这是关键]
-- 关键事件是软垫脚石：当正文自己正朝 target 自然推进时，directive 留空、intensity 填 "none"（在线上就闭嘴，绝不生硬 railroad）；只在轻微跑偏时用 "gentle" 轻推。
-- 节点是硬锚：当正文已接近当前节点的最后一个事件、或明显要越过本节点往后跑偏，用 "firm" 把主线收回来。
-- 支线自由：玩家故意跑支线是乐趣，容忍几拍别急着拽；只有迟迟回不来才升级力度。确实已 moot 的事件标 skipped，并把 target 顺势挪到更合适的位置，而不是硬逼回去。
+[三档回报——最重要的一节]
+- done：这个事件已经**兑现完毕**。必须同时给：该事件 done_when 里被真实兑现的条目下标（criteria_met）＋ evidence（正文里的指认，照抄或紧贴原文的一句）＋ evidence_floor（该正文所在的 #楼层号）。
+- progress：这一拍在朝它推进，但还没兑现完。**这是默认档**——拿不准就报 progress，别拿 done 凑。progress 不消耗事件，只留一条笔记给下回合的你自己看。
+- skipped：它已不可能发生或已失去意义。必须给 reason（moot=前提不成立 / superseded=被支线取代 / refused=玩家明确拒绝）＋ evidence。
 
-[已达成的记忆——务必遵守]
-- [盲盒骨架]里 status 已是 done/skipped 的事件就是"已经翻过去的篇章"，其 recap 字段是上几回合记下的实际经过。
-- [最近正文]可能被总结插件折叠或隐藏，只剩很短一截甚至空白。所以：凡骨架里已 done/skipped 的事件，一律当作既成事实，**绝不**因为最近正文里看不到就把它重新标回未达成、也不要再把 target 往回拨到它身上。只判断"还没翻过去"的事件有没有在这最新一拍里推进。
-- 每标一个事件 done/skipped，都要在该条 update 里写一句 recap：客观记下它在玩家的故事里实际是怎么发生/怎么被带过的（一句话，中文），供以后回顾——这句话会被永久保存，不随楼层隐藏丢失。
+[判定纪律——务必遵守]
+1) **你的引导被照做 ≠ 事件达成。** 上一拍你让写作模型"往 X 推"，它写了一笔朝 X 的动作，那只是 progress；只有 done_when 真的被兑现才是 done。
+2) **只有新正文算新证据。** [当前目标指针]写明了上次判定到第几楼，evidence_floor 必须大于它；拿更早楼层当依据的回报会被系统丢弃。
+3) **翻过去的不许翻回。** 骨架里 status 已是 done/skipped 的事件是既成事实（recap 是当时记下的实际经过）。[最近正文]可能被总结插件折叠/隐藏、只剩很短一截甚至空白，这也不构成翻回的理由——你只判断还没翻过去的事件。
+4) **一拍一步。** 同一回合最多只有一个事件会被接受为翻篇（done 与 skipped 共用这一个配额，多报的按下标取最早一个，其余自动降级为 progress）。别想一口气推完一个节点。
+4b) **只许动当前节点以内的事件**（含当前目标本身）。越过当前节点去判更后面的事件达成/跳过，一律被降级——因果上后面的节点以本节点为前提，越级判定基本都是猜。确实已 moot 的，等指针走到那儿再标。
+5) **拍数预算。** beats 是该事件至少应占的回复数，turns_spent 是它实际已占的拍数；turns_spent < beats 时判 done 需要 confidence=high（严格档一律不接受）。该慢的地方别抢。
+6) **支线自由。** 玩家故意跑支线是乐趣，容忍几拍别急着拽；只有迟迟回不来才升级力度。
+7) target 只是你的建议：标准/严格档下系统会自行把指针推导成"第一个还没翻过去的事件"。想跨过中间事件，唯一的正道是把它显式报成 skipped（且要过上面的闸门）。
 
-[directive 写法] 它是给写作模型的幕后旁白提示（玩家看不到），用客观祈使句点一个方向即可，不替角色写对白、不替角色行动；可以具体指向 target 事件该如何自然浮现。
+[两级强度]
+- 关键事件是软垫脚石：当正文自己正朝目标自然推进时，directive 留空、intensity 填 "none"（在线上就闭嘴，绝不生硬 railroad）；只在轻微跑偏时用 "gentle" 轻推。
+- 节点是硬锚：当正文已接近本节点最后一个事件、或明显要越过本节点往后跑偏，用 "firm" 把主线收回来。
+- 指针标出 ⚠ 硬锚待兑现时：本节点事件都翻过了但 anchor 还没落地，这一拍用 "firm" 把 anchor 做实，确认兑现后回报 anchor_met=true。
+
+[recap] 每标一个 done/skipped，都要写一句 recap：客观记下它在玩家的故事里实际怎么发生/怎么被带过（一句话，中文）。它会被永久保存、不随楼层隐藏丢失，是你以后唯一还记得这段的凭据。
+
+[directive 写法]
+1) 给写作模型的幕后旁白提示（玩家看不到），客观祈使句，点一个方向即可；不替角色写对白、不替角色行动。
+2) **时间推移**：目标事件的 span 若相对上一拍有明显间隔（"三天后"/"两周后"/"次年春天"），directive 必须先要求完成这次时间推移——例如"先以叙述带过约两周，再进入…"。不说，写作模型就会默认接着上一拍演下去，整本的时间跨度会塌掉。
+3) 不超过 80 字。
+
+[本次判定严格度]
+{{blindboxStrictness}}
 
 [硬性要求] 只返回 JSON，不要解释：
 {
-  "updates": [ { "node": 0, "event": 1, "status": "done", "recap": "一句话：这个事件在玩家的故事里实际怎么发生的" } ],
+  "updates": [
+    { "node": 0, "event": 1, "status": "done",
+      "evidence": "正文里的指认（≤30字）", "evidence_floor": 42,
+      "criteria_met": [0, 1], "confidence": "high",
+      "recap": "一句话：这个事件实际怎么发生的" },
+    { "node": 0, "event": 2, "status": "progress", "evidence": "…", "evidence_floor": 42 }
+  ],
+  "anchor_met": false,
   "target": { "node": 1, "event": 0 },
   "directive": "一句引导，或空字符串",
   "intensity": "none" | "gentle" | "firm"
 }`,
-            user: `[最近正文（可能已被总结插件折叠/隐藏，只剩很短一截甚至空白；带【背景】前缀的是摘要或已隐藏楼层）]
+            user: `[最近正文（带 #楼层号；可能已被总结插件折叠/隐藏，只剩很短一截甚至空白；带【背景】前缀的是摘要或已隐藏楼层）]
 {{recentChat}}
 
-[盲盒骨架] 节点=硬锚，事件=垫脚石；status：pending未到 / active进行中 / done已达成 / skipped已跳过；done/skipped 的 recap 是以往回合记下的实际经过
+[盲盒骨架] 节点=硬锚，事件=垫脚石
+- status：pending未到 / active进行中 / done已达成 / skipped已跳过；done/skipped 的 recap 是以往回合记下的实际经过
+- done_when=成立条件（判 done 要逐条核对，命中的下标填进 criteria_met）；span=应有的时间跨度；beats=拍数预算；turns_spent=已停留拍数；notes=以往回合留下的推进笔记
 {{blindboxOutline}}
 
-[当前目标指针] {{blindboxProgress}}
+[当前目标指针]
+{{blindboxProgress}}
 
-[任务] 读最近正文，更新这一拍里新达成/跳过的事件（并为每条写一句 recap）、给出下一步 target 与一句引导 directive（及 intensity）。骨架里已 done/skipped 的事件视为既成事实，不得翻回。严格按约定 JSON 返回。`
+[任务] 读最近正文，判断还没翻过去的事件在这一拍里的进展（done/skipped/progress，各带 evidence 与 evidence_floor），为 done/skipped 写一句 recap，并给出 directive 与 intensity。拿不准一律报 progress。严格按约定 JSON 返回。`
         }
     };
 }
@@ -1197,14 +1290,32 @@ function getPromptTemplates() {
             system: String(raw?.pacing?.system || defaults.pacing.system),
             user: String(raw?.pacing?.user || defaults.pacing.user)
         },
-        blindbox: {
-            system: String(raw?.blindbox?.system || defaults.blindbox.system),
-            user: String(raw?.blindbox?.user || defaults.blindbox.user)
-        },
-        director: {
-            system: String(raw?.director?.system || defaults.director.system),
-            user: String(raw?.director?.user || defaults.director.user)
-        }
+        // blindbox / director：和 rolling 同理，模板与解析器/闸门是一条链。v1 → v2 不兼容——
+        // savePromptTemplates 是整块存五类模板的，只要用户打开过设置点了保存，这两份就被
+        // 冻结在 v1；而 v1 的生成模板不会要 done_when/span/beats、v1 的判定模板不会回
+        // evidence/criteria_met，新闸门拿不到这些字段就只能一路降级，等于白改。故照抄一份重置。
+        blindbox: (() => {
+            const sys = String(raw?.blindbox?.system || defaults.blindbox.system);
+            const usr = String(raw?.blindbox?.user || defaults.blindbox.user);
+            if (!sys.includes("done_when") || !usr.includes("{{timescale}}")) {
+                if (raw?.blindbox?.system || raw?.blindbox?.user) {
+                    console.info("[Titania] 检测到旧版盲盒生成模板（v1，无 done_when/span/timescale），已重置为默认模板");
+                }
+                return JSON.parse(JSON.stringify(defaults.blindbox));
+            }
+            return { system: sys, user: usr };
+        })(),
+        director: (() => {
+            const sys = String(raw?.director?.system || defaults.director.system);
+            const usr = String(raw?.director?.user || defaults.director.user);
+            if (!sys.includes("evidence_floor") || !sys.includes("{{blindboxStrictness}}")) {
+                if (raw?.director?.system || raw?.director?.user) {
+                    console.info("[Titania] 检测到旧版盲盒判定模板（v1，无 evidence/三档回报），已重置为默认模板");
+                }
+                return JSON.parse(JSON.stringify(defaults.director));
+            }
+            return { system: sys, user: usr };
+        })()
     };
 }
 
@@ -1236,9 +1347,9 @@ function getUnknownPromptVars(text) {
         // 节奏把控专用变量
         "outlineProgress",
         // 盲盒生成专用变量
-        "nodeCount", "eventsPerGap", "redlines",
+        "nodeCount", "eventsPerGap", "redlines", "timescale",
         // 盲盒导演判定专用变量
-        "blindboxOutline", "blindboxProgress"
+        "blindboxOutline", "blindboxProgress", "blindboxStrictness"
     ]);
     const unknown = new Set();
     String(text || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
@@ -1268,9 +1379,13 @@ function buildPromptTemplateVars(ctx, userStoryInput, openingText, outlinePayloa
         nodeCount: String(extras?.nodeCount ?? "") || "(节点数)",
         eventsPerGap: String(extras?.eventsPerGap ?? "") || "(每段关键事件数)",
         redlines: String(extras?.redlines || "").trim() || "（无特别禁忌）",
-        // 盲盒导演判定专用：封印骨架 JSON 与当前目标指针（实际判定时注入，预览只给占位）。
+        // 故事总时长：时间跨度的总闸门。没填就让模型自己按基调定一个，但要它显式定。
+        timescale: String(extras?.timescale || "").trim()
+            || "（未指定：请先据故事基调自行判断一个合理的总时长——一夜/数日/数月/数年/一生——再据此分配各级 span）",
+        // 盲盒导演判定专用：封印骨架 JSON、当前目标指针、本次严格度（实际判定时注入，预览只给占位）。
         blindboxOutline: String(extras?.blindboxOutline || "").trim() || "（封印骨架，判定时注入）",
-        blindboxProgress: String(extras?.blindboxProgress || "").trim() || "（当前目标指针，判定时注入）"
+        blindboxProgress: String(extras?.blindboxProgress || "").trim() || "（当前目标指针，判定时注入）",
+        blindboxStrictness: String(extras?.blindboxStrictness || "").trim() || describeStrictness(STRICTNESS.STANDARD)
     };
 }
 
@@ -1304,6 +1419,7 @@ export async function openPromptTemplateManager() {
         streamEnabled: loadDraft().streamEnabled === true,
         genParams: getOutlineGenParams(),
         rollingChatFloors: getRollingChatFloors(),
+        directorChatFloors: getDirectorChatFloorsRaw(),
         promptTemplates: JSON.parse(JSON.stringify(getPromptTemplates()))
     };
     const working = settingsDraft.promptTemplates;
@@ -1392,6 +1508,7 @@ export async function openPromptTemplateManager() {
                             ${renderGenParamRow("outline", "大纲", settingsDraft.genParams.outline)}
                             ${renderGenParamRow("scenes", "剧情推荐", settingsDraft.genParams.scenes)}
                             ${renderGenParamRow("pacing", "节奏判断", settingsDraft.genParams.pacing)}
+                            ${renderGenParamRow("director", "盲盒判定", settingsDraft.genParams.director)}
                         </div>
 
                         <div class="t-form-group">
@@ -1401,6 +1518,15 @@ export async function openPromptTemplateManager() {
                                 <input id="t-outline-settings-rolling-floors" type="number" class="t-outline-select" value="${escapeHtml(settingsDraft.rollingChatFloors)}" min="0" max="20" step="1" style="width:80px;">
                             </label>
                             <div class="t-outline-genparam-hint">剧情推荐时读取酒馆最近 N 楼正文作为"已经发生的剧情"（走下方聊天提取白名单过滤）。模型据此自行判断故事推进到了大纲的哪一条。0=不读正文，仅靠大纲判断。</div>
+                        </div>
+
+                        <div class="t-form-group">
+                            <label class="t-form-label">盲盒导演</label>
+                            <label class="t-outline-mode t-outline-mode-source" style="margin-left:0;">
+                                判定读取最近正文楼层数
+                                <input id="t-outline-settings-director-floors" type="number" class="t-outline-select" value="${escapeHtml(settingsDraft.directorChatFloors)}" min="0" max="20" step="1" style="width:80px;">
+                            </label>
+                            <div class="t-outline-genparam-hint">导演判定「这个关键事件兑现完了没有」要看得到前几拍的铺垫，读得太少就只能凭最后一句话下结论（判定会偏松）。默认 6，0=跟随上面剧情推进的设置。判定一律连被总结/隐藏的楼层一起读。</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1427,7 +1553,7 @@ export async function openPromptTemplateManager() {
                                 </select>
                                 <button id="t-prompt-reset-current" class="t-btn t-btn-xs"><i class="fa-solid fa-rotate-left"></i> 恢复当前默认</button>
                             </div>
-                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}}<br>叙事节奏额外变量：{{recentChat}} {{outlineProgress}}<br>盲盒剧本生成额外变量：{{nodeCount}} {{eventsPerGap}} {{redlines}}<br>盲盒导演判定额外变量：{{recentChat}} {{blindboxOutline}} {{blindboxProgress}}</div>
+                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}}<br>叙事节奏额外变量：{{recentChat}} {{outlineProgress}}<br>盲盒剧本生成额外变量：{{nodeCount}} {{eventsPerGap}} {{redlines}} {{timescale}}<br>盲盒导演判定额外变量：{{recentChat}} {{blindboxOutline}} {{blindboxProgress}} {{blindboxStrictness}}</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1574,6 +1700,10 @@ export async function openPromptTemplateManager() {
         settingsDraft.rollingChatFloors = Number($(this).val());
     });
 
+    $("#t-outline-settings-director-floors").on("input change", function () {
+        settingsDraft.directorChatFloors = Number($(this).val());
+    });
+
     $("#t-prompt-target").on("change", () => {
         syncToEditor();
         preview();
@@ -1613,6 +1743,7 @@ export async function openPromptTemplateManager() {
         setOutlineChatTagWhitelistRaw(settingsDraft.chatTagWhitelist);
         saveOutlineGenParams(settingsDraft.genParams);
         saveRollingChatFloors(settingsDraft.rollingChatFloors);
+        saveDirectorChatFloors(settingsDraft.directorChatFloors);
         savePromptTemplates(settingsDraft.promptTemplates);
         $("#t-outline-stream-enabled").prop("checked", settingsDraft.streamEnabled === true);
         saveDraftStreamEnabledOnly(settingsDraft.streamEnabled === true);
@@ -1923,9 +2054,9 @@ function createEmptyPlan(nameInput = "", defaultName = "") {
 }
 
 // 新建盲盒方案：故事基调即 storyInput/instruction（用户自己的输入，可见不算泄题），
-// 节点数/每段事件数/红线存进 plan.blindbox 草稿；此时还没节点、未封印，待生成。
-function createBlindboxPlan({ name, tone, redlines, nodeCount, eventsPerGap }) {
-    const draft = createBlindboxDraft({ tone, redlines, nodeCount, eventsPerGap });
+// 节点数/每段事件数/总时长/红线/严格度存进 plan.blindbox 草稿；此时还没节点、未封印，待生成。
+function createBlindboxPlan({ name, tone, redlines, nodeCount, eventsPerGap, timescale, strictness }) {
+    const draft = createBlindboxDraft({ tone, redlines, nodeCount, eventsPerGap, timescale, strictness });
     return insertPlan({
         name,
         storyInput: tone || "",
@@ -2067,6 +2198,23 @@ function openPlanCreationDialog() {
                             <input id="t-create-plan-bb-events" type="number" class="t-outline-input" value="3" min="3" max="10" step="1" />
                         </label>
                     </div>
+                    <label class="t-outline-label" style="margin-top:10px;">故事总时长（决定节点之间的时间跨度）</label>
+                    <input id="t-create-plan-bb-timescale" class="t-outline-input" type="text" placeholder="例如：约三个月 / 一两年 / 跨越半生" />
+                    <div class="t-bb-timescale-presets" style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                        <button type="button" class="t-btn t-btn-xs t-bb-ts-btn" data-ts="一夜之间">一夜</button>
+                        <button type="button" class="t-btn t-btn-xs t-bb-ts-btn" data-ts="约一周">数日</button>
+                        <button type="button" class="t-btn t-btn-xs t-bb-ts-btn" data-ts="约一个月">数周</button>
+                        <button type="button" class="t-btn t-btn-xs t-bb-ts-btn" data-ts="约半年">数月</button>
+                        <button type="button" class="t-btn t-btn-xs t-bb-ts-btn" data-ts="约两年">一两年</button>
+                        <button type="button" class="t-btn t-btn-xs t-bb-ts-btn" data-ts="跨越半生（十年以上）">跨越半生</button>
+                    </div>
+                    <div class="t-plan-tip" style="margin-top:6px;">留空＝交给模型自己定。填了它会把这段时长分配给各节点，跨节点必有明显时间推移（不再挤在连续几天里）。</div>
+                    <label class="t-outline-label" style="margin-top:10px;">判定严格度（导演多久才认一个事件已达成）</label>
+                    <select id="t-create-plan-bb-strictness" class="t-outline-select">
+                        <option value="standard" selected>标准（推荐）</option>
+                        <option value="strict">严格（宁可慢一拍）</option>
+                        <option value="loose">宽松（旧行为，推进最快）</option>
+                    </select>
                     <label class="t-outline-label" style="margin-top:10px;">红线 / 禁忌（可选）</label>
                     <textarea id="t-create-plan-bb-redlines" class="t-outline-story-input" rows="2" placeholder="不想出现的内容，例如：不要角色死亡、不要血腥描写"></textarea>
                     <div class="t-plan-tip" style="margin-top:8px;">盲盒剧本生成后会立即封印——你本人也看不到内容，靠游玩时被悄悄引导着浮现。</div>
@@ -2098,6 +2246,11 @@ function openPlanCreationDialog() {
             : '<i class="fa-solid fa-check"></i> 创建并进入编辑');
     });
 
+    // 总时长快捷档：点一下填进输入框（仍可手改）。
+    $("#t-outline-create-plan-dialog").on("click", ".t-bb-ts-btn", function () {
+        $("#t-create-plan-bb-timescale").val(String($(this).data("ts") || ""));
+    });
+
     $("#t-create-plan-confirm").on("click", async () => {
         const planName = String($("#t-create-plan-name").val() || "").trim();
         const planStory = String($("#t-create-plan-story").val() || "").trim();
@@ -2125,6 +2278,8 @@ function openPlanCreationDialog() {
             redlines: String($("#t-create-plan-bb-redlines").val() || "").trim(),
             nodeCount: Number($("#t-create-plan-bb-nodes").val()),
             eventsPerGap: Number($("#t-create-plan-bb-events").val()),
+            timescale: String($("#t-create-plan-bb-timescale").val() || "").trim(),
+            strictness: String($("#t-create-plan-bb-strictness").val() || ""),
         });
         close();
         renderPlanHub();
@@ -2392,7 +2547,41 @@ function loadPlanToEditor(plan) {
 function bbConfigLine(bb) {
     const tone = String(bb?.tone || "").trim();
     const toneBrief = tone ? escapeHtml(getBriefText(tone, 60)) : "（未填）";
-    return `基调：${toneBrief} · 节点 ${bb?.nodeCount ?? "?"} · 每段约 ${bb?.eventsPerGap ?? "?"} 件`;
+    const ts = String(bb?.timescale || "").trim();
+    const tsText = ts ? ` · 总时长 ${escapeHtml(getBriefText(ts, 20))}` : "";
+    return `基调：${toneBrief} · 节点 ${bb?.nodeCount ?? "?"} · 每段约 ${bb?.eventsPerGap ?? "?"} 件${tsText}`;
+}
+
+const BB_STRICTNESS_LABEL = {
+    [STRICTNESS.LOOSE]: "宽松（旧行为）",
+    [STRICTNESS.STANDARD]: "标准（推荐）",
+    [STRICTNESS.STRICT]: "严格（宁可慢一拍）",
+};
+
+/**
+ * 导演设置块（封印态也能给）：严格度 + 本拍停留情况。
+ * 这些都不是剧情内容——严格度是玩家自己的旋钮，停留拍数讲的是玩家自己打了几拍，不泄题。
+ */
+function bbDirectorPanel(bb) {
+    const stats = getProgressStats(bb);
+    const level = normalizeStrictness(bb?.strictness);
+    const opts = [STRICTNESS.STANDARD, STRICTNESS.STRICT, STRICTNESS.LOOSE]
+        .map((v) => `<option value="${v}"${v === level ? " selected" : ""}>${escapeHtml(BB_STRICTNESS_LABEL[v])}</option>`)
+        .join("");
+    const dwell = stats.dwellBeats > 0
+        ? `当前这拍已停留 ${stats.dwellTurns} / 预算 ${stats.dwellBeats} 拍`
+        : `当前这拍已停留 ${stats.dwellTurns} 拍`;
+    const anchorWarn = stats.awaitingAnchor
+        ? `<div style="margin-top:4px;color:#e0a63a;">◆ 本节点的事件都已翻过，正在等硬锚落地——导演这几拍会收紧。</div>`
+        : "";
+    return `<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);">
+        <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-clapperboard"></i> 导演</div>
+        <label class="t-outline-label" style="display:block;">判定严格度
+            <select class="t-outline-select" data-action="bb-strictness">${opts}</select>
+        </label>
+        <div class="t-plan-tip" style="margin-top:6px;">${escapeHtml(dwell)}；判定越严，一个关键事件要占的回复越多（故事推得越慢、越不容易被一句话带过）。</div>
+        ${anchorWarn}
+    </div>`;
 }
 
 function bbEventDot(status, isTarget) {
@@ -2415,41 +2604,35 @@ function bbNodeDots(node, nodeIndex, bb) {
     </div>`;
 }
 
-function bbRevealWall(bb) {
-    const revealed = flattenEvents(bb).filter(
-        ({ event }) => event.status === EVENT_STATUS.DONE || event.status === EVENT_STATUS.SKIPPED
-    );
-    if (revealed.length === 0) {
-        return `<div class="t-plan-tip">还没有已揭晓的事件——开始游玩后，踩中的关键节点会显示在这里。</div>`;
-    }
-    return revealed.map(({ nodeIndex, eventIndex, event }) => {
-        const tag = event.status === EVENT_STATUS.SKIPPED ? `<span style="color:#8a8f98">（跳过）</span>` : "";
-        const recap = String(event.recap || "").trim();
-        // recap 是导演记下的「实际怎么发生的」，比封印时写死的计划内容更贴玩家的故事，有就补一行。
-        const recapLine = recap
-            ? `<div style="opacity:.55;font-size:12px;padding:2px 0 0 18px;">↳ ${escapeHtml(recap)}</div>`
-            : "";
-        return `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-            <span style="opacity:.6;">${nodeIndex + 1}.${eventIndex + 1}</span>
-            ${escapeHtml(event.content)} ${tag}
-            ${recapLine}
-        </div>`;
-    }).join("");
-}
-
 function bbNodeFull(node, nodeIndex) {
     const statusLabel = {
         [EVENT_STATUS.DONE]: "已达成", [EVENT_STATUS.SKIPPED]: "已跳过",
         [EVENT_STATUS.ACTIVE]: "进行中", [EVENT_STATUS.PENDING]: "未到",
     };
-    const events = node.events.map((ev, j) => `<div style="padding:3px 0 3px 16px;">
-        <span style="opacity:.55;">${nodeIndex + 1}.${j + 1}</span>
-        <span style="opacity:.6;font-size:11px;">[${statusLabel[ev.status] || ""}]</span>
-        ${escapeHtml(ev.content)}
-    </div>`).join("");
+    const events = node.events.map((ev, j) => {
+        const meta = [
+            ev.span ? `跨度 ${ev.span}` : "",
+            ev.beats > 0 ? `预算 ${ev.beats} 拍` : "",
+            ev.turns > 0 ? `已占 ${ev.turns} 拍` : "",
+        ].filter(Boolean).join(" · ");
+        const metaLine = meta ? `<div style="opacity:.45;font-size:11px;padding:0 0 0 32px;">${escapeHtml(meta)}</div>` : "";
+        const cond = ev.doneWhen.length
+            ? `<div style="opacity:.55;font-size:11px;padding:0 0 0 32px;">成立条件：${escapeHtml(ev.doneWhen.join("；"))}</div>`
+            : "";
+        return `<div style="padding:3px 0 3px 16px;">
+            <span style="opacity:.55;">${nodeIndex + 1}.${j + 1}</span>
+            <span style="opacity:.6;font-size:11px;">[${statusLabel[ev.status] || ""}]</span>
+            ${escapeHtml(ev.content)}
+        </div>${metaLine}${cond}`;
+    }).join("");
+    const nodeSpan = node.span ? `<span style="opacity:.5;font-size:12px;">（${escapeHtml(node.span)}）</span>` : "";
+    const anchorWhen = node.anchorWhen.length
+        ? `<div style="opacity:.55;font-size:11px;padding:0 0 2px 16px;">硬锚条件：${escapeHtml(node.anchorWhen.join("；"))}</div>`
+        : "";
     return `<div style="margin-bottom:10px;">
-        <div style="font-weight:600;">◆ 节点 ${nodeIndex + 1}：${escapeHtml(node.title || "")}</div>
+        <div style="font-weight:600;">◆ 节点 ${nodeIndex + 1}：${escapeHtml(node.title || "")} ${nodeSpan}</div>
         <div style="opacity:.8;padding:2px 0 2px 16px;">${escapeHtml(node.anchor || "")}</div>
+        ${anchorWhen}
         ${events}
     </div>`;
 }
@@ -2478,8 +2661,8 @@ function renderBlindboxSubview(plan) {
             <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-lock"></i> 盲盒剧本 · 已封印</div>
             <div class="t-plan-tip">已推进 ${stats.passed} / ${stats.total} 个关键事件 · 共 ${stats.nodeCount} 个节点</div>
             <div style="margin:10px 0;">${skeleton}</div>
-            <div style="font-weight:600;margin:12px 0 4px;">回顾墙</div>
-            ${bbRevealWall(bb)}
+            ${bbDirectorPanel(bb)}
+            <div class="t-plan-tip" style="margin-top:10px;">逐段揭晓的回顾在消息流底部的「剧情推进」面板里（点开就看得见进度点怎么一段段亮起来）。找不到它的话，去设置里打开「启用剧情推进与大纲入口」。</div>
             <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
                 <button class="t-btn" data-action="bb-reroll"><i class="fa-solid fa-dice"></i> 重新生成（盲掷）</button>
                 <button class="t-btn t-btn-danger" data-action="bb-unseal"><i class="fa-solid fa-unlock"></i> 剧透逃生（解封查看）</button>
@@ -2493,11 +2676,23 @@ function renderBlindboxSubview(plan) {
         <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-unlock"></i> 盲盒剧本 · 已解封</div>
         <div class="t-plan-tip">已经看过了，惊喜不复——这就是单向门的代价。想修改内容可转成普通大纲。</div>
         <div style="margin:10px 0;">${full}</div>
+        ${bbDirectorPanel(bb)}
         <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
             <button class="t-btn" data-action="bb-reroll"><i class="fa-solid fa-dice"></i> 重新生成（盲掷）</button>
             <button class="t-btn t-btn-primary" data-action="bb-to-normal"><i class="fa-solid fa-table-list"></i> 转为普通大纲（可编辑）</button>
         </div>
     </div>`);
+}
+
+/** 改判定严格度：游玩途中也能改（它只影响以后的判定，不动已经翻过去的事件）。 */
+function blindboxSetStrictness(value) {
+    const plan = getPlans().find((p) => p.id === editingPlanId);
+    if (!plan || !isBlindboxPlan(plan) || !plan.blindbox) return;
+    plan.blindbox = normalizeBlindbox({ ...plan.blindbox, strictness: normalizeStrictness(value) });
+    plan.updatedAt = Date.now();
+    saveExtData();
+    renderBlindboxSubview(plan);
+    if (window.toastr) toastr.success(`判定严格度已设为「${BB_STRICTNESS_LABEL[plan.blindbox.strictness]}」`, "盲盒剧本");
 }
 
 async function blindboxGenerateFromView(reroll) {
@@ -2998,9 +3193,12 @@ function collectRecentChatText(floors, opts = {}) {
     if (n <= 0) return "";
     const entries = getChatHistoryEntries(opts);
     if (!entries.length) return "";
+    // withFloors：带上酒馆楼层号下发。只有盲盒导演用它——判定要回报 evidence_floor，
+    // 代码才能验证「这条证据是不是上次判定之后的新正文」（见 applyDirectorDecision 的 stale-evidence 闸门）。
+    const withFloors = opts.withFloors === true;
     return entries
         .slice(-n)
-        .map((e) => `【${e.role}】${e.text}`)
+        .map((e) => (withFloors ? `【#${e.chatIndex} ${e.role}】${e.text}` : `【${e.role}】${e.text}`))
         .join("\n\n");
 }
 
@@ -3389,6 +3587,7 @@ function buildBlindboxPrompt(ctx, openingText, blindbox) {
         nodeCount: blindbox.nodeCount,
         eventsPerGap: blindbox.eventsPerGap,
         redlines: blindbox.redlines,
+        timescale: blindbox.timescale,
     });
     return [
         { role: "system", content: renderPromptTemplate(templates.system, vars) },
@@ -3429,34 +3628,19 @@ async function runBlindboxGeneration(plan) {
     }, { timeoutSec: params.timeoutSec || 0 });
 }
 
-/* ---- 盲盒导演：每条原生回复后的后台判定（见方案第 5 节；注入在 directorInjection.js） ---- */
+/* ---- 盲盒导演：每条原生回复后的后台判定（见方案第 5、9 节；注入在 directorInjection.js） ---- */
 
-// 给判定模型看的完整骨架（带下标与状态）。这是封印内容——只进后台提示词，绝不回灌任何用户可见视图。
-// done/skipped 的事件带上导演上回合留的 recap：这是不随楼层隐藏消失的 durable 记忆，
-// 让导演即便读不到最近正文也知道这拍已经发生过，别再往回推（见方案第 5 节 B）。
-function buildDirectorOutlineJson(bb) {
-    return bb.nodes.map((node, i) => ({
-        node: i,
-        title: node.title,
-        anchor: node.anchor,
-        is_final: i === bb.nodes.length - 1,
-        events: node.events.map((ev, j) => {
-            const e = { event: j, content: ev.content, status: ev.status };
-            if ((ev.status === EVENT_STATUS.DONE || ev.status === EVENT_STATUS.SKIPPED) && ev.recap) e.recap = ev.recap;
-            return e;
-        }),
-    }));
-}
-
-// 导演判定提示词已改为可在「设置→提示词模板」里编辑（defaults.director），这里只负责装配变量。
+// 骨架 JSON（buildDirectorSkeleton）与指针描述（describeDirectorProgress）都在 blindboxPlan 里，
+// 纯函数、可单测；这里只负责装配变量。它们是封印内容——只进后台提示词，绝不回灌用户可见视图。
 function buildDirectorMessages(ctx, bb) {
     const templates = getPromptTemplates().director;
-    const cur = bb.progress || { nodeIndex: 0, eventIndex: 0 };
     const vars = buildPromptTemplateVars(ctx, "(空)", "", [], {
-        // 导演专用：带上被总结/隐藏的楼层（includeHidden），否则总结一跑导演就瞎了。
-        recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true }),
-        blindboxOutline: JSON.stringify(buildDirectorOutlineJson(bb), null, 2),
-        blindboxProgress: `节点 ${cur.nodeIndex} · 事件 ${cur.eventIndex}`,
+        // 导演专用：① includeHidden 带上被总结/隐藏的楼层，否则总结一跑导演就瞎了；
+        //           ② withFloors 带上 #楼层号，判定才能回报 evidence_floor、代码才能校验是不是新证据。
+        recentChat: collectRecentChatText(getDirectorChatFloors(), { includeHidden: true, withFloors: true }),
+        blindboxOutline: JSON.stringify(buildDirectorSkeleton(bb), null, 2),
+        blindboxProgress: describeDirectorProgress(bb),
+        blindboxStrictness: describeStrictness(bb.strictness),
     });
     return [
         { role: "system", content: renderPromptTemplate(templates.system, vars) },
@@ -3465,24 +3649,45 @@ function buildDirectorMessages(ctx, bb) {
 }
 
 /**
- * 一个导演回合：读激活盲盒方案 + 最近正文 → 判定 → 落盘状态机 → 刷新注入。
- * 由 directorInjection 在 GENERATION_ENDED 后台调用。**刻意不走 runOutlineGeneration**
- * （那会动大纲窗的中断按钮 UI）、也不碰 raw 历史/流式预览——判定在幕后无声进行。
- * 任何异常都吞掉：判定失败不该打断玩家的 RP（调用方也兜了一层）。
+ * 一个导演回合：读激活盲盒方案 + 最近正文 → 判定 → 过闸门落盘 → 刷新注入。
+ * 由 directorInjection 在 GENERATION_ENDED 后台调用，并带上触发上下文（末楼层/swipe/签名）。
+ * **刻意不走 runOutlineGeneration**（那会动大纲窗的中断按钮 UI）、也不碰 raw 历史/流式预览——
+ * 判定在幕后无声进行。任何异常都吞掉：判定失败不该打断玩家的 RP（调用方也兜了一层）。
  */
-export async function runDirectorTurn() {
+export async function runDirectorTurn(trigger = null) {
     const plan = getActivePlan();
-    if (!plan || !isBlindboxPlan(plan)) return;
+    if (!plan || !isBlindboxPlan(plan)) return null;
     const bb0 = plan.blindbox;
-    if (!bb0 || bb0.sealed !== true || bb0.unsealed === true || bb0.directorPaused === true) return;
+    if (!bb0 || bb0.sealed !== true || bb0.unsealed === true || bb0.directorPaused === true) return null;
+    // 判定要等一次 API 往返，期间用户可能切换激活方案。把"这一拍判的是哪本"在开头就固定下来，
+    // 返回给调用方去结解锁账（事后重新读 extData 会拿错本子，给错的书报解锁）。
+    const judgedPlanId = plan.id;
+
+    // 手动调用（调试/补判）时自己算一份触发上下文，保证 floor/swipeId 永远有来源。
+    const trig = trigger && typeof trigger === "object" ? trigger : getDirectorTrigger();
+    const floor = Number.isFinite(Number(trig?.floor)) ? Math.floor(Number(trig.floor)) : -1;
+    const swipeId = String(trig?.swipeId ?? "");
+
+    let before = normalizeBlindbox(bb0);
+    // 同一楼层换了 swipe：先把这一楼（及其之后）的判定整笔撤回——被玩家 swipe 掉的那条回复
+    // 不该永久消耗事件。撤回后再按新 swipe 重判一次。
+    if (floor >= 0 && before.lastJudged.floor === floor && before.lastJudged.swipeId !== swipeId) {
+        before = rollbackJournalFrom(before, floor);
+        const pre = getPlans().find((p) => p.id === plan.id);
+        if (pre && isBlindboxPlan(pre)) {
+            pre.blindbox = before;
+            pre.updatedAt = Date.now();
+            saveExtData();
+        }
+    }
 
     const ctx = await getContextData();
-    const params = getOutlineGenParams().pacing; // 复用节奏采样：短、非流式
+    const params = getOutlineGenParams().director;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 60000);
+    const timer = setTimeout(() => controller.abort(), (params.timeoutSec > 0 ? params.timeoutSec : 60) * 1000);
     let raw = "";
     try {
-        raw = await sendOutlineRequest(buildDirectorMessages(ctx, normalizeBlindbox(bb0)), {
+        raw = await sendOutlineRequest(buildDirectorMessages(ctx, before), {
             temperature: params.temperature,
             maxTokens: params.maxTokens,
             stream: false,
@@ -3492,23 +3697,66 @@ export async function runDirectorTurn() {
         clearTimeout(timer);
     }
 
-    const decision = parseDirectorDecision(tryParseLooseJsonObject(raw));
+    const parsed = tryParseLooseJsonObject(raw);
+    if (!parsed) {
+        // 解析不出来（多半是 max_tokens 截断）：**保留上一拍的引导**，并且什么都不落盘——
+        // 尤其别推进 lastJudged，否则这段正文就被当成"判过了"，证据白白作废。
+        console.warn("[Titania] 盲盒导演判定返回无法解析，本拍跳过（保留上一拍引导）");
+        return { planId: judgedPlanId, updated: false };
+    }
+
+    const decision = parseDirectorDecision(parsed);
     const target = getPlans().find((p) => p.id === plan.id);
-    if (!target || !isBlindboxPlan(target)) return;
-    target.blindbox = applyDirectorDecision(target.blindbox, decision);
+    if (!target || !isBlindboxPlan(target)) return { planId: judgedPlanId, updated: false };
+    const report = {};
+    target.blindbox = applyDirectorDecision(before, decision, {
+        strictness: before.strictness,
+        floor,
+        swipeId,
+        sig: String(trig?.sig || ""),
+        sinceFloor: before.lastJudged.floor,
+        report,
+    });
     target.updatedAt = Date.now();
     saveExtData();
+
+    const after = normalizeBlindbox(target.blindbox);
+    if (report.refused?.length) {
+        // 只打下标与原因，不打内容——控制台也是泄题口。
+        console.info("[Titania] 盲盒导演：本拍被闸门拦下的回报", report.strictness, report.refused);
+    }
 
     // 进度视图若正开着这本，就地刷新（同模块，安全）。横条由 ST 下次渲染时自行追上。
     if (editingPlanId === target.id) renderBlindboxSubview(target);
 
+    // 指针换人且新目标带时间跨度：补一条确定性的时间推移指令。模型常把 span 忘在骨架里，
+    // 而 RP 里的时间推移必须由旁白明说——不说，写作模型就默认接着上一拍演，整本跨度会塌。
+    const moved = after.progress.nodeIndex !== before.progress.nodeIndex
+        || after.progress.eventIndex !== before.progress.eventIndex;
+    const nextEv = after.nodes[after.progress.nodeIndex]?.events?.[after.progress.eventIndex];
+    const spanLine = moved && nextEv?.span ? `\n【时间推移】先以叙述把时间推进到「${nextEv.span}」，再展开这一拍。` : "";
+
+    // 硬锚待兑现：这拍必须收束，模型没给话就拿 anchor 兜一句。
+    const awaiting = after.progress.awaitingAnchor === true;
+    const curNode = after.nodes[after.progress.nodeIndex];
+    let directive = decision.directive;
+    let intensity = decision.intensity;
+    if (awaiting) {
+        intensity = DIRECTOR_INTENSITY.FIRM;
+        if (!directive) directive = `把这一段的关键转折真正落地：${String(curNode?.anchor || "").slice(0, 80)}`;
+    }
+
     // 刷新/清除注入：在线上（none 或空 directive）就闭嘴，清掉上一拍的引导。
-    if (decision.directive && decision.intensity !== DIRECTOR_INTENSITY.NONE) {
-        const header = decision.intensity === DIRECTOR_INTENSITY.FIRM ? "【剧情导演·收束】\n" : "【剧情导演·轻推】\n";
-        armDirectorDirective(header + decision.directive, getDirectorInjectConfig());
+    if (directive && intensity !== DIRECTOR_INTENSITY.NONE) {
+        const header = intensity === DIRECTOR_INTENSITY.FIRM ? "【剧情导演·收束】\n" : "【剧情导演·轻推】\n";
+        armDirectorDirective(header + directive + spanLine, getDirectorInjectConfig());
+    } else if (spanLine) {
+        // 模型选择闭嘴，但时间跳转这件事不能省：只发时间推移。
+        armDirectorDirective("【剧情导演·轻推】" + spanLine, getDirectorInjectConfig());
     } else {
         clearDirectorDirective();
     }
+    return { planId: judgedPlanId, updated: true };
 }
 
 // 剧情推荐：结合大纲(终点)+最近正文，生成 2~3 个候选剧情走向供玩家挑选。
@@ -3711,6 +3959,9 @@ function bindEvents() {
     $overlay.on("click", "[data-action='bb-reroll']", () => blindboxGenerateFromView(true));
     $overlay.on("click", "[data-action='bb-unseal']", () => blindboxUnsealFromView());
     $overlay.on("click", "[data-action='bb-to-normal']", () => blindboxConvertToNormal());
+    $overlay.on("change", "[data-action='bb-strictness']", function () {
+        blindboxSetStrictness(String($(this).val() || ""));
+    });
 
     $overlay.on("click", "[data-action='delete-plan']", function (e) {
         e.stopPropagation();

@@ -30,6 +30,21 @@ import { getExtData, saveExtData } from "../utils/storage.js";
 import { TitaniaLogger } from "../core/logger.js";
 import * as pacingInjection from "../core/pacingInjection.js";
 import { isBlindboxPlan, normalizeBlindbox, getProgressStats } from "../core/blindboxPlan.js";
+import {
+    buildRevealView,
+    resolveUnlocks,
+    applyRevealMarks,
+    backfillRevealMarks,
+    pickUnlockCue,
+    getPassedMarks,
+    getClearedStageIndexes,
+} from "../core/blindboxReveal.js";
+import {
+    getUnlockSoundConfig,
+    cycleUnlockVolume,
+    describeUnlockVolume,
+    playUnlockCue,
+} from "../core/unlockChime.js";
 
 const STRIP_CLASS = "titania-scene-advance-strip";
 const PANEL_ID = "t-scene-advance-panel";
@@ -55,6 +70,8 @@ let restoring = false;
 let previewItemIdx = -1;
 /** 大纲情节预览整块是否展开。默认折叠 —— 面板收起时会重置，每次打开都从折叠态开始。 */
 let previewOpen = false;
+/** 盲盒解锁界面展开了哪个已通关阶段：-1=默认（最近通关的那个）、-2=全部收起、>=0=指定下标。收起时重置。 */
+let bbStageOpenIdx = -1;
 /** 面板当前模式：recommend（推荐剧情）| pacing（节奏把控）。收起时重置回 recommend。 */
 let panelMode = "recommend";
 /** 最近一次节奏诊断（{pacingState, assessment, directive, focus, intensity}），重绘不丢。 */
@@ -162,7 +179,14 @@ function getActiveBlindboxInfo() {
         const bb = plan.blindbox;
         if (!bb || bb.sealed !== true || bb.unsealed === true) return null;
         const nbb = normalizeBlindbox(bb);
-        return { planId: plan.id, stats: getProgressStats(nbb), paused: bb.directorPaused === true };
+        return {
+            planId: plan.id,
+            stats: getProgressStats(nbb),
+            paused: bb.directorPaused === true,
+            // 阶段化视图：纯数据，防剧透（未解锁项在数据层就没有内容）由 blindboxReveal 保证
+            view: buildRevealView(nbb),
+            sound: getUnlockSoundConfig(),
+        };
     } catch {
         return null;
     }
@@ -253,13 +277,26 @@ function updateStrip(strip, { progress, expanded } = {}) {
     if (bbInfo) {
         // 盲盒激活：横条退化成"引导中"状态灯，不显示任何剧透文字。
         $(strip).find(".tsa-strip-title").text(bbInfo.paused ? "盲盒导演 · 已暂停" : "盲盒导演");
-        $(strip).find(".tsa-strip-progress").text(`· 已达成 ${bbInfo.stats.passed}/${bbInfo.stats.total}`);
+        $(strip).find(".tsa-strip-progress").text(`· 已解锁 ${bbInfo.stats.passed}/${bbInfo.stats.total}`);
+        // 后台刚解锁、玩家还没打开面板看过 → 角标提示（打开面板做完揭晓动画后自动消失）。
+        // 每次都按持久化的账本重算，所以切楼层/重渲染都不会误留或误清。
+        const pending = bbInfo.view.header.hasUnviewed && !bbInfo.paused;
+        $(strip).toggleClass("has-unlock", pending);
+        if (pending) {
+            if (!strip.querySelector(".tsa-strip-unlock-dot")) {
+                $(strip).find(".tsa-strip-arrow").before('<span class="tsa-strip-unlock-dot" aria-hidden="true"></span>');
+            }
+        } else {
+            $(strip).find(".tsa-strip-unlock-dot").remove();
+        }
     } else {
         $(strip).find(".tsa-strip-title").text("剧情推进");
         const target = progress === undefined ? readProgressFromSettings() : progress;
         const label = formatProgressLabel(target);
         // 用 text() 而非 html()：进度文案没有富文本需求，也免得把外部数据当 HTML 解析
         $(strip).find(".tsa-strip-progress").text(label ? `· ${label}` : "");
+        $(strip).removeClass("has-unlock");
+        $(strip).find(".tsa-strip-unlock-dot").remove();
     }
     if (expanded !== undefined) {
         $(strip).attr("aria-expanded", String(expanded)).toggleClass("is-open", expanded);
@@ -325,6 +362,60 @@ function scheduleRefreshStrips(delay = 0) {
 
 export function refreshSceneAdvanceBubble() {
     scheduleRefreshStrips(0);
+}
+
+/**
+ * 导演判定跑完之后由 directorInjection 调用：把这一拍新解锁的账结掉。
+ *
+ * 为什么需要它：ST 的渲染事件都在判定**之前**就发完了（判定要等一次 API 往返），横条上的
+ * 进度与角标都会是旧的；而"刚解锁"的实时反馈只有这里能给——音效在这一刻响，角标在这一刻
+ * 亮。面板若还开着（swipe 重判这种不新增楼层的情况）就顺手就地刷新。
+ *
+ * @param {string} planId 判定前捕获的方案 id。**必须由调用方传入**：判定期间用户可能切换
+ *                        激活方案，事后重新去读 extData 会拿错本子，给错的书报解锁。
+ */
+export async function notifyBlindboxUnlocks(planId) {
+    try {
+        const plans = Array.isArray(getExtData()?.[PLANS_KEY]) ? getExtData()[PLANS_KEY] : [];
+        const plan = plans.find((p) => p?.id === planId);
+        if (!plan || !isBlindboxPlan(plan) || !plan.blindbox) return;
+        if (plan.blindbox.sealed !== true || plan.blindbox.unsealed === true) return;
+
+        // 横条/面板没开时：账照记，但不响。响一声却没有任何地方能看，只会让人找不到北；
+        // 等玩家把横条打开，那段没看过的历史会补做一次揭晓动画（viewed 标记只认渲染那一刻）。
+        const visible = isEnabled();
+        const bb = normalizeBlindbox(plan.blindbox);
+        const u = resolveUnlocks(bb);
+
+        // 本功能上线前的老存档：静默补记（不响、不动画），否则第一次玩会噼里啪啦响一串旧账。
+        if (u.backfill) {
+            plan.blindbox = backfillRevealMarks(bb);
+            plan.updatedAt = Date.now();
+            saveExtData();
+            return;
+        }
+        if (u.freshMarks.length === 0 && u.freshStages.length === 0) return;
+
+        // 静音也照记账：只压播放。否则静音期间攒下的解锁会在重新打开音效时一起炸出来。
+        const cue = visible
+            ? pickUnlockCue({
+                freshMarks: u.freshMarks,
+                freshStages: u.freshStages,
+                config: getUnlockSoundConfig(),
+            })
+            : null;
+        plan.blindbox = applyRevealMarks(bb, { announced: [...u.freshMarks, ...u.freshStages] });
+        plan.updatedAt = Date.now();
+        saveExtData();
+        if (cue) playUnlockCue(cue);
+
+        if (!visible) return;
+        // 面板还开着就就地刷新（swipe 重判走这条），否则至少让横条的进度与角标追上。
+        if (document.getElementById(PANEL_ID)) await refreshPanel();
+        else scheduleRefreshStrips(0);
+    } catch (e) {
+        TitaniaLogger.warn("盲盒解锁提示失败（已忽略，不影响游玩）", e);
+    }
 }
 
 /** 刷新当前横条上的进度文字（点候选/推进进度后调用）。 */
@@ -447,18 +538,185 @@ function buildPanelHtml(state) {
     return `<div id="${PANEL_ID}" class="tsa-panel">${tabs}${body}</div>`;
 }
 
-/** 盲盒导演面板体：只报状态，不剧透；带一个暂停/恢复开关。进度骨架与剧透逃生在大纲窗。 */
+/* ------------------------------------------------------------------ *
+ * 盲盒解锁界面（阶段化揭晓）
+ *
+ * 阶段＝盲盒节点。已通关的阶段揭晓标题＋硬锚（揭晓本身就是奖励）、进行中的阶段只给
+ * 进度点与"未解锁"占位、后面的阶段只留一行封印。所有"不给看"的内容在数据层就不存在
+ * （见 blindboxReveal.buildRevealView），这里只负责画。
+ *
+ * ── 揭晓动画为什么在渲染路径里消费 ──
+ * 面板是插在"最后一条 AI 楼层"的横条里的，新回复一渲染就连带面板被收掉。所以"刚解锁"
+ * 的实时反馈只能是音效＋横条角标，动画要等玩家下次打开面板时才播。既然如此，"这条已经
+ * 动画过了"就必须在**渲染那一刻**记账，否则动画会为一个没打开的面板空播掉。
+ * ------------------------------------------------------------------ */
+
+/** 阶段编号（一到十，再往后退回阿拉伯数字）。 */
+const BB_STAGE_LABELS = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+const bbStageLabel = (i) => `阶段${BB_STAGE_LABELS[i] || ` ${i + 1}`}`;
+
+/** 一条已揭晓的事件。recap 是导演记下的「实际怎么发生的」，比计划内容更贴玩家的故事。 */
+function bbEventRow(ev) {
+    const cls = ["tsa-bb-ev", `is-${ev.status}`];
+    if (ev.isFresh) cls.push("is-fresh");
+    const tag = ev.status === "skipped" ? `<span class="tsa-bb-ev-tag">跳过</span>` : "";
+    const recap = ev.recap
+        ? `<div class="tsa-bb-ev-recap">↳ ${escapeHtmlText(ev.recap)}</div>`
+        : "";
+    const span = ev.spanLabel ? `<span class="tsa-bb-ev-span">${escapeHtmlText(ev.spanLabel)}</span>` : "";
+    return `<li class="${cls.join(" ")}">
+        <span class="tsa-bb-ev-no">${ev.no}</span>
+        <div class="tsa-bb-ev-main">
+            <div class="tsa-bb-ev-text">${escapeHtmlText(ev.content)}${tag}</div>
+            ${recap}
+        </div>
+        ${span}
+    </li>`;
+}
+
+/** 一条还没解锁的事件：只给"这里有一拍"＋玩家自己的停留拍数，绝不带内容。 */
+function bbLockedRow(ev) {
+    const cls = ["tsa-bb-ev", "is-locked"];
+    if (ev.isTarget) cls.push("is-target");
+    const dwell = ev.dwell && ev.dwell.turns > 0
+        ? (ev.dwell.beats > 0 ? `已走 ${ev.dwell.turns} / ${ev.dwell.beats} 拍` : `已走 ${ev.dwell.turns} 拍`)
+        : "未解锁";
+    const icon = ev.isTarget ? "fa-hourglass-half" : "fa-lock";
+    return `<li class="${cls.join(" ")}">
+        <span class="tsa-bb-ev-no">${ev.no}</span>
+        <div class="tsa-bb-ev-main">
+            <div class="tsa-bb-ev-lock"><i class="fa-solid ${icon}"></i> ${dwell}</div>
+            <span class="tsa-bb-shimmer" aria-hidden="true"></span>
+        </div>
+    </li>`;
+}
+
+/** 一个阶段。sealed 只给一行（连事件行都不画），其余给表头 + 事件列表。 */
+function bbStageBlock(stage, openIdx) {
+    const counts = `${stage.counts.passed}/${stage.counts.total}`;
+    const fresh = stage.isFresh ? " is-fresh" : "";
+
+    if (stage.state === "sealed") {
+        return `<li class="tsa-bb-stage is-sealed">
+            <div class="tsa-bb-stage-head">
+                <span class="tsa-bb-stage-mark"><i class="fa-solid fa-lock"></i></span>
+                <span class="tsa-bb-stage-label">${bbStageLabel(stage.nodeIndex)}</span>
+                <span class="tsa-bb-stage-count">${stage.counts.total} 件</span>
+            </div>
+        </li>`;
+    }
+
+    const rows = stage.events
+        .map((ev) => (ev.unlocked ? bbEventRow(ev) : bbLockedRow(ev)))
+        .join("");
+    const events = `<ul class="tsa-bb-events">${rows}</ul>`;
+
+    if (stage.state === "current") {
+        const holding = stage.isHolding
+            ? `<div class="tsa-bb-holding">这一阶段的关键事件都翻过去了，正在等一个转折真正落地——导演这几拍会收紧。</div>`
+            : "";
+        return `<li class="tsa-bb-stage is-current">
+            <div class="tsa-bb-stage-head">
+                <span class="tsa-bb-stage-mark">◇</span>
+                <span class="tsa-bb-stage-label">${bbStageLabel(stage.nodeIndex)}</span>
+                <span class="tsa-bb-stage-count">进行中 ${counts}</span>
+            </div>
+            <div class="tsa-bb-stage-body">${holding}${events}</div>
+        </li>`;
+    }
+
+    // 已通关：可折叠。hold 状态（事件翻完但硬锚未落地）不揭晓标题与硬锚。
+    const open = openIdx === stage.nodeIndex;
+    const titleText = stage.revealed ? escapeHtmlText(stage.title || "") : "";
+    const anchor = stage.revealed && stage.anchor
+        ? `<div class="tsa-bb-anchor"><span class="tsa-bb-anchor-tag">硬锚</span>${escapeHtmlText(stage.anchor)}</div>`
+        : "";
+    return `<li class="tsa-bb-stage is-cleared${stage.isHolding ? " is-holding" : ""}${fresh}" data-stage-idx="${stage.nodeIndex}">
+        <div class="tsa-bb-stage-head" role="button" tabindex="0" aria-expanded="${open ? "true" : "false"}">
+            <span class="tsa-bb-stage-mark">◆</span>
+            <span class="tsa-bb-stage-label">${bbStageLabel(stage.nodeIndex)}</span>
+            <span class="tsa-bb-stage-title">${titleText}</span>
+            <span class="tsa-bb-stage-count">${counts}</span>
+            <i class="fa-solid fa-chevron-down tsa-bb-stage-arrow"></i>
+        </div>
+        <div class="tsa-bb-stage-body">${anchor}${events}</div>
+    </li>`;
+}
+
+/**
+ * 渲染即消费：把这一屏画出来的"新解锁"记进账本的 viewed，下次打开就是静态的历史。
+ * 顺带清掉横条角标（角标看的就是 viewed）。
+ */
+function consumeUnlockMarks(info) {
+    if (!info?.planId || info.view?.header?.hasUnviewed !== true) return;
+    const plans = Array.isArray(getExtData()?.[PLANS_KEY]) ? getExtData()[PLANS_KEY] : [];
+    const plan = plans.find((x) => x?.id === info.planId);
+    if (!plan || !isBlindboxPlan(plan) || !plan.blindbox) return;
+    const bb = normalizeBlindbox(plan.blindbox);
+    // 老存档（marksReady=false）走静默回填：两张表一起补上。只补 viewed 的话，
+    // 下一次判定会把这条陈年旧账当成"刚解锁"响一声。
+    plan.blindbox = bb.marksReady === true
+        ? applyRevealMarks(bb, {
+            viewed: [...getPassedMarks(bb), ...getClearedStageIndexes(bb).map((i) => `s:${i}`)],
+            marksReady: true,
+        })
+        : backfillRevealMarks(bb);
+    plan.updatedAt = Date.now();
+    saveExtData();
+    const strip = getStrip();
+    if (strip) updateStrip(strip);
+}
+
+/** 盲盒导演面板体：阶段化解锁界面 + 音量循环 + 暂停开关。全程不出现未解锁内容的文字。 */
 function buildBlindboxBody(info) {
-    const s = info.stats;
+    const view = info.view || { header: {}, stages: [] };
+    const h = view.header || {};
+    const percent = h.total > 0 ? Math.round((h.passed / h.total) * 100) : 0;
+
+    // 展开哪个已通关阶段：-1=默认（最近通关的那个）、-2=全部收起、>=0=指定下标。
+    const revealedIdx = view.stages.filter((st) => st.revealed).map((st) => st.nodeIndex);
+    const defaultOpen = revealedIdx.length ? revealedIdx[revealedIdx.length - 1] : -1;
+    const openIdx = bbStageOpenIdx === -1 ? defaultOpen : bbStageOpenIdx;
+
+    const dwell = h.isHolding
+        ? "本阶段事件都翻过去了，在等一个转折落地"
+        : (h.dwell?.beats > 0
+            ? `当前这一拍已走 ${h.dwell.turns} / ${h.dwell.beats} 拍`
+            : `当前这一拍已走 ${h.dwell?.turns ?? 0} 拍`);
+    const stages = view.stages.map((st) => bbStageBlock(st, openIdx)).join("");
+    const emptyHint = h.passed === 0
+        ? `<div class="tsa-bb-empty">还没有已揭晓的片段——照常玩就好，踩中关键情节时这里会一段段亮起来。</div>`
+        : "";
+
+    const sound = info.sound || {};
+    const soundOn = sound.enabled !== false && Number(sound.volume) > 0;
+    const soundIcon = soundOn ? (Number(sound.volume) > 70 ? "fa-volume-high" : "fa-volume-low") : "fa-volume-xmark";
+    const soundLabel = describeUnlockVolume(sound);
+
+    // 渲染即消费本屏的"新解锁"（见函数注释）。放在拼 HTML 之后、返回之前。
+    consumeUnlockMarks(info);
+
     return `
         <div class="tsa-scroll">
-            <div class="tsa-empty" style="line-height:1.6;">
-                <div style="font-weight:600;"><i class="fa-solid fa-clapperboard"></i> 盲盒导演${info.paused ? " · 已暂停" : "引导中"}</div>
-                <div style="margin-top:6px;">内容已封印，由导演在幕后把每回合悄悄引导向主线。已达成 ${s.passed}/${s.total} 个关键事件 · 共 ${s.nodeCount} 个节点。</div>
-                <div style="margin-top:6px;opacity:.7;">想看进度骨架 / 回顾墙，或剧透逃生，请到「大纲生成」窗口打开这本方案。</div>
+            <div class="tsa-bb">
+                <div class="tsa-bb-top">
+                    <span class="tsa-bb-title"><i class="fa-solid fa-clapperboard"></i> 盲盒导演</span>
+                    <span class="tsa-bb-state">${info.paused ? "已暂停" : "引导中"}</span>
+                    <span class="tsa-bb-stages-count">阶段 ${Math.min(h.stageIndex + 1, h.stageCount)}/${h.stageCount}</span>
+                </div>
+                <div class="tsa-progress tsa-bb-progress">
+                    <div class="tsa-progress-text">已解锁 ${h.passed} / ${h.total} 个关键事件${h.skipped > 0 ? ` · 跳过 ${h.skipped}` : ""}</div>
+                    <div class="tsa-bar"><div class="tsa-bar-fill" style="width:${percent}%"></div></div>
+                </div>
+                <div class="tsa-bb-dwell">${dwell}</div>
+                ${emptyHint}
+                <ol class="tsa-bb-stages">${stages}</ol>
             </div>
         </div>
         <div class="tsa-footer">
+            <button type="button" class="tsa-icon-btn" id="tsa-bb-sound" title="解锁提示音：${soundLabel}（点击切换 关/轻/中/响）" aria-label="切换解锁提示音音量">
+                <i class="fa-solid ${soundIcon}"></i>
+            </button>
             <button type="button" class="tsa-generate" id="tsa-bb-pause">
                 <i class="fa-solid ${info.paused ? "fa-play" : "fa-pause"}"></i> ${info.paused ? "恢复导演" : "暂停导演"}
             </button>
@@ -579,6 +837,7 @@ function destroyPanel() {
     previewItemIdx = -1;
     previewOpen = false;   // 下次打开回到折叠态
     panelMode = "recommend";   // 下次打开回到推荐剧情页（节奏诊断缓存保留，重开仍可见）
+    bbStageOpenIdx = -1;   // 解锁界面回到"默认展开最近通关的那个阶段"
     const strip = getStrip();
     if (strip) updateStrip(strip, { expanded: false });
 }
@@ -767,6 +1026,29 @@ function bindPanelNode(panel) {
         const strip = getStrip();
         if (strip) updateStrip(strip);
         await refreshPanel();
+    });
+
+    // 音量循环：关 → 轻 → 中 → 响 → 关。每切一档当场试听一下（等于把"试听"并进这个按钮）。
+    $panel.on("click", "#tsa-bb-sound", async function () {
+        const next = cycleUnlockVolume();
+        if (next.enabled !== false && next.volume > 0) playUnlockCue("event", { config: next });
+        await refreshPanel();
+    });
+
+    // 已通关阶段：点表头折叠/展开（-2 表示全部收起，见 buildBlindboxBody 的 openIdx 约定）
+    const toggleStage = async function () {
+        const $stage = $(this).closest(".tsa-bb-stage");
+        const idx = Number($stage.data("stage-idx"));
+        if (!Number.isFinite(idx)) return;
+        const isOpen = $stage.find(".tsa-bb-stage-head").attr("aria-expanded") === "true";
+        bbStageOpenIdx = isOpen ? -2 : idx;
+        await refreshPanel();
+    };
+    $panel.on("click", ".tsa-bb-stage.is-cleared > .tsa-bb-stage-head", toggleStage);
+    $panel.on("keydown", ".tsa-bb-stage.is-cleared > .tsa-bb-stage-head", function (event) {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        toggleStage.call(this);
     });
 
     $panel.on("click", ".tsa-item", function () {

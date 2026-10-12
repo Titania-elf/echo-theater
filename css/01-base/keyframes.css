@@ -295,3 +295,31 @@
 
 /* rewriteEntryButton.js */
 @keyframes t-rewrite-mark-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* sceneAdvanceBubble.js（盲盒解锁界面）：新解锁的条目"从模糊到清晰"地揭晓出来。
+   只跑一次（动画结束即停在终态），所以用 forwards 之外的默认值也行——由类名控制是否挂在元素上。 */
+@keyframes t-bb-reveal-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+        filter: blur(3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+}
+
+/* sceneAdvanceBubble.js：未解锁占位条上那道慢慢扫过的微光。
+   只用在当前阶段那两三条锁行上，不给整片封印阶段用（省性能）。 */
+@keyframes t-bb-shimmer-sweep {
+    0% {
+        background-position: -160% 0;
+    }
+
+    100% {
+        background-position: 260% 0;
+    }
+}

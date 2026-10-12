@@ -55,6 +55,13 @@ import { initOutlineEntryButton } from "./ui/outlineEntryButton.js";
 import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteEntryButton.js";
 import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
 import { initSceneAdvanceBubble, refreshSceneAdvanceBubble } from "./ui/sceneAdvanceBubble.js";
+import {
+    initUnlockSound,
+    getUnlockSoundConfig,
+    setUnlockSound,
+    previewUnlockCues,
+    describeUnlockVolume,
+} from "./core/unlockChime.js";
 import { initPacingInjection } from "./core/pacingInjection.js";
 import { initDirectorInjection } from "./core/directorInjection.js";
 import { initFloorNav, refreshFloorNavButton } from "./ui/floorNav.js";
@@ -215,6 +222,9 @@ function initCoreFeatures() {
 
     // 初始化消息气泡上的剧情推进入口（与发送键菜单入口共用 show_outline_actions 开关）
     initSceneAdvanceBubble();
+
+    // 盲盒解锁提示音：挂上"首次用户手势时恢复音频上下文"的钩子（自动播放策略），幂等
+    initUnlockSound();
 
     // 初始化叙事节奏把控的一次性注入生命周期（arm/clear + GENERATION_ENDED 清除）
     initPacingInjection();
@@ -1362,6 +1372,16 @@ async function loadExtensionSettings() {
     $("#cfg-floor-nav-enabled").prop("checked", extData.floor_nav?.enabled !== false);
     $("#cfg-preset-persist-vars").prop("checked", extData.preset_macros.persist_variables === true);
 
+    // 盲盒解锁提示音（独立顶层块 blindbox_reveal；读端一律 `!== false` 兜老用户）
+    (() => {
+        const cfg = getUnlockSoundConfig();
+        $("#cfg-blindbox-sound-enabled").prop("checked", cfg.enabled);
+        $("#cfg-blindbox-sound-event").prop("checked", cfg.cue_event);
+        $("#cfg-blindbox-sound-volume").val(cfg.volume);
+        $("#cfg-blindbox-sound-volume-label").text(describeUnlockVolume(cfg));
+        $("#titania-blindbox-sound-extra").toggleClass("is-muted", !cfg.enabled);
+    })();
+
     $("#cfg-float-edge-tuck").on("input", function () {
         const enabled = $(this).prop("checked") === true;
         const data = getExtData();
@@ -1409,6 +1429,44 @@ async function loadExtensionSettings() {
         // 同一开关也管着气泡上的剧情推进入口（入口已从发送键菜单迁至气泡）
         refreshSceneAdvanceBubble();
         if (window.toastr) toastr.success(enabled ? "剧情推进入口已启用" : "剧情推进入口已关闭", "Titania Echo");
+    });
+
+    // ── 盲盒解锁提示音 ──
+    // 音量的唯一"调法"在面板底部那个循环按钮（关/轻/中/响）；这里是开关与试听。
+    const syncBlindboxSoundControls = (cfg) => {
+        $("#cfg-blindbox-sound-volume-label").text(describeUnlockVolume(cfg));
+        $("#titania-blindbox-sound-extra").toggleClass("is-muted", !cfg.enabled);
+        // 开关动过之后，面板底部那个音量按钮的图标也要跟着变
+        refreshSceneAdvanceBubble();
+    };
+
+    $("#cfg-blindbox-sound-enabled").on("input", function () {
+        const enabled = $(this).prop("checked") === true;
+        syncBlindboxSoundControls(setUnlockSound({ enabled }));
+        if (window.toastr) toastr.success(enabled ? "盲盒解锁提示音已启用" : "盲盒解锁提示音已关闭", "Titania Echo");
+    });
+
+    $("#cfg-blindbox-sound-event").on("input", function () {
+        const on = $(this).prop("checked") === true;
+        setUnlockSound({ cue_event: on });
+        if (on) previewUnlockCues(); // 打开就试听一下，省得再去找试听按钮
+    });
+
+    $("#cfg-blindbox-sound-volume").on("input", function () {
+        const vol = Number($(this).val());
+        // 拖到 0 就是关掉：与面板底部那个循环按钮的档位语义保持一致
+        const cfg = setUnlockSound({ volume: vol, enabled: vol > 0 });
+        $("#cfg-blindbox-sound-enabled").prop("checked", cfg.enabled);
+        $("#cfg-blindbox-sound-volume-label").text(describeUnlockVolume(cfg));
+    });
+
+    $("#cfg-blindbox-sound-preview").on("click", () => {
+        const cfg = getUnlockSoundConfig();
+        if (cfg.enabled === false || cfg.volume <= 0) {
+            if (window.toastr) toastr.info("提示音当前是关闭的，先打开开关或把音量调上去", "Titania Echo");
+            return;
+        }
+        previewUnlockCues();
     });
 
     $("#cfg-rewrite-entry-enabled").on("input", function () {

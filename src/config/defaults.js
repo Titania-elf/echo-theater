@@ -187,6 +187,16 @@ export const defaultSettings = {
         inject_depth: 0,       // setExtensionPrompt 的 IN_CHAT 深度，0 = 紧贴最新消息
         inject_role: "system"  // system | user | assistant
     },
+    // 盲盒解锁提示音的设置。
+    // ⚠ 必须是**独立顶层块**：settingsWindow.js 保存时会把 director 整个对象换掉，
+    //   塞进去会被静默清空。读端一律 `?? 默认`（老用户没这个键时按 开启/30/事件也响）。
+    // ⚠ enabled 的默认是 true，读端用 `!== false` 判：老用户没这个键，
+    //   用 `=== true` 会把全新功能静默关掉，谁也发现不了。
+    blindbox_reveal: {
+        enabled: true,      // 解锁时响提示音
+        volume: 30,         // 0–100，平方律映射到增益；面板底部的按钮循环 0/30/60/90
+        cue_event: true     // 事件解锁也响（关掉就只保留阶段通关那一声）
+    },
 
     // 自定义系统提示词配置
     custom_prompts: {
