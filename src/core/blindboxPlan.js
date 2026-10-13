@@ -78,6 +78,25 @@ export function addRevealMarks(list, marks) {
 /** 判定流水最多留几条——够覆盖一轮反复 swipe 的回滚即可。 */
 export const MAX_JOURNAL = 40;
 
+/**
+ * 「导演日志」最多留几条。这是**给人看**的判定流水（横条心跳 + 面板里那张表）。
+ *
+ * ⚠ 它和 journal 是两本账，**别合并**：
+ *   · journal 是**回滚账本**——swipe 撤回时要按它还原事件状态，只记"真改了状态"的那几拍；
+ *   · directorLog 每拍都记一条，包括"判过了但没出手"和"判定压根失败"。
+ *     失败那拍根本不调 applyDirectorDecision，若把失败条目混进 journal，
+ *     rollbackJournalFrom 结尾那句「lastJudged 取 journal 末条」会把 lastJudged
+ *     推到一段其实没判过的正文上，next 拍的 sinceFloor 就错了（新证据被判成旧证据）。
+ */
+export const MAX_DIRECTOR_LOG = 40;
+
+/** 本拍判定的结果档。这是**给人看的分类**，不是事件状态机的一部分。 */
+export const DIRECTOR_TURN = Object.freeze({
+    NOOP: "noop",          // 判完了，模型选择不动（当前目标照样涨一拍停留）
+    ADVANCED: "advanced",  // 放行了 done / skipped，往前走了一步
+    FAILED: "failed",      // 判定没跑成：API 报错，或返回无法解析
+});
+
 /** 关键事件状态：未到 / 进行中 / 已达成 / 已跳过。 */
 export const EVENT_STATUS = Object.freeze({
     PENDING: "pending",
@@ -246,6 +265,68 @@ function normalizeJournalEntry(raw) {
     };
 }
 
+/** 事件下标引用（节点.事件）。非法的一律返回 null，由调用方 filter 掉。 */
+function normalizeRef(raw) {
+    const node = Math.floor(Number(raw?.node));
+    const event = Math.floor(Number(raw?.event));
+    if (!Number.isFinite(node) || node < 0) return null;
+    if (!Number.isFinite(event) || event < 0) return null;
+    return { node, event };
+}
+
+/**
+ * 一条导演日志。
+ *
+ * ⚠ **只有状态与下标，永远不含内容**：它要显示在横条与面板上，而界面上"未解锁"的东西
+ * 必须零剧透（见 blindboxReveal.js 那道铁律）。所以这里连 evidence / recap / 事件正文
+ * 都不收；被拦原因也只收抽象码（why），不收模型原文——原文里可能带着骨架内容。
+ */
+function normalizeDirectorLogEntry(raw) {
+    const r = raw && typeof raw === "object" ? raw : {};
+    const floor = Math.floor(Number(r.floor));
+    const advanced = (Array.isArray(r.advanced) ? r.advanced : [])
+        .map((a) => {
+            const ref = normalizeRef(a);
+            if (!ref) return null;
+            return { ...ref, status: VALID_STATUS.has(a?.status) ? a.status : EVENT_STATUS.DONE };
+        })
+        .filter(Boolean)
+        .slice(0, 8);
+    const refused = (Array.isArray(r.refused) ? r.refused : [])
+        .map((a) => {
+            const ref = normalizeRef(a);
+            const why = trimmed(a?.why);
+            if (!ref || !why) return null;
+            return { ...ref, why };
+        })
+        .filter(Boolean)
+        .slice(0, 8);
+    const turns = Math.floor(Number(r.dwell?.turns));
+    const beats = Math.floor(Number(r.dwell?.beats));
+    return {
+        floor: Number.isFinite(floor) && floor >= 0 ? floor : -1,
+        swipeId: str(r.swipeId),
+        at: Number(r.at) || 0,
+        turn: Object.values(DIRECTOR_TURN).includes(r.turn) ? r.turn : DIRECTOR_TURN.NOOP,
+        // 实际出手的力度（含代码兜底补的时间推移那一句）。
+        spoke: VALID_INTENSITY.has(r.spoke) ? r.spoke : DIRECTOR_INTENSITY.NONE,
+        advanced,
+        refused,
+        failure: r.failure === "parse" || r.failure === "api" ? r.failure : "",
+        dwell: {
+            turns: Number.isFinite(turns) && turns > 0 ? turns : 0,
+            beats: Number.isFinite(beats) && beats > 0 ? beats : 0,
+        },
+    };
+}
+
+/** 往导演日志尾部追加一条（封顶 MAX_DIRECTOR_LOG）。返回新对象，不改原对象。 */
+export function appendDirectorLog(blindbox, entry) {
+    const bb = normalizeBlindbox(blindbox);
+    bb.directorLog = [...bb.directorLog, normalizeDirectorLogEntry(entry)].slice(-MAX_DIRECTOR_LOG);
+    return bb;
+}
+
 /**
  * 规范化整个 blindbox 对象。缺字段给安全默认，坏类型被洗掉，不抛错。
  * ⚠ 这是个**白名单式**对象字面量：没写进这里的字段会在落盘时被悄悄洗掉
@@ -255,6 +336,9 @@ export function normalizeBlindbox(raw) {
     const bb = raw && typeof raw === "object" ? raw : {};
     const nodes = Array.isArray(bb.nodes) ? bb.nodes.map(normalizeNode) : [];
     const journal = (Array.isArray(bb.journal) ? bb.journal : []).map(normalizeJournalEntry).slice(-MAX_JOURNAL);
+    const directorLog = (Array.isArray(bb.directorLog) ? bb.directorLog : [])
+        .map(normalizeDirectorLogEntry)
+        .slice(-MAX_DIRECTOR_LOG);
     return {
         tone: str(bb.tone),
         redlines: str(bb.redlines),
@@ -272,6 +356,8 @@ export function normalizeBlindbox(raw) {
         progress: normalizeProgress(bb.progress, nodes),
         lastJudged: normalizeLastJudged(bb.lastJudged),
         journal,
+        // 判定流水（给人看的那本账，与 journal 分工见 MAX_DIRECTOR_LOG 的注释）。
+        directorLog,
         // 解锁播报账本（判定侧只写 announced，揭晓侧只写 viewed，见 blindboxReveal.js）。
         // marksReady=false ＝ 本功能上线前就存在的存档：首次接触时静默补记，否则一开面板
         // 会把陈年旧账一次性响一遍。
@@ -557,14 +643,15 @@ export function applyDirectorDecision(blindbox, decision, options = {}) {
         .sort((a, b) => (a.node - b.node) || (a.event - b.event));
     sorted.forEach((u) => {
         const where = `${u?.node}.${u?.event}`;
+        const ref = { node: u?.node, event: u?.event };
         const ev = bb.nodes[u?.node]?.events?.[u?.event];
         if (!ev) {
-            report.refused.push({ where, want: u?.status, why: "no-such-event" });
+            report.refused.push({ ...ref, where, want: u?.status, why: "no-such-event" });
             return;
         }
         // 已经翻过去的事件是既成事实：代码层面也不许翻回（v1 只在提示词里嘱咐过）。
         if (isPassed(ev)) {
-            report.refused.push({ where, want: u?.status, why: "already-passed" });
+            report.refused.push({ ...ref, where, want: u?.status, why: "already-passed" });
             return;
         }
         const isPointer = u.node === prevProgress.nodeIndex && u.event === prevProgress.eventIndex;
@@ -598,11 +685,11 @@ export function applyDirectorDecision(blindbox, decision, options = {}) {
             if (u.recap) ev.recap = u.recap;
             if (want === UPDATE_KIND.SKIPPED) ev.skipReason = u.reason || SKIP_REASONS.MOOT;
             stepQuota -= 1;
-            report.applied.push({ where, status: want });
+            report.applied.push({ ...ref, where, status: want });
         } else {
             // 没放行的也别白判：把证据/回顾留成一条推进笔记，下回合随骨架回灌。
             pushNote(ev, u.evidence || u.recap);
-            if (u.status !== UPDATE_KIND.PROGRESS) report.refused.push({ where, want: u.status, why: why || "downgraded" });
+            if (u.status !== UPDATE_KIND.PROGRESS) report.refused.push({ ...ref, where, want: u.status, why: why || "downgraded" });
         }
     });
 
@@ -667,6 +754,9 @@ export function rollbackJournalFrom(blindbox, floor) {
     const bb = normalizeBlindbox(blindbox);
     const from = Math.floor(Number(floor));
     if (!Number.isFinite(from) || from < 0) return bb;
+    // 导演日志跟着一起撤回：这一楼被 swipe 掉要重判，作废的那几拍不该继续挂在流水上。
+    // （它不参与任何状态还原，纯粹是"别让人看见已经作废的判定"。）
+    bb.directorLog = bb.directorLog.filter((e) => !(e.floor >= 0 && e.floor >= from));
     let rolled = 0;
     let earliestProgress = null;
     while (bb.journal.length > 0) {
@@ -773,4 +863,50 @@ export function describeStrictness(strictness) {
         "当前目标事件停留拍数未达 beats 预算时，只有 confidence=high 才放行，否则降级为 progress；",
         "skipped 必须给 reason（moot/superseded/refused）＋ evidence，且不得越过当前目标造成跨步。",
     ].join("\n");
+}
+
+/* ---- 判定流水的「人话」层（给人看的，与提示词契约无关） ---- */
+
+/**
+ * 闸门拒绝原因（checkDoneGate / checkSkipGate 与两处前置过滤抛的那些码）翻成人话。
+ *
+ * 这一层能放在界面上，是因为**原因码是抽象的**——它说的是"为什么没放行"，
+ * 从头到尾不碰事件内容，所以不构成剧透。玩家看到"模型想放行但停留拍数不够"，
+ * 就知道该调松严格度，而不是疑心导演没在跑。
+ */
+const REFUSAL_TEXT = {
+    "done-quota": "这一拍已经往前走过一步了（一拍一步），多报的留到下一拍",
+    "skip-quota": "这一拍已经往前走过一步了（一拍一步），多报的留到下一拍",
+    "no-evidence": "没给正文里的指认（evidence），无据可依",
+    "criteria-incomplete": "成立条件没有全部命中（严格档要求逐条命中）",
+    "criteria-none": "成立条件一条都没命中",
+    "too-early": "当前这拍停留拍数没到预算，严格档一律不放行",
+    "too-early-low-confidence": "当前这拍停留拍数没到预算，且模型没给高置信度",
+    "no-skip-reason": "没给跳过理由（moot / superseded / refused）",
+    "skip-ahead": "想跳过还没走到的事件，不许跨步",
+    "no-such-event": "报了一个骨架上不存在的事件（模型记错了）",
+    "already-passed": "那个事件早就翻过去了，不许翻回",
+    "future-node": "想判后面节点的事件——越级判定一律降级",
+    "stale-evidence": "拿的是更早楼层的正文，旧正文不算新证据",
+    "downgraded": "没通过闸门，降级为「推进中」",
+};
+
+export function describeRefusal(why) {
+    const key = trimmed(why);
+    if (!key) return "没通过闸门";
+    return REFUSAL_TEXT[key] || `没通过闸门（${key}）`;
+}
+
+/** 一行说清这一拍导演干了什么。零剧透：只有动作与数量，没有内容。 */
+export function describeDirectorTurn(entry) {
+    const e = entry && typeof entry === "object" ? entry : {};
+    if (e.turn === DIRECTOR_TURN.FAILED) {
+        return e.failure === "api" ? "判定失败（API 报错）" : "判定失败（返回无法解析）";
+    }
+    const parts = [];
+    const advanced = Array.isArray(e.advanced) ? e.advanced.length : 0;
+    if (advanced > 0) parts.push(`翻过 ${advanced} 个`);
+    if (e.spoke === DIRECTOR_INTENSITY.FIRM) parts.push("出手 · 收束");
+    else if (e.spoke === DIRECTOR_INTENSITY.GENTLE) parts.push("出手 · 轻推");
+    return parts.length ? parts.join(" · ") : "没出手";
 }

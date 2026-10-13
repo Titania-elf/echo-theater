@@ -7,13 +7,14 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const mod = await import(pathToFileURL(path.join(here, '../src/core/blindboxPlan.js')).href);
 const {
     BLINDBOX_KIND, EVENT_STATUS, EVENTS_PER_GAP_MIN, EVENTS_PER_GAP_MAX,
-    STRICTNESS, SKIP_REASONS, MAX_EVENT_NOTES,
+    STRICTNESS, SKIP_REASONS, MAX_EVENT_NOTES, MAX_DIRECTOR_LOG, DIRECTOR_TURN,
     getPlanKind, isBlindboxPlan, isSealed,
     clampNodeCount, clampEventsPerGap, normalizeStrictness,
     normalizeBlindbox, createBlindboxDraft, sealWithNodes, unseal,
     getCurrentTarget, flattenEvents, getProgressStats, toVisibleItems, extractBlindboxNodes,
     DIRECTOR_INTENSITY, parseDirectorDecision, applyDirectorDecision, rollbackJournalFrom,
     buildDirectorSkeleton, describeDirectorProgress, describeStrictness,
+    appendDirectorLog, describeDirectorTurn, describeRefusal,
 } = mod;
 
 test('kind: 缺省/非 blindbox 一律当普通方案', () => {
@@ -563,4 +564,117 @@ test('describeDirectorProgress / describeStrictness: 契约文本带上判定要
     assert.match(describeStrictness(STRICTNESS.STANDARD), /confidence=high/);
     assert.match(describeStrictness(STRICTNESS.STRICT), /全部/);
     assert.match(describeStrictness(STRICTNESS.LOOSE), /不推荐/);
+});
+
+/* ---------------- 导演流水（给人看的那本账） ----------------
+ * 它和 journal 是两本账：journal 管回滚，directorLog 管显示。下面几条守着这条分界，
+ * 以及"流水永远不含内容"那道零剧透底线。
+ */
+
+test('导演流水: 每拍都记一条，且活过 normalize 白名单', () => {
+    const bb = appendDirectorLog(sealV2(), {
+        floor: 7, swipeId: '0', at: 1700000000000,
+        turn: DIRECTOR_TURN.ADVANCED, spoke: DIRECTOR_INTENSITY.GENTLE,
+        advanced: [{ node: 0, event: 0, status: 'done' }],
+        refused: [{ node: 0, event: 1, why: 'stale-evidence' }],
+        dwell: { turns: 3, beats: 4 },
+    });
+    assert.equal(bb.directorLog.length, 1);
+    const e = normalizeBlindbox(bb).directorLog[0];   // 白名单没写进去就会在这里蒸发
+    assert.equal(e.floor, 7);
+    assert.equal(e.turn, DIRECTOR_TURN.ADVANCED);
+    assert.equal(e.spoke, DIRECTOR_INTENSITY.GENTLE);
+    assert.deepEqual(e.advanced, [{ node: 0, event: 0, status: 'done' }]);
+    assert.deepEqual(e.refused, [{ node: 0, event: 1, why: 'stale-evidence' }]);
+    assert.deepEqual(e.dwell, { turns: 3, beats: 4 });
+});
+
+test('导演流水: 零剧透——内容字段一个都不收，坏档位退回最保守的一档', () => {
+    const bb = appendDirectorLog(sealV2(), {
+        floor: 3, turn: '什么鬼', spoke: 'railroad',
+        evidence: '机密证据', recap: '机密回顾', content: '机密正文', directive: '机密引导',
+        advanced: [{ node: 0, event: 0, status: 'done' }],
+    });
+    const e = bb.directorLog[0];
+    assert.equal(e.turn, DIRECTOR_TURN.NOOP);
+    assert.equal(e.spoke, DIRECTOR_INTENSITY.NONE);
+    // 整条序列化后扫不出任何内容字段——这是"界面上不给看的东西在数据层就不存在"的延续
+    const dump = JSON.stringify(e);
+    for (const secret of ['机密证据', '机密回顾', '机密正文', '机密引导']) {
+        assert.equal(dump.includes(secret), false, `流水里不应出现 ${secret}`);
+    }
+});
+
+test('导演流水: 失败那拍照样记，且不碰 journal / lastJudged', () => {
+    const bb = sealV2();
+    const logged = appendDirectorLog(bb, {
+        floor: 9, swipeId: '1', turn: DIRECTOR_TURN.FAILED, failure: 'parse',
+    });
+    assert.equal(logged.directorLog.length, 1);
+    assert.equal(logged.directorLog[0].failure, 'parse');
+    // 关键：失败条目不进 journal，所以 lastJudged 不会被推到一段其实没判过的正文上
+    assert.deepEqual(logged.journal, []);
+    assert.equal(logged.lastJudged.floor, -1);
+
+    // 坏 failure 档位洗成空串，不会把模型原文带进来
+    const dirty = appendDirectorLog(bb, { floor: 9, turn: DIRECTOR_TURN.FAILED, failure: '截断原文在此' });
+    assert.equal(dirty.directorLog[0].failure, '');
+});
+
+test('导演流水: 封顶 MAX_DIRECTOR_LOG，只留最近的', () => {
+    let bb = sealV2();
+    for (let i = 0; i < MAX_DIRECTOR_LOG + 5; i += 1) {
+        bb = appendDirectorLog(bb, { floor: i, turn: DIRECTOR_TURN.NOOP, dwell: { turns: i, beats: 0 } });
+    }
+    assert.equal(bb.directorLog.length, MAX_DIRECTOR_LOG);
+    // 留下的必须是尾部那几条（floor 从 5 起）
+    assert.equal(bb.directorLog[0].floor, 5);
+    assert.equal(bb.directorLog[bb.directorLog.length - 1].floor, MAX_DIRECTOR_LOG + 4);
+});
+
+test('rollbackJournalFrom: swipe 撤回时导演流水跟着一起撤', () => {
+    let bb = sealV2();
+    bb = appendDirectorLog(bb, { floor: 4, turn: DIRECTOR_TURN.NOOP });
+    bb = applyDirectorDecision(bb, parseDirectorDecision({
+        updates: [{ node: 0, event: 0, status: 'done', evidence: 'a', evidence_floor: 6, criteria_met: [0, 1], confidence: 'high' }],
+    }), { floor: 6, swipeId: '0' });
+    bb = appendDirectorLog(bb, { floor: 6, turn: DIRECTOR_TURN.ADVANCED, advanced: [{ node: 0, event: 0, status: 'done' }] });
+    assert.equal(bb.directorLog.length, 2);
+
+    const rolled = rollbackJournalFrom(bb, 6);
+    assert.equal(rolled.directorLog.length, 1);          // 第 6 楼那拍作废
+    assert.equal(rolled.directorLog[0].floor, 4);        // 更早的留着
+});
+
+test('applyDirectorDecision: 回报带上 node/event，流水才知道拦的是哪一条', () => {
+    const report = {};
+    applyDirectorDecision(sealV2(), parseDirectorDecision({
+        updates: [
+            { node: 0, event: 0, status: 'done', evidence: '在', evidence_floor: 10, criteria_met: [0, 1], confidence: 'high' },
+            { node: 0, event: 1, status: 'done', evidence: '在', evidence_floor: 9, criteria_met: [0], confidence: 'high' },
+        ],
+    }), { floor: 10, swipeId: '0', report });
+
+    assert.deepEqual(report.applied[0], { node: 0, event: 0, where: '0.0', status: 'done' });
+    // 第二条被"一拍一步"的配额拦下，下标要能照样带出来
+    assert.equal(report.refused[0].node, 0);
+    assert.equal(report.refused[0].event, 1);
+    assert.equal(report.refused[0].why, 'done-quota');
+});
+
+test('describeRefusal / describeDirectorTurn: 人话层，未知原因码也不崩', () => {
+    assert.match(describeRefusal('too-early-low-confidence'), /置信度/);
+    assert.match(describeRefusal('stale-evidence'), /旧正文/);
+    assert.match(describeRefusal('future-node'), /越级/);
+    assert.match(describeRefusal('brand-new-code'), /brand-new-code/);   // 认不出就原样带出
+    assert.equal(describeRefusal(''), '没通过闸门');
+
+    assert.equal(describeDirectorTurn({ turn: DIRECTOR_TURN.NOOP }), '没出手');
+    assert.equal(describeDirectorTurn({ turn: DIRECTOR_TURN.NOOP, spoke: DIRECTOR_INTENSITY.FIRM }), '出手 · 收束');
+    assert.equal(
+        describeDirectorTurn({ turn: DIRECTOR_TURN.ADVANCED, advanced: [{ node: 0, event: 0, status: 'done' }] }),
+        '翻过 1 个',
+    );
+    assert.match(describeDirectorTurn({ turn: DIRECTOR_TURN.FAILED, failure: 'parse' }), /无法解析/);
+    assert.match(describeDirectorTurn({ turn: DIRECTOR_TURN.FAILED, failure: 'api' }), /API/);
 });

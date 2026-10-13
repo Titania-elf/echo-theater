@@ -311,6 +311,40 @@
 
 .tsa-panel .tsa-bb-empty { font-size: 11px; line-height: 1.5; color: var(--t-glass-text-muted); }
 
+/* 导演流水：每拍一行「判过了什么」。只露最近 3 拍，要细究再展开。 */
+.tsa-panel .tsa-bb-flow { display: flex; flex-direction: column; gap: 4px; padding: 6px 7px; border: 1px solid var(--t-color-accent-border); border-radius: var(--t-radius-sm); }
+
+.tsa-panel .tsa-bb-flow-head { font-size: 11px; font-weight: 700; color: var(--t-glass-text-secondary); }
+
+.tsa-panel .tsa-bb-flow-sub { margin-left: 5px; font-weight: 400; color: var(--t-glass-text-muted); }
+
+.tsa-panel .tsa-bb-flow-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+
+.tsa-panel .tsa-bb-flow-row { display: flex; align-items: baseline; gap: 7px; font-size: 11px; color: var(--t-glass-text-secondary); }
+
+.tsa-panel .tsa-bb-flow-floor { flex-shrink: 0; width: 26px; color: var(--t-glass-text-muted); font-variant-numeric: tabular-nums; }
+
+.tsa-panel .tsa-bb-flow-time { flex-shrink: 0; color: var(--t-glass-text-muted); font-variant-numeric: tabular-nums; }
+
+.tsa-panel .tsa-bb-flow-what { flex: 1; min-width: 0; }
+
+.tsa-panel .tsa-bb-flow-refused { flex-shrink: 0; color: var(--t-color-warning); }
+
+.tsa-panel .tsa-bb-flow-row.is-failed .tsa-bb-flow-what { color: var(--t-color-danger); font-weight: 600; }
+
+.tsa-panel .tsa-bb-flow-toggle {
+    align-self: flex-start;
+    padding: 1px 6px;
+    border: 1px solid var(--t-color-accent-border);
+    border-radius: var(--t-radius-sm);
+    background: transparent;
+    color: var(--t-glass-text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.tsa-panel .tsa-bb-flow-toggle:hover { border-color: var(--t-color-accent-border-hover); color: var(--t-glass-text); }
+
 /* 阶段列表 */
 .tsa-panel .tsa-bb-stages { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
 
@@ -428,6 +462,11 @@
     background: var(--t-color-success);
     animation: t-pulse-green 1.6s ease-in-out infinite;
 }
+
+/* 心跳报"本拍判定异常"时把横条染红——这是"导演坏了"唯一不用翻日志就看得见的地方 */
+#chat .mes .tsa-strip.is-failed { border-color: var(--t-color-danger-border); }
+
+#chat .mes .tsa-strip.is-failed .tsa-strip-progress { color: var(--t-color-danger); }
 
 /* 减少动态效果：动画是点缀，先把状态信息留在原地（本仓库第一个 reduced-motion 兜底） */
 @media (prefers-reduced-motion: reduce) {

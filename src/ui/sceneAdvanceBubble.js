@@ -29,7 +29,7 @@ import { eventSource, event_types } from "../../../../script.js";
 import { getExtData, saveExtData } from "../utils/storage.js";
 import { TitaniaLogger } from "../core/logger.js";
 import * as pacingInjection from "../core/pacingInjection.js";
-import { isBlindboxPlan, normalizeBlindbox, getProgressStats } from "../core/blindboxPlan.js";
+import { isBlindboxPlan, normalizeBlindbox, getProgressStats, DIRECTOR_TURN, describeDirectorTurn } from "../core/blindboxPlan.js";
 import {
     buildRevealView,
     resolveUnlocks,
@@ -72,6 +72,10 @@ let previewItemIdx = -1;
 let previewOpen = false;
 /** 盲盒解锁界面展开了哪个已通关阶段：-1=默认（最近通关的那个）、-2=全部收起、>=0=指定下标。收起时重置。 */
 let bbStageOpenIdx = -1;
+
+// 判定流水是否展开全部（默认只露最近 3 拍）。面板被 ST 重渲染冲掉时不重置——
+// 和 bbStageOpenIdx 一样属于"玩家的查看偏好"，下次打开该保持。
+let bbFlowOpen = false;
 /** 面板当前模式：recommend（推荐剧情）| pacing（节奏把控）。收起时重置回 recommend。 */
 let panelMode = "recommend";
 /** 最近一次节奏诊断（{pacingState, assessment, directive, focus, intensity}），重绘不丢。 */
@@ -185,6 +189,9 @@ function getActiveBlindboxInfo() {
             paused: bb.directorPaused === true,
             // 阶段化视图：纯数据，防剧透（未解锁项在数据层就没有内容）由 blindboxReveal 保证
             view: buildRevealView(nbb),
+            // 判定流水：同样是纯数据、同样零剧透——条目里只有状态与下标，没有内容
+            // （保证在 blindboxPlan.normalizeDirectorLogEntry，那里连 evidence 都不收）。
+            directorLog: nbb.directorLog,
             sound: getUnlockSoundConfig(),
         };
     } catch {
@@ -270,6 +277,23 @@ function buildStrip() {
     return strip;
 }
 
+/**
+ * 横条上那一小截心跳：只说「导演刚才干了什么」，不碰任何内容。
+ *
+ * 存在的理由：判定跑在后台，没出手的那一拍与"根本没在跑"在界面上一模一样。
+ * 有一截心跳，玩家才分得清「它在克制」和「它坏了」。
+ */
+function directorHeartbeat(entry) {
+    if (!entry) return "";
+    if (entry.turn === DIRECTOR_TURN.FAILED) return "本拍判定异常";
+    const floor = Number(entry.floor) >= 0 ? `#${entry.floor}` : "";
+    const tail = Array.isArray(entry.advanced) && entry.advanced.length > 0
+        ? "翻过一幕"
+        : (entry.spoke === "firm" ? "收束" : (entry.spoke === "gentle" ? "轻推" : ""));
+    const parts = [floor ? `刚看过 ${floor}` : "刚看过", tail].filter(Boolean);
+    return parts.join(" · ");
+}
+
 /** 就地更新某条横条上的进度文字与展开态外观。 */
 function updateStrip(strip, { progress, expanded } = {}) {
     if (!strip) return;
@@ -277,7 +301,13 @@ function updateStrip(strip, { progress, expanded } = {}) {
     if (bbInfo) {
         // 盲盒激活：横条退化成"引导中"状态灯，不显示任何剧透文字。
         $(strip).find(".tsa-strip-title").text(bbInfo.paused ? "盲盒导演 · 已暂停" : "盲盒导演");
-        $(strip).find(".tsa-strip-progress").text(`· 已解锁 ${bbInfo.stats.passed}/${bbInfo.stats.total}`);
+        const log = Array.isArray(bbInfo.directorLog) ? bbInfo.directorLog : [];
+        const last = log[log.length - 1];
+        const beat = bbInfo.paused ? "" : directorHeartbeat(last);
+        $(strip).find(".tsa-strip-progress")
+            .text(`· 已解锁 ${bbInfo.stats.passed}/${bbInfo.stats.total}${beat ? ` · ${beat}` : ""}`);
+        // 判定失败时把心跳染红——这是"导演坏了"唯一不用翻日志就看得见的地方。
+        $(strip).toggleClass("is-failed", !bbInfo.paused && last?.turn === DIRECTOR_TURN.FAILED);
         // 后台刚解锁、玩家还没打开面板看过 → 角标提示（打开面板做完揭晓动画后自动消失）。
         // 每次都按持久化的账本重算，所以切楼层/重渲染都不会误留或误清。
         const pending = bbInfo.view.header.hasUnviewed && !bbInfo.paused;
@@ -296,6 +326,7 @@ function updateStrip(strip, { progress, expanded } = {}) {
         // 用 text() 而非 html()：进度文案没有富文本需求，也免得把外部数据当 HTML 解析
         $(strip).find(".tsa-strip-progress").text(label ? `· ${label}` : "");
         $(strip).removeClass("has-unlock");
+        $(strip).removeClass("is-failed");
         $(strip).find(".tsa-strip-unlock-dot").remove();
     }
     if (expanded !== undefined) {
@@ -361,6 +392,21 @@ function scheduleRefreshStrips(delay = 0) {
 }
 
 export function refreshSceneAdvanceBubble() {
+    scheduleRefreshStrips(0);
+}
+
+/**
+ * 判定跑完后由 directorInjection 调用：让界面追上这一拍的判定结果。
+ *
+ * 和 notifyBlindboxUnlocks 的分工：
+ *   · 那个只管"新解锁"的结账（音效 / 角标），**没有新解锁就提前 return**；
+ *   · 这个不管有没有解锁都要跑——判定没出手、甚至判定失败的那一拍，横条心跳与面板
+ *     流水同样得更新。少了这一下，"导演很克制"和"判定根本没在跑"又长得一样了。
+ * 必须在 notifyBlindboxUnlocks **之后**调用：先结账（写 announced 账本）再渲染，
+ * 否则刚解锁的那一幕会被当成旧账，不播揭晓动画。
+ */
+export function refreshDirectorPanel() {
+    if (document.getElementById(PANEL_ID)) refreshPanel();
     scheduleRefreshStrips(0);
 }
 
@@ -710,6 +756,7 @@ function buildBlindboxBody(info) {
                 </div>
                 <div class="tsa-bb-dwell">${dwell}</div>
                 ${emptyHint}
+                ${buildDirectorFlow(info)}
                 <ol class="tsa-bb-stages">${stages}</ol>
             </div>
         </div>
@@ -721,6 +768,39 @@ function buildBlindboxBody(info) {
                 <i class="fa-solid ${info.paused ? "fa-play" : "fa-pause"}"></i> ${info.paused ? "恢复导演" : "暂停导演"}
             </button>
         </div>`;
+}
+
+/**
+ * 判定流水：每拍一行「导演刚才干了什么」。
+ *
+ * 默认只露最近 3 拍（一打开就糊一屏反而没人看），要细究再展开——完整的原因明细在
+ * 大纲窗的「导演诊断」里，这里只给一个"被拦 N 条"的汇总，免得游玩时被诊断信息淹掉。
+ * 内容全走 describeDirectorTurn，与横条心跳同一个来源，两边永远不会说两套话。
+ */
+function buildDirectorFlow(info) {
+    const log = Array.isArray(info.directorLog) ? info.directorLog : [];
+    if (log.length === 0) return "";
+    const rows = log.slice().reverse();
+    const shown = bbFlowOpen ? rows : rows.slice(0, 3);
+    const items = shown.map((e) => {
+        const failed = e.turn === DIRECTOR_TURN.FAILED;
+        const time = e.at ? new Date(e.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+        const refused = Array.isArray(e.refused) ? e.refused.length : 0;
+        return `<li class="tsa-bb-flow-row${failed ? " is-failed" : ""}">
+            <span class="tsa-bb-flow-floor">${e.floor >= 0 ? `#${e.floor}` : "—"}</span>
+            <span class="tsa-bb-flow-time">${escapeHtmlText(time)}</span>
+            <span class="tsa-bb-flow-what">${escapeHtmlText(describeDirectorTurn(e))}</span>
+            ${refused > 0 ? `<span class="tsa-bb-flow-refused">被拦 ${refused} 条</span>` : ""}
+        </li>`;
+    }).join("");
+    const toggle = rows.length > 3
+        ? `<button type="button" class="tsa-bb-flow-toggle" data-action="bb-flow-toggle">${bbFlowOpen ? "收起" : `展开全部 ${rows.length} 拍`}</button>`
+        : "";
+    return `<div class="tsa-bb-flow">
+        <div class="tsa-bb-flow-head">导演流水<span class="tsa-bb-flow-sub">（判过了什么，不是剧情内容）</span></div>
+        <ol class="tsa-bb-flow-list">${items}</ol>
+        ${toggle}
+    </div>`;
 }
 
 /** 推荐剧情体：预览 / 方案 / 进度 / 候选（可滚动）+ 底部操作条。原「剧情推进」排布。 */
@@ -1053,6 +1133,12 @@ function bindPanelNode(panel) {
 
     $panel.on("click", ".tsa-item", function () {
         onPickCandidate(Number($(this).data("candidate-index")));
+    });
+
+    // 判定流水展开/收起（只改这一处显示偏好，不重跑判定）
+    $panel.on("click", "[data-action='bb-flow-toggle']", async () => {
+        bbFlowOpen = !bbFlowOpen;
+        await refreshPanel();
     });
 
     // ── 节奏把控 ──

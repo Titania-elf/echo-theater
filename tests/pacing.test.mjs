@@ -39,16 +39,26 @@ async function loadPacingInjection() {
     return { ns: entry.namespace, calls };
 }
 
-/** 加载 storyOutlineWindow.js，7 个带宿主依赖的 import 全换成桩——parsePacingResponse 是纯逻辑，运行时不碰它们。 */
-async function loadStoryOutline() {
-    const context = vm.createContext({ console, String, Number, Boolean, Math, JSON, Array, Object });
+/**
+ * 加载 storyOutlineWindow.js，7 个带宿主依赖的 import 全换成桩——parsePacingResponse 是纯逻辑，运行时不碰它们。
+ *
+ * @param {{chat?: object[], extData?: object}} [opts]
+ *        chat 传了才桩出 SillyTavern（读楼层的函数据此走真实分支）；不传则全局没有
+ *        SillyTavern，那些函数按"无上下文"返回空——这正是老用例依赖的行为。
+ */
+async function loadStoryOutline(opts = {}) {
+    const context = vm.createContext({
+        console, String, Number, Boolean, Math, JSON, Array, Object,
+        __extData: opts.extData || {},
+        SillyTavern: opts.chat ? { getContext: () => ({ chat: opts.chat }) } : undefined,
+    });
     const uiPath = path.join(project, 'src/ui');
     const stubs = new Map([
         [path.join(project, 'src/core/context.js'), 'export const getContextData = async () => ({});'],
         [path.join(project, 'src/core/connection.js'), 'export const sendChatRequestWithConnection = async () => ""; export const getConnectionByProfileId = () => null; export const getActiveConnection = () => null;'],
         [path.join(project, 'src/core/apiProfileRegistry.js'), 'export const normalizeApiBaseUrl = u => u; export const normalizeRewriteCustomProfiles = p => p;'],
         [path.join(project, 'src/utils/dom.js'), 'export const ensureFeatureCss = () => {};'],
-        [path.join(project, 'src/utils/storage.js'), 'export const getExtData = () => ({}); export const saveExtData = () => {};'],
+        [path.join(project, 'src/utils/storage.js'), 'export const getExtData = () => __extData; export const saveExtData = () => {};'],
         [path.join(project, 'src/utils/chatTagWhitelist.js'), 'export const parseTagWhitelistInput = () => []; export const extractTextByWhitelist = t => t;'],
         [path.join(uiPath, 'shared/apiConnectionEditor.js'), 'export const createApiConnectionEditor = () => ({}); export const mapConnectionProfilesToCustomProfiles = p => p; export const mapCustomProfilesToConnectionProfiles = p => p; export const renderApiConnectionEditorHTML = () => "";'],
         [path.join(project, 'src/core/directorInjection.js'), 'export const armDirectorDirective = () => {}; export const clearDirectorDirective = () => {}; export const getDirectorInjectConfig = () => ({ depth: 0, role: "system" }); export const getDirectorTrigger = () => ({ eligible: false, floor: -1, swipeId: "", sig: "" });'],
@@ -139,6 +149,95 @@ test('非法 state 归平稳、intensity 夹到 1-5、缺字段容错', async ()
 });
 
 /* ------------------------------------------------------------------ *
+ * 最近 N 层窗口（collectRecentChatText）—— 纯逻辑，靠桩出的 chat 驱动
+ * ------------------------------------------------------------------ */
+
+/** 5 楼聊天：0 开场 / 1 用户 / 2 角色 / 3 用户（空正文）/ 4 角色。 */
+const CHAT_5 = [
+    { mes: "开场白" },
+    { mes: "用户说", is_user: true },
+    { mes: "角色回复一" },
+    { mes: "", is_user: true },
+    { mes: "角色回复二" },
+];
+
+test('窗口按楼层切：抽不出正文的楼层占位，不从更早的楼层顶替', async () => {
+    const ns = await loadStoryOutline({ chat: CHAT_5 });
+    const text = ns.collectRecentChatText(2);
+    assert.ok(text.includes("角色回复二"), '最新一楼必须在窗口里');
+    assert.ok(text.includes("（本楼无可用正文）"), '滤空的第 3 楼要留占位，让模型知道这里有一层');
+    assert.equal(text.includes("角色回复一"), false, '窗口只有 2 层，第 2 楼不能被顶替进来');
+    assert.equal(text.includes("开场白"), false);
+});
+
+test('窗口不因隐藏/空楼层而变长：N 就是实际下发的最远楼层数', async () => {
+    const ns = await loadStoryOutline({ chat: CHAT_5 });
+    // 2 层 → 2 行（一行占位一行正文），不是"抽到 2 条正文为止"
+    assert.equal(ns.collectRecentChatText(2).split("\n\n").length, 2);
+    assert.equal(ns.collectRecentChatText(3).split("\n\n").length, 3);
+});
+
+test('withFloors 带上酒馆楼层号（盲盒导演据此回报 evidence_floor）', async () => {
+    const ns = await loadStoryOutline({ chat: CHAT_5 });
+    const text = ns.collectRecentChatText(2, { withFloors: true });
+    assert.ok(text.includes("【#3 用户】"), '楼层号必须是对原始 chat 下标，不是窗口内序号');
+    assert.ok(text.includes("【#4 角色】角色回复二"));
+});
+
+test('隐藏楼层计入窗口：includeHidden=false 时占位不读正文', async () => {
+    const hiddenChat = [
+        { mes: "真正文" },
+        { mes: "摘要", is_system: true },
+    ];
+    const ns = await loadStoryOutline({ chat: hiddenChat });
+    assert.equal(ns.collectRecentChatText(2, { includeHidden: true }), "【角色】真正文\n\n【背景】摘要");
+    const off = ns.collectRecentChatText(2, { includeHidden: false });
+    assert.equal(off.includes("摘要"), false, '不读隐藏楼层时正文不能漏出来');
+    assert.equal(off.split("\n\n").length, 2, '但楼层仍要占位，窗口长度不变');
+});
+
+test('0 或不传楼层数＝不读正文', async () => {
+    const ns = await loadStoryOutline({ chat: CHAT_5 });
+    assert.equal(ns.collectRecentChatText(0), "");
+    assert.equal(ns.collectRecentChatText(undefined), "");
+});
+
+test('没有 SillyTavern 上下文时返回空串，不抛错', async () => {
+    const ns = await loadStoryOutline();
+    assert.equal(ns.collectRecentChatText(3), "");
+});
+
+/* ------------------------------------------------------------------ *
+ * 剧情推进的参考文本（getRollingOpeningText）—— 永远是"最新一条角色回复"
+ * ------------------------------------------------------------------ */
+
+test('参考文本取最新一条角色回复，用户楼层与隐藏楼层都跳过', async () => {
+    const ns = await loadStoryOutline({
+        chat: [
+            { mes: "开场白" },
+            { mes: "用户说", is_user: true },
+            { mes: "角色回复一" },
+            { mes: "导演写的一小段", is_system: true },
+            { mes: "用户又说", is_user: true },
+            { mes: "角色回复二" },
+        ],
+    });
+    assert.equal(ns.getRollingOpeningText(), "角色回复二");
+});
+
+test('只有开场白时退回那一楼，不会空手交给模型', async () => {
+    const ns = await loadStoryOutline({ chat: [{ mes: "开场白" }] });
+    assert.equal(ns.getRollingOpeningText(), "开场白");
+});
+
+test('空聊天且无角色卡信息时返回空串，绝不抛错（不再有"未选择参考来源，已取消生成"）', async () => {
+    const ns = await loadStoryOutline({ chat: [] });
+    assert.equal(ns.getRollingOpeningText(), "");
+    const noCtx = await loadStoryOutline();
+    assert.equal(noCtx.getRollingOpeningText(), "");
+});
+
+/* ------------------------------------------------------------------ *
  * 接线契约（源码文本）
  * ------------------------------------------------------------------ */
 
@@ -155,6 +254,28 @@ test('节奏判断不触发开场白选择器（buildPacingPrompt 不碰 ensureO
     assert.ok(start >= 0 && end > start);
     assert.equal(src.slice(start, end).includes('ensureOpeningTextForGeneration'), false,
         'buildPacingPrompt 绝不能调开场白解析——那正是会弹选择器的入口');
+});
+
+test('剧情推进不弹选择器：generateRecommendations 用 resolveOpening＝最新回复', () => {
+    const src = read('src/ui/storyOutlineWindow.js');
+    const start = src.indexOf('async function generateRecommendations');
+    const end = src.indexOf('async function generateOutline(');
+    assert.ok(start >= 0 && end > start);
+    const body = src.slice(start, end);
+    assert.ok(body.includes('resolveOpening: getRollingOpeningText'),
+        '剧情推荐必须绕开开场白/楼层选择器，否则点「推荐剧情」会弹「选择聊天记录参考来源」');
+    assert.equal(body.includes('ensureOpeningTextForGeneration'), false);
+});
+
+test('runGenerationFlow 缺省仍走开场白解析，只有显式传 resolveOpening 才绕开', () => {
+    const src = read('src/ui/storyOutlineWindow.js');
+    const start = src.indexOf('async function runGenerationFlow');
+    const end = src.indexOf('/* ================================================================== *', start);
+    assert.ok(start >= 0 && end > start);
+    const body = src.slice(start, end);
+    assert.ok(body.includes('typeof cfg.resolveOpening === "function"'));
+    assert.ok(body.includes(': ensureOpeningTextForGeneration'),
+        '大纲生成/盲盒剧本生成没传 resolveOpening，必须继续走原来的（可选楼层）路径');
 });
 
 test('面板接线：bubble 引入 pacingInjection 并武装指令', () => {

@@ -21662,6 +21662,40 @@ body.t-reader-zen .t-reader-topbar {
 
 .tsa-panel .tsa-bb-empty { font-size: 11px; line-height: 1.5; color: var(--t-glass-text-muted); }
 
+/* \u5BFC\u6F14\u6D41\u6C34\uFF1A\u6BCF\u62CD\u4E00\u884C\u300C\u5224\u8FC7\u4E86\u4EC0\u4E48\u300D\u3002\u53EA\u9732\u6700\u8FD1 3 \u62CD\uFF0C\u8981\u7EC6\u7A76\u518D\u5C55\u5F00\u3002 */
+.tsa-panel .tsa-bb-flow { display: flex; flex-direction: column; gap: 4px; padding: 6px 7px; border: 1px solid var(--t-color-accent-border); border-radius: var(--t-radius-sm); }
+
+.tsa-panel .tsa-bb-flow-head { font-size: 11px; font-weight: 700; color: var(--t-glass-text-secondary); }
+
+.tsa-panel .tsa-bb-flow-sub { margin-left: 5px; font-weight: 400; color: var(--t-glass-text-muted); }
+
+.tsa-panel .tsa-bb-flow-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+
+.tsa-panel .tsa-bb-flow-row { display: flex; align-items: baseline; gap: 7px; font-size: 11px; color: var(--t-glass-text-secondary); }
+
+.tsa-panel .tsa-bb-flow-floor { flex-shrink: 0; width: 26px; color: var(--t-glass-text-muted); font-variant-numeric: tabular-nums; }
+
+.tsa-panel .tsa-bb-flow-time { flex-shrink: 0; color: var(--t-glass-text-muted); font-variant-numeric: tabular-nums; }
+
+.tsa-panel .tsa-bb-flow-what { flex: 1; min-width: 0; }
+
+.tsa-panel .tsa-bb-flow-refused { flex-shrink: 0; color: var(--t-color-warning); }
+
+.tsa-panel .tsa-bb-flow-row.is-failed .tsa-bb-flow-what { color: var(--t-color-danger); font-weight: 600; }
+
+.tsa-panel .tsa-bb-flow-toggle {
+    align-self: flex-start;
+    padding: 1px 6px;
+    border: 1px solid var(--t-color-accent-border);
+    border-radius: var(--t-radius-sm);
+    background: transparent;
+    color: var(--t-glass-text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.tsa-panel .tsa-bb-flow-toggle:hover { border-color: var(--t-color-accent-border-hover); color: var(--t-glass-text); }
+
 /* \u9636\u6BB5\u5217\u8868 */
 .tsa-panel .tsa-bb-stages { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
 
@@ -21779,6 +21813,11 @@ body.t-reader-zen .t-reader-topbar {
     background: var(--t-color-success);
     animation: t-pulse-green 1.6s ease-in-out infinite;
 }
+
+/* \u5FC3\u8DF3\u62A5"\u672C\u62CD\u5224\u5B9A\u5F02\u5E38"\u65F6\u628A\u6A2A\u6761\u67D3\u7EA2\u2014\u2014\u8FD9\u662F"\u5BFC\u6F14\u574F\u4E86"\u552F\u4E00\u4E0D\u7528\u7FFB\u65E5\u5FD7\u5C31\u770B\u5F97\u89C1\u7684\u5730\u65B9 */
+#chat .mes .tsa-strip.is-failed { border-color: var(--t-color-danger-border); }
+
+#chat .mes .tsa-strip.is-failed .tsa-strip-progress { color: var(--t-color-danger); }
 
 /* \u51CF\u5C11\u52A8\u6001\u6548\u679C\uFF1A\u52A8\u753B\u662F\u70B9\u7F00\uFF0C\u5148\u628A\u72B6\u6001\u4FE1\u606F\u7559\u5728\u539F\u5730\uFF08\u672C\u4ED3\u5E93\u7B2C\u4E00\u4E2A reduced-motion \u515C\u5E95\uFF09 */
 @media (prefers-reduced-motion: reduce) {
@@ -30127,10 +30166,55 @@ function normalizeJournalEntry(raw) {
     } : null
   };
 }
+function normalizeRef(raw) {
+  const node = Math.floor(Number(raw?.node));
+  const event = Math.floor(Number(raw?.event));
+  if (!Number.isFinite(node) || node < 0) return null;
+  if (!Number.isFinite(event) || event < 0) return null;
+  return { node, event };
+}
+function normalizeDirectorLogEntry(raw) {
+  const r = raw && typeof raw === "object" ? raw : {};
+  const floor = Math.floor(Number(r.floor));
+  const advanced = (Array.isArray(r.advanced) ? r.advanced : []).map((a) => {
+    const ref = normalizeRef(a);
+    if (!ref) return null;
+    return { ...ref, status: VALID_STATUS.has(a?.status) ? a.status : EVENT_STATUS.DONE };
+  }).filter(Boolean).slice(0, 8);
+  const refused = (Array.isArray(r.refused) ? r.refused : []).map((a) => {
+    const ref = normalizeRef(a);
+    const why = trimmed(a?.why);
+    if (!ref || !why) return null;
+    return { ...ref, why };
+  }).filter(Boolean).slice(0, 8);
+  const turns = Math.floor(Number(r.dwell?.turns));
+  const beats = Math.floor(Number(r.dwell?.beats));
+  return {
+    floor: Number.isFinite(floor) && floor >= 0 ? floor : -1,
+    swipeId: str(r.swipeId),
+    at: Number(r.at) || 0,
+    turn: Object.values(DIRECTOR_TURN).includes(r.turn) ? r.turn : DIRECTOR_TURN.NOOP,
+    // 实际出手的力度（含代码兜底补的时间推移那一句）。
+    spoke: VALID_INTENSITY.has(r.spoke) ? r.spoke : DIRECTOR_INTENSITY.NONE,
+    advanced,
+    refused,
+    failure: r.failure === "parse" || r.failure === "api" ? r.failure : "",
+    dwell: {
+      turns: Number.isFinite(turns) && turns > 0 ? turns : 0,
+      beats: Number.isFinite(beats) && beats > 0 ? beats : 0
+    }
+  };
+}
+function appendDirectorLog(blindbox, entry) {
+  const bb = normalizeBlindbox(blindbox);
+  bb.directorLog = [...bb.directorLog, normalizeDirectorLogEntry(entry)].slice(-MAX_DIRECTOR_LOG);
+  return bb;
+}
 function normalizeBlindbox(raw) {
   const bb = raw && typeof raw === "object" ? raw : {};
   const nodes = Array.isArray(bb.nodes) ? bb.nodes.map(normalizeNode) : [];
   const journal = (Array.isArray(bb.journal) ? bb.journal : []).map(normalizeJournalEntry).slice(-MAX_JOURNAL);
+  const directorLog = (Array.isArray(bb.directorLog) ? bb.directorLog : []).map(normalizeDirectorLogEntry).slice(-MAX_DIRECTOR_LOG);
   return {
     tone: str(bb.tone),
     redlines: str(bb.redlines),
@@ -30148,6 +30232,8 @@ function normalizeBlindbox(raw) {
     progress: normalizeProgress(bb.progress, nodes),
     lastJudged: normalizeLastJudged(bb.lastJudged),
     journal,
+    // 判定流水（给人看的那本账，与 journal 分工见 MAX_DIRECTOR_LOG 的注释）。
+    directorLog,
     // 解锁播报账本（判定侧只写 announced，揭晓侧只写 viewed，见 blindboxReveal.js）。
     // marksReady=false ＝ 本功能上线前就存在的存档：首次接触时静默补记，否则一开面板
     // 会把陈年旧账一次性响一遍。
@@ -30353,13 +30439,14 @@ function applyDirectorDecision(blindbox, decision, options = {}) {
   const sorted = (Array.isArray(dec.updates) ? dec.updates : []).slice().sort((a, b) => a.node - b.node || a.event - b.event);
   sorted.forEach((u) => {
     const where = `${u?.node}.${u?.event}`;
+    const ref = { node: u?.node, event: u?.event };
     const ev = bb.nodes[u?.node]?.events?.[u?.event];
     if (!ev) {
-      report.refused.push({ where, want: u?.status, why: "no-such-event" });
+      report.refused.push({ ...ref, where, want: u?.status, why: "no-such-event" });
       return;
     }
     if (isPassed(ev)) {
-      report.refused.push({ where, want: u?.status, why: "already-passed" });
+      report.refused.push({ ...ref, where, want: u?.status, why: "already-passed" });
       return;
     }
     const isPointer = u.node === prevProgress.nodeIndex && u.event === prevProgress.eventIndex;
@@ -30399,10 +30486,10 @@ function applyDirectorDecision(blindbox, decision, options = {}) {
       if (u.recap) ev.recap = u.recap;
       if (want === UPDATE_KIND.SKIPPED) ev.skipReason = u.reason || SKIP_REASONS.MOOT;
       stepQuota -= 1;
-      report.applied.push({ where, status: want });
+      report.applied.push({ ...ref, where, status: want });
     } else {
       pushNote(ev, u.evidence || u.recap);
-      if (u.status !== UPDATE_KIND.PROGRESS) report.refused.push({ where, want: u.status, why: why || "downgraded" });
+      if (u.status !== UPDATE_KIND.PROGRESS) report.refused.push({ ...ref, where, want: u.status, why: why || "downgraded" });
     }
   });
   const flat = flattenEvents(bb);
@@ -30453,6 +30540,7 @@ function rollbackJournalFrom(blindbox, floor) {
   const bb = normalizeBlindbox(blindbox);
   const from = Math.floor(Number(floor));
   if (!Number.isFinite(from) || from < 0) return bb;
+  bb.directorLog = bb.directorLog.filter((e) => !(e.floor >= 0 && e.floor >= from));
   let rolled = 0;
   let earliestProgress = null;
   while (bb.journal.length > 0) {
@@ -30546,7 +30634,24 @@ function describeStrictness(strictness) {
     "skipped \u5FC5\u987B\u7ED9 reason\uFF08moot/superseded/refused\uFF09\uFF0B evidence\uFF0C\u4E14\u4E0D\u5F97\u8D8A\u8FC7\u5F53\u524D\u76EE\u6807\u9020\u6210\u8DE8\u6B65\u3002"
   ].join("\n");
 }
-var BLINDBOX_KIND, EVENTS_PER_GAP_MIN, EVENTS_PER_GAP_MAX, NODE_COUNT_MIN, NODE_COUNT_MAX, NODE_COUNT_DEFAULT, BEATS_MAX, MAX_EVENT_NOTES, MAX_REVEAL_MARKS, eventMark, stageMark, REVEAL_MARK_RE, MAX_JOURNAL, EVENT_STATUS, VALID_STATUS, isPassed, UPDATE_KIND, SKIP_REASONS, VALID_SKIP_REASON, STRICTNESS, VALID_STRICTNESS, clampInt, str, trimmed, seq, genId, DIRECTOR_INTENSITY, VALID_INTENSITY;
+function describeRefusal(why) {
+  const key = trimmed(why);
+  if (!key) return "\u6CA1\u901A\u8FC7\u95F8\u95E8";
+  return REFUSAL_TEXT[key] || `\u6CA1\u901A\u8FC7\u95F8\u95E8\uFF08${key}\uFF09`;
+}
+function describeDirectorTurn(entry) {
+  const e = entry && typeof entry === "object" ? entry : {};
+  if (e.turn === DIRECTOR_TURN.FAILED) {
+    return e.failure === "api" ? "\u5224\u5B9A\u5931\u8D25\uFF08API \u62A5\u9519\uFF09" : "\u5224\u5B9A\u5931\u8D25\uFF08\u8FD4\u56DE\u65E0\u6CD5\u89E3\u6790\uFF09";
+  }
+  const parts = [];
+  const advanced = Array.isArray(e.advanced) ? e.advanced.length : 0;
+  if (advanced > 0) parts.push(`\u7FFB\u8FC7 ${advanced} \u4E2A`);
+  if (e.spoke === DIRECTOR_INTENSITY.FIRM) parts.push("\u51FA\u624B \xB7 \u6536\u675F");
+  else if (e.spoke === DIRECTOR_INTENSITY.GENTLE) parts.push("\u51FA\u624B \xB7 \u8F7B\u63A8");
+  return parts.length ? parts.join(" \xB7 ") : "\u6CA1\u51FA\u624B";
+}
+var BLINDBOX_KIND, EVENTS_PER_GAP_MIN, EVENTS_PER_GAP_MAX, NODE_COUNT_MIN, NODE_COUNT_MAX, NODE_COUNT_DEFAULT, BEATS_MAX, MAX_EVENT_NOTES, MAX_REVEAL_MARKS, eventMark, stageMark, REVEAL_MARK_RE, MAX_JOURNAL, MAX_DIRECTOR_LOG, DIRECTOR_TURN, EVENT_STATUS, VALID_STATUS, isPassed, UPDATE_KIND, SKIP_REASONS, VALID_SKIP_REASON, STRICTNESS, VALID_STRICTNESS, clampInt, str, trimmed, seq, genId, DIRECTOR_INTENSITY, VALID_INTENSITY, REFUSAL_TEXT;
 var init_blindboxPlan = __esm({
   "src/core/blindboxPlan.js"() {
     BLINDBOX_KIND = "blindbox";
@@ -30562,6 +30667,15 @@ var init_blindboxPlan = __esm({
     stageMark = (nodeIndex) => `s:${nodeIndex}`;
     REVEAL_MARK_RE = /^[es]:\d+(\.\d+)?$/;
     MAX_JOURNAL = 40;
+    MAX_DIRECTOR_LOG = 40;
+    DIRECTOR_TURN = Object.freeze({
+      NOOP: "noop",
+      // 判完了，模型选择不动（当前目标照样涨一拍停留）
+      ADVANCED: "advanced",
+      // 放行了 done / skipped，往前走了一步
+      FAILED: "failed"
+      // 判定没跑成：API 报错，或返回无法解析
+    });
     EVENT_STATUS = Object.freeze({
       PENDING: "pending",
       ACTIVE: "active",
@@ -30586,6 +30700,22 @@ var init_blindboxPlan = __esm({
     genId = (prefix) => `${prefix}_${Date.now().toString(36)}_${(seq++).toString(36)}`;
     DIRECTOR_INTENSITY = Object.freeze({ NONE: "none", GENTLE: "gentle", FIRM: "firm" });
     VALID_INTENSITY = new Set(Object.values(DIRECTOR_INTENSITY));
+    REFUSAL_TEXT = {
+      "done-quota": "\u8FD9\u4E00\u62CD\u5DF2\u7ECF\u5F80\u524D\u8D70\u8FC7\u4E00\u6B65\u4E86\uFF08\u4E00\u62CD\u4E00\u6B65\uFF09\uFF0C\u591A\u62A5\u7684\u7559\u5230\u4E0B\u4E00\u62CD",
+      "skip-quota": "\u8FD9\u4E00\u62CD\u5DF2\u7ECF\u5F80\u524D\u8D70\u8FC7\u4E00\u6B65\u4E86\uFF08\u4E00\u62CD\u4E00\u6B65\uFF09\uFF0C\u591A\u62A5\u7684\u7559\u5230\u4E0B\u4E00\u62CD",
+      "no-evidence": "\u6CA1\u7ED9\u6B63\u6587\u91CC\u7684\u6307\u8BA4\uFF08evidence\uFF09\uFF0C\u65E0\u636E\u53EF\u4F9D",
+      "criteria-incomplete": "\u6210\u7ACB\u6761\u4EF6\u6CA1\u6709\u5168\u90E8\u547D\u4E2D\uFF08\u4E25\u683C\u6863\u8981\u6C42\u9010\u6761\u547D\u4E2D\uFF09",
+      "criteria-none": "\u6210\u7ACB\u6761\u4EF6\u4E00\u6761\u90FD\u6CA1\u547D\u4E2D",
+      "too-early": "\u5F53\u524D\u8FD9\u62CD\u505C\u7559\u62CD\u6570\u6CA1\u5230\u9884\u7B97\uFF0C\u4E25\u683C\u6863\u4E00\u5F8B\u4E0D\u653E\u884C",
+      "too-early-low-confidence": "\u5F53\u524D\u8FD9\u62CD\u505C\u7559\u62CD\u6570\u6CA1\u5230\u9884\u7B97\uFF0C\u4E14\u6A21\u578B\u6CA1\u7ED9\u9AD8\u7F6E\u4FE1\u5EA6",
+      "no-skip-reason": "\u6CA1\u7ED9\u8DF3\u8FC7\u7406\u7531\uFF08moot / superseded / refused\uFF09",
+      "skip-ahead": "\u60F3\u8DF3\u8FC7\u8FD8\u6CA1\u8D70\u5230\u7684\u4E8B\u4EF6\uFF0C\u4E0D\u8BB8\u8DE8\u6B65",
+      "no-such-event": "\u62A5\u4E86\u4E00\u4E2A\u9AA8\u67B6\u4E0A\u4E0D\u5B58\u5728\u7684\u4E8B\u4EF6\uFF08\u6A21\u578B\u8BB0\u9519\u4E86\uFF09",
+      "already-passed": "\u90A3\u4E2A\u4E8B\u4EF6\u65E9\u5C31\u7FFB\u8FC7\u53BB\u4E86\uFF0C\u4E0D\u8BB8\u7FFB\u56DE",
+      "future-node": "\u60F3\u5224\u540E\u9762\u8282\u70B9\u7684\u4E8B\u4EF6\u2014\u2014\u8D8A\u7EA7\u5224\u5B9A\u4E00\u5F8B\u964D\u7EA7",
+      "stale-evidence": "\u62FF\u7684\u662F\u66F4\u65E9\u697C\u5C42\u7684\u6B63\u6587\uFF0C\u65E7\u6B63\u6587\u4E0D\u7B97\u65B0\u8BC1\u636E",
+      "downgraded": "\u6CA1\u901A\u8FC7\u95F8\u95E8\uFF0C\u964D\u7EA7\u4E3A\u300C\u63A8\u8FDB\u4E2D\u300D"
+    };
   }
 });
 
@@ -31053,6 +31183,7 @@ var sceneAdvanceBubble_exports = {};
 __export(sceneAdvanceBubble_exports, {
   initSceneAdvanceBubble: () => initSceneAdvanceBubble,
   notifyBlindboxUnlocks: () => notifyBlindboxUnlocks,
+  refreshDirectorPanel: () => refreshDirectorPanel,
   refreshSceneAdvanceBubble: () => refreshSceneAdvanceBubble
 });
 import { eventSource as eventSource3, event_types as event_types3 } from "../../../../script.js";
@@ -31118,6 +31249,9 @@ function getActiveBlindboxInfo() {
       paused: bb.directorPaused === true,
       // 阶段化视图：纯数据，防剧透（未解锁项在数据层就没有内容）由 blindboxReveal 保证
       view: buildRevealView(nbb),
+      // 判定流水：同样是纯数据、同样零剧透——条目里只有状态与下标，没有内容
+      // （保证在 blindboxPlan.normalizeDirectorLogEntry，那里连 evidence 都不收）。
+      directorLog: nbb.directorLog,
       sound: getUnlockSoundConfig()
     };
   } catch {
@@ -31180,12 +31314,24 @@ function buildStrip() {
   });
   return strip;
 }
+function directorHeartbeat(entry) {
+  if (!entry) return "";
+  if (entry.turn === DIRECTOR_TURN.FAILED) return "\u672C\u62CD\u5224\u5B9A\u5F02\u5E38";
+  const floor = Number(entry.floor) >= 0 ? `#${entry.floor}` : "";
+  const tail = Array.isArray(entry.advanced) && entry.advanced.length > 0 ? "\u7FFB\u8FC7\u4E00\u5E55" : entry.spoke === "firm" ? "\u6536\u675F" : entry.spoke === "gentle" ? "\u8F7B\u63A8" : "";
+  const parts = [floor ? `\u521A\u770B\u8FC7 ${floor}` : "\u521A\u770B\u8FC7", tail].filter(Boolean);
+  return parts.join(" \xB7 ");
+}
 function updateStrip(strip, { progress, expanded } = {}) {
   if (!strip) return;
   const bbInfo = getActiveBlindboxInfo();
   if (bbInfo) {
     $(strip).find(".tsa-strip-title").text(bbInfo.paused ? "\u76F2\u76D2\u5BFC\u6F14 \xB7 \u5DF2\u6682\u505C" : "\u76F2\u76D2\u5BFC\u6F14");
-    $(strip).find(".tsa-strip-progress").text(`\xB7 \u5DF2\u89E3\u9501 ${bbInfo.stats.passed}/${bbInfo.stats.total}`);
+    const log = Array.isArray(bbInfo.directorLog) ? bbInfo.directorLog : [];
+    const last = log[log.length - 1];
+    const beat = bbInfo.paused ? "" : directorHeartbeat(last);
+    $(strip).find(".tsa-strip-progress").text(`\xB7 \u5DF2\u89E3\u9501 ${bbInfo.stats.passed}/${bbInfo.stats.total}${beat ? ` \xB7 ${beat}` : ""}`);
+    $(strip).toggleClass("is-failed", !bbInfo.paused && last?.turn === DIRECTOR_TURN.FAILED);
     const pending = bbInfo.view.header.hasUnviewed && !bbInfo.paused;
     $(strip).toggleClass("has-unlock", pending);
     if (pending) {
@@ -31201,6 +31347,7 @@ function updateStrip(strip, { progress, expanded } = {}) {
     const label = formatProgressLabel(target);
     $(strip).find(".tsa-strip-progress").text(label ? `\xB7 ${label}` : "");
     $(strip).removeClass("has-unlock");
+    $(strip).removeClass("is-failed");
     $(strip).find(".tsa-strip-unlock-dot").remove();
   }
   if (expanded !== void 0) {
@@ -31249,6 +31396,10 @@ function scheduleRefreshStrips(delay = 0) {
   }, delay);
 }
 function refreshSceneAdvanceBubble() {
+  scheduleRefreshStrips(0);
+}
+function refreshDirectorPanel() {
+  if (document.getElementById(PANEL_ID)) refreshPanel();
   scheduleRefreshStrips(0);
 }
 async function notifyBlindboxUnlocks(planId) {
@@ -31473,6 +31624,7 @@ function buildBlindboxBody(info) {
                 </div>
                 <div class="tsa-bb-dwell">${dwell}</div>
                 ${emptyHint}
+                ${buildDirectorFlow(info)}
                 <ol class="tsa-bb-stages">${stages}</ol>
             </div>
         </div>
@@ -31484,6 +31636,29 @@ function buildBlindboxBody(info) {
                 <i class="fa-solid ${info.paused ? "fa-play" : "fa-pause"}"></i> ${info.paused ? "\u6062\u590D\u5BFC\u6F14" : "\u6682\u505C\u5BFC\u6F14"}
             </button>
         </div>`;
+}
+function buildDirectorFlow(info) {
+  const log = Array.isArray(info.directorLog) ? info.directorLog : [];
+  if (log.length === 0) return "";
+  const rows = log.slice().reverse();
+  const shown = bbFlowOpen ? rows : rows.slice(0, 3);
+  const items = shown.map((e) => {
+    const failed = e.turn === DIRECTOR_TURN.FAILED;
+    const time = e.at ? new Date(e.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+    const refused = Array.isArray(e.refused) ? e.refused.length : 0;
+    return `<li class="tsa-bb-flow-row${failed ? " is-failed" : ""}">
+            <span class="tsa-bb-flow-floor">${e.floor >= 0 ? `#${e.floor}` : "\u2014"}</span>
+            <span class="tsa-bb-flow-time">${escapeHtmlText2(time)}</span>
+            <span class="tsa-bb-flow-what">${escapeHtmlText2(describeDirectorTurn(e))}</span>
+            ${refused > 0 ? `<span class="tsa-bb-flow-refused">\u88AB\u62E6 ${refused} \u6761</span>` : ""}
+        </li>`;
+  }).join("");
+  const toggle = rows.length > 3 ? `<button type="button" class="tsa-bb-flow-toggle" data-action="bb-flow-toggle">${bbFlowOpen ? "\u6536\u8D77" : `\u5C55\u5F00\u5168\u90E8 ${rows.length} \u62CD`}</button>` : "";
+  return `<div class="tsa-bb-flow">
+        <div class="tsa-bb-flow-head">\u5BFC\u6F14\u6D41\u6C34<span class="tsa-bb-flow-sub">\uFF08\u5224\u8FC7\u4E86\u4EC0\u4E48\uFF0C\u4E0D\u662F\u5267\u60C5\u5185\u5BB9\uFF09</span></div>
+        <ol class="tsa-bb-flow-list">${items}</ol>
+        ${toggle}
+    </div>`;
 }
 function buildRecommendBody(state) {
   const generateLabel = state.candidates.length > 0 ? "\u6362\u4E00\u6279" : "\u63A8\u8350\u5267\u60C5";
@@ -31748,6 +31923,10 @@ function bindPanelNode(panel) {
   $panel.on("click", ".tsa-item", function() {
     onPickCandidate(Number($(this).data("candidate-index")));
   });
+  $panel.on("click", "[data-action='bb-flow-toggle']", async () => {
+    bbFlowOpen = !bbFlowOpen;
+    await refreshPanel();
+  });
   $panel.on("click", ".tsa-mode-tab", async function() {
     const next = String($(this).data("mode") || "recommend") === "pacing" ? "pacing" : "recommend";
     if (next === panelMode) return;
@@ -31807,7 +31986,7 @@ function initSceneAdvanceBubble() {
   scheduleRefreshStrips(300);
   TitaniaLogger.info("\u5267\u60C5\u63A8\u8FDB\u6A2A\u6761\u5DF2\u521D\u59CB\u5316");
 }
-var STRIP_CLASS, PANEL_ID, PLANS_KEY, ACTIVE_PLAN_KEY, SCENE_SOURCE_PLAN_KEY, listenersBound2, refreshQueued, apiPromise, expandedForMesid, generating, opening, restoring, previewItemIdx, previewOpen, bbStageOpenIdx, panelMode, pacingResult, pacingDraft, pacingAnalyzing, PACING_PRESETS, BB_STAGE_LABELS, bbStageLabel;
+var STRIP_CLASS, PANEL_ID, PLANS_KEY, ACTIVE_PLAN_KEY, SCENE_SOURCE_PLAN_KEY, listenersBound2, refreshQueued, apiPromise, expandedForMesid, generating, opening, restoring, previewItemIdx, previewOpen, bbStageOpenIdx, bbFlowOpen, panelMode, pacingResult, pacingDraft, pacingAnalyzing, PACING_PRESETS, BB_STAGE_LABELS, bbStageLabel;
 var init_sceneAdvanceBubble = __esm({
   "src/ui/sceneAdvanceBubble.js"() {
     init_storage();
@@ -31831,6 +32010,7 @@ var init_sceneAdvanceBubble = __esm({
     previewItemIdx = -1;
     previewOpen = false;
     bbStageOpenIdx = -1;
+    bbFlowOpen = false;
     panelMode = "recommend";
     pacingResult = null;
     pacingDraft = "";
@@ -31957,7 +32137,10 @@ async function onGenerationEnded() {
     if (planId) {
       const bubble = await Promise.resolve().then(() => (init_sceneAdvanceBubble(), sceneAdvanceBubble_exports));
       if (typeof bubble.notifyBlindboxUnlocks === "function") await bubble.notifyBlindboxUnlocks(planId);
+      if (typeof bubble.refreshDirectorPanel === "function") bubble.refreshDirectorPanel();
     }
+    if (turn?.failed === "api") TitaniaLogger.warn("\u76F2\u76D2\u5BFC\u6F14\u5224\u5B9A\u5931\u8D25\uFF08\u5DF2\u5FFD\u7565\uFF0C\u4E0D\u6253\u65AD\u5BF9\u8BDD\uFF09", turn.error);
+    else if (turn?.failed === "parse") TitaniaLogger.warn("\u76F2\u76D2\u5BFC\u6F14\u5224\u5B9A\u8FD4\u56DE\u65E0\u6CD5\u89E3\u6790\uFF0C\u672C\u62CD\u8DF3\u8FC7\uFF08\u4FDD\u7559\u4E0A\u4E00\u62CD\u5F15\u5BFC\uFF09");
   } catch (e) {
     TitaniaLogger.warn("\u76F2\u76D2\u5BFC\u6F14\u5224\u5B9A\u5931\u8D25\uFF08\u5DF2\u5FFD\u7565\uFF0C\u4E0D\u6253\u65AD\u5BF9\u8BDD\uFF09", e);
   } finally {
@@ -32002,9 +32185,11 @@ var init_directorInjection = __esm({
 var storyOutlineWindow_exports = {};
 __export(storyOutlineWindow_exports, {
   applySceneProgress: () => applyProgressFromModel,
+  collectRecentChatText: () => collectRecentChatText,
   ensureSceneSourceLoaded: () => ensureSceneSourceLoaded,
   generatePacingAssessment: () => generatePacingAssessment,
   generateSceneRecommendations: () => generateRecommendations,
+  getRollingOpeningText: () => getRollingOpeningText,
   getSceneAdvanceState: () => getSceneAdvanceState,
   getSceneInsertMode: () => getCurrentInsertMode,
   markSceneCandidateUsed: () => markSceneCandidateUsed,
@@ -32746,6 +32931,13 @@ async function ensureOpeningTextForGeneration() {
   openingText = getOpeningFromCardRef(sourceRef, cardEntries);
   return openingText || cardEntries[0]?.text || getOpeningFromContext();
 }
+function getRollingOpeningText() {
+  const entries = getChatHistoryEntries();
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (entries[i].role === "\u89D2\u8272") return entries[i].text;
+  }
+  return entries[entries.length - 1]?.text || getOpeningFromContext();
+}
 function getDefaultPromptTemplates() {
   return {
     outline: {
@@ -33328,7 +33520,7 @@ async function openPromptTemplateManager() {
                                 \u8BFB\u53D6\u6700\u8FD1\u6B63\u6587\u697C\u5C42\u6570
                                 <input id="t-outline-settings-rolling-floors" type="number" class="t-outline-select" value="${escapeHtml4(settingsDraft.rollingChatFloors)}" min="0" max="20" step="1" style="width:80px;">
                             </label>
-                            <div class="t-outline-genparam-hint">\u5267\u60C5\u63A8\u8350\u65F6\u8BFB\u53D6\u9152\u9986\u6700\u8FD1 N \u697C\u6B63\u6587\u4F5C\u4E3A"\u5DF2\u7ECF\u53D1\u751F\u7684\u5267\u60C5"\uFF08\u8D70\u4E0B\u65B9\u804A\u5929\u63D0\u53D6\u767D\u540D\u5355\u8FC7\u6EE4\uFF09\u3002\u6A21\u578B\u636E\u6B64\u81EA\u884C\u5224\u65AD\u6545\u4E8B\u63A8\u8FDB\u5230\u4E86\u5927\u7EB2\u7684\u54EA\u4E00\u6761\u30020=\u4E0D\u8BFB\u6B63\u6587\uFF0C\u4EC5\u9760\u5927\u7EB2\u5224\u65AD\u3002</div>
+                            <div class="t-outline-genparam-hint">\u5267\u60C5\u63A8\u8350\u4E0E\u8282\u594F\u5224\u65AD\u8BFB\u53D6\u9152\u9986\u300C\u6700\u65B0 N \u5C42\u300D\u6B63\u6587\u4F5C\u4E3A"\u5DF2\u7ECF\u53D1\u751F\u7684\u5267\u60C5"\uFF08\u8D70\u4E0B\u65B9\u804A\u5929\u63D0\u53D6\u767D\u540D\u5355\u8FC7\u6EE4\uFF09\u3002\u7A97\u53E3\u6309\u697C\u5C42\u5207\uFF1A\u4E2D\u95F4\u697C\u5C42\u88AB\u6EE4\u7A7A\u6216\u88AB\u6298\u53E0\u9690\u85CF\u65F6\u7559\u4E00\u884C\u5360\u4F4D\uFF0C\u4E0D\u4F1A\u62FF\u66F4\u65E9\u7684\u697C\u5C42\u9876\u66FF\u2014\u2014\u8BBE\u7F6E\u91CC\u7684 N \u5C31\u662F\u6A21\u578B\u5B9E\u9645\u80FD\u770B\u5230\u7684\u6700\u8FDC\u697C\u5C42\u3002\u6A21\u578B\u636E\u6B64\u81EA\u884C\u5224\u65AD\u6545\u4E8B\u63A8\u8FDB\u5230\u4E86\u5927\u7EB2\u7684\u54EA\u4E00\u6761\u30020=\u4E0D\u8BFB\u6B63\u6587\uFF0C\u4EC5\u9760\u5927\u7EB2\u5224\u65AD\u3002</div>
                         </div>
 
                         <div class="t-form-group">
@@ -33337,7 +33529,7 @@ async function openPromptTemplateManager() {
                                 \u5224\u5B9A\u8BFB\u53D6\u6700\u8FD1\u6B63\u6587\u697C\u5C42\u6570
                                 <input id="t-outline-settings-director-floors" type="number" class="t-outline-select" value="${escapeHtml4(settingsDraft.directorChatFloors)}" min="0" max="20" step="1" style="width:80px;">
                             </label>
-                            <div class="t-outline-genparam-hint">\u5BFC\u6F14\u5224\u5B9A\u300C\u8FD9\u4E2A\u5173\u952E\u4E8B\u4EF6\u5151\u73B0\u5B8C\u4E86\u6CA1\u6709\u300D\u8981\u770B\u5F97\u5230\u524D\u51E0\u62CD\u7684\u94FA\u57AB\uFF0C\u8BFB\u5F97\u592A\u5C11\u5C31\u53EA\u80FD\u51ED\u6700\u540E\u4E00\u53E5\u8BDD\u4E0B\u7ED3\u8BBA\uFF08\u5224\u5B9A\u4F1A\u504F\u677E\uFF09\u3002\u9ED8\u8BA4 6\uFF0C0=\u8DDF\u968F\u4E0A\u9762\u5267\u60C5\u63A8\u8FDB\u7684\u8BBE\u7F6E\u3002\u5224\u5B9A\u4E00\u5F8B\u8FDE\u88AB\u603B\u7ED3/\u9690\u85CF\u7684\u697C\u5C42\u4E00\u8D77\u8BFB\u3002</div>
+                            <div class="t-outline-genparam-hint">\u5BFC\u6F14\u5224\u5B9A\u300C\u8FD9\u4E2A\u5173\u952E\u4E8B\u4EF6\u5151\u73B0\u5B8C\u4E86\u6CA1\u6709\u300D\u8981\u770B\u5F97\u5230\u524D\u51E0\u62CD\u7684\u94FA\u57AB\uFF0C\u8BFB\u5F97\u592A\u5C11\u5C31\u53EA\u80FD\u51ED\u6700\u540E\u4E00\u53E5\u8BDD\u4E0B\u7ED3\u8BBA\uFF08\u5224\u5B9A\u4F1A\u504F\u677E\uFF09\u3002\u9ED8\u8BA4 6\uFF0C0=\u8DDF\u968F\u4E0A\u9762\u5267\u60C5\u63A8\u8FDB\u7684\u8BBE\u7F6E\u3002\u7A97\u53E3\u540C\u6837\u6309\u697C\u5C42\u5207\uFF0C\u4E00\u5F8B\u8FDE\u88AB\u603B\u7ED3/\u9690\u85CF\u7684\u697C\u5C42\u4E00\u8D77\u8BFB\u3002</div>
                         </div>
 
                         <div class="t-form-group">
@@ -33465,7 +33657,7 @@ async function openPromptTemplateManager() {
     const currentStoryInput = String($("#t-outline-story-input").val() || "").trim();
     const openingMode = getOpeningSourceMode();
     const openingSourceRef = getOpeningSourceRef();
-    const opening2 = getOpeningTextForPreview(openingMode, openingSourceRef);
+    const opening2 = type === "rolling" ? getRollingOpeningText() : getOpeningTextForPreview(openingMode, openingSourceRef);
     const varsLocal = buildPromptTemplateVars(ctx2, currentStoryInput, opening2, outlinePayload, {
       recentChat: collectRecentChatText(getRollingChatFloors()),
       outlineProgress: buildOutlineProgressText()
@@ -34223,6 +34415,35 @@ function bbDirectorPanel(bb) {
         </label>
         <div class="t-plan-tip" style="margin-top:6px;">${escapeHtml4(dwell)}\uFF1B\u5224\u5B9A\u8D8A\u4E25\uFF0C\u4E00\u4E2A\u5173\u952E\u4E8B\u4EF6\u8981\u5360\u7684\u56DE\u590D\u8D8A\u591A\uFF08\u6545\u4E8B\u63A8\u5F97\u8D8A\u6162\u3001\u8D8A\u4E0D\u5BB9\u6613\u88AB\u4E00\u53E5\u8BDD\u5E26\u8FC7\uFF09\u3002</div>
         ${anchorWarn}
+        ${bbDirectorDiagnosis(bb)}
+        <div style="margin-top:8px;">
+            <button class="t-btn t-btn-xs" data-action="bb-director-run"><i class="fa-solid fa-stethoscope"></i> \u7ACB\u5373\u5224\u5B9A\u4E00\u6B21</button>
+            <span class="t-plan-tip" style="margin-left:6px;">\u4E0D\u7B49\u4E0B\u4E00\u6761\u56DE\u590D\uFF0C\u73B0\u5728\u5C31\u8DD1\u4E00\u904D\u540E\u53F0\u5224\u5B9A\uFF08\u4F1A\u82B1\u4E00\u6B21 API \u8C03\u7528\uFF09\u3002</span>
+        </div>
+    </div>`;
+}
+function bbDirectorDiagnosis(bb) {
+  const log = Array.isArray(bb?.directorLog) ? bb.directorLog : [];
+  const last = log[log.length - 1];
+  if (!last) {
+    return `<div class="t-plan-tip" style="margin-top:6px;">\u8FD8\u6CA1\u6709\u5224\u5B9A\u8BB0\u5F55\u3002\u6BCF\u6761\u89D2\u8272\u56DE\u590D\u7ED3\u675F\u540E\u5BFC\u6F14\u4F1A\u5728\u540E\u53F0\u8DD1\u4E00\u6B21\u2014\u2014\u8DD1\u5B8C\u8FD9\u91CC\u5C31\u6709\u6D41\u6C34\uFF0C\u6A2A\u6761\u4E0A\u4E5F\u4F1A\u663E\u793A\u5FC3\u8DF3\u3002</div>`;
+  }
+  const failed = last.turn === DIRECTOR_TURN.FAILED;
+  const when = last.at ? new Date(last.at).toLocaleString() : "";
+  const where = last.floor >= 0 ? `\u6B63\u6587 #${last.floor} \u697C` : "\u6CA1\u6709\u53EF\u5224\u7684\u697C\u5C42";
+  const dwellText = last.dwell.beats > 0 ? `\u5F53\u65F6\u5DF2\u505C\u7559 ${last.dwell.turns} / \u9884\u7B97 ${last.dwell.beats} \u62CD` : `\u5F53\u65F6\u5DF2\u505C\u7559 ${last.dwell.turns} \u62CD`;
+  const refused = Array.isArray(last.refused) ? last.refused : [];
+  const refusedBlock = refused.length ? `<div style="margin-top:6px;font-size:11px;line-height:1.6;">
+                <b>\u6A21\u578B\u60F3\u5F80\u524D\u63A8\uFF0C\u88AB\u95F8\u95E8\u62E6\u4E0B ${refused.length} \u6761\uFF1A</b>
+                <ul style="margin:2px 0 0;padding-left:18px;">${refused.map((r) => `<li>\u8282\u70B9 ${r.node + 1} \xB7 \u4E8B\u4EF6 ${r.event + 1}\u2014\u2014${escapeHtml4(describeRefusal(r.why))}</li>`).join("")}</ul>
+            </div>` : "";
+  const hint = failed ? `<div class="t-plan-tip" style="margin-top:4px;">\u5931\u8D25\u65F6\u5BFC\u6F14\u4F1A\u4FDD\u7559\u4E0A\u4E00\u62CD\u7684\u5F15\u5BFC\uFF0C\u8FDB\u5EA6\u4E5F\u4E0D\u63A8\u8FDB\u2014\u2014\u6240\u4EE5\u8FDE\u7EED\u5931\u8D25\u5C31\u4F1A\u5361\u5728\u539F\u5730\u3002\u4E0A\u9762\u300C\u6700\u8FD1\u4E00\u62CD\u300D\u82E5\u4E00\u76F4\u662F\u7EA2\u7684\uFF0C\u95EE\u9898\u5728\u5224\u5B9A\u94FE\u8DEF\u800C\u4E0D\u662F\u95F8\u95E8\u3002</div>` : "";
+  return `<div style="margin-top:8px;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.04);">
+        <div><b>\u6700\u8FD1\u4E00\u62CD</b>\uFF1A<span style="color:${failed ? "#e05a5a" : "inherit"};">${escapeHtml4(describeDirectorTurn(last))}</span>
+            <span style="opacity:.55;font-size:11px;"> \xB7 ${escapeHtml4(where)}${when ? ` \xB7 ${escapeHtml4(when)}` : ""}</span></div>
+        <div style="opacity:.55;font-size:11px;margin-top:2px;">${escapeHtml4(dwellText)}</div>
+        ${refusedBlock}
+        ${hint}
     </div>`;
 }
 function bbEventDot(status, isTarget) {
@@ -34324,6 +34545,30 @@ function blindboxSetStrictness(value) {
   saveExtData();
   renderBlindboxSubview(plan);
   if (window.toastr) toastr.success(`\u5224\u5B9A\u4E25\u683C\u5EA6\u5DF2\u8BBE\u4E3A\u300C${BB_STRICTNESS_LABEL[plan.blindbox.strictness]}\u300D`, "\u76F2\u76D2\u5267\u672C");
+}
+async function blindboxRunDirectorOnce() {
+  const plan = getPlans().find((p) => p.id === editingPlanId);
+  if (!plan || !isBlindboxPlan(plan)) return;
+  if (plan.blindbox?.directorPaused === true) {
+    if (window.toastr) toastr.warning("\u5BFC\u6F14\u5904\u4E8E\u6682\u505C\u72B6\u6001\uFF0C\u5148\u5728\u6D88\u606F\u6D41\u91CC\u7684\u9762\u677F\u6062\u590D\u5B83", "\u76F2\u76D2\u5BFC\u6F14");
+    return;
+  }
+  const $btn = $("[data-action='bb-director-run']");
+  if ($btn.prop("disabled")) return;
+  $btn.prop("disabled", true);
+  try {
+    const turn = await runDirectorTurn();
+    renderBlindboxSubview(getPlans().find((p) => p.id === editingPlanId));
+    if (window.toastr) {
+      if (turn?.failed) toastr.warning("\u8FD9\u4E00\u62CD\u6CA1\u5224\u6210\uFF0C\u539F\u56E0\u89C1\u4E0B\u65B9\u300C\u6700\u8FD1\u4E00\u62CD\u300D", "\u76F2\u76D2\u5BFC\u6F14");
+      else toastr.success("\u5224\u5B9A\u5DF2\u5B8C\u6210\uFF0C\u7ED3\u679C\u89C1\u4E0B\u65B9\u6D41\u6C34", "\u76F2\u76D2\u5BFC\u6F14");
+    }
+  } catch (e) {
+    renderBlindboxSubview(getPlans().find((p) => p.id === editingPlanId));
+    if (window.toastr) toastr.error(e?.message || "\u5224\u5B9A\u5931\u8D25", "\u76F2\u76D2\u5BFC\u6F14");
+  } finally {
+    $("[data-action='bb-director-run']").prop("disabled", false);
+  }
 }
 async function blindboxGenerateFromView(reroll) {
   const plan = getPlans().find((p) => p.id === editingPlanId);
@@ -34759,13 +35004,41 @@ function buildOutlinePayloadForPrompt() {
     foreshadowing: item.foreshadowing || ""
   }));
 }
-function collectRecentChatText(floors, opts = {}) {
+function getRecentFloorWindow(floors, opts = {}) {
   const n = Number(floors) || 0;
-  if (n <= 0) return "";
-  const entries = getChatHistoryEntries(opts);
+  if (n <= 0) return [];
+  const includeHidden = opts.includeHidden === true;
+  try {
+    if (typeof SillyTavern === "undefined" || !SillyTavern.getContext) return [];
+    const stCtx = SillyTavern.getContext();
+    const chat2 = Array.isArray(stCtx?.chat) ? stCtx.chat : [];
+    if (chat2.length === 0) return [];
+    const whitelist = parseTagWhitelistInput(getOutlineChatTagWhitelistRaw());
+    const start = Math.max(0, chat2.length - n);
+    return chat2.slice(start).map((msg, i) => {
+      const raw = typeof msg?.mes === "string" ? msg.mes : "";
+      const hidden = !!(msg?.is_system || msg?.is_hidden);
+      let text = extractTextByWhitelist(raw, whitelist);
+      if (!text && includeHidden && hidden) text = raw.trim();
+      if (hidden && !includeHidden) text = "";
+      return {
+        chatIndex: start + i,
+        role: hidden ? "\u80CC\u666F" : msg?.is_user ? "\u7528\u6237" : "\u89D2\u8272",
+        text
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+function collectRecentChatText(floors, opts = {}) {
+  const entries = getRecentFloorWindow(floors, opts);
   if (!entries.length) return "";
   const withFloors = opts.withFloors === true;
-  return entries.slice(-n).map((e) => withFloors ? `\u3010#${e.chatIndex} ${e.role}\u3011${e.text}` : `\u3010${e.role}\u3011${e.text}`).join("\n\n");
+  return entries.map((e) => {
+    const head = withFloors ? `\u3010#${e.chatIndex} ${e.role}\u3011` : `\u3010${e.role}\u3011`;
+    return head + (e.text || EMPTY_FLOOR_MARK);
+  }).join("\n\n");
 }
 function buildOutlineProgressText() {
   const plan = getRollingPlan();
@@ -35021,7 +35294,8 @@ async function runGenerationFlow(cfg) {
   const useStream = isStreamingEnabled();
   return runOutlineGeneration(async (signal) => {
     const ctx2 = await getContextData();
-    const opening2 = await ensureOpeningTextForGeneration();
+    const resolveOpening = typeof cfg.resolveOpening === "function" ? cfg.resolveOpening : ensureOpeningTextForGeneration;
+    const opening2 = await resolveOpening();
     const messages = cfg.buildMessages(ctx2, opening2);
     startResponseTimer(true);
     if (useStream) {
@@ -35114,6 +35388,19 @@ function buildDirectorMessages(ctx2, bb) {
     { role: "user", content: renderPromptTemplate(templates.user, vars) }
   ];
 }
+function dwellOf(bb) {
+  const stats = getProgressStats(bb);
+  return { turns: stats.dwellTurns, beats: stats.dwellBeats };
+}
+function logDirectorTurn(planId, blindbox, entry) {
+  const target = getPlans().find((p) => p.id === planId);
+  if (!target || !isBlindboxPlan(target)) return null;
+  target.blindbox = appendDirectorLog(blindbox, entry);
+  target.updatedAt = Date.now();
+  saveExtData();
+  if (editingPlanId === target.id) renderBlindboxSubview(target);
+  return target;
+}
 async function runDirectorTurn(trigger = null) {
   const plan = getActivePlan();
   if (!plan || !isBlindboxPlan(plan)) return null;
@@ -35145,13 +35432,29 @@ async function runDirectorTurn(trigger = null) {
       stream: false,
       signal: controller.signal
     });
-  } finally {
+  } catch (e) {
     clearTimeout(timer);
+    logDirectorTurn(judgedPlanId, before, {
+      floor,
+      swipeId,
+      turn: DIRECTOR_TURN.FAILED,
+      failure: "api",
+      dwell: dwellOf(before)
+    });
+    return { planId: judgedPlanId, updated: false, failed: "api", error: e };
   }
+  clearTimeout(timer);
   const parsed = tryParseLooseJsonObject(raw);
   if (!parsed) {
     console.warn("[Titania] \u76F2\u76D2\u5BFC\u6F14\u5224\u5B9A\u8FD4\u56DE\u65E0\u6CD5\u89E3\u6790\uFF0C\u672C\u62CD\u8DF3\u8FC7\uFF08\u4FDD\u7559\u4E0A\u4E00\u62CD\u5F15\u5BFC\uFF09");
-    return { planId: judgedPlanId, updated: false };
+    logDirectorTurn(judgedPlanId, before, {
+      floor,
+      swipeId,
+      turn: DIRECTOR_TURN.FAILED,
+      failure: "parse",
+      dwell: dwellOf(before)
+    });
+    return { planId: judgedPlanId, updated: false, failed: "parse" };
   }
   const decision = parseDirectorDecision(parsed);
   const target = getPlans().find((p) => p.id === plan.id);
@@ -35165,13 +35468,10 @@ async function runDirectorTurn(trigger = null) {
     sinceFloor: before.lastJudged.floor,
     report
   });
-  target.updatedAt = Date.now();
-  saveExtData();
   const after = normalizeBlindbox(target.blindbox);
   if (report.refused?.length) {
     console.info("[Titania] \u76F2\u76D2\u5BFC\u6F14\uFF1A\u672C\u62CD\u88AB\u95F8\u95E8\u62E6\u4E0B\u7684\u56DE\u62A5", report.strictness, report.refused);
   }
-  if (editingPlanId === target.id) renderBlindboxSubview(target);
   const moved = after.progress.nodeIndex !== before.progress.nodeIndex || after.progress.eventIndex !== before.progress.eventIndex;
   const nextEv = after.nodes[after.progress.nodeIndex]?.events?.[after.progress.eventIndex];
   const spanLine = moved && nextEv?.span ? `
@@ -35184,14 +35484,30 @@ async function runDirectorTurn(trigger = null) {
     intensity = DIRECTOR_INTENSITY.FIRM;
     if (!directive) directive = `\u628A\u8FD9\u4E00\u6BB5\u7684\u5173\u952E\u8F6C\u6298\u771F\u6B63\u843D\u5730\uFF1A${String(curNode?.anchor || "").slice(0, 80)}`;
   }
+  let spoken = "";
+  let spoke = DIRECTOR_INTENSITY.NONE;
   if (directive && intensity !== DIRECTOR_INTENSITY.NONE) {
     const header = intensity === DIRECTOR_INTENSITY.FIRM ? "\u3010\u5267\u60C5\u5BFC\u6F14\xB7\u6536\u675F\u3011\n" : "\u3010\u5267\u60C5\u5BFC\u6F14\xB7\u8F7B\u63A8\u3011\n";
-    armDirectorDirective(header + directive + spanLine, getDirectorInjectConfig());
+    spoken = header + directive + spanLine;
+    spoke = intensity;
   } else if (spanLine) {
-    armDirectorDirective("\u3010\u5267\u60C5\u5BFC\u6F14\xB7\u8F7B\u63A8\u3011" + spanLine, getDirectorInjectConfig());
-  } else {
-    clearDirectorDirective();
+    spoken = "\u3010\u5267\u60C5\u5BFC\u6F14\xB7\u8F7B\u63A8\u3011" + spanLine;
+    spoke = DIRECTOR_INTENSITY.GENTLE;
   }
+  target.blindbox = appendDirectorLog(after, {
+    floor,
+    swipeId,
+    turn: report.applied?.length ? DIRECTOR_TURN.ADVANCED : DIRECTOR_TURN.NOOP,
+    spoke,
+    advanced: report.applied || [],
+    refused: report.refused || [],
+    dwell: dwellOf(after)
+  });
+  target.updatedAt = Date.now();
+  saveExtData();
+  if (editingPlanId === target.id) renderBlindboxSubview(target);
+  if (spoken) armDirectorDirective(spoken, getDirectorInjectConfig());
+  else clearDirectorDirective();
   return { planId: judgedPlanId, updated: true };
 }
 async function generateRecommendations() {
@@ -35217,6 +35533,10 @@ async function generateRecommendations() {
       temperature: params.temperature,
       maxTokens: params.maxTokens,
       timeoutSec: params.timeoutSec,
+      // 剧情推进不指定参考楼层：永远取最新一条角色回复（见 getRollingOpeningText）。
+      // 少了这一行，点「推荐剧情」会弹出「选择聊天记录参考来源」，点取消还会直接报
+      // 「未选择参考来源，已取消生成」——而 rolling 模板里其实用不上这个变量。
+      resolveOpening: getRollingOpeningText,
       buildMessages: (ctx2, opening2) => buildRecommendationPrompt(ctx2, storyInput, opening2),
       parse: (raw) => parseRecommendationResponse(raw, fallbackItemIndex, total),
       apply: (parsed) => {
@@ -35361,6 +35681,7 @@ function bindEvents() {
   $overlay.on("click", "[data-action='bb-reroll']", () => blindboxGenerateFromView(true));
   $overlay.on("click", "[data-action='bb-unseal']", () => blindboxUnsealFromView());
   $overlay.on("click", "[data-action='bb-to-normal']", () => blindboxConvertToNormal());
+  $overlay.on("click", "[data-action='bb-director-run']", () => blindboxRunDirectorOnce());
   $overlay.on("change", "[data-action='bb-strictness']", function() {
     blindboxSetStrictness(String($(this).val() || ""));
   });
@@ -35553,7 +35874,7 @@ function openStoryOutlineWindow() {
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> \u5927\u7EB2\u751F\u6210
                             </button>
                         </div>
-                        <label class="t-outline-mode t-outline-mode-source">
+                        <label class="t-outline-mode t-outline-mode-source" title="\u53EA\u5F71\u54CD\u300C\u5927\u7EB2\u751F\u6210\u300D\u4E0E\u300C\u76F2\u76D2\u5267\u672C\u751F\u6210\u300D\u3002\u300C\u63A8\u8350\u5267\u60C5\u300D\u4E0D\u9700\u8981\u6307\u5B9A\u697C\u5C42\uFF0C\u6C38\u8FDC\u53D6\u6700\u65B0\u4E00\u6761\u89D2\u8272\u56DE\u590D\u3002">
                             \u53C2\u8003\u6765\u6E90
                             <select id="t-outline-opening-source-mode" class="t-outline-select">
                                 <option value="auto_first">\u5F00\u573A\u767D</option>
@@ -35696,7 +36017,7 @@ function markSceneCandidateUsed(planId, index) {
   candidates[index] = { ...candidates[index], used: true };
   setPlanCandidates(id3, candidates, { keepTimestamp: true });
 }
-var outlineItems, lastRawResponse, rawResponseHistory, selectedRowIndex, isRawDialogOpen, responseTimerStartAt, responseElapsedMs, responseTimerId, responseTimerRunning, activeOutlineAbortController, DRAFT_KEY, PLANS_KEY3, ACTIVE_PLAN_KEY3, SCENE_SOURCE_PLAN_KEY2, PROMPT_TEMPLATES_KEY, OPENING_SOURCE_MODE_KEY, OPENING_SOURCE_REF_KEY, OUTLINE_CHAT_TAG_WHITELIST_KEY, RAW_HISTORY_KEY, OUTLINE_SELECTED_PROFILE_KEY, OUTLINE_CUSTOM_PROFILES_KEY, GEN_PARAMS_KEY, ROLLING_CHAT_FLOORS_KEY, ROLLING_CHAT_FLOORS_DEFAULT, ROLLING_CHAT_FLOORS_MAX, DIRECTOR_CHAT_FLOORS_KEY, DIRECTOR_CHAT_FLOORS_DEFAULT, currentView, activePlanId, editingPlanId, editingPlanBaseline, planItemCursorMap, autoSavePlanTimer, planRenameMode, planRenameSnapshot, MAX_RAW_HISTORY, OUTLINE_ST_FOLLOW_ID, BB_STRICTNESS_LABEL, PACING_STATES;
+var outlineItems, lastRawResponse, rawResponseHistory, selectedRowIndex, isRawDialogOpen, responseTimerStartAt, responseElapsedMs, responseTimerId, responseTimerRunning, activeOutlineAbortController, DRAFT_KEY, PLANS_KEY3, ACTIVE_PLAN_KEY3, SCENE_SOURCE_PLAN_KEY2, PROMPT_TEMPLATES_KEY, OPENING_SOURCE_MODE_KEY, OPENING_SOURCE_REF_KEY, OUTLINE_CHAT_TAG_WHITELIST_KEY, RAW_HISTORY_KEY, OUTLINE_SELECTED_PROFILE_KEY, OUTLINE_CUSTOM_PROFILES_KEY, GEN_PARAMS_KEY, ROLLING_CHAT_FLOORS_KEY, ROLLING_CHAT_FLOORS_DEFAULT, ROLLING_CHAT_FLOORS_MAX, DIRECTOR_CHAT_FLOORS_KEY, DIRECTOR_CHAT_FLOORS_DEFAULT, EMPTY_FLOOR_MARK, currentView, activePlanId, editingPlanId, editingPlanBaseline, planItemCursorMap, autoSavePlanTimer, planRenameMode, planRenameSnapshot, MAX_RAW_HISTORY, OUTLINE_ST_FOLLOW_ID, BB_STRICTNESS_LABEL, PACING_STATES;
 var init_storyOutlineWindow = __esm({
   "src/ui/storyOutlineWindow.js"() {
     init_context();
@@ -35735,6 +36056,7 @@ var init_storyOutlineWindow = __esm({
     ROLLING_CHAT_FLOORS_MAX = 20;
     DIRECTOR_CHAT_FLOORS_KEY = "story_outline_director_chat_floors";
     DIRECTOR_CHAT_FLOORS_DEFAULT = 6;
+    EMPTY_FLOOR_MARK = "\uFF08\u672C\u697C\u65E0\u53EF\u7528\u6B63\u6587\uFF09";
     currentView = "hub";
     activePlanId = "";
     editingPlanId = "";

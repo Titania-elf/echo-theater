@@ -186,7 +186,14 @@ async function onGenerationEnded() {
         if (planId) {
             const bubble = await import("../ui/sceneAdvanceBubble.js");
             if (typeof bubble.notifyBlindboxUnlocks === "function") await bubble.notifyBlindboxUnlocks(planId);
+            // 心跳/流水：**没有新解锁也要刷**。notifyBlindboxUnlocks 在没有新解锁时直接 return，
+            // 靠它刷不出来——而"这一拍没出手"恰恰是最需要看见的一拍（否则它与"没在跑"无异）。
+            if (typeof bubble.refreshDirectorPanel === "function") bubble.refreshDirectorPanel();
         }
+        // 判定没跑成时 runDirectorTurn 不抛错、而是回一个 failed 标记（它要把失败也记进流水）。
+        // 这里补一条 WARN 留住排查线索——WARN 只进内存日志，查看器/调试报告里能看到。
+        if (turn?.failed === "api") TitaniaLogger.warn("盲盒导演判定失败（已忽略，不打断对话）", turn.error);
+        else if (turn?.failed === "parse") TitaniaLogger.warn("盲盒导演判定返回无法解析，本拍跳过（保留上一拍引导）");
     } catch (e) {
         TitaniaLogger.warn("盲盒导演判定失败（已忽略，不打断对话）", e);
     } finally {

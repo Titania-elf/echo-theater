@@ -32,6 +32,10 @@ import {
     buildDirectorSkeleton,
     describeDirectorProgress,
     describeStrictness,
+    appendDirectorLog,
+    describeDirectorTurn,
+    describeRefusal,
+    DIRECTOR_TURN,
 } from "../core/blindboxPlan.js";
 import {
     armDirectorDirective,
@@ -116,6 +120,8 @@ function saveOutlineGenParams(params) {
 }
 
 // 剧情推进读取的酒馆正文楼层数（0=不读，仅用大纲推进）。
+// 窗口按**楼层**切（见 getRecentFloorWindow）：N 就是模型实际能看到的最远楼层数，
+// 中间楼层被滤空也不从更早处顶替。
 const ROLLING_CHAT_FLOORS_KEY = "story_outline_rolling_chat_floors";
 const ROLLING_CHAT_FLOORS_DEFAULT = 3;
 const ROLLING_CHAT_FLOORS_MAX = 20;
@@ -162,6 +168,9 @@ function saveDirectorChatFloors(n) {
         : DIRECTOR_CHAT_FLOORS_DEFAULT;
     saveExtData();
 }
+
+/** 楼层在窗口里占位、但抽不出正文时下发的标记。见 getRecentFloorWindow。 */
+const EMPTY_FLOOR_MARK = "（本楼无可用正文）";
 
 let currentView = "hub";
 let activePlanId = "";
@@ -929,6 +938,25 @@ async function ensureOpeningTextForGeneration() {
     return openingText || cardEntries[0]?.text || getOpeningFromContext();
 }
 
+/**
+ * 剧情推进读的参考文本：**永远取最新一条角色回复楼层**，不弹选择框、不因"没选来源"中断生成。
+ *
+ * 为什么不复用 ensureOpeningTextForGeneration：那条路是给大纲生成/盲盒剧本生成用的——
+ * 「参考来源＝聊天记录」时要玩家指定"用哪一楼"，没设过或那一楼取不到就弹「选择聊天记录
+ * 参考来源」对话框，点取消还会抛「未选择参考来源，已取消生成」。剧情推进不需要人工指定楼层：
+ * 它要回答的是"故事现在演到哪儿了"，那永远是最新那一楼（正文上下文另有最近 N 层窗口，
+ * 见 collectRecentChatText）。
+ * 聊天空 / 只有用户楼层时退回 ST 当前开场白（getOpeningFromContext），绝不抛错。
+ * 导出供单测直接验证（同 parsePacingResponse 的做法）。
+ */
+export function getRollingOpeningText() {
+    const entries = getChatHistoryEntries();
+    for (let i = entries.length - 1; i >= 0; i--) {
+        if (entries[i].role === "角色") return entries[i].text;
+    }
+    return entries[entries.length - 1]?.text || getOpeningFromContext();
+}
+
 function getDefaultPromptTemplates() {
     return {
         outline: {
@@ -1517,7 +1545,7 @@ export async function openPromptTemplateManager() {
                                 读取最近正文楼层数
                                 <input id="t-outline-settings-rolling-floors" type="number" class="t-outline-select" value="${escapeHtml(settingsDraft.rollingChatFloors)}" min="0" max="20" step="1" style="width:80px;">
                             </label>
-                            <div class="t-outline-genparam-hint">剧情推荐时读取酒馆最近 N 楼正文作为"已经发生的剧情"（走下方聊天提取白名单过滤）。模型据此自行判断故事推进到了大纲的哪一条。0=不读正文，仅靠大纲判断。</div>
+                            <div class="t-outline-genparam-hint">剧情推荐与节奏判断读取酒馆「最新 N 层」正文作为"已经发生的剧情"（走下方聊天提取白名单过滤）。窗口按楼层切：中间楼层被滤空或被折叠隐藏时留一行占位，不会拿更早的楼层顶替——设置里的 N 就是模型实际能看到的最远楼层。模型据此自行判断故事推进到了大纲的哪一条。0=不读正文，仅靠大纲判断。</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1526,7 +1554,7 @@ export async function openPromptTemplateManager() {
                                 判定读取最近正文楼层数
                                 <input id="t-outline-settings-director-floors" type="number" class="t-outline-select" value="${escapeHtml(settingsDraft.directorChatFloors)}" min="0" max="20" step="1" style="width:80px;">
                             </label>
-                            <div class="t-outline-genparam-hint">导演判定「这个关键事件兑现完了没有」要看得到前几拍的铺垫，读得太少就只能凭最后一句话下结论（判定会偏松）。默认 6，0=跟随上面剧情推进的设置。判定一律连被总结/隐藏的楼层一起读。</div>
+                            <div class="t-outline-genparam-hint">导演判定「这个关键事件兑现完了没有」要看得到前几拍的铺垫，读得太少就只能凭最后一句话下结论（判定会偏松）。默认 6，0=跟随上面剧情推进的设置。窗口同样按楼层切，一律连被总结/隐藏的楼层一起读。</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1657,7 +1685,11 @@ export async function openPromptTemplateManager() {
         const currentStoryInput = String($("#t-outline-story-input").val() || "").trim();
         const openingMode = getOpeningSourceMode();
         const openingSourceRef = getOpeningSourceRef();
-        const opening = getOpeningTextForPreview(openingMode, openingSourceRef);
+        // 预览要跟实际下发的对齐：剧情推进不认「参考来源」，它永远取最新一条角色回复
+        // （见 getRollingOpeningText），这里若照抄参考来源设置，预览就会和实际生成两套话。
+        const opening = type === "rolling"
+            ? getRollingOpeningText()
+            : getOpeningTextForPreview(openingMode, openingSourceRef);
         const varsLocal = buildPromptTemplateVars(ctx, currentStoryInput, opening, outlinePayload, {
             recentChat: collectRecentChatText(getRollingChatFloors()),
             outlineProgress: buildOutlineProgressText()
@@ -2581,6 +2613,52 @@ function bbDirectorPanel(bb) {
         </label>
         <div class="t-plan-tip" style="margin-top:6px;">${escapeHtml(dwell)}；判定越严，一个关键事件要占的回复越多（故事推得越慢、越不容易被一句话带过）。</div>
         ${anchorWarn}
+        ${bbDirectorDiagnosis(bb)}
+        <div style="margin-top:8px;">
+            <button class="t-btn t-btn-xs" data-action="bb-director-run"><i class="fa-solid fa-stethoscope"></i> 立即判定一次</button>
+            <span class="t-plan-tip" style="margin-left:6px;">不等下一条回复，现在就跑一遍后台判定（会花一次 API 调用）。</span>
+        </div>
+    </div>`;
+}
+
+/**
+ * 导演诊断：最近一拍的判定结果 ＋ 被闸门拦下的原因。
+ *
+ * ⚠ 这一段能显示，是因为它**从头到尾不碰事件内容**：结果档是"出手/没出手"，
+ * 被拦原因走 describeRefusal 的抽象码。玩家看到的永远是"系统怎么处理的"，
+ * 而不是"后面会发生什么"——这正好补上"完全无感"缺的那一块：能分清
+ * 「导演很克制」和「判定根本没在跑」。
+ */
+function bbDirectorDiagnosis(bb) {
+    const log = Array.isArray(bb?.directorLog) ? bb.directorLog : [];
+    const last = log[log.length - 1];
+    if (!last) {
+        return `<div class="t-plan-tip" style="margin-top:6px;">还没有判定记录。每条角色回复结束后导演会在后台跑一次——跑完这里就有流水，横条上也会显示心跳。</div>`;
+    }
+    const failed = last.turn === DIRECTOR_TURN.FAILED;
+    const when = last.at ? new Date(last.at).toLocaleString() : "";
+    const where = last.floor >= 0 ? `正文 #${last.floor} 楼` : "没有可判的楼层";
+    const dwellText = last.dwell.beats > 0
+        ? `当时已停留 ${last.dwell.turns} / 预算 ${last.dwell.beats} 拍`
+        : `当时已停留 ${last.dwell.turns} 拍`;
+    const refused = Array.isArray(last.refused) ? last.refused : [];
+    const refusedBlock = refused.length
+        ? `<div style="margin-top:6px;font-size:11px;line-height:1.6;">
+                <b>模型想往前推，被闸门拦下 ${refused.length} 条：</b>
+                <ul style="margin:2px 0 0;padding-left:18px;">${refused
+                    .map((r) => `<li>节点 ${r.node + 1} · 事件 ${r.event + 1}——${escapeHtml(describeRefusal(r.why))}</li>`)
+                    .join("")}</ul>
+            </div>`
+        : "";
+    const hint = failed
+        ? `<div class="t-plan-tip" style="margin-top:4px;">失败时导演会保留上一拍的引导，进度也不推进——所以连续失败就会卡在原地。上面「最近一拍」若一直是红的，问题在判定链路而不是闸门。</div>`
+        : "";
+    return `<div style="margin-top:8px;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.04);">
+        <div><b>最近一拍</b>：<span style="color:${failed ? "#e05a5a" : "inherit"};">${escapeHtml(describeDirectorTurn(last))}</span>
+            <span style="opacity:.55;font-size:11px;"> · ${escapeHtml(where)}${when ? ` · ${escapeHtml(when)}` : ""}</span></div>
+        <div style="opacity:.55;font-size:11px;margin-top:2px;">${escapeHtml(dwellText)}</div>
+        ${refusedBlock}
+        ${hint}
     </div>`;
 }
 
@@ -2693,6 +2771,33 @@ function blindboxSetStrictness(value) {
     saveExtData();
     renderBlindboxSubview(plan);
     if (window.toastr) toastr.success(`判定严格度已设为「${BB_STRICTNESS_LABEL[plan.blindbox.strictness]}」`, "盲盒剧本");
+}
+
+/** 手动跑一次判定（不等下一条回复）。既是诊断工具，也是"它真的在跑"的即时证明。 */
+async function blindboxRunDirectorOnce() {
+    const plan = getPlans().find((p) => p.id === editingPlanId);
+    if (!plan || !isBlindboxPlan(plan)) return;
+    if (plan.blindbox?.directorPaused === true) {
+        if (window.toastr) toastr.warning("导演处于暂停状态，先在消息流里的面板恢复它", "盲盒导演");
+        return;
+    }
+    const $btn = $("[data-action='bb-director-run']");
+    if ($btn.prop("disabled")) return;   // 判定要等一次 API 往返，防连点
+    $btn.prop("disabled", true);
+    try {
+        const turn = await runDirectorTurn();
+        renderBlindboxSubview(getPlans().find((p) => p.id === editingPlanId));
+        if (window.toastr) {
+            if (turn?.failed) toastr.warning("这一拍没判成，原因见下方「最近一拍」", "盲盒导演");
+            else toastr.success("判定已完成，结果见下方流水", "盲盒导演");
+        }
+    } catch (e) {
+        // runDirectorTurn 自己会吞 API 错，走到这儿基本是别的意外（方案被删之类）。
+        renderBlindboxSubview(getPlans().find((p) => p.id === editingPlanId));
+        if (window.toastr) toastr.error(e?.message || "判定失败", "盲盒导演");
+    } finally {
+        $("[data-action='bb-director-run']").prop("disabled", false);
+    }
 }
 
 async function blindboxGenerateFromView(reroll) {
@@ -3187,18 +3292,59 @@ function buildOutlinePayloadForPrompt() {
     }));
 }
 
-// 取最近 N 楼酒馆正文（走标签白名单过滤），越靠后越新，拼成给模型的"已发生的剧情"。
-function collectRecentChatText(floors, opts = {}) {
+/**
+ * 最近 N 层窗口：**先按楼层切窗口，再逐楼抽正文**。
+ *
+ * 与老写法（先抽正文、再取最后 N 条）的区别：窗口边界只由楼层决定——中间哪几楼
+ * 被提取白名单滤空、或被总结插件折叠隐藏，都不会让更早的楼层顶替进来。设置里写的
+ * N 与模型实际看到的最远楼层永远一致：可预期，也不会"设置读 3 楼、其实喂了 8 楼"。
+ *
+ * 返回定长数组（min(N, 楼层数)）。抽不出正文的楼层 text 为空串，标不标由调用方定。
+ * 隐藏/系统楼层同样占位：includeHidden=false 时 text 置空（楼层仍计入窗口）。
+ */
+function getRecentFloorWindow(floors, opts = {}) {
     const n = Number(floors) || 0;
-    if (n <= 0) return "";
-    const entries = getChatHistoryEntries(opts);
+    if (n <= 0) return [];
+    const includeHidden = opts.includeHidden === true;
+    try {
+        if (typeof SillyTavern === "undefined" || !SillyTavern.getContext) return [];
+        const stCtx = SillyTavern.getContext();
+        const chat = Array.isArray(stCtx?.chat) ? stCtx.chat : [];
+        if (chat.length === 0) return [];
+        const whitelist = parseTagWhitelistInput(getOutlineChatTagWhitelistRaw());
+        const start = Math.max(0, chat.length - n);
+        return chat.slice(start).map((msg, i) => {
+            const raw = typeof msg?.mes === "string" ? msg.mes : "";
+            const hidden = !!(msg?.is_system || msg?.is_hidden);
+            let text = extractTextByWhitelist(raw, whitelist);
+            // 摘要文本通常不带白名单标签，会被 extract 洗成空——隐藏楼层退回原文，别把摘要丢了。
+            if (!text && includeHidden && hidden) text = raw.trim();
+            if (hidden && !includeHidden) text = "";
+            return {
+                chatIndex: start + i,
+                role: hidden ? "背景" : (msg?.is_user ? "用户" : "角色"),
+                text
+            };
+        });
+    } catch {
+        return [];
+    }
+}
+
+// 取最近 N 楼酒馆正文（走标签白名单过滤），越靠后越新，拼成给模型的"已发生的剧情"。
+// 窗口按楼层切（见 getRecentFloorWindow）：抽不出正文的楼层留一行占位，不从更早的楼层顶替。
+// 导出供单测直接验证窗口边界——它是本功能的唯一判据（同 parsePacingResponse 的做法）。
+export function collectRecentChatText(floors, opts = {}) {
+    const entries = getRecentFloorWindow(floors, opts);
     if (!entries.length) return "";
     // withFloors：带上酒馆楼层号下发。只有盲盒导演用它——判定要回报 evidence_floor，
     // 代码才能验证「这条证据是不是上次判定之后的新正文」（见 applyDirectorDecision 的 stale-evidence 闸门）。
     const withFloors = opts.withFloors === true;
     return entries
-        .slice(-n)
-        .map((e) => (withFloors ? `【#${e.chatIndex} ${e.role}】${e.text}` : `【${e.role}】${e.text}`))
+        .map((e) => {
+            const head = withFloors ? `【#${e.chatIndex} ${e.role}】` : `【${e.role}】`;
+            return head + (e.text || EMPTY_FLOOR_MARK);
+        })
         .join("\n\n");
 }
 
@@ -3523,6 +3669,8 @@ function getRollingPlan() {
  * @param {number} cfg.maxTokens
  * @param {() => Array} cfg.buildMessages          组装 messages（同步，返回前 ctx/opening 已就绪）
  * @param {(ctx, opening) => Array} 见下方调用
+ * @param {() => string | Promise<string>} [cfg.resolveOpening] 参考文本来源。
+ *        缺省 ensureOpeningTextForGeneration（可能弹选择框）；剧情推进传 getRollingOpeningText 绕开。
  * @param {(raw: string) => object} cfg.parse      解析函数
  * @param {(parsed: object) => void} cfg.apply     应用解析结果
  * @param {string} cfg.reparseLabel   回退对话框的重解析按钮文案
@@ -3533,7 +3681,12 @@ async function runGenerationFlow(cfg) {
     const useStream = isStreamingEnabled();
     return runOutlineGeneration(async (signal) => {
         const ctx = await getContextData();
-        const opening = await ensureOpeningTextForGeneration();
+        // 参考文本来源：默认走 ensureOpeningTextForGeneration（可能要玩家选楼层/开场白）；
+        // 剧情推进传 cfg.resolveOpening 绕开它——那条路只取最新回复，永不弹框（见 getRollingOpeningText）。
+        const resolveOpening = typeof cfg.resolveOpening === "function"
+            ? cfg.resolveOpening
+            : ensureOpeningTextForGeneration;
+        const opening = await resolveOpening();
         const messages = cfg.buildMessages(ctx, opening);
 
         startResponseTimer(true);
@@ -3648,6 +3801,30 @@ function buildDirectorMessages(ctx, bb) {
     ];
 }
 
+/** 当前这拍的停留快照，写进判定流水给人看（零剧透，界面上本来就有这一行）。 */
+function dwellOf(bb) {
+    const stats = getProgressStats(bb);
+    return { turns: stats.dwellTurns, beats: stats.dwellBeats };
+}
+
+/**
+ * 记一笔导演流水并落盘。**失败那拍也要记**——解析失败与 API 报错都不调
+ * applyDirectorDecision，什么都不落盘，流水就会在最需要它的地方空一格，
+ * 而那正是"判定是不是根本没在跑"唯一问得出口的地方。
+ * 返回更新后的方案（诊断视图要就地重画），方案没了就返回 null。
+ */
+function logDirectorTurn(planId, blindbox, entry) {
+    const target = getPlans().find((p) => p.id === planId);
+    if (!target || !isBlindboxPlan(target)) return null;
+    target.blindbox = appendDirectorLog(blindbox, entry);
+    target.updatedAt = Date.now();
+    saveExtData();
+    // 进度视图正开着这本就地重画（与成功路径同一手法）——不然"判定一直失败"这件事
+    // 要等玩家手动点一下才看得见。
+    if (editingPlanId === target.id) renderBlindboxSubview(target);
+    return target;
+}
+
 /**
  * 一个导演回合：读激活盲盒方案 + 最近正文 → 判定 → 过闸门落盘 → 刷新注入。
  * 由 directorInjection 在 GENERATION_ENDED 后台调用，并带上触发上下文（末楼层/swipe/签名）。
@@ -3693,18 +3870,30 @@ export async function runDirectorTurn(trigger = null) {
             stream: false,
             signal: controller.signal,
         });
-    } finally {
+    } catch (e) {
         clearTimeout(timer);
+        // 失败也要留痕：以前这里直接往上抛，被 directorInjection 吞成一条 WARN，
+        // 而 WARN 根本不进控制台（logger.js 只对 ERROR 打 console），于是"判定坏了"
+        // 和"导演很克制"在界面上长得一模一样。现在至少流水里那一拍是红的。
+        logDirectorTurn(judgedPlanId, before, {
+            floor, swipeId, turn: DIRECTOR_TURN.FAILED, failure: "api",
+            dwell: dwellOf(before),
+        });
+        return { planId: judgedPlanId, updated: false, failed: "api", error: e };
     }
+    clearTimeout(timer);
 
     const parsed = tryParseLooseJsonObject(raw);
     if (!parsed) {
         // 解析不出来（多半是 max_tokens 截断）：**保留上一拍的引导**，并且什么都不落盘——
         // 尤其别推进 lastJudged，否则这段正文就被当成"判过了"，证据白白作废。
         console.warn("[Titania] 盲盒导演判定返回无法解析，本拍跳过（保留上一拍引导）");
-        return { planId: judgedPlanId, updated: false };
+        logDirectorTurn(judgedPlanId, before, {
+            floor, swipeId, turn: DIRECTOR_TURN.FAILED, failure: "parse",
+            dwell: dwellOf(before),
+        });
+        return { planId: judgedPlanId, updated: false, failed: "parse" };
     }
-
     const decision = parseDirectorDecision(parsed);
     const target = getPlans().find((p) => p.id === plan.id);
     if (!target || !isBlindboxPlan(target)) return { planId: judgedPlanId, updated: false };
@@ -3717,17 +3906,12 @@ export async function runDirectorTurn(trigger = null) {
         sinceFloor: before.lastJudged.floor,
         report,
     });
-    target.updatedAt = Date.now();
-    saveExtData();
 
     const after = normalizeBlindbox(target.blindbox);
     if (report.refused?.length) {
         // 只打下标与原因，不打内容——控制台也是泄题口。
         console.info("[Titania] 盲盒导演：本拍被闸门拦下的回报", report.strictness, report.refused);
     }
-
-    // 进度视图若正开着这本，就地刷新（同模块，安全）。横条由 ST 下次渲染时自行追上。
-    if (editingPlanId === target.id) renderBlindboxSubview(target);
 
     // 指针换人且新目标带时间跨度：补一条确定性的时间推移指令。模型常把 span 忘在骨架里，
     // 而 RP 里的时间推移必须由旁白明说——不说，写作模型就默认接着上一拍演，整本跨度会塌。
@@ -3746,16 +3930,39 @@ export async function runDirectorTurn(trigger = null) {
         if (!directive) directive = `把这一段的关键转折真正落地：${String(curNode?.anchor || "").slice(0, 80)}`;
     }
 
-    // 刷新/清除注入：在线上（none 或空 directive）就闭嘴，清掉上一拍的引导。
+    // 先算出这一拍**实际**要说什么、出多大力，再据此记流水——两处共用一个来源，
+    // 免得流水里写着"轻推"而注入的其实是兜底的时间推移。规则与下面 arm/clear 完全一致。
+    let spoken = "";
+    let spoke = DIRECTOR_INTENSITY.NONE;
     if (directive && intensity !== DIRECTOR_INTENSITY.NONE) {
         const header = intensity === DIRECTOR_INTENSITY.FIRM ? "【剧情导演·收束】\n" : "【剧情导演·轻推】\n";
-        armDirectorDirective(header + directive + spanLine, getDirectorInjectConfig());
+        spoken = header + directive + spanLine;
+        spoke = intensity;
     } else if (spanLine) {
         // 模型选择闭嘴，但时间跳转这件事不能省：只发时间推移。
-        armDirectorDirective("【剧情导演·轻推】" + spanLine, getDirectorInjectConfig());
-    } else {
-        clearDirectorDirective();
+        spoken = "【剧情导演·轻推】" + spanLine;
+        spoke = DIRECTOR_INTENSITY.GENTLE;
     }
+
+    // 判定流水：本拍导演干了什么（给人看，零剧透——只有状态与下标，没有内容）。
+    target.blindbox = appendDirectorLog(after, {
+        floor,
+        swipeId,
+        turn: report.applied?.length ? DIRECTOR_TURN.ADVANCED : DIRECTOR_TURN.NOOP,
+        spoke,
+        advanced: report.applied || [],
+        refused: report.refused || [],
+        dwell: dwellOf(after),
+    });
+    target.updatedAt = Date.now();
+    saveExtData();
+
+    // 进度视图若正开着这本，就地刷新（同模块，安全）。横条由 directorInjection 那边叫醒。
+    if (editingPlanId === target.id) renderBlindboxSubview(target);
+
+    // 刷新/清除注入：在线上（none 或空 directive）就闭嘴，清掉上一拍的引导。
+    if (spoken) armDirectorDirective(spoken, getDirectorInjectConfig());
+    else clearDirectorDirective();
     return { planId: judgedPlanId, updated: true };
 }
 
@@ -3793,6 +4000,10 @@ async function generateRecommendations() {
             temperature: params.temperature,
             maxTokens: params.maxTokens,
             timeoutSec: params.timeoutSec,
+            // 剧情推进不指定参考楼层：永远取最新一条角色回复（见 getRollingOpeningText）。
+            // 少了这一行，点「推荐剧情」会弹出「选择聊天记录参考来源」，点取消还会直接报
+            // 「未选择参考来源，已取消生成」——而 rolling 模板里其实用不上这个变量。
+            resolveOpening: getRollingOpeningText,
             buildMessages: (ctx, opening) => buildRecommendationPrompt(ctx, storyInput, opening),
             parse: (raw) => parseRecommendationResponse(raw, fallbackItemIndex, total),
             apply: (parsed) => {
@@ -3959,6 +4170,7 @@ function bindEvents() {
     $overlay.on("click", "[data-action='bb-reroll']", () => blindboxGenerateFromView(true));
     $overlay.on("click", "[data-action='bb-unseal']", () => blindboxUnsealFromView());
     $overlay.on("click", "[data-action='bb-to-normal']", () => blindboxConvertToNormal());
+    $overlay.on("click", "[data-action='bb-director-run']", () => blindboxRunDirectorOnce());
     $overlay.on("change", "[data-action='bb-strictness']", function () {
         blindboxSetStrictness(String($(this).val() || ""));
     });
@@ -4180,7 +4392,7 @@ export function openStoryOutlineWindow() {
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> 大纲生成
                             </button>
                         </div>
-                        <label class="t-outline-mode t-outline-mode-source">
+                        <label class="t-outline-mode t-outline-mode-source" title="只影响「大纲生成」与「盲盒剧本生成」。「推荐剧情」不需要指定楼层，永远取最新一条角色回复。">
                             参考来源
                             <select id="t-outline-opening-source-mode" class="t-outline-select">
                                 <option value="auto_first">开场白</option>
