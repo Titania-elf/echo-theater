@@ -247,6 +247,104 @@
 
 .tsa-panel .tsa-preview-item.todo .tsa-preview-marker { color: var(--t-glass-text-secondary); }
 
+/* ── 过渡行程单（推荐剧情页内嵌块：把相邻两条大纲之间的空白补成有序的几步）──
+   ⚠ 只用语义 token（同本文件其它面板块）：深浅主题靠 token 重映射自动跟随。 */
+
+.tsa-panel .tsa-transition { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--t-color-accent-border); }
+
+/* 标题行兼作折叠开关（同 .tsa-preview-head 的做法）：本段还没排时整块只占一行。
+   行距比大纲预览紧一档——行程单最多十步，整块要能塞进面板而不挤掉候选卡片。 */
+.tsa-panel .tsa-transition-head { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; font-weight: 700; }
+
+.tsa-panel .tsa-transition-toggle { cursor: pointer; user-select: none; transition: color 0.16s ease; }
+
+.tsa-panel .tsa-transition-toggle:hover { color: var(--t-color-text-strong); }
+
+.tsa-panel .tsa-transition-head i { color: var(--t-color-accent); }
+
+.tsa-panel .tsa-transition-gap { flex-shrink: 0; padding: 0 6px; border: 1px solid var(--t-color-accent-border); border-radius: 999px; font-size: 11px; font-weight: 400; color: var(--t-glass-text-secondary); }
+
+.tsa-panel .tsa-transition-arrow { margin-left: auto; color: var(--t-glass-text-secondary); transition: transform 0.18s ease; }
+
+.tsa-panel .tsa-transition-toggle.is-open .tsa-transition-arrow { transform: rotate(180deg); }
+
+/* 步数徽标：等宽数字——「1 / 4 步」会随进度逐字变化，比例数字会让整行左右抖。 */
+.tsa-panel .tsa-transition-badge { margin-left: auto; font-size: 11px; font-weight: 400; font-variant-numeric: tabular-nums; color: var(--t-glass-text-secondary); }
+
+/* 下单表单（本段还没排行程单时） */
+
+.tsa-panel .tsa-transition-form { display: flex; flex-direction: column; gap: 6px; }
+
+.tsa-panel .tsa-transition-brief { width: 100%; padding: 6px 8px; border: 1px solid var(--t-color-accent-border); border-radius: var(--t-radius-sm); background: var(--t-glass-field); color: var(--t-glass-text); font-family: inherit; resize: vertical; }
+
+.tsa-panel .tsa-transition-form-row { display: flex; align-items: center; gap: 8px; }
+
+.tsa-panel .tsa-transition-count-label { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--t-glass-text-secondary); }
+
+.tsa-panel .tsa-transition-count { width: 56px; padding: 3px 6px; border: 1px solid var(--t-color-accent-border); border-radius: var(--t-radius-sm); background: var(--t-glass-field); color: var(--t-glass-text); }
+
+.tsa-panel .tsa-transition-gen { margin-left: auto; }
+
+.tsa-panel .tsa-transition-hint { font-size: 11px; color: var(--t-glass-text-secondary); }
+
+/* 有序清单（已排行程单）。行距比大纲预览更紧凑：最多十步，撑不起那么大的行高。 */
+
+.tsa-panel .tsa-transition-purpose { margin-bottom: 5px; font-size: 11px; color: var(--t-glass-text-secondary); white-space: pre-wrap; word-break: break-word; }
+
+.tsa-panel .tsa-transition-list { margin: 0; padding: 0; list-style: none; }
+
+.tsa-panel .tsa-transition-step { display: flex; gap: 6px; margin-bottom: 3px; padding: 4px 7px; border: 1px solid transparent; border-radius: var(--t-radius-sm); cursor: pointer; transition: background-color 0.16s ease, border-color 0.16s ease; }
+
+.tsa-panel .tsa-transition-step:hover { border-color: var(--t-color-accent-border); background: var(--t-glass-row-hover); }
+
+/* 编辑态不可点（点它没有定位语义），光标要如实反映 */
+.tsa-panel .tsa-transition-step.is-editing { cursor: default; }
+
+.tsa-panel .tsa-transition-marker { flex-shrink: 0; width: 14px; text-align: center; }
+
+.tsa-panel .tsa-transition-main { flex: 1; min-width: 0; }
+
+.tsa-panel .tsa-transition-title { margin-bottom: 2px; font-weight: 700; }
+
+.tsa-panel .tsa-transition-span { margin-left: 6px; padding: 0 5px; border: 1px solid var(--t-color-accent-border); border-radius: 999px; font-size: 10px; font-weight: 400; color: var(--t-glass-text-secondary); }
+
+.tsa-panel .tsa-transition-brief-text { color: var(--t-glass-text-secondary); white-space: pre-wrap; word-break: break-word; }
+
+/* 已走完：淡化 + 打勾；当前这一步：高亮左边条（与大纲预览同一套语汇） */
+.tsa-panel .tsa-transition-step.done { opacity: 0.55; }
+
+.tsa-panel .tsa-transition-step.done .tsa-transition-marker { color: var(--t-color-success-border); }
+
+.tsa-panel .tsa-transition-step.current { border-color: var(--t-color-accent-border-hover); background: var(--t-color-accent-soft); }
+
+.tsa-panel .tsa-transition-step.current .tsa-transition-marker { color: var(--t-color-accent); }
+
+.tsa-panel .tsa-transition-step.todo .tsa-transition-marker { color: var(--t-glass-text-secondary); }
+
+/* 终点行：虚线＝还没走到；走完最后一步就点亮成实线并可点（跨段） */
+.tsa-panel .tsa-transition-final { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; padding: 4px 7px; border: 1px dashed var(--t-color-accent-border); border-radius: var(--t-radius-sm); color: var(--t-glass-text-secondary); cursor: pointer; transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease; }
+
+.tsa-panel .tsa-transition-final:hover { border-color: var(--t-color-accent-border-hover); background: var(--t-glass-row-hover); }
+
+.tsa-panel .tsa-transition-final.is-ready { border-style: solid; border-color: var(--t-color-success-border); background: var(--t-color-success-soft); color: var(--t-glass-text); }
+
+/* 编辑态 */
+
+.tsa-panel .tsa-transition-edit { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.tsa-panel .tsa-transition-edit-title,
+.tsa-panel .tsa-transition-edit-span,
+.tsa-panel .tsa-transition-edit-brief { width: 100%; padding: 3px 6px; border: 1px solid var(--t-color-accent-border); border-radius: var(--t-radius-sm); background: var(--t-glass-field); color: var(--t-glass-text); font-family: inherit; resize: vertical; }
+
+.tsa-panel .tsa-transition-edit-title { font-weight: 700; }
+
+.tsa-panel .tsa-transition-edit-ops { display: flex; gap: 4px; }
+
+/* 底部操作条：最后一条清单行自己带 3px 下边距，这里只补 2px 凑齐块内的 5px 节奏。 */
+.tsa-panel .tsa-transition-ops { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+
+.tsa-panel .tsa-transition-edit-toggle.is-active { border-color: var(--t-color-accent-border-hover); background: var(--t-color-accent-soft); }
+
 /* ── 节奏把控（剧情推进面板的第二模式）────────────────────────────── */
 .tsa-panel .tsa-mode-tabs { display: flex; gap: 6px; padding: 8px 10px 0; }
 

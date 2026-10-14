@@ -30,6 +30,7 @@ import { getExtData, saveExtData } from "../utils/storage.js";
 import { TitaniaLogger } from "../core/logger.js";
 import * as pacingInjection from "../core/pacingInjection.js";
 import { isBlindboxPlan, normalizeBlindbox, getProgressStats, DIRECTOR_TURN, describeDirectorTurn } from "../core/blindboxPlan.js";
+import { EVENT_COUNT_DEFAULT, clampEventCount } from "../core/transitionPlan.js";
 import {
     buildRevealView,
     resolveUnlocks,
@@ -84,6 +85,26 @@ let pacingResult = null;
 let pacingDraft = "";
 /** 节奏分析进行中：防连点，也让重绘保留 loading 态。 */
 let pacingAnalyzing = false;
+/** 过渡行程单：折叠表单是否展开（只在"本段还没排"时有意义）。收起面板时重置。 */
+let transitionOpen = false;
+/** 过渡梗概草稿：同 pacingDraft——重绘不丢用户正在打的字。 */
+let transitionDraft = "";
+/** 事件数量输入框的值。 */
+let transitionCount = EVENT_COUNT_DEFAULT;
+/** 行程单编辑态（改文字 / 增 / 删 / 调序）。收起面板时重置。 */
+let transitionEditing = false;
+/**
+ * 编辑中的事件草稿（进编辑态时拷贝一份，退出时才落盘）。
+ *
+ * 为什么不每改一下就落盘：落盘要过 normalizeTransition，而它会**丢掉 brief 为空的条目**
+ * （那是给模型看的数据，空壳没意义）。编辑过程中把某条 brief 清空再点"上移"，那条就会
+ * 当场蒸发——这是最恼人的一种"手滑"。所以编辑期一律改草稿，只在退出编辑/收起面板时
+ * 一次性提交，空壳到那时才被清掉（此时语义正确且可预期）。
+ * 草稿刻意放在模块级：ST 重渲染冲掉面板后 rebuild 仍从它读，编辑不丢。
+ */
+let transitionEditDraft = null;
+/** 行程单生成中：防连点，也让重绘保留 loading 态。 */
+let transitionGenerating = false;
 
 /** 手动节奏预设：一键把现成 directive 填进编辑框，不调 API。措辞与 judge 产出同格式。 */
 const PACING_PRESETS = [
@@ -159,12 +180,25 @@ function readProgressFromSettings() {
 
     const raw = Number(plan.progress?.itemIndex);
     const index = Number.isFinite(raw) ? Math.max(0, Math.min(raw, total - 1)) : 0;
-    return { index, total };
+    // 过渡步数也从 extData 现读：折叠态横条必须能看出"还卡在某段过渡里"，
+    // 但不能为此加载整个大纲模块（那是这条路径一开始就守着的规矩）。逻辑与
+    // transitionPlan.getActiveTransition + isTransitionDone 同义，只是不引它。
+    const tr = Array.isArray(plan.transitions)
+        ? plan.transitions.find(t => Number(t?.fromIndex) === index)
+        : null;
+    const transitionTotal = Array.isArray(tr?.events) ? tr.events.length : 0;
+    const transitionStep = transitionTotal > 0
+        ? Math.max(0, Math.min(Math.floor(Number(tr?.cursor)) || 0, transitionTotal))
+        : -1;
+    return { index, total, transitionStep, transitionTotal };
 }
 
 function formatProgressLabel(progress) {
     if (!progress) return "";
-    return `第 ${progress.index + 1} / ${progress.total} 条`;
+    const base = `第 ${progress.index + 1} / ${progress.total} 条`;
+    return progress.transitionStep >= 0
+        ? `${base} · 过渡 ${progress.transitionStep}/${progress.transitionTotal}`
+        : base;
 }
 
 /* ------------------------------------------------------------------ *
@@ -218,7 +252,14 @@ function progressFromState(state) {
     const total = Number(state?.total) || 0;
     if (total <= 0) return null;
     const index = Math.max(0, Math.min(Number(state.progress?.itemIndex) || 0, total - 1));
-    return { index, total };
+    const t = state?.transition;
+    const transitionTotal = t && Array.isArray(t.events) ? t.events.length : 0;
+    return {
+        index,
+        total,
+        transitionStep: transitionTotal > 0 ? Math.max(0, Math.min(Number(t.cursor) || 0, transitionTotal)) : -1,
+        transitionTotal
+    };
 }
 
 /* ------------------------------------------------------------------ *
@@ -478,10 +519,16 @@ function buildProgressHtml(state) {
     if (!state.hasPlan || state.total <= 0) return "";
     const idx = state.progress.itemIndex;
     const percent = Math.round(((idx + 1) / state.total) * 100);
+    // 有行程单时挂一条子进度：大纲进度点是粗粒度的，玩家真正在走的是"过渡段的第几步"。
+    const t = state.transition;
+    const stepText = t && t.events.length > 0
+        ? `<div class="tsa-progress-step"><i class="fa-solid fa-diagram-project"></i> 本段过渡 ${t.cursor} / ${t.events.length} 步</div>`
+        : "";
     return `
         <div class="tsa-progress">
             <div class="tsa-progress-text">第 ${idx + 1} / ${state.total} 条</div>
             <div class="tsa-bar"><div class="tsa-bar-fill" style="width:${percent}%"></div></div>
+            ${stepText}
         </div>`;
 }
 
@@ -559,10 +606,123 @@ function buildCandidatesHtml(state) {
                 <span class="tsa-item-title">${escapeHtmlText(c.title || `候选 ${idx + 1}`)}</span>
                 ${c.used ? '<span class="tsa-item-used">已写入</span>' : ""}
             </div>
-            <div class="tsa-item-meta">推进至大纲第 ${Number(c.itemIndex) || 0} 条</div>
+            <div class="tsa-item-meta">${candidateMetaLine(c, state)}</div>
             <div class="tsa-item-text">${escapeHtmlText(c.text)}</div>
         </div>
     `).join("");
+}
+
+/** 候选卡片那行小字：有行程单时点明它走的是第几步，否则只说推进到第几条。 */
+function candidateMetaLine(c, state) {
+    const itemNo = Number(c.itemIndex) || 0;
+    if (c.stepIndex === null || c.stepIndex === undefined) return `推进至大纲第 ${itemNo} 条`;
+    const total = state?.transition?.events?.length || 0;
+    return `停留在第 ${itemNo} 条 · 走完过渡第 ${c.stepIndex} / ${total} 步`;
+}
+
+/**
+ * 过渡行程单块：把相邻两条大纲之间那段空白补成一条有序的事件清单。
+ *
+ * ── 为什么点某一步不是"发送" ──
+ * 行程单的 brief 是**面向作者的梗概体**（"两人从对峙走到和解"），而候选才是"可直接发送的
+ * 玩家输入"（见 rolling 模板对 text 的定义）。所以点一步的语义是**定位**——把这一步设为
+ * "当前要演的"，并清掉上一步遗留的候选（它们已经过期）；真正可发的文本由随后的「推荐剧情」
+ * 产出，它会把当前这一步写进 {{transitionContext}}。
+ * 一句话：行程单定"走到哪"，候选定"怎么走"。
+ */
+function buildTransitionHtml(state) {
+    if (!state.hasPlan || !state.canTransition) return "";
+    const gap = state.transitionGap;
+    const gapLabel = `第 ${gap.fromIndex + 1} → ${gap.toIndex + 1} 条`;
+    const t = state.transition;
+
+    if (!t) {
+        const form = transitionOpen ? `
+            <div class="tsa-transition-form">
+                <textarea class="tsa-transition-brief" id="tsa-transition-brief" rows="2"
+                    placeholder="这一段大概怎么走？（例：两人从冷战到重新搭话，中间隔着一次意外）">${escapeHtmlText(transitionDraft)}</textarea>
+                <div class="tsa-transition-form-row">
+                    <label class="tsa-transition-count-label">事件数
+                        <input type="number" class="tsa-transition-count" id="tsa-transition-count" min="1" max="10" step="1" value="${transitionCount}">
+                    </label>
+                    <button type="button" class="tsa-generate tsa-transition-gen" id="tsa-transition-gen" ${transitionGenerating ? "disabled" : ""}>
+                        <i class="fa-solid ${transitionGenerating ? "fa-spinner fa-spin" : "fa-diagram-project"}"></i> ${transitionGenerating ? "生成中..." : "生成行程单"}
+                    </button>
+                </div>
+                <div class="tsa-transition-hint">把「${escapeHtmlText(gap.fromTitle || "当前条")}」到「${escapeHtmlText(gap.toTitle || "下一条")}」之间的空档排成几步，剧情推进就会沿着它们走，而不是一步跨过去。</div>
+            </div>` : "";
+        return `
+            <div class="tsa-transition ${transitionOpen ? "is-open" : ""}">
+                <div class="tsa-transition-head tsa-transition-toggle ${transitionOpen ? "is-open" : ""}" role="button" tabindex="0" aria-expanded="${transitionOpen}" title="展开/收起过渡行程单">
+                    <i class="fa-solid fa-diagram-project"></i> 过渡行程单
+                    <span class="tsa-transition-gap">${escapeHtmlText(gapLabel)}</span>
+                    <i class="fa-solid fa-chevron-down tsa-transition-arrow"></i>
+                </div>
+                ${form}
+            </div>`;
+    }
+
+    // 编辑期一律画草稿（见 transitionEditDraft 的注释）；平时画落盘的那份。
+    const shown = transitionEditing && Array.isArray(transitionEditDraft) ? transitionEditDraft : t.events;
+    const total = shown.length;
+    const doneCount = Math.min(t.cursor, total);
+    const rows = shown.map((e, i) => {
+        const cls = i < t.cursor ? "done" : i === t.cursor ? "current" : "todo";
+        const marker = cls === "done" ? '<i class="fa-solid fa-check"></i>'
+            : cls === "current" ? '<i class="fa-solid fa-location-dot"></i>'
+                : '<i class="fa-regular fa-circle"></i>';
+
+        if (transitionEditing) {
+            return `
+            <li class="tsa-transition-step ${cls} is-editing">
+                <span class="tsa-transition-marker">${marker}</span>
+                <div class="tsa-transition-edit">
+                    <input class="tsa-transition-edit-title" data-step-idx="${i}" data-field="title" value="${escapeHtmlText(e.title)}" placeholder="标题" maxlength="40">
+                    <input class="tsa-transition-edit-span" data-step-idx="${i}" data-field="span" value="${escapeHtmlText(e.span)}" placeholder="时间（如 三天后）" maxlength="60">
+                    <textarea class="tsa-transition-edit-brief" data-step-idx="${i}" data-field="brief" rows="2" placeholder="这一步发生了什么、导致了什么">${escapeHtmlText(e.brief)}</textarea>
+                    <div class="tsa-transition-edit-ops">
+                        <button type="button" class="tsa-icon-btn tsa-transition-up" data-step-idx="${i}" title="上移" ${i === 0 ? "disabled" : ""}><i class="fa-solid fa-arrow-up"></i></button>
+                        <button type="button" class="tsa-icon-btn tsa-transition-down" data-step-idx="${i}" title="下移" ${i === total - 1 ? "disabled" : ""}><i class="fa-solid fa-arrow-down"></i></button>
+                        <button type="button" class="tsa-icon-btn tsa-transition-del" data-step-idx="${i}" title="删除这一步"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            </li>`;
+        }
+        return `
+            <li class="tsa-transition-step ${cls}" data-step-idx="${i}" title="把这一步设为当前（不会写入输入框）">
+                <span class="tsa-transition-marker">${marker}</span>
+                <div class="tsa-transition-main">
+                    <div class="tsa-transition-title">${escapeHtmlText(e.title || `第 ${i + 1} 步`)}${e.span ? `<span class="tsa-transition-span">${escapeHtmlText(e.span)}</span>` : ""}</div>
+                    <div class="tsa-transition-brief-text">${escapeHtmlText(e.brief)}</div>
+                </div>
+            </li>`;
+    }).join("");
+
+    const left = total - doneCount;
+    const finalRow = `
+        <li class="tsa-transition-final ${state.transitionDone ? "is-ready" : ""}" data-action="cross-gap"
+            title="${state.transitionDone ? "跨到下一个阶段" : `还有 ${left} 步没走；点它会跳过剩下几步直接跨段`}">
+            <i class="fa-solid fa-flag-checkered"></i> 进入「${escapeHtmlText(gap.toTitle || `第 ${gap.toIndex + 1} 条`)}」
+        </li>`;
+
+    const ops = transitionEditing
+        ? `<button type="button" class="tsa-chip tsa-transition-add" id="tsa-transition-add"><i class="fa-solid fa-plus"></i> 添加一条</button>
+           <button type="button" class="tsa-chip tsa-transition-edit-toggle is-active" id="tsa-transition-edit-toggle"><i class="fa-solid fa-check"></i> 完成编辑</button>`
+        : `<button type="button" class="tsa-chip tsa-transition-edit-toggle" id="tsa-transition-edit-toggle"><i class="fa-solid fa-pen"></i> 编辑</button>
+           <button type="button" class="tsa-chip tsa-transition-regen" id="tsa-transition-regen" ${transitionGenerating ? "disabled" : ""}><i class="fa-solid fa-rotate"></i> 重新生成</button>
+           <button type="button" class="tsa-chip tsa-transition-drop" id="tsa-transition-drop"><i class="fa-solid fa-trash"></i> 删除</button>`;
+
+    return `
+        <div class="tsa-transition is-open has-list">
+            <div class="tsa-transition-head">
+                <i class="fa-solid fa-diagram-project"></i> 过渡行程单
+                <span class="tsa-transition-gap">${escapeHtmlText(gapLabel)}</span>
+                <span class="tsa-transition-badge">${doneCount} / ${total} 步</span>
+            </div>
+            ${t.brief ? `<div class="tsa-transition-purpose">用意：${escapeHtmlText(t.brief)}</div>` : ""}
+            <ol class="tsa-transition-list">${rows}${finalRow}</ol>
+            <div class="tsa-transition-ops">${ops}</div>
+        </div>`;
 }
 
 /**
@@ -805,7 +965,10 @@ function buildDirectorFlow(info) {
 
 /** 推荐剧情体：预览 / 方案 / 进度 / 候选（可滚动）+ 底部操作条。原「剧情推进」排布。 */
 function buildRecommendBody(state) {
-    const generateLabel = state.candidates.length > 0 ? "换一批" : "推荐剧情";
+    // 有行程单时按钮改口：这一批候选是"演当前这一步"的，不是"跳到下一条"的。
+    const inTransition = !!(state.transition && state.transition.events.length > 0);
+    const idleLabel = inTransition ? "推荐这一步的剧情" : "推荐剧情";
+    const generateLabel = state.candidates.length > 0 ? "换一批" : idleLabel;
     return `
         <div class="tsa-scroll">
             ${buildPreviewHtml(state)}
@@ -815,6 +978,7 @@ function buildRecommendBody(state) {
                 </label>
             </div>
             ${buildProgressHtml(state)}
+            ${buildTransitionHtml(state)}
             <div class="tsa-list" id="tsa-list">${buildCandidatesHtml(state)}</div>
         </div>
         <div class="tsa-footer">
@@ -912,6 +1076,15 @@ async function refreshPanel() {
 
 /** 收起：摘掉面板。 */
 function destroyPanel() {
+    // 编辑中的行程单要先落盘（草稿在内存里，与 DOM 无关；但退出编辑的语义要一致）。
+    // commitTransitionEditDraft 在第一个 await 之前就把 editing/draft 清掉了，
+    // 所以这里不 await 也不会留下不一致的模块态。
+    if (transitionEditing) void commitTransitionEditDraft();
+    transitionOpen = false;      // 下次打开回到折叠态（和 previewOpen 一样）
+    transitionEditing = false;
+    // transitionDraft / transitionCount 刻意**不重置**：那是用户手打的过渡梗概，
+    // 误关一次面板就清空太狠了（同 pacingDraft 的取舍）。行程单本身在 plan 上，更不受影响。
+
     $(`#${PANEL_ID}`).remove();
     expandedForMesid = null;
     previewItemIdx = -1;
@@ -973,7 +1146,7 @@ async function expandPanel(strip, mesid) {
  * 交互
  * ------------------------------------------------------------------ */
 
-/** 点候选卡片：写入酒馆输入框 + 用模型给的 item_index 回写进度 + 标记已写入。 */
+/** 点候选卡片：写入酒馆输入框 + 按模型给的位置回写进度 + 标记已写入。 */
 async function onPickCandidate(index) {
     const api = await loadApi();
     const state = api.getSceneAdvanceState();
@@ -982,10 +1155,143 @@ async function onPickCandidate(index) {
 
     api.writeSceneToInput(candidate.text, api.getSceneInsertMode());
     if (state.planId) {
-        // itemIndex 是 1-based 大纲序号，进度指针是 0-based
-        api.applySceneProgress(state.planId, candidate.itemIndex - 1);
+        if (candidate.stepIndex !== null && candidate.stepIndex !== undefined) {
+            // 有行程单时，stepIndex 才是权威的推进量：候选的 item_index 一律停在当前条目，
+            // 拿它去推指针只会原地打转（还会被跨段闸门夹住）。
+            api.setSceneStep(state.planId, candidate.stepIndex);
+        } else {
+            // itemIndex 是 1-based 大纲序号，进度指针是 0-based
+            api.applySceneProgress(state.planId, candidate.itemIndex - 1);
+        }
         api.markSceneCandidateUsed(state.planId, index);
     }
+    await refreshPanel();
+}
+
+/* ---- 过渡行程单 ---- */
+
+/** 把草稿一次性落盘（brief 为空的空壳到这时才被清掉）并退出编辑态。 */
+async function commitTransitionEditDraft() {
+    const draft = transitionEditDraft;
+    transitionEditing = false;
+    transitionEditDraft = null;
+    if (!Array.isArray(draft)) return;
+    try {
+        const api = await loadApi();
+        const state = api.getSceneAdvanceState();
+        if (state.planId) api.saveSceneTransitionEvents(state.planId, draft);
+    } catch (e) {
+        TitaniaLogger.warn("过渡行程单落盘失败", e?.message || String(e));
+    }
+}
+
+/** 生成（或重掷）当前 gap 的过渡行程单。 */
+async function onGenerateTransition(regen = false) {
+    if (transitionGenerating) return;
+    const api = await loadApi();
+    const state = api.getSceneAdvanceState();
+
+    // 重掷沿用上一版的梗概与条数——按"重新生成"是想换个排法，不是想重填表单。
+    let brief;
+    let count;
+    if (regen && state.transition) {
+        brief = state.transition.brief;
+        count = state.transition.events.length || EVENT_COUNT_DEFAULT;
+    } else {
+        brief = String($("#tsa-transition-brief").val() ?? transitionDraft).trim();
+        count = clampEventCount($("#tsa-transition-count").val() ?? transitionCount);
+    }
+    transitionDraft = brief;
+    transitionCount = count;
+    transitionGenerating = true;
+    await refreshPanel();
+    try {
+        await api.generateSceneTransition({ brief, count });
+    } catch (e) {
+        TitaniaLogger.error("过渡行程单生成失败", e);
+    } finally {
+        transitionGenerating = false;
+        // 只有真的排出来了才收起表单；失败（或用户在修复弹窗里取消）时保持展开，
+        // 别把用户刚填的梗概一起收走。
+        const after = api.getSceneAdvanceState();
+        if (after.transition && after.transition.events.length > 0) transitionOpen = false;
+        await refreshPanel();
+    }
+}
+
+/**
+ * 点某一步：**定位**，不是发送。
+ * brief 是面向作者的梗概体，不是可直接发送的玩家输入；这里只把这一步设为"当前要演的"，
+ * 并清掉上一步遗留的候选（它们已经过期，留着点了会推进到错误的步）。
+ */
+async function onPickStep(stepIndex) {
+    await commitTransitionEditDraft();
+    const api = await loadApi();
+    const state = api.getSceneAdvanceState();
+    if (!state.planId || !state.transition) return;
+    if (state.transition.cursor === stepIndex) return;
+    api.clearSceneCandidates(state.planId);
+    api.setSceneStep(state.planId, stepIndex);
+    await refreshPanel();
+}
+
+/** 跨到下一个大纲条目。行程单没走完时＝跳过剩下几步，所以要问一句。 */
+async function onCrossGap() {
+    await commitTransitionEditDraft();
+    const api = await loadApi();
+    const state = api.getSceneAdvanceState();
+    if (!state.planId) return;
+    const left = state.transition && !state.transitionDone
+        ? state.transition.events.length - state.transition.cursor
+        : 0;
+    if (left > 0 && !window.confirm(`还有 ${left} 步过渡没走，确定跳过它们、直接进入下一条大纲？`)) return;
+    api.clearSceneCandidates(state.planId);
+    api.crossSceneGap(state.planId);
+    await refreshPanel();
+}
+
+/** 进出编辑态。进入时拷贝一份草稿，退出时一次性落盘。 */
+async function onToggleTransitionEdit() {
+    if (transitionEditing) {
+        await commitTransitionEditDraft();
+    } else {
+        const api = await loadApi();
+        const state = api.getSceneAdvanceState();
+        if (!state.transition) return;
+        transitionEditing = true;
+        transitionEditDraft = state.transition.events.map(e => ({ ...e }));
+    }
+    await refreshPanel();
+}
+
+/**
+ * 编辑操作：改草稿 → 重绘。**刻意不落盘**——落盘在退出编辑时（见 transitionEditDraft）。
+ * 文字输入由下面那个 input 处理器实时写进草稿，所以这里不必再去 DOM 里捞一遍，
+ * 也就不会出现"改完字直接点完成编辑、刚打的字没了"这种丢字。
+ */
+async function mutateTransitionDraft(mutator) {
+    if (!Array.isArray(transitionEditDraft)) return;
+    transitionEditDraft = mutator(transitionEditDraft.map(e => ({ ...e })));
+    await refreshPanel();
+}
+
+/** 交换数组两项（上移/下移用）。纯函数，不改入参。 */
+function swapAt(list, a, b) {
+    const next = list.slice();
+    const tmp = next[a];
+    next[a] = next[b];
+    next[b] = tmp;
+    return next;
+}
+
+async function onDropTransition() {
+    const api = await loadApi();
+    const state = api.getSceneAdvanceState();
+    if (!state.planId) return;
+    if (!window.confirm("删除这一段的过渡行程单？剧情推进将退回按大纲条目直接推进。")) return;
+    transitionEditing = false;
+    transitionEditDraft = null;
+    api.clearSceneTransition(state.planId);
     await refreshPanel();
 }
 
@@ -1097,6 +1403,56 @@ function bindPanelNode(panel) {
     });
 
     $panel.on("click", "#tsa-generate", () => onGenerate());
+
+    /* ---- 过渡行程单 ---- */
+    // 注：面板内所有点击已由本函数末尾那个裸 click 处理器统一 stopPropagation，
+    //     这里不必再逐个拦 ST 的 .mes 处理器。
+
+    $panel.on("click", ".tsa-transition-toggle", async function () {
+        transitionOpen = !transitionOpen;
+        await refreshPanel();
+    });
+    // 表单草稿：只同步变量、**不重绘**——重绘会把焦点和光标位置一起冲掉（同 #tsa-pacing-directive）。
+    $panel.on("input", "#tsa-transition-brief", function () {
+        transitionDraft = String($(this).val() || "");
+    });
+    $panel.on("change", "#tsa-transition-count", function () {
+        transitionCount = clampEventCount($(this).val());
+    });
+    $panel.on("click", "#tsa-transition-gen", () => onGenerateTransition(false));
+    $panel.on("click", "#tsa-transition-regen", () => onGenerateTransition(true));
+    $panel.on("click", "#tsa-transition-drop", () => onDropTransition());
+    // 点某一步 = 定位（不写输入框）。见 buildTransitionHtml 的注释。
+    $panel.on("click", ".tsa-transition-step:not(.is-editing)", function () {
+        return onPickStep(Number($(this).data("step-idx")));
+    });
+    $panel.on("click", ".tsa-transition-final", () => onCrossGap());
+    $panel.on("click", "#tsa-transition-edit-toggle", () => onToggleTransitionEdit());
+
+    $panel.on("click", ".tsa-transition-up", function () {
+        const i = Number($(this).data("step-idx"));
+        return mutateTransitionDraft(list => (i > 0 ? swapAt(list, i, i - 1) : list));
+    });
+    $panel.on("click", ".tsa-transition-down", function () {
+        const i = Number($(this).data("step-idx"));
+        return mutateTransitionDraft(list => (i >= 0 && i < list.length - 1 ? swapAt(list, i, i + 1) : list));
+    });
+    $panel.on("click", ".tsa-transition-del", function () {
+        const i = Number($(this).data("step-idx"));
+        return mutateTransitionDraft(list => list.filter((_, idx) => idx !== i));
+    });
+    $panel.on("click", "#tsa-transition-add", () => mutateTransitionDraft(list => [...list, { title: "", span: "", brief: "" }]));
+
+    // 编辑框：**输入即写草稿**，只同步变量、不重绘（重绘会丢焦点与光标位置）。
+    // 之所以不能等到"失焦再捞 DOM"：用户改完字直接点「完成编辑」或终点行时不会再触发
+    // 一次读取，刚打的字就没了——这是这套交互最容易踩的一个坑。
+    $panel.on("input", ".tsa-transition-edit-title, .tsa-transition-edit-span, .tsa-transition-edit-brief", function () {
+        if (!Array.isArray(transitionEditDraft)) return;
+        const i = Number($(this).data("step-idx"));
+        const field = String($(this).data("field") || "");
+        if (!transitionEditDraft[i] || !field) return;
+        transitionEditDraft[i] = { ...transitionEditDraft[i], [field]: String($(this).val() || "") };
+    });
 
     // 盲盒导演：暂停 / 恢复
     $panel.on("click", "#tsa-bb-pause", async function () {

@@ -43,6 +43,19 @@ import {
     getDirectorInjectConfig,
     getDirectorTrigger,
 } from "../core/directorInjection.js";
+import {
+    EVENT_COUNT_DEFAULT,
+    clampEventCount,
+    normalizeTransition,
+    normalizeTransitions,
+    getActiveTransition,
+    getTransitionFor,
+    upsertTransition,
+    dropTransition,
+    isTransitionDone,
+    clampCursor,
+    buildTransitionContextText,
+} from "../core/transitionPlan.js";
 
 let outlineItems = [];
 let lastRawResponse = "";
@@ -1114,26 +1127,32 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 3) 不得倒退：候选推进到的条目不得早于你判断的当前位置，也不要一次跨过多条。
 4) 承接已发生的剧情：候选必须自然衔接"已经发生的剧情"的最后状态，不重复已经写过的情节。
 5) 临近结局：若你判断故事已推进到最后一条大纲、或已经该收尾了，候选应当是收束与落地方向（把既有线索结清、给出结局），不要另起新的展开。
+6) 有过渡行程单时（见[过渡行程单]一节），候选的推进单位**不是大纲条目、而是行程单里的一步**：只能在行程单内往前推进**至多一步**，item_index 一律填当前所处的那一条、不得越过本段过渡；只有行程单已全部走完，才允许把故事推进到下一个大纲条目。行程单是玩家为本段亲手指定的过场，越过它就等于把玩家的安排作废。
 
 [硬性要求]
 1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
 2) 只允许返回以下结构：
 {
-  "version": "1.6",
+  "version": "1.7",
   "current_item_index": 1,
   "candidates": [
     {
       "title": "候选标题（8字以内）",
       "text": "可直接作为玩家输入发送的剧情段落",
-      "item_index": 1
+      "item_index": 1,
+      "step_index": 1
     }
   ]
 }
 3) current_item_index 填你判断的"故事目前推进到第几条"（对应输入大纲里的 index）。确实无法判断时填 null，不要随便填 1。
 4) candidates 数量必须为 2~3 个。
 5) text 是以玩家视角驱动剧情的指令式情节段落，120-220 字，中文，具体可延展，可直接发送给模型续写，不写"请你/你需要"。
-6) item_index 填该候选推进到的大纲条目序号，必须来自输入大纲，不得新增；各候选相同或相邻都属于正常。
-7) 输出语言使用中文。`,
+6) item_index 填该候选推进到的大纲条目序号，必须来自输入大纲，不得新增；各候选相同或相邻都属于正常。有过渡行程单时一律填当前条目（见核心原则 6）。
+7) step_index 填"这个候选走完后，本段过渡行程单里已完成几步"（0 起算的整数）：
+   - 无过渡行程单时填 null；
+   - 有行程单时，[过渡行程单]一节会直接写明本回合该填几，照抄即可；
+   - 候选只在原地深化、不推进过渡 → 填当前已完成步数；把当前这一步演完 → 已完成步数 + 1；行程单全部走完 → 填行程单总步数。
+8) 输出语言使用中文。`,
             user: `[角色设定]
 {{persona}}
 
@@ -1149,13 +1168,17 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 [完整故事大纲（路标，最后一条=结局）]
 {{outlineItemsJson}}
 
+[过渡行程单（玩家为下面这一段过场亲手排的顺序；没有内容时＝本段没有行程单，按普通推进处理）]
+{{transitionContext}}
+
 [已经发生的剧情（仅为最近正文片段，越靠后越新，不代表故事开头；带【背景】前缀的是被总结/隐藏的楼层或摘要）]
 {{recentChat}}
 
 [任务]
 1) 先判断故事目前推进到了大纲的哪一条，填进 current_item_index（确实无法判断填 null）。
 2) 再给出 2~3 个候选剧情走向：都从该位置出发，承接已经发生的剧情，彼此方向不同，朝结局稳步推进但不要跳到结局。每个候选的 item_index 填它推进到的那一条（通常彼此相同或相邻）。
-严格按 version 1.6 结构返回。只返回 JSON。`
+3) 若上面给了[过渡行程单]，候选要**针对行程单里当前那一步**来写（写出这一步具体怎么发生、怎么演），并按其指示填 step_index 与 item_index——不要越过行程单去写后面的内容。没有行程单时 step_index 一律填 null。
+严格按 version 1.7 结构返回。只返回 JSON。`
         },
         pacing: {
             system: `你是叙事节奏分析师，在写作模型动笔前为「本次这一条回复」把控节奏。
@@ -1280,6 +1303,69 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 {{blindboxProgress}}
 
 [任务] 读最近正文，判断还没翻过去的事件在这一拍里的进展（done/skipped/progress，各带 evidence 与 evidence_floor），为 done/skipped 写一句 recap，并给出 directive 与 intensity。拿不准一律报 progress。严格按约定 JSON 返回。`
+        },
+        transition: {
+            system: `你是剧情过场设计师。玩家已经有一份完整故事大纲，但相邻两条之间往往隔着一段不短的时间（"一周后""半年后"），大纲本身对这段空白没有任何交代——你的职责就是把这段空白填成一条**有序的事件行程单**，让故事能从当前这条自然走到下一条。
+
+[硬性要求]
+1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
+2) 返回格式必须是：
+{
+  "version": "1.0",
+  "from_index": 2,
+  "to_index": 3,
+  "events": [
+    {
+      "title": "本步标题（8字以内）",
+      "span": "本步距上一拍的时间跨度",
+      "brief": "本步梗概（客观概述发生了什么、导致了什么）"
+    }
+  ]
+}
+3) events 数量必须**恰好 {{eventCount}} 条**，且**按时间先后排列**。
+4) 因果衔接：上一步的后果要驱动下一步，用"因此/但是"而非"然后"。不要写成几件互不相干的并列事件。
+5) 时间跨度（与本条同等重要）：
+   - span 写成时间跨度标记而非瞬时时刻，格式参考：当晚 / 次日 / 三天后 / 两周后 / 入秋时 / 次年春天；
+   - 第一条相对[最近正文]的最后状态起算，最后一条必须**刚好落在下一个条目的入口**（即下一条的时间点之前）；
+   - 所有 span 沿时间轴单调前进，累加起来不得超过这一段 gap 的总跨度（见[本次要补的过渡段]）；
+   - 禁止把整段 gap 写成连续几天的场景串，也不要全程一句"数月后"草草带过——该快则快、该慢则慢。
+6) brief 一律用梗概体（客观概述）书写，这是文风硬约束：
+   - 只写"发生了什么事件、产生什么后果、人物处境或关系发生什么变化"，用陈述句；
+   - 禁止对白与台词，禁止神态/动作/语气等表演性描写与心理活动渲染；
+   - 正例：林然开始每天绕远路经过那家店，两人从点头之交变成会停下来说两句。
+   - 反例：林然红着脸说："好巧啊。"她抿嘴一笑，别过脸去。
+7) 第一条要承接[最近正文]里已经发生的最后状态，不重复已经写过的情节；最后一条要把人与事**摆到下一条开场所需的位置上**，让下一条的情节能直接接上。
+8) 严格遵守[过渡梗概]——那是玩家对这一段过场的用意。你可以细化，但不要改方向。
+9) 输出语言使用中文。`,
+            user: `[角色设定]
+{{persona}}
+
+[用户设定]
+{{userDesc}}
+
+[世界书/设定]
+{{worldInfo}}
+
+[剧情设定]
+{{scenario}}
+
+[完整故事大纲（路标，最后一条=结局）]
+{{outlineItemsJson}}
+
+[本次要补的过渡段]
+{{gapPair}}
+
+[过渡梗概（玩家填的：这一段大概怎么走）]
+{{gapBrief}}
+
+[最近正文（越靠后越新，仅为最近片段，不代表故事开头；带【背景】前缀的是被总结/隐藏的楼层或摘要）]
+{{recentChat}}
+
+[故事需求]
+{{storyInput}}
+
+[任务]
+为上面这一段 gap 排 {{eventCount}} 条有序的过渡关键事件：从[最近正文]的最后状态起，到下一个条目的入口止；span 沿时间轴单调前进且总和不超出本段跨度；brief 用客观梗概体，不写对白与表演性细节。严格按 version 1.0 结构返回，只返回 JSON。`
         }
     };
 }
@@ -1301,13 +1387,17 @@ function getPromptTemplates() {
         //   1.5 → 1.6：候选语义改为「同一步的不同走法」，并新增 current_item_index
         //              回报；1.5 模板的「各候选可以指向不同的条目，不要照搬同一个值」
         //              与新语义正好相反。
+        //   1.6 → 1.7：候选新增 step_index，并引入过渡行程单（{{transitionContext}}）。
+        //              1.6 模板不会填 step_index，解析器只能一路回退成 null，
+        //              于是行程单生成了也没人用——用户手上那份清单等于白做。
         rolling: (() => {
             const sys = String(raw?.rolling?.system || defaults.rolling.system);
             const usr = String(raw?.rolling?.user || defaults.rolling.user);
             const legacy = (sys.includes('"1.3"') || usr.includes("scenesSoFar")) ? "1.3"
                 : (sys.includes('"1.4"') || usr.includes("{{progressHint}}") || usr.includes("[当前进度]")) ? "1.4"
                     : (sys.includes('"1.5"') || !sys.includes("current_item_index")) ? "1.5"
-                        : "";
+                        : !sys.includes("step_index") ? "1.6"
+                            : "";
             if (legacy) {
                 console.info(`[Titania] 检测到旧版剧情推进模板（${legacy}），已重置为默认模板`);
                 return JSON.parse(JSON.stringify(defaults.rolling));
@@ -1343,7 +1433,13 @@ function getPromptTemplates() {
                 return JSON.parse(JSON.stringify(defaults.director));
             }
             return { system: sys, user: usr };
-        })()
+        })(),
+        // transition（过渡行程单生成）：全新功能，没有历史包袱——逐键回退到默认即可，
+        // 不需要 legacy 重置档。老用户存着的模板对象里根本没有这个键，天然取到默认值。
+        transition: {
+            system: String(raw?.transition?.system || defaults.transition.system),
+            user: String(raw?.transition?.user || defaults.transition.user)
+        }
     };
 }
 
@@ -1363,6 +1459,7 @@ function getPromptTemplateSection(templates, type) {
     if (type === "pacing") return templates.pacing;
     if (type === "blindbox") return templates.blindbox;
     if (type === "director") return templates.director;
+    if (type === "transition") return templates.transition;
     return templates.outline;
 }
 
@@ -1377,7 +1474,9 @@ function getUnknownPromptVars(text) {
         // 盲盒生成专用变量
         "nodeCount", "eventsPerGap", "redlines", "timescale",
         // 盲盒导演判定专用变量
-        "blindboxOutline", "blindboxProgress", "blindboxStrictness"
+        "blindboxOutline", "blindboxProgress", "blindboxStrictness",
+        // 过渡行程单专用变量：生成侧（gapPair/gapBrief/eventCount）+ 推进侧（transitionContext）
+        "gapPair", "gapBrief", "eventCount", "transitionContext"
     ]);
     const unknown = new Set();
     String(text || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
@@ -1413,7 +1512,16 @@ function buildPromptTemplateVars(ctx, userStoryInput, openingText, outlinePayloa
         // 盲盒导演判定专用：封印骨架 JSON、当前目标指针、本次严格度（实际判定时注入，预览只给占位）。
         blindboxOutline: String(extras?.blindboxOutline || "").trim() || "（封印骨架，判定时注入）",
         blindboxProgress: String(extras?.blindboxProgress || "").trim() || "（当前目标指针，判定时注入）",
-        blindboxStrictness: String(extras?.blindboxStrictness || "").trim() || describeStrictness(STRICTNESS.STANDARD)
+        blindboxStrictness: String(extras?.blindboxStrictness || "").trim() || describeStrictness(STRICTNESS.STANDARD),
+        // 过渡行程单生成专用：本段两个条目的完整信息 + 玩家填的过渡梗概 + 下单事件数。
+        // 缺省给占位串，预览时不至于渲染成空（同 nodeCount 的做法）。
+        gapPair: String(extras?.gapPair || "").trim() || "（过渡段：第 N 条 → 第 N+1 条，生成时注入）",
+        gapBrief: String(extras?.gapBrief || "").trim() || "（未填写：请依大纲自行判断这一段该怎么过渡）",
+        eventCount: String(extras?.eventCount ?? "") || "(事件数)",
+        // 剧情推进（rolling）专用：当前 gap 的行程单上下文。无行程单时给一行的占位说明，
+        // 让模型明确"本段没有行程单"，而不是把空当成"随便推进"。
+        transitionContext: String(extras?.transitionContext || "").trim()
+            || "（本段没有过渡行程单，按普通推进处理；step_index 一律填 null）"
     };
 }
 
@@ -1575,13 +1683,14 @@ export async function openPromptTemplateManager() {
                                 <select id="t-prompt-target" class="t-outline-select">
                                     <option value="outline">故事大纲</option>
                                     <option value="rolling">剧情推进</option>
+                                    <option value="transition">过渡行程单</option>
                                     <option value="pacing">叙事节奏</option>
                                     <option value="blindbox">盲盒剧本生成</option>
                                     <option value="director">盲盒导演判定</option>
                                 </select>
                                 <button id="t-prompt-reset-current" class="t-btn t-btn-xs"><i class="fa-solid fa-rotate-left"></i> 恢复当前默认</button>
                             </div>
-                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}}<br>叙事节奏额外变量：{{recentChat}} {{outlineProgress}}<br>盲盒剧本生成额外变量：{{nodeCount}} {{eventsPerGap}} {{redlines}} {{timescale}}<br>盲盒导演判定额外变量：{{recentChat}} {{blindboxOutline}} {{blindboxProgress}} {{blindboxStrictness}}</div>
+                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}} {{transitionContext}}<br>过渡行程单额外变量：{{recentChat}} {{gapPair}} {{gapBrief}} {{eventCount}}<br>叙事节奏额外变量：{{recentChat}} {{outlineProgress}}<br>盲盒剧本生成额外变量：{{nodeCount}} {{eventsPerGap}} {{redlines}} {{timescale}}<br>盲盒导演判定额外变量：{{recentChat}} {{blindboxOutline}} {{blindboxProgress}} {{blindboxStrictness}}</div>
                         </div>
 
                         <div class="t-form-group">
@@ -2491,15 +2600,30 @@ function setPlanProgress(planId, progress) {
 
 // 最近一批剧情推进候选（持久化在 plan.candidates 上，只留一批）：
 // 重新推荐整批覆盖，大纲重生成时清空；点击卡片写入后 used 标记一并落盘。
+//
+// ⚠ 候选的字段白名单**只在这里写一份**（读、写两条路径共用）。原先 get/set 各写一份，
+//   加字段时漏一处就会被悄悄洗掉——和 blindboxPlan.normalizeBlindbox 是同一个坑
+//   （见 docs/盲盒剧本-导演模式-方案.md §9.4）。新增字段请只改这里。
+function normalizeCandidate(c) {
+    // ⚠ 别用 Number(c?.stepIndex) 一把梭：Number(null) === 0 是有限数，会把"没有行程单"
+    //   悄悄变成"第 0 步"。那样点候选就会去 setSceneStep(0)，把 cursor 打回原点。
+    //   显式空值（null / undefined / ""）一律保持 null，与 0（有行程单但就地深化）区分开。
+    const rawStep = c?.stepIndex;
+    const hasStep = rawStep !== null && rawStep !== undefined && String(rawStep).trim() !== "";
+    const step = Number(rawStep);
+    return {
+        title: String(c?.title || ""),
+        text: String(c?.text || ""),
+        itemIndex: Number(c?.itemIndex) || 1,
+        stepIndex: hasStep && Number.isFinite(step) ? Math.max(0, Math.floor(step)) : null,
+        used: c?.used === true
+    };
+}
+
 function getPlanCandidates(plan) {
     const items = plan && Array.isArray(plan.candidates?.items) ? plan.candidates.items : [];
     return items
-        .map((c) => ({
-            title: String(c?.title || ""),
-            text: String(c?.text || ""),
-            itemIndex: Number(c?.itemIndex) || 1,
-            used: c?.used === true
-        }))
+        .map(normalizeCandidate)
         .filter((c) => c.text.trim());
 }
 
@@ -2508,12 +2632,7 @@ function setPlanCandidates(planId, candidates, opts = {}) {
     const plan = plans.find(p => p.id === planId);
     if (!plan) return;
     const items = (Array.isArray(candidates) ? candidates : [])
-        .map((c) => ({
-            title: String(c?.title || ""),
-            text: String(c?.text || ""),
-            itemIndex: Number(c?.itemIndex) || 1,
-            used: c?.used === true
-        }))
+        .map(normalizeCandidate)
         .filter((c) => c.text.trim());
     if (items.length === 0) {
         delete plan.candidates;
@@ -2534,6 +2653,14 @@ function setPlanCandidates(planId, candidates, opts = {}) {
 //   故事推进到哪条（见默认模板的「进度由你判断」），完全可能判出比记录的指针更靠
 //   前的条目。那时若仍把指针钉住不动，展示出来的进度就是错的。
 //   reachedEnding 也随之改为按当前值现算，不再粘滞。
+//
+// ── 跨段闸门（唯一一处刻意加的夹紧）──
+// 若当前 gap 挂着一份**还没走完**的过渡行程单，则不许把指针推过 fromIndex。
+// 理由：生成候选时每次都会回写模型判断的进度（见 generateRecommendations 的 apply）。
+// 模型完全可能判出"故事已经跨到下一段了"，指针一跳，行程单立刻失活——
+// 用户手上那份刚排好的清单凭空消失，等于白排。行程单是玩家亲手指定的过场，走完才放行。
+// 注意这只夹"跨段"，**不夹段内推进**：cursor 由 setSceneStep 直接赋值、可进可退，
+// 与这里"判断权交给模型"的既定设计保持一致。
 function applyProgressFromModel(planId, itemIndex) {
     if (!planId) return;
     if (planId !== editingPlanId && planId !== getSceneSourcePlanId()) return;
@@ -2541,9 +2668,96 @@ function applyProgressFromModel(planId, itemIndex) {
     if (!plan) return;
     const total = Array.isArray(plan.items) ? plan.items.length : 0;
     if (total <= 0) return;
-    const nextIdx = Math.min(Math.max(Number(itemIndex) || 0, 0), total - 1);
+    let nextIdx = Math.min(Math.max(Number(itemIndex) || 0, 0), total - 1);
+
+    const active = getActiveTransition(plan, getPlanProgress(plan).itemIndex);
+    if (active && !isTransitionDone(active) && nextIdx > active.fromIndex) {
+        nextIdx = active.fromIndex;
+    }
+
     setPlanProgress(planId, { itemIndex: nextIdx, reachedEnding: nextIdx >= total - 1 });
     if (editingPlanId === planId) setEditingPlan(getPlans().find(p => p.id === planId));
+}
+
+/* ------------------------------------------------------------------ *
+ * 过渡行程单（plan.transitions）
+ *
+ * 数据形状与纯逻辑都在 src/core/transitionPlan.js；这里只做「读写落盘」这一层，
+ * 对齐 setPlanProgress / setPlanCandidates 的分工（UI 模块管持久化，core 管纯逻辑）。
+ * ------------------------------------------------------------------ */
+
+/** 读某方案的行程单整表（tolerant：老方案没这个字段 → 空表，不会抛错）。 */
+function getPlanTransitions(plan) {
+    return normalizeTransitions(plan?.transitions);
+}
+
+/**
+ * 覆盖写入一段行程单（按 fromIndex upsert），返回写进去的那一段。
+ * ⚠ normalizeTransition 是**白名单式**字面量，新增运行态字段必须补进 transitionPlan.js，
+ *   否则落盘时会被悄悄洗掉（blindbox 的 directorPaused 就栽过，见方案 §9.4）。
+ */
+function setPlanTransition(planId, transition) {
+    const plan = getPlans().find(p => p.id === planId);
+    if (!plan) return null;
+    const next = normalizeTransition(transition);
+    // 空行程单（用户把事件一条条删光了）等于没有行程单，直接丢掉那一段。
+    // 存下来的话面板会画出一块 "0 / 0 步" 的空壳，而 isTransitionDone 又会当它已走完——
+    // 一个既拦不住跨段、又占着地方、还回不到下单表单的死状态。
+    if (next.events.length === 0) {
+        plan.transitions = dropTransition(plan.transitions, next.fromIndex);
+        if (plan.transitions.length === 0) delete plan.transitions;
+        plan.updatedAt = Date.now();
+        saveExtData();
+        return null;
+    }
+    plan.transitions = upsertTransition(plan.transitions, next);
+    plan.updatedAt = Date.now();
+    saveExtData();
+    return next;
+}
+
+/**
+ * 定位到行程单的某一步：cursor = stepIndex。
+ * 刻意**只写盘、不发送任何东西**——行程单的 brief 是面向作者的梗概体，不是玩家输入；
+ * 这一步是"把某一步设为当前要演的"，真正可发送的内容由随后的推荐剧情产出。
+ */
+function setPlanTransitionCursor(planId, stepIndex) {
+    const plan = getPlans().find(p => p.id === planId);
+    if (!plan) return null;
+    const active = getActiveTransition(plan, getPlanProgress(plan).itemIndex);
+    if (!active) return null;
+    return setPlanTransition(planId, { ...active, cursor: clampCursor(active, stepIndex) });
+}
+
+/**
+ * 手改事件清单（增、删、改文字、调序都走它）。
+ * cursor 的重新夹紧在 normalizeTransition 里做——用户删掉几步后，旧 cursor 不能悬空。
+ */
+function setPlanTransitionEvents(planId, events) {
+    const plan = getPlans().find(p => p.id === planId);
+    if (!plan) return null;
+    const active = getActiveTransition(plan, getPlanProgress(plan).itemIndex);
+    if (!active) return null;
+    return setPlanTransition(planId, { ...active, events });
+}
+
+/** 删掉当前这一段的行程单（用户不要了）。 */
+function dropPlanTransition(planId) {
+    const plan = getPlans().find(p => p.id === planId);
+    if (!plan) return;
+    plan.transitions = dropTransition(plan.transitions, getPlanProgress(plan).itemIndex);
+    if (plan.transitions.length === 0) delete plan.transitions;
+    plan.updatedAt = Date.now();
+    saveExtData();
+}
+
+/** 清空整张行程单表（大纲重生成时用——路标重画，每段 gap 的起讫都变了）。 */
+function clearPlanTransitions(planId) {
+    const plan = getPlans().find(p => p.id === planId);
+    if (!plan) return;
+    delete plan.transitions;
+    plan.updatedAt = Date.now();
+    saveExtData();
 }
 
 function showOutlineView(view) {
@@ -3277,6 +3491,8 @@ function applyParsedOutline(parsed, storyInput, insertMode) {
     if (editingPlanId) {
         setPlanProgress(editingPlanId, { itemIndex: 0, reachedEnding: false });
         setPlanCandidates(editingPlanId, []);
+        // 路标重画 ⇒ 每段 gap 的起讫都变了，旧行程单指向的条目已不存在，一并清空。
+        clearPlanTransitions(editingPlanId);
         setEditingPlan(getPlans().find(p => p.id === editingPlanId));
     }
     saveDraft(storyInput, insertMode);
@@ -3431,10 +3647,15 @@ export async function generatePacingAssessment() {
 function buildRecommendationPrompt(ctx, userStoryInput, openingText) {
     const outlinePayload = buildOutlinePayloadForPrompt();
     const templates = getPromptTemplates();
+    // 当前 gap 的过渡行程单。没有 → 空串，模板里会渲染成"本段没有行程单"的占位说明，
+    // 让模型明确"随便推进"而不是把空当成没约束。有 → 行程单全文 + 本回合该填的 step_index。
+    const plan = getRollingPlan();
+    const active = plan ? getActiveTransition(plan, getPlanProgress(plan).itemIndex) : null;
     const vars = buildPromptTemplateVars(ctx, userStoryInput || "(空)", openingText, outlinePayload, {
         // 带上被总结/隐藏的楼层：否则前文一折叠，模型既判不出 current_item_index、也凑不出贴合剧情的候选。
         // 判不出时解析器回退保留旧指针（见 parseRecommendationResponse 注释），不会把进度冲掉。
-        recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true })
+        recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true }),
+        transitionContext: active ? buildTransitionContextText(active, outlinePayload) : ""
     });
     const sys = renderPromptTemplate(templates.rolling.system, vars);
     const user = renderPromptTemplate(templates.rolling.user, vars);
@@ -3445,18 +3666,23 @@ function buildRecommendationPrompt(ctx, userStoryInput, openingText) {
     ];
 }
 
-// 解析剧情推荐返回（version 1.6 candidates 结构）。
+// 解析剧情推荐返回（version 1.7 candidates 结构）。
 // item_index 为 1-based 大纲条目序号，缺失回退到当前进度指针那一条，并夹紧到合法范围。
 // current_item_index 是模型自己判断的「故事目前推进到第几条」，同样夹紧；
 // 模型填 null / 缺失 / 非法时返回 0，表示「它没判断出来」—— 调用方据此跳过回写，
 // 而不是把指针打到第一条（那会把已有的正确进度冲掉）。
-function parseRecommendationResponse(raw, fallbackItemIndex, totalItems) {
+//
+// step_index（v1.7 新增）：本候选走完后过渡行程单里已完成几步，夹到 0..行程单步数。
+// **没有行程单时一律 null**——不把"没填"当成 0，两者行为完全不同（0 ＝有行程单但就地深化）。
+// 导出供单测直接验证（同 parsePacingResponse 的做法）。
+export function parseRecommendationResponse(raw, fallbackItemIndex, totalItems, transition = null) {
     if (!raw || typeof raw !== "string") {
         throw new Error("模型返回为空");
     }
     const data = tryParseLooseJsonObject(raw);
     const list = Array.isArray(data?.candidates) ? data.candidates : [];
     const maxIdx = Math.max(Number(totalItems) || 1, 1);
+    const stepMax = transition ? normalizeTransition(transition).events.length : null;
 
     const candidates = list.map((c) => {
         const text = String(c?.text || "").trim();
@@ -3464,7 +3690,17 @@ function parseRecommendationResponse(raw, fallbackItemIndex, totalItems) {
         let idx = Number(c?.item_index);
         if (!Number.isFinite(idx)) idx = (Number(fallbackItemIndex) || 0) + 1;
         idx = Math.min(Math.max(Math.floor(idx), 1), maxIdx);
-        return { title: String(c?.title || "").trim(), text, itemIndex: idx };
+        let stepIndex = null;
+        if (stepMax !== null) {
+            // 同样别用 Number(c?.step_index) 一把梭：模型填 null（模板要求无行程单时填 null）
+            // 会被 Number(null) 变成 0，读成"第 0 步"。
+            const rawStep = c?.step_index;
+            if (rawStep !== null && rawStep !== undefined && String(rawStep).trim() !== "") {
+                const s = Number(rawStep);
+                stepIndex = Number.isFinite(s) ? Math.min(Math.max(Math.floor(s), 0), stepMax) : null;
+            }
+        }
+        return { title: String(c?.title || "").trim(), text, itemIndex: idx, stepIndex };
     }).filter(Boolean);
     if (candidates.length === 0) {
         throw new Error("剧情推荐返回格式无法解析为 JSON（缺少有效 candidates）");
@@ -3480,6 +3716,151 @@ function parseRecommendationResponse(raw, fallbackItemIndex, totalItems) {
     }
 
     return { candidates, currentItemIndex };
+}
+
+/* ------------------------------------------------------------------ *
+ * 过渡行程单：生成 / 解析
+ * ------------------------------------------------------------------ */
+
+/**
+ * 本段 gap 的完整说明，喂给 `{{gapPair}}`。
+ * 把两个条目的时间、情节、伏笔都摊开，并点明"这一段的总跨度"——模型据此分配各事件的 span，
+ * 否则它会默认逐日推进，把"一周"写成连续七天。
+ */
+function buildGapPairText(outlinePayload, fromIndex) {
+    const list = Array.isArray(outlinePayload) ? outlinePayload : [];
+    const from = list[fromIndex];
+    const to = list[fromIndex + 1];
+    if (!from || !to) return "";
+    const fmt = (it, n) => [
+        `第 ${n} 条`,
+        `  时间：${it.time || "(未标注)"}`,
+        `  标题：${it.title || "未命名"}`,
+        `  情节：${it.plot || "(空)"}`,
+        it.foreshadowing ? `  伏笔：${it.foreshadowing}` : ""
+    ].filter(Boolean).join("\n");
+    return [
+        "[起点] 故事当前所处，也就是这一段的入口：",
+        fmt(from, fromIndex + 1),
+        "",
+        "[终点] 这一段走完必须抵达的状态，也是下一条的入口：",
+        fmt(to, fromIndex + 2),
+        "",
+        `[本段跨度] 从「${from.time || "上一拍"}」到「${to.time || "下一条"}」——`
+            + "行程单里所有事件的 span 累加起来不得超过这一段，最后一条要刚好落在终点的入口上。"
+    ].join("\n");
+}
+
+/**
+ * 组装过渡行程单生成提示词。
+ * 同 buildPacingPrompt：刻意不碰 ensureOpeningTextForGeneration——它只读大纲与最近正文，
+ * 不需要开场白，更不该因此弹出「选择参考开场白」对话框。openingText 传空即可。
+ */
+function buildTransitionPrompt(ctx, fromIndex, brief, count) {
+    const outlinePayload = buildOutlinePayloadForPrompt();
+    const templates = getPromptTemplates();
+    const vars = buildPromptTemplateVars(
+        ctx,
+        getPlanInstruction(getRollingPlan()),
+        "",
+        outlinePayload,
+        {
+            recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true }),
+            gapPair: buildGapPairText(outlinePayload, fromIndex),
+            gapBrief: brief,
+            eventCount: String(count)
+        }
+    );
+    return [
+        { role: "system", content: renderPromptTemplate(templates.transition.system, vars) },
+        { role: "user", content: renderPromptTemplate(templates.transition.user, vars) }
+    ];
+}
+
+/**
+ * 解析过渡行程单生成返回（version 1.0）。
+ *
+ * - fromIndex **由调用方给定**，不信模型自报的 from_index——它算错下标是常事，
+ *   而这一段是哪一段完全由 UI 上下文决定，没有让模型猜的道理。
+ * - 事件条数按 eventCount 截断（多给不要），没 brief 的空壳丢掉，span 缺失容忍成空串。
+ * - 零有效条目直接抛错 → 走 runGenerationFlow 的可编辑修复弹窗（同 parseRecommendationResponse）。
+ *
+ * 导出供单测直接验证（同 parsePacingResponse 的做法）。
+ *
+ * @param {string} raw 模型原始返回
+ * @param {{fromIndex?: number, brief?: string, eventCount?: number}} [opts]
+ */
+export function parseTransitionResponse(raw, opts = {}) {
+    if (!raw || typeof raw !== "string") throw new Error("模型返回为空");
+    const data = tryParseLooseJsonObject(raw);
+    const list = Array.isArray(data?.events) ? data.events : [];
+    const cap = clampEventCount(opts?.eventCount);
+    const events = list
+        .map((e) => ({
+            title: String(e?.title || "").trim(),
+            span: String(e?.span || "").trim(),
+            brief: String(e?.brief ?? e?.content ?? "").trim()
+        }))
+        .filter((e) => e.brief)
+        .slice(0, cap);
+    if (events.length === 0) {
+        throw new Error("过渡行程单返回格式无法解析为 JSON（缺少有效 events）");
+    }
+    return normalizeTransition({
+        fromIndex: Number(opts?.fromIndex) || 0,
+        brief: String(opts?.brief || ""),
+        events,
+        cursor: 0,
+        generatedAt: Date.now()
+    });
+}
+
+/**
+ * 生成（或重掷）当前 gap 的过渡行程单。
+ * 只服务**当前进度所在的那一段**——gap 由进度指针决定，与 UI 上显示的完全一致。
+ * 重掷是覆盖语义：整段替换、cursor 归零（新排的行程单，当然从第一步起算）。
+ *
+ * @param {{brief?: string, count?: number}} [opts]
+ */
+export async function generateTransitionItinerary(opts = {}) {
+    if (!ensureEditingPlanContext()) return;
+    const plan = getPlans().find(p => p.id === editingPlanId);
+    if (!plan) return;
+    const total = Array.isArray(plan.items) ? plan.items.length : 0;
+    const fromIndex = getPlanProgress(plan).itemIndex;
+    if (fromIndex + 1 >= total) {
+        if (window.toastr) toastr.warning("已经是最后一条大纲，后面没有可补的过渡段", "过渡行程单");
+        return;
+    }
+
+    const brief = String(opts?.brief || "").trim();
+    const count = clampEventCount(opts?.count);
+    let saved = null;
+
+    try {
+        const params = getOutlineGenParams().scenes;
+        await runGenerationFlow({
+            label: "过渡行程单",
+            historyLabel: "过渡行程单",
+            streamingTitle: "流式生成过渡行程单中...",
+            doneTitle: "过渡行程单生成完成",
+            failTitle: "过渡行程单解析失败 - 可手动修复",
+            temperature: params.temperature,
+            maxTokens: params.maxTokens,
+            timeoutSec: params.timeoutSec,
+            // 同剧情推进：永远取最新一条角色回复，绕开「选择聊天记录参考来源」对话框。
+            resolveOpening: getRollingOpeningText,
+            buildMessages: (ctx) => buildTransitionPrompt(ctx, fromIndex, brief, count),
+            parse: (raw) => parseTransitionResponse(raw, { fromIndex, brief, eventCount: count }),
+            apply: (parsed) => { saved = setPlanTransition(editingPlanId, parsed); },
+            reparseLabel: "重新解析并应用",
+            successMessage: () => `已排好 ${saved ? saved.events.length : 0} 条过渡事件`
+        });
+    } catch (e) {
+        reportGenerationError(e, "过渡行程单", "过渡行程单生成失败");
+    } finally {
+        stopResponseTimer();
+    }
 }
 
 function renderRows() {
@@ -3978,7 +4359,10 @@ async function generateRecommendations() {
     const plan = getPlans().find(p => p.id === editingPlanId);
     // 刻意不再因「进度指针已到结局」拦下推荐：指针现在只是展示，判断权已交给模型
     // （它读全量大纲 + 正文自行判断该推进到哪条）。拿旧指针设卡会与模型判断相矛盾。
-    const fallbackItemIndex = getPlanProgress(plan).itemIndex;
+    const progress = getPlanProgress(plan);
+    const fallbackItemIndex = progress.itemIndex;
+    // 当前 gap 的过渡行程单（没有则 null）。它决定候选的推进单位是"大纲条目"还是"行程单的一步"。
+    const activeTransition = plan ? getActiveTransition(plan, progress.itemIndex) : null;
 
     const total = outlineItems.length;
     // apply 的回调发生在 successMessage 之前，用它把「本批候选数」带给提示文案
@@ -4005,12 +4389,15 @@ async function generateRecommendations() {
             // 「未选择参考来源，已取消生成」——而 rolling 模板里其实用不上这个变量。
             resolveOpening: getRollingOpeningText,
             buildMessages: (ctx, opening) => buildRecommendationPrompt(ctx, storyInput, opening),
-            parse: (raw) => parseRecommendationResponse(raw, fallbackItemIndex, total),
+            // 把当前 gap 的行程单交给解析器：候选的 step_index 要按它的步数夹紧。
+            // 没有行程单时传 null，解析出来的 stepIndex 一律为 null（走旧的 item_index 路径）。
+            parse: (raw) => parseRecommendationResponse(raw, fallbackItemIndex, total, activeTransition),
             apply: (parsed) => {
                 generatedCandidateCount = parsed.candidates.length;
                 setPlanCandidates(editingPlanId, parsed.candidates);
                 // 生成时立刻把进度回写到模型判断的位置（currentItemIndex 为 1-based，
                 // 进度指针是 0-based）。为 0 表示模型没能判断出来，保留原指针不动。
+                // 行程单没走完时，applyProgressFromModel 内部会把这次回写夹回本段起点。
                 if (parsed.currentItemIndex > 0) {
                     applyProgressFromModel(editingPlanId, parsed.currentItemIndex - 1);
                 }
@@ -4528,6 +4915,10 @@ export function getSceneAdvanceState() {
     const total = Array.isArray(plan?.items) ? plan.items.length : 0;
     const progress = plan ? getPlanProgress(plan) : { itemIndex: 0, reachedEnding: false };
     const candidates = plan ? getPlanCandidates(plan) : [];
+    const items = plan ? normalizeItems(plan.items || []) : [];
+    // 当前 gap 的过渡行程单（null ＝ 这一段还没排）。
+    const transition = plan ? getActiveTransition(plan, progress.itemIndex) : null;
+    const toIndex = progress.itemIndex + 1;
     return {
         hasPlan: !!plan,
         sourcePlanId: getSceneSourcePlanId(),
@@ -4538,9 +4929,20 @@ export function getSceneAdvanceState() {
         reachedEnding: progress.reachedEnding,
         candidates,
         // 大纲情节预览用的完整条目（原「剧情推进」窗口的预览面板已迁至气泡浮层）
-        items: plan ? normalizeItems(plan.items || []) : [],
+        items,
         insertMode: getCurrentInsertMode(),
-        plans: getPlans().map(p => ({ id: p.id, name: p.name || "未命名方案" }))
+        plans: getPlans().map(p => ({ id: p.id, name: p.name || "未命名方案" })),
+        // ── 过渡行程单 ──
+        transition,
+        transitionDone: transition ? isTransitionDone(transition) : false,
+        // 后面还有大纲条目才谈得上"补过渡"；已在最后一条则整块隐藏。
+        canTransition: !!plan && total >= 2 && toIndex < total,
+        transitionGap: {
+            fromIndex: progress.itemIndex,
+            toIndex,
+            fromTitle: items[progress.itemIndex]?.title || "",
+            toTitle: items[toIndex]?.title || ""
+        }
     };
 }
 
@@ -4575,8 +4977,74 @@ export function markSceneCandidateUsed(planId, index) {
     setPlanCandidates(id, candidates, { keepTimestamp: true });
 }
 
+/* ------------------------------------------------------------------ *
+ * 无头 API：过渡行程单
+ * ------------------------------------------------------------------ */
+
+/** planId 缺省时退回当前剧情推进来源方案（气泡传的永远是它，这里只是兜底）。 */
+function resolveScenePlanId(planId) {
+    return String(planId || "").trim() || getSceneSourcePlanId();
+}
+
+/**
+ * 把行程单定位到第 stepIndex 步。
+ * ⚠ **纯写盘，不发送任何东西**——行程单的 brief 是面向作者的梗概体，不是可直接发送的
+ *   玩家输入（候选才是）。这一步的语义是"把某一步设为当前要演的"，真正可发的文本由
+ *   随后的推荐剧情产出（它会把当前这一步写进 {{transitionContext}}）。
+ */
+export function setSceneStep(planId, stepIndex) {
+    const id = resolveScenePlanId(planId);
+    if (id) setPlanTransitionCursor(id, stepIndex);
+    return getSceneAdvanceState();
+}
+
+/**
+ * 跨到下一个大纲条目。行程单随即自动失活（按 fromIndex 匹配不到），但它会留在表里：
+ * 若进度日后回退到本段，行程单连同 cursor 一起复活。
+ *
+ * 用户显式要求跨段时，先把行程单标记为走完（等于"剩下几步跳过"）再推进指针——
+ * applyProgressFromModel 里的跨段闸门是拦**模型自作主张**的，不该拦玩家的显式操作。
+ */
+export function crossSceneGap(planId) {
+    const id = resolveScenePlanId(planId);
+    const plan = id ? getPlans().find(p => p.id === id) : null;
+    if (!plan) return getSceneAdvanceState();
+    const progress = getPlanProgress(plan);
+    const total = Array.isArray(plan.items) ? plan.items.length : 0;
+    if (progress.itemIndex + 1 >= total) return getSceneAdvanceState();
+
+    const active = getActiveTransition(plan, progress.itemIndex);
+    if (active && !isTransitionDone(active)) {
+        setPlanTransition(id, { ...active, cursor: active.events.length });
+    }
+    applyProgressFromModel(id, progress.itemIndex + 1);
+    return getSceneAdvanceState();
+}
+
+/** 手改行程单的事件清单（增、删、改文字、调序都走它）。cursor 会被重新夹紧到新长度。 */
+export function saveSceneTransitionEvents(planId, events) {
+    const id = resolveScenePlanId(planId);
+    if (id) setPlanTransitionEvents(id, events);
+    return getSceneAdvanceState();
+}
+
+/** 清空当前候选批次。换了一步之后旧候选已过期（点它会推进到错误的步），必须一起清掉。 */
+export function clearSceneCandidates(planId) {
+    const id = resolveScenePlanId(planId);
+    if (id) setPlanCandidates(id, []);
+    return getSceneAdvanceState();
+}
+
+/** 删掉当前这一段的行程单（用户不要了）。跨段闸门随之失效——没有台阶就不该拦路。 */
+export function clearSceneTransition(planId) {
+    const id = resolveScenePlanId(planId);
+    if (id) dropPlanTransition(id);
+    return getSceneAdvanceState();
+}
+
 export {
     generateRecommendations as generateSceneRecommendations,
+    generateTransitionItinerary as generateSceneTransition,
     writePlotToInput as writeSceneToInput,
     applyProgressFromModel as applySceneProgress,
     getCurrentInsertMode as getSceneInsertMode
