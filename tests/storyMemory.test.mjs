@@ -8,7 +8,7 @@ import { JSDOM } from 'jsdom';
 import {
     MEMORY_KEY, MEMORY_HIDE_KEY, MEMORY_ID_KEY, newStoryMemory, planMemoryBatch,
     parseMemoryResponse, mergeMemoryResult, composeMemoryPrompt, snapshotMemoryState,
-    rollbackMemory, copyMemory, memoryFloorFingerprint,
+    rollbackMemory, copyMemory, memoryFloorFingerprint, normalizeMemoryConfig, MEMORY_DEFAULTS,
 } from '../src/core/storyMemoryData.js';
 
 const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -115,6 +115,15 @@ async function loadRuntime(options = {}) {
         emitArgs: async (name, ...args) => { for (const callback of events.get(name) || []) await callback(...args); },
     };
 }
+
+test('配置里没有"单独指定总结模型"这一项，老配置存过的 model 会被丢掉', () => {
+    // 界面上的「总结模型覆盖」已移除。字段若还留在配置里，就是一个看不见却仍在生效的
+    // 模型覆盖——那比没有这项更难排查。
+    assert.equal('model' in MEMORY_DEFAULTS, false, '默认值里不该还有 model');
+    const config = normalizeMemoryConfig({ model: 'gpt-4o', keep_floors: 8 });
+    assert.equal('model' in config, false, '老配置里存过的 model 也要在规范化时丢掉');
+    assert.equal(config.keep_floors, 8, '别的字段照常生效');
+});
 
 test('整段对话切分：保留最近完整轮次，不读取其他插件隐藏的正文', () => {
     const chat = makeChat(); chat[2].is_system = true;
@@ -349,6 +358,33 @@ test('总结方案不存在时不回退到别的模型、不隐藏正文', async
     const host = await loadRuntime(); host.data.story_memory.profile_id = 'missing';
     await assert.rejects(host.ns.runStoryMemory(true), /方案已不存在/);
     assert.equal(host.requests.length, 0); assert.ok(host.chat.every(message => !message.is_system));
+});
+
+test('整理时用所选 API 方案自带的模型，不再吃旧配置里的模型覆盖', async () => {
+    const host = await loadRuntime();
+    host.data.story_memory = { ...host.data.story_memory, profile_id: 'team-a', model: 'gpt-4o' };
+    assert.equal(await host.ns.runStoryMemory(true), true);
+    assert.equal(host.requests.length, 1);
+    assert.equal(host.requests[0].conn.model, 'team-a', '模型由所选方案决定');
+    assert.equal(host.requests[0].options.model, undefined, '请求里不再单独塞 model');
+});
+
+test('运行设置：模型覆盖已移除，各项标签不再用术语', async () => {
+    const host = await loadRuntime({ dom: true, memory: newStoryMemory() });
+    const ui = await host.ui(); const close = ui.openStoryMemoryWindow();
+    const document = host.dom.window.document;
+    document.querySelector('[data-tab="settings"]').click();
+    const grid = document.querySelector('.t-memory-settings');
+    assert.ok(grid, '运行设置页要能渲染');
+    assert.equal(document.querySelector('[data-setting="model"]'), null, '「总结模型覆盖」那一项已经移除');
+    for (const key of ['profile_id', 'keep_floors', 'trigger_tokens', 'trigger_floors', 'batch_tokens', 'memory_tokens', 'inject_depth']) {
+        assert.ok(document.querySelector(`[data-setting="${key}"]`), `运行设置缺了 ${key}`);
+    }
+    // 标签一律写成"填进去的数是干什么用的"：这些旧术语是用户看不懂的源头，不许回流。
+    for (const jargon of ['总结模型覆盖', '旧正文触发', '注入深度', '目标预算', '单次正文读取上限', '至少保留最近楼层']) {
+        assert.equal(grid.innerHTML.includes(jargon), false, `仍是术语：${jargon}`);
+    }
+    close();
 });
 
 test('界面可开启后台、手动新增条目、编辑内容，模型文本不会变成HTML', async () => {

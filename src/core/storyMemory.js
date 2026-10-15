@@ -305,8 +305,9 @@ export async function runStoryMemory(force = true) {
     const config = getStoryMemoryConfig();
     const batch = planMemoryBatch(ctx.chat, memory, config, estimateTokens, force);
     if (!batch) { status = 'idle'; notify(); return false; }
-    const conn = config.profile_id ? getConnectionByProfileId(config.profile_id, config.model || null) : getActiveConnection();
-    if (!conn) throw new Error('总结 API 方案已不存在，请重新选择。');
+    // 不传模型覆盖：整理用哪个模型完全由所选的 API 方案决定（跟随主连接时用酒馆当前模型）。
+    const conn = config.profile_id ? getConnectionByProfileId(config.profile_id) : getActiveConnection();
+    if (!conn) throw new Error('整理时用的 API 方案已不存在，请到「运行设置」里重新选择。');
     if (!conn.useSTConnection && !conn.url?.trim()) throw new Error('请先配置工具箱 API，或选择跟随酒馆主连接。');
     const controller = new AbortController();
     const task = { ctx, batch, revision: memory.revision, controller };
@@ -318,7 +319,7 @@ export async function runStoryMemory(force = true) {
     try {
         const raw = await sendChatRequestWithConnection(conn, buildMessages(memory, batch), {
             stream: false, maxTokens: 4096, temperature: 0.2, signal: controller.signal,
-            model: config.model || undefined, allowEmptyKey: true, respectRequestLimits: true,
+            allowEmptyKey: true, respectRequestLimits: true,
         });
         if (job !== task || controller.signal.aborted || !sameChat(ctx)) return false;
         task.result = parseMemoryResponse(raw, batch);

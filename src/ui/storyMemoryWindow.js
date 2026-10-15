@@ -80,20 +80,20 @@ export function openStoryMemoryWindow() {
 
     function renderSettings(view) {
         settingsDraft ||= { ...view.config };
+        // 标签一律写成"填进去的数是干什么用的"，让人不必先懂 token/深度这些术语再看提示。
         const numeric = (key, label, min, max, hint) => `<label class="t-memory-field"><span>${label}</span><input class="t-input" type="number" data-setting="${key}" value="${escape(settingsDraft[key])}" min="${min}" max="${max}" step="1"><small>${hint}</small></label>`;
         const profiles = getAllProfiles();
         const missing = settingsDraft.profile_id && !profiles.some(profile => profile.id === settingsDraft.profile_id);
         return `<div class="t-memory-settings"><p class="t-memory-hint">这些参数在各聊天间共用；自动整理开关按聊天分别保存。</p>
-            <div class="t-memory-settings-grid"><label class="t-memory-field"><span>总结 API 方案</span><select class="t-input" data-setting="profile_id"><option value="">跟随工具箱当前方案</option>
+            <div class="t-memory-settings-grid"><label class="t-memory-field"><span>整理时用哪个 API 方案</span><select class="t-input" data-setting="profile_id"><option value="">跟随工具箱当前方案</option>
                 ${missing ? `<option value="${escape(settingsDraft.profile_id)}" selected>原方案已不存在，请重新选择</option>` : ''}
-                ${profiles.map(profile => `<option value="${escape(profile.id)}" ${settingsDraft.profile_id === profile.id ? 'selected' : ''}>${escape(profile.name)}</option>`).join('')}</select><small>方案在工具箱的 API 配置中管理。</small></label>
-            <label class="t-memory-field"><span>总结模型覆盖（可选）</span><input class="t-input" data-setting="model" value="${escape(settingsDraft.model)}"><small>留空沿用所选方案的模型。</small></label>
-            ${numeric('keep_floors', '至少保留最近楼层', 2, 500, '切分会向前延伸到完整对话开头。')}
-            ${numeric('trigger_tokens', '旧正文触发量（预计 token）', 100, 100000, '达到 token 或楼层条件之一便开始整理。')}
-            ${numeric('trigger_floors', '旧正文触发楼层数', 2, 1000, '只计入可读正文，隐藏的系统消息不计入。')}
-            ${numeric('batch_tokens', '单次正文读取上限（预计 token）', 1000, 100000, '每次处理一段完整对话，超大单组不会截断后隐藏。')}
-            ${numeric('memory_tokens', '注入记忆目标预算（预计 token）', 300, 20000, '历史脉络及锁定条目优先完整保留；超预算会显示。')}
-            ${numeric('inject_depth', '注入深度', 0, 1000, '0紧贴最新消息；默认4，让最近正文在记忆之后。')}</div>
+                ${profiles.map(profile => `<option value="${escape(profile.id)}" ${settingsDraft.profile_id === profile.id ? 'selected' : ''}>${escape(profile.name)}</option>`).join('')}</select><small>整理用哪个模型由所选方案决定。方案本身在工具箱的 API 配置里管理。</small></label>
+            ${numeric('keep_floors', '最近多少楼不整理', 2, 500, '这几楼始终留在正文里。整理范围会向前避让到一段完整对话的开头。')}
+            ${numeric('trigger_tokens', '未整理的正文攒到多少 token 就开始整理', 100, 100000, '和下面那条楼层数满足任意一个就触发；两个都调大＝整理得更少更晚。')}
+            ${numeric('trigger_floors', '未整理的正文攒到多少楼就开始整理', 2, 1000, '只算读得到的正文，隐藏的系统消息不计入。')}
+            ${numeric('batch_tokens', '一次整理最多读多少 token', 1000, 100000, '每次成段处理，超大的单段不会只读一半再把剩下藏起来。')}
+            ${numeric('memory_tokens', '每次注入的记忆最多占多少 token', 300, 20000, '历史脉络和锁定的条目优先完整保留；放不下的会在「注入预览」里列出来。')}
+            ${numeric('inject_depth', '记忆插在对话的哪个位置', 0, 1000, '0＝紧贴最新一条消息；默认 4，让最近几楼的正文排在记忆之后。')}</div>
             ${button('save-settings', '保存运行设置')}</div>`;
     }
 

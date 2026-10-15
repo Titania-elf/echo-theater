@@ -2,9 +2,11 @@
 export const MEMORY_KEY = 'titania_story_memory';
 export const MEMORY_HIDE_KEY = 'titania_memory_hidden';
 export const MEMORY_ID_KEY = 'titania_memory_id';
+// 参数表里刻意没有"单独指定总结模型"这一项：整理用哪个模型完全由所选的 API 方案决定
+// （profile_id → 方案自带的模型），少一个能被静默覆盖的来源。
 export const MEMORY_DEFAULTS = Object.freeze({
     keep_floors: 16, trigger_tokens: 6000, trigger_floors: 32,
-    batch_tokens: 12000, memory_tokens: 2400, profile_id: '', model: '', inject_depth: 4,
+    batch_tokens: 12000, memory_tokens: 2400, profile_id: '', inject_depth: 4,
 });
 
 export const copyMemory = value => JSON.parse(JSON.stringify(value));
@@ -23,8 +25,10 @@ export function normalizeMemoryConfig(raw = {}) {
         const n = Number(config[key]);
         config[key] = Number.isFinite(n) ? Math.max(min, Math.min(max, Math.floor(n))) : MEMORY_DEFAULTS[key];
     }
+    // 老配置里存过的 model 不再被采纳：它不是白名单字段，{...MEMORY_DEFAULTS, ...raw} 之后就
+    // 把它显式丢掉（留着会变成一个界面上看不见、却仍在生效的模型覆盖）。
+    delete config.model;
     config.profile_id = String(config.profile_id || '');
-    config.model = String(config.model || '').trim();
     return config;
 }
 

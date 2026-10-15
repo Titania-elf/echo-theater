@@ -258,6 +258,7 @@ export const defaultSettings = {
         enabled: true
     },
     // 自动整理开关随聊天保存；这里只放跨聊天共用的运行参数。
+    // 没有"单独指定总结模型"这一项：用哪个模型由所选 API 方案决定（见 storyMemoryData 的规范化）。
     story_memory: {
         keep_floors: 16,
         trigger_tokens: 6000,
@@ -265,7 +266,6 @@ export const defaultSettings = {
         batch_tokens: 12000,
         memory_tokens: 2400,
         profile_id: "",
-        model: "",
         inject_depth: 4
     },
     // 导入预设的宏求值行为

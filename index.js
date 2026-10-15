@@ -276,6 +276,7 @@ var init_defaults = __esm({
         enabled: true
       },
       // 自动整理开关随聊天保存；这里只放跨聊天共用的运行参数。
+      // 没有"单独指定总结模型"这一项：用哪个模型由所选 API 方案决定（见 storyMemoryData 的规范化）。
       story_memory: {
         keep_floors: 16,
         trigger_tokens: 6e3,
@@ -283,7 +284,6 @@ var init_defaults = __esm({
         batch_tokens: 12e3,
         memory_tokens: 2400,
         profile_id: "",
-        model: "",
         inject_depth: 4
       },
       // 导入预设的宏求值行为
@@ -40195,8 +40195,8 @@ function normalizeMemoryConfig(raw = {}) {
     const n = Number(config[key]);
     config[key] = Number.isFinite(n) ? Math.max(min, Math.min(max, Math.floor(n))) : MEMORY_DEFAULTS[key];
   }
+  delete config.model;
   config.profile_id = String(config.profile_id || "");
-  config.model = String(config.model || "").trim();
   return config;
 }
 function memoryFloorFingerprint(message) {
@@ -40377,7 +40377,6 @@ var init_storyMemoryData = __esm({
       batch_tokens: 12e3,
       memory_tokens: 2400,
       profile_id: "",
-      model: "",
       inject_depth: 4
     });
     copyMemory = (value) => JSON.parse(JSON.stringify(value));
@@ -40698,8 +40697,8 @@ async function runStoryMemory(force = true) {
     notify2();
     return false;
   }
-  const conn = config.profile_id ? getConnectionByProfileId(config.profile_id, config.model || null) : getActiveConnection();
-  if (!conn) throw new Error("\u603B\u7ED3 API \u65B9\u6848\u5DF2\u4E0D\u5B58\u5728\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u3002");
+  const conn = config.profile_id ? getConnectionByProfileId(config.profile_id) : getActiveConnection();
+  if (!conn) throw new Error("\u6574\u7406\u65F6\u7528\u7684 API \u65B9\u6848\u5DF2\u4E0D\u5B58\u5728\uFF0C\u8BF7\u5230\u300C\u8FD0\u884C\u8BBE\u7F6E\u300D\u91CC\u91CD\u65B0\u9009\u62E9\u3002");
   if (!conn.useSTConnection && !conn.url?.trim()) throw new Error("\u8BF7\u5148\u914D\u7F6E\u5DE5\u5177\u7BB1 API\uFF0C\u6216\u9009\u62E9\u8DDF\u968F\u9152\u9986\u4E3B\u8FDE\u63A5\u3002");
   const controller = new AbortController();
   const task = { ctx: ctx2, batch, revision: memory.revision, controller };
@@ -40714,7 +40713,6 @@ async function runStoryMemory(force = true) {
       maxTokens: 4096,
       temperature: 0.2,
       signal: controller.signal,
-      model: config.model || void 0,
       allowEmptyKey: true,
       respectRequestLimits: true
     });
@@ -41045,16 +41043,15 @@ function openStoryMemoryWindow() {
     const profiles = getAllProfiles();
     const missing = settingsDraft.profile_id && !profiles.some((profile) => profile.id === settingsDraft.profile_id);
     return `<div class="t-memory-settings"><p class="t-memory-hint">\u8FD9\u4E9B\u53C2\u6570\u5728\u5404\u804A\u5929\u95F4\u5171\u7528\uFF1B\u81EA\u52A8\u6574\u7406\u5F00\u5173\u6309\u804A\u5929\u5206\u522B\u4FDD\u5B58\u3002</p>
-            <div class="t-memory-settings-grid"><label class="t-memory-field"><span>\u603B\u7ED3 API \u65B9\u6848</span><select class="t-input" data-setting="profile_id"><option value="">\u8DDF\u968F\u5DE5\u5177\u7BB1\u5F53\u524D\u65B9\u6848</option>
+            <div class="t-memory-settings-grid"><label class="t-memory-field"><span>\u6574\u7406\u65F6\u7528\u54EA\u4E2A API \u65B9\u6848</span><select class="t-input" data-setting="profile_id"><option value="">\u8DDF\u968F\u5DE5\u5177\u7BB1\u5F53\u524D\u65B9\u6848</option>
                 ${missing ? `<option value="${escape(settingsDraft.profile_id)}" selected>\u539F\u65B9\u6848\u5DF2\u4E0D\u5B58\u5728\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9</option>` : ""}
-                ${profiles.map((profile) => `<option value="${escape(profile.id)}" ${settingsDraft.profile_id === profile.id ? "selected" : ""}>${escape(profile.name)}</option>`).join("")}</select><small>\u65B9\u6848\u5728\u5DE5\u5177\u7BB1\u7684 API \u914D\u7F6E\u4E2D\u7BA1\u7406\u3002</small></label>
-            <label class="t-memory-field"><span>\u603B\u7ED3\u6A21\u578B\u8986\u76D6\uFF08\u53EF\u9009\uFF09</span><input class="t-input" data-setting="model" value="${escape(settingsDraft.model)}"><small>\u7559\u7A7A\u6CBF\u7528\u6240\u9009\u65B9\u6848\u7684\u6A21\u578B\u3002</small></label>
-            ${numeric("keep_floors", "\u81F3\u5C11\u4FDD\u7559\u6700\u8FD1\u697C\u5C42", 2, 500, "\u5207\u5206\u4F1A\u5411\u524D\u5EF6\u4F38\u5230\u5B8C\u6574\u5BF9\u8BDD\u5F00\u5934\u3002")}
-            ${numeric("trigger_tokens", "\u65E7\u6B63\u6587\u89E6\u53D1\u91CF\uFF08\u9884\u8BA1 token\uFF09", 100, 1e5, "\u8FBE\u5230 token \u6216\u697C\u5C42\u6761\u4EF6\u4E4B\u4E00\u4FBF\u5F00\u59CB\u6574\u7406\u3002")}
-            ${numeric("trigger_floors", "\u65E7\u6B63\u6587\u89E6\u53D1\u697C\u5C42\u6570", 2, 1e3, "\u53EA\u8BA1\u5165\u53EF\u8BFB\u6B63\u6587\uFF0C\u9690\u85CF\u7684\u7CFB\u7EDF\u6D88\u606F\u4E0D\u8BA1\u5165\u3002")}
-            ${numeric("batch_tokens", "\u5355\u6B21\u6B63\u6587\u8BFB\u53D6\u4E0A\u9650\uFF08\u9884\u8BA1 token\uFF09", 1e3, 1e5, "\u6BCF\u6B21\u5904\u7406\u4E00\u6BB5\u5B8C\u6574\u5BF9\u8BDD\uFF0C\u8D85\u5927\u5355\u7EC4\u4E0D\u4F1A\u622A\u65AD\u540E\u9690\u85CF\u3002")}
-            ${numeric("memory_tokens", "\u6CE8\u5165\u8BB0\u5FC6\u76EE\u6807\u9884\u7B97\uFF08\u9884\u8BA1 token\uFF09", 300, 2e4, "\u5386\u53F2\u8109\u7EDC\u53CA\u9501\u5B9A\u6761\u76EE\u4F18\u5148\u5B8C\u6574\u4FDD\u7559\uFF1B\u8D85\u9884\u7B97\u4F1A\u663E\u793A\u3002")}
-            ${numeric("inject_depth", "\u6CE8\u5165\u6DF1\u5EA6", 0, 1e3, "0\u7D27\u8D34\u6700\u65B0\u6D88\u606F\uFF1B\u9ED8\u8BA44\uFF0C\u8BA9\u6700\u8FD1\u6B63\u6587\u5728\u8BB0\u5FC6\u4E4B\u540E\u3002")}</div>
+                ${profiles.map((profile) => `<option value="${escape(profile.id)}" ${settingsDraft.profile_id === profile.id ? "selected" : ""}>${escape(profile.name)}</option>`).join("")}</select><small>\u6574\u7406\u7528\u54EA\u4E2A\u6A21\u578B\u7531\u6240\u9009\u65B9\u6848\u51B3\u5B9A\u3002\u65B9\u6848\u672C\u8EAB\u5728\u5DE5\u5177\u7BB1\u7684 API \u914D\u7F6E\u91CC\u7BA1\u7406\u3002</small></label>
+            ${numeric("keep_floors", "\u6700\u8FD1\u591A\u5C11\u697C\u4E0D\u6574\u7406", 2, 500, "\u8FD9\u51E0\u697C\u59CB\u7EC8\u7559\u5728\u6B63\u6587\u91CC\u3002\u6574\u7406\u8303\u56F4\u4F1A\u5411\u524D\u907F\u8BA9\u5230\u4E00\u6BB5\u5B8C\u6574\u5BF9\u8BDD\u7684\u5F00\u5934\u3002")}
+            ${numeric("trigger_tokens", "\u672A\u6574\u7406\u7684\u6B63\u6587\u6512\u5230\u591A\u5C11 token \u5C31\u5F00\u59CB\u6574\u7406", 100, 1e5, "\u548C\u4E0B\u9762\u90A3\u6761\u697C\u5C42\u6570\u6EE1\u8DB3\u4EFB\u610F\u4E00\u4E2A\u5C31\u89E6\u53D1\uFF1B\u4E24\u4E2A\u90FD\u8C03\u5927\uFF1D\u6574\u7406\u5F97\u66F4\u5C11\u66F4\u665A\u3002")}
+            ${numeric("trigger_floors", "\u672A\u6574\u7406\u7684\u6B63\u6587\u6512\u5230\u591A\u5C11\u697C\u5C31\u5F00\u59CB\u6574\u7406", 2, 1e3, "\u53EA\u7B97\u8BFB\u5F97\u5230\u7684\u6B63\u6587\uFF0C\u9690\u85CF\u7684\u7CFB\u7EDF\u6D88\u606F\u4E0D\u8BA1\u5165\u3002")}
+            ${numeric("batch_tokens", "\u4E00\u6B21\u6574\u7406\u6700\u591A\u8BFB\u591A\u5C11 token", 1e3, 1e5, "\u6BCF\u6B21\u6210\u6BB5\u5904\u7406\uFF0C\u8D85\u5927\u7684\u5355\u6BB5\u4E0D\u4F1A\u53EA\u8BFB\u4E00\u534A\u518D\u628A\u5269\u4E0B\u85CF\u8D77\u6765\u3002")}
+            ${numeric("memory_tokens", "\u6BCF\u6B21\u6CE8\u5165\u7684\u8BB0\u5FC6\u6700\u591A\u5360\u591A\u5C11 token", 300, 2e4, "\u5386\u53F2\u8109\u7EDC\u548C\u9501\u5B9A\u7684\u6761\u76EE\u4F18\u5148\u5B8C\u6574\u4FDD\u7559\uFF1B\u653E\u4E0D\u4E0B\u7684\u4F1A\u5728\u300C\u6CE8\u5165\u9884\u89C8\u300D\u91CC\u5217\u51FA\u6765\u3002")}
+            ${numeric("inject_depth", "\u8BB0\u5FC6\u63D2\u5728\u5BF9\u8BDD\u7684\u54EA\u4E2A\u4F4D\u7F6E", 0, 1e3, "0\uFF1D\u7D27\u8D34\u6700\u65B0\u4E00\u6761\u6D88\u606F\uFF1B\u9ED8\u8BA4 4\uFF0C\u8BA9\u6700\u8FD1\u51E0\u697C\u7684\u6B63\u6587\u6392\u5728\u8BB0\u5FC6\u4E4B\u540E\u3002")}</div>
             ${button2("save-settings", "\u4FDD\u5B58\u8FD0\u884C\u8BBE\u7F6E")}</div>`;
   }
   function renderContent(view) {
