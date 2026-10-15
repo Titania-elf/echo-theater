@@ -607,6 +607,7 @@ function buildCandidatesHtml(state) {
                 ${c.used ? '<span class="tsa-item-used">已写入</span>' : ""}
             </div>
             <div class="tsa-item-meta">${candidateMetaLine(c, state)}</div>
+            ${c.from ? `<div class="tsa-item-from"><i class="fa-solid fa-turn-up"></i> 承接：${escapeHtmlText(c.from)}</div>` : ""}
             <div class="tsa-item-text">${escapeHtmlText(c.text)}</div>
         </div>
     `).join("");
@@ -718,6 +719,7 @@ function buildTransitionHtml(state) {
                 <i class="fa-solid fa-diagram-project"></i> 过渡行程单
                 <span class="tsa-transition-gap">${escapeHtmlText(gapLabel)}</span>
                 <span class="tsa-transition-badge">${doneCount} / ${total} 步</span>
+                ${state.stepState ? `<span class="tsa-transition-state" title="模型读最新一层回复得出的「当前这一步演到哪了」，代表它这一批候选是从哪儿往下接的">本步 ${escapeHtmlText(state.stepState)}</span>` : ""}
             </div>
             ${t.brief ? `<div class="tsa-transition-purpose">用意：${escapeHtmlText(t.brief)}</div>` : ""}
             <ol class="tsa-transition-list">${rows}${finalRow}</ol>

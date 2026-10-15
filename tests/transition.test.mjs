@@ -168,10 +168,27 @@ test('context: 段首——两个条目都在，标出当前该演第一步，�
     assert.ok(text.includes('两人从初遇走到重逢'), '用户填的过渡梗概');
     assert.ok(text.includes('[当前这一步]1. 试探（次日）'), '第一步标为当前');
     assert.ok(text.includes('已走完 0 / 3 步'));
-    assert.ok(text.includes('step_index 填 1'), '告诉模型本回合该填几');
-    assert.ok(text.includes('step_index 填 0'), '就地深化这个出口也要给');
+    assert.ok(text.includes('→ 填 1'), '本回合把这一步演完的出口');
+    assert.ok(text.includes('→ 填 0'), '这一步之内再演一拍的出口');
     assert.ok(text.includes('item_index 一律填 1'), '锁死 item_index，不得越过过渡');
     assert.ok(!text.includes('[已走完]'), '还没走过任何一步');
+    // v1.8：这一步是"去向"不是复述对象，且它的开头可能已经在最新正文里演过了。
+    // 旧措辞「候选至多把这一步演完」正是"只扩写这一步"的源头，必须消失。
+    assert.ok(text.includes('这一步是**去向**'), '点明这一步是去向');
+    assert.ok(text.includes('往下续演'), '要求从最新正文的末态续演');
+    assert.ok(!text.includes('至多把这一步演完'), '旧措辞不许回流');
+});
+
+test('context: 走完了这一步的出口与"还在这一步之内"分开写，一次至多前进 1 步', () => {
+    const text = buildTransitionContextText({
+        fromIndex: 0,
+        events: [{ brief: 'A' }, { brief: 'B' }, { brief: 'C' }],
+        cursor: 1,
+    }, ITEMS);
+    assert.ok(text.includes('→ 填 1；'), '还在这一步之内 → 停在已走完的步数');
+    assert.ok(text.includes('→ 填 2；'), '本回合演完这一步 / 正文显示它已演完 → 前进 1 步');
+    assert.ok(text.includes('一次至多前进 1 步'), '不许一跳到底');
+    assert.ok(!text.includes('→ 填 3'), '没有"直接跳到第三步"这个出口');
 });
 
 test('context: 中途——已走完的标出来，当前步顺延', () => {
@@ -184,7 +201,7 @@ test('context: 中途——已走完的标出来，当前步顺延', () => {
     assert.ok(text.includes('[已走完]2. B'));
     assert.ok(text.includes('[当前这一步]3. C'));
     assert.ok(text.includes('已走完 2 / 3 步'));
-    assert.ok(text.includes('step_index 填 3'));
+    assert.ok(text.includes('→ 填 3'), '演完第三步 / 正文显示它已演完');
     assert.ok(text.includes('item_index 一律填 2'), 'fromIndex=1 → item_index 填 2');
 });
 
@@ -345,6 +362,46 @@ test('状态快照：候选的 stepIndex=null 必须原样保留，不能被读�
     assert.equal(state.candidates[2].stepIndex, 2);
 });
 
+test('状态快照：承接点 from 与模型对表的 stepState 都要原样带出来', async () => {
+    const extData = PLAN_WITH_CANDIDATES([
+        { title: 'A', text: 't1', from: '深夜那通被挂断的电话', itemIndex: 1, stepIndex: 0 },
+        { title: 'B', text: 't2', from: 'x'.repeat(70), itemIndex: 1, stepIndex: 0 },
+    ]);
+    extData.story_outline_plans[0].candidates.stepState = '进行中';
+    const ns = await loadStoryOutline({ extData });
+    const state = ns.getSceneAdvanceState();
+    // ⚠ 候选字段白名单只写一份：from 漏了它就会被静默洗掉，卡片上的「承接」行永远不出现。
+    assert.equal(state.candidates[0].from, '深夜那通被挂断的电话');
+    assert.equal(state.candidates[1].from.length, 60, '抄了一整段正文的要截断（卡片放不下）');
+    assert.equal(state.stepState, '进行中', '模型对表的读数要带出来给面板显示');
+});
+
+test('状态快照：点候选标「已写入」不能把 stepState 抹掉', async () => {
+    // markSceneCandidateUsed 只回传 items（keepTimestamp 那条路径）。setPlanCandidates 若不继承
+    // 批次里已有的 stepState，点一次卡片「本步 进行中」那枚读数就凭空消失了。
+    const extData = PLAN_WITH_CANDIDATES([
+        { title: 'A', text: 't1', from: '挂断电话', itemIndex: 1, stepIndex: 0 },
+        { title: 'B', text: 't2', from: '挂断电话', itemIndex: 1, stepIndex: 0 },
+    ]);
+    extData.story_outline_plans[0].candidates.stepState = '进行中';
+    const ns = await loadStoryOutline({ extData });
+    ns.markSceneCandidateUsed('p1', 0);
+    const after = ns.getSceneAdvanceState();
+    assert.equal(after.candidates[0].used, true);
+    assert.equal(after.candidates[0].from, '挂断电话', 'from 也要跟着留下');
+    assert.equal(after.stepState, '进行中');
+});
+
+test('状态快照：stepState 只认三值，坏值/缺失一律 null', async () => {
+    const bad = PLAN_WITH_CANDIDATES([{ title: 'A', text: 't1', itemIndex: 1, stepIndex: 0 }]);
+    bad.story_outline_plans[0].candidates.stepState = '大概是中间吧';
+    const nsBad = await loadStoryOutline({ extData: bad });
+    assert.equal(nsBad.getSceneAdvanceState().stepState, null, '别的词当作"没判断出来"，不猜');
+
+    const none = await loadStoryOutline({ extData: PLAN_WITH_CANDIDATES([]) });
+    assert.equal(none.getSceneAdvanceState().stepState, null);
+});
+
 test('状态快照：老方案（无 transitions 字段）不报错，canTransition 按条目数算', async () => {
     const ns = await loadStoryOutline({ extData: PLAN_WITH_CANDIDATES([]) });
     const state = ns.getSceneAdvanceState();
@@ -408,6 +465,40 @@ test('parseRecommendationResponse: 有行程单时 step_index 夹紧，null/缺�
     assert.equal(parsed.candidates[1].stepIndex, 3, '越过行程单总步数就夹到总步数');
     assert.equal(parsed.candidates[2].stepIndex, null, '模型显式填 null 不能被读成 0');
     assert.equal(parsed.candidates[3].stepIndex, null, '整个字段缺失同样是 null');
+});
+
+test('parseRecommendationResponse: from（承接点）容缺成空串，超长截断', async () => {
+    const ns = await loadStoryOutline();
+    const parsed = ns.parseRecommendationResponse(JSON.stringify({
+        candidates: [
+            { title: 'A', text: 'x1', from: '  她挂断电话的那三秒  ', item_index: 1 },
+            { title: 'B', text: 'x2', from: 'y'.repeat(90), item_index: 1 },
+            { title: 'C', text: 'x3', item_index: 1 },
+        ],
+    }), 0, 3);
+    assert.equal(parsed.candidates[0].from, '她挂断电话的那三秒');
+    assert.equal(parsed.candidates[1].from.length, 60);
+    // 缺 from 不该让整批候选作废：它只用于展示与自查，不是推进量。
+    assert.equal(parsed.candidates[2].from, '');
+});
+
+test('parseRecommendationResponse: step_state 只认三值，且没有行程单时一律 null', async () => {
+    const ns = await loadStoryOutline();
+    const transition = { fromIndex: 0, events: [{ brief: 'a' }, { brief: 'b' }], cursor: 0 };
+    const candidates = [{ title: 'A', text: 'x1' }];
+    const withT = (state) => ns.parseRecommendationResponse(
+        JSON.stringify({ step_state: state, candidates }), 0, 3, transition);
+
+    assert.equal(withT('进行中').stepState, '进行中');
+    assert.equal(withT('已完成').stepState, '已完成');
+    assert.equal(withT('未开始').stepState, '未开始');
+    assert.equal(withT('差不多演完了').stepState, null, '别的词当作没判断出来');
+    assert.equal(withT(null).stepState, null, '模板要求无行程单时填 null');
+    assert.equal(withT(undefined).stepState, null);
+
+    const noT = ns.parseRecommendationResponse(
+        JSON.stringify({ step_state: '进行中', candidates }), 0, 3);
+    assert.equal(noT.stepState, null, '没有行程单时模型就算填了也不认——那一步不存在');
 });
 
 /* ------------------------------------------------------------------ *
@@ -553,19 +644,34 @@ test('行程单的 brief 与 span 一路带到 {{transitionContext}}（端到端
  * 模板链的源码断言（本仓既有边界：sceneAdvanceBubble/api 无法被夹具加载）
  * ------------------------------------------------------------------ */
 
-test('源码：rolling 默认模板已升到 1.7 并带 step_index 契约', () => {
+test('源码：rolling 默认模板已升到 1.8，带 step_index/from/step_state 契约', () => {
     const src = read('src/ui/storyOutlineWindow.js');
     const start = src.indexOf('rolling: {');
     const block = src.slice(start, src.indexOf('pacing: {', start));
-    assert.ok(block.includes('"1.7"'), 'version 提到 1.7');
-    assert.ok(block.includes('step_index'), '候选契约加了 step_index');
+    assert.ok(block.includes('"1.8"'), 'version 提到 1.8');
+    assert.ok(block.includes('step_index'), '候选契约带 step_index');
     assert.ok(block.includes('{{transitionContext}}'), 'user 段引用行程单上下文');
+    assert.ok(block.includes('"from"'), '候选契约带 from（承接点）');
+    assert.ok(block.includes('"step_state"'), '顶层带 step_state（当前这一步演到哪了）');
 });
 
-test('源码：getPromptTemplates 有 step_index 的 legacy 重置档', () => {
+test('源码：rolling 模板把最新一层回复当起点，并禁掉"复述这一步"', () => {
+    const src = read('src/ui/storyOutlineWindow.js');
+    const start = src.indexOf('rolling: {');
+    const block = src.slice(start, src.indexOf('pacing: {', start));
+    assert.ok(block.includes('{{latestReply}}'), 'user 段必须引用最新一层回复');
+    assert.ok(block.includes('[起点与落点'), '起点/落点自成一节');
+    assert.ok(block.includes('不是让你复述或扩写的稿子'), '点明 brief 不是要复写的稿子');
+    assert.ok(!block.includes('针对行程单里当前那一步**来写'),
+        '旧指令「针对行程单当前这一步来写（写出这一步具体怎么发生）」正是一切扩写的源头，不许回流');
+});
+
+test('源码：getPromptTemplates 有 step_index 与 latestReply 两档 legacy 重置', () => {
     const src = read('src/ui/storyOutlineWindow.js');
     assert.ok(src.includes('!sys.includes("step_index")'),
         '用户存着的 1.6 模板必须被探测并重置，否则按旧契约要求模型');
+    assert.ok(src.includes('!usr.includes("{{latestReply}}")'),
+        '1.7 模板不会填 from/step_state，不重置就等于续演约束没下');
 });
 
 test('源码：大纲重生成时清空行程单', () => {

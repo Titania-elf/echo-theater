@@ -1117,6 +1117,12 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
         rolling: {
             system: `你是剧情推进策划。完整故事大纲已给定（最后一条即结局）。你的职责是：自行判断故事目前推进到了大纲的哪一条，并给出 2~3 个候选剧情走向，供玩家挑选后作为下一回合的玩家输入来推进故事。
 
+[起点与落点——最重要的一节]
+1) 起点永远是[最新一层回复]：候选必须从那一层正文**最后停住的状态**接下去——谁在哪、刚发生了什么、什么还悬着。它不是"参考背景"，是你唯一的下笔处。
+2) 落点是[过渡行程单]里的当前这一步（没有行程单时，落点是核心原则 1 判断出的当前位置该往哪走）。
+3) 落点说的是"这一步要走到哪"，**不是"这一步的内容是什么"**。行程单的 brief 是写给作者看的落点说明，不是让你复述或扩写的稿子。
+4) 所以每个候选写成的是同一件事：**玩家接下来做了什么**，把故事从[最新一层回复]的末态往前推。
+
 [核心原则]
 1) 进度由你判断：先读"已经发生的剧情"，据此判断故事实际推进到了第几条大纲。
    - 提供给你的正文只是故事**最近的片段**，不代表故事从头开始，不要默认从第一条起步。
@@ -1127,32 +1133,43 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 3) 不得倒退：候选推进到的条目不得早于你判断的当前位置，也不要一次跨过多条。
 4) 承接已发生的剧情：候选必须自然衔接"已经发生的剧情"的最后状态，不重复已经写过的情节。
 5) 临近结局：若你判断故事已推进到最后一条大纲、或已经该收尾了，候选应当是收束与落地方向（把既有线索结清、给出结局），不要另起新的展开。
-6) 有过渡行程单时（见[过渡行程单]一节），候选的推进单位**不是大纲条目、而是行程单里的一步**：只能在行程单内往前推进**至多一步**，item_index 一律填当前所处的那一条、不得越过本段过渡；只有行程单已全部走完，才允许把故事推进到下一个大纲条目。行程单是玩家为本段亲手指定的过场，越过它就等于把玩家的安排作废。
+6) 有过渡行程单时（见[过渡行程单]一节），推进单位**不是大纲条目、而是行程单里的一步**：
+   - item_index 一律填当前所处的那一条，不得越过本段过渡；只有行程单已全部走完，才允许把故事推进到下一个大纲条目。
+   - 每一步都是一个要用好几拍才演完的段落，不是一句话。先看[最新一层回复]已经把**当前这一步**演到哪了，候选从那里继续往下演。
+   - ⛔ 两种最常见的错法，都不要犯：
+     ① **复述**：把这一步的 brief 换个说法重写一遍（连正文里已经演过的开头也重演一遍）；
+     ② **跳步**：最新正文还停在深夜被挂断的电话里，候选却直接写"我推开旧书店的门"，把这一步的场景凭空搬出来。
+   - 行程单是玩家为本段亲手指定的过场，越过它就等于把玩家的安排作废。
 
 [硬性要求]
 1) 只能返回 JSON，不要 markdown，不要解释，不要多余文本。
 2) 只允许返回以下结构：
 {
-  "version": "1.7",
+  "version": "1.8",
   "current_item_index": 1,
+  "step_state": "进行中",
   "candidates": [
     {
       "title": "候选标题（8字以内）",
       "text": "可直接作为玩家输入发送的剧情段落",
+      "from": "这个候选从最新一层回复的哪一拍接住（≤30字）",
       "item_index": 1,
       "step_index": 1
     }
   ]
 }
 3) current_item_index 填你判断的"故事目前推进到第几条"（对应输入大纲里的 index）。确实无法判断时填 null，不要随便填 1。
-4) candidates 数量必须为 2~3 个。
-5) text 是以玩家视角驱动剧情的指令式情节段落，120-220 字，中文，具体可延展，可直接发送给模型续写，不写"请你/你需要"。
-6) item_index 填该候选推进到的大纲条目序号，必须来自输入大纲，不得新增；各候选相同或相邻都属于正常。有过渡行程单时一律填当前条目（见核心原则 6）。
-7) step_index 填"这个候选走完后，本段过渡行程单里已完成几步"（0 起算的整数）：
+4) step_state 填[最新一层回复]里"当前这一步演到哪了"：未开始 / 进行中 / 已完成 三选一；无过渡行程单时填 null。依据必须是正文里的具体情节，不是猜测。
+5) candidates 数量必须为 2~3 个。
+6) text 是以玩家视角驱动剧情的指令式情节段落，120-220 字，中文，具体可延展，可直接发送给模型续写，不写"请你/你需要"。起句要落在[最新一层回复]的末态上，让人一眼看出它是接着那一层往下走的，而不是另起一场戏。
+7) from 填这个候选接住的**最具体的那一拍**（谁在哪 / 刚说了什么 / 正做到哪一步），≤30 字，照抄或紧贴原文。写不出具体指认，说明你没读那一层——那就回去读。
+8) item_index 填该候选推进到的大纲条目序号，必须来自输入大纲，不得新增；各候选相同或相邻都属于正常。有过渡行程单时一律填当前条目（见核心原则 6）。
+9) step_index 填"这个候选走完后，本段过渡行程单里已完成几步"（0 起算的整数）：
    - 无过渡行程单时填 null；
    - 有行程单时，[过渡行程单]一节会直接写明本回合该填几，照抄即可；
-   - 候选只在原地深化、不推进过渡 → 填当前已完成步数；把当前这一步演完 → 已完成步数 + 1；行程单全部走完 → 填行程单总步数。
-8) 输出语言使用中文。`,
+   - 还在这一步之内再演一拍（没演完这一步）→ 填当前已完成步数；本回合把这一步演完 → 已完成步数 + 1；[最新一层回复]显示这一步其实已经演完、候选因此带向下一步 → 已完成步数 + 1（一次至多前进 1 步）。
+10) 时间推移：若[过渡行程单]里当前这一步的 span 相对上一拍有明显间隔（"三天后""两周后"），而正文还没做过这次推移，候选要先写明这次时间推移再进入场景，不要默认接着上一拍往下演。
+11) 输出语言使用中文。`,
             user: `[角色设定]
 {{persona}}
 
@@ -1171,14 +1188,19 @@ plot 的文体是「分集梗概」：写给编剧看的规划文档——旁观
 [过渡行程单（玩家为下面这一段过场亲手排的顺序；没有内容时＝本段没有行程单，按普通推进处理）]
 {{transitionContext}}
 
-[已经发生的剧情（仅为最近正文片段，越靠后越新，不代表故事开头；带【背景】前缀的是被总结/隐藏的楼层或摘要）]
+[更早的剧情（背景；越靠后越新，不代表故事开头；带【背景】前缀的是被总结/隐藏的楼层或摘要）]
 {{recentChat}}
 
+[最新一层回复（起点——候选必须从它的末态接下去；它不是参考背景，是下笔处）]
+{{latestReply}}
+
 [任务]
-1) 先判断故事目前推进到了大纲的哪一条，填进 current_item_index（确实无法判断填 null）。
-2) 再给出 2~3 个候选剧情走向：都从该位置出发，承接已经发生的剧情，彼此方向不同，朝结局稳步推进但不要跳到结局。每个候选的 item_index 填它推进到的那一条（通常彼此相同或相邻）。
-3) 若上面给了[过渡行程单]，候选要**针对行程单里当前那一步**来写（写出这一步具体怎么发生、怎么演），并按其指示填 step_index 与 item_index——不要越过行程单去写后面的内容。没有行程单时 step_index 一律填 null。
-严格按 version 1.7 结构返回。只返回 JSON。`
+1) 先读[最新一层回复]，把它的**末态**定位出来：谁在哪、刚发生了什么、什么还悬着。
+2) 再判断故事目前推进到了大纲的哪一条，填进 current_item_index（确实无法判断填 null）。
+3) 然后给出 2~3 个候选：每个都从上面那个末态往下接，写玩家接下来做了什么，彼此方向不同；每个候选的 from 指认它接住的那一拍。
+4) 候选要在当前这一步**之内**继续演：这一步的开头若已经在[最新一层回复]里演过了，就别重演；不要复述这一步的 brief，也不要提前跳到下一步——除非[最新一层回复]显示这一步确实已经演完。没有行程单时 step_index 与 step_state 一律填 null，候选按普通推进处理。
+5) item_index 与 step_index 按核心原则 6 与[过渡行程单]的指示填。
+严格按 version 1.8 结构返回。只返回 JSON。`
         },
         pacing: {
             system: `你是叙事节奏分析师，在写作模型动笔前为「本次这一条回复」把控节奏。
@@ -1390,6 +1412,11 @@ function getPromptTemplates() {
         //   1.6 → 1.7：候选新增 step_index，并引入过渡行程单（{{transitionContext}}）。
         //              1.6 模板不会填 step_index，解析器只能一路回退成 null，
         //              于是行程单生成了也没人用——用户手上那份清单等于白做。
+        //   1.7 → 1.8：起点改为[最新一层回复]（新增 {{latestReply}}），候选新增 from（承接点）
+        //              与顶层 step_state。1.7 模板把候选定义成"演这一步"（写出这一步具体
+        //              怎么发生），拿到的行程单 brief 又是一段完整梗概，模型只能把它换个
+        //              说法扩写——用户看到的候选永远在围绕这一步打转，而不是接着最新一层
+        //              回复往下演。这两个字段都不填，新约束等于没下。
         rolling: (() => {
             const sys = String(raw?.rolling?.system || defaults.rolling.system);
             const usr = String(raw?.rolling?.user || defaults.rolling.user);
@@ -1397,7 +1424,8 @@ function getPromptTemplates() {
                 : (sys.includes('"1.4"') || usr.includes("{{progressHint}}") || usr.includes("[当前进度]")) ? "1.4"
                     : (sys.includes('"1.5"') || !sys.includes("current_item_index")) ? "1.5"
                         : !sys.includes("step_index") ? "1.6"
-                            : "";
+                            : !usr.includes("{{latestReply}}") ? "1.7"
+                                : "";
             if (legacy) {
                 console.info(`[Titania] 检测到旧版剧情推进模板（${legacy}），已重置为默认模板`);
                 return JSON.parse(JSON.stringify(defaults.rolling));
@@ -1467,8 +1495,8 @@ function getUnknownPromptVars(text) {
     const known = new Set([
         "persona", "userDesc", "openingText", "storyInput", "outlineItemsJson",
         "worldInfo", "scenario", "dialogueExamples",
-        // 剧情推进专用变量
-        "recentChat",
+        // 剧情推进专用变量（latestReply ＝ 最新一层角色回复，v1.8 起单独成节作为起点）
+        "recentChat", "latestReply",
         // 节奏把控专用变量
         "outlineProgress",
         // 盲盒生成专用变量
@@ -1500,6 +1528,10 @@ function buildPromptTemplateVars(ctx, userStoryInput, openingText, outlinePayloa
         dialogueExamples: String(ctx?.dialogueExamples || "").trim() || "(无)",
         // 剧情推进专用；非推荐场景为 "(无)"，模板里没引用就不影响。
         recentChat: String(extras?.recentChat || "").trim() || "(无)",
+        // 剧情推进专用（v1.8）：最新一层角色回复，候选的起点。读不到时给一句说明，
+        // 让模型知道"这次没有起点可接"，而不是把空当成"随便写"。
+        latestReply: String(extras?.latestReply || "").trim()
+            || "（读不到最近正文：本次无法确认故事停在哪，请只按大纲与过渡行程单推进，并如实说明）",
         // 节奏把控专用：当前大纲进度，无方案时为 "(无大纲)"。
         outlineProgress: String(extras?.outlineProgress || "").trim() || "(无)",
         // 盲盒生成专用：下单参数。缺省给占位串，预览时不至于渲染成空。
@@ -1690,7 +1722,7 @@ export async function openPromptTemplateManager() {
                                 </select>
                                 <button id="t-prompt-reset-current" class="t-btn t-btn-xs"><i class="fa-solid fa-rotate-left"></i> 恢复当前默认</button>
                             </div>
-                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}} {{transitionContext}}<br>过渡行程单额外变量：{{recentChat}} {{gapPair}} {{gapBrief}} {{eventCount}}<br>叙事节奏额外变量：{{recentChat}} {{outlineProgress}}<br>盲盒剧本生成额外变量：{{nodeCount}} {{eventsPerGap}} {{redlines}} {{timescale}}<br>盲盒导演判定额外变量：{{recentChat}} {{blindboxOutline}} {{blindboxProgress}} {{blindboxStrictness}}</div>
+                            <div class="t-plan-tip" style="margin-top:8px;">通用变量：{{persona}} {{userDesc}} {{worldInfo}} {{scenario}} {{dialogueExamples}} {{openingText}} {{storyInput}} {{outlineItemsJson}}<br>剧情推进额外变量：{{recentChat}} {{latestReply}} {{transitionContext}}<br>过渡行程单额外变量：{{recentChat}} {{gapPair}} {{gapBrief}} {{eventCount}}<br>叙事节奏额外变量：{{recentChat}} {{outlineProgress}}<br>盲盒剧本生成额外变量：{{nodeCount}} {{eventsPerGap}} {{redlines}} {{timescale}}<br>盲盒导演判定额外变量：{{recentChat}} {{blindboxOutline}} {{blindboxProgress}} {{blindboxStrictness}}</div>
                         </div>
 
                         <div class="t-form-group">
@@ -1799,8 +1831,12 @@ export async function openPromptTemplateManager() {
         const opening = type === "rolling"
             ? getRollingOpeningText()
             : getOpeningTextForPreview(openingMode, openingSourceRef);
+        // 预览要跟实际下发的对齐：剧情推进（v1.8 起）把最新一层角色回复单独拆成 {{latestReply}}
+        // 当起点，其余楼层留给 {{recentChat}}；别的模板类型照旧整窗下发。
+        const chatParts = collectRecentChatParts(getRollingChatFloors());
         const varsLocal = buildPromptTemplateVars(ctx, currentStoryInput, opening, outlinePayload, {
-            recentChat: collectRecentChatText(getRollingChatFloors()),
+            recentChat: type === "rolling" ? chatParts.earlierChat : collectRecentChatText(getRollingChatFloors()),
+            latestReply: chatParts.latestReply,
             outlineProgress: buildOutlineProgressText()
         });
         const renderedSys = renderPromptTemplate(section.system, varsLocal);
@@ -2614,6 +2650,8 @@ function normalizeCandidate(c) {
     return {
         title: String(c?.title || ""),
         text: String(c?.text || ""),
+        // from：候选接住的那一拍（最新一层回复里的具体指认），v1.8 新增。只用于展示与自查。
+        from: String(c?.from || "").trim().slice(0, FROM_MAX),
         itemIndex: Number(c?.itemIndex) || 1,
         stepIndex: hasStep && Number.isFinite(step) ? Math.max(0, Math.floor(step)) : null,
         used: c?.used === true
@@ -2639,7 +2677,12 @@ function setPlanCandidates(planId, candidates, opts = {}) {
     } else {
         // keepTimestamp：只更新 used 等标记时沿用原批次的生成时间。
         const generatedAt = (opts.keepTimestamp && Number(plan.candidates?.generatedAt)) || Date.now();
-        plan.candidates = { items, generatedAt };
+        // stepState 与候选同批同源（模型读最新正文时一并判断的）。没显式给（如点卡片改 used）
+        // 就沿用批次里已有的那个——否则一次标记「已写入」就把模型的对表结论抹掉了。
+        const stepState = "stepState" in opts
+            ? (STEP_STATES.includes(opts.stepState) ? opts.stepState : null)
+            : (STEP_STATES.includes(plan.candidates?.stepState) ? plan.candidates.stepState : null);
+        plan.candidates = stepState ? { items, generatedAt, stepState } : { items, generatedAt };
     }
     plan.updatedAt = Date.now();
     saveExtData();
@@ -3547,6 +3590,12 @@ function getRecentFloorWindow(floors, opts = {}) {
     }
 }
 
+/** 一条楼层 → 下发文本（`【角色】正文`；抽不出正文的楼层留占位，见 EMPTY_FLOOR_MARK）。 */
+function formatChatEntry(entry, withFloors) {
+    const head = withFloors ? `【#${entry.chatIndex} ${entry.role}】` : `【${entry.role}】`;
+    return head + (entry.text || EMPTY_FLOOR_MARK);
+}
+
 // 取最近 N 楼酒馆正文（走标签白名单过滤），越靠后越新，拼成给模型的"已发生的剧情"。
 // 窗口按楼层切（见 getRecentFloorWindow）：抽不出正文的楼层留一行占位，不从更早的楼层顶替。
 // 导出供单测直接验证窗口边界——它是本功能的唯一判据（同 parsePacingResponse 的做法）。
@@ -3555,13 +3604,39 @@ export function collectRecentChatText(floors, opts = {}) {
     if (!entries.length) return "";
     // withFloors：带上酒馆楼层号下发。只有盲盒导演用它——判定要回报 evidence_floor，
     // 代码才能验证「这条证据是不是上次判定之后的新正文」（见 applyDirectorDecision 的 stale-evidence 闸门）。
+    return entries.map((e) => formatChatEntry(e, opts.withFloors === true)).join("\n\n");
+}
+
+/**
+ * 把最近 N 层窗口切成「最新一层回复」与「更早的楼层」——**只有剧情推进用**。
+ *
+ * 为什么要拆：候选必须以**最新一层角色回复**的末态为起点（见 rolling 模板的 [起点与落点]）。
+ * 原先整窗只有一个 {{recentChat}}，模型把最新那层当成"若干参考背景"之一，转而去扩写行程单
+ * 里的这一步——起点就丢了。拆成独立变量后，"最新一层"在提示词里自成一段，措辞也写明是下笔处。
+ *
+ * latestReply 取窗口里**最后一条有正文的「角色」楼层**（玩家自己的话不是起点）；一层角色
+ * 回复都没有时退回最后一个有正文的楼层；全空则空串。两条输出出自同一次窗口读取，不会错位。
+ */
+export function collectRecentChatParts(floors, opts = {}) {
+    const entries = getRecentFloorWindow(floors, opts);
+    if (!entries.length) return { latestReply: "", earlierChat: "" };
+    let latest = -1;
+    for (let i = entries.length - 1; i >= 0; i--) {
+        if (entries[i].role === "角色" && entries[i].text) { latest = i; break; }
+    }
+    if (latest < 0) {
+        for (let i = entries.length - 1; i >= 0; i--) {
+            if (entries[i].text) { latest = i; break; }
+        }
+    }
     const withFloors = opts.withFloors === true;
-    return entries
-        .map((e) => {
-            const head = withFloors ? `【#${e.chatIndex} ${e.role}】` : `【${e.role}】`;
-            return head + (e.text || EMPTY_FLOOR_MARK);
-        })
-        .join("\n\n");
+    return {
+        latestReply: latest >= 0 ? formatChatEntry(entries[latest], withFloors) : "",
+        earlierChat: entries
+            .filter((_, i) => i !== latest)
+            .map((e) => formatChatEntry(e, withFloors))
+            .join("\n\n")
+    };
 }
 
 // 组装剧情推荐 prompt：完整大纲 + 最近正文。
@@ -3651,10 +3726,14 @@ function buildRecommendationPrompt(ctx, userStoryInput, openingText) {
     // 让模型明确"随便推进"而不是把空当成没约束。有 → 行程单全文 + 本回合该填的 step_index。
     const plan = getRollingPlan();
     const active = plan ? getActiveTransition(plan, getPlanProgress(plan).itemIndex) : null;
+    // 最近 N 层拆成两段：最新一层角色回复单独成节，明写"这是起点"；更早的降为背景。
+    // 原先整窗只给 {{recentChat}}，模型把最新那层当参考背景之一，转头去扩写行程单的这一步。
+    // 带上被总结/隐藏的楼层：否则前文一折叠，模型既判不出 current_item_index、也凑不出贴合剧情的候选。
+    // 判不出时解析器回退保留旧指针（见 parseRecommendationResponse 注释），不会把进度冲掉。
+    const chat = collectRecentChatParts(getRollingChatFloors(), { includeHidden: true });
     const vars = buildPromptTemplateVars(ctx, userStoryInput || "(空)", openingText, outlinePayload, {
-        // 带上被总结/隐藏的楼层：否则前文一折叠，模型既判不出 current_item_index、也凑不出贴合剧情的候选。
-        // 判不出时解析器回退保留旧指针（见 parseRecommendationResponse 注释），不会把进度冲掉。
-        recentChat: collectRecentChatText(getRollingChatFloors(), { includeHidden: true }),
+        recentChat: chat.earlierChat,
+        latestReply: chat.latestReply,
         transitionContext: active ? buildTransitionContextText(active, outlinePayload) : ""
     });
     const sys = renderPromptTemplate(templates.rolling.system, vars);
@@ -3666,7 +3745,12 @@ function buildRecommendationPrompt(ctx, userStoryInput, openingText) {
     ];
 }
 
-// 解析剧情推荐返回（version 1.7 candidates 结构）。
+/** 候选「承接点」的长度上限（模型偶尔会把一整段正文抄进来，卡片上放不下）。 */
+const FROM_MAX = 60;
+/** step_state 的合法值：模型判断的「当前这一步在最新正文里演到哪了」。给别的词就当没判断。 */
+const STEP_STATES = ["未开始", "进行中", "已完成"];
+
+// 解析剧情推荐返回（version 1.8 candidates 结构）。
 // item_index 为 1-based 大纲条目序号，缺失回退到当前进度指针那一条，并夹紧到合法范围。
 // current_item_index 是模型自己判断的「故事目前推进到第几条」，同样夹紧；
 // 模型填 null / 缺失 / 非法时返回 0，表示「它没判断出来」—— 调用方据此跳过回写，
@@ -3674,6 +3758,10 @@ function buildRecommendationPrompt(ctx, userStoryInput, openingText) {
 //
 // step_index（v1.7 新增）：本候选走完后过渡行程单里已完成几步，夹到 0..行程单步数。
 // **没有行程单时一律 null**——不把"没填"当成 0，两者行为完全不同（0 ＝有行程单但就地深化）。
+//
+// from / step_state（v1.8 新增）：from 是候选接住的那一拍（最新一层回复里的具体指认），
+// 容缺成空串（它只用于展示与自查，缺了不该让整批候选作废）；step_state 是模型判断的
+// 「当前这一步在最新正文里演到哪了」，只认三值，其余一律 null——同样**没有行程单时一律 null**。
 // 导出供单测直接验证（同 parsePacingResponse 的做法）。
 export function parseRecommendationResponse(raw, fallbackItemIndex, totalItems, transition = null) {
     if (!raw || typeof raw !== "string") {
@@ -3700,7 +3788,13 @@ export function parseRecommendationResponse(raw, fallbackItemIndex, totalItems, 
                 stepIndex = Number.isFinite(s) ? Math.min(Math.max(Math.floor(s), 0), stepMax) : null;
             }
         }
-        return { title: String(c?.title || "").trim(), text, itemIndex: idx, stepIndex };
+        return {
+            title: String(c?.title || "").trim(),
+            text,
+            from: String(c?.from || "").trim().slice(0, FROM_MAX),
+            itemIndex: idx,
+            stepIndex
+        };
     }).filter(Boolean);
     if (candidates.length === 0) {
         throw new Error("剧情推荐返回格式无法解析为 JSON（缺少有效 candidates）");
@@ -3715,7 +3809,10 @@ export function parseRecommendationResponse(raw, fallbackItemIndex, totalItems, 
         }
     }
 
-    return { candidates, currentItemIndex };
+    // 只认三值。模型给了别的词（或没给）就当它没判断出来 —— 与"填 null"同义，不猜。
+    const stepState = stepMax !== null && STEP_STATES.includes(data?.step_state) ? data.step_state : null;
+
+    return { candidates, currentItemIndex, stepState };
 }
 
 /* ------------------------------------------------------------------ *
@@ -4394,7 +4491,8 @@ async function generateRecommendations() {
             parse: (raw) => parseRecommendationResponse(raw, fallbackItemIndex, total, activeTransition),
             apply: (parsed) => {
                 generatedCandidateCount = parsed.candidates.length;
-                setPlanCandidates(editingPlanId, parsed.candidates);
+                // stepState 与这批候选同源：模型读最新正文时一并判断的「当前这一步演到哪了」。
+                setPlanCandidates(editingPlanId, parsed.candidates, { stepState: parsed.stepState });
                 // 生成时立刻把进度回写到模型判断的位置（currentItemIndex 为 1-based，
                 // 进度指针是 0-based）。为 0 表示模型没能判断出来，保留原指针不动。
                 // 行程单没走完时，applyProgressFromModel 内部会把这次回写夹回本段起点。
@@ -4915,6 +5013,9 @@ export function getSceneAdvanceState() {
     const total = Array.isArray(plan?.items) ? plan.items.length : 0;
     const progress = plan ? getPlanProgress(plan) : { itemIndex: 0, reachedEnding: false };
     const candidates = plan ? getPlanCandidates(plan) : [];
+    // 模型上一批候选时读最新正文得出的「当前这一步演到哪了」（未开始/进行中/已完成）。
+    // 只用于展示与自查，不是权威进度——行程单的 cursor 仍由玩家与点候选决定。
+    const stepState = STEP_STATES.includes(plan?.candidates?.stepState) ? plan.candidates.stepState : null;
     const items = plan ? normalizeItems(plan.items || []) : [];
     // 当前 gap 的过渡行程单（null ＝ 这一段还没排）。
     const transition = plan ? getActiveTransition(plan, progress.itemIndex) : null;
@@ -4928,6 +5029,8 @@ export function getSceneAdvanceState() {
         progress,
         reachedEnding: progress.reachedEnding,
         candidates,
+        // 模型上一批候选时读最新正文得出的「当前这一步演到哪了」；没有行程单/没判断出来时 null。
+        stepState,
         // 大纲情节预览用的完整条目（原「剧情推进」窗口的预览面板已迁至气泡浮层）
         items,
         insertMode: getCurrentInsertMode(),

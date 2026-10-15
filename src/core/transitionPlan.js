@@ -7,6 +7,9 @@
 // 有序的过渡事件清单（行程单），推荐剧情的锚点就从"大纲第 N 条"变成"过渡段第 K 步"。
 // 这是把盲盒模式那层"垫脚石"（nodes[].events[]）搬到普通大纲模式。
 //
+// ⚠ 一步不是一句话：它是要用好几拍才演完的一小段。候选的职责是**从最新一层回复的末态
+//   往下续演这一步**，不是把这一步的 brief 复述一遍（v1.8 起在提示词里明写，见下）。
+//
 // 纯模块：不 import 任何宿主（ST）模块，故可被单测直接 import（同 blindboxPlan.js）。
 
 /** 生成时的事件数量：默认 4，夹在 1~10（对齐 blindboxPlan 的 clampEventsPerGap 风格）。 */
@@ -165,8 +168,11 @@ function itemLabel(item, fallbackIndex) {
  * 组装 `{{transitionContext}}`——喂给 rolling 模板的行程单上下文。
  *
  * 不存在行程单时返回空串（buildPromptTemplateVars 会把它换成占位串）。
- * 这里把"本回合 step_index 该填几"写死成一句祈使句，是因为候选契约里这个字段最容易填错，
- * 让模型从文本照抄比让它自己推更稳。
+ *
+ * ⚠ 这里刻意把这一步说成**去向**、并点明"它的开头可能已经演过了"（v1.8）。旧措辞是
+ *   "本回合至多把这一步演完"，配上 brief 本身就是一段完整梗概，模型只能把它扩写一遍——
+ *   用户看到的候选永远在围绕这一步打转，而不是接着最新一层回复往下演。step_index 那句
+ *   也一样写死成祈使句：这个字段最容易填错，让模型从文本照抄比让它自己推更稳。
  *
  * @param {object} transition 已规范化的行程单（未规范化也能吃，内部会过一遍）
  * @param {Array} items 大纲条目（normalizeItems 的形状：{index,time,title,plot,...}）
@@ -198,9 +204,13 @@ export function buildTransitionContextText(transition, items = []) {
     const tail = isTransitionDone(t)
         ? `\n当前进度：${t.events.length} / ${t.events.length} 步已全部走完——本段过渡已收束，`
             + `本回合的候选可以把故事推进到 ${toLabel}（item_index 填 ${toIdx + 1}，step_index 填 ${t.events.length}）。`
-        : `\n当前进度：已走完 ${t.cursor} / ${t.events.length} 步，该演的是第 ${t.cursor + 1} 步。`
-            + `\n本回合的候选至多把这一步演完（step_index 填 ${t.cursor + 1}）；`
-            + `若候选只在原地深化、不推进过渡，step_index 填 ${t.cursor}。`
+        : `\n当前进度：已走完 ${t.cursor} / ${t.events.length} 步，**当前这一步**是第 ${t.cursor + 1} 步。`
+            + `\n这一步是**去向**，不是要你复述的内容——它的开头很可能已经在[最新一层回复]里演过了：`
+            + `先看那一步演到哪了，候选就从那里**往下续演**。不要重演开头，也不要把它的梗概换个说法重写一遍。`
+            + `\n本回合该填的 step_index，按[最新一层回复]里的实际进度定（一次至多前进 1 步，不许一跳到底）：`
+            + `\n  · 还在这一步之内再演一拍（这一步还没演完）→ 填 ${t.cursor}；`
+            + `\n  · 本回合把这一步演完 → 填 ${t.cursor + 1}；`
+            + `\n  · [最新一层回复]显示这一步其实已经演完、候选因此带向下一步 → 填 ${t.cursor + 1}。`
             + `\n⛔ item_index 一律填 ${fromIdx + 1}（当前所在条目），**不得越过本段过渡**。`;
 
     return head + tail;

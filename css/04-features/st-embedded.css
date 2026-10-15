@@ -186,6 +186,11 @@
 
 .tsa-panel .tsa-item-meta { margin-bottom: 3px; font-size: 11px; color: var(--t-glass-text-secondary); }
 
+/* 「承接：…」——模型指认它接住了最新一层回复里的哪一拍。一行截断：它是自查用的路标，不是正文。 */
+.tsa-panel .tsa-item-from { margin-bottom: 3px; font-size: 11px; color: var(--t-glass-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.tsa-panel .tsa-item-from i { margin-right: 3px; color: var(--t-color-accent); }
+
 /* 候选正文可能很长：限高滚动，保证卡片列表整体仍可扫读 */
 .tsa-panel .tsa-item-text { max-height: 88px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
 
@@ -280,6 +285,10 @@
 
 /* 步数徽标：等宽数字——「1 / 4 步」会随进度逐字变化，比例数字会让整行左右抖。 */
 .tsa-panel .tsa-transition-badge { margin-left: auto; font-size: 11px; font-weight: 400; font-variant-numeric: tabular-nums; color: var(--t-glass-text-secondary); }
+
+/* 「本步 进行中」：模型读最新正文得出的读数，不是权威进度（cursor 仍由玩家点选决定），
+   所以用虚线框弱化，别与步数徽标抢眼。模型没判断出来就不画。 */
+.tsa-panel .tsa-transition-state { flex-shrink: 0; padding: 0 6px; border: 1px dashed var(--t-color-accent-border); border-radius: 999px; font-size: 10px; font-weight: 400; color: var(--t-glass-text-secondary); }
 
 /* 下单表单（本段还没排行程单时） */
 

@@ -208,6 +208,58 @@ test('没有 SillyTavern 上下文时返回空串，不抛错', async () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 最新一层回复的拆分（collectRecentChatParts）—— 剧情推进的"起点"
+ *
+ * 拆错的后果是候选转头去扩写行程单：模型把最新那层当成"若干参考背景"之一，
+ * 起点就丢了。所以这里钉死"哪一层算起点、其余怎么下发"。
+ * ------------------------------------------------------------------ */
+
+test('拆窗：最新一层角色回复单独拿出来，其余留作背景', async () => {
+    const ns = await loadStoryOutline({ chat: CHAT_5 });
+    const parts = ns.collectRecentChatParts(3, { includeHidden: true });
+    assert.equal(parts.latestReply, "【角色】角色回复二", '起点＝窗口里最后一条有正文的角色楼层');
+    assert.equal(parts.earlierChat, "【角色】角色回复一\n\n【用户】（本楼无可用正文）", '其余楼层原样留作背景');
+    assert.equal(parts.latestReply.includes("角色回复一"), false, '起点只有一层，不叠加更早的');
+});
+
+test('拆窗：最新一层是玩家自己的话时，起点退回上一条角色回复', async () => {
+    const ns = await loadStoryOutline({
+        chat: [{ mes: "开场白" }, { mes: "角色回复" }, { mes: "玩家刚说的", is_user: true }],
+    });
+    const parts = ns.collectRecentChatParts(3, { includeHidden: true });
+    assert.equal(parts.latestReply, "【角色】角色回复", '玩家的话不是起点');
+    assert.ok(parts.earlierChat.includes("【用户】玩家刚说的"), '但仍在背景里');
+});
+
+test('拆窗：隐藏/摘要楼层不当起点（它是背景，不是刚演的正文）', async () => {
+    const ns = await loadStoryOutline({
+        chat: [{ mes: "真正文" }, { mes: "摘要", is_system: true }],
+    });
+    const parts = ns.collectRecentChatParts(2, { includeHidden: true });
+    assert.equal(parts.latestReply, "【角色】真正文");
+    assert.equal(parts.earlierChat, "【背景】摘要");
+});
+
+test('拆窗：窗口里一条正文都没有时不硬造起点，楼层仍占位', async () => {
+    const ns = await loadStoryOutline({ chat: [{ mes: "" }, { mes: "" }] });
+    const parts = ns.collectRecentChatParts(2, { includeHidden: true });
+    assert.equal(parts.latestReply, "", '没正文就没有起点，模板的占位串会接手');
+    assert.equal(parts.earlierChat.split("\n\n").length, 2, '两层都还占着位');
+});
+
+test('拆窗：0 层/无上下文 → 两边都空，不抛错', async () => {
+    // 注意别用 deepStrictEqual：vm 里造出来的对象与宿主的 Object 不同源，原型对不上。
+    const ns = await loadStoryOutline({ chat: CHAT_5 });
+    const zero = ns.collectRecentChatParts(0);
+    assert.equal(zero.latestReply, "");
+    assert.equal(zero.earlierChat, "");
+    const bare = await loadStoryOutline();
+    const none = bare.collectRecentChatParts(3);
+    assert.equal(none.latestReply, "");
+    assert.equal(none.earlierChat, "");
+});
+
+/* ------------------------------------------------------------------ *
  * 剧情推进的参考文本（getRollingOpeningText）—— 永远是"最新一条角色回复"
  * ------------------------------------------------------------------ */
 
