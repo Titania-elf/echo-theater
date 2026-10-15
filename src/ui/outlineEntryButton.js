@@ -33,6 +33,7 @@ function getEnabledFeatureList(data) {
     if (showTheater) features.push("theater");
     if (showOutlineActions) features.push("outline_actions");
     if (rewriteEnabled) features.push("rewrite");
+    features.push("memory");
     return features;
 }
 
@@ -51,6 +52,11 @@ async function openFeatureDirect(featureKey) {
         case "rewrite": {
             const { openRewritePanelFromMenu } = await import("./rewriteEntryButton.js");
             openRewritePanelFromMenu();
+            return;
+        }
+        case "memory": {
+            const { openStoryMemoryWindow } = await import("./storyMemoryWindow.js");
+            openStoryMemoryWindow();
             return;
         }
         default:
@@ -88,6 +94,9 @@ async function openMenu($btn) {
             <i class="fa-solid fa-list-check"></i> 生成大纲
         </button>` : ""}
         ${rewriteEnabled ? '<button class="t-outline-entry-item" id="t-outline-entry-open-rewrite" role="menuitem"><i class="fa-solid fa-highlighter"></i> 文本改写</button>' : ''}
+        <button class="t-outline-entry-item" id="t-outline-entry-open-memory" role="menuitem">
+            <i class="fa-solid fa-brain"></i> 故事记忆
+        </button>
         ${floorNavEnabled ? `<button class="t-outline-entry-item" id="t-outline-entry-jump-top" role="menuitem">
             <i class="fa-solid fa-angles-up"></i> 回到顶楼
         </button>
@@ -136,6 +145,14 @@ async function openMenu($btn) {
         closeMenu();
         const { openRewritePanelFromMenu } = await import("./rewriteEntryButton.js");
         openRewritePanelFromMenu();
+    });
+
+    $("#t-outline-entry-open-memory").on("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenu();
+        const { openStoryMemoryWindow } = await import("./storyMemoryWindow.js");
+        openStoryMemoryWindow();
     });
 
     $("#t-outline-entry-jump-top").on("click", async (e) => {

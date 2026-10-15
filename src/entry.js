@@ -64,6 +64,7 @@ import {
 } from "./core/unlockChime.js";
 import { initPacingInjection } from "./core/pacingInjection.js";
 import { initDirectorInjection } from "./core/directorInjection.js";
+import { initStoryMemory } from "./core/storyMemory.js";
 import { initFloorNav, refreshFloorNavButton } from "./ui/floorNav.js";
 import { isInjectedTheaterMessage } from "./core/chatInjector.js";
 import { exportIllustrationBackup, restoreIllustrationBackup } from "./core/illustrationPortability.js";
@@ -231,6 +232,9 @@ function initCoreFeatures() {
 
     // 初始化盲盒导演：每条原生回复后台判定并持续刷新注入（见 directorInjection.js）
     initDirectorInjection();
+
+    // 故事记忆：按聊天保存、后台增量整理，并在原生提示词构造前同步。
+    initStoryMemory();
 
     // 初始化楼层快捷操作（跳转 + 批量隐藏旧楼）
     initFloorNav();

@@ -253,6 +253,17 @@ export const defaultSettings = {
     floor_nav: {
         enabled: true
     },
+    // 自动整理开关随聊天保存；这里只放跨聊天共用的运行参数。
+    story_memory: {
+        keep_floors: 16,
+        trigger_tokens: 6000,
+        trigger_floors: 32,
+        batch_tokens: 12000,
+        memory_tokens: 2400,
+        profile_id: "",
+        model: "",
+        inject_depth: 4
+    },
     // 导入预设的宏求值行为
     preset_macros: {
         // 预设里的 {{setvar::}} 等写入宏默认只在本次提示词构建内有效，构建完成后还原，

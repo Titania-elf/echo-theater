@@ -113,8 +113,8 @@ export async function sendChatRequestWithConnection(conn, messages, options = {}
             messages: messages,
             chat_completion_source: oai_settings.chat_completion_source,
             model: model,
-            max_tokens: oai_settings.openai_max_tokens || maxTokens,
-            temperature: oai_settings.temp_openai || temperature,
+            max_tokens: options.respectRequestLimits === true ? maxTokens : (oai_settings.openai_max_tokens || maxTokens),
+            temperature: options.respectRequestLimits === true ? temperature : (oai_settings.temp_openai || temperature),
             custom_url: oai_settings.custom_url,
             reverse_proxy: oai_settings.reverse_proxy,
             proxy_password: oai_settings.proxy_password,
@@ -122,7 +122,7 @@ export async function sendChatRequestWithConnection(conn, messages, options = {}
         });
 
         if (useStream) {
-            const streamGenerator = await ChatCompletionService.sendRequest(requestData, false, null);
+            const streamGenerator = await ChatCompletionService.sendRequest(requestData, false, signal || null);
 
             if (typeof streamGenerator === 'function') {
                 for await (const chunk of streamGenerator()) {
@@ -134,7 +134,7 @@ export async function sendChatRequestWithConnection(conn, messages, options = {}
                 if (onProgress) onProgress(rawContent);
             }
         } else {
-            const result = await ChatCompletionService.sendRequest(requestData, true, null);
+            const result = await ChatCompletionService.sendRequest(requestData, true, signal || null);
             rawContent = result?.content || "";
             if (onProgress) onProgress(rawContent);
         }

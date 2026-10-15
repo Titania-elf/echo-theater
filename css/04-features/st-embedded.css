@@ -36,6 +36,16 @@
 
 #chat .mes .t-rewrite-inline-count { color: var(--t-glass-text-secondary); padding: 2px 4px; }
 
+#chat .mes .t-rewrite-inline-sentences { flex-basis: 100%; display: grid; gap: 6px; max-height: 260px; overflow: auto; }
+#chat .mes .t-rewrite-inline-sentences[hidden] { display: none; }
+#chat .mes .t-rewrite-sentence-row { display: flex; gap: 8px; text-align: left; white-space: normal; }
+#chat .mes .t-rewrite-sentence-row.selected { background: var(--t-color-success-soft); border-color: var(--t-color-success-border); }
+#chat .mes .t-rewrite-sentence-no { flex-shrink: 0; color: var(--t-glass-text-secondary); }
+
+::highlight(titania-rewrite-mark) { background-color: var(--t-color-success-soft); }
+::highlight(titania-rewrite-select) { background-color: var(--t-color-accent-soft); }
+::highlight(titania-rewrite-selected) { background-color: var(--t-color-success-soft); }
+
 #chat .mes .t-rewrite-select-sentence { border-radius: 5px; padding: 0 2px; cursor: pointer; transition: background-color 0.16s ease, box-shadow 0.16s ease; }
 
 #chat .mes .t-rewrite-select-sentence:hover { background: var(--t-color-accent-soft); box-shadow: inset 0 0 0 1px var(--t-color-accent-border); }

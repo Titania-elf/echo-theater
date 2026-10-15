@@ -1,8 +1,11 @@
 // src/ui/rewriteEntryButton.js
 
 import { getExtData, saveExtData } from "../utils/storage.js";
-import { saveChatConditional, reloadCurrentChat, updateMessageBlock, eventSource, event_types } from "../../../../script.js";
-import { parseTagWhitelistInput, extractTextByWhitelist } from "../utils/chatTagWhitelist.js";
+import { saveChatConditional, getRequestHeaders, isGenerating, eventSource, event_types } from "../../../../script.js";
+import { extractRewriteProjection, mapRewriteUnits } from "../core/textRewritePatch.js";
+import { captureRewriteTarget, commitRewritePatches, persistRewriteTarget } from "../core/textRewriteWriteback.js";
+import { collectRewriteTextGroups, locateRewriteRange, rangeForRewriteMatch } from "./textRewriteDom.js";
+import { TITANIA_TEXT_PATCHED } from "../core/contentChangeEvents.js";
 import { normalizeRewriteCustomProfiles } from "../core/apiProfileRegistry.js";
 import { sendChatCompletion } from "../core/relayClient.js";
 import {
@@ -10,12 +13,8 @@ import {
     parseCommaList,
     uniq,
     splitBySentence,
-    splitByParagraph,
-    splitText,
     normalizeDeleteMode,
     applyDeletesToUnit,
-    applyReplacements,
-    buildDeleteReplacements,
     evaluateDeleteRules,
     evaluateRewriteRules,
     splitLegacyRules,
@@ -57,6 +56,9 @@ let lastDeleteSourceText = "";
 let latestSentenceUnits = [];
 let selectedSentenceIds = new Set();
 let inlineSelectionMessageIndex = null;
+let sentenceSelectionTarget = null;
+let inlineSelectionRanges = [];
+const rewriteHighlightRanges = new Map();
 const LIVE_RESPONSE_HISTORY_MAX = 20;
 const AUTO_REWRITE_DELAY_MS = 3000;
 const REWRITE_TEMPERATURE = 0.8;
@@ -463,6 +465,7 @@ function refreshLatestSentenceSelection({ keepSelection = false } = {}) {
     const latest = getLatestAssistantMessageFromChat();
     const previous = keepSelection ? getSelectedSentenceIdSet() : new Set();
     latestSentenceUnits = latest ? buildSentenceUnitsFromLatest(latest) : [];
+    sentenceSelectionTarget = latest?.target || null;
     const available = new Set(latestSentenceUnits.map(u => u.segment_id));
     setSelectedSentenceIds(Array.from(previous).filter(id => available.has(id)));
     renderSentenceSelection();
@@ -501,60 +504,28 @@ function buildSelectedSentencePayload(latest, selectedIds) {
     };
 }
 
-function clearInlineSentenceSelection() {
-    $("#chat .t-rewrite-inline-toolbar").remove();
-    $("#chat .t-rewrite-select-sentence").each((_, el) => {
-        const text = document.createTextNode(el.textContent || "");
-        el.replaceWith(text);
+function unwrapOwnRewriteSpans(container) {
+    container?.querySelectorAll('span.t-rewrite-mark, span.t-rewrite-select-sentence').forEach(element => {
+        element.replaceWith(...element.childNodes);
     });
-    const containers = document.querySelectorAll("#chat .mes_text, #chat .message_text");
-    containers.forEach(el => el.normalize());
-    inlineSelectionMessageIndex = null;
-    setSelectedSentenceIds([]);
 }
 
-function wrapFirstSentenceSelectionOccurrence(containerEl, unit) {
-    const needle = String(unit?.text || "");
-    const segmentId = String(unit?.segment_id || "");
-    if (!containerEl || !needle || !segmentId) return false;
+function updateSelectionHighlights() {
+    const registry = window.CSS?.highlights;
+    if (!registry || !window.Highlight) return;
+    registry.set('titania-rewrite-select', new window.Highlight(...inlineSelectionRanges.filter(item => !selectedSentenceIds.has(item.id)).map(item => item.range)));
+    registry.set('titania-rewrite-selected', new window.Highlight(...inlineSelectionRanges.filter(item => selectedSentenceIds.has(item.id)).map(item => item.range)));
+}
 
-    const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT, {
-        acceptNode(node) {
-            if (!node || !node.nodeValue || !node.nodeValue.includes(needle)) return NodeFilter.FILTER_REJECT;
-            const parent = node.parentElement;
-            if (!parent) return NodeFilter.FILTER_REJECT;
-            if (parent.closest(".t-rewrite-mark, .t-rewrite-select-sentence")) return NodeFilter.FILTER_REJECT;
-            return NodeFilter.FILTER_ACCEPT;
-        }
-    });
-
-    const candidateNodes = [];
-    let current = walker.nextNode();
-    while (current) {
-        candidateNodes.push(current);
-        current = walker.nextNode();
-    }
-
-    for (const textNode of candidateNodes) {
-        const content = textNode.nodeValue || "";
-        const idx = content.indexOf(needle);
-        if (idx < 0) continue;
-
-        const right = textNode.splitText(idx);
-        const tail = right.splitText(needle.length);
-        const mark = document.createElement("span");
-        mark.className = "t-rewrite-select-sentence";
-        mark.dataset.segmentId = segmentId;
-        mark.title = "点击选择/取消选择此句";
-        mark.textContent = needle;
-        right.replaceWith(mark);
-
-        if (tail && tail.parentNode) tail.parentNode.normalize();
-        else if (mark.parentNode) mark.parentNode.normalize();
-        return true;
-    }
-
-    return false;
+function clearInlineSentenceSelection() {
+    $('#chat .t-rewrite-inline-toolbar').remove();
+    document.querySelectorAll('#chat .mes_text, #chat .message_text').forEach(unwrapOwnRewriteSpans);
+    window.CSS?.highlights?.delete('titania-rewrite-select');
+    window.CSS?.highlights?.delete('titania-rewrite-selected');
+    inlineSelectionRanges = [];
+    inlineSelectionMessageIndex = null;
+    sentenceSelectionTarget = null;
+    setSelectedSentenceIds([]);
 }
 
 function ensureInlineRewriteToolbar(latest) {
@@ -569,6 +540,7 @@ function ensureInlineRewriteToolbar(latest) {
                 <button class="t-rewrite-inline-confirm" type="button" style="display:none;">确认改写</button>
                 <button class="t-rewrite-inline-cancel" type="button" style="display:none;">取消</button>
                 <span class="t-rewrite-inline-count" style="display:none;">已选 0 句</span>
+                <div id="t-rewrite-sentence-list" class="t-rewrite-inline-sentences" hidden></div>
             </div>
         `);
         const containerEl = getMessageRenderContainer($message);
@@ -603,7 +575,8 @@ function enterInlineSentenceSelection() {
 
     latestSentenceUnits = buildSentenceUnitsFromLatest(latest);
     if (latestSentenceUnits.length === 0) {
-        if (window.toastr) toastr.warning("最新楼层内容为空，无法选句", "文本改写");
+        setStatus(latest.projection.reason || "未找到可安全提取的正文", "warn");
+        if (window.toastr) toastr.warning(latest.projection.reason || "未找到可安全提取的正文", "文本改写");
         return;
     }
 
@@ -612,9 +585,18 @@ function enterInlineSentenceSelection() {
     const containerEl = getMessageRenderContainer($message);
     if (!containerEl) return;
 
-    unwrapRenderedRewriteMarks(containerEl);
-    latestSentenceUnits.forEach(unit => wrapFirstSentenceSelectionOccurrence(containerEl, unit));
+    sentenceSelectionTarget = latest.target;
+    const groups = collectRewriteTextGroups(containerEl, latest.projection.whitelist);
+    inlineSelectionRanges = mapRewriteUnits(latest.projection, latestSentenceUnits).flatMap(unit => {
+        if (!unit.run) return [];
+        const match = locateRewriteRange(groups, latest.projection, { run: unit.run, local: unit.local, before: unit.text });
+        const range = rangeForRewriteMatch(document, match);
+        return range ? [{ id: unit.segment_id, range }] : [];
+    });
+    updateSelectionHighlights();
     ensureInlineRewriteToolbar(latest);
+    renderSentenceSelection();
+    $('#t-rewrite-sentence-list').prop('hidden', false);
     const $toolbar = $message.find(".t-rewrite-inline-toolbar").first();
     $toolbar.find(".t-rewrite-inline-start").hide();
     $toolbar.find(".t-rewrite-inline-confirm, .t-rewrite-inline-cancel, .t-rewrite-inline-count").show();
@@ -627,7 +609,10 @@ function renderDiffRows(rows = []) {
             before: String(item?.before || ""),
             after: String(item?.after || ""),
             ruleHint: String(item?.ruleHint || ""),
-            action: item?.action === "delete" ? "delete" : "rewrite"
+            action: item?.action === "delete" ? "delete" : "rewrite",
+            unitIndex: item?.unitIndex,
+            status: item?.status || "preview",
+            reason: String(item?.reason || "等待安全写回")
         }));
     } else {
         lastDiffRows = [];
@@ -647,7 +632,8 @@ function renderDiffRows(rows = []) {
         const ruleHint = escapeHtml(item.ruleHint || "");
         const isDelete = item.action === "delete";
         const afterLabel = isDelete ? "删除" : "改写";
-        const afterText = isDelete && !item.after ? "（已删除）" : after;
+        const afterText = isDelete && !item.after ? "（删除预览）" : after;
+        const statusLabel = item.status === 'applied' ? '已写回' : item.status === 'unchanged' ? '未变化' : '仅预览';
         return `
             <div class="t-rewrite-diff-row">
                 <div class="t-rewrite-diff-cell t-rewrite-diff-before">
@@ -655,7 +641,8 @@ function renderDiffRows(rows = []) {
                     <div class="t-rewrite-diff-text">${before}</div>
                 </div>
                 <div class="t-rewrite-diff-cell t-rewrite-diff-after">
-                    <div class="t-rewrite-diff-label">${afterLabel} #${idx + 1}</div>
+                    <div class="t-rewrite-diff-label">${afterLabel} #${idx + 1} · ${statusLabel}</div>
+                    <div class="t-rewrite-diff-label">${escapeHtml(item.reason)}</div>
                     <div class="t-rewrite-diff-text">${afterText}</div>
                 </div>
             </div>
@@ -921,30 +908,40 @@ function buildRewritePayload(data, sourceText) {
 }
 
 function getLatestAssistantMessageFromChat() {
-    if (typeof SillyTavern === "undefined" || !SillyTavern.getContext) return null;
-    const ctx = SillyTavern.getContext();
-    const chat = Array.isArray(ctx?.chat) ? ctx.chat : [];
-    const whitelist = parseTagWhitelistInput(ensureRewriteDataShape().tag_whitelist || "");
-    if (chat.length === 0) return null;
-
-    for (let i = chat.length - 1; i >= 0; i -= 1) {
-        const msg = chat[i];
+    const ctx = globalThis.SillyTavern?.getContext?.();
+    if (!Array.isArray(ctx?.chat)) return null;
+    for (let i = ctx.chat.length - 1; i >= 0; i--) {
+        const msg = ctx.chat[i];
         if (!msg || msg.is_user || msg.is_system || msg.is_hidden || msg.disabled) continue;
-        const raw = String(msg.mes || msg.message || "");
-        const content = extractTextByWhitelist(raw, whitelist);
-        if (!content.trim()) continue;
-        return { index: i, msg, content, raw };
+        const raw = String(msg.mes ?? msg.message ?? '');
+        const projection = extractRewriteProjection(raw, ensureRewriteDataShape().tag_whitelist || '');
+        const container = getMessageRenderContainer(getChatMessageElementByIndex(i));
+        const target = captureRewriteTarget(ctx, i, projection, container);
+        return { index: i, msg, content: projection.text, raw, projection, target };
     }
-
     return null;
 }
 
 function getChatMessageElementByIndex(index) {
-    const $byId = $(`#chat .mes[mesid='${index}']`).last();
-    if ($byId.length) return $byId;
-    const $fallback = $("#chat > div.mes.reasoning.last_mes").last();
-    if ($fallback.length) return $fallback;
-    return $();
+    return $(`#chat .mes[mesid='${index}']`).last();
+}
+
+async function writeSafeMessagePatches(latest, units, replacements, action) {
+    return commitRewritePatches(latest.target, units, replacements, {
+        action,
+        getContext: () => globalThis.SillyTavern?.getContext?.(),
+        isGenerating,
+        getContainer: () => getMessageRenderContainer(getChatMessageElementByIndex(latest.index)),
+        persist: (target, rewritten) => persistRewriteTarget(target, rewritten, {
+            getContext: () => globalThis.SillyTavern?.getContext?.(),
+            save: saveChatConditional, getHeaders: getRequestHeaders, fetch: (...args) => fetch(...args),
+        }),
+        restore: target => persistRewriteTarget(target, target.projection.raw, {
+            getContext: () => globalThis.SillyTavern?.getContext?.(),
+            save: saveChatConditional, getHeaders: getRequestHeaders, fetch: (...args) => fetch(...args),
+        }),
+        notify: target => eventSource.emit(TITANIA_TEXT_PATCHED, target.index),
+    });
 }
 
 function clearAutoRewriteIndicator() {
@@ -962,10 +959,6 @@ function applyAutoRewriteIndicator(messageIndex) {
     return true;
 }
 
-function stripRewriteMarkWrappers(text) {
-    return String(text || "").replace(/<span\b[^>]*\bt-rewrite-mark\b[^>]*>([\s\S]*?)<\/span>/gi, "$1");
-}
-
 function normalizeRewriteMarks(input) {
     if (!Array.isArray(input)) return [];
     return input
@@ -980,22 +973,6 @@ function normalizeRewriteMarks(input) {
         });
 }
 
-function buildRewriteMarksFromRows(rows = []) {
-    return normalizeRewriteMarks(rows.map((row) => ({
-        before: String(row?.before || ""),
-        after: String(row?.after || "")
-    })));
-}
-
-function unwrapRenderedRewriteMarks(containerEl) {
-    if (!containerEl) return;
-    const marked = containerEl.querySelectorAll("span.t-rewrite-mark");
-    marked.forEach((el) => {
-        const text = document.createTextNode(el.textContent || "");
-        el.replaceWith(text);
-    });
-}
-
 function getMessageRenderContainer($message) {
     if (!$message || !$message.length) return null;
     const selectors = [".mes_text", ".message_text", ".mes_block .mes_text"];
@@ -1006,68 +983,29 @@ function getMessageRenderContainer($message) {
     return null;
 }
 
-function wrapFirstTextOccurrence(containerEl, targetText, originalText) {
-    const needle = String(targetText || "");
-    if (!containerEl || !needle) return false;
-
-    const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT, {
-        acceptNode(node) {
-            if (!node || !node.nodeValue || !node.nodeValue.includes(needle)) {
-                return NodeFilter.FILTER_REJECT;
-            }
-            const parent = node.parentElement;
-            if (!parent) return NodeFilter.FILTER_REJECT;
-            if (parent.closest(".t-rewrite-mark")) return NodeFilter.FILTER_REJECT;
-            return NodeFilter.FILTER_ACCEPT;
-        }
-    });
-
-    const candidateNodes = [];
-    let current = walker.nextNode();
-    while (current) {
-        candidateNodes.push(current);
-        current = walker.nextNode();
-    }
-
-    for (const textNode of candidateNodes) {
-        const content = textNode.nodeValue || "";
-        const idx = content.indexOf(needle);
-        if (idx < 0) continue;
-
-        const right = textNode.splitText(idx);
-        const tail = right.splitText(needle.length);
-        const mark = document.createElement("span");
-        mark.className = "t-rewrite-mark";
-        mark.title = `原句：${String(originalText || "")}`;
-        mark.textContent = needle;
-        right.replaceWith(mark);
-
-        if (tail && tail.parentNode) {
-            tail.parentNode.normalize();
-        } else if (mark.parentNode) {
-            mark.parentNode.normalize();
-        }
-        return true;
-    }
-
-    return false;
-}
-
 function applyRewriteMarksToMessage(index, marksInput) {
-    const marks = normalizeRewriteMarks(marksInput)
-        .sort((a, b) => b.after.length - a.after.length);
-    const $message = getChatMessageElementByIndex(index);
-    if (!$message.length) return;
-
-    const containerEl = getMessageRenderContainer($message);
-    if (!containerEl) return;
-
-    unwrapRenderedRewriteMarks(containerEl);
-    if (marks.length === 0) return;
-
-    marks.forEach((mark) => {
-        wrapFirstTextOccurrence(containerEl, mark.after, mark.before);
-    });
+    const ranges = [];
+    const ctx = globalThis.SillyTavern?.getContext?.();
+    const message = ctx?.chat?.[index];
+    const container = getMessageRenderContainer(getChatMessageElementByIndex(index));
+    if (container && message) {
+        unwrapOwnRewriteSpans(container);
+        const projection = extractRewriteProjection(message.mes ?? message.message ?? '', ensureRewriteDataShape().tag_whitelist || '');
+        const groups = collectRewriteTextGroups(container, projection.whitelist);
+        for (const mark of normalizeRewriteMarks(marksInput)) {
+            const matches = projection.runs.flatMap(run => {
+                const local = run.text.indexOf(mark.after);
+                return local >= 0 && run.text.indexOf(mark.after, local + 1) < 0 ? [{ run, local, before: mark.after }] : [];
+            });
+            if (matches.length !== 1) continue;
+            const range = rangeForRewriteMatch(document, locateRewriteRange(groups, projection, matches[0]));
+            if (range) ranges.push(range);
+        }
+    }
+    rewriteHighlightRanges.set(index, ranges);
+    if (window.CSS?.highlights && window.Highlight) {
+        window.CSS.highlights.set('titania-rewrite-mark', new window.Highlight(...Array.from(rewriteHighlightRanges.values()).flat().filter(range => range.startContainer.isConnected)));
+    }
 }
 
 function applyAllRewriteMarksFromChat() {
@@ -1075,6 +1013,8 @@ function applyAllRewriteMarksFromChat() {
     const ctx = SillyTavern.getContext();
     const chat = Array.isArray(ctx?.chat) ? ctx.chat : [];
 
+    rewriteHighlightRanges.clear();
+    window.CSS?.highlights?.delete('titania-rewrite-mark');
     chat.forEach((msg, index) => {
         const marks = normalizeRewriteMarks(msg?.extra?.titania_rewrite_marks);
         applyRewriteMarksToMessage(index, marks);
@@ -1102,196 +1042,6 @@ function bindRewriteDecorationEvents() {
     });
 }
 
-/* ===== 原地分段替换（不重渲染整层楼）=====
-   目标：改哪句就只动哪句的文本节点，其余 DOM（其他插件注入的前端美化、酒馆显示正则产出的
-   结构、代码块等）一个都不碰。这样不依赖「猜其他插件监听了哪个事件」，天然不打断它们。 */
-
-const T_INLINE_WRAP_TAGS = new Set(["Q", "EM", "STRONG", "I", "B", "DEL", "MARK", "SPAN", "CODE", "U", "SMALL", "SUB", "SUP"]);
-
-function collectVisibleTextNodes(containerEl) {
-    const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT, {
-        acceptNode(node) {
-            const parent = node.parentElement;
-            if (!parent) return NodeFilter.FILTER_REJECT;
-            if (parent.closest("script, style, pre, code")) return NodeFilter.FILTER_REJECT;
-            return NodeFilter.FILTER_ACCEPT;
-        }
-    });
-    const nodes = [];
-    let n = walker.nextNode();
-    while (n) { nodes.push(n); n = walker.nextNode(); }
-    return nodes;
-}
-
-/* 清理被我们掏空的内联包裹元素（如清空后残留的空 <q></q>），只上溯处理传入的元素，绝不全局扫描。 */
-function cleanupEmptiedWrappers(elements) {
-    (elements || []).forEach((start) => {
-        let cur = start;
-        while (cur && cur.nodeType === 1 && T_INLINE_WRAP_TAGS.has(cur.tagName)
-            && !cur.textContent.trim() && cur.children.length === 0) {
-            const parent = cur.parentNode;
-            if (!parent) break;
-            parent.removeChild(cur);
-            cur = (parent.nodeType === 1) ? parent : null;
-        }
-    });
-}
-
-/* 在容器所有可见文本里找 before（可跨多个文本节点，因为 markdown/正则会把一句话拆进
-   <q>/<em> 等内联标签），命中后把这一段换成 after（after="" 即删除）。只改命中跨到的节点，
-   其余结构原样保留。mark=true 时把 after 包进 .t-rewrite-mark。返回是否命中。 */
-function replaceAcrossTextNodes(containerEl, before, after, { mark = false, title = "" } = {}) {
-    const needle = String(before || "");
-    if (!containerEl || !needle) return false;
-
-    const nodes = collectVisibleTextNodes(containerEl);
-    let full = "";
-    const spans = [];
-    for (const node of nodes) {
-        const val = node.nodeValue || "";
-        spans.push({ node, start: full.length, end: full.length + val.length });
-        full += val;
-    }
-
-    const idx = full.indexOf(needle);
-    if (idx < 0) return false;
-    const matchStart = idx;
-    const matchEnd = idx + needle.length;
-    const covered = spans.filter(s => s.end > matchStart && s.start < matchEnd);
-    if (covered.length === 0) return false;
-
-    const first = covered[0];
-    const last = covered[covered.length - 1];
-    const prefix = (first.node.nodeValue || "").slice(0, matchStart - first.start);
-    const suffix = (last.node.nodeValue || "").slice(matchEnd - last.start);
-
-    let afterNode = null;
-    if (String(after || "") !== "") {
-        if (mark) {
-            const span = document.createElement("span");
-            span.className = "t-rewrite-mark";
-            if (title) span.title = title;
-            span.textContent = String(after);
-            afterNode = span;
-        } else {
-            afterNode = document.createTextNode(String(after));
-        }
-    }
-
-    const touchedParents = covered.map(s => s.node.parentElement).filter(Boolean);
-    const firstParent = first.node.parentNode;
-    if (!firstParent) return false;
-
-    const frag = document.createDocumentFragment();
-    if (prefix) frag.appendChild(document.createTextNode(prefix));
-    if (afterNode) frag.appendChild(afterNode);
-    if (covered.length === 1 && suffix) frag.appendChild(document.createTextNode(suffix));
-    if (!frag.childNodes.length) frag.appendChild(document.createTextNode(""));
-    firstParent.replaceChild(frag, first.node);
-
-    if (covered.length > 1) {
-        for (let i = 1; i < covered.length; i += 1) {
-            covered[i].node.nodeValue = (covered[i] === last) ? suffix : "";
-        }
-    }
-
-    cleanupEmptiedWrappers(touchedParents);
-    if (firstParent.normalize) firstParent.normalize();
-    return true;
-}
-
-/* 把一批 {before, after, mark} 原地应用到某楼的 .mes_text。先把手动选句高亮和旧改写标记还原成
-   纯文本（避免干扰定位、避免 after 被插进包裹里），再逐条替换。返回 {containerFound, applied, total}。 */
-function applyInPlaceEdits(index, edits) {
-    const list = Array.isArray(edits) ? edits : [];
-    const $message = getChatMessageElementByIndex(index);
-    const containerEl = getMessageRenderContainer($message);
-    if (!containerEl) return { containerFound: false, applied: 0, total: list.length };
-
-    containerEl.querySelectorAll(".t-rewrite-select-sentence, .t-rewrite-mark").forEach((el) => {
-        el.replaceWith(document.createTextNode(el.textContent || ""));
-    });
-    if (containerEl.normalize) containerEl.normalize();
-
-    let applied = 0;
-    list.forEach((edit) => {
-        const before = String(edit?.before || "");
-        const after = String(edit?.after || "");
-        if (!before || after === before) return;
-        const ok = replaceAcrossTextNodes(containerEl, before, after, {
-            mark: edit?.mark === true,
-            title: edit?.mark === true ? `原句：${before}` : "",
-        });
-        if (ok) applied += 1;
-    });
-    return { containerFound: true, applied, total: list.length };
-}
-
-/* 改写命中单元 → 原地替换条目（before=原句，after=模型改写，带标记）。与 applyRewriteToFullText 同源。 */
-function buildInPlaceRewriteEdits(evaluated, parsed) {
-    const map = new Map((parsed?.results || []).map(r => [String(r.segment_id), String(r.rewritten_text || "")]));
-    return (evaluated?.unitResults || [])
-        .filter(u => u.hit)
-        .map((unit) => ({ before: String(unit.text || ""), after: map.get(`s_${unit.unitIndex}`), mark: true }))
-        .filter((e) => e.before && typeof e.after === "string" && e.after && e.after !== e.before);
-}
-
-/* 删除回写：命中单元 → 顺序替换（整句 after=""）。 */
-function applyDeleteToFullText(sourceText, deleteUnits) {
-    return applyReplacements(sourceText, buildDeleteReplacements(deleteUnits));
-}
-
-/* 改写回写：按模型返回的 rewritten_text 替换命中单元（纯改写，删除走独立链路）。 */
-function applyRewriteToFullText(sourceText, evaluated, parsed) {
-    const map = new Map((parsed?.results || []).map(r => [String(r.segment_id), String(r.rewritten_text || "")]));
-    const entries = (evaluated?.unitResults || [])
-        .filter(u => u.hit)
-        .map((unit) => ({ before: String(unit.text || ""), after: map.get(`s_${unit.unitIndex}`) }))
-        .filter((item) => item.before && typeof item.after === "string");
-    return applyReplacements(sourceText, entries);
-}
-
-function writeBackMessageContent(targetMsg, rewrittenText) {
-    const text = stripRewriteMarkWrappers(String(rewrittenText || ""));
-    targetMsg.mes = text;
-    targetMsg.message = text;
-
-    if (Array.isArray(targetMsg.swipes) && targetMsg.swipes.length > 0) {
-        const swipeId = Number(targetMsg.swipe_id);
-        const idx = Number.isInteger(swipeId) && swipeId >= 0 && swipeId < targetMsg.swipes.length
-            ? swipeId
-            : (targetMsg.swipes.length - 1);
-        targetMsg.swipes[idx] = text;
-    }
-}
-
-/* 原地回写一楼：对齐 ST 自身的编辑落定流程（script.js 的 messageEditDone）。
-   关键不在「只渲染一楼 vs 整屏重载」，而在**有没有发编辑事件**：
-   ST 编辑消息时会先 emit MESSAGE_EDITED、重渲染 .mes_text、再 emit MESSAGE_UPDATED。其他插件的前端
-   美化、以及「随编辑运行」(runOnEdit) 的酒馆正则，全都挂在这两个事件上。改写/删除是对楼层内容的
-   程序化编辑，只调 updateMessageBlock 而不发事件，就会：重渲染把那一楼的三方美化 DOM 冲掉，却又不给
-   三方插件重新挂载的机会 —— 这正是「破坏前端美化、让正则失效」的根因，整屏重载只是把范围放大到全部楼层。
-   所以这里补发标准编辑事件，让生态把这一楼当成一次正常编辑重新处理。改写与删除两条链路共用。
-   配一个很短的淡出，让「命中句原地变化」读起来像消息自然落定。 */
-async function rerenderMessageInPlace(index, msg) {
-    try {
-        await eventSource.emit(event_types.MESSAGE_EDITED, index);
-        updateMessageBlock(index, msg);
-        await eventSource.emit(event_types.MESSAGE_UPDATED, index);
-    } catch (e) {
-        return false;
-    }
-    const el = getChatMessageElementByIndex(index).get(0);
-    const textEl = el ? el.querySelector(".mes_text") : null;
-    if (textEl) {
-        textEl.classList.remove("t-delete-settle");
-        // 触发重排后再加类，保证动画每次都播放
-        void textEl.offsetWidth;
-        textEl.classList.add("t-delete-settle");
-        setTimeout(() => textEl.classList.remove("t-delete-settle"), 400);
-    }
-    return true;
-}
 
 function buildRewriteMessages(payload, promptState = null) {
     const schemaText = '{"task_id":"string","results":[{"segment_id":"string","rewritten_text":"string"}]}';
@@ -1489,6 +1239,7 @@ function buildDiffRowsFromResults(evaluated, payload, parsed) {
             const segmentId = `s_${u.unitIndex}`;
             const after = rewrittenMap.get(segmentId) || u.text;
             return {
+                unitIndex: u.unitIndex,
                 before: u.text,
                 after,
                 ruleHint: categoryNames,
@@ -1545,7 +1296,7 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
         } catch (e) {
             const fixMessages = buildFixJsonMessages(raw, request);
             raw = await requestRewriteWithOptions(apiUrl, apiKey, model, fixMessages, maxTokens, {
-                temperature: REWRITE_FIX_TEMPERATURE
+                temperature: REWRITE_FIX_TEMPERATURE, signal: abortController.signal
             });
             pushLiveResponseHistory({ source, phase: "修复请求", model, stream: false, text: raw });
             parsed = normalizeRewriteResponseShape(parseRewriteJson(raw), request);
@@ -1556,7 +1307,7 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
             const fixMessages = buildFixJsonMessages(raw, request);
             setRawMeta("实时响应：修复请求（非流式）");
             const fixedRaw = await requestRewriteWithOptions(apiUrl, apiKey, model, fixMessages, maxTokens, {
-                temperature: REWRITE_FIX_TEMPERATURE
+                temperature: REWRITE_FIX_TEMPERATURE, signal: abortController.signal
             });
             pushLiveResponseHistory({ source, phase: "修复请求", model, stream: false, text: fixedRaw });
             setRawResponse(fixedRaw);
@@ -1565,31 +1316,18 @@ async function executeRewriteRequest({ data, latest, evaluated, request, rewrite
             if (!valid.ok) throw new Error(`返回校验失败: ${valid.reason}`);
         }
 
+        if (abortController.signal.aborted) throw new DOMException('改写已终止', 'AbortError');
         const rows = buildDiffRowsFromResults(evaluated, request, parsed);
         renderDiffRows(rows);
-        const rewriteMarks = buildRewriteMarksFromRows(rows);
-
-        const applied = applyRewriteToFullText(latest.content, evaluated, parsed);
-        writeBackMessageContent(latest.msg, applied.text);
-        if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
-        latest.msg.extra.titania_rewrite_done = true;
-        latest.msg.extra.titania_rewrite_marks = rewriteMarks;
-        await saveChatConditional();
-        // 只改命中那几句的 DOM 文本节点，不重渲染整层楼——其余结构（其他插件的前端美化、酒馆
-        // 显示正则产出的 HTML）全部原样保留。只有拿不到楼层 DOM 时才退回按编辑流程重渲染这一楼。
-        const editRes = applyInPlaceEdits(latest.index, buildInPlaceRewriteEdits(evaluated, parsed));
-        if (!editRes.containerFound) {
-            const rerendered = await rerenderMessageInPlace(latest.index, latest.msg);
-            if (!rerendered) await reloadCurrentChat();
-            scheduleApplyAllRewriteMarks(180);
-        }
-
-        const appliedNote = editRes.containerFound && editRes.applied < editRes.total
-            ? `（原地回写 ${editRes.applied}/${editRes.total} 句，其余已存入楼层，重载后生效）` : "";
-        setStatus(`执行完成：改写 ${rewriteCount} 条，已回写第 ${latest.index + 1} 楼${appliedNote}`, "ok");
-        success = true;
+        const replacements = new Map((parsed.results || []).map(item => [Number(String(item.segment_id).replace(/^s_/, '')), item.rewritten_text]));
+        const result = await writeSafeMessagePatches(latest, evaluated.unitResults, replacements, 'rewrite');
+        const statuses = new Map(result.entries.map(entry => [entry.unitIndex, entry]));
+        renderDiffRows(rows.map(row => ({ ...row, after: statuses.get(row.unitIndex)?.after ?? row.after, status: statuses.get(row.unitIndex)?.status, reason: statuses.get(row.unitIndex)?.reason })));
+        if (result.applied) scheduleApplyAllRewriteMarks(80);
+        const note = result.preview ? `，${result.preview} 条仅保留预览（原因见 Diff）` : '';
+        setStatus(`改写完成：已安全写回 ${result.applied} 条${note}${result.notificationError ? '；记忆通知失败，正文已保存' : ''}`, result.applied ? 'ok' : 'warn');
+        success = result.applied > 0 || result.entries.every(entry => entry.status === 'unchanged');
     } catch (e) {
-        renderDiffRows([]);
         if (e?.name === "AbortError") {
             setStatus("改写已手动终止", "warn");
         } else {
@@ -1632,7 +1370,7 @@ async function runRewrite(options = {}) {
     renderMatchResult(evaluated, latest.content);
 
     if (!String(latest.content || "").trim()) {
-        setStatus("最新楼层内容为空，无法改写", "warn");
+        setStatus(latest.projection.reason || "未找到可安全提取的正文，请检查白名单与前端格式", "warn");
         return;
     }
     const rewriteCount = Array.isArray(request.targets) ? request.targets.length : 0;
@@ -1677,7 +1415,7 @@ async function runDelete(options = {}) {
         return false;
     }
     if (!String(latest.content || "").trim()) {
-        setStatus("最新楼层内容为空，无法删除", "warn");
+        setStatus(latest.projection.reason || "未找到可安全提取的正文，请检查白名单与前端格式", "warn");
         return false;
     }
 
@@ -1689,25 +1427,20 @@ async function runDelete(options = {}) {
         return false;
     }
 
-    const applied = applyDeleteToFullText(latest.content, result.deleteUnits);
-    writeBackMessageContent(latest.msg, applied.text);
-    if (!latest.msg.extra || typeof latest.msg.extra !== "object") latest.msg.extra = {};
-    latest.msg.extra.titania_delete_done = true;
-    await saveChatConditional();
-    // 只删命中那几句的 DOM 文本节点，不重渲染整层楼；拿不到楼层 DOM 时才退回按编辑流程重渲染。
-    const deleteEdits = buildDeleteReplacements(result.deleteUnits).map(e => ({ before: e.before, after: e.after, mark: false }));
-    const editRes = applyInPlaceEdits(latest.index, deleteEdits);
-    if (!editRes.containerFound) {
-        const rerendered = await rerenderMessageInPlace(latest.index, latest.msg);
-        if (!rerendered) await reloadCurrentChat(); // 兜底：拿不到 DOM 时退回重载
+    const replacements = new Map(result.deleteUnits.map(unit => [unit.unitIndex, unit.after]));
+    const applied = await writeSafeMessagePatches(latest, result.unitResults, replacements, 'delete');
+    const statuses = new Map(applied.entries.map(entry => [entry.unitIndex, entry]));
+    result.unitResults = result.unitResults.map(unit => ({ ...unit, status: statuses.get(unit.unitIndex)?.status, reason: statuses.get(unit.unitIndex)?.reason }));
+    renderDeleteResult(result, latest.content);
+    if (applied.applied) {
+        clearInlineSentenceSelection();
+        scheduleApplyAllRewriteMarks(80);
     }
     refreshInlineRewriteEntry();
-
-    const delNote = editRes.containerFound && editRes.applied < editRes.total
-        ? `（原地删除 ${editRes.applied}/${editRes.total} 处，其余已存入楼层，重载后生效）` : "";
-    setStatus(`执行完成：删除 ${result.hitCount} 处，已回写第 ${latest.index + 1} 楼${delNote}`, "ok");
-    if (options.source !== "auto" && window.toastr) toastr.success(`已按删除规则处理 ${result.hitCount} 处`, "文本删除");
-    return true;
+    const note = applied.preview ? `，${applied.preview} 处仅保留预览（原因见删除结果）` : '';
+    setStatus(`删除完成：已安全写回 ${applied.applied} 处${note}${applied.notificationError ? '；记忆通知失败，正文已保存' : ''}`, applied.applied ? 'ok' : 'warn');
+    if (options.source !== 'auto' && applied.applied && window.toastr) toastr.success(`已安全删除 ${applied.applied} 处`, '文本删除');
+    return applied.applied > 0;
 }
 
 async function runManualDelete() {
@@ -1718,16 +1451,20 @@ async function runSelectedSentenceRewrite() {
     persistPanelState();
     const data = ensureRewriteDataShape();
     const latest = getLatestAssistantMessageFromChat();
-    if (latest) {
-        latestSentenceUnits = buildSentenceUnitsFromLatest(latest);
+    if (latest && sentenceSelectionTarget && (sentenceSelectionTarget.message !== latest.msg || sentenceSelectionTarget.projection.raw !== latest.raw || sentenceSelectionTarget.key !== latest.target.key || sentenceSelectionTarget.swipe !== latest.msg.swipe_id)) {
+        clearInlineSentenceSelection();
+        refreshInlineRewriteEntry();
+        setStatus('选择后聊天内容已变化，请重新选句', 'warn');
+        return false;
     }
+    if (latest) latestSentenceUnits = buildSentenceUnitsFromLatest(latest);
 
     if (!latest) {
         setStatus("未找到可改写的最新回复楼层", "warn");
         return;
     }
     if (!String(latest.content || "").trim()) {
-        setStatus("最新楼层内容为空，无法改写", "warn");
+        setStatus(latest.projection.reason || "未找到可安全提取的正文，请检查白名单与前端格式", "warn");
         return;
     }
 
@@ -1851,7 +1588,7 @@ function maybeScheduleAutoRewrite() {
             if (ok) {
                 if (window.toastr) toastr.success("自动改写完成，已回写当前回复", "文本改写");
             } else {
-                if (window.toastr) toastr.error("自动改写失败，已保留原文", "文本改写");
+                if (window.toastr) toastr.info("未应用的改写已保留在预览中，请查看 Diff 和实时响应", "文本改写");
             }
         } finally {
             clearAutoRewriteIndicator();
@@ -2081,7 +1818,7 @@ function refreshRuntimeStateView() {
     $overlay.find("#t-rewrite-rule-count").text(String(categories.length));
     $overlay.find("#t-rewrite-runtime-stream").text(data.stream_live === false ? "关闭" : "开启");
     $overlay.find("#t-rewrite-runtime-delete-count").text(String((data.deletion.rules || []).length));
-    $overlay.find("#t-rewrite-runtime-whitelist").text(data.tag_whitelist || "未设置（全文）");
+    $overlay.find("#t-rewrite-runtime-whitelist").text(data.tag_whitelist || "未设置（可安全提取的正文）");
 }
 
 function renderMatchResult(result, sourceText = "") {
@@ -2166,6 +1903,7 @@ function renderDeleteResult(result, sourceText = "") {
                 </div>
                 <div class="t-rewrite-match-text t-delete-before">${escapeHtml(item.text)}</div>
                 ${afterHtml}
+                <div class="t-rewrite-diff-label">${item.status === 'applied' ? '已写回' : '仅预览'}${item.reason ? ` · ${escapeHtml(item.reason)}` : ''}</div>
             </div>`;
     }).join("");
 
@@ -2656,8 +2394,8 @@ function openSettingsPanel() {
 
                         <div class="t-form-group">
                             <label class="t-form-label">聊天提取白名单</label>
-                            <input id="t-rewrite-settings-tag-whitelist" class="text_pole" type="text" placeholder="例如: content, dialogue, narration" value="${escapeHtml(rewriteData.tag_whitelist || "")}">
-                            <div class="t-rewrite-rule-guide">仅提取白名单标签中的文本用于切分和规则匹配；留空则提取全文纯文本。</div>
+                            <input id="t-rewrite-settings-tag-whitelist" class="text_pole" type="text" placeholder="例如: 正文, content, dialogue" value="${escapeHtml(rewriteData.tag_whitelist || "")}">
+                            <div class="t-rewrite-rule-guide">支持中文正文标签；未匹配标签时停止提取。留空则提取可安全识别的正文，跳过状态栏与前端代码。</div>
                         </div>
                     </div>
 
@@ -2799,7 +2537,7 @@ function openPanel() {
                             <div>分类数量：<b id="t-rewrite-rule-count">${categories.length}</b></div>
                             <div>流式显示：<b id="t-rewrite-runtime-stream">${rewriteData.stream_live === false ? "关闭" : "开启"}</b></div>
                             <div>删除规则：<b id="t-rewrite-runtime-delete-count">${(rewriteData.deletion.rules || []).length}</b></div>
-                            <div>提取白名单：<b id="t-rewrite-runtime-whitelist">${rewriteData.tag_whitelist ? escapeHtml(rewriteData.tag_whitelist) : "未设置（全文）"}</b></div>
+                            <div>提取白名单：<b id="t-rewrite-runtime-whitelist">${rewriteData.tag_whitelist ? escapeHtml(rewriteData.tag_whitelist) : "未设置（可安全提取的正文）"}</b></div>
                         </div>
                     </div>
                     <div class="t-rewrite-section t-rewrite-test-section">
@@ -2877,17 +2615,23 @@ function bindGlobalEvents() {
         runSelectedSentenceRewrite();
     });
 
-    $(document).on("click.titaniaRewriteInline", ".t-rewrite-select-sentence", (e) => {
-        e.preventDefault();
-        const $target = $(e.currentTarget);
-        const id = String($target.attr("data-segment-id") || "").trim();
-        if (!id) return;
+    const toggleSentence = id => {
         const selected = getSelectedSentenceIdSet();
-        if (selected.has(id)) selected.delete(id);
-        else selected.add(id);
+        if (selected.has(id)) selected.delete(id); else selected.add(id);
         setSelectedSentenceIds(selected);
-        $target.toggleClass("selected", selected.has(id));
+        updateSelectionHighlights();
+        renderSentenceSelection();
         updateInlineRewriteCount();
+    };
+    $(document).on('click.titaniaRewriteInline', '.t-rewrite-sentence-row', e => {
+        e.preventDefault();
+        toggleSentence(String(e.currentTarget.dataset.segmentId || ''));
+    });
+    $(document).on('click.titaniaRewriteInline', '#chat .mes_text, #chat .message_text', e => {
+        if (inlineSelectionMessageIndex == null || e.target.closest('a, button, input, select, textarea, iframe')) return;
+        const candidate = inlineSelectionRanges.find(item => Array.from(item.range.getClientRects()).some(rect =>
+            e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom));
+        if (candidate) toggleSentence(candidate.id);
     });
 }
 

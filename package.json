@@ -4,7 +4,9 @@
     "description": "沉浸式角色内心独白与平行世界演绎插件",
     "type": "module",
     "scripts": {
-        "test": "node --experimental-vm-modules --test --test-isolation=none tests/illustration.test.mjs tests/cleaning.test.mjs tests/tempInstruction.test.mjs tests/pacing.test.mjs tests/transition.test.mjs tests/textRewrite.test.mjs tests/blindbox.test.mjs tests/blindboxReveal.test.mjs",
+        "test": "node --experimental-vm-modules --test --test-isolation=none tests/illustration.test.mjs tests/cleaning.test.mjs tests/tempInstruction.test.mjs tests/pacing.test.mjs tests/transition.test.mjs tests/textRewrite.test.mjs tests/textRewritePatch.test.mjs tests/textRewriteUi.test.mjs tests/blindbox.test.mjs tests/blindboxReveal.test.mjs tests/storyMemory.test.mjs",
+        "test:rewrite": "node --experimental-vm-modules --test --test-isolation=none tests/textRewrite.test.mjs tests/textRewritePatch.test.mjs tests/textRewriteUi.test.mjs",
+        "test:memory": "node --experimental-vm-modules --test --test-isolation=none tests/storyMemory.test.mjs",
         "test:blindbox": "node --experimental-vm-modules --test --test-isolation=none tests/blindbox.test.mjs",
         "test:reveal": "node --experimental-vm-modules --test --test-isolation=none tests/blindboxReveal.test.mjs",
         "test:illustration": "node --experimental-vm-modules --test --test-isolation=none tests/illustration.test.mjs",

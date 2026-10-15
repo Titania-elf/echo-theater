@@ -104,6 +104,7 @@ export const CSS_LAYERS = [
             'rewrite.css',
             // 小说模式：全屏沉浸阅读（.t-reader-*）
             'reader.css',
+            'story-memory.css',
             // Phase 5b-11 从 src/core/api.js 的内联 style 迁出。
             // 选择器全库唯一（#t-confirm-* / .t-confirm-*），位置对层叠无影响。
             'confirm-dialog.css',

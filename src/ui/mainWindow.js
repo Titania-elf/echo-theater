@@ -3207,6 +3207,9 @@ async function runHeaderAction(id, $anchor) {
         openWorkshopWindow('main');
     } else if (id === "worldinfo") {
         openWorldInfoSelector();
+    } else if (id === "memory") {
+        const { openStoryMemoryWindow } = await import("./storyMemoryWindow.js");
+        openStoryMemoryWindow();
     } else if (id === "profiles") {
         renderProfileMenu($anchor);
     } else if (id === "settings") {
