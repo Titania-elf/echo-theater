@@ -9,11 +9,15 @@
 
 import { getExtData, saveExtData } from "../utils/storage.js";
 import { ensureFeatureCss } from "../utils/dom.js";
+import { MEMORY_HIDE_KEY } from "../core/storyMemoryData.js";
+import { isReaderSeparator } from "../core/readerStoryData.js";
+import { createReaderStoryPanel } from "./readerStoryPanel.js";
 
 const OVERLAY_ID = "t-reader-overlay";
 const ZEN_BODY_CLASS = "t-reader-zen";
 const FONT_MIN = 14;
 const FONT_MAX = 26;
+let activeReaderPanel = null;
 
 /* ------------------------------------------------------------------ *
  * 配置读写（extData.appearance.reader，旧数据无键走默认）
@@ -31,7 +35,7 @@ function getReaderConfig() {
 function saveReaderConfig(patch) {
     const data = getExtData();
     if (!data.appearance || typeof data.appearance !== "object") data.appearance = {};
-    data.appearance.reader = { ...getReaderConfig(), ...patch };
+    data.appearance.reader = { ...data.appearance.reader, ...getReaderConfig(), ...patch };
     saveExtData();
 }
 
@@ -46,7 +50,8 @@ function saveReaderConfig(patch) {
 export function isFloorVisible(msg, { showUser, showHidden }) {
     if (!msg) return false;
     if (msg.is_user && !showUser) return false;
-    if (msg.is_system && !showHidden) return false;
+    if ((msg.is_hidden || msg.extra?.is_hidden || msg.disabled) && !showHidden) return false;
+    if (msg.is_system && !msg.extra?.[MEMORY_HIDE_KEY] && !showHidden) return false;
     return true;
 }
 
@@ -60,12 +65,11 @@ export function getFloorText(msg) {
 }
 
 /**
- * 卷分隔检测：消息首个非空行为纯分隔线（*** / --- / —— / ___ 等
- * 三个以上重复符号）时，该楼渲染为居中装饰符而不是正文段落。
+ * 卷分隔检测：整楼仅有纯分隔线（*** / --- / —— / ___ 等
+ * 三个以上重复符号）时，渲染为居中装饰符；同楼后续正文仍保留。
  */
 export function isSeparatorFloor(text) {
-    const firstLine = String(text || "").split(/\r?\n/).find(l => l.trim()) || "";
-    return /^(\*{3,}|-{3,}|—{3,}|＿{3,}|_{3,}|·{3,}|={3,})$/.test(firstLine.trim());
+    return isReaderSeparator(text);
 }
 
 /** 楼层文案的非空行计数（空消息楼不渲染）。 */
@@ -112,7 +116,7 @@ function buildFloors(config) {
         const text = getFloorText(msg);
         if (!hasContent(text)) return;
         if (isSeparatorFloor(text)) {
-            floors.push({ kind: "sep" });
+            floors.push({ kind: "sep", index });
             return;
         }
         floors.push({ kind: "flow", isUser: msg.is_user === true, index, html: renderFloorHtml(msg, index) });
@@ -122,8 +126,11 @@ function buildFloors(config) {
 
 function renderPage(floors) {
     return floors.map((floor) => {
-        if (floor.kind === "sep") return '<div class="t-reader-sep" aria-hidden="true">❖</div>';
-        return `<section class="t-reader-flow${floor.isUser ? " t-reader-flow--user" : ""}">${floor.html}</section>`;
+        if (floor.kind === "sep") return `<div class="t-reader-sep" data-reader-floor="${floor.index}" aria-hidden="true">❖</div>`;
+        return `<section class="t-reader-flow${floor.isUser ? " t-reader-flow--user" : ""}" data-reader-floor="${floor.index}">
+            <div data-reader-prose>${floor.html}</div>
+            <footer class="t-reader-floor-tools"><button type="button" data-reader-action="at" data-reader-index="${floor.index}">查看这一刻 · 第 ${floor.index} 楼</button><span data-reader-echo-markers></span></footer>
+        </section>`;
     }).join("");
 }
 
@@ -132,6 +139,8 @@ function renderPage(floors) {
  * ------------------------------------------------------------------ */
 
 function closeReader() {
+    activeReaderPanel?.dispose();
+    activeReaderPanel = null;
     $(`#${OVERLAY_ID}`).remove();
     $(document).off("keydown.treader");
     $(document).off("mousemove.treader");
@@ -159,13 +168,14 @@ export function openReaderWindow() {
             <div class="t-reader-topbar">
                 <div class="t-reader-topbar-title"><i class="fa-solid fa-book-open"></i> ${title}</div>
                 <div class="t-reader-topbar-controls">
+                    <button class="t-btn t-btn-xs" type="button" data-reader-action="toggle" aria-expanded="true">剧情索引</button>
                     <label class="t-reader-toggle" title="你扮演的角色发言（左侧竖线样式）">
                         <input type="checkbox" id="t-reader-show-user" ${config.showUser ? "checked" : ""}>
                         <span>用户楼层</span>
                     </label>
-                    <label class="t-reader-toggle" title="被隐藏（不进提示词）的楼层">
+                    <label class="t-reader-toggle" title="其他隐藏楼层；故事记忆隐藏的原文默认参与阅读">
                         <input type="checkbox" id="t-reader-show-hidden" ${config.showHidden ? "checked" : ""}>
-                        <span>隐藏楼层</span>
+                        <span>其他隐藏楼层</span>
                     </label>
                     <div class="t-reader-fontctl">
                         <button class="t-btn t-btn-xs" id="t-reader-font-dec" title="缩小字号"><i class="fa-solid fa-minus"></i></button>
@@ -176,10 +186,13 @@ export function openReaderWindow() {
                     <button class="t-btn t-btn-xs" id="t-reader-close" title="关闭（Esc）"><i class="fa-solid fa-times"></i></button>
                 </div>
             </div>
+            <div class="t-reader-workspace">
             <div class="t-reader-scroll" id="t-reader-scroll">
                 <article class="t-reader-page" id="t-reader-page">
                     ${renderPage(built.floors)}
                 </article>
+            </div>
+            <aside class="t-reader-inspector" data-reader-sidebar aria-label="剧情阅读资料"></aside>
             </div>
         </div>
     </div>`;
@@ -188,10 +201,12 @@ export function openReaderWindow() {
     const $overlay = $(`#${OVERLAY_ID}`);
     $overlay.css("--t-reader-font-size", `${config.fontSize}px`);
 
-    const rerender = () => {
+    const renderBody = () => {
         built = buildFloors(config);
         $("#t-reader-page").html(renderPage(built.floors));
     };
+    const rerender = () => { renderBody(); activeReaderPanel?.refresh(); };
+    activeReaderPanel = createReaderStoryPanel($overlay.get(0), { refreshBody: renderBody, close: closeReader });
 
     // —— 顶栏控件 ——
     $overlay.on("change", "#t-reader-show-user", function () {

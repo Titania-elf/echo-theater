@@ -140,7 +140,11 @@ export const defaultSettings = {
         reader: {
             fontSize: 18,          // 正文字号 px（14–26）
             showUser: true,        // 显示用户楼层
-            showHidden: false      // 显示被隐藏的楼层
+            showHidden: false,     // 显示其他隐藏楼层；故事记忆原文默认可读
+            index_profile_id: "",  // 留空使用当前工具箱连接
+            index_model: "",
+            index_tag_whitelist: "",
+            index_context_tokens: 16000
         }
     },
     director: {

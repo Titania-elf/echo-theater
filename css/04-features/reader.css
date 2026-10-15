@@ -88,7 +88,40 @@ body.t-reader-zen .t-reader-topbar {
     overflow-y: auto;
     flex: 1;
     background: var(--t-reader-bg);
+    min-width: 0;
 }
+
+.t-reader-workspace { position: relative; display: flex; flex: 1; min-height: 0; }
+.t-reader-inspector { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; min-height: 0; padding: 16px; box-sizing: border-box; background: var(--t-reader-topbar-bg); color: var(--t-reader-text); border-left: 1px solid var(--t-color-border-faint); }
+.t-reader-inspector[hidden] { display: none; }
+.t-reader-index-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.t-reader-index-position, .t-reader-index-hint { font-size: 0.8em; line-height: 1.6; color: var(--t-glass-text-secondary); }
+.t-reader-index-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+.t-reader-index-tabs button { flex: 1; padding: 8px 4px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--t-reader-text); cursor: pointer; }
+.t-reader-index-tabs button[aria-selected="true"] { border-bottom-color: var(--t-reader-user-edge); font-weight: 700; }
+.t-reader-index-content { flex: 1; overflow-y: auto; min-height: 80px; font-size: 0.9em; line-height: 1.7; }
+.t-reader-index-content h3 { font-size: 1em; margin: 16px 0 8px; }
+.t-reader-index-content h4 { font-size: 0.9em; margin: 0 0 8px; }
+.t-reader-index-content p { margin: 6px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.t-reader-index-empty { color: var(--t-glass-text-secondary); padding: 12px 0; }
+.t-reader-scene-entry { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 12px; margin-bottom: 8px; text-align: left; border: 1px solid var(--t-color-border-faint); border-radius: 8px; background: var(--t-reader-user-bg); color: var(--t-reader-text); cursor: pointer; }
+.t-reader-scene-entry small { color: var(--t-glass-text-secondary); }
+.t-reader-index-button { padding: 6px 9px; margin: 3px; border: 1px solid var(--t-reader-user-edge); border-radius: 6px; background: transparent; color: var(--t-reader-text); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.t-reader-index-button:disabled { opacity: 0.45; cursor: default; }
+.t-reader-index-card { padding: 12px; margin: 10px 0; border: 1px solid var(--t-color-border-faint); border-radius: 8px; }
+.t-reader-index-content blockquote { margin: 8px 0; padding-left: 10px; border-left: 2px solid var(--t-reader-user-edge); color: var(--t-reader-quote); white-space: pre-wrap; overflow-wrap: anywhere; }
+.t-reader-index-source { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; padding: 10px; background: var(--t-reader-code-bg); border-radius: 8px; }
+.t-reader-index-runtime { flex-shrink: 0; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--t-color-border-faint); font-size: 0.78em; }
+.t-reader-index-runtime p { margin: 5px 0; line-height: 1.5; }
+.t-reader-index-settings { max-height: 34vh; overflow-y: auto; margin-top: 8px; }
+.t-reader-index-settings label { display: grid; gap: 4px; margin: 8px 0; }
+.t-reader-index-settings input, .t-reader-index-settings select { width: 100%; box-sizing: border-box; padding: 6px; border: 1px solid var(--t-color-border-faint); border-radius: 5px; background: var(--t-reader-bg); color: var(--t-reader-text); }
+.t-reader-index-error { color: var(--t-color-danger); overflow-wrap: anywhere; }
+.t-reader-floor-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 18px; text-indent: 0; font-size: 12px; }
+.t-reader-floor-tools > button { padding: 3px 0; border: 0; background: transparent; color: var(--t-glass-text-secondary); cursor: pointer; }
+.t-reader-floor-tools > button:hover { color: var(--t-reader-quote); }
+body.t-reader-zen .t-reader-inspector, body.t-reader-zen .t-reader-floor-tools { display: none; }
+::highlight(titania-reader-people) { color: var(--t-reader-quote); background-color: var(--t-color-accent-veil); text-decoration: underline; }
 
 .t-reader-page {
     max-width: 42em;
@@ -188,6 +221,7 @@ body.t-reader-zen .t-reader-topbar {
 
 /* 窄屏：页边距收紧 */
 @media screen and (max-width: 600px) {
+    .t-reader-inspector { position: absolute; top: 0; right: 0; bottom: 0; width: min(340px, 90vw); z-index: var(--t-z-raised); box-shadow: var(--t-shadow-md); }
     .t-reader-page {
         padding: 24px 14px 25vh;
     }
