@@ -54,6 +54,8 @@ import { applyUITheme } from "./ui/theme.js";
 import { initOutlineEntryButton } from "./ui/outlineEntryButton.js";
 import { initRewriteEntryButton, refreshRewriteEntryButton } from "./ui/rewriteEntryButton.js";
 import { initChatInjectButton, refreshChatInjectButton } from "./ui/chatInjectButton.js";
+import { initReaderEntryButton, refreshReaderEntryButton } from "./ui/readerEntryButton.js";
+import { initSettingsDrawer } from "./ui/settingsDrawer.js";
 import { initSceneAdvanceBubble, refreshSceneAdvanceBubble } from "./ui/sceneAdvanceBubble.js";
 import {
     initUnlockSound,
@@ -220,6 +222,9 @@ function initCoreFeatures() {
 
     // 初始化消息气泡上的小剧场注入入口
     initChatInjectButton();
+
+    // 初始化最新 AI 回复操作栏中的全屏阅读入口
+    initReaderEntryButton();
 
     // 初始化消息气泡上的剧情推进入口（与发送键菜单入口共用 show_outline_actions 开关）
     initSceneAdvanceBubble();
@@ -1373,6 +1378,7 @@ async function loadExtensionSettings() {
     $("#cfg-outline-actions-enabled").prop("checked", extData.outline_entry.show_outline_actions === true);
     $("#cfg-rewrite-entry-enabled").prop("checked", extData.rewrite_entry.enabled === true);
     $("#cfg-chat-inject-enabled").prop("checked", extData.chat_inject.enabled === true);
+    $("#cfg-reader-entry-enabled").prop("checked", extData.reader_entry?.enabled === true);
     $("#cfg-floor-nav-enabled").prop("checked", extData.floor_nav?.enabled !== false);
     $("#cfg-preset-persist-vars").prop("checked", extData.preset_macros.persist_variables === true);
 
@@ -1383,7 +1389,6 @@ async function loadExtensionSettings() {
         $("#cfg-blindbox-sound-event").prop("checked", cfg.cue_event);
         $("#cfg-blindbox-sound-volume").val(cfg.volume);
         $("#cfg-blindbox-sound-volume-label").text(describeUnlockVolume(cfg));
-        $("#titania-blindbox-sound-extra").toggleClass("is-muted", !cfg.enabled);
     })();
 
     $("#cfg-float-edge-tuck").on("input", function () {
@@ -1439,7 +1444,6 @@ async function loadExtensionSettings() {
     // 音量的唯一"调法"在面板底部那个循环按钮（关/轻/中/响）；这里是开关与试听。
     const syncBlindboxSoundControls = (cfg) => {
         $("#cfg-blindbox-sound-volume-label").text(describeUnlockVolume(cfg));
-        $("#titania-blindbox-sound-extra").toggleClass("is-muted", !cfg.enabled);
         // 开关动过之后，面板底部那个音量按钮的图标也要跟着变
         refreshSceneAdvanceBubble();
     };
@@ -1495,6 +1499,13 @@ async function loadExtensionSettings() {
         if (window.toastr) toastr.success(enabled ? "小剧场注入入口已启用" : "小剧场注入入口已关闭", "Titania Echo");
     });
 
+    $("#cfg-reader-entry-enabled").on("input", function () {
+        const data = getExtData();
+        data.reader_entry = { ...data.reader_entry, enabled: $(this).prop("checked") === true };
+        saveExtData();
+        refreshReaderEntryButton();
+    });
+
     $("#cfg-floor-nav-enabled").on("input", function () {
         const enabled = $(this).prop("checked") === true;
         const data = getExtData();
@@ -1522,6 +1533,9 @@ async function loadExtensionSettings() {
             );
         }
     });
+
+    // 开关赋值、绑定完成后，再同步分组数量和子选项显示。
+    initSettingsDrawer();
 
     // 4. 轻量版本更新检测
     void initExtensionUpdate();

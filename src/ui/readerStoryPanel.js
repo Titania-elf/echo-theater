@@ -65,7 +65,8 @@ export function createReaderStoryPanel(root, { refreshBody, close }) {
         if (!target) { localError = '这段正文被阅读筛选隐藏，可调整“用户楼层”或“其他隐藏楼层”后定位。'; render(); return; }
         readFloor = Number(target.dataset.readerFloor) - 1;
         source = null; selectedEcho = ''; localError = '';
-        const top = target.getBoundingClientRect().top - scroll.getBoundingClientRect().top + scroll.scrollTop;
+        const prose = target.querySelector('[data-reader-prose]') || target;
+        const top = prose.getBoundingClientRect().top - scroll.getBoundingClientRect().top + scroll.scrollTop;
         scroll.scrollTo?.({ top, behavior: 'auto' });
         if (!scroll.scrollTo) scroll.scrollTop = top;
         lastScroll = scroll.scrollTop;
@@ -231,6 +232,7 @@ export function createReaderStoryPanel(root, { refreshBody, close }) {
     render();
     return {
         refresh: render,
+        gotoFloor,
         dispose() {
             disposed = true; unsubscribe(); clearTimeout(scrollTimer);
             root.removeEventListener('click', onClick); scroll.removeEventListener('scroll', onScroll);

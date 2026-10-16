@@ -357,6 +357,137 @@
     font-size: 11px;
 }
 
+/* 功能分组：原生 details 提供键盘展开与无障碍状态。 */
+.titania-settings-groups {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.titania-settings-group {
+    min-width: 0;
+    border: 1px solid var(--t-color-border-subtle);
+    border-radius: var(--t-radius-panel);
+    background: var(--t-color-surface-veil);
+}
+
+.titania-settings-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    border-radius: var(--t-radius-panel);
+    list-style: none;
+    color: var(--t-glass-text-bright);
+    cursor: pointer;
+    font-size: 13px;
+}
+
+#titania-settings-drawer .titania-settings-summary::-webkit-details-marker {
+    display: none;
+}
+
+.titania-settings-summary:hover,
+.titania-settings-help:hover {
+    background: var(--t-color-surface-hover);
+}
+
+.titania-settings-summary:focus-visible,
+.titania-settings-help:focus-visible {
+    outline: 2px solid var(--t-color-accent);
+    outline-offset: 2px;
+}
+
+.titania-settings-group-title {
+    flex: 1;
+    min-width: 0;
+    font-weight: 700;
+}
+
+.titania-settings-count {
+    flex-shrink: 0;
+    color: var(--t-glass-text-faint);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+.titania-settings-chevron {
+    color: var(--t-glass-text-faint);
+    font-size: 10px;
+    transition: transform 0.15s ease;
+}
+
+.titania-settings-group[open] > summary .titania-settings-chevron {
+    transform: rotate(180deg);
+}
+
+.titania-settings-group-body {
+    display: grid;
+    gap: 14px;
+    padding: 14px 12px;
+    border-top: 1px solid var(--t-color-border-subtle);
+}
+
+.titania-settings-group-body .titania-switch-row {
+    min-width: 0;
+    margin: 0;
+}
+
+.titania-settings-group-body input[type="checkbox"] {
+    flex-shrink: 0;
+}
+
+.titania-settings-dependent {
+    min-width: 0;
+    margin: -4px 0 0 7px;
+    padding: 4px 0 4px 14px;
+    border-left: 2px solid var(--t-color-border-subtle);
+}
+
+.titania-settings-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 32px;
+    gap: 6px 4px;
+    align-items: start;
+}
+
+.titania-settings-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--t-radius-control);
+    background: transparent;
+    color: var(--t-glass-text-faint);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.titania-settings-help[aria-expanded="true"] {
+    color: var(--t-color-accent);
+}
+
+.titania-settings-help-text {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: var(--t-radius-control);
+    background: var(--t-color-surface-veil);
+    color: var(--t-glass-text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+#titania-settings-drawer [hidden] {
+    display: none;
+}
+
 .titania-version-badge {
     background: rgb(var(--t-surface-mid-rgb) / .3);
     color: var(--t-color-text-muted);
@@ -412,19 +543,7 @@
     cursor: not-allowed;
 }
 
-/* ---- 盲盒解锁提示音：音量 + 试听 + 事件档开关（settings.html 的那一行） ---- */
-.titania-blindbox-sound-extra {
-    /* 与上面的开关行同构，但内容是一组控件，所以对齐方式不同 */
-    align-items: center;
-    margin-top: -2px;
-    margin-bottom: 12px;
-}
-
-/* 主开关关掉时整块淡出但保留占位，避免开关行在抽屉里跳动 */
-.titania-blindbox-sound-extra.is-muted {
-    opacity: 0.55;
-}
-
+/* 盲盒解锁提示音：随主开关展开的音量、试听和事件开关。 */
 .titania-sound-controls {
     display: flex;
     align-items: center;

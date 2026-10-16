@@ -574,18 +574,32 @@ test('实际小说窗口接入目录、楼层查看入口与资料页，调字�
     root.querySelector('#t-reader-close').click(); assert.equal(root.isConnected, false);
 });
 
-test('关闭实际阅读窗口会中止其整理请求，重新打开从顶部且不留旧侧栏', async () => {
+test('关闭实际阅读窗口会中止其整理请求，每次打开定位最新可读正文且不留旧侧栏', async () => {
     const gate = deferred(); const host = await runtime({ request: () => gate.promise });
     host.context.$ = readerJquery(host.dom.window);
-    const reader = await host.reader(); reader.openReaderWindow();
+    host.data.appearance.reader.showUser = false;
     const document = host.dom.window.document;
+    // jsdom 不计算布局；给正文与楼层不同的坐标，验证滚动确实对齐正文开头。
+    host.dom.window.HTMLElement.prototype.getBoundingClientRect = function () {
+        const floor = this.closest('[data-reader-floor]');
+        const scroll = document.querySelector('#t-reader-scroll');
+        const top = floor ? 32 + 48 + Number(floor.dataset.readerFloor) * 400 - scroll.scrollTop
+            + (this.matches('[data-reader-prose]') ? 16 : 0) : 32;
+        return { top, bottom: top + 300 };
+    };
+    const reader = await host.reader(); reader.openReaderWindow();
+    assert.equal(document.querySelector('#t-reader-scroll').scrollTop, 864);
+    assert.match(document.querySelector('[data-reader-position]').textContent, /阅读位置：第 1 楼/);
+    document.querySelector('#t-reader-scroll').scrollTop = 0;
     document.querySelector('[data-reader-action="index"]').click(); await settle(() => host.requests.length === 1);
     document.querySelector('#t-reader-close').click();
     assert.equal(host.requests[0].options.signal.aborted, true);
     gate.resolve('{}'); await settle(() => !host.ns.getReaderStoryView().busy);
+    host.current.chat.push({ name: '顾舟', mes: '最新回复正文。' },
+        { mes: '隐藏楼层。', is_hidden: true }, { mes: '  ' }, { mes: '---' }, { mes: '用户楼层。', is_user: true });
     reader.openReaderWindow();
     assert.equal(document.querySelectorAll('#t-reader-overlay').length, 1);
-    assert.equal(document.querySelector('#t-reader-scroll').scrollTop, 0);
-    assert.match(document.querySelector('[data-reader-position]').textContent, /尚未读完/);
+    assert.equal(document.querySelector('#t-reader-scroll').scrollTop, 1264);
+    assert.match(document.querySelector('[data-reader-position]').textContent, /阅读位置：第 2 楼/);
     document.querySelector('#t-reader-close').click();
 });

@@ -266,6 +266,7 @@ export function openReaderWindow() {
         closeReader();
     });
 
-    // 打开即从顶部开始阅读
-    $("#t-reader-scroll").scrollTop(0);
+    // 每次打开都定位到最新可阅读楼层的正文开头，跳过空楼和纯分隔线。
+    const latestFloor = built.floors.filter(floor => floor.kind === "flow").pop();
+    if (latestFloor) activeReaderPanel.gotoFloor(latestFloor.index);
 }

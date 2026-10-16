@@ -253,6 +253,10 @@ export const defaultSettings = {
         visible_to_ai: true,      // 注入时默认让 AI 看到；注入后可用气泡上的眼睛图标切换
         speaker_name: "回声小剧场" // 仅界面显示用，narrator 类型不会把名字带进提示词
     },
+    // 最新 AI 回复操作栏中的全屏阅读入口，默认关闭。
+    reader_entry: {
+        enabled: false
+    },
     // 楼层快捷操作（入口菜单跳转项 + 气泡批量隐藏按钮）
     floor_nav: {
         enabled: true

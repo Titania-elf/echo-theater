@@ -22,7 +22,6 @@ export const HEADER_ACTION_REGISTRY = [
     { id: "workshop", icon: "fa-store", label: "回声工坊" },
     { id: "favs", icon: "fa-book-bookmark", label: "回声收藏夹" },
     { id: "worldinfo", icon: "fa-book-atlas", label: "世界书筛选" },
-    { id: "memory", icon: "fa-brain", label: "故事记忆" },
     { id: "profiles", icon: "fa-network-wired", label: "API 方案" },
     { id: "settings", icon: "fa-gear", label: "设置" }
 ];
