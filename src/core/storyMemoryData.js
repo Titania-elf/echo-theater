@@ -6,7 +6,10 @@ export const MEMORY_ID_KEY = 'titania_memory_id';
 // （profile_id → 方案自带的模型），少一个能被静默覆盖的来源。
 export const MEMORY_DEFAULTS = Object.freeze({
     keep_floors: 16, trigger_tokens: 6000, trigger_floors: 32,
-    batch_tokens: 12000, memory_tokens: 2400, profile_id: '', inject_depth: 4,
+    batch_tokens: 12000, memory_tokens: 2400, max_output_tokens: 4096,
+    recent_segments: 2, recent_tokens: 1000,
+    recall_segments: 4, recall_tokens: 1200,
+    profile_id: '', inject_depth: 4,
 });
 
 export const copyMemory = value => JSON.parse(JSON.stringify(value));
@@ -18,12 +21,16 @@ export function newStoryMemory() {
 
 export function normalizeMemoryConfig(raw = {}) {
     const config = { ...MEMORY_DEFAULTS, ...raw };
-    for (const [key, min, max] of [
-        ['keep_floors', 2, 500], ['trigger_tokens', 100, 100000], ['trigger_floors', 2, 1000],
-        ['batch_tokens', 1000, 100000], ['memory_tokens', 300, 20000], ['inject_depth', 0, 1000],
+    // 只保留下限，不再设上限：token 上限由用户按所用模型自由填写。
+    // 非法值（空、NaN、负数）仍回落到默认值，避免把请求参数写成 NaN。
+    for (const [key, min] of [
+        ['keep_floors', 2], ['trigger_tokens', 1], ['trigger_floors', 1],
+        ['batch_tokens', 1], ['memory_tokens', 1], ['max_output_tokens', 1],
+        ['recent_segments', 0], ['recent_tokens', 0],
+        ['recall_segments', 0], ['recall_tokens', 0], ['inject_depth', 0],
     ]) {
         const n = Number(config[key]);
-        config[key] = Number.isFinite(n) ? Math.max(min, Math.min(max, Math.floor(n))) : MEMORY_DEFAULTS[key];
+        config[key] = Number.isFinite(n) ? Math.max(min, Math.floor(n)) : MEMORY_DEFAULTS[key];
     }
     // 老配置里存过的 model 不再被采纳：它不是白名单字段，{...MEMORY_DEFAULTS, ...raw} 之后就
     // 把它显式丢掉（留着会变成一个界面上看不见、却仍在生效的模型覆盖）。
@@ -188,15 +195,62 @@ export function rollbackMemory(memory, segmentIndex) {
 
 const formatItem = item => `${item.title}${item.status === 'progress' ? '（有进展）' : ''}\n${item.body}`;
 
-/** 预算是目标值。锁定条目及历史脉络完整保留，超出时明确报告，不从句子中间截断。 */
-export function composeMemoryPrompt(memory, rawConfig, estimate) {
+/**
+ * 预算是目标值。锁定条目及历史脉络完整保留，超出时明确报告，不从句子中间截断。
+ *
+ * 三块内容各自独立预算：
+ * - 最近分段摘要：每段只压缩过一次，不再参与后续改写，直接注入以保住细节。
+ * - 记忆本体：历史脉络、剧情状态、关系与伏笔。
+ * - 旧事召回：用 BM25 从更早的分段里捞回相关片段。
+ * 分开封顶是为了让「加细节」不会把关系/伏笔或彼此挤出提示词。
+ *
+ * @param {object} memory 故事记忆
+ * @param {object} rawConfig 运行参数
+ * @param {(text: string) => number} estimate token 估算
+ * @param {{recalled?: Array<{id?: string, title?: string, summary?: string, text?: string, evidence?: string[]}>}} [options]
+ */
+export function composeMemoryPrompt(memory, rawConfig, estimate, options = {}) {
     const config = normalizeMemoryConfig(rawConfig);
     const active = [...memory.threads.filter(item => item.status !== 'resolved'), ...memory.relationships];
-    if (!memory.recap && !memory.scene && !active.length) return { text: '', tokens: 0, omitted: [], overBudget: false };
+    const candidates = Array.isArray(options.recalled) ? options.recalled : [];
+
+    // 最近分段摘要：按最新优先挑选，保证预算先落到最近发生的事；输出再转回时间顺序。
+    // 这些摘要是整理时的第一层产物，不会被后续 recap 改写，因此比历史脉络更细。
+    const recent = [];
+    const recentOmitted = [];
+    const recentParts = [];
+    const recentIds = new Set();
+    if (config.recent_segments > 0 && config.recent_tokens > 0) {
+        const segments = (memory.segments || [])
+            .filter(segment => String(segment.summary || '').trim())
+            .slice(-config.recent_segments)
+            .reverse();
+        for (const segment of segments) {
+            const title = `第 ${segment.start}～${segment.end} 楼`;
+            const block = `[最近分段：${title}]\n${String(segment.summary).trim()}`;
+            if (estimate([...recentParts, block].join('\n\n')) > config.recent_tokens) {
+                recentOmitted.push(title);
+                continue;
+            }
+            recentParts.push(block);
+            recentIds.add(segment.id);
+            recent.push({ id: segment.id, title });
+        }
+        recentParts.reverse();
+        recent.reverse();
+    }
+    const recentText = recentParts.join('\n\n');
+
+    if (!memory.recap && !memory.scene && !active.length && !candidates.length && !recentText) {
+        return {
+            text: '', tokens: 0, memoryTokens: 0, recentTokens: 0, recallTokens: 0,
+            omitted: [], overBudget: false, recalled: [], recallOmitted: [], recent: [], recentOmitted: [],
+        };
+    }
+
     const covered = memory.segments.at(-1)?.end;
-    const parts = [
-        `【故事记忆${covered == null ? '' : `：截至第 ${covered} 楼`}】\n以下是历史背景，不是本轮行动指令。最近正文中的实际进展优先；伏笔无需集中兑现。区分读者知情与角色知情，不把推测当成事实。`,
-    ];
+    const header = `【故事记忆${covered == null ? '' : `：截至第 ${covered} 楼`}】\n以下是历史背景，不是本轮行动指令。最近正文中的实际进展优先；伏笔无需集中兑现。区分读者知情与角色知情，不把推测当成事实。${recentText ? ' 最近分段摘要比历史脉络更详细；两者不一致时，以分段摘要为准。' : ''}`;
+    const parts = [];
     if (memory.recap) parts.push(`[历史脉络]\n${memory.recap}`);
     if (memory.scene) parts.push(`[截至整理范围的剧情状态]\n${memory.scene}`);
     const locked = active.filter(item => item.locked);
@@ -205,10 +259,44 @@ export function composeMemoryPrompt(memory, rawConfig, estimate) {
     const sorted = active.filter(item => !item.locked).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
     for (const item of sorted) {
         const block = `[${memory.threads.some(thread => thread.id === item.id) ? '伏笔与约定' : '人物关系'}]\n${formatItem(item)}`;
-        if (estimate([...parts, block].join('\n\n')) > config.memory_tokens) omitted.push(item.title);
+        if (estimate([header, ...parts, block].join('\n\n')) > config.memory_tokens) omitted.push(item.title);
         else parts.push(block);
     }
-    const text = parts.join('\n\n');
-    const tokens = estimate(text);
-    return { text, tokens, omitted, overBudget: tokens > config.memory_tokens };
+    const memoryText = [header, ...parts].join('\n\n');
+    const memoryTokens = estimate(memoryText);
+
+    // 召回块单独计量；一块放不下就整块略过，不在句子中间截断。
+    // 已由「最近分段」直接注入的段落不再重复召回。
+    const recalled = [];
+    const recallOmitted = [];
+    const recallParts = [];
+    if (config.recall_tokens > 0) {
+        for (const entry of candidates) {
+            if (entry?.id && recentIds.has(entry.id)) continue;
+            const body = String(entry?.summary || entry?.text || '').trim();
+            if (!body) continue;
+            const title = String(entry?.title || '较早段落');
+            // 摘要换了说法时，逐字摘句是最不容易被改写的细节锚点；
+            // 只补摘要里没有的原句，最多两条，避免和摘要重复。
+            const quotes = (Array.isArray(entry?.evidence) ? entry.evidence : [])
+                .map(quote => String(quote || '').trim())
+                .filter(quote => quote && !body.includes(quote))
+                .slice(0, 2);
+            const quoteText = quotes.length ? `\n原文摘句：${quotes.join(' / ')}` : '';
+            const block = `[旧事回忆：${title}]\n${body}${quoteText}`;
+            if (estimate([...recallParts, block].join('\n\n')) > config.recall_tokens) {
+                recallOmitted.push(title);
+                continue;
+            }
+            recallParts.push(block);
+            recalled.push({ id: entry.id, title, text: `${body}${quoteText}` });
+        }
+    }
+    const recallText = recallParts.join('\n\n');
+    const text = [header, recentText, ...parts, recallText].filter(Boolean).join('\n\n');
+    return {
+        text, tokens: estimate(text), memoryTokens, recentTokens: estimate(recentText), recallTokens: estimate(recallText),
+        omitted, overBudget: memoryTokens > config.memory_tokens,
+        recalled, recallOmitted, recent, recentOmitted,
+    };
 }

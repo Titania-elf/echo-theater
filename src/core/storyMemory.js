@@ -12,8 +12,11 @@ import {
     firstInvalidSegment, parseMemoryResponse, mergeMemoryResult, snapshotMemoryState,
     rollbackMemory, composeMemoryPrompt,
 } from './storyMemoryData.js';
+import { buildMemoryIndex, queryMemoryIndex } from './memoryIndex.js';
 
 export const MEMORY_PROMPT_KEY = 'TITANIA_STORY_MEMORY';
+const RECALL_QUERY_FLOORS = 4;
+const RECALL_QUERY_CHARS = 6000;
 const subscribers = new Set();
 let initialized = false;
 let generationActive = false;
@@ -25,6 +28,7 @@ let failureCount = 0;
 let job = null;
 let pending = null;
 let writing = null;
+let recallCache = null;
 let status = 'idle';
 let error = '';
 
@@ -58,6 +62,37 @@ export function getStoryMemoryConfig() {
     return normalizeMemoryConfig(getExtData().story_memory);
 }
 
+/** 只取最近可见正文作为召回查询；隐藏楼层不参与，否则会拿旧事去搜旧事。 */
+function recallQuery(chat) {
+    if (!Array.isArray(chat)) return '';
+    const texts = [];
+    for (let i = chat.length - 1; i >= 0 && texts.length < RECALL_QUERY_FLOORS; i--) {
+        const message = chat[i];
+        if (!message || !String(message.mes || '').trim()) continue;
+        if (message.is_system || message.is_hidden || message.extra?.is_hidden) continue;
+        texts.push(String(message.mes));
+    }
+    return texts.reverse().join('\n').slice(-RECALL_QUERY_CHARS);
+}
+
+/**
+ * 从旧段落中召回与最近对话相关的内容。
+ *
+ * 索引是派生数据：按聊天与记忆 revision 缓存在内存里，切聊天即失效。
+ * 不写进聊天存档，手机端也不需要额外安装任何东西。
+ */
+function recallCandidatesFor(ctx, memory, config) {
+    if (!ctx || config.recall_segments <= 0 || config.recall_tokens <= 0) return [];
+    const key = `${ctx.key}\u0000${memory.revision}\u0000${memory.segments?.length || 0}`;
+    if (recallCache?.key !== key) {
+        recallCache = { key, index: buildMemoryIndex(memory) };
+    }
+    if (!recallCache.index.docs.length) return [];
+    const query = recallQuery(ctx.chat);
+    if (!query) return [];
+    return queryMemoryIndex(recallCache.index, query, { limit: config.recall_segments });
+}
+
 function notify() {
     for (const callback of subscribers) {
         try { callback(); } catch (cause) { console.warn('Titania story memory view:', cause); }
@@ -77,7 +112,7 @@ export function getStoryMemoryView() {
     let planError = '';
     try { batch = ctx ? planMemoryBatch(ctx.chat, memory, config, estimateTokens, true) : null; }
     catch (cause) { planError = cause.message; }
-    const injection = composeMemoryPrompt(memory, config, estimateTokens);
+    const injection = composeMemoryPrompt(memory, config, estimateTokens, { recalled: recallCandidatesFor(ctx, memory, config) });
     return {
         available: !!ctx, key: ctx?.key || '', chatName: String(ctx?.chatId || ''),
         memory: copyMemory(memory), config, injection, batch,
@@ -94,7 +129,10 @@ function refreshInjection() {
         const config = getStoryMemoryConfig();
         const memory = memoryFor(ctx);
         // 在修复完成前不注入依赖失效正文的记忆。
-        if (firstInvalidSegment(memory, ctx.chat) < 0) text = composeMemoryPrompt(memory, config, estimateTokens).text;
+        if (firstInvalidSegment(memory, ctx.chat) < 0) {
+            const recalled = recallCandidatesFor(ctx, memory, config);
+            text = composeMemoryPrompt(memory, config, estimateTokens, { recalled }).text;
+        }
         depth = Math.min(config.inject_depth, Math.max(0, ctx.chat.filter(message => !message.is_system).length - 1));
     }
     setExtensionPrompt(MEMORY_PROMPT_KEY, text, extension_prompt_types.IN_CHAT, depth, false, extension_prompt_roles.SYSTEM);
@@ -318,7 +356,7 @@ export async function runStoryMemory(force = true) {
     const timeout = setTimeout(() => controller.abort(), 180000);
     try {
         const raw = await sendChatRequestWithConnection(conn, buildMessages(memory, batch), {
-            stream: false, maxTokens: 4096, temperature: 0.2, signal: controller.signal,
+            stream: false, maxTokens: config.max_output_tokens, temperature: 0.2, signal: controller.signal,
             allowEmptyKey: true, respectRequestLimits: true,
         });
         if (job !== task || controller.signal.aborted || !sameChat(ctx)) return false;

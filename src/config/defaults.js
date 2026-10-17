@@ -269,6 +269,11 @@ export const defaultSettings = {
         trigger_floors: 32,
         batch_tokens: 12000,
         memory_tokens: 2400,
+        max_output_tokens: 4096,
+        recent_segments: 2,
+        recent_tokens: 1000,
+        recall_segments: 4,
+        recall_tokens: 1200,
         profile_id: "",
         inject_depth: 4
     },

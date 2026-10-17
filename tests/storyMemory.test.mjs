@@ -10,6 +10,8 @@ import {
     parseMemoryResponse, mergeMemoryResult, composeMemoryPrompt, snapshotMemoryState,
     rollbackMemory, copyMemory, memoryFloorFingerprint, normalizeMemoryConfig, MEMORY_DEFAULTS,
 } from '../src/core/storyMemoryData.js';
+import { tokenize, buildMemoryIndex, queryMemoryIndex } from '../src/core/memoryIndex.js';
+import { relationNames, buildMemoryGraph, graphFocusNames, renderMemoryGraph } from '../src/ui/storyMemoryGraph.js';
 
 const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const estimate = text => String(text).length;
@@ -190,6 +192,122 @@ test('回滚撤去未来信息，保留不依赖旧正文的人工条目', () =>
     assert.equal(next.recap, ''); assert.deepEqual(next.threads.map(item => item.id), ['independent']);
 });
 
+test('中文按字二元组切词，英文与数字按连续片段切词', () => {
+    assert.deepEqual(tokenize('旧宅钥匙 key2'), ['旧宅', '宅钥', '钥匙', 'key2']);
+    assert.deepEqual(tokenize('顾舟，林岚。'), ['顾舟', '林岚']);
+    assert.deepEqual(tokenize('  '), []);
+});
+
+test('BM25 召回：最近对话命中哪段旧事就取哪段，原文摘句也参与匹配', () => {
+    const memory = newStoryMemory();
+    memory.segments = [
+        { id: 's1', start: 0, end: 6, summary: '两人在旧宅门口找到一把铜钥匙。', sources: [] },
+        { id: 's2', start: 7, end: 12, summary: '林岚与顾舟乘渡船前往海岛。', sources: [] },
+    ];
+    memory.relationships = [{
+        id: 'r1', title: '林岚 → 顾舟', body: '钥匙的来历仍有隐瞒。',
+        sources: [{ segmentId: 's1', evidence: '钥匙是父亲留下的遗物' }],
+    }];
+    const index = buildMemoryIndex(memory);
+    const hits = queryMemoryIndex(index, '你还记得父亲留下的那把钥匙吗', { limit: 2 });
+    assert.equal(hits[0].id, 's1', '摘要写了「钥匙」、摘句写了「父亲留下的遗物」，应排第一');
+    assert.ok(hits[0].evidence.includes('钥匙是父亲留下的遗物'));
+    assert.equal(queryMemoryIndex(index, '渡船去海岛', { limit: 2 })[0].id, 's2');
+    assert.deepEqual(queryMemoryIndex(index, '完全不相关的句子', { limit: 2 }), []);
+    assert.deepEqual(queryMemoryIndex(index, '钥匙', { limit: 0 }), [], 'limit=0 表示关闭召回');
+});
+
+test('召回使用独立预算，放不下的整块略过并报告', () => {
+    const memory = newStoryMemory(); memory.recap = '历史脉络。';
+    const recalled = [
+        { id: 's1', title: '第 0～6 楼', summary: '旧宅钥匙的细节。' },
+        { id: 's2', title: '第 7～12 楼', summary: '渡船上的约定。' },
+    ];
+    const roomy = composeMemoryPrompt(memory, { memory_tokens: 1000, recall_tokens: 500 }, estimate, { recalled });
+    assert.equal(roomy.recalled.length, 2);
+    assert.ok(roomy.text.includes('[旧事回忆：第 0～6 楼]'));
+    assert.ok(roomy.recallTokens > 0);
+    assert.ok(roomy.tokens >= roomy.memoryTokens + roomy.recallTokens);
+
+    const tight = composeMemoryPrompt(memory, { memory_tokens: 1000, recall_tokens: 1 }, estimate, { recalled });
+    assert.equal(tight.recalled.length, 0);
+    assert.deepEqual(tight.recallOmitted, ['第 0～6 楼', '第 7～12 楼']);
+    assert.ok(!tight.text.includes('旧事回忆'));
+
+    const off = composeMemoryPrompt(memory, { memory_tokens: 1000, recall_tokens: 0 }, estimate, { recalled });
+    assert.equal(off.recalled.length, 0);
+    assert.deepEqual(off.recallOmitted, [], '预算 0 是主动关闭，不算遗漏');
+});
+
+test('召回会把摘要里没有的原文摘句一并带上，重复的不再抄一遍', () => {
+    const memory = newStoryMemory(); memory.recap = '历史。';
+    const prompt = composeMemoryPrompt(memory, { memory_tokens: 1000, recall_tokens: 500 }, estimate, {
+        recalled: [{
+            id: 's1', title: '第 0～6 楼', summary: '两人回到旧宅，钥匙仍在顾舟手里。',
+            evidence: ['钥匙仍在顾舟手里', '钥匙是父亲留下的遗物'],
+        }],
+    });
+    assert.ok(prompt.text.includes('原文摘句：钥匙是父亲留下的遗物'));
+    assert.equal(prompt.text.split('钥匙仍在顾舟手里').length - 1, 1, '摘要里已有的句子不重复注入');
+});
+
+test('最近分段摘要直接注入：取最近几段、按时间顺序、使用独立预算', () => {
+    const memory = newStoryMemory();
+    memory.recap = '完整历史脉络。';
+    memory.segments = [
+        { id: 's1', start: 0, end: 6, summary: '第一段的细节。' },
+        { id: 's2', start: 7, end: 12, summary: '第二段的细节。' },
+        { id: 's3', start: 13, end: 18, summary: '第三段的细节。' },
+    ];
+    const prompt = composeMemoryPrompt(memory, { memory_tokens: 1000, recent_segments: 2, recent_tokens: 500 }, estimate);
+    assert.deepEqual(prompt.recent.map(entry => entry.id), ['s2', 's3'], '只取最近两段');
+    assert.ok(prompt.text.indexOf('[最近分段：第 7～12 楼]') < prompt.text.indexOf('[最近分段：第 13～18 楼]'), '按时间顺序输出');
+    assert.ok(prompt.text.indexOf('第三段的细节') < prompt.text.indexOf('[历史脉络]'), '最近分段排在历史脉络之前');
+    assert.ok(prompt.text.includes('两者不一致时，以分段摘要为准'));
+    assert.ok(prompt.recentTokens > 0);
+
+    const off = composeMemoryPrompt(memory, { memory_tokens: 1000, recent_segments: 2, recent_tokens: 0 }, estimate);
+    assert.equal(off.recent.length, 0);
+    assert.ok(!off.text.includes('[最近分段'));
+});
+
+test('已被最近分段直接注入的段落不会在召回里重复出现', () => {
+    const memory = newStoryMemory(); memory.recap = '历史。';
+    memory.segments = [{ id: 's3', start: 13, end: 18, summary: '第三段的细节。' }];
+    const prompt = composeMemoryPrompt(
+        memory,
+        { memory_tokens: 1000, recent_segments: 2, recent_tokens: 500, recall_tokens: 500 },
+        estimate,
+        { recalled: [{ id: 's3', title: '第 13～18 楼', summary: '第三段的细节。', evidence: [] }] },
+    );
+    assert.equal(prompt.recent.length, 1);
+    assert.equal(prompt.recalled.length, 0);
+    assert.equal(prompt.text.split('第三段的细节').length - 1, 1);
+});
+
+test('关系图：拆分关系方向、连接人物与伏笔、节点聚焦', () => {
+    assert.deepEqual(relationNames('林岚 → 顾舟'), ['林岚', '顾舟']);
+    assert.deepEqual(relationNames('没有方向的关系'), ['没有方向的关系', '']);
+    const memory = newStoryMemory();
+    memory.relationships = [
+        { id: 'r1', title: '林岚 → 顾舟', body: '顾舟隐瞒了钥匙的来历。' },
+        { id: 'r2', title: '林岚 → 父亲', body: '父亲留下遗物。' },
+    ];
+    memory.threads = [
+        { id: 't1', title: '钥匙的来历', body: '顾舟知道钥匙的来历。', status: 'open' },
+        { id: 't2', title: '旧宅的秘密', body: '与人物无关。', status: 'resolved' },
+    ];
+    const graph = buildMemoryGraph(memory);
+    assert.deepEqual(graph.nodes.filter(node => node.kind === 'character').map(node => node.name).sort(), ['林岚', '顾舟', '父亲'].sort());
+    assert.equal(graph.edges.length, 2);
+    assert.ok(graph.links.some(link => link.a === 't:t1' && link.b === 'c:顾舟'));
+    assert.deepEqual(graphFocusNames(memory, 'c:林岚'), ['林岚']);
+    assert.deepEqual(graphFocusNames(memory, 't:t1'), ['顾舟']);
+    const html = renderMemoryGraph(memory, { selected: 'c:林岚' });
+    assert.ok(html.includes('data-node="c:林岚"'));
+    assert.ok(html.includes('t-memory-graph-edge'));
+});
+
 test('后台成功：先确认摘要保存，再隐藏，最近正文保持完整', async () => {
     const host = await loadRuntime();
     assert.equal(await host.ns.runStoryMemory(true), true);
@@ -200,6 +318,39 @@ test('后台成功：先确认摘要保存，再隐藏，最近正文保持完�
     assert.equal(host.current.chatMetadata[MEMORY_KEY].segments[0].end, 6);
     assert.ok(host.context.__injection.text.includes('故事记忆'));
     assert.equal(host.requests[0].options.respectRequestLimits, true);
+});
+
+test('注入时按最近对话召回旧段落，关掉召回则回到纯记忆', async () => {
+    const memory = {
+        ...newStoryMemory(), enabled: true, recap: '两人仍在旅途中。',
+        segments: [{ id: 's1', start: 0, end: 6, sources: [], summary: '旧宅的铜钥匙是父亲留下的遗物。' }],
+    };
+    const host = await loadRuntime({ memory });
+    host.data.story_memory = { ...host.data.story_memory, recent_segments: 0, recall_segments: 3, recall_tokens: 1200 };
+    const view = host.ns.getStoryMemoryView();
+    assert.equal(view.injection.recalled.length, 1);
+    assert.ok(view.injection.text.includes('[旧事回忆：第 0～6 楼]'));
+    assert.ok(view.injection.text.includes('父亲留下的遗物'));
+
+    host.data.story_memory = { ...host.data.story_memory, recall_segments: 0 };
+    const off = host.ns.getStoryMemoryView();
+    assert.equal(off.injection.recalled.length, 0);
+    assert.ok(!off.injection.text.includes('旧事回忆'));
+});
+
+test('注入时直接带上最近分段摘要，同一段不再重复召回', async () => {
+    const memory = {
+        ...newStoryMemory(), enabled: true, recap: '两人仍在旅途中。',
+        segments: [{ id: 's1', start: 0, end: 6, sources: [], summary: '旧宅的铜钥匙是父亲留下的遗物。' }],
+    };
+    const host = await loadRuntime({ memory });
+    host.data.story_memory = { ...host.data.story_memory, recent_segments: 2, recent_tokens: 1000, recall_segments: 3, recall_tokens: 1200 };
+    const view = host.ns.getStoryMemoryView();
+    assert.equal(view.injection.recent.length, 1);
+    assert.ok(view.injection.text.includes('[最近分段：第 0～6 楼]'));
+    assert.ok(view.injection.text.includes('父亲留下的遗物'));
+    assert.equal(view.injection.recalled.length, 0, '已直接注入的段落不重复召回');
+    assert.ok(view.injection.tokens >= view.injection.memoryTokens + view.injection.recentTokens);
 });
 
 test('宿主吞掉第一次保存失败时不隐藏，也不留下内存中的无效摘要', async () => {
@@ -369,28 +520,126 @@ test('整理时用所选 API 方案自带的模型，不再吃旧配置里的模
     assert.equal(host.requests[0].options.model, undefined, '请求里不再单独塞 model');
 });
 
-test('运行设置：模型覆盖已移除，各项标签不再用术语', async () => {
+test('运行设置是独立窗口，从顶栏齿轮进入；模型覆盖已移除，各项标签不再用术语', async () => {
     const host = await loadRuntime({ dom: true, memory: newStoryMemory() });
     const ui = await host.ui(); const close = ui.openStoryMemoryWindow();
     const document = host.dom.window.document;
-    document.querySelector('[data-tab="settings"]').click();
-    const grid = document.querySelector('.t-memory-settings');
+    assert.equal(document.querySelector('[data-tab="settings"]'), null, '运行设置不再占故事记忆的页签');
+    document.querySelector('[data-action="settings"]').click();
+    const panel = document.querySelector('.t-memory-settings-window');
+    assert.ok(panel, '顶栏齿轮应打开独立的运行设置窗口');
+    const grid = panel.querySelector('.t-memory-settings-grid');
     assert.ok(grid, '运行设置页要能渲染');
-    assert.equal(document.querySelector('[data-setting="model"]'), null, '「总结模型覆盖」那一项已经移除');
-    for (const key of ['profile_id', 'keep_floors', 'trigger_tokens', 'trigger_floors', 'batch_tokens', 'memory_tokens', 'inject_depth']) {
-        assert.ok(document.querySelector(`[data-setting="${key}"]`), `运行设置缺了 ${key}`);
+    assert.equal(panel.querySelector('[data-setting="model"]'), null, '「总结模型覆盖」那一项已经移除');
+    for (const key of ['profile_id', 'keep_floors', 'trigger_tokens', 'trigger_floors', 'batch_tokens', 'memory_tokens', 'max_output_tokens', 'recent_segments', 'recent_tokens', 'recall_segments', 'recall_tokens', 'inject_depth']) {
+        assert.ok(panel.querySelector(`[data-setting="${key}"]`), `运行设置缺了 ${key}`);
     }
+    assert.equal(panel.querySelector('[data-setting="max_output_tokens"]').hasAttribute('max'), false, '输出上限不再写死最大值');
+    assert.equal(panel.querySelector('[data-setting="batch_tokens"]').hasAttribute('max'), false, '读取上限不再写死最大值');
     // 标签一律写成"填进去的数是干什么用的"：这些旧术语是用户看不懂的源头，不许回流。
     for (const jargon of ['总结模型覆盖', '旧正文触发', '注入深度', '目标预算', '单次正文读取上限', '至少保留最近楼层']) {
         assert.equal(grid.innerHTML.includes(jargon), false, `仍是术语：${jargon}`);
     }
+    const output = panel.querySelector('[data-setting="max_output_tokens"]');
+    output.value = '20000';
+    output.dispatchEvent(new host.dom.window.Event('input', { bubbles: true }));
+    panel.querySelector('[data-action="save"]').click();
+    assert.equal(host.data.story_memory.max_output_tokens, 20000, '设置窗口保存后应即时落盘');
+    assert.equal(panel.querySelector('[data-role="status"]').textContent, '已保存');
+    document.dispatchEvent(new host.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(document.querySelector('.t-memory-settings-window'), null, 'Esc 只关设置窗口');
+    assert.ok(document.querySelector('.t-memory-overlay'), '故事记忆应保持打开');
+    close();
+});
+
+test('输出 token 上限可随意填写，并真正用于整理请求', async () => {
+    assert.equal(normalizeMemoryConfig({ max_output_tokens: 128000 }).max_output_tokens, 128000);
+    assert.equal(normalizeMemoryConfig({ recent_tokens: 999999 }).recent_tokens, 999999, '最近分段预算也不设上限');
+    assert.equal(normalizeMemoryConfig({ recall_tokens: 999999 }).recall_tokens, 999999, '召回预算也不设上限');
+    const host = await loadRuntime();
+    host.data.story_memory = { ...host.data.story_memory, max_output_tokens: 8192 };
+    assert.equal(await host.ns.runStoryMemory(true), true);
+    assert.equal(host.requests[0].options.maxTokens, 8192);
+});
+
+test('当前剧情仪表盘：进度、四个统计块与页签跳转', async () => {
+    const host = await loadRuntime({ dom: true, memory: newStoryMemory() });
+    const ui = await host.ui(); const close = ui.openStoryMemoryWindow();
+    const document = host.dom.window.document;
+    assert.ok(document.querySelector('.t-memory-progress'), '仪表盘要显示整理进度');
+    assert.equal(document.querySelectorAll('.t-memory-stat').length, 4);
+    document.querySelector('.t-memory-stat[data-jump-tab="relationships"]').click();
+    assert.ok(document.querySelector('[data-tab="relationships"]').classList.contains('is-active'), '统计块应跳到人物关系');
+    close();
+});
+
+test('人物关系：头像关系卡、待确认建议、来源楼层与关系图聚焦', async () => {
+    const memory = {
+        ...newStoryMemory(), enabled: true,
+        relationships: [
+            {
+                id: 'r1', title: '林岚 → 顾舟', body: '愿意合作，但仍怀疑钥匙的来历。',
+                locked: false, manual: false,
+                sources: [{ start: 0, end: 6, evidence: '他们谈起旧宅钥匙' }],
+                pending: { title: '林岚 → 顾舟', body: '信任开始恢复。', source: { segmentId: 's1', start: 0, end: 6, evidence: '他们谈起旧宅钥匙' } },
+            },
+            { id: 'r2', title: '林岚 → 父亲', body: '父亲留下遗物。', locked: true, manual: true, sources: [] },
+        ],
+        threads: [{ id: 't1', title: '钥匙的来历', body: '顾舟知道钥匙的来历。', status: 'open', sources: [] }],
+    };
+    const host = await loadRuntime({ dom: true, memory });
+    const ui = await host.ui(); const close = ui.openStoryMemoryWindow();
+    const document = host.dom.window.document;
+    document.querySelector('[data-tab="relationships"]').click();
+    assert.equal(document.querySelectorAll('.t-memory-rel-card').length, 2);
+    assert.equal(document.querySelectorAll('.t-memory-avatar').length, 4, '两段关系各两个人物头像');
+    assert.ok(document.querySelector('.t-memory-suggestion'), '待确认建议要直接显示');
+    assert.ok(document.querySelector('.t-memory-source-chip'), '来源楼层要显示为 chip');
+    assert.equal(document.querySelectorAll('.t-memory-graph-node').length, 4, '3 个人物 + 1 个伏笔');
+
+    document.querySelector('.t-memory-graph-node[data-node="c:顾舟"]').dispatchEvent(new host.dom.window.Event('click', { bubbles: true }));
+    assert.equal(document.querySelectorAll('.t-memory-rel-card').length, 1, '聚焦后只显示相关关系');
+    assert.ok(document.querySelector('.t-memory-rel-card.is-focus'));
+    assert.ok(document.querySelector('.t-memory-graph-focus'));
+    close();
+});
+
+test('伏笔：按状态分组，筛选与搜索保持输入焦点', async () => {
+    const memory = {
+        ...newStoryMemory(), enabled: true,
+        threads: [
+            { id: 't1', title: '钥匙的来历', body: '顾舟知道。', status: 'open', sources: [] },
+            { id: 't2', title: '父亲的遗愿', body: '已经找到第一件。', status: 'progress', sources: [] },
+            { id: 't3', title: '旧宅的秘密', body: '已经解开。', status: 'resolved', sources: [] },
+        ],
+    };
+    const host = await loadRuntime({ dom: true, memory });
+    const ui = await host.ui(); const close = ui.openStoryMemoryWindow();
+    const document = host.dom.window.document;
+    document.querySelector('[data-tab="threads"]').click();
+    assert.equal(document.querySelectorAll('.t-memory-thread-card').length, 3);
+    assert.equal(document.querySelectorAll('.t-memory-group-head').length, 2, '未解决/有进展各一组，已解决在折叠区');
+    assert.ok(document.querySelector('.t-memory-thread-card.is-open'));
+    assert.ok(document.querySelector('.t-memory-thread-card.is-progress'));
+    assert.ok(document.querySelector('.t-memory-thread-card.is-resolved'));
+
+    document.querySelector('[data-action="set-filter"][data-filter="progress"]').click();
+    assert.equal(document.querySelectorAll('.t-memory-thread-card').length, 1);
+    document.querySelector('[data-action="set-filter"][data-filter="all"]').click();
+
+    const search = document.querySelector('[data-role="memory-search"]');
+    search.focus();
+    search.value = '钥匙';
+    search.dispatchEvent(new host.dom.window.Event('input', { bubbles: true }));
+    assert.equal(document.querySelectorAll('.t-memory-thread-card').length, 1);
+    assert.equal(document.activeElement, document.querySelector('[data-role="memory-search"]'), '搜索时保持焦点');
     close();
 });
 
 test('界面可开启后台、手动新增条目、编辑内容，模型文本不会变成HTML', async () => {
     const host = await loadRuntime({ dom: true, memory: newStoryMemory() });
     const ui = await host.ui(); const close = ui.openStoryMemoryWindow(); const document = host.dom.window.document;
-    assert.equal(document.querySelectorAll('[data-tab]').length, 6);
+    assert.equal(document.querySelectorAll('[data-tab]').length, 5);
     const enabled = document.querySelector('[data-role="enabled"]'); enabled.checked = true;
     enabled.dispatchEvent(new host.dom.window.Event('change', { bubbles: true }));
     await settle(() => host.current.chatMetadata[MEMORY_KEY].enabled && !host.ns.getStoryMemoryView().busy);
